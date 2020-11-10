@@ -195,6 +195,9 @@ func TestGatherKeys(t *testing.T) {
 	primaryKeyStr := base64.StdEncoding.EncodeToString(primaryKey)
 	secondaryKeyStr := base64.StdEncoding.EncodeToString(secondaryKey)
 
+	tooShortKey := primaryKey[:5]
+	tooShortKeyStr := base64.StdEncoding.EncodeToString(tooShortKey)
+
 	tests := []struct {
 		name             string
 		data             []byte
@@ -227,6 +230,13 @@ func TestGatherKeys(t *testing.T) {
 		{
 			name:             "has bad encoded keys",
 			data:             []byte("look mom, I am a key"),
+			wantPrimaryKey:   nil,
+			wantSecondaryKey: nil,
+			wantErr:          true,
+		},
+		{
+			name:             "key length is below requirement",
+			data:             []byte(tooShortKeyStr),
 			wantPrimaryKey:   nil,
 			wantSecondaryKey: nil,
 			wantErr:          true,

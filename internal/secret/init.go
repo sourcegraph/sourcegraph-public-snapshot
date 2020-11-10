@@ -26,12 +26,16 @@ func gatherKeys(data []byte) (primaryKey, secondaryKey []byte, err error) {
 	primaryKey, err = base64.StdEncoding.DecodeString(parts[0])
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "decode primary key")
+	} else if len(primaryKey) < requiredKeyLength {
+		return nil, nil, errors.Errorf("primary key length of %d bytes is required", requiredKeyLength)
 	}
 
 	if len(parts) == 2 {
 		secondaryKey, err = base64.StdEncoding.DecodeString(parts[1])
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "decode secondary key")
+		} else if len(primaryKey) < requiredKeyLength {
+			return nil, nil, errors.Errorf("secondary key length of %d bytes is required", requiredKeyLength)
 		}
 	}
 
@@ -91,9 +95,6 @@ func initDefaultEncryptor() error {
 	encryptionKeys, err := ioutil.ReadFile(secretFile)
 	if err != nil {
 		return errors.Wrapf(err, "read file %q", secretFile)
-	}
-	if len(encryptionKeys) < requiredKeyLength {
-		return errors.Errorf("key length of %d characters is required", requiredKeyLength)
 	}
 
 	primaryKey, secondaryKey, err := gatherKeys(encryptionKeys)
