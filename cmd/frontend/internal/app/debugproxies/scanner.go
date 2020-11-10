@@ -192,7 +192,7 @@ func namespace() string {
 	}
 
 	ns := strings.TrimSpace(string(data))
-	if len(ns) == 0 {
+	if ns == "" {
 		log15.Warn("file: ", filename, " empty using \"default\" ns")
 		return "default"
 	}
