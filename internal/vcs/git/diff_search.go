@@ -201,6 +201,7 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 
 	// We then search each commit in batches to further filter the results.
 	complete = true
+	var cache refResolveCache
 	for {
 		commits, err := nextCommits()
 		if err == io.EOF {
@@ -209,8 +210,7 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 			return results, complete, err
 		}
 
-		// TODO we want to share cache between calls to rawShowSearch
-		results2, complete2, err := rawShowSearch(ctx, repo, opt, commits)
+		results2, complete2, err := rawShowSearch(ctx, repo, opt, &cache, commits)
 		results = append(results, results2...)
 		complete = complete && complete2
 
@@ -253,7 +253,7 @@ func rawLogSearchCmd(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSea
 
 // rawShowSearch runs git show on each commit in onelineCommits. We need to do
 // this to further filter hunks.
-func rawShowSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions, onelineCommits []*onelineCommit) (results []*LogCommitSearchResult, complete bool, err error) {
+func rawShowSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions, cache *refResolveCache, onelineCommits []*onelineCommit) (results []*LogCommitSearchResult, complete bool, err error) {
 	if len(onelineCommits) == 0 {
 		return nil, true, nil
 	}
@@ -316,7 +316,6 @@ func rawShowSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearc
 	if err != nil {
 		return nil, complete, err
 	}
-	var cache refResolveCache
 	for len(data) > 0 {
 		var commit *Commit
 		var refs []string
@@ -337,9 +336,9 @@ func rawShowSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearc
 			Refs:       refs,
 			SourceRefs: []string{commitSourceRefs[string(commit.ID)]},
 		}
-		result.Refs, err = filterAndResolveRefs(ctx, repo, result.Refs, &cache)
+		result.Refs, err = filterAndResolveRefs(ctx, repo, result.Refs, cache)
 		if err == nil {
-			result.SourceRefs, err = filterAndResolveRefs(ctx, repo, result.SourceRefs, &cache)
+			result.SourceRefs, err = filterAndResolveRefs(ctx, repo, result.SourceRefs, cache)
 		}
 		sort.Strings(result.Refs)
 		sort.Strings(result.SourceRefs)
