@@ -1,18 +1,10 @@
 import React from 'react'
-import ReactDOM from 'react-dom'
-import renderer from 'react-test-renderer'
 import { TextDocumentDecoration, ThemableDecorationStyle } from 'sourcegraph'
 import { Position, Range } from '@sourcegraph/extension-api-classes'
 import { LineDecorator, LineDecoratorProps } from './LineDecorator'
-import sinon from 'sinon'
+import { mount } from 'enzyme'
 
 describe('LineDecorator', () => {
-    beforeAll(() => {
-        // react-test-renderer doesn't support portals (https://github.com/facebook/react/issues/11565),
-        // so just pass children through
-        ReactDOM.createPortal = sinon.spy(children => children)
-    })
-
     function createCodeElement() {
         const codeElement = document.createElement('td')
         codeElement.classList.add('code')
@@ -50,7 +42,7 @@ describe('LineDecorator', () => {
             { after: { contentText: 'test content' }, range: new Range(new Position(0, 0), new Position(0, 0)) },
         ])
 
-        expect(renderer.create(<LineDecorator {...props} />).toJSON()).toMatchSnapshot()
+        expect(mount(<LineDecorator {...props} />)).toMatchSnapshot()
     })
 
     it('renders multiple attachments', () => {
@@ -65,7 +57,7 @@ describe('LineDecorator', () => {
             },
         ])
 
-        expect(renderer.create(<LineDecorator {...props} />).toJSON()).toMatchSnapshot()
+        expect(mount(<LineDecorator {...props} />)).toMatchSnapshot()
     })
 
     it('decorates line', () => {
@@ -86,7 +78,7 @@ describe('LineDecorator', () => {
             codeElement
         )
 
-        const testRenderer = renderer.create(<LineDecorator {...props} />)
+        const wrapper = mount(<LineDecorator {...props} />)
 
         // Code row should be styled after the decorator mounts
         expect({
@@ -95,7 +87,7 @@ describe('LineDecorator', () => {
         }).toStrictEqual(themeableDecorationStyle)
 
         // Code row should be unstyled after the decorator unmounts
-        testRenderer.unmount()
+        wrapper.unmount()
         expect({
             backgroundColor: parentRow.style.backgroundColor,
             borderColor: parentRow.style.borderColor,
@@ -125,14 +117,14 @@ describe('LineDecorator', () => {
             codeElement
         )
 
-        const testRenderer = renderer.create(<LineDecorator {...props} isLightTheme={true} />)
+        const wrapper = mount(<LineDecorator {...props} isLightTheme={true} />)
 
         expect({
             backgroundColor: parentRow.style.backgroundColor,
             borderColor: parentRow.style.borderColor,
         }).toStrictEqual(themeableDecorationStyleLight)
 
-        testRenderer.update(<LineDecorator {...props} isLightTheme={false} />)
+        wrapper.setProps({ ...props, isLightTheme: false })
 
         expect({
             backgroundColor: parentRow.style.backgroundColor,
