@@ -17,6 +17,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 28,
+  "iteration": 1605109633679,
   "links": [],
   "panels": [
     {
@@ -69,7 +70,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (instance, cmd) (src_gitserver_exec_running)",
+          "expr": "sum by (instance, cmd) (src_gitserver_exec_running{instance=~\"${shard:regex}\"})",
           "interval": "",
           "legendFormat": "{{instance}} {{cmd}}",
           "refId": "A"
@@ -179,7 +180,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (container_label_io_kubernetes_pod_name) (container_memory_working_set_bytes{container_label_io_kubernetes_container_name=\"gitserver\"})\n ",
+          "expr": "sum by (container_label_io_kubernetes_pod_name) (container_memory_working_set_bytes{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~\"${shard:regex}\"})",
           "interval": "",
           "legendFormat": "{{container_label_io_kubernetes_pod_name}}",
           "refId": "A"
@@ -289,7 +290,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (container_label_io_kubernetes_pod_name) ((rate(container_cpu_cfs_throttled_periods_total{container_label_io_kubernetes_container_name=\"gitserver\"}[5m]) / rate(container_cpu_cfs_periods_total{container_label_io_kubernetes_container_name=\"gitserver\"}[5m])) * 100)",
+          "expr": "sum by (container_label_io_kubernetes_pod_name) ((rate(container_cpu_cfs_throttled_periods_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~\"${shard:regex}\"}[5m]) / rate(container_cpu_cfs_periods_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~\"${shard:regex}\"}[5m])) * 100)",
           "interval": "",
           "legendFormat": "{{container_label_io_kubernetes_pod_name}}",
           "refId": "A"
@@ -386,7 +387,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "go_goroutines{app=\"gitserver\"}",
+          "expr": "go_goroutines{app=\"gitserver\", instance=~\"${shard:regex}\"}",
           "interval": "",
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -482,7 +483,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (container_label_io_kubernetes_pod_name) (rate(container_cpu_usage_seconds_total{container_label_io_kubernetes_container_name=\"gitserver\"}[5m]))",
+          "expr": "sum by (container_label_io_kubernetes_pod_name) (rate(container_cpu_usage_seconds_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~\"${shard:regex}\"}[5m]))",
           "interval": "",
           "legendFormat": "{{container_label_io_kubernetes_pod_name}}",
           "refId": "A"
@@ -791,7 +792,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_reads_total{container_label_io_kubernetes_container_name=\"gitserver\"}[5m]))",
+          "expr": "sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_reads_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~\"${shard:regex}\"}[5m]))",
           "instant": false,
           "interval": "",
           "legendFormat": "{{container_label_io_kubernetes_pod_name}}",
@@ -890,7 +891,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_writes_total{container_label_io_kubernetes_container_name=\"gitserver\"}[5m]))",
+          "expr": "sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_writes_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~\"${shard:regex}\"}[5m]))",
           "instant": false,
           "interval": "",
           "legendFormat": "{{container_label_io_kubernetes_pod_name}}",
@@ -989,7 +990,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_reads_bytes_total{container_label_io_kubernetes_container_name=\"gitserver\"}[5m]))",
+          "expr": "sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_reads_bytes_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~\"${shard:regex}\"}[5m]))",
           "instant": false,
           "interval": "",
           "legendFormat": "{{container_label_io_kubernetes_pod_name}}",
@@ -1088,7 +1089,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_writes_bytes_total{container_label_io_kubernetes_container_name=\"gitserver\"}[5m]))",
+          "expr": "sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_writes_bytes_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~\"${shard:regex}\"}[5m]))",
           "interval": "",
           "legendFormat": "{{container_label_io_kubernetes_pod_name}}",
           "refId": "A"
@@ -1142,7 +1143,39 @@
   "style": "dark",
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "tags": [],
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "Prometheus",
+        "definition": "label_values(src_gitserver_exec_running, instance)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Shard",
+        "multi": true,
+        "name": "shard",
+        "options": [],
+        "query": "label_values(src_gitserver_exec_running, instance)",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 3,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      }
+    ]
   },
   "time": {
     "from": "now-12h",
