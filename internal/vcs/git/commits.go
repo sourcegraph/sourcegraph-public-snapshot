@@ -76,7 +76,7 @@ func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (s
 		defer func() {
 			ev := honey.Event("getCommit")
 			ev.SampleRate = 10 // 1 in 10
-			ev.AddField("repo", repo)
+			ev.AddField("repo", repo.Name)
 			ev.AddField("commit", id)
 			ev.AddField("no_ensure_revision", opt.NoEnsureRevision)
 			ev.AddField("actor", actor.FromContext(ctx).UIDString())
