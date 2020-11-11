@@ -778,6 +778,15 @@ type Mutation {
         """
         enabled: Boolean!
     ): Monitor!
+    """
+    Delete a code monitor.
+    """
+    deleteCodeMonitor(
+        """
+        The id of a code monitor.
+        """
+        id: ID!
+    ): EmptyResponse!
 }
 
 """

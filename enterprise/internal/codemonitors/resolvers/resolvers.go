@@ -128,6 +128,21 @@ func (r *Resolver) ToggleCodeMonitor(ctx context.Context, args *graphqlbackend.T
 	return r.runMonitorQuery(ctx, q)
 }
 
+func (r *Resolver) DeleteCodeMonitor(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) (*graphqlbackend.EmptyResponse, error) {
+	err := r.isAllowedToEdit(ctx, args.Id)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteCodeMonitor: %w", err)
+	}
+	q, err := r.deleteCodeMonitorQuery(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.db.Exec(ctx, q); err != nil {
+		return nil, err
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
 func (r *Resolver) runMonitorQuery(ctx context.Context, q *sqlf.Query) (graphqlbackend.MonitorResolver, error) {
 	rows, err := r.db.Query(ctx, q)
 	if err != nil {
@@ -418,6 +433,20 @@ RETURNING %s
 		r.clock(),
 		monitorID,
 		sqlf.Join(monitorColumns, ", "),
+	)
+	return query, nil
+}
+
+func (r *Resolver) deleteCodeMonitorQuery(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) (*sqlf.Query, error) {
+	deleteCodeMonitorQuery := `DELETE FROM cm_monitors WHERE id = %s`
+	var monitorID int64
+	err := relay.UnmarshalSpec(args.Id, &monitorID)
+	if err != nil {
+		return nil, err
+	}
+	query := sqlf.Sprintf(
+		deleteCodeMonitorQuery,
+		monitorID,
 	)
 	return query, nil
 }
