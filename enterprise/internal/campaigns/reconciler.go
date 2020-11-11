@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -327,7 +326,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	existingSameBranch, err := e.tx.GetChangeset(ctx, GetChangesetOpts{
 		ExternalServiceType: e.ch.ExternalServiceType,
 		RepoID:              e.ch.RepoID,
-		ExternalBranch:      git.AbbreviateRef(e.spec.Spec.HeadRef),
+		ExternalBranch:      e.spec.Spec.HeadRef,
 	})
 	if err != nil && err != ErrNoResults {
 		return err
@@ -351,7 +350,7 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 		Title:     e.spec.Spec.Title,
 		Body:      e.spec.Spec.Body,
 		BaseRef:   e.spec.Spec.BaseRef,
-		HeadRef:   git.EnsureRefPrefix(e.spec.Spec.HeadRef),
+		HeadRef:   e.spec.Spec.HeadRef,
 		Repo:      e.repo,
 		Changeset: e.ch,
 	}
@@ -437,7 +436,7 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 		Title:     e.spec.Spec.Title,
 		Body:      e.spec.Spec.Body,
 		BaseRef:   e.spec.Spec.BaseRef,
-		HeadRef:   git.EnsureRefPrefix(e.spec.Spec.HeadRef),
+		HeadRef:   e.spec.Spec.HeadRef,
 		Repo:      e.repo,
 		Changeset: e.ch,
 	}
@@ -491,7 +490,7 @@ func (e *executor) undraftChangeset(ctx context.Context) (err error) {
 		Title:     e.spec.Spec.Title,
 		Body:      e.spec.Spec.Body,
 		BaseRef:   e.spec.Spec.BaseRef,
-		HeadRef:   git.EnsureRefPrefix(e.spec.Spec.HeadRef),
+		HeadRef:   e.spec.Spec.HeadRef,
 		Repo:      e.repo,
 		Changeset: e.ch,
 	}
