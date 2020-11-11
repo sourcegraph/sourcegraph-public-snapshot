@@ -58,7 +58,7 @@ export function getProviders(
                 const result = scanSearchQuery(line, options.interpretComments ?? false)
                 if (result.type === 'success') {
                     return {
-                        tokens: getMonacoTokens(result.token),
+                        tokens: getMonacoTokens(result.term),
                         endState: SCANNER_STATE,
                     }
                 }
@@ -71,7 +71,7 @@ export function getProviders(
                     .pipe(
                         first(),
                         map(({ scanned }) =>
-                            scanned.type === 'error' ? null : getHoverResult(scanned.token, position)
+                            scanned.type === 'error' ? null : getHoverResult(scanned.term, position)
                         ),
                         takeUntil(fromEventPattern(handler => token.onCancellationRequested(handler)))
                     )
@@ -88,7 +88,7 @@ export function getProviders(
                             scannedQuery.scanned.type === 'error'
                                 ? of(null)
                                 : getCompletionItems(
-                                      scannedQuery.scanned.token,
+                                      scannedQuery.scanned.term,
                                       position,
                                       debouncedDynamicSuggestions,
                                       options.globbing
@@ -99,7 +99,7 @@ export function getProviders(
                     .toPromise(),
         },
         diagnostics: scannedQueries.pipe(
-            map(({ scanned }) => (scanned.type === 'success' ? getDiagnostics(scanned.token, options.patternType) : []))
+            map(({ scanned }) => (scanned.type === 'success' ? getDiagnostics(scanned.term, options.patternType) : []))
         ),
     }
 }

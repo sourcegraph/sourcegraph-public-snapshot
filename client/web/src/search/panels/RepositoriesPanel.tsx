@@ -127,9 +127,9 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
     for (const node of eventLogResult.nodes) {
         const url = new URL(node.url)
         const queryFromURL = parseSearchURLQuery(url.search)
-        const parsedQuery = scanSearchQuery(queryFromURL || '')
-        if (parsedQuery.type === 'success') {
-            for (const token of parsedQuery.token.members) {
+        const scannedQuery = scanSearchQuery(queryFromURL || '')
+        if (scannedQuery.type === 'success') {
+            for (const token of scannedQuery.term) {
                 if (
                     token.type === 'filter' &&
                     (token.filterType.value === FilterType.repo ||

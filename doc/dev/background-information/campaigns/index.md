@@ -70,3 +70,38 @@ To use this account, follow these steps:
   ]
 }
 ```
+
+## How src-cli executes a campaign spec
+
+[src-cli](https://github.com/sourcegraph/src-cli) executes the `steps` in a campaign spec locally before sending up the changeset specs (which include the produced diff) and the campaign spec to the Sourcegraph instance.
+
+Here is a short description of what `src-cli` does when you run with `src campaign [preview|apply]` and the campaign spec includes `steps` (the code for this is neatly contained in [`func runSteps`](https://github.com/sourcegraph/src-cli/blob/850eabe4c8412375de675576d780dd4058004862/internal/campaigns/run_steps.go#L20)):
+
+### 1. Download archive and prepare
+
+1. Download archive of repository (what it does is equivalent to: `curl -L -v -X GET -H 'Accept: application/zip' -H 'Authorization: token <THE_SRC_TOKEN>' 'http://sourcegraph.example.com/github.com/my-org/my-repo@refs/heads/master/-/raw' --output ~/tmp/my-repo.zip
+`)
+2. Unzip archive, e.g. into `~/Library/Caches/sourcegraph/campaigns` (see `src campaign preview -h` for default value of cache dir, overwrite with `-cache`)
+3. `cd` into unzipped archive
+4. In the unzipped archive directory, create a git repository:
+  - Run `git init`
+  - Run `git config --local user.name Sourcegraph`
+  - Run `git config --local user.email campaigns@sourcegraph.com`
+  - Run `git add --force --all`
+  - Run `git commit --quiet --all -m sourcegraph-campaigns`
+
+### 2. Run the steps
+
+For each step:
+
+1. Probe container image to see whether it has `bin/sh` or `bin/bash`
+2. Write `steps.run` to a temp file, e.g. `/tmp-script`
+3. Run `chmod 644 /tmp-script`
+4. Run `docker run --rm --init --workdir /work --mount type=bind,source=/unzipped-archive-locally,target=/work --mount type=bind,source=/tmp-script,target=/tmp-file-in-container --entrypoint /bin/bash -- <IMAGE> /tmp-file-in-container`
+5. Add all the changes, run: `git add --all`
+
+### 3. Create final diff
+
+In the unzipped archive:
+
+1. Create a diff by running: `git diff --cached --no-prefix --binary`

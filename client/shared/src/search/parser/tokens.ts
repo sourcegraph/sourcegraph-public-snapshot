@@ -1,21 +1,21 @@
 import * as Monaco from 'monaco-editor'
-import { Sequence } from './scanner'
+import { Token } from './scanner'
 
 /**
  * Returns the tokens in a scanned search query displayed in the Monaco query input.
  */
-export function getMonacoTokens(scannedQuery: Pick<Sequence, 'members'>): Monaco.languages.IToken[] {
-    const tokens: Monaco.languages.IToken[] = []
-    for (const token of scannedQuery.members) {
+export function getMonacoTokens(tokens: Token[]): Monaco.languages.IToken[] {
+    const monacoTokens: Monaco.languages.IToken[] = []
+    for (const token of tokens) {
         switch (token.type) {
             case 'filter':
                 {
-                    tokens.push({
+                    monacoTokens.push({
                         startIndex: token.filterType.range.start,
                         scopes: 'filterKeyword',
                     })
                     if (token.filterValue) {
-                        tokens.push({
+                        monacoTokens.push({
                             startIndex: token.filterValue.range.start,
                             scopes: 'identifier',
                         })
@@ -25,18 +25,18 @@ export function getMonacoTokens(scannedQuery: Pick<Sequence, 'members'>): Monaco
             case 'whitespace':
             case 'keyword':
             case 'comment':
-                tokens.push({
+                monacoTokens.push({
                     startIndex: token.range.start,
                     scopes: token.type,
                 })
                 break
             default:
-                tokens.push({
+                monacoTokens.push({
                     startIndex: token.range.start,
                     scopes: 'identifier',
                 })
                 break
         }
     }
-    return tokens
+    return monacoTokens
 }
