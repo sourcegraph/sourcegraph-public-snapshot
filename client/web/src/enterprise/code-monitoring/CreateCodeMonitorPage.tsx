@@ -95,6 +95,7 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                             onChange={event => {
                                 onNameChange(event.target.value)
                             }}
+                            autoFocus={true}
                         />
                     </div>
                     <small className="text-muted">
@@ -233,6 +234,7 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 }}
                                 value={query}
                                 required={true}
+                                autoFocus={true}
                             />
                             <a
                                 href=""
@@ -358,6 +360,7 @@ const ActionArea: React.FunctionComponent<ActionAreaProps> = ({
                                 className="form-control my-2"
                                 value={`${authenticatedUser.email || ''} (you)`}
                                 disabled={true}
+                                autoFocus={true}
                             />
                             <small className="text-muted">
                                 Code monitors are currently limited to sending emails to your primary email address.
