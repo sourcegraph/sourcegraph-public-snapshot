@@ -1,7 +1,15 @@
 import * as Monaco from 'monaco-editor'
 import { Token, Pattern, CharacterRange, PatternKind } from './scanner'
 import { RegExpParser, visitRegExpAST } from 'regexpp'
-import { Character, CharacterClass, CharacterSet, CapturingGroup, Assertion, Quantifier } from 'regexpp/ast'
+import {
+    Character,
+    CharacterClass,
+    CharacterClassRange,
+    CharacterSet,
+    CapturingGroup,
+    Assertion,
+    Quantifier,
+} from 'regexpp/ast'
 
 export enum RegexpMetaKind {
     Delimited = 'Delimited', // like ( or )
@@ -84,6 +92,17 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                     type: 'regexpMeta',
                     range: { start: offset + node.end - 1, end: offset + node.end },
                     value: ']',
+                    kind: RegexpMetaKind.CharacterClass,
+                })
+            },
+            onCharacterClassRangeEnter(node: CharacterClassRange) {
+                // highlight the '-' in [a-z]. Take care to use node.min.end, because we
+                // don't want to highlight the first '-' in [--z], nor an escaped '-' with a
+                // two-character offset as in [\--z].
+                tokens.push({
+                    type: 'regexpMeta',
+                    range: { start: offset + node.min.end, end: offset + node.min.end + 1 },
+                    value: '-',
                     kind: RegexpMetaKind.CharacterClass,
                 })
             },
