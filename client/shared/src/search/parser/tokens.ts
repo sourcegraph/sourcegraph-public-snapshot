@@ -160,6 +160,8 @@ const fromDecoratedTokens = (tokens: DecoratedToken[]): Monaco.languages.IToken[
             case 'whitespace':
             case 'keyword':
             case 'comment':
+            case 'openingParen':
+            case 'closingParen':
                 monacoTokens.push({
                     startIndex: token.range.start,
                     scopes: token.type,
