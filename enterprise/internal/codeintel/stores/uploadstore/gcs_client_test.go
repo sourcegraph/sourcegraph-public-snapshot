@@ -93,7 +93,7 @@ func TestGCSGet(t *testing.T) {
 	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
 	objectHandle.NewRangeReaderFunc.SetDefaultReturn(ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))), nil)
 
-	client := testGCSClient(gcsClient, true)
+	client := testGCSClient(gcsClient, false)
 	rc, err := client.Get(context.Background(), "test-key", 0)
 	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err.Error())
@@ -132,7 +132,7 @@ func TestGCSGetSkipBytes(t *testing.T) {
 	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
 	objectHandle.NewRangeReaderFunc.SetDefaultReturn(ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))), nil)
 
-	client := testGCSClient(gcsClient, true)
+	client := testGCSClient(gcsClient, false)
 	rc, err := client.Get(context.Background(), "test-key", 20)
 	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err.Error())
@@ -174,7 +174,7 @@ func TestGCSUpload(t *testing.T) {
 	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
 	objectHandle.NewWriterFunc.SetDefaultReturn(nopCloser{buf})
 
-	client := testGCSClient(gcsClient, true)
+	client := testGCSClient(gcsClient, false)
 
 	size, err := client.Upload(context.Background(), "test-key", bytes.NewReader([]byte("TEST PAYLOAD")))
 	if err != nil {
@@ -219,7 +219,7 @@ func TestGCSCombine(t *testing.T) {
 		}[name]
 	})
 
-	client := testGCSClient(gcsClient, true)
+	client := testGCSClient(gcsClient, false)
 
 	size, err := client.Compose(context.Background(), "test-key", "test-src1", "test-src2", "test-src3")
 	if err != nil {
@@ -274,7 +274,7 @@ func TestGCSDelete(t *testing.T) {
 	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
 	objectHandle.NewRangeReaderFunc.SetDefaultReturn(ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))), nil)
 
-	client := testGCSClient(gcsClient, true)
+	client := testGCSClient(gcsClient, false)
 	if err := client.Delete(context.Background(), "test-key"); err != nil {
 		t.Fatalf("unexpected error getting key: %s", err.Error())
 	}
@@ -301,7 +301,7 @@ func TestGCSLifecycle(t *testing.T) {
 }
 
 func testGCSClient(client gcsAPI, manageBucket bool) Store {
-	return newLazyStorerawGCSClient(client, manageBucket)
+	return newLazyStore(rawGCSClient(client, manageBucket))
 }
 
 func rawGCSClient(client gcsAPI, manageBucket bool) *gcsStore {

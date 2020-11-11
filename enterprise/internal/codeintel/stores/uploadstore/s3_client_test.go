@@ -351,7 +351,7 @@ func TestS3Lifecycle(t *testing.T) {
 }
 
 func testS3Client(client s3API, uploader s3Uploader) Store {
-	return newLazyStore(rawS3Client(client, uploader)
+	return newLazyStore(rawS3Client(client, uploader))
 }
 
 func rawS3Client(client s3API, uploader s3Uploader) *s3Store {
