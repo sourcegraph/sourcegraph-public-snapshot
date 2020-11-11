@@ -21,6 +21,7 @@ import { Link } from '../../../../../shared/src/components/Link'
 import { AuthenticatedUser } from '../../../auth'
 import { ExternalServiceKind } from '../../../graphql-operations'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
+import { pluralize } from '../../../../../shared/src/util/strings'
 
 export interface CampaignApplyPageProps extends ThemeProps, TelemetryProps {
     specID: string
@@ -79,14 +80,25 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
             {spec.viewerMissingCodeHostCredentials.totalCount > 0 && (
                 <div className="alert alert-warning">
                     <p className="alert-title">
-                        Some credentials are missing to apply this campaign.{' '}
-                        <Link to={`${authenticatedUser.url}/settings/campaigns`}>Configure them here</Link>.
+                        You don't have credentials configured for{' '}
+                        {pluralize(
+                            'this code host',
+                            spec.viewerMissingCodeHostCredentials.totalCount,
+                            'these code hosts'
+                        )}
                     </p>
                     <ul>
                         {spec.viewerMissingCodeHostCredentials.nodes.map(node => (
                             <MissingCodeHost {...node} key={node.externalServiceKind + node.externalServiceURL} />
                         ))}
                     </ul>
+                    <p className="mb-0">
+                        Configure {pluralize('it', spec.viewerMissingCodeHostCredentials.totalCount, 'them')} in your{' '}
+                        <Link to={`${authenticatedUser.url}/settings/campaigns`} target="_blank" rel="noopener">
+                            campaigns user settings
+                        </Link>{' '}
+                        to apply this spec.
+                    </p>
                 </div>
             )}
             <CreateUpdateCampaignAlert
@@ -117,7 +129,7 @@ const MissingCodeHost: React.FunctionComponent<{
     const Icon = defaultExternalServices[externalServiceKind].icon
     return (
         <li>
-            <Icon className="icon-inline" />
+            <Icon className="icon-inline mr-2" />
             {externalServiceURL}
         </li>
     )
