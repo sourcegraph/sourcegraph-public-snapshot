@@ -56,10 +56,10 @@ interface BlobProps
     className: string
     wrapCode: boolean
     /** The current text document to be rendered and provided to extensions */
-    model: ModelProps
+    blobInfo: BlobInfo
 }
 
-export interface ModelProps extends AbsoluteRepoFile, ThemeProps, ModeSpec {
+export interface BlobInfo extends AbsoluteRepoFile, ThemeProps, ModeSpec {
     /** The raw content of the blob. */
     content: string
 
@@ -105,7 +105,7 @@ const domFunctions = {
 }
 
 export const Blob: React.FunctionComponent<BlobProps> = props => {
-    const { location, isLightTheme, extensionsController, model } = props
+    const { location, isLightTheme, extensionsController, blobInfo } = props
 
     // Element reference subjects passed to `hoverifier`. They must be `ReplaySubjects` because
     // the ref callback is called before hoverifier is created in `useEffect`
@@ -147,12 +147,12 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         rerenders.next()
     })
 
-    // Emits on model
-    const modelChanges = useMemo(() => new ReplaySubject<ModelProps>(1), [])
-    const nextModelChange = useCallback((modelProps: ModelProps) => modelChanges.next(modelProps), [modelChanges])
+    // Emits on blob info changes to update extension host model
+    const blobInfoChanges = useMemo(() => new ReplaySubject<BlobInfo>(1), [])
+    const nextBlobInfoChange = useCallback((blobInfo: BlobInfo) => blobInfoChanges.next(blobInfo), [blobInfoChanges])
     useEffect(() => {
-        nextModelChange(model)
-    }, [model, nextModelChange])
+        nextBlobInfoChange(blobInfo)
+    }, [blobInfo, nextBlobInfoChange])
 
     const closeButtonClicks = useMemo(() => new Subject<MouseEvent>(), [])
     const nextCloseButtonClick = useCallback((click: MouseEvent) => closeButtonClicks.next(click), [closeButtonClicks])
@@ -194,12 +194,12 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             getHover: position =>
                 // before, static methods could read from this.props
                 getHover(
-                    getLSPTextDocumentPositionParameters(position, propsReference.current.model.mode),
+                    getLSPTextDocumentPositionParameters(position, propsReference.current.blobInfo.mode),
                     propsReference.current
                 ),
             getDocumentHighlights: position =>
                 getDocumentHighlights(
-                    getLSPTextDocumentPositionParameters(position, propsReference.current.model.mode),
+                    getLSPTextDocumentPositionParameters(position, propsReference.current.blobInfo.mode),
                     propsReference.current
                 ),
             getActions: context => getHoverActions(propsReference.current, context),
@@ -221,7 +221,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                     }))
                 ),
                 resolveContext: () => {
-                    const { repoName, revision, commitID, filePath } = propsReference.current.model
+                    const { repoName, revision, commitID, filePath } = propsReference.current.blobInfo
                     return {
                         repoName,
                         revision,
@@ -337,13 +337,13 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
         // Update the Sourcegraph extensions model to reflect the current file.
         subscriptions.add(
-            combineLatest([modelChanges, locationPositions]).subscribe(([model, position]) => {
-                const uri = toURIWithPath(model)
+            combineLatest([blobInfoChanges, locationPositions]).subscribe(([blobInfo, position]) => {
+                const uri = toURIWithPath(blobInfo)
                 if (!propsReference.current.extensionsController.services.model.hasModel(uri)) {
                     propsReference.current.extensionsController.services.model.addModel({
                         uri,
-                        languageId: model.mode,
-                        text: model.content,
+                        languageId: blobInfo.mode,
+                        text: blobInfo.content,
                     })
                 }
                 propsReference.current.extensionsController.services.viewer.removeAllViewers()
@@ -357,17 +357,17 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         )
 
         // Get decorations for the current file
-        let lastModel: (AbsoluteRepoFile & ModeSpec) | undefined
-        const decorations = modelChanges.pipe(
-            switchMap(model => {
-                const modelChanged = !isEqual(model, lastModel)
-                lastModel = model // record so we can compute modelChanged
+        let lastBlobInfo: (AbsoluteRepoFile & ModeSpec) | undefined
+        const decorations = blobInfoChanges.pipe(
+            switchMap(blobInfo => {
+                const blobInfoChanged = !isEqual(blobInfo, lastBlobInfo)
+                lastBlobInfo = blobInfo // record so we can compute blobInfoChanged
                 // Only clear decorations if the model changed. If only the extensions changed,
                 // keep the old decorations until the new ones are available, to avoid UI jitter
                 return merge(
-                    modelChanged ? [null] : [],
+                    blobInfoChanged ? [null] : [],
                     propsReference.current.extensionsController.services.textDocumentDecoration.getDecorations({
-                        uri: `git://${model.repoName}?${model.commitID}#${model.filePath}`,
+                        uri: `git://${blobInfo.repoName}?${blobInfo.commitID}#${blobInfo.filePath}`,
                     })
                 )
             }),
@@ -389,7 +389,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         codeViewElements,
         rerenders,
         locationPositions,
-        modelChanges,
+        blobInfoChanges,
         closeButtonClicks,
     ])
 
@@ -405,7 +405,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             <code
                 className={`blob__code ${props.wrapCode ? ' blob__code--wrapped' : ''} test-blob`}
                 ref={nextCodeViewElement}
-                dangerouslySetInnerHTML={{ __html: props.model.html }}
+                dangerouslySetInnerHTML={{ __html: blobInfo.html }}
             />
             {hoverState.hoverOverlayProps && (
                 <WebHoverOverlay
@@ -423,7 +423,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         return (
                             <LineDecorator
                                 isLightTheme={isLightTheme}
-                                key={`${portalID}-${model.filePath}`}
+                                key={`${portalID}-${blobInfo.filePath}`}
                                 portalID={portalID}
                                 getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
                                 line={line}

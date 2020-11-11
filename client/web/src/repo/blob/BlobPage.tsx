@@ -26,7 +26,7 @@ import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
-import { Blob, ModelProps } from './Blob'
+import { Blob, BlobInfo } from './Blob'
 import { BlobPanel } from './panel/BlobPanel'
 import { GoToRawAction } from './GoToRawAction'
 import { RenderedFile } from './RenderedFile'
@@ -143,9 +143,9 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     // Prevents https://github.com/sourcegraph/sourcegraph/issues/14965 by not allowing
     // components to use current file props while blob hasn't updated, since all information
     // is bundled in one object whose creation is blocked by `fetchBlob` emission.
-    const [nextFetchWithDisabledTimeout, modelOrError] = useEventObservable<
+    const [nextFetchWithDisabledTimeout, blobInfoOrError] = useEventObservable<
         void,
-        (ModelProps & { richHTML: string; aborted: boolean }) | ErrorLike
+        (BlobInfo & { richHTML: string; aborted: boolean }) | ErrorLike
     >(
         useCallback(
             (clicks: Observable<void>) =>
@@ -162,7 +162,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                         })
                     ),
                     map(blob => {
-                        const model: ModelProps & { richHTML: string; aborted: boolean } = {
+                        const blobInfo: BlobInfo & { richHTML: string; aborted: boolean } = {
                             content: blob.content,
                             html: blob.highlight.html,
                             repoName,
@@ -175,7 +175,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                             richHTML: blob.richHTML,
                             aborted: blob.highlight.aborted,
                         }
-                        return model
+                        return blobInfo
                     }),
                     catchError((error): [ErrorLike] => {
                         console.error(error)
@@ -214,7 +214,10 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     // - If file does not contain richHTML or the url includes a line number: We render in code view.
     if (!renderMode) {
         renderMode =
-            modelOrError && !isErrorLike(modelOrError) && modelOrError.richHTML && !parseHash(props.location.hash).line
+            blobInfoOrError &&
+            !isErrorLike(blobInfoOrError) &&
+            blobInfoOrError.richHTML &&
+            !parseHash(props.location.hash).line
                 ? 'rendered'
                 : 'code'
     }
@@ -258,12 +261,12 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
         </>
     )
 
-    if (isErrorLike(modelOrError)) {
+    if (isErrorLike(blobInfoOrError)) {
         // Be helpful if the URL was actually a tree and redirect.
         // Some extensions may optimistically construct blob URLs because
         // they cannot easily determine eagerly if a file path is a tree or a blob.
         // We don't have error names on GraphQL errors.
-        if (/not a blob/i.test(modelOrError.message)) {
+        if (/not a blob/i.test(blobInfoOrError.message)) {
             return <Redirect to={toTreeURL(props)} />
         }
         return (
@@ -272,13 +275,13 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 <HeroPage
                     icon={AlertCircleIcon}
                     title="Error"
-                    subtitle={<ErrorMessage error={modelOrError} history={props.history} />}
+                    subtitle={<ErrorMessage error={blobInfoOrError} history={props.history} />}
                 />
             </>
         )
     }
 
-    if (!modelOrError) {
+    if (!blobInfoOrError) {
         // Render placeholder for layout before content is fetched.
         return <div className="blob-page__placeholder">{alwaysRender}</div>
     }
@@ -286,7 +289,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     return (
         <>
             {alwaysRender}
-            {modelOrError.richHTML && (
+            {blobInfoOrError.richHTML && (
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={100}
@@ -300,14 +303,14 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 />
             )}
-            {modelOrError.richHTML && renderMode === 'rendered' && (
+            {blobInfoOrError.richHTML && renderMode === 'rendered' && (
                 <RenderedFile
-                    dangerousInnerHTML={modelOrError.richHTML}
+                    dangerousInnerHTML={blobInfoOrError.richHTML}
                     location={props.location}
                     history={props.history}
                 />
             )}
-            {!modelOrError.richHTML && modelOrError.aborted && (
+            {!blobInfoOrError.richHTML && blobInfoOrError.aborted && (
                 <div className="blob-page__aborted">
                     <div className="alert alert-info">
                         Syntax-highlighting this file took too long. &nbsp;
@@ -321,7 +324,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
             {renderMode === 'code' && (
                 <Blob
                     className="blob-page__blob test-repo-blob"
-                    model={modelOrError}
+                    blobInfo={blobInfoOrError}
                     wrapCode={wrapCode}
                     platformContext={props.platformContext}
                     extensionsController={props.extensionsController}
