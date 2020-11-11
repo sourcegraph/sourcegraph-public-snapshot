@@ -311,10 +311,16 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                     <Link className="btn btn-secondary" to={`${treeOrError.url}/-/commits`}>
                                         <SourceCommitIcon className="icon-inline" /> Commits
                                     </Link>
-                                    <Link className="btn btn-secondary" to={`/${encodeURIComponentExceptSlashes(repoName)}/-/branches`}>
+                                    <Link
+                                        className="btn btn-secondary"
+                                        to={`/${encodeURIComponentExceptSlashes(repoName)}/-/branches`}
+                                    >
                                         <SourceBranchIcon className="icon-inline" /> Branches
                                     </Link>
-                                    <Link className="btn btn-secondary" to={`/${encodeURIComponentExceptSlashes(repoName)}/-/tags`}>
+                                    <Link
+                                        className="btn btn-secondary"
+                                        to={`/${encodeURIComponentExceptSlashes(repoName)}/-/tags`}
+                                    >
                                         <TagIcon className="icon-inline" /> Tags
                                     </Link>
                                     <Link
