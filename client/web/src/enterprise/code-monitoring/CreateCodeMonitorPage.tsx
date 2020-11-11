@@ -91,6 +91,7 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                         <input
                             type="text"
                             className="form-control my-2"
+                            required={true}
                             onChange={event => {
                                 onNameChange(event.target.value)
                             }}
@@ -154,13 +155,14 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                     </div>
                     <div className="flex my-4">
                         <button
-                            type="button"
+                            type="submit"
                             className="btn btn-primary mr-2"
                             disabled={!formCompletion.actionCompleted}
                         >
                             Create code monitor
                         </button>
                         <button type="button" className="btn btn-outline-secondary">
+                            {/* TODO: this should link somewhere */}
                             Cancel
                         </button>
                     </div>
@@ -184,12 +186,12 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     setTriggerCompleted,
 }) => {
     const [showQueryForm, setShowQueryForm] = useState(false)
-    const toggleQueryForm: React.MouseEventHandler = useCallback(event => {
+    const toggleQueryForm: React.FormEventHandler = useCallback(event => {
         event.preventDefault()
         setShowQueryForm(show => !show)
     }, [])
 
-    const editOrCompleteForm: React.MouseEventHandler = useCallback(
+    const editOrCompleteForm: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
             toggleQueryForm(event)
@@ -230,6 +232,7 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     onQueryChange(event.target.value)
                                 }}
                                 value={query}
+                                required={true}
                             />
                             <a
                                 href=""
@@ -247,13 +250,14 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         </small>
                         <div>
                             <button
-                                type="button"
                                 className="btn btn-outline-secondary mr-1"
                                 onClick={editOrCompleteForm}
+                                onSubmit={editOrCompleteForm}
+                                type="submit"
                             >
                                 Continue
                             </button>
-                            <button type="button" className="btn btn-outline-secondary">
+                            <button type="button" className="btn btn-outline-secondary" onClick={editOrCompleteForm}>
                                 Cancel
                             </button>
                         </div>
@@ -301,12 +305,12 @@ const ActionArea: React.FunctionComponent<ActionAreaProps> = ({
     onActionChange,
 }) => {
     const [showEmailNotificationForm, setShowEmailNotificationForm] = useState(false)
-    const toggleEmailNotificationForm: React.MouseEventHandler = useCallback(event => {
+    const toggleEmailNotificationForm: React.FormEventHandler = useCallback(event => {
         event.preventDefault()
         setShowEmailNotificationForm(show => !show)
     }, [])
 
-    const editOrCompleteForm: React.MouseEventHandler = useCallback(
+    const editOrCompleteForm: React.FormEventHandler = useCallback(
         event => {
             event?.preventDefault()
             toggleEmailNotificationForm(event)
@@ -370,13 +374,14 @@ const ActionArea: React.FunctionComponent<ActionAreaProps> = ({
                         </div>
                         <div>
                             <button
-                                type="button"
+                                type="submit"
                                 className="btn btn-outline-secondary mr-1"
                                 onClick={editOrCompleteForm}
+                                onSubmit={editOrCompleteForm}
                             >
                                 Done
                             </button>
-                            <button type="button" className="btn btn-outline-secondary">
+                            <button type="button" className="btn btn-outline-secondary" onClick={editOrCompleteForm}>
                                 Cancel
                             </button>
                         </div>

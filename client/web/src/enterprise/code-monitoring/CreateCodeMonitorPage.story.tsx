@@ -15,7 +15,7 @@ add(
                 <CreateCodeMonitorPage
                     {...props}
                     authenticatedUser={
-                        boolean('isAuthenticated', false) ? ({ username: 'alice' } as AuthenticatedUser) : null
+                        { id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser
                     }
                 />
             )}
