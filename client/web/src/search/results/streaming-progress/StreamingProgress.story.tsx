@@ -141,7 +141,7 @@ add('2 results from 2 repositories, complete, skipped with warning, popover open
             {
                 reason: 'shard-timedout',
                 message:
-                    'Search timed out before some repositories could be search. Try reducing scope of your query with repo: or other filters.',
+                    'Search timed out before some repositories could be searched. Try reducing scope of your query with repo: or other filters.',
                 severity: 'warn',
                 title: 'Search timed out',
                 suggested: {
