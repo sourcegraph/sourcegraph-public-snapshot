@@ -40,7 +40,6 @@ To support precise code intelligence, [write an LSIF indexer](../../code_intelli
 To support syntax highlighting on code files, search results, diff views, and more:
 
 1. Follow the [directions](https://github.com/sourcegraph/syntect_server#adding-languages) to add a language to [syntect server](https://github.com/sourcegraph/syntect_server).
-1. Update the [sourcegraph/syntect_server](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+-file:%5C.md+sourcegraph/syntect_server:&patternType=literal) image tags in [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph).
 1. Update the [SyntectLanguageMap](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@56a9eec78566499b108e1f869712865d90cc29cf/-/blob/internal/highlight/syntect_language_map.go#L5:5) in [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph).
 
 To support syntax highlighting in hovers:
