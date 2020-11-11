@@ -2,6 +2,7 @@ package usagestats
 
 import (
 	"context"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -56,24 +57,71 @@ func groupSiteUsageStats(summary types.SiteUsageSummary, monthsOnly bool) *types
 	return stats
 }
 
-// GetAggregatedCodeIntelStats returns aggregates statistics for code intel usage.
-func GetAggregatedCodeIntelStats(ctx context.Context) (*types.CodeIntelUsageStatistics, error) {
-	events, err := db.EventLogs.AggregatedCodeIntelEvents(ctx)
+// GetAggregateCodeIntelStats returns aggregates statistics for code intelligence usage.
+func GetAggregatedCodeIntelStats(ctx context.Context) (*types.NewCodeIntelUsageStatistics, error) {
+	codeIntelEvents, err := db.EventLogs.AggregatedCodeIntelEvents(ctx)
 	if err != nil {
 		return nil, err
 	}
+	stats := groupAggreatedCodeIntelStats(codeIntelEvents)
 
-	codeIntelUsageStats := &types.CodeIntelUsageStatistics{
-		Daily:   []*types.CodeIntelUsagePeriod{newCodeIntelUsagePeriod()},
-		Weekly:  []*types.CodeIntelUsagePeriod{newCodeIntelUsagePeriod()},
-		Monthly: []*types.CodeIntelUsagePeriod{newCodeIntelUsagePeriod()},
+	usersCount, err := db.EventLogs.CodeIntelligenceCombinedWAU(ctx)
+	if err != nil {
+		return nil, err
+	}
+	stats.WAUs = int32(usersCount)
+
+	return stats, nil
+}
+
+var actionMap = map[string]types.CodeIntelAction{
+	"codeintel.lsifHover":               types.HoverAction,
+	"codeintel.searchHover":             types.HoverAction,
+	"codeintel.lsifDefinitions":         types.DefinitionsAction,
+	"codeintel.lsifDefinitions.xrepo":   types.DefinitionsAction,
+	"codeintel.searchDefinitions":       types.DefinitionsAction,
+	"codeintel.searchDefinitions.xrepo": types.DefinitionsAction,
+	"codeintel.lsifReferences":          types.ReferencesAction,
+	"codeintel.lsifReferences.xrepo":    types.ReferencesAction,
+	"codeintel.searchReferences":        types.ReferencesAction,
+	"codeintel.searchReferences.xrepo":  types.ReferencesAction,
+}
+
+var sourceMap = map[string]types.CodeIntelSource{
+	"codeintel.lsifHover":               types.PreciseSource,
+	"codeintel.lsifDefinitions":         types.PreciseSource,
+	"codeintel.lsifDefinitions.xrepo":   types.PreciseSource,
+	"codeintel.lsifReferences":          types.PreciseSource,
+	"codeintel.lsifReferences.xrepo":    types.PreciseSource,
+	"codeintel.searchHover":             types.SearchSource,
+	"codeintel.searchDefinitions":       types.SearchSource,
+	"codeintel.searchDefinitions.xrepo": types.SearchSource,
+	"codeintel.searchReferences":        types.SearchSource,
+	"codeintel.searchReferences.xrepo":  types.SearchSource,
+}
+
+func groupAggreatedCodeIntelStats(rawEvents []types.CodeIntelAggregatedEvent) *types.NewCodeIntelUsageStatistics {
+	var eventSummaries []types.CodeIntelEventSummary
+	for _, event := range rawEvents {
+		languageID := ""
+		if event.LanguageID != nil {
+			languageID = *event.LanguageID
+		}
+
+		eventSummaries = append(eventSummaries, types.CodeIntelEventSummary{
+			Action:          actionMap[event.Name],
+			Source:          sourceMap[event.Name],
+			LanguageID:      languageID,
+			CrossRepository: strings.HasSuffix(event.Name, ".xrepo"),
+			WAUs:            event.UniquesWeek,
+			TotalActions:    event.TotalWeek,
+		})
 	}
 
-	for _, event := range events {
-		insertCodeIntelEventStatistics(event, codeIntelUsageStats)
+	return &types.NewCodeIntelUsageStatistics{
+		StartOfWeek:    rawEvents[0].Week,
+		EventSummaries: eventSummaries,
 	}
-
-	return codeIntelUsageStats, nil
 }
 
 // GetAggregatedSearchStats returns aggregates statistics for search usage.
@@ -83,96 +131,36 @@ func GetAggregatedSearchStats(ctx context.Context) (*types.SearchUsageStatistics
 		return nil, err
 	}
 
+	return groupAggreatedSearchStats(events), nil
+}
+
+func groupAggreatedSearchStats(events []types.AggregatedEvent) *types.SearchUsageStatistics {
 	searchUsageStats := &types.SearchUsageStatistics{
-		Daily:   []*types.SearchUsagePeriod{newSearchUsagePeriod()},
-		Weekly:  []*types.SearchUsagePeriod{newSearchUsagePeriod()},
-		Monthly: []*types.SearchUsagePeriod{newSearchUsagePeriod()},
+		Daily:   []*types.SearchUsagePeriod{newSearchEventPeriod()},
+		Weekly:  []*types.SearchUsagePeriod{newSearchEventPeriod()},
+		Monthly: []*types.SearchUsagePeriod{newSearchEventPeriod()},
 	}
 
 	for _, event := range events {
 		insertSearchEventStatistics(event, searchUsageStats)
 	}
 
-	return searchUsageStats, nil
+	return searchUsageStats
 }
 
-func groupAggreatedStats(events []types.AggregatedEvent) (*types.CodeIntelUsageStatistics, *types.SearchUsageStatistics) {
-	codeIntelUsageStats := &types.CodeIntelUsageStatistics{
-		Daily:   []*types.CodeIntelUsagePeriod{newCodeIntelUsagePeriod()},
-		Weekly:  []*types.CodeIntelUsagePeriod{newCodeIntelUsagePeriod()},
-		Monthly: []*types.CodeIntelUsagePeriod{newCodeIntelUsagePeriod()},
-	}
-
-	searchUsageStats := &types.SearchUsageStatistics{
-		Daily:   []*types.SearchUsagePeriod{newSearchUsagePeriod()},
-		Weekly:  []*types.SearchUsagePeriod{newSearchUsagePeriod()},
-		Monthly: []*types.SearchUsagePeriod{newSearchUsagePeriod()},
-	}
-
-	for _, event := range events {
-		insertCodeIntelEventStatistics(event, codeIntelUsageStats)
-		insertSearchEventStatistics(event, searchUsageStats)
-	}
-
-	return codeIntelUsageStats, searchUsageStats
-}
-
-func newCodeIntelUsagePeriod() *types.CodeIntelUsagePeriod {
-	return &types.CodeIntelUsagePeriod{
-		Hover:       newCodeIntelEventCategory(),
-		Definitions: newCodeIntelEventCategory(),
-		References:  newCodeIntelEventCategory(),
-	}
-}
-
-func insertCodeIntelEventStatistics(event types.AggregatedEvent, statistics *types.CodeIntelUsageStatistics) {
-	extractors := map[string]func(p *types.CodeIntelUsagePeriod) *types.CodeIntelEventStatistics{
-		"codeintel.lsifHover":         func(p *types.CodeIntelUsagePeriod) *types.CodeIntelEventStatistics { return p.Hover.LSIF },
-		"codeintel.searchHover":       func(p *types.CodeIntelUsagePeriod) *types.CodeIntelEventStatistics { return p.Hover.Search },
-		"codeintel.lsifDefinitions":   func(p *types.CodeIntelUsagePeriod) *types.CodeIntelEventStatistics { return p.Definitions.LSIF },
-		"codeintel.searchDefinitions": func(p *types.CodeIntelUsagePeriod) *types.CodeIntelEventStatistics { return p.Definitions.Search },
-		"codeintel.lsifReferences":    func(p *types.CodeIntelUsagePeriod) *types.CodeIntelEventStatistics { return p.References.LSIF },
-		"codeintel.searchReferences":  func(p *types.CodeIntelUsagePeriod) *types.CodeIntelEventStatistics { return p.References.Search },
-	}
-
-	extractor, ok := extractors[event.Name]
-	if !ok {
-		return
-	}
-
-	statistics.Monthly[0].StartTime = event.Month
-	month := extractor(statistics.Monthly[0])
-	month.EventsCount = &event.TotalMonth
-	month.UsersCount = event.UniquesMonth
-
-	statistics.Weekly[0].StartTime = event.Week
-	week := extractor(statistics.Weekly[0])
-	week.EventsCount = &event.TotalWeek
-	week.UsersCount = event.UniquesWeek
-
-	statistics.Daily[0].StartTime = event.Day
-	day := extractor(statistics.Daily[0])
-	day.EventsCount = &event.TotalDay
-	day.UsersCount = event.UniquesDay
-}
-
-func newSearchUsagePeriod() *types.SearchUsagePeriod {
-	return newSearchEventPeriod()
+var searchExtractors = map[string]func(p *types.SearchUsagePeriod) *types.SearchEventStatistics{
+	"search.latencies.literal":    func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Literal },
+	"search.latencies.regexp":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Regexp },
+	"search.latencies.structural": func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Structural },
+	"search.latencies.file":       func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.File },
+	"search.latencies.repo":       func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Repo },
+	"search.latencies.diff":       func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Diff },
+	"search.latencies.commit":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Commit },
+	"search.latencies.symbol":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Symbol },
 }
 
 func insertSearchEventStatistics(event types.AggregatedEvent, statistics *types.SearchUsageStatistics) {
-	extractors := map[string]func(p *types.SearchUsagePeriod) *types.SearchEventStatistics{
-		"search.latencies.literal":    func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Literal },
-		"search.latencies.regexp":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Regexp },
-		"search.latencies.structural": func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Structural },
-		"search.latencies.file":       func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.File },
-		"search.latencies.repo":       func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Repo },
-		"search.latencies.diff":       func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Diff },
-		"search.latencies.commit":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Commit },
-		"search.latencies.symbol":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Symbol },
-	}
-
-	extractor, ok := extractors[event.Name]
+	extractor, ok := searchExtractors[event.Name]
 	if !ok {
 		return
 	}
@@ -203,18 +191,6 @@ func insertSearchEventStatistics(event types.AggregatedEvent, statistics *types.
 	day.EventsCount = &event.TotalDay
 	day.UserCount = &event.UniquesDay
 	day.EventLatencies = makeLatencies(event.LatenciesDay)
-}
-
-func newCodeIntelEventCategory() *types.CodeIntelEventCategoryStatistics {
-	return &types.CodeIntelEventCategoryStatistics{
-		LSIF:   codeIntelEventStatistics(),
-		LSP:    codeIntelEventStatistics(),
-		Search: codeIntelEventStatistics(),
-	}
-}
-
-func codeIntelEventStatistics() *types.CodeIntelEventStatistics {
-	return &types.CodeIntelEventStatistics{}
 }
 
 func newSearchEventPeriod() *types.SearchUsagePeriod {
