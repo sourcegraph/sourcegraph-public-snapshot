@@ -28,6 +28,20 @@ func runSteps(ctx context.Context, wc *WorkspaceCreator, repo *graphql.Repositor
 
 	runGitCmd := func(args ...string) ([]byte, error) {
 		cmd := exec.CommandContext(ctx, "git", args...)
+		cmd.Env = []string{
+			// Don't use the system wide git config.
+			"GIT_CONFIG_NOSYSTEM=1",
+			// And also not any other, because they can mess up output, change defaults, .. which can do unexpected things.
+			"GIT_CONFIG=/dev/null",
+			// Set user.name and user.email in the local repository. The user name and
+			// e-mail will eventually be ignored anyway, since we're just using the Git
+			// repository to generate diffs, but we don't want git to generate alarming
+			// looking warnings.
+			"GIT_AUTHOR_NAME=Sourcegraph",
+			"GIT_AUTHOR_EMAIL=campaigns@sourcegraph.com",
+			"GIT_COMMITTER_NAME=Sourcegraph",
+			"GIT_COMMITTER_EMAIL=campaigns@sourcegraph.com",
+		}
 		cmd.Dir = volumeDir
 		out, err := cmd.CombinedOutput()
 		if err != nil {
@@ -39,17 +53,6 @@ func runSteps(ctx context.Context, wc *WorkspaceCreator, repo *graphql.Repositor
 	reportProgress("Initializing workspace")
 	if _, err := runGitCmd("init"); err != nil {
 		return nil, errors.Wrap(err, "git init failed")
-	}
-
-	// Set user.name and user.email in the local repository. The user name and
-	// e-mail will eventually be ignored anyway, since we're just using the Git
-	// repository to generate diffs, but we don't want git to generate alarming
-	// looking warnings.
-	if _, err := runGitCmd("config", "--local", "user.name", "Sourcegraph"); err != nil {
-		return nil, errors.Wrap(err, "git config user.name failed")
-	}
-	if _, err := runGitCmd("config", "--local", "user.email", "campaigns@sourcegraph.com"); err != nil {
-		return nil, errors.Wrap(err, "git config user.email failed")
 	}
 
 	// --force because we want previously "gitignored" files in the repository
