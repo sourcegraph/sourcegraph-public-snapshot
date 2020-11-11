@@ -140,6 +140,10 @@ type executor struct {
 
 	repo *repos.Repo
 
+	// au is nil if we want to use the global credentials stored in the external
+	// service configuration.
+	au auth.Authenticator
+
 	ch    *campaigns.Changeset
 	spec  *campaigns.ChangesetSpec
 	delta *changesetSpecDelta
@@ -164,13 +168,13 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 	}
 
 	// Figure out which authenticator we should use to modify the changeset.
-	a, err := e.loadAuthenticator(ctx)
+	e.au, err = e.loadAuthenticator(ctx)
 	if err != nil {
 		return err
 	}
 
 	// Set up a source with which we can modify the changeset.
-	e.ccs, err = e.buildChangesetSource(e.repo, extSvc, a)
+	e.ccs, err = e.buildChangesetSource(e.repo, extSvc)
 	if err != nil {
 		return err
 	}
@@ -230,7 +234,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 	return e.tx.UpdateChangeset(ctx, e.ch)
 }
 
-func (e *executor) buildChangesetSource(repo *repos.Repo, extSvc *repos.ExternalService, auth auth.Authenticator) (repos.ChangesetSource, error) {
+func (e *executor) buildChangesetSource(repo *repos.Repo, extSvc *repos.ExternalService) (repos.ChangesetSource, error) {
 	sources, err := e.sourcer(extSvc)
 	if err != nil {
 		return nil, err
@@ -240,8 +244,8 @@ func (e *executor) buildChangesetSource(repo *repos.Repo, extSvc *repos.External
 	}
 	src := sources[0]
 
-	if auth != nil {
-		// If auth == nil that means the user that applied that last
+	if e.au != nil {
+		// If e.au == nil that means the user that applied that last
 		// campaign/changeset spec is a site-admin and we can fall back to the
 		// global credentials stored in extSvc.
 		ucs, ok := src.(repos.UserSource)
@@ -249,7 +253,7 @@ func (e *executor) buildChangesetSource(repo *repos.Repo, extSvc *repos.External
 			return nil, errors.Errorf("using user credentials on code host of repo %q is not implemented", repo.Name)
 		}
 
-		if src, err = ucs.WithAuthenticator(auth); err != nil {
+		if src, err = ucs.WithAuthenticator(e.au); err != nil {
 			return nil, errors.Wrapf(err, "unable to use this specific user credential on code host of repo %q", repo.Name)
 		}
 	}
@@ -333,14 +337,8 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 		return ErrPublishSameBranch{}
 	}
 
-	// Figure out which authenticator we should use to push the commits.
-	a, err := e.loadAuthenticator(ctx)
-	if err != nil {
-		return err
-	}
-
 	// Create a commit and push it
-	opts, err := buildCommitOpts(e.repo, e.spec, a)
+	opts, err := buildCommitOpts(e.repo, e.spec, e.au)
 	if err != nil {
 		return err
 	}
