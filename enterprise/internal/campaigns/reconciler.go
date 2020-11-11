@@ -137,7 +137,8 @@ type executor struct {
 	tx  *Store
 	ccs repos.ChangesetSource
 
-	repo *repos.Repo
+	repo   *repos.Repo
+	extSvc *repos.ExternalService
 
 	// au is nil if we want to use the global credentials stored in the external
 	// service configuration.
@@ -161,7 +162,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 		return errors.Wrap(err, "failed to load repository")
 	}
 
-	extSvc, err := loadExternalService(ctx, reposStore, e.repo)
+	e.extSvc, err = loadExternalService(ctx, reposStore, e.repo)
 	if err != nil {
 		return errors.Wrap(err, "failed to load external service")
 	}
@@ -173,7 +174,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 	}
 
 	// Set up a source with which we can modify the changeset.
-	e.ccs, err = e.buildChangesetSource(e.repo, extSvc)
+	e.ccs, err = e.buildChangesetSource(e.repo, e.extSvc)
 	if err != nil {
 		return err
 	}
@@ -337,7 +338,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	}
 
 	// Create a commit and push it
-	opts, err := buildCommitOpts(e.repo, e.spec, e.au)
+	opts, err := buildCommitOpts(e.repo, e.extSvc, e.spec, e.au)
 	if err != nil {
 		return err
 	}
@@ -526,7 +527,7 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 	return nil
 }
 
-func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec, a auth.Authenticator) (protocol.CreateCommitFromPatchRequest, error) {
+func buildCommitOpts(repo *repos.Repo, extSvc *repos.ExternalService, spec *campaigns.ChangesetSpec, a auth.Authenticator) (protocol.CreateCommitFromPatchRequest, error) {
 	var opts protocol.CreateCommitFromPatchRequest
 
 	desc := spec.Spec
@@ -551,7 +552,12 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec, a auth.Aut
 		return opts, err
 	}
 
-	pushConf, err := buildPushConfig(repo.ExternalRepo.ServiceType, a)
+	source, ok := repo.Sources[extSvc.URN()]
+	if !ok {
+		return opts, errors.New("repository was not cloned through given external service")
+	}
+
+	pushConf, err := buildPushConfig(repo.ExternalRepo.ServiceType, source.CloneURL, a)
 	if err != nil {
 		return opts, err
 	}
@@ -586,18 +592,20 @@ func buildCommitOpts(repo *repos.Repo, spec *campaigns.ChangesetSpec, a auth.Aut
 	return opts, nil
 }
 
-func buildPushConfig(extSvcType string, a auth.Authenticator) (*protocol.PushConfig, error) {
-	pc := &protocol.PushConfig{}
+func buildPushConfig(extSvcType, cloneURL string, a auth.Authenticator) (*protocol.PushConfig, error) {
+	u, err := url.Parse(cloneURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing repository clone URL")
+	}
 
 	switch av := a.(type) {
 	case *auth.OAuthBearerToken:
 		switch extSvcType {
 		case extsvc.TypeGitHub:
-			pc.Username = av.Token
+			u.User = url.User(av.Token)
 
 		case extsvc.TypeGitLab:
-			pc.Username = "git"
-			pc.Password = av.Token
+			u.User = url.UserPassword("git", av.Token)
 
 		case extsvc.TypeBitbucketServer:
 			return nil, errors.New("require username/token to push commits to BitbucketServer")
@@ -609,8 +617,7 @@ func buildPushConfig(extSvcType string, a auth.Authenticator) (*protocol.PushCon
 			return nil, errors.New("need token to push commits to " + extSvcType)
 
 		case extsvc.TypeBitbucketServer:
-			pc.Username = av.Username
-			pc.Password = av.Password
+			u.User = url.UserPassword(av.Username, av.Password)
 		}
 
 	case nil:
@@ -621,7 +628,7 @@ func buildPushConfig(extSvcType string, a auth.Authenticator) (*protocol.PushCon
 		return nil, ErrNoPushCredentials{credentialsType: fmt.Sprintf("%T", a)}
 	}
 
-	return pc, nil
+	return &protocol.PushConfig{RemoteURL: u.String()}, nil
 }
 
 // ErrNoPushCredentials is returned by buildCommitOpts if the credentials
