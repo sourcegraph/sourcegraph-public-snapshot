@@ -23,8 +23,8 @@ export const CampaignsListEmpty: React.FunctionComponent<CampaignsListEmptyProps
                                 </a>
                             </h4>
                             <p className="text-muted mb-0">
-                                A Sourcegraph query plus a simple <code>sed</code> command creates changesets required to manage a
-                                large scale change.
+                                A Sourcegraph query plus a simple <code>sed</code> command creates changesets required
+                                to manage a large scale change.
                             </p>
                         </div>
                     </div>
@@ -44,8 +44,12 @@ export const CampaignsListEmpty: React.FunctionComponent<CampaignsListEmptyProps
                                 </a>
                             </h4>
                             <p className="text-muted mb-0">
-                                Using <a href="https://comby.dev/" rel="noopener">Comby's</a> language-aware structural search to refactor Go statements to a semantically
-                                equivalent, but clearer execution.
+                                Using{' '}
+                                <a href="https://comby.dev/" rel="noopener">
+                                    Comby's
+                                </a>{' '}
+                                language-aware structural search to refactor Go statements to a semantically equivalent,
+                                but clearer execution.
                             </p>
                         </div>
                     </div>
@@ -86,7 +90,7 @@ export const CampaignsListEmpty: React.FunctionComponent<CampaignsListEmptyProps
                         href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference"
                         rel="noopener"
                     >
-                       campaign spec YAML reference
+                        campaign spec YAML reference
                     </a>
                     , learn about its powerful{' '}
                     <a href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_templating">
@@ -109,8 +113,7 @@ export const CampaignsListEmpty: React.FunctionComponent<CampaignsListEmptyProps
         </div>
         <h2>Campaigns demo</h2>
         <p className="text-muted">
-            This demo shows how to refactor code and manage changesets across many repositories and
-            multiple code hosts.
+            This demo shows how to refactor code and manage changesets across many repositories and multiple code hosts.
         </p>
         <div className="text-center">
             <iframe
