@@ -22,6 +22,7 @@ type UserEmail struct {
 	VerificationCode       *string
 	VerifiedAt             *time.Time
 	LastVerificationSentAt *time.Time
+	Primary                bool
 }
 
 // NeedsVerificationCoolDown returns true if the verification cooled down time is behind current time.
@@ -135,18 +136,38 @@ func (*userEmails) Add(ctx context.Context, userID int32, email string, verifica
 	return err
 }
 
-// Remove removes a user email. It returns an error if there is no such email associated with the user.
+// Remove removes a user email. It returns an error if there is no such email associated with the user or the email
+// is the user's primary address
 func (*userEmails) Remove(ctx context.Context, userID int32, email string) error {
-	res, err := dbconn.Global.ExecContext(ctx, "DELETE FROM user_emails WHERE user_id=$1 AND email=$2", userID, email)
+	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
-	nrows, err := res.RowsAffected()
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	// Get the email. It needs to exist and be verified.
+	var isPrimary bool
+	if err := tx.QueryRowContext(ctx, "SELECT is_primary FROM user_emails WHERE user_id=$1 AND email=$2",
+		userID, email,
+	).Scan(&isPrimary); err != nil {
+		return fmt.Errorf("fetching email address: %w", err)
+	}
+	if isPrimary {
+		return errors.New("can't delete primary email address")
+	}
+
+	_, err = tx.ExecContext(ctx, "DELETE FROM user_emails WHERE user_id=$1 AND email=$2", userID, email)
 	if err != nil {
 		return err
-	}
-	if nrows == 0 {
-		return errors.New("user email not found")
 	}
 	return nil
 }
@@ -262,7 +283,7 @@ func (*userEmails) GetVerifiedEmails(ctx context.Context, emails ...string) ([]*
 func (*userEmails) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*UserEmail, error) {
 	rows, err := dbconn.Global.QueryContext(ctx,
 		`SELECT user_emails.user_id, user_emails.email, user_emails.created_at, user_emails.verification_code,
-				user_emails.verified_at, user_emails.last_verification_sent_at FROM user_emails `+query, args...)
+				user_emails.verified_at, user_emails.last_verification_sent_at, user_emails.is_primary FROM user_emails `+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -271,7 +292,7 @@ func (*userEmails) getBySQL(ctx context.Context, query string, args ...interface
 	defer rows.Close()
 	for rows.Next() {
 		var v UserEmail
-		err := rows.Scan(&v.UserID, &v.Email, &v.CreatedAt, &v.VerificationCode, &v.VerifiedAt, &v.LastVerificationSentAt)
+		err := rows.Scan(&v.UserID, &v.Email, &v.CreatedAt, &v.VerificationCode, &v.VerifiedAt, &v.LastVerificationSentAt, &v.Primary)
 		if err != nil {
 			return nil, err
 		}
