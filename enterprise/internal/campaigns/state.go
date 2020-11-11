@@ -10,6 +10,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -73,7 +74,7 @@ func SetDerivedState(ctx context.Context, c *campaigns.Changeset, es []*campaign
 	// and new states for the duration of this function, although we'll update
 	// c.SyncState as soon as we can.
 	oldState := c.SyncState
-	newState, err := computeSyncState(ctx, c, *repo)
+	newState, err := computeSyncState(ctx, c, repo)
 	if err != nil {
 		log15.Warn("Computing sync state", "err", err)
 		return
@@ -83,7 +84,7 @@ func SetDerivedState(ctx context.Context, c *campaigns.Changeset, es []*campaign
 	// Now we can update fields that are invalidated when the sync state
 	// changes.
 	if !oldState.Equals(newState) {
-		if stat, err := computeDiffStat(ctx, c, *repo); err != nil {
+		if stat, err := computeDiffStat(ctx, c, repo); err != nil {
 			log15.Warn("Computing diffstat", "err", err)
 		} else {
 			c.SetDiffStat(stat)
@@ -423,7 +424,7 @@ func computeSingleChangesetExternalState(c *campaigns.Changeset) (s campaigns.Ch
 
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
-		if m.IsDraft {
+		if m.IsDraft && m.State == string(campaigns.ChangesetExternalStateOpen) {
 			s = campaigns.ChangesetExternalStateDraft
 		} else {
 			s = campaigns.ChangesetExternalState(m.State)
@@ -567,23 +568,15 @@ func computeDiffStat(ctx context.Context, c *campaigns.Changeset, repo gitserver
 // computeSyncState computes the up to date sync state based on the changeset as
 // it currently exists on the external provider.
 func computeSyncState(ctx context.Context, c *campaigns.Changeset, repo gitserver.Repo) (*campaigns.ChangesetSyncState, error) {
-	// If the changeset type can return the OIDs directly, then we can use that
-	// for the new state. Otherwise, we need to try to resolve the ref to a
-	// revision.
-	base, err := computeRev(ctx, c, repo, func(c *campaigns.Changeset) (string, error) {
-		return c.BaseRefOid()
-	}, func(c *campaigns.Changeset) (string, error) {
-		return c.BaseRef()
-	})
+	// We compute the revision by first trying to get the OID, then the Ref. //
+	// We then call out to gitserver to ensure that the one we use is available on
+	// gitserver.
+	base, err := computeRev(ctx, repo, c.BaseRefOid, c.BaseRef)
 	if err != nil {
 		return nil, err
 	}
 
-	head, err := computeRev(ctx, c, repo, func(c *campaigns.Changeset) (string, error) {
-		return c.HeadRefOid()
-	}, func(c *campaigns.Changeset) (string, error) {
-		return c.HeadRef()
-	})
+	head, err := computeRev(ctx, repo, c.HeadRefOid, c.HeadRef)
 	if err != nil {
 		return nil, err
 	}
@@ -595,31 +588,37 @@ func computeSyncState(ctx context.Context, c *campaigns.Changeset, repo gitserve
 	}, nil
 }
 
-func computeRev(ctx context.Context, c *campaigns.Changeset, repo gitserver.Repo, getOid, getRef func(*campaigns.Changeset) (string, error)) (string, error) {
-	if rev, err := getOid(c); err != nil {
-		return "", err
-	} else if rev != "" {
-		return rev, nil
-	}
-
-	ref, err := getRef(c)
+func computeRev(ctx context.Context, repo gitserver.Repo, getOid, getRef func() (string, error)) (string, error) {
+	// Try to get the OID first
+	rev, err := getOid()
 	if err != nil {
 		return "", err
 	}
 
-	rev, err := git.ResolveRevision(ctx, repo, nil, ref, git.ResolveRevisionOptions{})
-	return string(rev), err
+	if rev == "" {
+		// Fallback to the ref
+		rev, err = getRef()
+		if err != nil {
+			return "", err
+		}
+	}
+
+	// Resolve the revision to make sure it's on gitserver and, in case we did
+	// the fallback to ref, to get the specific revision.
+	gitRev, err := git.ResolveRevision(ctx, repo, nil, rev, git.ResolveRevisionOptions{})
+	return string(gitRev), err
 }
 
 // changesetGitserverRepo looks up a gitserver.Repo based on the RepoID within a
 // changeset.
-func changesetGitserverRepo(ctx context.Context, c *campaigns.Changeset) (*gitserver.Repo, error) {
+func changesetGitserverRepo(ctx context.Context, c *campaigns.Changeset) (gitserver.Repo, error) {
 	// We need to use an internal actor here as the repo-updater otherwise has no access to the repo.
 	repo, err := db.Repos.Get(actor.WithActor(ctx, &actor.Actor{Internal: true}), c.RepoID)
 	if err != nil {
-		return nil, err
+		return gitserver.Repo{}, err
 	}
-	return &gitserver.Repo{Name: repo.Name, URL: repo.URI}, nil
+
+	return backend.GitRepo(ctx, repo)
 }
 
 func unixMilliToTime(ms int64) time.Time {

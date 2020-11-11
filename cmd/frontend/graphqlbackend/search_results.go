@@ -25,7 +25,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -40,6 +39,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/src-d/enry/v2"
@@ -1079,21 +1079,19 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 	return result, nil
 }
 
-// setRepoCacheInvalidation sets whether resolved repos should be invalidated when
+// invalidateRepoCache returns whether resolved repos should be invalidated when
 // evaluating subexpressions. If a query contains more than one repo or repogroup
 // field, we should invalidate resolved repos, since multiple repo or repogroups
 // imply that different repos may need to be resolved.
-func (r *searchResolver) setRepoCacheInvalidation() {
+func invalidateRepoCache(q []query.Node) bool {
 	var seenRepo, seenRepoGroup int
-	query.VisitField(r.query.(*query.AndOrQuery).Query, "repo", func(_ string, _ bool, _ query.Annotation) {
+	query.VisitField(q, "repo", func(_ string, _ bool, _ query.Annotation) {
 		seenRepo += 1
 	})
-	query.VisitField(r.query.(*query.AndOrQuery).Query, "repogroup", func(_ string, _ bool, _ query.Annotation) {
+	query.VisitField(q, "repogroup", func(_ string, _ bool, _ query.Annotation) {
 		seenRepoGroup += 1
 	})
-	if seenRepo+seenRepoGroup > 1 {
-		r.invalidateRepoCache = true
-	}
+	return seenRepo+seenRepoGroup > 1
 }
 
 func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolver, err error) {
@@ -1115,6 +1113,9 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 			wantCount, _ = strconv.Atoi(countStr) // Invariant: count is validated.
 		}
 
+		if invalidateRepoCache(q.Query) {
+			r.invalidateRepoCache = true
+		}
 		for _, disjunct := range query.Dnf(q.Query) {
 			disjunct = query.ConcatRevFilters(disjunct)
 			newResult, err := r.evaluate(ctx, disjunct)

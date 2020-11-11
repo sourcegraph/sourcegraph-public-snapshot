@@ -1,15 +1,17 @@
 import * as Monaco from 'monaco-editor'
 import { getCompletionItems, repositoryCompletionItemKind } from './completion'
-import { parseSearchQuery, ParseSuccess, Sequence } from './parser'
+import { scanSearchQuery, ScanSuccess, ScanResult, Token } from './scanner'
 import { NEVER, of } from 'rxjs'
 import { SearchSuggestion } from '../../graphql/schema'
+
+const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSuccess<Token[]>).term
 
 describe('getCompletionItems()', () => {
     test('returns only static filter type completions when the token matches a known filter', async () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('re') as ParseSuccess<Sequence>).token,
+                    toSuccess(scanSearchQuery('re')),
                     { column: 3 },
                     of([
                         {
@@ -71,7 +73,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('reposi') as ParseSuccess<Sequence>).token,
+                    toSuccess(scanSearchQuery('reposi')),
                     { column: 7 },
                     of([
                         {
@@ -133,14 +135,9 @@ describe('getCompletionItems()', () => {
 
     test('returns suggestions for an empty query', async () => {
         expect(
-            (
-                await getCompletionItems(
-                    (parseSearchQuery('') as ParseSuccess<Sequence>).token,
-                    { column: 1 },
-                    NEVER,
-                    false
-                )
-            )?.suggestions.map(({ label }) => label)
+            (await getCompletionItems(toSuccess(scanSearchQuery('')), { column: 1 }, NEVER, false))?.suggestions.map(
+                ({ label }) => label
+            )
         ).toStrictEqual([
             'after',
             'archived',
@@ -180,7 +177,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('a ') as ParseSuccess<Sequence>).token,
+                    toSuccess(scanSearchQuery('a ')),
                     { column: 3 },
                     of([
                         {
@@ -229,14 +226,9 @@ describe('getCompletionItems()', () => {
 
     test('returns static filter type completions for case-insensitive query', async () => {
         expect(
-            (
-                await getCompletionItems(
-                    (parseSearchQuery('rE') as ParseSuccess<Sequence>).token,
-                    { column: 3 },
-                    of([]),
-                    false
-                )
-            )?.suggestions.map(({ label }) => label)
+            (await getCompletionItems(toSuccess(scanSearchQuery('rE')), { column: 3 }, of([]), false))?.suggestions.map(
+                ({ label }) => label
+            )
         ).toStrictEqual([
             'after',
             'archived',
@@ -275,12 +267,7 @@ describe('getCompletionItems()', () => {
     test('returns completions for filters with discrete values', async () => {
         expect(
             (
-                await getCompletionItems(
-                    (parseSearchQuery('case:y') as ParseSuccess<Sequence>).token,
-                    { column: 7 },
-                    NEVER,
-                    false
-                )
+                await getCompletionItems(toSuccess(scanSearchQuery('case:y')), { column: 7 }, NEVER, false)
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual(['yes', 'no'])
     })
@@ -289,7 +276,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('lang:') as ParseSuccess<Sequence>).token,
+                    toSuccess(scanSearchQuery('lang:')),
                     {
                         column: 6,
                     },
@@ -327,7 +314,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('file:c') as ParseSuccess<Sequence>).token,
+                    toSuccess(scanSearchQuery('file:c')),
                     { column: 7 },
                     of([
                         {
@@ -349,7 +336,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('jsonrpc') as ParseSuccess<Sequence>).token,
+                    toSuccess(scanSearchQuery('jsonrpc')),
                     { column: 8 },
                     of([
                         {
@@ -380,7 +367,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('f:^jsonrpc') as ParseSuccess<Sequence>).token,
+                    toSuccess(scanSearchQuery('f:^jsonrpc')),
                     { column: 11 },
                     of([
                         {
@@ -402,7 +389,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('main.go') as ParseSuccess<Sequence>).token,
+                    toSuccess(scanSearchQuery('main.go')),
                     { column: 7 },
                     of([
                         {
@@ -426,7 +413,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    (parseSearchQuery('f:') as ParseSuccess<Sequence>).token,
+                    toSuccess(scanSearchQuery('f:')),
                     { column: 2 },
                     of([
                         {

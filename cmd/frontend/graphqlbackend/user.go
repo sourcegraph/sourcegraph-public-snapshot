@@ -330,6 +330,11 @@ func (r *UserResolver) Campaigns(ctx context.Context, args *ListCampaignsArgs) (
 	return EnterpriseResolvers.campaignsResolver.Campaigns(ctx, args)
 }
 
+func (r *UserResolver) CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error) {
+	args.UserID = r.user.ID
+	return EnterpriseResolvers.campaignsResolver.CampaignsCodeHosts(ctx, args)
+}
+
 func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		return false
@@ -339,4 +344,11 @@ func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 	}
 	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.enableUsernameChanges == false.
 	return backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
+}
+
+func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (MonitorConnectionResolver, error) {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+		return nil, err
+	}
+	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.user.ID, args)
 }

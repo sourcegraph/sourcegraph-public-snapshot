@@ -1475,10 +1475,10 @@
   resolved "https://registry.npmjs.org/@emotion/weak-memoize/-/weak-memoize-0.2.5.tgz#8eed982e2ee6f7f4e44c253e12962980791efd46"
   integrity sha512-6U71C2Wp7r5XtFtQzYrW5iKFT67OixrSxjI4MptCHzdSVlgabczzqLe0ZSgnub/5Kp4hSbpDB1tMytZY9pwxxA==
 
-"@eslint/eslintrc@^0.1.3":
-  version "0.1.3"
-  resolved "https://registry.npmjs.org/@eslint/eslintrc/-/eslintrc-0.1.3.tgz#7d1a2b2358552cc04834c0979bd4275362e37085"
-  integrity sha512-4YVwPkANLeNtRjMekzux1ci8hIaH5eGKktGqR0d3LWsKNn5B2X/1Z6Trxy7jQXl9EBGE6Yj02O+t09FMeRllaA==
+"@eslint/eslintrc@^0.2.1":
+  version "0.2.1"
+  resolved "https://registry.npmjs.org/@eslint/eslintrc/-/eslintrc-0.2.1.tgz#f72069c330461a06684d119384435e12a5d76e3c"
+  integrity sha512-XRUeBZ5zBWLYgSANMpThFddrZZkEbGHgUdt5UJjZfnlN9BGCiUBrf+nvbRupSjMvqzwnQN0qwCmOxITt1cfywA==
   dependencies:
     ajv "^6.12.4"
     debug "^4.1.1"
@@ -2057,10 +2057,10 @@
     "@types/yargs" "^15.0.0"
     chalk "^3.0.0"
 
-"@jest/types@^26.5.2":
-  version "26.5.2"
-  resolved "https://registry.npmjs.org/@jest/types/-/types-26.5.2.tgz#44c24f30c8ee6c7f492ead9ec3f3c62a5289756d"
-  integrity sha512-QDs5d0gYiyetI8q+2xWdkixVQMklReZr4ltw7GFDtb4fuJIBCE6mzj2LnitGqCuAlLap6wPyb8fpoHgwZz5fdg==
+"@jest/types@^26.5.2", "@jest/types@^26.6.1":
+  version "26.6.1"
+  resolved "https://registry.npmjs.org/@jest/types/-/types-26.6.1.tgz#2638890e8031c0bc8b4681e0357ed986e2f866c5"
+  integrity sha512-ywHavIKNpAVrStiRY5wiyehvcktpijpItvGiK72RAn5ctqmzvPk8OvKnvHeBqa1XdQr959CTWAJMqxI8BTibyg==
   dependencies:
     "@types/istanbul-lib-coverage" "^2.0.0"
     "@types/istanbul-reports" "^3.0.0"
@@ -2688,22 +2688,22 @@
     sourcegraph "^24.0.0"
     ts-key-enum "^2.0.0"
 
-"@sourcegraph/eslint-config@^0.20.12":
-  version "0.20.12"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.20.12.tgz#566c4823fbd915332bd10e537572a8d654677148"
-  integrity sha512-1yzJQ7CYUV8YWYbdK9BsuJO/jnVQM/CNAG2YQGKwnrmeqWsF+xDQL/bCBDTeo41SUzliLJQxk74/WDowbpWrBA==
+"@sourcegraph/eslint-config@^0.20.16":
+  version "0.20.16"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.20.16.tgz#78ebb5ec3569ac886c8533651e01c798e8086715"
+  integrity sha512-kBgquxOK4rqyXtMD8FMjnh1Et0pUMF1Aea3iYh4k2FQPy2P46ig+UKz+XzRJFai7GHrKhCLkiCCJuWRCukf2dw==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.3"
     "@typescript-eslint/eslint-plugin" "^4.5.0"
     "@typescript-eslint/parser" "^4.5.0"
-    eslint-config-prettier "^6.12.0"
+    eslint-config-prettier "^6.15.0"
     eslint-plugin-ban "^1.4.0"
-    eslint-plugin-etc "^0.0.3-beta.48"
+    eslint-plugin-etc "^1.1.5"
     eslint-plugin-import "^2.22.1"
-    eslint-plugin-jsdoc "^30.6.4"
+    eslint-plugin-jsdoc "^30.7.6"
     eslint-plugin-react "^7.21.4"
     eslint-plugin-react-hooks "^4.1.2"
-    eslint-plugin-rxjs "^0.0.3-beta.30"
+    eslint-plugin-rxjs "^2.0.0"
     eslint-plugin-unicorn "^21.0.0"
 
 "@sourcegraph/event-positions@^1.0.4":
@@ -3553,10 +3553,10 @@
   resolved "https://registry.npmjs.org/@types/anymatch/-/anymatch-1.3.0.tgz#d1d55958d1fccc5527d4aba29fc9c4b942f563ff"
   integrity sha512-7WcbyctkE8GTzogDb0ulRAEw7v8oIS54ft9mQTU7PfM0hp5e+8kpa+HeQ7IQrFbKtJXBKcZ4bh+Em9dTw5L6AQ==
 
-"@types/babel__core@7.1.10", "@types/babel__core@^7.1.7":
-  version "7.1.10"
-  resolved "https://registry.npmjs.org/@types/babel__core/-/babel__core-7.1.10.tgz#ca58fc195dd9734e77e57c6f2df565623636ab40"
-  integrity sha512-x8OM8XzITIMyiwl5Vmo2B1cR1S1Ipkyv4mdlbJjMa1lmuKvKY9FrBbEANIaMlnWn5Rf7uO+rC/VgYabNkE17Hw==
+"@types/babel__core@7.1.12", "@types/babel__core@^7.1.7":
+  version "7.1.12"
+  resolved "https://registry.npmjs.org/@types/babel__core/-/babel__core-7.1.12.tgz#4d8e9e51eb265552a7e4f1ff2219ab6133bdfb2d"
+  integrity sha512-wMTHiiTiBAAPebqaPiPDLFA4LYPKr6Ph0Xq/6rq1Ur3v66HXyG+clfR9CNETkD7MQS8ZHvpQOtA53DLws5WAEQ==
   dependencies:
     "@babel/parser" "^7.1.0"
     "@babel/types" "^7.0.0"
@@ -3616,10 +3616,10 @@
   dependencies:
     "@types/chai" "*"
 
-"@types/chai@*", "@types/chai@4.2.13":
-  version "4.2.13"
-  resolved "https://registry.npmjs.org/@types/chai/-/chai-4.2.13.tgz#8a3801f6655179d1803d81e94a2e4aaf317abd16"
-  integrity sha512-o3SGYRlOpvLFpwJA6Sl1UPOwKFEvE4FxTEB/c9XHI2whdnd4kmPVkNLL8gY4vWGBxWWDumzLbKsAhEH5SKn37Q==
+"@types/chai@*", "@types/chai@4.2.14":
+  version "4.2.14"
+  resolved "https://registry.npmjs.org/@types/chai/-/chai-4.2.14.tgz#44d2dd0b5de6185089375d976b4ec5caf6861193"
+  integrity sha512-G+ITQPXkwTrslfG5L/BksmbLUA0M1iybEsmCWPqzSxsRRhJZimBKJkoMi8fr/CPygPTj4zO5pJH7I2/cm9M7SQ==
 
 "@types/cheerio@*":
   version "0.22.18"
@@ -3636,10 +3636,10 @@
     "@types/filesystem" "*"
     "@types/har-format" "*"
 
-"@types/chrome@0.0.124":
-  version "0.0.124"
-  resolved "https://registry.npmjs.org/@types/chrome/-/chrome-0.0.124.tgz#1cdb8e1c1ddb04b15844f5a71b9907f73bbb84a2"
-  integrity sha512-0UmDQ6A9gaahvztKryIonSTyUMEhuhKNyyJAnBB7ZJN/YXP7YRkL4onPFSTxnIbXcMnYsQFo8TxsGP8jY2mdEw==
+"@types/chrome@0.0.126":
+  version "0.0.126"
+  resolved "https://registry.npmjs.org/@types/chrome/-/chrome-0.0.126.tgz#f9f3436712f0c7c12ea9798abc9b95575ad7b23a"
+  integrity sha512-191z7uoyfbGU+z7/m45j9XbWugWqVHVPMM4hJV5cZ+3YzGCT9wFjMUHO3Wr3Xvo8aVodvRNu28u7lvEaAnfbzg==
   dependencies:
     "@types/filesystem" "*"
     "@types/har-format" "*"
@@ -3717,10 +3717,10 @@
   dependencies:
     "@types/node" "*"
 
-"@types/enzyme@3.10.7":
-  version "3.10.7"
-  resolved "https://registry.npmjs.org/@types/enzyme/-/enzyme-3.10.7.tgz#ebdf3b972d293095e09af479e36c772025285e3a"
-  integrity sha512-J+0wduPGAkzOvW7sr6hshGv1gBI3WXLRTczkRKzVPxLP3xAkYxZmvvagSBPw8Z452fZ8TGUxCmAXcb44yLQksw==
+"@types/enzyme@3.10.8":
+  version "3.10.8"
+  resolved "https://registry.npmjs.org/@types/enzyme/-/enzyme-3.10.8.tgz#ad7ac9d3af3de6fd0673773123fafbc63db50d42"
+  integrity sha512-vlOuzqsTHxog6PV79+tvOHFb6hq4QZKMq1lLD9MaWD1oec2lHTKndn76XOpSwCA0oFTaIbKVPrgM3k78Jjd16g==
   dependencies:
     "@types/cheerio" "*"
     "@types/react" "*"
@@ -3933,13 +3933,13 @@
   dependencies:
     "@types/jest" "*"
 
-"@types/jest@*", "@types/jest@26.0.14":
-  version "26.0.14"
-  resolved "https://registry.npmjs.org/@types/jest/-/jest-26.0.14.tgz#078695f8f65cb55c5a98450d65083b2b73e5a3f3"
-  integrity sha512-Hz5q8Vu0D288x3iWXePSn53W7hAjP0H7EQ6QvDO9c7t46mR0lNOLlfuwQ+JkVxuhygHzlzPX+0jKdA3ZgSh+Vg==
+"@types/jest@*", "@types/jest@26.0.15":
+  version "26.0.15"
+  resolved "https://registry.npmjs.org/@types/jest/-/jest-26.0.15.tgz#12e02c0372ad0548e07b9f4e19132b834cb1effe"
+  integrity sha512-s2VMReFXRg9XXxV+CW9e5Nz8fH2K1aEhwgjUqPPbQd7g95T0laAcvLv032EhFHIa5GHsZ8W7iJEQVaJq6k3Gog==
   dependencies:
-    jest-diff "^25.2.1"
-    pretty-format "^25.2.1"
+    jest-diff "^26.0.0"
+    pretty-format "^26.0.0"
 
 "@types/jest@^25.1.1":
   version "25.2.3"
@@ -3992,10 +3992,10 @@
   dependencies:
     "@types/node" "*"
 
-"@types/lodash@4.14.162":
-  version "4.14.162"
-  resolved "https://registry.npmjs.org/@types/lodash/-/lodash-4.14.162.tgz#65d78c397e0d883f44afbf1f7ba9867022411470"
-  integrity sha512-alvcho1kRUnnD1Gcl4J+hK0eencvzq9rmzvFPRmP5rPHx9VVsJj6bKLTATPVf9ktgv4ujzh7T+XWKp+jhuODig==
+"@types/lodash@4.14.165":
+  version "4.14.165"
+  resolved "https://registry.npmjs.org/@types/lodash/-/lodash-4.14.165.tgz#74d55d947452e2de0742bad65270433b63a8c30f"
+  integrity sha512-tjSSOTHhI5mCHTy/OOXYIhi2Wt1qcbHmuXD1Ha7q70CgI/I71afO4XtLb/cVexki1oVYchpul/TOuu3Arcdxrg==
 
 "@types/markdown-to-jsx@^6.11.0":
   version "6.11.2"
@@ -4053,10 +4053,10 @@
   resolved "https://registry.npmjs.org/@types/mockdate/-/mockdate-2.0.0.tgz#aaf388a1ead3b0f5ed6dc1611956ea7b40a57d3c"
   integrity sha1-qvOIoerTsPXtbcFhGVbqe0ClfTw=
 
-"@types/mz@2.7.1":
-  version "2.7.1"
-  resolved "https://registry.npmjs.org/@types/mz/-/mz-2.7.1.tgz#1ac1d69b039c8b3cbe603972b5c12d3167a84f58"
-  integrity sha512-H86h7KmRDVs9UeSiQvtUeVhS+WYpJSYSsZrRvNYpGWGiytEqxwEtvgRnINESQtCgnojIH2wS2WgaMTJP0firBw==
+"@types/mz@2.7.2":
+  version "2.7.2"
+  resolved "https://registry.npmjs.org/@types/mz/-/mz-2.7.2.tgz#48de03aacc98aeb40cfdeb8c58fff9fb8a2d8dfc"
+  integrity sha512-a6E4fuAakzq/uRHEohiYo9M5G+NV33FodRGCU+N4W65CAk6PPJo9KWPH8hxkqiiUgfs8EgUFuKPxclcUEahsRw==
   dependencies:
     "@types/node" "*"
 
@@ -4112,18 +4112,18 @@
   dependencies:
     "@types/pollyjs__core" "*"
 
-"@types/pollyjs__core@*", "@types/pollyjs__core@4.3.0":
-  version "4.3.0"
-  resolved "https://registry.npmjs.org/@types/pollyjs__core/-/pollyjs__core-4.3.0.tgz#813c4d778d518771d9ddf559d63120190e4fc86d"
-  integrity sha512-gloFb5e36G8Tice0J2GhdzqAAongh2ALBel5QjvjmTk4Vv0+mD3xkE3O50XHdRfbJwCOo7A/rpH+6J+kuKXdZg==
+"@types/pollyjs__core@*", "@types/pollyjs__core@4.3.1":
+  version "4.3.1"
+  resolved "https://registry.npmjs.org/@types/pollyjs__core/-/pollyjs__core-4.3.1.tgz#374c62ef87b1a582cf448615860ecc2dbb15c309"
+  integrity sha512-YxAH9Ms9A2jStQKko/wnCCLN6VYQHfrSPvHRC8YlVXuZVoVx56tz8I88QyBxrNO9ZEC4o2dvQqkDO1A8neOQZQ==
   dependencies:
     "@types/pollyjs__adapter" "*"
     "@types/pollyjs__persister" "*"
 
-"@types/pollyjs__persister-fs@2.0.0":
-  version "2.0.0"
-  resolved "https://registry.npmjs.org/@types/pollyjs__persister-fs/-/pollyjs__persister-fs-2.0.0.tgz#8643bca7e80da499541d3e4d28fd039e3bfdc5be"
-  integrity sha512-m788FLVtzE+qqrNeotBel2S1EhNMkkNRVJa9XQqeNdwvaJvOp7h/EWacKCrdHLK406LBo7vhL8dpWldkRBm0lg==
+"@types/pollyjs__persister-fs@2.0.1":
+  version "2.0.1"
+  resolved "https://registry.npmjs.org/@types/pollyjs__persister-fs/-/pollyjs__persister-fs-2.0.1.tgz#5b660cf725dd93dc10710377e923269e57b9094c"
+  integrity sha512-wYqBN0sqHg+XHGo0Hy5J7pCF0IW6+aWEz9+wKWN6VuLmq3Bh2D/pzLOADSbSH8g5IwYQWNRO4GTYONCffNSlwg==
   dependencies:
     "@types/pollyjs__persister" "*"
 
@@ -4147,10 +4147,10 @@
   resolved "https://registry.npmjs.org/@types/prop-types/-/prop-types-15.5.6.tgz#9c03d3fed70a8d517c191b7734da2879b50ca26c"
   integrity sha512-ZBFR7TROLVzCkswA3Fmqq+IIJt62/T7aY/Dmz+QkU7CaW2QFqAitCE8Ups7IzmGhcN1YWMBT4Qcoc07jU9hOJQ==
 
-"@types/puppeteer@3.0.1":
-  version "3.0.1"
-  resolved "https://registry.npmjs.org/@types/puppeteer/-/puppeteer-3.0.1.tgz#053ec20facc162b25a64785affccaa3e5817c607"
-  integrity sha512-t03eNKCvWJXhQ8wkc5C6GYuSqMEdKLOX0GLMGtks25YZr38wKZlKTwGM/BoAPVtdysX7Bb9tdwrDS1+NrW3RRA==
+"@types/puppeteer@3.0.3":
+  version "3.0.3"
+  resolved "https://registry.npmjs.org/@types/puppeteer/-/puppeteer-3.0.3.tgz#db0066e294cb9a1572d8e25fc68705e6d270ee8b"
+  integrity sha512-JDrg4N5hzKvtZsD62DV6i5h5hxKtZF+Q79YmGIacAVyJNcG1OWR0ty+e6LwqGWaoEt5lPeTtA2Z7OuTjUg6rag==
   dependencies:
     "@types/node" "*"
 
@@ -4259,10 +4259,10 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react@*", "@types/react@16.9.51":
-  version "16.9.51"
-  resolved "https://registry.npmjs.org/@types/react/-/react-16.9.51.tgz#f8aa51ffa9996f1387f63686696d9b59713d2b60"
-  integrity sha512-lQa12IyO+DMlnSZ3+AGHRUiUcpK47aakMMoBG8f7HGxJT8Yfe+WE128HIXaHOHVPReAW0oDS3KAI0JI2DDe1PQ==
+"@types/react@*", "@types/react@16.9.56":
+  version "16.9.56"
+  resolved "https://registry.npmjs.org/@types/react/-/react-16.9.56.tgz#ea25847b53c5bec064933095fc366b1462e2adf0"
+  integrity sha512-gIkl4J44G/qxbuC6r2Xh+D3CGZpJ+NdWTItAPmZbR5mUS+JQ8Zvzpl0ea5qT/ZT3ZNTUcDKUVqV3xBE8wv/DyQ==
   dependencies:
     "@types/prop-types" "*"
     csstype "^3.0.2"
@@ -9686,10 +9686,10 @@ eslint-ast-utils@^1.1.0:
     lodash.get "^4.4.2"
     lodash.zip "^4.2.0"
 
-eslint-config-prettier@^6.12.0:
-  version "6.12.0"
-  resolved "https://registry.npmjs.org/eslint-config-prettier/-/eslint-config-prettier-6.12.0.tgz#9eb2bccff727db1c52104f0b49e87ea46605a0d2"
-  integrity sha512-9jWPlFlgNwRUYVoujvWTQ1aMO8o6648r+K7qU7K5Jmkbyqav1fuEZC0COYpGBxyiAJb65Ra9hrmFx19xRGwXWw==
+eslint-config-prettier@^6.15.0:
+  version "6.15.0"
+  resolved "https://registry.npmjs.org/eslint-config-prettier/-/eslint-config-prettier-6.15.0.tgz#7f93f6cb7d45a92f1537a70ecc06366e1ac6fed9"
+  integrity sha512-a1+kOYLR8wMGustcgAjdydMsQ2A/2ipRPwRKUmfYaSxc9ZPcrku080Ctl6zrZzZNs/U82MjSv+qKREkoq3bJaw==
   dependencies:
     get-stdin "^6.0.0"
 
@@ -9735,10 +9735,10 @@ eslint-plugin-ban@^1.4.0:
   dependencies:
     requireindex "~1.2.0"
 
-eslint-plugin-etc@^0.0.3-beta.48:
-  version "0.0.3-beta.49"
-  resolved "https://registry.npmjs.org/eslint-plugin-etc/-/eslint-plugin-etc-0.0.3-beta.49.tgz#2f4c83faf5cf5957e540514a007e0178af3269aa"
-  integrity sha512-cOCF6fJOlrqH3R9hs3mnqASGcDv93mnTJ1wa1Ep7SFJvjP+8+OiyaFL5bVbNyxUBuKbPjKHM7yAnC8b6KtX3sg==
+eslint-plugin-etc@^1.1.5:
+  version "1.1.5"
+  resolved "https://registry.npmjs.org/eslint-plugin-etc/-/eslint-plugin-etc-1.1.5.tgz#29102203ed4475ca17d2230ccb1236a9148443c0"
+  integrity sha512-3xL62PJiDEPSy1XJGFOViT+pTnfzIe18LYZEWcShBjvf/MMGZBo+hbtb0gJ+u/3UCNkW+cx7+XLpfcEp3UzYcQ==
   dependencies:
     "@phenomnomnominal/tsquery" "^4.0.0"
     "@typescript-eslint/experimental-utils" "^4.0.0"
@@ -9766,10 +9766,10 @@ eslint-plugin-import@^2.22.1:
     resolve "^1.17.0"
     tsconfig-paths "^3.9.0"
 
-eslint-plugin-jsdoc@^30.6.4:
-  version "30.6.4"
-  resolved "https://registry.npmjs.org/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-30.6.4.tgz#ae7dab1ff24dff2c75fab7bb96a6b5f12621c212"
-  integrity sha512-aDTsAkKwyMsIYtytjH5zPtv+LkbCORN6oy/T4L40ssU5pgXWRSs0ULyJb6e4p2jT8y5nmG3IgpawYarL4tKunw==
+eslint-plugin-jsdoc@^30.7.6:
+  version "30.7.6"
+  resolved "https://registry.npmjs.org/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-30.7.6.tgz#050ee54014dd301d9d53eb0e9aa740293861cc47"
+  integrity sha512-w18IOiS/9ahKgRfQOuHbce+EQYx3fwIkZhUZDEK+augNlhJkzgTSZkrBkzaflSbFNZ9/Tk4xzUABEaTbsBSzew==
   dependencies:
     comment-parser "^0.7.6"
     debug "^4.2.0"
@@ -9808,10 +9808,10 @@ eslint-plugin-react@^7.21.4:
     resolve "^1.17.0"
     string.prototype.matchall "^4.0.2"
 
-eslint-plugin-rxjs@^0.0.3-beta.30:
-  version "0.0.3-beta.30"
-  resolved "https://registry.npmjs.org/eslint-plugin-rxjs/-/eslint-plugin-rxjs-0.0.3-beta.30.tgz#caaed11af114c77f83890948112c8b19c3518e9d"
-  integrity sha512-9d6y6lroFtFsTVhsALCmjQ+J+VmnNjk1CWGArXz2G4YGVYa9XphmxX3ymZOjdzJoNMrHKHafbvIoK2zP3zZomA==
+eslint-plugin-rxjs@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.npmjs.org/eslint-plugin-rxjs/-/eslint-plugin-rxjs-2.0.0.tgz#cdf624783bc2551c6b5a67114a7498c4394a9e1a"
+  integrity sha512-h4WhHktoYEieOhcxh8zmvWHf3RP5mOinUJYrpYWc4QrMX5Afkl9PO5yp7ArDx2HqgilZJ0Q46NuALmx+++7+cw==
   dependencies:
     "@typescript-eslint/experimental-utils" "^4.0.0"
     common-tags "^1.8.0"
@@ -9850,12 +9850,12 @@ eslint-scope@^4.0.3:
     esrecurse "^4.1.0"
     estraverse "^4.1.1"
 
-eslint-scope@^5.0.0, eslint-scope@^5.1.0:
-  version "5.1.0"
-  resolved "https://registry.npmjs.org/eslint-scope/-/eslint-scope-5.1.0.tgz#d0f971dfe59c69e0cada684b23d49dbf82600ce5"
-  integrity sha512-iiGRvtxWqgtx5m8EyQUJihBloE4EnYeGE/bz1wSPwJE6tZuJUtHlhqDM4Xj2ukE8Dyy1+HCZ4hE0fzIVMzb58w==
+eslint-scope@^5.0.0, eslint-scope@^5.1.1:
+  version "5.1.1"
+  resolved "https://registry.npmjs.org/eslint-scope/-/eslint-scope-5.1.1.tgz#e786e59a66cb92b3f6c1fb0d508aab174848f48c"
+  integrity sha512-2NxwbF/hZ0KpepYN0cNbo+FN6XoK7GaHlQhgx/hIZl6Va0bF45RQOOwhLIy8lQDbuCiadSLCBnH2CFYquit5bw==
   dependencies:
-    esrecurse "^4.1.0"
+    esrecurse "^4.3.0"
     estraverse "^4.1.1"
 
 eslint-template-visitor@^2.0.0:
@@ -9979,22 +9979,22 @@ eslint@^3.7.1:
     text-table "~0.2.0"
     user-home "^2.0.0"
 
-eslint@^7.8.1:
-  version "7.8.1"
-  resolved "https://registry.npmjs.org/eslint/-/eslint-7.8.1.tgz#e59de3573fb6a5be8ff526c791571646d124a8fa"
-  integrity sha512-/2rX2pfhyUG0y+A123d0ccXtMm7DV7sH1m3lk9nk2DZ2LReq39FXHueR9xZwshE5MdfSf0xunSaMWRqyIA6M1w==
+eslint@^7.13.0:
+  version "7.13.0"
+  resolved "https://registry.npmjs.org/eslint/-/eslint-7.13.0.tgz#7f180126c0dcdef327bfb54b211d7802decc08da"
+  integrity sha512-uCORMuOO8tUzJmsdRtrvcGq5qposf7Rw0LwkTJkoDbOycVQtQjmnhZSuLQnozLE4TmAzlMVV45eCHmQ1OpDKUQ==
   dependencies:
     "@babel/code-frame" "^7.0.0"
-    "@eslint/eslintrc" "^0.1.3"
+    "@eslint/eslintrc" "^0.2.1"
     ajv "^6.10.0"
     chalk "^4.0.0"
     cross-spawn "^7.0.2"
     debug "^4.0.1"
     doctrine "^3.0.0"
     enquirer "^2.3.5"
-    eslint-scope "^5.1.0"
+    eslint-scope "^5.1.1"
     eslint-utils "^2.1.0"
-    eslint-visitor-keys "^1.3.0"
+    eslint-visitor-keys "^2.0.0"
     espree "^7.3.0"
     esquery "^1.2.0"
     esutils "^2.0.2"
@@ -10074,22 +10074,22 @@ esquery@^1.0.0, esquery@^1.0.1, esquery@^1.2.0:
   dependencies:
     estraverse "^5.1.0"
 
-esrecurse@^4.1.0:
-  version "4.2.1"
-  resolved "https://registry.npmjs.org/esrecurse/-/esrecurse-4.2.1.tgz#007a3b9fdbc2b3bb87e4879ea19c92fdbd3942cf"
-  integrity sha512-64RBB++fIOAXPw3P9cy89qfMlvZEXZkqqJkjqqXIvzP5ezRZjW+lPWjw35UX/3EhUPFYbg5ER4JYgDw4007/DQ==
+esrecurse@^4.1.0, esrecurse@^4.3.0:
+  version "4.3.0"
+  resolved "https://registry.npmjs.org/esrecurse/-/esrecurse-4.3.0.tgz#7ad7964d679abb28bee72cec63758b1c5d2c9921"
+  integrity sha512-KmfKL3b6G+RXvP8N1vr3Tq1kL/oCFgn2NYXEtqP8/L3pKapUA4G8cFVaoF3SU323CD4XypR/ffioHmkti6/Tag==
   dependencies:
-    estraverse "^4.1.0"
+    estraverse "^5.2.0"
 
-estraverse@^4.1.0, estraverse@^4.1.1, estraverse@^4.2.0:
+estraverse@^4.1.1, estraverse@^4.2.0:
   version "4.2.0"
   resolved "https://registry.npmjs.org/estraverse/-/estraverse-4.2.0.tgz#0dee3fed31fcd469618ce7342099fc1afa0bdb13"
   integrity sha1-De4/7TH81GlhjOc0IJn8GvoL2xM=
 
-estraverse@^5.1.0:
-  version "5.1.0"
-  resolved "https://registry.npmjs.org/estraverse/-/estraverse-5.1.0.tgz#374309d39fd935ae500e7b92e8a6b4c720e59642"
-  integrity sha512-FyohXK+R0vE+y1nHLoBM7ZTyqRpqAlhdZHCWIWEviFLiGB8b04H6bQs8G+XTthacvT8VuwvteiP7RJSxMs8UEw==
+estraverse@^5.1.0, estraverse@^5.2.0:
+  version "5.2.0"
+  resolved "https://registry.npmjs.org/estraverse/-/estraverse-5.2.0.tgz#307df42547e6cc7324d3cf03c155d5cdb8c53880"
+  integrity sha512-BxbNGGNm0RyRYvUdHpIwv9IWzeM9XClbOxwoATuFdOE7ZE6wHL+HQ5T8hoPM+zHvmKzzsEqhgy0GrQ5X13afiQ==
 
 esutils@^2.0.2:
   version "2.0.2"
@@ -13569,15 +13569,15 @@ jest-diff@^25.2.1, jest-diff@^25.5.0:
     jest-get-type "^25.2.6"
     pretty-format "^25.5.0"
 
-jest-diff@^26.5.2:
-  version "26.5.2"
-  resolved "https://registry.npmjs.org/jest-diff/-/jest-diff-26.5.2.tgz#8e26cb32dc598e8b8a1b9deff55316f8313c8053"
-  integrity sha512-HCSWDUGwsov5oTlGzrRM+UPJI/Dpqi9jzeV0fdRNi3Ch5bnoXhnyJMmVg2juv9081zLIy3HGPI5mcuGgXM2xRA==
+jest-diff@^26.0.0, jest-diff@^26.5.2:
+  version "26.6.1"
+  resolved "https://registry.npmjs.org/jest-diff/-/jest-diff-26.6.1.tgz#38aa194979f454619bb39bdee299fb64ede5300c"
+  integrity sha512-BBNy/zin2m4kG5In126O8chOBxLLS/XMTuuM2+YhgyHk87ewPzKTuTJcqj3lOWOi03NNgrl+DkMeV/exdvG9gg==
   dependencies:
     chalk "^4.0.0"
     diff-sequences "^26.5.0"
     jest-get-type "^26.3.0"
-    pretty-format "^26.5.2"
+    pretty-format "^26.6.1"
 
 jest-docblock@^25.3.0:
   version "25.3.0"
@@ -18216,15 +18216,15 @@ pretty-format@^25.2.1, pretty-format@^25.5.0:
     ansi-styles "^4.0.0"
     react-is "^16.12.0"
 
-pretty-format@^26.4.0, pretty-format@^26.5.2:
-  version "26.5.2"
-  resolved "https://registry.npmjs.org/pretty-format/-/pretty-format-26.5.2.tgz#5d896acfdaa09210683d34b6dc0e6e21423cd3e1"
-  integrity sha512-VizyV669eqESlkOikKJI8Ryxl/kPpbdLwNdPs2GrbQs18MpySB5S0Yo0N7zkg2xTRiFq4CFw8ct5Vg4a0xP0og==
+pretty-format@^26.0.0, pretty-format@^26.4.0, pretty-format@^26.5.2, pretty-format@^26.6.1:
+  version "26.6.1"
+  resolved "https://registry.npmjs.org/pretty-format/-/pretty-format-26.6.1.tgz#af9a2f63493a856acddeeb11ba6bcf61989660a8"
+  integrity sha512-MeqqsP5PYcRBbGMvwzsyBdmAJ4EFX7pWFyl7x4+dMVg5pE0ZDdBIvEH2ergvIO+Gvwv1wh64YuOY9y5LuyY/GA==
   dependencies:
-    "@jest/types" "^26.5.2"
+    "@jest/types" "^26.6.1"
     ansi-regex "^5.0.0"
     ansi-styles "^4.0.0"
-    react-is "^16.12.0"
+    react-is "^17.0.1"
 
 pretty-hrtime@^1.0.0, pretty-hrtime@^1.0.3:
   version "1.0.3"
@@ -18884,6 +18884,11 @@ react-is@^16.12.0, react-is@^16.13.1, react-is@^16.6.0, react-is@^16.7.0, react-
   version "16.13.1"
   resolved "https://registry.npmjs.org/react-is/-/react-is-16.13.1.tgz#789729a4dc36de2999dc156dd6c1d9c18cea56a4"
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
+
+react-is@^17.0.1:
+  version "17.0.1"
+  resolved "https://registry.npmjs.org/react-is/-/react-is-17.0.1.tgz#5b3531bd76a645a4c9fb6e693ed36419e3301339"
+  integrity sha512-NAnt2iGDXohE5LI7uBnLnqvLQMtzhkiAOLXTmv+qnF9Ky7xAPcX8Up/xWIhxvLVGJvuLiNc4xQLtuqDRzb4fSA==
 
 react-lifecycles-compat@^3.0.4:
   version "3.0.4"
@@ -20159,10 +20164,10 @@ sass-loader@^10.0.3:
     schema-utils "^3.0.0"
     semver "^7.3.2"
 
-sass@^1.26.10:
-  version "1.26.10"
-  resolved "https://registry.npmjs.org/sass/-/sass-1.26.10.tgz#851d126021cdc93decbf201d1eca2a20ee434760"
-  integrity sha512-bzN0uvmzfsTvjz0qwccN1sPm2HxxpNI/Xa+7PlUEMS+nQvbyuEK7Y0qFqxlPHhiNHb1Ze8WQJtU31olMObkAMw==
+sass@^1.28.0:
+  version "1.28.0"
+  resolved "https://registry.npmjs.org/sass/-/sass-1.28.0.tgz#546f1308ff74cc4ec2ad735fd35dc18bc3f51f72"
+  integrity sha512-9FWX/0wuE1KxwfiP02chZhHaPzu6adpx9+wGch7WMOuHy5npOo0UapRI3FNSHva2CczaYJu2yNUBN8cCSqHz/A==
   dependencies:
     chokidar ">=2.0.0 <4.0.0"
 

@@ -23,12 +23,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
 func TestNullIDResilience(t *testing.T) {
 	sr := &Resolver{store: ee.NewStore(dbconn.Global)}
 
-	s, err := graphqlbackend.NewSchema(sr, nil, nil)
+	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,6 +42,7 @@ func TestNullIDResilience(t *testing.T) {
 		marshalChangesetID(0),
 		marshalCampaignSpecRandID(""),
 		marshalChangesetSpecRandID(""),
+		marshalCampaignsCredentialID(0),
 	}
 
 	for _, id := range ids {
@@ -60,6 +63,7 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { applyCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
 		fmt.Sprintf(`mutation { createCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
 		fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, marshalCampaignID(0)),
+		fmt.Sprintf(`mutation { deleteCampaignsCredential(campaignsCredential: %q) { alwaysNil } }`, marshalCampaignsCredentialID(0)),
 	}
 
 	for _, m := range mutations {
@@ -105,7 +109,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,7 +212,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -320,7 +324,7 @@ func TestApplyCampaign(t *testing.T) {
 	}
 
 	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -451,7 +455,7 @@ func TestCreateCampaign(t *testing.T) {
 	}
 
 	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -527,7 +531,7 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -741,3 +745,113 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		})
 	}
 }
+
+func TestCreateCampaignsCredential(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	dbtesting.SetupGlobalTestDB(t)
+
+	pruneUserCredentials(t)
+
+	userID := insertTestUser(t, dbconn.Global, "create-credential", false)
+
+	store := ee.NewStore(dbconn.Global)
+
+	r := &Resolver{store: store}
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	input := map[string]interface{}{
+		"externalServiceKind": string(extsvc.KindGitHub),
+		"externalServiceURL":  "https://github.com/",
+		"credential":          "SOSECRET",
+	}
+
+	var response struct{ CreateCampaignsCredential apitest.CampaignsCredential }
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	// First time it should work, because no credential exists
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCredential)
+
+	if response.CreateCampaignsCredential.ID == "" {
+		t.Fatalf("expected credential to be created, but was not")
+	}
+
+	// Second time it should fail
+	errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
+
+	if len(errors) != 1 {
+		t.Fatalf("expected single errors, but got none")
+	}
+	if have, want := errors[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
+		t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+	}
+}
+
+const mutationCreateCredential = `
+mutation($externalServiceKind: ExternalServiceKind!, $externalServiceURL: String!, $credential: String!) {
+  createCampaignsCredential(externalServiceKind: $externalServiceKind, externalServiceURL: $externalServiceURL, credential: $credential) { id }
+}
+`
+
+func TestDeleteCampaignsCredential(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	dbtesting.SetupGlobalTestDB(t)
+
+	pruneUserCredentials(t)
+
+	userID := insertTestUser(t, dbconn.Global, "delete-credential", true)
+
+	cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+		Domain:              db.UserCredentialDomainCampaigns,
+		ExternalServiceType: extsvc.TypeGitHub,
+		ExternalServiceID:   "https://github.com/",
+		UserID:              userID,
+	}, &auth.OAuthBearerToken{Token: "SOSECRET"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	store := ee.NewStore(dbconn.Global)
+
+	r := &Resolver{store: store}
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	input := map[string]interface{}{
+		"campaignsCredential": marshalCampaignsCredentialID(cred.ID),
+	}
+
+	var response struct{ DeleteCampaignsCredential apitest.EmptyResponse }
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	// First time it should work, because a credential exists
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationDeleteCredential)
+
+	// Second time it should fail
+	errors := apitest.Exec(actorCtx, t, s, input, &response, mutationDeleteCredential)
+
+	if len(errors) != 1 {
+		t.Fatalf("expected single errors, but got none")
+	}
+	if have, want := errors[0].Message, "user credential not found: [1]"; have != want {
+		t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+	}
+}
+
+const mutationDeleteCredential = `
+mutation($campaignsCredential: ID!) {
+  deleteCampaignsCredential(campaignsCredential: $campaignsCredential) { alwaysNil }
+}
+`

@@ -36,8 +36,8 @@ fi
 SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat "$DEV_PRIVATE_PATH"/enterprise/dev/test-license-generation-key.pem)
 export SOURCEGRAPH_LICENSE_GENERATION_KEY
 
-export PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL=http://localhost:3187
-export PRECISE_CODE_INTEL_BUNDLE_DIR=$HOME/.sourcegraph/lsif-storage
+export PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT=http://localhost:9000
+export DISABLE_CNCF=notonmybox
 
 export EXECUTOR_FRONTEND_URL=http://localhost:3080
 export EXECUTOR_FRONTEND_USERNAME=executor
@@ -45,10 +45,9 @@ export EXECUTOR_FRONTEND_PASSWORD=hunter2
 export EXECUTOR_QUEUE_URL=http://localhost:3191
 export EXECUTOR_USE_FIRECRACKER=false
 export EXECUTOR_IMAGE_ARCHIVE_PATH=$HOME/.sourcegraph/images
-export DISABLE_CNCF=notonmybox
 
 export WATCH_ADDITIONAL_GO_DIRS="enterprise/cmd enterprise/dev enterprise/internal"
-export ENTERPRISE_ONLY_COMMANDS=" precise-code-intel-bundle-manager precise-code-intel-indexer precise-code-intel-indexer-vm precise-code-intel-worker executor-queue executor "
+export ENTERPRISE_ONLY_COMMANDS=" precise-code-intel-worker executor-queue executor "
 export ENTERPRISE_COMMANDS="frontend repo-updater ${ENTERPRISE_ONLY_COMMANDS}"
 export ENTERPRISE=1
 export PROCFILE=enterprise/dev/Procfile

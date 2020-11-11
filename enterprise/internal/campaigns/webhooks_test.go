@@ -53,7 +53,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		extSvc := &repos.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub",
-			Config: marshalJSON(t, &schema.GitHubConnection{
+			Config: ct.MarshalJSON(t, &schema.GitHubConnection{
 				Url:      "https://github.com",
 				Token:    os.Getenv("GITHUB_TOKEN"),
 				Repos:    []string{"sourcegraph/sourcegraph"},
@@ -128,7 +128,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		})
 		defer state.Unmock()
 
-		err = SyncChangeset(ctx, repoStore, store, repos.NewSourcer(cf), changeset)
+		err = SyncChangeset(ctx, repoStore, store, githubSrc, githubRepo, changeset)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -221,7 +221,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		extSvc := &repos.ExternalService{
 			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket",
-			Config: marshalJSON(t, &schema.BitbucketServerConnection{
+			Config: ct.MarshalJSON(t, &schema.BitbucketServerConnection{
 				Url:   "https://bitbucket.sgdev.org",
 				Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
 				Repos: []string{"SOUR/automation-testing"},
@@ -309,7 +309,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				t.Fatal(err)
 			}
 
-			err = SyncChangeset(ctx, repoStore, store, repos.NewSourcer(cf), ch)
+			err = SyncChangeset(ctx, repoStore, store, bitbucketSource, bitbucketRepo, ch)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -456,15 +456,4 @@ func sign(t *testing.T, message, secret []byte) string {
 	}
 
 	return "sha256=" + hex.EncodeToString(mac.Sum(nil))
-}
-
-func marshalJSON(t testing.TB, v interface{}) string {
-	t.Helper()
-
-	bs, err := json.Marshal(v)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return string(bs)
 }

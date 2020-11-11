@@ -1,0 +1,23 @@
+env:
+  VAGRANT_RUN_ENV: "CI"
+steps:
+- label: ':docker::chromium: Sourcegraph QA'
+  command:
+    - .buildkite/vagrant-run.sh sourcegraph-qa-test
+  artifact_paths: ./*.png;./*.mp4;./*.log
+  agents:
+    queue: 'baremetal'
+
+- label: ':docker::arrow_double_up: Sourcegraph Upgrade'
+  command:
+  - .buildkite/vagrant-run.sh sourcegraph-upgrade
+  artifact_paths: ./*.png;./*.mp4;./*.log
+  agents:
+    queue: 'baremetal'
+
+- label: ':docker::brain: Code Intel'
+  command:
+    - .buildkite/vagrant-run.sh sourcegraph-code-intel-test
+  artifact_paths: ./*.log
+  agents:
+    queue: 'baremetal'

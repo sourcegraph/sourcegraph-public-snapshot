@@ -4,7 +4,7 @@ import {
     isNegatedFilter,
     resolveNegatedFilter,
 } from '../../../../shared/src/search/interactive/util'
-import { parseSearchQuery } from '../../../../shared/src/search/parser/parser'
+import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
 import { uniqueId } from 'lodash'
 import { validateFilter, isSingularFilter } from '../../../../shared/src/search/parser/filters'
 
@@ -19,31 +19,30 @@ import { validateFilter, isSingularFilter } from '../../../../shared/src/search/
 export function convertPlainTextToInteractiveQuery(
     query: string
 ): { filtersInQuery: FiltersToTypeAndValue; navbarQuery: string } {
-    const parsedQuery = parseSearchQuery(query)
+    const scannedQuery = scanSearchQuery(query)
 
     const newFiltersInQuery: FiltersToTypeAndValue = {}
     let newNavbarQuery = ''
 
-    if (parsedQuery.type === 'success') {
-        for (const member of parsedQuery.token.members) {
+    if (scannedQuery.type === 'success') {
+        for (const token of scannedQuery.term) {
             if (
-                member.token.type === 'filter' &&
-                member.token.filterValue &&
-                validateFilter(member.token.filterType.token.value, member.token.filterValue).valid
+                token.type === 'filter' &&
+                token.filterValue &&
+                validateFilter(token.filterType.value, token.filterValue).valid
             ) {
-                const filterType = member.token.filterType.token.value as FilterType
+                const filterType = token.filterType.value as FilterType
                 newFiltersInQuery[isSingularFilter(filterType) ? filterType : uniqueId(filterType)] = {
                     type: isNegatedFilter(filterType) ? resolveNegatedFilter(filterType) : filterType,
-                    value: query.slice(member.token.filterValue.range.start, member.token.filterValue.range.end),
+                    value: query.slice(token.filterValue.range.start, token.filterValue.range.end),
                     editable: false,
                     negated: isNegatedFilter(filterType),
                 }
             } else if (
-                member.token.type !== 'filter' ||
-                (member.token.type === 'filter' &&
-                    !validateFilter(member.token.filterType.token.value, member.token.filterValue).valid)
+                token.type !== 'filter' ||
+                (token.type === 'filter' && !validateFilter(token.filterType.value, token.filterValue).valid)
             ) {
-                newNavbarQuery = [newNavbarQuery, query.slice(member.range.start, member.range.end)]
+                newNavbarQuery = [newNavbarQuery, query.slice(token.range.start, token.range.end)]
                     .filter(query => query.length > 0)
                     .join('')
             }

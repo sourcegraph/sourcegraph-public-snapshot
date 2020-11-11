@@ -1,369 +1,180 @@
-import { IRange } from 'monaco-editor'
-import { filterTypeKeysWithAliases } from '../interactive/util'
+import { scanSearchQuery, PatternKind, Token, KeywordKind } from './scanner'
 
-/**
- * Represents a zero-indexed character range in a single-line search query.
- */
-export interface CharacterRange {
-    /** Zero-based character on the line */
-    start: number
-    /** Zero-based character on the line */
-    end: number
-}
-
-/**
- * Converts a zero-indexed, single-line {@link CharacterRange} to a Monaco {@link IRange}.
- */
-export const toMonacoRange = ({ start, end }: CharacterRange): IRange => ({
-    startLineNumber: 1,
-    endLineNumber: 1,
-    startColumn: start + 1,
-    endColumn: end + 1,
-})
-
-/**
- * Represents a literal in a search query.
- *
- * Example: `Conn`.
- */
-export interface Literal {
-    type: 'literal'
+export interface Pattern {
+    type: 'pattern'
+    kind: PatternKind
     value: string
+    quoted: boolean
+    negated: boolean
+}
+
+export interface Parameter {
+    type: 'parameter'
+    field: string
+    value: string
+    negated: boolean
+}
+
+export enum OperatorKind {
+    Or = 'OR',
+    And = 'AND',
 }
 
 /**
- * Represents a filter in a search query.
- *
- * Example: `repo:^github\.com\/sourcegraph\/sourcegraph$`.
- */
-export interface Filter {
-    type: 'filter'
-    filterType: Pick<ParseSuccess<Literal>, 'range' | 'token'>
-    filterValue: Pick<ParseSuccess<Literal | Quoted>, 'range' | 'token'> | undefined
-}
-
-/**
- * Represents an operator in a search query.
- *
- * Example: AND, OR, NOT.
+ * A nonterminal node for operators AND and OR.
  */
 export interface Operator {
     type: 'operator'
-    value: string
+    operands: Node[]
+    kind: OperatorKind
 }
 
-/**
- * Represents a sequence of tokens in a search query.
- */
-export interface Sequence {
-    type: 'sequence'
-    members: Pick<ParseSuccess<Exclude<Token, Sequence>>, 'range' | 'token'>[]
-}
+export type Node = Operator | Parameter | Pattern
 
-/**
- * Represents a quoted string in a search query.
- *
- * Example: "Conn".
- */
-export interface Quoted {
-    type: 'quoted'
-    quotedValue: string
-}
-
-/**
- * Represents a C-style comment, terminated by a newline.
- *
- * Example: `// Oh hai`
- */
-export interface Comment {
-    type: 'comment'
-    value: string
-}
-
-export type Token =
-    | { type: 'whitespace' }
-    | { type: 'openingParen' }
-    | { type: 'closingParen' }
-    | { type: 'operator' }
-    | Comment
-    | Literal
-    | Filter
-    | Sequence
-    | Quoted
-
-/**
- * Represents the failed result of running a {@link Parser} on a search query.
- */
 interface ParseError {
     type: 'error'
-
-    /**
-     * A string representing the token that would have been expected
-     * for successful parsing at {@link ParseError#at}.
-     */
     expected: string
-
-    /**
-     * The index in the search query string where parsing failed.
-     */
-    at: number
 }
 
-/**
- * Represents the successful result of running a {@link Parser} on a search query.
- */
-export interface ParseSuccess<T = Token> {
+export interface ParseSuccess {
     type: 'success'
-
-    /**
-     * The parsed token.
-     */
-    token: T
-
-    /**
-     * The character range that was successfully parsed.
-     */
-    range: CharacterRange
+    nodes: Node[]
 }
 
-/**
- * Represents the result of running a {@link Parser} on a search query.
- */
-export type ParserResult<T = Token> = ParseError | ParseSuccess<T>
-
-type Parser<T = Token> = (input: string, start: number) => ParserResult<T>
+export type ParseResult = ParseError | ParseSuccess
 
 /**
- * Returns a {@link Parser} that succeeds if zero or more tokens parsed
- * by the given `parseToken` parsers are found in a search query.
+ * State contains the current parse result, and the remaining tokens to parse.
  */
-const zeroOrMore = (parseToken: Parser): Parser<Sequence> => (input, start) => {
-    const members: Pick<ParseSuccess<Exclude<Token, Sequence>>, 'range' | 'token'>[] = []
-    let adjustedStart = start
-    let end = start + 1
-    while (input[adjustedStart] !== undefined) {
-        const result = parseToken(input, adjustedStart)
-        if (result.type === 'error') {
-            return result
+interface State {
+    result: ParseResult
+    tokens: Token[]
+}
+
+const createNodes = (nodes: Node[]): ParseSuccess => ({ type: 'success', nodes })
+
+const createPattern = (value: string, kind: PatternKind, quoted: boolean, negated: boolean): ParseSuccess =>
+    createNodes([{ type: 'pattern', kind, value, quoted, negated }])
+
+const createParameter = (field: string, value: string, negated: boolean): ParseSuccess =>
+    createNodes([{ type: 'parameter', field, value, negated }])
+
+const createOperator = (nodes: Node[], kind: OperatorKind): ParseSuccess =>
+    createNodes([{ type: 'operator', operands: nodes, kind }])
+
+const tokenToLeafNode = (token: Token): ParseResult => {
+    if (token.type === 'pattern') {
+        return createPattern(token.value, token.kind, false, false)
+    }
+    if (token.type === 'filter') {
+        const filterValue = token.filterValue
+            ? token.filterValue.type === 'literal'
+                ? token.filterValue.value
+                : token.filterValue.quotedValue
+            : ''
+        return createParameter(token.filterType.value, filterValue, token.negated)
+    }
+    return { type: 'error', expected: 'a convertable token to tree node' }
+}
+
+export const parseLeaves = (tokens: Token[]): State => {
+    const nodes: Node[] = []
+    while (true) {
+        const current = tokens[0]
+        if (current === undefined) {
+            break
         }
-        if (result.token.type === 'sequence') {
-            for (const member of result.token.members) {
-                members.push(member)
+        if (current.type === 'openingParen') {
+            tokens = tokens.slice(1) // Consume '('.
+
+            const groupNodes = parseOr(tokens)
+            if (groupNodes.result.type === 'error') {
+                return { result: groupNodes.result, tokens }
             }
-        } else {
-            const { range, token } = result
-            members.push({ range, token })
+            nodes.push(...groupNodes.result.nodes)
+            tokens = groupNodes.tokens // Advance to the next list of tokens.
+            continue
         }
-        end = result.range.end
-        adjustedStart = end
+        if (current.type === 'closingParen') {
+            tokens = tokens.slice(1) // Consume ')'.
+            continue
+        }
+        if (current.type === 'keyword' && (current.kind === KeywordKind.And || current.kind === KeywordKind.Or)) {
+            return { result: createNodes(nodes), tokens } // Caller advances.
+        }
+
+        const node = tokenToLeafNode(current)
+        if (node.type === 'error') {
+            return { result: node, tokens }
+        }
+        nodes.push(...node.nodes)
+        tokens = tokens.slice(1)
+    }
+    return { result: { type: 'success', nodes }, tokens }
+}
+
+/**
+ * parseAnd parses and-expressions. And operators bind tighter:
+ * (a and b or c) => ((a and b) or c).
+ */
+export const parseAnd = (tokens: Token[]): State => {
+    const left = parseLeaves(tokens)
+    if (left.result.type === 'error') {
+        return { result: left.result, tokens }
+    }
+    if (left.tokens[0] === undefined) {
+        return { result: left.result, tokens }
+    }
+    if (!(left.tokens[0].type === 'keyword' && left.tokens[0].kind === KeywordKind.And)) {
+        return { result: left.result, tokens: left.tokens }
+    }
+    tokens = left.tokens.slice(1) // Consume AND token.
+    const right = parseAnd(tokens)
+    if (right.result.type === 'error') {
+        return { result: right.result, tokens }
     }
     return {
-        type: 'success',
-        range: { start, end },
-        token: { type: 'sequence', members },
+        result: createOperator(left.result.nodes.concat(...right.result.nodes), OperatorKind.And),
+        tokens: right.tokens,
     }
 }
 
 /**
- * Returns a {@link Parser} that succeeds if any of the given parsers succeeds.
+ * parseOr parses or-expressions. Or operators have lower precedence than And
+ * operators, therefore this function calls parseAnd.
  */
-const oneOf = <T>(...parsers: Parser<T>[]): Parser<T> => (input, start) => {
-    const expected: string[] = []
-    for (const parser of parsers) {
-        const result = parser(input, start)
-        if (result.type === 'success') {
-            return result
-        }
-        expected.push(result.expected)
+export const parseOr = (tokens: Token[]): State => {
+    const left = parseAnd(tokens)
+    if (left.result.type === 'error') {
+        return { result: left.result, tokens }
+    }
+    if (left.tokens[0] === undefined) {
+        return { result: left.result, tokens }
+    }
+    if (!(left.tokens[0].type === 'keyword' && left.tokens[0].kind === KeywordKind.Or)) {
+        return { result: left.result, tokens: left.tokens }
+    }
+    tokens = left.tokens.slice(1) // Consume OR token.
+    const right = parseOr(tokens)
+    if (right.result.type === 'error') {
+        return { result: right.result, tokens }
     }
     return {
-        type: 'error',
-        expected: `One of: ${expected.join(', ')}`,
-        at: start,
+        result: createOperator(left.result.nodes.concat(...right.result.nodes), OperatorKind.Or),
+        tokens: right.tokens,
     }
 }
 
 /**
- * A {@link Parser} that will attempt to parse quoted strings in a search query.
+ * Produces a parse tree from a search query.
  */
-const quoted: Parser<Quoted> = (input, start) => {
-    if (input[start] !== '"') {
-        return { type: 'error', expected: '"', at: start }
-    }
-    let end = start + 1
-    while (input[end] && (input[end] !== '"' || input[end - 1] === '\\')) {
-        end = end + 1
-    }
-    if (!input[end]) {
-        return { type: 'error', expected: '"', at: end }
-    }
-    return {
-        type: 'success',
-        // end + 1 as `end` is currently the index of the quote in the string.
-        range: { start, end: end + 1 },
-        token: { type: 'quoted', quotedValue: input.slice(start + 1, end) },
-    }
-}
-
-/**
- * Returns a {@link Parser} that will attempt to parse tokens matching
- * the given character in a search query.
- */
-const character = (character: string): Parser<Literal> => (input, start) => {
-    if (input[start] !== character) {
-        return { type: 'error', expected: character, at: start }
-    }
-    return {
-        type: 'success',
-        range: { start, end: start + 1 },
-        token: { type: 'literal', value: character },
-    }
-}
-
-/**
- * Returns a {@link Parser} that will attempt to parse
- * tokens matching the given RegExp pattern in a search query.
- */
-const pattern = <T extends Token = Literal>(
-    regexp: RegExp,
-    output?: T | ((input: string, range: CharacterRange) => T),
-    expected?: string
-): Parser<T> => {
-    if (!regexp.source.startsWith('^')) {
-        regexp = new RegExp(`^${regexp.source}`, regexp.flags)
-    }
-    return (input, start) => {
-        const matchTarget = input.slice(Math.max(0, start))
-        if (!matchTarget) {
-            return { type: 'error', expected: expected || `/${regexp.source}/`, at: start }
-        }
-        const match = matchTarget.match(regexp)
-        if (!match) {
-            return { type: 'error', expected: expected || `/${regexp.source}/`, at: start }
-        }
-        const range = { start, end: start + match[0].length }
+export const parseSearchQuery = (input: string): ParseResult => {
+    const result = scanSearchQuery(input)
+    if (result.type === 'error') {
         return {
-            type: 'success',
-            range,
-            token: output
-                ? typeof output === 'function'
-                    ? output(input, range)
-                    : output
-                : ({ type: 'literal', value: match[0] } as T),
+            type: 'error',
+            expected: result.expected,
         }
     }
+    return parseOr(result.term.filter(token => token.type !== 'whitespace')).result
 }
-
-const whitespace = pattern(/\s+/, { type: 'whitespace' as const }, 'whitespace')
-
-const literal = pattern(/[^\s)]+/)
-
-const operator = pattern(
-    /(and|AND|or|OR|not|NOT)/,
-    (input, { start, end }): Operator => ({ type: 'operator', value: input.slice(start, end) })
-)
-
-const comment = pattern(
-    /\/\/.*/,
-    (input, { start, end }): Comment => ({ type: 'comment', value: input.slice(start, end) })
-)
-
-const filterKeyword = pattern(new RegExp(`-?(${filterTypeKeysWithAliases.join('|')})+(?=:)`, 'i'))
-
-const filterDelimiter = character(':')
-
-const filterValue = oneOf<Quoted | Literal>(quoted, literal)
-
-const openingParen = pattern(/\(/, { type: 'openingParen' as const })
-
-const closingParen = pattern(/\)/, { type: 'closingParen' as const })
-
-/**
- * Returns a {@link Parser} that succeeds if a token parsed by `parseToken`,
- * followed by whitespace or EOF, is found in the search query.
- */
-const followedBy = (
-    parseToken: Parser<Exclude<Token, Sequence>>,
-    parseNext: Parser<Exclude<Token, Sequence>>
-): Parser<Sequence> => (input, start) => {
-    const members: Pick<ParseSuccess<Exclude<Token, Sequence>>, 'range' | 'token'>[] = []
-    const tokenResult = parseToken(input, start)
-    if (tokenResult.type === 'error') {
-        return tokenResult
-    }
-    members.push({ token: tokenResult.token, range: tokenResult.range })
-    let { end } = tokenResult.range
-    if (input[end] !== undefined) {
-        const separatorResult = parseNext(input, end)
-        if (separatorResult.type === 'error') {
-            return separatorResult
-        }
-        members.push({ token: separatorResult.token, range: separatorResult.range })
-        end = separatorResult.range.end
-    }
-    return {
-        type: 'success',
-        range: { start, end },
-        token: { type: 'sequence', members },
-    }
-}
-
-/**
- * A {@link Parser} that will attempt to parse {@link Filter} tokens
- * (consisting a of a filter type and a filter value, separated by a colon)
- * in a search query.
- */
-const filter: Parser<Filter> = (input, start) => {
-    const parsedKeyword = filterKeyword(input, start)
-    if (parsedKeyword.type === 'error') {
-        return parsedKeyword
-    }
-    const parsedDelimiter = filterDelimiter(input, parsedKeyword.range.end)
-    if (parsedDelimiter.type === 'error') {
-        return parsedDelimiter
-    }
-    const parsedValue =
-        input[parsedDelimiter.range.end] === undefined ? undefined : filterValue(input, parsedDelimiter.range.end)
-    if (parsedValue && parsedValue.type === 'error') {
-        return parsedValue
-    }
-    return {
-        type: 'success',
-        range: { start, end: parsedValue ? parsedValue.range.end : parsedDelimiter.range.end },
-        token: {
-            type: 'filter',
-            filterType: parsedKeyword,
-            filterValue: parsedValue,
-        },
-    }
-}
-
-const baseTerms = [operator, filter, quoted, literal]
-
-const createParser = (terms: Parser<Exclude<Token, Sequence>>[]): Parser<Sequence> =>
-    zeroOrMore(
-        oneOf<Token>(
-            whitespace,
-            openingParen,
-            closingParen,
-            ...terms.map(token =>
-                followedBy(token, oneOf<{ type: 'whitespace' } | { type: 'closingParen' }>(whitespace, closingParen))
-            )
-        )
-    )
-
-/**
- * A {@link Parser} for a Sourcegraph search query.
- */
-const searchQuery = createParser(baseTerms)
-
-/**
- * A {@link Parser} for a Sourcegraph search query containing comments.
- */
-const searchQueryWithComments = createParser([comment, ...baseTerms])
-
-/**
- * Parses a search query string.
- */
-export const parseSearchQuery = (query: string, interpretComments?: boolean): ParserResult<Sequence> =>
-    interpretComments ? searchQueryWithComments(query, 0) : searchQuery(query, 0)

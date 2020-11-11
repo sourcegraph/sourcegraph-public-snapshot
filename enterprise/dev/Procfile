@@ -8,7 +8,9 @@ frontend: env CONFIGURATION_MODE=server SITE_CONFIG_ESCAPE_HATCH_PATH=$HOME/.sou
 watch: ./dev/changewatch.sh
 nginx: nginx -p . -g 'daemon off;' -c $PWD/dev/nginx.conf 2>&1 | grep -v 'could not open error log file'
 caddy: ./dev/caddy.sh run --watch --config=dev/Caddyfile
-web: ./node_modules/.bin/gulp --color dev
+# TODO gulp doesn't respect C-c https://github.com/sourcegraph/sourcegraph/issues/13291
+# Fix this and you get to remove the badge of unix shame! :)
+web: ./dev/badge-of-unix-shame.sh ./node_modules/.bin/gulp --color dev
 syntect_server: ./dev/syntect_server.sh
 zoekt-indexserver-0: ./dev/zoekt/wrapper indexserver 0
 zoekt-indexserver-1: ./dev/zoekt/wrapper indexserver 1
@@ -26,7 +28,5 @@ executor-queue: executor-queue
 codeintel-executor: EXECUTOR_QUEUE_NAME=codeintel TMPDIR=~/.sourcegraph/indexer-temp executor
 
 # Enterprise code intelligence services
-precise-code-intel-bundle-manager: precise-code-intel-bundle-manager
-precise-code-intel-indexer: precise-code-intel-indexer
 precise-code-intel-worker: precise-code-intel-worker
 minio: ./dev/minio.sh

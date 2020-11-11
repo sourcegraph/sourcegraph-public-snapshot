@@ -120,7 +120,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                             <div className="d-flex align-items-baseline mb-3">
                                 <h3 className="search-page__help-content-header mr-2">Search in repository groups</h3>
                                 <small className="text-monospace font-weight-normal small">
-                                    <span className="search-keyword">repogroup:</span>
+                                    <span className="search-filter-keyword">repogroup:</span>
                                     <i>name</i>
                                 </small>
                             </div>
@@ -214,7 +214,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                                         <h3 className="search-page__help-content-header">
                                             Search a language{' '}
                                             <small className="text-monospace font-weight-normal">
-                                                <span className="search-keyword ml-1">lang:</span>
+                                                <span className="search-filter-keyword ml-1">lang:</span>
                                                 <i>name</i>
                                             </small>
                                         </h3>
@@ -225,7 +225,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                                                 .slice(0, Math.ceil(homepageLanguageList.length / 2))
                                                 .map(language => (
                                                     <Link
-                                                        className="search-keyword search-page__lang-link text-monospace mb-3"
+                                                        className="search-filter-keyword search-page__lang-link text-monospace mb-3"
                                                         to={`/search?q=lang:${language.filterName}`}
                                                         key={language.name}
                                                     >
@@ -241,7 +241,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                                                 )
                                                 .map(language => (
                                                     <Link
-                                                        className="search-keyword search-page__lang-link text-monospace mb-3"
+                                                        className="search-filter-keyword search-page__lang-link text-monospace mb-3"
                                                         to={`/search?q=lang:${language.filterName}`}
                                                         key={language.name}
                                                         onClick={LanguageExampleClicked(language.filterName)}

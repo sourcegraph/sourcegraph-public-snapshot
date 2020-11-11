@@ -66,3 +66,7 @@ var planFeatures = map[Plan][]Feature{
 	team:       {},
 	enterprise: {},
 }
+
+// NoLicenseMaximumExternalServiceCount is the maximum number of external services that the
+// instance supports when running without a license.
+const NoLicenseMaximumExternalServiceCount = 1

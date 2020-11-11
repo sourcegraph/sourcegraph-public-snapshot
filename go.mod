@@ -154,7 +154,7 @@ require (
 	github.com/sourcegraph/campaignutils v0.0.0-20201016010611-63eb2bca27ad
 	github.com/sourcegraph/codeintelutils v0.0.0-20200824140252-1db3aed5cf58
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
-	github.com/sourcegraph/go-ctags v0.0.0-20200922223002-071e508aa451
+	github.com/sourcegraph/go-ctags v0.0.0-20201109224903-0e02e034fdb1
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/go-jsonschema v0.0.0-20200907102109-d14e9f2f3a28
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
@@ -219,7 +219,7 @@ replace (
 )
 
 // We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20201016122840-58ac958bfd1d
+replace github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20201109233450-89466ac1243c
 
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 

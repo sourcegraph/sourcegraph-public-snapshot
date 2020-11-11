@@ -29,9 +29,9 @@ Campaigns need write permissions for the repositories in which you want to make 
 
 Configure your code host connections to have the right permissions for campaigns:
 
-- [GitHub](../../admin/external_service/github.md#github-api-token-and-access)
-- [GitLab](../../admin/external_service/gitlab.md#access-token-scopes)
-- [Bitbucket Server](../../admin/external_service/gitlab.md#access-token-permissions)
+- `repo`, `read:org`, and `read:discussion` (see [GitHub api token and access](../../admin/external_service/github.md#github-api-token-and-access) )
+- `api`, `read_repository`, `write_repository` (see [GitLab access token scopes](../../admin/external_service/gitlab.md#access-token-scopes))
+- **write** permissions on the project and repository level (see [Bitbucket Server access token permissions](../../admin/external_service/bitbucket_server.md#access-token-permissions))
 
 See ["Code host interactions in campaigns"](explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns) for details on what the permissions are used for.
 
@@ -66,7 +66,7 @@ Once `src login` reports that you're authenticated, we're ready for the next ste
 
 A **campaign spec** is a YAML file that defines a campaign. It specifies which changes should be made in which repositories and how those should be published on the code host.
 
-See the ["Campaign spec YAML reference"](campaign_spec_yaml_reference.md) for details.
+See the ["Campaign spec YAML reference"](references/campaign_spec_yaml_reference.md) for details.
 
 Save the following campaign spec as `hello-world.campaign.yaml`:
 
@@ -129,7 +129,7 @@ On a real campaign, you would do the following:
 1. Change the `published: false` in `hello-world.campaign.yaml` to `published: true`.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/campaign_publish_true.png" class="screenshot">
 
-    > NOTE: Change [`published` to an array](campaign_spec_yaml_reference.md#publishing-only-specific-changesets) to publish only some of the changesets, or set [`'draft'` to create changesets as drafts on code hosts that support drafts](campaign_spec_yaml_reference.md#changesettemplate-published).
+    > NOTE: Change [`published` to an array](references/campaign_spec_yaml_reference.md#publishing-only-specific-changesets) to publish only some of the changesets, or set [`'draft'` to create changesets as drafts on code hosts that support drafts](references/campaign_spec_yaml_reference.md#changesettemplate-published).
 1. Run the `src campaign preview` command again and open the URL.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/src_rerun_preview.png" class="screenshot">
 1. On the preview page you can confirm that changesets will be published when the spec is applied.

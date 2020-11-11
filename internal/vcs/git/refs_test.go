@@ -1,6 +1,7 @@
 package git
 
 import (
+	"context"
 	"reflect"
 	"sort"
 	"testing"
@@ -54,7 +55,7 @@ func TestRepository_ListBranches(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		branches, err := ListBranches(ctx, test.repo, BranchesOptions{})
+		branches, err := ListBranches(context.Background(), test.repo, BranchesOptions{})
 		if err != nil {
 			t.Errorf("%s: Branches: %s", label, err)
 			continue
@@ -107,7 +108,7 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 		},
 	} {
 		for branch, mergedInto := range test.wantBranches {
-			branches, err := ListBranches(ctx, test.repo, BranchesOptions{MergedInto: branch})
+			branches, err := ListBranches(context.Background(), test.repo, BranchesOptions{MergedInto: branch})
 			if err != nil {
 				t.Errorf("%s: Branches: %s", label, err)
 				continue
@@ -148,7 +149,7 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 
 	for label, test := range tests {
 		for commit, wantBranches := range test.commitToWantBranches {
-			branches, err := ListBranches(ctx, test.repo, BranchesOptions{ContainsCommit: commit})
+			branches, err := ListBranches(context.Background(), test.repo, BranchesOptions{ContainsCommit: commit})
 			if err != nil {
 				t.Errorf("%s: Branches: %s", label, err)
 				continue
@@ -198,7 +199,7 @@ func TestRepository_Branches_BehindAheadCounts(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		branches, err := ListBranches(ctx, test.repo, BranchesOptions{BehindAheadBranch: "master"})
+		branches, err := ListBranches(context.Background(), test.repo, BranchesOptions{BehindAheadBranch: "master"})
 		if err != nil {
 			t.Errorf("%s: Branches: %s", label, err)
 			continue
@@ -253,7 +254,7 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		branches, err := ListBranches(ctx, test.repo, BranchesOptions{IncludeCommit: true})
+		branches, err := ListBranches(context.Background(), test.repo, BranchesOptions{IncludeCommit: true})
 		if err != nil {
 			t.Errorf("%s: Branches: %s", label, err)
 			continue
@@ -291,7 +292,7 @@ func TestRepository_ListTags(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		tags, err := ListTags(ctx, test.repo)
+		tags, err := ListTags(context.Background(), test.repo)
 		if err != nil {
 			t.Errorf("%s: ListTags: %s", label, err)
 			continue

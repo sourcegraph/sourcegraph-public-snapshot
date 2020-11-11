@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"golang.org/x/oauth2"
 )
@@ -124,14 +125,14 @@ func derefInt64(i *int64) int64 {
 	return *i
 }
 
-func (s *sessionIssuerHelper) newClient(token string) *githubsvc.Client {
+func (s *sessionIssuerHelper) newClient(token string) *githubsvc.V3Client {
 	apiURL, _ := githubsvc.APIRoot(s.BaseURL)
-	return githubsvc.NewClient(apiURL, token, nil)
+	return githubsvc.NewV3Client(apiURL, &esauth.OAuthBearerToken{Token: token}, nil)
 }
 
 // getVerifiedEmails returns the list of user emails that are verified. If the primary email is verified,
 // it will be the first email in the returned list. It only checks the first 100 user emails.
-func getVerifiedEmails(ctx context.Context, ghClient *githubsvc.Client) (verifiedEmails []string) {
+func getVerifiedEmails(ctx context.Context, ghClient *githubsvc.V3Client) (verifiedEmails []string) {
 	emails, err := ghClient.GetAuthenticatedUserEmails(ctx)
 	if err != nil {
 		log15.Warn("Could not get GitHub authenticated user emails", "error", err)
@@ -151,7 +152,7 @@ func getVerifiedEmails(ctx context.Context, ghClient *githubsvc.Client) (verifie
 	return verifiedEmails
 }
 
-func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *githubsvc.Client) bool {
+func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *githubsvc.V3Client) bool {
 	if len(s.allowOrgs) == 0 {
 		return true
 	}

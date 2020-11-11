@@ -23,10 +23,7 @@ var allDockerImages = []string{
 	"repo-updater",
 	"searcher",
 	"symbols",
-	"precise-code-intel-bundle-manager",
 	"precise-code-intel-worker",
-	"precise-code-intel-indexer",
-	"precise-code-intel-indexer-vm",
 	"executor-queue",
 	"executor",
 
@@ -46,14 +43,14 @@ var allDockerImages = []string{
 
 // Verifies the docs formatting and builds the `docsite` command.
 func addDocs(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":memo:",
+	pipeline.AddStep(":memo: Check and build docsite",
 		bk.Cmd("./dev/ci/yarn-run.sh prettier-check"),
 		bk.Cmd("./dev/check/docsite.sh"))
 }
 
 // Adds the static check test step.
 func addCheck(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":white_check_mark:", bk.Cmd("./dev/check/all.sh"))
+	pipeline.AddStep(":white_check_mark: Misc Linters", bk.Cmd("./dev/check/all.sh"))
 }
 
 // Adds the lint test step.
@@ -70,28 +67,28 @@ func addLint(pipeline *bk.Pipeline) {
 	// - prettier 29s
 	// - stylelint 7s
 	// - graphql-lint 1s
-	pipeline.AddStep(":eslint:",
+	pipeline.AddStep(":eslint: Lint all Typescript",
 		bk.Cmd("dev/ci/yarn-run.sh build-ts all:eslint")) // eslint depends on build-ts
-	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :graphql:",
+	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :graphql:", // TODO: Add header - Similar to the previous step
 		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:stylelint graphql-lint all:tsgql"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
 func addWebApp(pipeline *bk.Pipeline) {
 	// Webapp build
-	pipeline.AddStep(":webpack::globe_with_meridians:",
+	pipeline.AddStep(":webpack::globe_with_meridians: Build",
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("ENTERPRISE", "0"))
 
 	// Webapp enterprise build
-	pipeline.AddStep(":webpack::globe_with_meridians::moneybag:",
+	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("ENTERPRISE", "1"))
 
 	// Webapp tests
-	pipeline.AddStep(":jest::globe_with_meridians:",
+	pipeline.AddStep(":jest::globe_with_meridians: Test",
 		bk.Cmd("dev/ci/yarn-test.sh client/web"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 }
@@ -99,11 +96,11 @@ func addWebApp(pipeline *bk.Pipeline) {
 // Builds and tests the browser extension.
 func addBrowserExt(pipeline *bk.Pipeline) {
 	// Browser extension build
-	pipeline.AddStep(":webpack::chrome:",
+	pipeline.AddStep(":webpack::chrome: Build browser extension",
 		bk.Cmd("dev/ci/yarn-build.sh client/browser"))
 
 	// Browser extension tests
-	pipeline.AddStep(":jest::chrome:",
+	pipeline.AddStep(":jest::chrome: Test browser extension",
 		bk.Cmd("dev/ci/yarn-test.sh client/browser"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 }
@@ -112,7 +109,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		// Client integration tests
-		pipeline.AddStep(":puppeteer::electric_plug:",
+		pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests",
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
 			bk.Env("ENTERPRISE", "1"),
 			bk.Env("PERCY_ON", "true"),
@@ -123,7 +120,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.ArtifactPaths("./puppeteer/*.png"))
 
 		// Storybook coverage
-		pipeline.AddStep(":storybook::codecov:",
+		pipeline.AddStep(":storybook::codecov: Code coverage",
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
 			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-storybook"),
 			bk.Cmd("yarn run cover-storybook"),
@@ -135,14 +132,14 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 		if !c.isPR() {
 			chromaticCommand += " --auto-accept-changes"
 		}
-		pipeline.AddStep(":chromatic:",
+		pipeline.AddStep(":chromatic: Upload storybook to Chromatic",
 			bk.AutomaticRetry(5),
 			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn gulp generate"),
 			bk.Cmd(chromaticCommand))
 
 		// Shared tests
-		pipeline.AddStep(":jest:",
+		pipeline.AddStep(":jest: Test shared client code",
 			bk.Cmd("dev/ci/yarn-test.sh client/shared"),
 			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 	}
@@ -155,21 +152,21 @@ func addPostgresBackcompat(pipeline *bk.Pipeline) {
 
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":go:",
+	pipeline.AddStep(":go: Test",
 		bk.Cmd("./dev/ci/go-test.sh"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F go"))
 }
 
 // Builds the OSS and Enterprise Go commands.
 func addGoBuild(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":go:",
+	pipeline.AddStep(":go: Build",
 		bk.Cmd("./dev/ci/go-build.sh"),
 	)
 }
 
 // Lints the Dockerfiles.
 func addDockerfileLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":docker:",
+	pipeline.AddStep(":docker: Lint",
 		bk.Cmd("./dev/ci/docker-lint.sh"))
 }
 
@@ -180,7 +177,7 @@ func addBackendIntegrationTests(c Config) func(*bk.Pipeline) {
 			return
 		}
 
-		pipeline.AddStep(":chains:",
+		pipeline.AddStep(":chains: Backend integration tests",
 			bk.Cmd("pushd enterprise"),
 			bk.Cmd("./cmd/server/pre-build.sh"),
 			bk.Cmd("./cmd/server/build.sh"),
@@ -192,21 +189,21 @@ func addBackendIntegrationTests(c Config) func(*bk.Pipeline) {
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
-	// TODO run this on firefox as well when our add-on is unblocked
-	browser := "chrome"
-	// Run e2e tests
-	pipeline.AddStep(fmt.Sprintf(":%s:", browser),
-		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-		bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
-		bk.Env("BROWSER", browser),
-		bk.Env("LOG_BROWSER_CONSOLE", "true"),
-		bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd client/browser"),
-		bk.Cmd("yarn -s run build"),
-		bk.Cmd("yarn -s mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts"),
-		bk.Cmd("popd"),
-		bk.ArtifactPaths("./puppeteer/*.png"))
+	for _, browser := range []string{"chrome", "firefox"} {
+		// Run e2e tests
+		pipeline.AddStep(fmt.Sprintf(":%s: E2E for %s extension", browser, browser),
+			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
+			bk.Env("BROWSER", browser),
+			bk.Env("LOG_BROWSER_CONSOLE", "true"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("pushd client/browser"),
+			bk.Cmd("yarn -s run build"),
+			bk.Cmd("yarn -s mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts"),
+			bk.Cmd("popd"),
+			bk.ArtifactPaths("./puppeteer/*.png"))
+	}
 }
 
 // Release the browser extension.
@@ -216,23 +213,22 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 	pipeline.AddWait()
 
 	// Release to the Chrome Webstore
-	pipeline.AddStep(":rocket::chrome:",
+	pipeline.AddStep(":rocket::chrome: Extension release",
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("pushd client/browser"),
 		bk.Cmd("yarn -s run build"),
 		bk.Cmd("yarn release:chrome"),
 		bk.Cmd("popd"))
 
-	// TODO uncomment this when our add-on will be unblocked
-	// Build and self sign the FF extension and upload it to ...
-	// pipeline.AddStep(":rocket::firefox:",
-	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-	// 	bk.Cmd("pushd client/browser"),
-	// 	bk.Cmd("yarn release:ff"),
-	// 	bk.Cmd("popd"))
+	// Build and self sign the FF add-on and upload it to a storage bucket
+	pipeline.AddStep(":rocket::firefox: Extension release",
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("pushd client/browser"),
+		bk.Cmd("yarn release:ff"),
+		bk.Cmd("popd"))
 
 	// Release to npm
-	pipeline.AddStep(":rocket::npm:",
+	pipeline.AddStep(":rocket::npm: NPM Release",
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("pushd client/browser"),
 		bk.Cmd("yarn -s run build"),
@@ -245,10 +241,7 @@ func wait(pipeline *bk.Pipeline) {
 	pipeline.AddWait()
 }
 
-func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
-	// Run e2e tests on release, patch and main branches
-	runE2E := c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "main"
-
+func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	var async bool
 	if c.branch == "main" {
 		async = true
@@ -266,13 +259,31 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["VERSION"] = commonEnv["VERSION"]
 	env["CI_DEBUG_PROFILE"] = commonEnv["CI_DEBUG_PROFILE"]
 
+	// Set variables that indicate the tag for 'us.gcr.io/sourcegraph-dev' images built
+	// from this CI run's commit, and credentials to access them.
+	env["CANDIDATE_VERSION"] = candidateImageTag(c)
+	env["VAGRANT_SERVICE_ACCOUNT"] = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
+
+	// Test upgrades from mininum upgradeable Sourcegraph version
+	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.20.0"
+
 	return func(pipeline *bk.Pipeline) {
-		if !runE2E {
+		if !c.shouldRunE2EandQA() {
 			return
 		}
 
-		pipeline.AddTrigger(":chromium:",
+		pipeline.AddTrigger(":chromium: Trigger E2E",
 			bk.Trigger("sourcegraph-e2e"),
+			bk.Async(async),
+			bk.Build(bk.BuildOptions{
+				Message: os.Getenv("BUILDKITE_MESSAGE"),
+				Commit:  c.commit,
+				Branch:  c.branch,
+				Env:     env,
+			}),
+		)
+		pipeline.AddTrigger(":chromium: Trigger QA",
+			bk.Trigger("qa"),
 			bk.Async(async),
 			bk.Build(bk.BuildOptions{
 				Message: os.Getenv("BUILDKITE_MESSAGE"),
@@ -294,8 +305,9 @@ func copyEnv(keys ...string) map[string]string {
 	return m
 }
 
-// Build all relevant Docker images for Sourcegraph, given the current CI case (e.g., "tagged
-// release", "release branch", "master branch", etc.)
+// Build all relevant Docker images for Sourcegraph (for example, candidates and final
+// images), given the current CI case (e.g., "tagged release", "release branch",
+// "master branch", etc.)
 func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 	addDockerImage := func(c Config, app string, insiders bool) func(*bk.Pipeline) {
 		if !final {
@@ -306,21 +318,36 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 
 	return func(pipeline *bk.Pipeline) {
 		switch {
+		// build all images for tagged releases
 		case c.taggedRelease:
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
+
+		// only build `sourcegraph/server` for release branch updates
 		case c.releaseBranch:
 			addDockerImage(c, "server", false)(pipeline)
-		case c.isMasterDryRun: // replicates `master` build but does not deploy
+
+		// replicates `main` build but does not deploy `insiders` images
+		case c.isMasterDryRun:
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
-		case c.branch == "master" || c.branch == "main":
+
+		// deploy `insiders` images for `main`
+		case c.branch == "main":
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, true)(pipeline)
 			}
 
+		// ensure candidate images are available for testing
+		case c.shouldRunE2EandQA():
+			for _, dockerImage := range allDockerImages {
+				addDockerImage(c, dockerImage, false)(pipeline)
+			}
+
+		// only build candidate image for the specified image in the branch name
+		// see https://about.sourcegraph.com/handbook/engineering/deployments/testing#building-docker-images-for-a-specific-branch
 		case strings.HasPrefix(c.branch, "docker-images-patch/"):
 			addDockerImage(c, c.branch[20:], false)(pipeline)
 		}
@@ -368,7 +395,7 @@ func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 			bk.Cmd(fmt.Sprintf("docker push %s:%s", gcrImage, tag)),
 		)
 
-		pipeline.AddStep(":docker: :construction:", cmds...)
+		pipeline.AddStep(fmt.Sprintf(":docker: :construction: %s", app), cmds...)
 	}
 }
 
@@ -398,10 +425,14 @@ func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline)
 		candidateImage := fmt.Sprintf("%s:%s", gcrImage, candidateImageTag(c))
 		cmd := fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(images, " "))
 
-		pipeline.AddStep(":docker: :white_check_mark:", bk.Cmd(cmd))
+		pipeline.AddStep(fmt.Sprintf(":docker: :white_check_mark: %s", app), bk.Cmd(cmd))
 	}
 }
 
+// candidateImageTag provides the tag for a candidate image built for this Buildkite run.
+//
+// Note that the availability of this image depends on whether a candidate gets built,
+// as determined in `addDockerImages()`.
 func candidateImageTag(c Config) string {
 	buildNumber := os.Getenv("BUILDKITE_BUILD_NUMBER")
 	return fmt.Sprintf("%s_%s_candidate", c.commit, buildNumber)

@@ -701,6 +701,33 @@ type Mutation {
     syncChangeset(changeset: ID!): EmptyResponse!
 
     """
+    Create a new credential for the requesting user for the given code host.
+    If another token for that code host already exists, an error with the error code
+    ErrDuplicateCredential is returned.
+    """
+    createCampaignsCredential(
+        """
+        The kind of external service being configured.
+        """
+        externalServiceKind: ExternalServiceKind!
+
+        """
+        The URL of the external service being configured.
+        """
+        externalServiceURL: String!
+
+        """
+        The credential to be stored. This can never be retrieved through the API and will be stored encrypted.
+        """
+        credential: String!
+    ): CampaignsCredential!
+
+    """
+    Hard-deletes a given campaigns credential.
+    """
+    deleteCampaignsCredential(campaignsCredential: ID!): EmptyResponse!
+
+    """
     OBSERVABILITY
 
     Set the status of a test alert of the specified parameters - useful for validating
@@ -712,6 +739,98 @@ type Mutation {
         """
         level: String!
     ): EmptyResponse!
+    """
+    Create a code monitor.
+    """
+    createCodeMonitor(
+        """
+        The namespace represents the owner of the code monitor.
+        Owners can either be users or organizations.
+        """
+        namespace: ID!
+        """
+        A meaningful description of the code monitor.
+        """
+        description: String!
+        """
+        Whether the code monitor is enabled or not.
+        """
+        enabled: Boolean!
+        """
+        A trigger.
+        """
+        trigger: MonitorTriggerInput!
+        """
+        A list of actions.
+        """
+        actions: [MonitorActionInput!]!
+    ): Monitor!
+}
+
+"""
+A connection of all code hosts usable with campaigns and accessible by the user
+this is requested on.
+"""
+type CampaignsCodeHostConnection {
+    """
+    A list of code hosts.
+    """
+    nodes: [CampaignsCodeHost!]!
+
+    """
+    The total number of configured external services in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A code host usable with campaigns. This service is accessible by the user it belongs to.
+"""
+type CampaignsCodeHost {
+    """
+    The kind of external service.
+    """
+    externalServiceKind: ExternalServiceKind!
+
+    """
+    The URL of the external service.
+    """
+    externalServiceURL: String!
+
+    """
+    The configured credential, if any.
+    """
+    credential: CampaignsCredential
+}
+
+"""
+A user token configured for campaigns use on the specified code host.
+"""
+type CampaignsCredential implements Node {
+    """
+    A globally unique identifier.
+    """
+    id: ID!
+
+    """
+    The kind of external service.
+    """
+    externalServiceKind: ExternalServiceKind!
+
+    """
+    The URL of the external service.
+    """
+    externalServiceURL: String!
+
+    """
+    The date and time this token has been created at.
+    """
+    createdAt: DateTime!
 }
 
 """
@@ -1154,6 +1273,11 @@ type Campaign implements Node {
     The date and time when the campaign was closed. If set, applying a spec for this campaign will fail with an error.
     """
     closedAt: DateTime
+
+    """
+    Stats on all the changesets that are tracked in this campaign.
+    """
+    changesetsStats: ChangesetsStats!
 
     """
     The changesets in this campaign that already exist on the code host.
@@ -1631,7 +1755,7 @@ type ExternalChangeset implements Node & Changeset {
 """
 Used in the campaign page for the overview component.
 """
-type ChangesetConnectionStats {
+type ChangesetsStats {
     """
     The count of unpublished changesets.
     """
@@ -1657,7 +1781,7 @@ type ChangesetConnectionStats {
     """
     deleted: Int!
     """
-    The count of all changesets. Equal to totalCount of the connection.
+    The count of all changesets.
     """
     total: Int!
 }
@@ -1680,11 +1804,6 @@ type ChangesetConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
-
-    """
-    Stats on all the changesets that are in this connection. Pagination has no effect on the stats.
-    """
-    stats: ChangesetConnectionStats!
 }
 
 """
@@ -2837,6 +2956,326 @@ type SavedSearch implements Node {
     The Slack webhook URL associated with this saved search, if any.
     """
     slackWebhookURL: String
+}
+
+"""
+A list of code monitors
+"""
+type MonitorConnection {
+    """
+    A list of monitors.
+    """
+    nodes: [Monitor!]!
+
+    """
+    The total number of monitors in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A code monitor with one trigger and possibly many actions.
+"""
+type Monitor implements Node {
+    """
+    The code monitor's unique ID.
+    """
+    id: ID!
+    """
+    The user who created the code monitor.
+    """
+    createdBy: User!
+    """
+    The time at which the code monitor was created.
+    """
+    createdAt: DateTime!
+    """
+    A meaningful description of the code monitor.
+    """
+    description: String!
+    """
+    Owners can edit the code monitor.
+    """
+    owner: Namespace!
+    """
+    Whether the code monitor is currently enabled.
+    """
+    enabled: Boolean!
+    """
+    Triggers trigger actions. There can only be one trigger per monitor.
+    """
+    trigger: MonitorTrigger
+    """
+    One or more actions that are triggered by the trigger.
+    """
+    actions(
+        """
+        Returns the first n actions from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionConnection!
+}
+
+"""
+A query that can serve as a trigger for code monitors.
+"""
+type MonitorQuery implements Node {
+    """
+    The unique id of a trigger query.
+    """
+    id: ID!
+    """
+    A query.
+    """
+    query: String!
+    """
+    A list of events.
+    """
+    events(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorTriggerEventConnection!
+}
+
+"""
+A list of trigger events.
+"""
+type MonitorTriggerEventConnection {
+    """
+    A list of events.
+    """
+    nodes: [MonitorTriggerEvent!]!
+    """
+    The total number of events in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A trigger event is an event together with a list of associated actions.
+"""
+type MonitorTriggerEvent implements Node {
+    """
+    The unique id of an event.
+    """
+    id: ID!
+    """
+    The status of an event.
+    """
+    status: EventStatus!
+    """
+    A message with details regarding the status of the event.
+    """
+    message: String
+    """
+    The time and date of the event.
+    """
+    timestamp: DateTime!
+    """
+    A list of actions.
+    """
+    actions(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionConnection!
+}
+
+"""
+Supported triggers for code monitors.
+"""
+union MonitorTrigger = MonitorQuery
+
+"""
+A list of actions.
+"""
+type MonitorActionConnection {
+    """
+    A list of actions.
+    """
+    nodes: [MonitorAction!]!
+
+    """
+    The total number of actions in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Supported actions for code monitors.
+"""
+union MonitorAction = MonitorEmail
+
+"""
+Email is one of the supported actions of code monitors.
+"""
+type MonitorEmail implements Node {
+    """
+    The unique id of an email action.
+    """
+    id: ID!
+    """
+    Whether the email action is enabled or not.
+    """
+    enabled: Boolean!
+    """
+    The priority of the email action.
+    """
+    priority: MonitorEmailPriority!
+    """
+    Use header to automatically approve the message in a read-only or moderated mailing list.
+    """
+    header: String!
+    """
+    The recipients of the email.
+    """
+    recipient: MonitorEmailRecipient!
+    """
+    A list of events.
+    """
+    events(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionEventConnection!
+}
+
+"""
+The priority of an email action.
+"""
+enum MonitorEmailPriority {
+    NORMAL
+    CRITICAL
+}
+
+"""
+Supported types of recipients for email actions.
+"""
+union MonitorEmailRecipient = User
+
+"""
+A list of events.
+"""
+type MonitorActionEventConnection {
+    """
+    A list of events.
+    """
+    nodes: [MonitorActionEvent!]!
+    """
+    The total number of events in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An event documents the result of a trigger or an execution of an action.
+"""
+type MonitorActionEvent implements Node {
+    """
+    The unique id of an event.
+    """
+    id: ID!
+    """
+    The status of an event.
+    """
+    status: EventStatus!
+    """
+    A message with details regarding the status of the event.
+    """
+    message: String
+    """
+    The time and date of the event.
+    """
+    timestamp: DateTime!
+}
+
+"""
+Supported status of monitor events.
+"""
+enum EventStatus {
+    PENDING
+    SUCCESS
+    ERROR
+}
+
+"""
+The input required to create a trigger.
+"""
+input MonitorTriggerInput {
+    """
+    The query string.
+    """
+    query: String!
+}
+
+"""
+The input required to create an action.
+"""
+input MonitorActionInput {
+    """
+    An email action.
+    """
+    email: MonitorEmailInput
+}
+
+"""
+The input required to create an email action.
+"""
+input MonitorEmailInput {
+    """
+    Whether the email action is enabled or not.
+    """
+    enabled: Boolean!
+    """
+    The priority of the email.
+    """
+    priority: MonitorEmailPriority!
+    """
+    A list of users or orgs which will receive the email.
+    """
+    recipients: [ID!]!
+    """
+    Use header to automatically approve the message in a read-only or moderated mailing list.
+    """
+    header: String!
 }
 
 """
@@ -5565,6 +6004,36 @@ type User implements Node & SettingsSubject & Namespace {
         """
         viewerCanAdminister: Boolean
     ): CampaignConnection!
+
+    """
+    Returns a connection of configured external services accessible by this user, for usage with campaigns.
+    These are all code hosts configured on the Sourcegraph instance that are supported by campaigns. They are
+    connected to CampaignCredential resources, if one has been created for the code host connection before.
+    """
+    campaignsCodeHosts(
+        """
+        Returns the first n code hosts from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): CampaignsCodeHostConnection!
+
+    """
+    A list of monitors owned by the user or her organization.
+    """
+    monitors(
+        """
+        Returns the first n monitors from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorConnection!
 }
 
 """

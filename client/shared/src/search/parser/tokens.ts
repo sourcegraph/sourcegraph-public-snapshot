@@ -1,52 +1,42 @@
 import * as Monaco from 'monaco-editor'
-import { Sequence } from './parser'
+import { Token } from './scanner'
 
 /**
- * Returns the tokens in a parsed search query displayed in the Monaco query input.
+ * Returns the tokens in a scanned search query displayed in the Monaco query input.
  */
-export function getMonacoTokens(parsedQuery: Pick<Sequence, 'members'>): Monaco.languages.IToken[] {
-    const tokens: Monaco.languages.IToken[] = []
-    for (const { token, range } of parsedQuery.members) {
+export function getMonacoTokens(tokens: Token[]): Monaco.languages.IToken[] {
+    const monacoTokens: Monaco.languages.IToken[] = []
+    for (const token of tokens) {
         switch (token.type) {
-            case 'whitespace':
-                tokens.push({
-                    startIndex: range.start,
-                    scopes: 'whitespace',
-                })
-                break
             case 'filter':
                 {
-                    tokens.push({
+                    monacoTokens.push({
                         startIndex: token.filterType.range.start,
-                        scopes: 'keyword',
+                        scopes: 'filterKeyword',
                     })
                     if (token.filterValue) {
-                        tokens.push({
+                        monacoTokens.push({
                             startIndex: token.filterValue.range.start,
                             scopes: 'identifier',
                         })
                     }
                 }
                 break
-            case 'operator':
-                tokens.push({
-                    startIndex: range.start,
-                    scopes: 'operator',
-                })
-                break
+            case 'whitespace':
+            case 'keyword':
             case 'comment':
-                tokens.push({
-                    startIndex: range.start,
-                    scopes: 'comment',
+                monacoTokens.push({
+                    startIndex: token.range.start,
+                    scopes: token.type,
                 })
                 break
             default:
-                tokens.push({
-                    startIndex: range.start,
+                monacoTokens.push({
+                    startIndex: token.range.start,
                     scopes: 'identifier',
                 })
                 break
         }
     }
-    return tokens
+    return monacoTokens
 }

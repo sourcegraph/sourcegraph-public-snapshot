@@ -1,6 +1,7 @@
 package git
 
 import (
+	"context"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -8,6 +9,7 @@ import (
 
 func TestMerger_MergeBase(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
 
 	// TODO(sqs): implement for hg
 	// TODO(sqs): make a more complex test case

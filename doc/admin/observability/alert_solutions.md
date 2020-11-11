@@ -393,11 +393,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```
 
 <br />
-## frontend: 99th_percentile_precise_code_intel_api_duration
+## frontend: codeintel_api_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful precise code intel api query duration over 5m</p>**Descriptions:**
+<p class="subtitle">code-intel: 99th percentile successful api operation duration over 5m</p>**Descriptions:**
 
-- _frontend: 20s+ 99th percentile successful precise code intel api query duration over 5m_
+- _frontend: 20s+ 99th percentile successful api operation duration over 5m_
 
 **Possible solutions:**
 
@@ -405,16 +405,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_99th_percentile_precise_code_intel_api_duration"
+  "warning_frontend_codeintel_api_99th_percentile_duration"
 ]
 ```
 
 <br />
-## frontend: precise_code_intel_api_errors
+## frontend: codeintel_api_errors
 
-<p class="subtitle">code-intel: precise code intel api errors every 5m</p>**Descriptions:**
+<p class="subtitle">code-intel: api errors every 5m</p>**Descriptions:**
 
-- _frontend: 5%+ precise code intel api errors every 5m for 15m0s_
+- _frontend: 20+ api errors every 5m_
 
 **Possible solutions:**
 
@@ -422,16 +422,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_precise_code_intel_api_errors"
+  "warning_frontend_codeintel_api_errors"
 ]
 ```
 
 <br />
-## frontend: code_intel_frontend_db_store_99th_percentile_duration
+## frontend: codeintel_dbstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful frontend database query duration over 5m</p>**Descriptions:**
+<p class="subtitle">code-intel: 99th percentile successful dbstore operation duration over 5m</p>**Descriptions:**
 
-- _frontend: 20s+ 99th percentile successful frontend database query duration over 5m_
+- _frontend: 20s+ 99th percentile successful dbstore operation duration over 5m_
 
 **Possible solutions:**
 
@@ -439,16 +439,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_code_intel_frontend_db_store_99th_percentile_duration"
+  "warning_frontend_codeintel_dbstore_99th_percentile_duration"
 ]
 ```
 
 <br />
-## frontend: code_intel_frontend_db_store_errors
+## frontend: codeintel_dbstore_errors
 
-<p class="subtitle">code-intel: frontend database errors every 5m</p>**Descriptions:**
+<p class="subtitle">code-intel: dbstore errors every 5m</p>**Descriptions:**
 
-- _frontend: 20+ frontend database errors every 5m_
+- _frontend: 20+ dbstore errors every 5m_
 
 **Possible solutions:**
 
@@ -456,16 +456,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_code_intel_frontend_db_store_errors"
+  "warning_frontend_codeintel_dbstore_errors"
 ]
 ```
 
 <br />
-## frontend: code_intel_codeintel_db_store_99th_percentile_duration
+## frontend: codeintel_lsifstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful codeintel database query duration over 5m</p>**Descriptions:**
+<p class="subtitle">code-intel: 99th percentile successful lsifstore operation duration over 5m</p>**Descriptions:**
 
-- _frontend: 20s+ 99th percentile successful codeintel database query duration over 5m_
+- _frontend: 20s+ 99th percentile successful lsifstore operation duration over 5m_
 
 **Possible solutions:**
 
@@ -473,16 +473,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_code_intel_codeintel_db_store_99th_percentile_duration"
+  "warning_frontend_codeintel_lsifstore_99th_percentile_duration"
 ]
 ```
 
 <br />
-## frontend: code_intel_codeintel_db_store_errors
+## frontend: codeintel_lsifstore_errors
 
-<p class="subtitle">code-intel: codeintel database every 5m</p>**Descriptions:**
+<p class="subtitle">code-intel: lsifstore errors every 5m</p>**Descriptions:**
 
-- _frontend: 20+ codeintel database every 5m_
+- _frontend: 20+ lsifstore errors every 5m_
 
 **Possible solutions:**
 
@@ -490,16 +490,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_code_intel_codeintel_db_store_errors"
+  "warning_frontend_codeintel_lsifstore_errors"
 ]
 ```
 
 <br />
-## frontend: code_intel_bundle_store_99th_percentile_duration
+## frontend: codeintel_uploadstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful bundle database store operation duration over 5m</p>**Descriptions:**
+<p class="subtitle">code-intel: 99th percentile successful uploadstore operation duration over 5m</p>**Descriptions:**
 
-- _frontend: 20s+ 99th percentile successful bundle database store operation duration over 5m_
+- _frontend: 20s+ 99th percentile successful uploadstore operation duration over 5m_
 
 **Possible solutions:**
 
@@ -507,16 +507,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_code_intel_bundle_store_99th_percentile_duration"
+  "warning_frontend_codeintel_uploadstore_99th_percentile_duration"
 ]
 ```
 
 <br />
-## frontend: code_intel_bundle_store_errors
+## frontend: codeintel_uploadstore_errors
 
-<p class="subtitle">code-intel: bundle store errors every 5m</p>**Descriptions:**
+<p class="subtitle">code-intel: uploadstore errors every 5m</p>**Descriptions:**
 
-- _frontend: 20+ bundle store errors every 5m_
+- _frontend: 20+ uploadstore errors every 5m_
 
 **Possible solutions:**
 
@@ -524,7 +524,41 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_code_intel_bundle_store_errors"
+  "warning_frontend_codeintel_uploadstore_errors"
+]
+```
+
+<br />
+## frontend: codeintel_gitserver_99th_percentile_duration
+
+<p class="subtitle">code-intel: 99th percentile successful gitserver operation duration over 5m</p>**Descriptions:**
+
+- _frontend: 20s+ 99th percentile successful gitserver operation duration over 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_codeintel_gitserver_99th_percentile_duration"
+]
+```
+
+<br />
+## frontend: codeintel_gitserver_errors
+
+<p class="subtitle">code-intel: gitserver errors every 5m</p>**Descriptions:**
+
+- _frontend: 20+ gitserver errors every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_codeintel_gitserver_errors"
 ]
 ```
 
@@ -788,7 +822,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">cloud: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _frontend: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _frontend: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -809,7 +843,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">cloud: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _frontend: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
+- _frontend: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -1144,7 +1178,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">cloud: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _gitserver: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _gitserver: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -1372,7 +1406,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">cloud: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _github-proxy: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _github-proxy: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -1393,7 +1427,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">cloud: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _github-proxy: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
+- _github-proxy: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -1499,448 +1533,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```
 
 <br />
-## precise-code-intel-bundle-manager: code_intel_frontend_db_store_99th_percentile_duration
-
-<p class="subtitle">code-intel: 99th percentile successful frontend database query duration over 5m</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 20s+ 99th percentile successful frontend database query duration over 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_code_intel_frontend_db_store_99th_percentile_duration"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: code_intel_frontend_db_store_errors
-
-<p class="subtitle">code-intel: frontend database errors every 5m</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 20+ frontend database errors every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_code_intel_frontend_db_store_errors"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: code_intel_codeintel_db_store_99th_percentile_duration
-
-<p class="subtitle">code-intel: 99th percentile successful codeintel database query duration over 5m</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 20s+ 99th percentile successful codeintel database query duration over 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_code_intel_codeintel_db_store_99th_percentile_duration"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: code_intel_codeintel_db_store_errors
-
-<p class="subtitle">code-intel: codeintel database every 5m</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 20+ codeintel database every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_code_intel_codeintel_db_store_errors"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: code_intel_bundle_store_99th_percentile_duration
-
-<p class="subtitle">code-intel: 99th percentile successful bundle database store operation duration over 5m</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 20s+ 99th percentile successful bundle database store operation duration over 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_code_intel_bundle_store_99th_percentile_duration"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: code_intel_bundle_store_errors
-
-<p class="subtitle">code-intel: bundle store errors every 5m</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 20+ bundle store errors every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_code_intel_bundle_store_errors"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: disk_space_remaining
-
-<p class="subtitle">code-intel: disk space remaining by instance</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: less than 25% disk space remaining by instance_
-- _precise-code-intel-bundle-manager: less than 15% disk space remaining by instance_
-
-**Possible solutions:**
-
-- 	- **Provision more disk space:** Sourcegraph will begin deleting the oldest uploaded bundle files at 10% disk space remaining.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_disk_space_remaining",
-  "critical_precise-code-intel-bundle-manager_disk_space_remaining"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: janitor_errors
-
-<p class="subtitle">code-intel: janitor errors every 5m</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 20+ janitor errors every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_janitor_errors"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: janitor_upload_files_removed
-
-<p class="subtitle">code-intel: upload files removed (due to age) every 5m</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 20+ upload files removed (due to age) every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_janitor_upload_files_removed"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: janitor_upload_part_files_removed
-
-<p class="subtitle">code-intel: upload part files removed (due to age) every 5m</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 20+ upload part files removed (due to age) every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_janitor_upload_part_files_removed"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: janitor_upload_records_removed
-
-<p class="subtitle">code-intel: upload records removed every 5m</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 20+ upload records removed every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_janitor_upload_records_removed"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: janitor_data_rows_removed
-
-<p class="subtitle">code-intel: codeintel database rows removed (due to deleted upload) every 5m</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 20+ codeintel database rows removed (due to deleted upload) every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_janitor_data_rows_removed"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: frontend_internal_api_error_responses
-
-<p class="subtitle">code-intel: frontend-internal API error responses every 5m by route</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 2%+ frontend-internal API error responses every 5m by route for 5m0s_
-
-**Possible solutions:**
-
-- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
-- **Kubernetes:**
-	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
-	- Check `kubectl logs precise-code-intel-bundle-manager` for logs indicate request failures to `frontend` or `frontend-internal`.
-- **Docker Compose:**
-	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
-	- Check `docker logs precise-code-intel-bundle-manager` for logs indicating request failures to `frontend` or `frontend-internal`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_frontend_internal_api_error_responses"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: container_cpu_usage
-
-<p class="subtitle">code-intel: container cpu usage total (1m average) across all cores by instance</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 99%+ container cpu usage total (1m average) across all cores by instance_
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_container_cpu_usage"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: container_memory_usage
-
-<p class="subtitle">code-intel: container memory usage by instance</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 99%+ container memory usage by instance_
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_container_memory_usage"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: container_restarts
-
-<p class="subtitle">code-intel: container restarts every 5m by instance</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 1+ container restarts every 5m by instance_
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-bundle-manager` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-bundle-manager`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-bundle-manager` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-bundle-manager` (note this will include logs from the previous and currently running container).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_container_restarts"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: fs_inodes_used
-
-<p class="subtitle">code-intel: fs inodes in use by instance</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 3e+06+ fs inodes in use by instance_
-
-**Possible solutions:**
-
-- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_fs_inodes_used"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: provisioning_container_cpu_usage_long_term
-
-<p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
-
-**Possible solutions:**
-
-- If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the precise-code-intel-bundle-manager service.
-	- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_long_term"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: provisioning_container_memory_usage_long_term
-
-<p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
-
-**Possible solutions:**
-
-- If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the precise-code-intel-bundle-manager service.
-	- **Docker Compose:** Consider increasing `memory:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_long_term"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: provisioning_container_cpu_usage_short_term
-
-<p class="subtitle">code-intel: container cpu usage total (5m maximum) across all cores by instance</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-bundle-manager container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_provisioning_container_cpu_usage_short_term"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: provisioning_container_memory_usage_short_term
-
-<p class="subtitle">code-intel: container memory usage (5m maximum) by instance</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 90%+ container memory usage (5m maximum) by instance_
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-bundle-manager container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_provisioning_container_memory_usage_short_term"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: go_goroutines
-
-<p class="subtitle">code-intel: maximum active goroutines</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 10000+ maximum active goroutines for 10m0s_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_go_goroutines"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: go_gc_duration_seconds
-
-<p class="subtitle">code-intel: maximum go garbage collection duration</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: 2s+ maximum go garbage collection duration_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-bundle-manager_go_gc_duration_seconds"
-]
-```
-
-<br />
-## precise-code-intel-bundle-manager: pods_available_percentage
-
-<p class="subtitle">code-intel: percentage pods available</p>**Descriptions:**
-
-- _precise-code-intel-bundle-manager: less than 90% percentage pods available for 10m0s_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_precise-code-intel-bundle-manager_pods_available_percentage"
-]
-```
-
-<br />
 ## precise-code-intel-worker: upload_queue_size
 
 <p class="subtitle">code-intel: upload queue size</p>**Descriptions:**
@@ -1992,11 +1584,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```
 
 <br />
-## precise-code-intel-worker: code_intel_frontend_db_store_99th_percentile_duration
+## precise-code-intel-worker: codeintel_dbstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful frontend database query duration over 5m</p>**Descriptions:**
+<p class="subtitle">code-intel: 99th percentile successful dbstore operation duration over 5m</p>**Descriptions:**
 
-- _precise-code-intel-worker: 20s+ 99th percentile successful frontend database query duration over 5m_
+- _precise-code-intel-worker: 20s+ 99th percentile successful dbstore operation duration over 5m_
 
 **Possible solutions:**
 
@@ -2004,16 +1596,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_code_intel_frontend_db_store_99th_percentile_duration"
+  "warning_precise-code-intel-worker_codeintel_dbstore_99th_percentile_duration"
 ]
 ```
 
 <br />
-## precise-code-intel-worker: code_intel_frontend_db_store_errors
+## precise-code-intel-worker: codeintel_dbstore_errors
 
-<p class="subtitle">code-intel: frontend database errors every 5m</p>**Descriptions:**
+<p class="subtitle">code-intel: dbstore errors every 5m</p>**Descriptions:**
 
-- _precise-code-intel-worker: 20+ frontend database errors every 5m_
+- _precise-code-intel-worker: 20+ dbstore errors every 5m_
 
 **Possible solutions:**
 
@@ -2021,16 +1613,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_code_intel_frontend_db_store_errors"
+  "warning_precise-code-intel-worker_codeintel_dbstore_errors"
 ]
 ```
 
 <br />
-## precise-code-intel-worker: code_intel_codeintel_db_store_99th_percentile_duration
+## precise-code-intel-worker: codeintel_lsifstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful codeintel database query duration over 5m</p>**Descriptions:**
+<p class="subtitle">code-intel: 99th percentile successful lsifstore operation duration over 5m</p>**Descriptions:**
 
-- _precise-code-intel-worker: 20s+ 99th percentile successful codeintel database query duration over 5m_
+- _precise-code-intel-worker: 20s+ 99th percentile successful lsifstore operation duration over 5m_
 
 **Possible solutions:**
 
@@ -2038,16 +1630,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_code_intel_codeintel_db_store_99th_percentile_duration"
+  "warning_precise-code-intel-worker_codeintel_lsifstore_99th_percentile_duration"
 ]
 ```
 
 <br />
-## precise-code-intel-worker: code_intel_codeintel_db_store_errors
+## precise-code-intel-worker: codeintel_lsifstore_errors
 
-<p class="subtitle">code-intel: codeintel database errors every 5m</p>**Descriptions:**
+<p class="subtitle">code-intel: lsifstore errors every 5m</p>**Descriptions:**
 
-- _precise-code-intel-worker: 20+ codeintel database errors every 5m_
+- _precise-code-intel-worker: 20+ lsifstore errors every 5m_
 
 **Possible solutions:**
 
@@ -2055,16 +1647,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_code_intel_codeintel_db_store_errors"
+  "warning_precise-code-intel-worker_codeintel_lsifstore_errors"
 ]
 ```
 
 <br />
-## precise-code-intel-worker: processing_uploads_reset
+## precise-code-intel-worker: codeintel_uploadstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: uploads reset to queued state every 5m</p>**Descriptions:**
+<p class="subtitle">code-intel: 99th percentile successful uploadstore operation duration over 5m</p>**Descriptions:**
 
-- _precise-code-intel-worker: 20+ uploads reset to queued state every 5m_
+- _precise-code-intel-worker: 20s+ 99th percentile successful uploadstore operation duration over 5m_
 
 **Possible solutions:**
 
@@ -2072,16 +1664,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_processing_uploads_reset"
+  "warning_precise-code-intel-worker_codeintel_uploadstore_99th_percentile_duration"
 ]
 ```
 
 <br />
-## precise-code-intel-worker: processing_uploads_reset_failures
+## precise-code-intel-worker: codeintel_uploadstore_errors
 
-<p class="subtitle">code-intel: uploads errored after repeated resets every 5m</p>**Descriptions:**
+<p class="subtitle">code-intel: uploadstore errors every 5m</p>**Descriptions:**
 
-- _precise-code-intel-worker: 20+ uploads errored after repeated resets every 5m_
+- _precise-code-intel-worker: 20+ uploadstore errors every 5m_
 
 **Possible solutions:**
 
@@ -2089,16 +1681,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_processing_uploads_reset_failures"
+  "warning_precise-code-intel-worker_codeintel_uploadstore_errors"
 ]
 ```
 
 <br />
-## precise-code-intel-worker: upload_resetter_errors
+## precise-code-intel-worker: codeintel_gitserver_99th_percentile_duration
 
-<p class="subtitle">code-intel: upload resetter errors every 5m</p>**Descriptions:**
+<p class="subtitle">code-intel: 99th percentile successful gitserver operation duration over 5m</p>**Descriptions:**
 
-- _precise-code-intel-worker: 20+ upload resetter errors every 5m_
+- _precise-code-intel-worker: 20s+ 99th percentile successful gitserver operation duration over 5m_
 
 **Possible solutions:**
 
@@ -2106,33 +1698,16 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_upload_resetter_errors"
+  "warning_precise-code-intel-worker_codeintel_gitserver_99th_percentile_duration"
 ]
 ```
 
 <br />
-## precise-code-intel-worker: 99th_percentile_bundle_manager_transfer_duration
+## precise-code-intel-worker: codeintel_gitserver_errors
 
-<p class="subtitle">code-intel: 99th percentile successful bundle manager data transfer duration over 5m</p>**Descriptions:**
+<p class="subtitle">code-intel: gitserver errors every 5m</p>**Descriptions:**
 
-- _precise-code-intel-worker: 300s+ 99th percentile successful bundle manager data transfer duration over 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_99th_percentile_bundle_manager_transfer_duration"
-]
-```
-
-<br />
-## precise-code-intel-worker: bundle_manager_error_responses
-
-<p class="subtitle">code-intel: bundle manager error responses every 5m</p>**Descriptions:**
-
-- _precise-code-intel-worker: 5+ bundle manager error responses every 5m_
+- _precise-code-intel-worker: 20+ gitserver errors every 5m_
 
 **Possible solutions:**
 
@@ -2140,41 +1715,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_bundle_manager_error_responses"
-]
-```
-
-<br />
-## precise-code-intel-worker: 99th_percentile_gitserver_duration
-
-<p class="subtitle">code-intel: 99th percentile successful gitserver query duration over 5m</p>**Descriptions:**
-
-- _precise-code-intel-worker: 20s+ 99th percentile successful gitserver query duration over 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_99th_percentile_gitserver_duration"
-]
-```
-
-<br />
-## precise-code-intel-worker: gitserver_error_responses
-
-<p class="subtitle">code-intel: gitserver error responses every 5m</p>**Descriptions:**
-
-- _precise-code-intel-worker: 5%+ gitserver error responses every 5m for 15m0s_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_gitserver_error_responses"
+  "warning_precise-code-intel-worker_codeintel_gitserver_errors"
 ]
 ```
 
@@ -2287,7 +1828,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _precise-code-intel-worker: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -2308,7 +1849,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
+- _precise-code-intel-worker: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -2410,479 +1951,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "critical_precise-code-intel-worker_pods_available_percentage"
-]
-```
-
-<br />
-## precise-code-intel-indexer: index_queue_size
-
-<p class="subtitle">code-intel: index queue size</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 100+ index queue size_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_index_queue_size"
-]
-```
-
-<br />
-## precise-code-intel-indexer: index_queue_growth_rate
-
-<p class="subtitle">code-intel: index queue growth rate every 5m</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 5+ index queue growth rate every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_index_queue_growth_rate"
-]
-```
-
-<br />
-## precise-code-intel-indexer: index_process_errors
-
-<p class="subtitle">code-intel: index process errors every 5m</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 20+ index process errors every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_index_process_errors"
-]
-```
-
-<br />
-## precise-code-intel-indexer: code_intel_frontend_db_store_99th_percentile_duration
-
-<p class="subtitle">code-intel: 99th percentile successful frontend database query duration over 5m</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 20s+ 99th percentile successful frontend database query duration over 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_code_intel_frontend_db_store_99th_percentile_duration"
-]
-```
-
-<br />
-## precise-code-intel-indexer: code_intel_frontend_db_store_errors
-
-<p class="subtitle">code-intel: frontend database errors every 5m</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 20+ frontend database errors every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_code_intel_frontend_db_store_errors"
-]
-```
-
-<br />
-## precise-code-intel-indexer: indexability_updater_errors
-
-<p class="subtitle">code-intel: indexability updater errors every 5m</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 20+ indexability updater errors every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_indexability_updater_errors"
-]
-```
-
-<br />
-## precise-code-intel-indexer: index_scheduler_errors
-
-<p class="subtitle">code-intel: index scheduler errors every 5m</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 20+ index scheduler errors every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_index_scheduler_errors"
-]
-```
-
-<br />
-## precise-code-intel-indexer: processing_indexes_reset
-
-<p class="subtitle">code-intel: indexes reset to queued state every 5m</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 20+ indexes reset to queued state every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_processing_indexes_reset"
-]
-```
-
-<br />
-## precise-code-intel-indexer: processing_indexes_reset_failures
-
-<p class="subtitle">code-intel: indexes errored after repeated resets every 5m</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 20+ indexes errored after repeated resets every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_processing_indexes_reset_failures"
-]
-```
-
-<br />
-## precise-code-intel-indexer: index_resetter_errors
-
-<p class="subtitle">code-intel: index resetter errors every 5m</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 20+ index resetter errors every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_index_resetter_errors"
-]
-```
-
-<br />
-## precise-code-intel-indexer: janitor_errors
-
-<p class="subtitle">code-intel: janitor errors every 5m</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 20+ janitor errors every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_janitor_errors"
-]
-```
-
-<br />
-## precise-code-intel-indexer: janitor_indexes_removed
-
-<p class="subtitle">code-intel: index records removed every 5m</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 20+ index records removed every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_janitor_indexes_removed"
-]
-```
-
-<br />
-## precise-code-intel-indexer: 99th_percentile_gitserver_duration
-
-<p class="subtitle">code-intel: 99th percentile successful gitserver query duration over 5m</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 20s+ 99th percentile successful gitserver query duration over 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_99th_percentile_gitserver_duration"
-]
-```
-
-<br />
-## precise-code-intel-indexer: gitserver_error_responses
-
-<p class="subtitle">code-intel: gitserver error responses every 5m</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 5%+ gitserver error responses every 5m for 15m0s_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_gitserver_error_responses"
-]
-```
-
-<br />
-## precise-code-intel-indexer: frontend_internal_api_error_responses
-
-<p class="subtitle">code-intel: frontend-internal API error responses every 5m by route</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 2%+ frontend-internal API error responses every 5m by route for 5m0s_
-
-**Possible solutions:**
-
-- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
-- **Kubernetes:**
-	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
-	- Check `kubectl logs precise-code-intel-indexer` for logs indicate request failures to `frontend` or `frontend-internal`.
-- **Docker Compose:**
-	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
-	- Check `docker logs precise-code-intel-indexer` for logs indicating request failures to `frontend` or `frontend-internal`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_frontend_internal_api_error_responses"
-]
-```
-
-<br />
-## precise-code-intel-indexer: container_cpu_usage
-
-<p class="subtitle">code-intel: container cpu usage total (1m average) across all cores by instance</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 99%+ container cpu usage total (1m average) across all cores by instance_
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_container_cpu_usage"
-]
-```
-
-<br />
-## precise-code-intel-indexer: container_memory_usage
-
-<p class="subtitle">code-intel: container memory usage by instance</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 99%+ container memory usage by instance_
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_container_memory_usage"
-]
-```
-
-<br />
-## precise-code-intel-indexer: container_restarts
-
-<p class="subtitle">code-intel: container restarts every 5m by instance</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 1+ container restarts every 5m by instance_
-
-**Possible solutions:**
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-indexer` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-indexer`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-indexer` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-indexer container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-indexer` (note this will include logs from the previous and currently running container).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_container_restarts"
-]
-```
-
-<br />
-## precise-code-intel-indexer: fs_inodes_used
-
-<p class="subtitle">code-intel: fs inodes in use by instance</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 3e+06+ fs inodes in use by instance_
-
-**Possible solutions:**
-
-- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
-			- **Kubernetes:** consider provisioning more machines with less resources.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_fs_inodes_used"
-]
-```
-
-<br />
-## precise-code-intel-indexer: provisioning_container_cpu_usage_long_term
-
-<p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
-
-**Possible solutions:**
-
-- If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the precise-code-intel-indexer service.
-	- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_provisioning_container_cpu_usage_long_term"
-]
-```
-
-<br />
-## precise-code-intel-indexer: provisioning_container_memory_usage_long_term
-
-<p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
-
-**Possible solutions:**
-
-- If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the precise-code-intel-indexer service.
-	- **Docker Compose:** Consider increasing `memory:` of the precise-code-intel-indexer container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_provisioning_container_memory_usage_long_term"
-]
-```
-
-<br />
-## precise-code-intel-indexer: provisioning_container_cpu_usage_short_term
-
-<p class="subtitle">code-intel: container cpu usage total (5m maximum) across all cores by instance</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-indexer container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_provisioning_container_cpu_usage_short_term"
-]
-```
-
-<br />
-## precise-code-intel-indexer: provisioning_container_memory_usage_short_term
-
-<p class="subtitle">code-intel: container memory usage (5m maximum) by instance</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 90%+ container memory usage (5m maximum) by instance_
-
-**Possible solutions:**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-indexer container in `docker-compose.yml`.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_provisioning_container_memory_usage_short_term"
-]
-```
-
-<br />
-## precise-code-intel-indexer: go_goroutines
-
-<p class="subtitle">code-intel: maximum active goroutines</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 10000+ maximum active goroutines for 10m0s_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_go_goroutines"
-]
-```
-
-<br />
-## precise-code-intel-indexer: go_gc_duration_seconds
-
-<p class="subtitle">code-intel: maximum go garbage collection duration</p>**Descriptions:**
-
-- _precise-code-intel-indexer: 2s+ maximum go garbage collection duration_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_go_gc_duration_seconds"
-]
-```
-
-<br />
-## precise-code-intel-indexer: pods_available_percentage
-
-<p class="subtitle">code-intel: percentage pods available</p>**Descriptions:**
-
-- _precise-code-intel-indexer: less than 90% percentage pods available for 10m0s_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_precise-code-intel-indexer_pods_available_percentage"
 ]
 ```
 
@@ -2995,7 +2063,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">search: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _query-runner: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _query-runner: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -3016,7 +2084,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">search: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _query-runner: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
+- _query-runner: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -3720,7 +2788,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">cloud: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _repo-updater: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _repo-updater: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -3741,7 +2809,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">cloud: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _repo-updater: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
+- _repo-updater: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -3989,7 +3057,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">search: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _searcher: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _searcher: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -4010,7 +3078,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">search: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _searcher: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
+- _searcher: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -4258,7 +3326,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _symbols: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _symbols: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -4279,7 +3347,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _symbols: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
+- _symbols: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -4537,7 +3605,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _syntect-server: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _syntect-server: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -4558,7 +3626,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _syntect-server: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
+- _syntect-server: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -4750,7 +3818,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">search: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _zoekt-indexserver: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -4771,7 +3839,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">search: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
+- _zoekt-indexserver: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -4961,7 +4029,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">search: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _zoekt-webserver: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -4982,7 +4050,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">search: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
+- _zoekt-webserver: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -5156,7 +4224,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">distribution: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _prometheus: 80%+ or less than 30% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _prometheus: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -5177,7 +4245,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">distribution: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _prometheus: 80%+ or less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
+- _prometheus: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
@@ -5245,6 +4313,292 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "critical_prometheus_pods_available_percentage"
+]
+```
+
+<br />
+## executor-queue: executor_queue_size
+
+<p class="subtitle">code-intel: executor queue size</p>**Descriptions:**
+
+- _executor-queue: 100+ executor queue size_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor-queue_executor_queue_size"
+]
+```
+
+<br />
+## executor-queue: executor_queue_growth_rate
+
+<p class="subtitle">code-intel: executor queue growth rate every 5m</p>**Descriptions:**
+
+- _executor-queue: 5+ executor queue growth rate every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor-queue_executor_queue_growth_rate"
+]
+```
+
+<br />
+## executor-queue: executor_process_errors
+
+<p class="subtitle">code-intel: executor process errors every 5m</p>**Descriptions:**
+
+- _executor-queue: 20+ executor process errors every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor-queue_executor_process_errors"
+]
+```
+
+<br />
+## executor-queue: frontend_internal_api_error_responses
+
+<p class="subtitle">code-intel: frontend-internal API error responses every 5m by route</p>**Descriptions:**
+
+- _executor-queue: 2%+ frontend-internal API error responses every 5m by route for 5m0s_
+
+**Possible solutions:**
+
+- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
+- **Kubernetes:**
+	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
+	- Check `kubectl logs executor-queue` for logs indicate request failures to `frontend` or `frontend-internal`.
+- **Docker Compose:**
+	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
+	- Check `docker logs executor-queue` for logs indicating request failures to `frontend` or `frontend-internal`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor-queue_frontend_internal_api_error_responses"
+]
+```
+
+<br />
+## executor-queue: container_cpu_usage
+
+<p class="subtitle">code-intel: container cpu usage total (1m average) across all cores by instance</p>**Descriptions:**
+
+- _executor-queue: 99%+ container cpu usage total (1m average) across all cores by instance_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the executor-queue container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor-queue_container_cpu_usage"
+]
+```
+
+<br />
+## executor-queue: container_memory_usage
+
+<p class="subtitle">code-intel: container memory usage by instance</p>**Descriptions:**
+
+- _executor-queue: 99%+ container memory usage by instance_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of executor-queue container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor-queue_container_memory_usage"
+]
+```
+
+<br />
+## executor-queue: container_restarts
+
+<p class="subtitle">code-intel: container restarts every 5m by instance</p>**Descriptions:**
+
+- _executor-queue: 1+ container restarts every 5m by instance_
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod executor-queue` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p executor-queue`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' executor-queue` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the executor-queue container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs executor-queue` (note this will include logs from the previous and currently running container).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor-queue_container_restarts"
+]
+```
+
+<br />
+## executor-queue: fs_inodes_used
+
+<p class="subtitle">code-intel: fs inodes in use by instance</p>**Descriptions:**
+
+- _executor-queue: 3e+06+ fs inodes in use by instance_
+
+**Possible solutions:**
+
+- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor-queue_fs_inodes_used"
+]
+```
+
+<br />
+## executor-queue: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
+
+- _executor-queue: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+
+**Possible solutions:**
+
+- If usage is high:
+	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the executor-queue service.
+	- **Docker Compose:** Consider increasing `cpus:` of the executor-queue container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor-queue_provisioning_container_cpu_usage_long_term"
+]
+```
+
+<br />
+## executor-queue: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>**Descriptions:**
+
+- _executor-queue: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
+
+**Possible solutions:**
+
+- If usage is high:
+	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the executor-queue service.
+	- **Docker Compose:** Consider increasing `memory:` of the executor-queue container in `docker-compose.yml`.
+- If usage is low, consider decreasing the above values.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor-queue_provisioning_container_memory_usage_long_term"
+]
+```
+
+<br />
+## executor-queue: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">code-intel: container cpu usage total (5m maximum) across all cores by instance</p>**Descriptions:**
+
+- _executor-queue: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the executor-queue container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor-queue_provisioning_container_cpu_usage_short_term"
+]
+```
+
+<br />
+## executor-queue: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">code-intel: container memory usage (5m maximum) by instance</p>**Descriptions:**
+
+- _executor-queue: 90%+ container memory usage (5m maximum) by instance_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of executor-queue container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor-queue_provisioning_container_memory_usage_short_term"
+]
+```
+
+<br />
+## executor-queue: go_goroutines
+
+<p class="subtitle">code-intel: maximum active goroutines</p>**Descriptions:**
+
+- _executor-queue: 10000+ maximum active goroutines for 10m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor-queue_go_goroutines"
+]
+```
+
+<br />
+## executor-queue: go_gc_duration_seconds
+
+<p class="subtitle">code-intel: maximum go garbage collection duration</p>**Descriptions:**
+
+- _executor-queue: 2s+ maximum go garbage collection duration_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor-queue_go_gc_duration_seconds"
+]
+```
+
+<br />
+## executor-queue: pods_available_percentage
+
+<p class="subtitle">code-intel: percentage pods available</p>**Descriptions:**
+
+- _executor-queue: less than 90% percentage pods available for 10m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_executor-queue_pods_available_percentage"
 ]
 ```
 

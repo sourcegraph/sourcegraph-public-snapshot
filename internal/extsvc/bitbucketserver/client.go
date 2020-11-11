@@ -24,6 +24,7 @@ import (
 	"github.com/segmentio/fasthash/fnv1"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -64,29 +65,55 @@ type Client struct {
 	// URL is the base URL of Bitbucket Server.
 	URL *url.URL
 
-	// Token is the personal access token for accessing the
-	// server. https://bitbucket.example.com/plugins/servlet/access-tokens/manage
-	Token string
-
-	// The username and password credentials for accessing the server. Typically these are only
-	// used when the server doesn't support personal access tokens (such as Bitbucket Server
-	// version 5.4 and older). If both Token and Username/Password are specified, Token is used.
-	Username, Password string
+	// Auth is the authentication method used when accessing the server.
+	// Supported types are:
+	// * auth.OAuthBearerToken for a personal access token; see also
+	//   https://bitbucket.example.com/plugins/servlet/access-tokens/manage
+	// * auth.BasicAuth for a username and password combination. Typically
+	//   these are only used when the server doesn't support personal access
+	//   tokens (such as Bitbucket Server 5.4 and older).
+	// * SudoableClient for an OAuth 1 client used to authenticate requests.
+	//   This is generally set using SetOAuth.
+	Auth auth.Authenticator
 
 	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
 	// of rate limiting in HTTP response headers).
 	RateLimit *rate.Limiter
-
-	// OAuth client used to authenticate requests, if set via SetOAuth.
-	// Takes precedence over Token and Username / Password authentication.
-	Oauth *oauth.Client
 }
 
 // NewClient returns an authenticated Bitbucket Server API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(c *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
-	u, err := url.Parse(c.Url)
+func NewClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
+	client, err := newClient(config, httpClient)
+	if err != nil {
+		return nil, err
+	}
+
+	if config.Authorization == nil {
+		if config.Token != "" {
+			client.Auth = &auth.OAuthBearerToken{Token: config.Token}
+		} else {
+			client.Auth = &auth.BasicAuth{
+				Username: config.Username,
+				Password: config.Password,
+			}
+		}
+	} else {
+		err := client.SetOAuth(
+			config.Authorization.Oauth.ConsumerKey,
+			config.Authorization.Oauth.SigningKey,
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "authorization.oauth.signingKey")
+		}
+	}
+
+	return client, nil
+}
+
+func newClient(config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
+	u, err := url.Parse(config.Url)
 	if err != nil {
 		return nil, err
 	}
@@ -102,26 +129,23 @@ func NewClient(c *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*C
 	defaultLimiter := rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst)
 	l := ratelimit.DefaultRegistry.GetOrSet(u.String(), defaultLimiter)
 
-	client := &Client{
+	return &Client{
 		httpClient: httpClient,
 		URL:        u,
-		Username:   c.Username,
-		Password:   c.Password,
-		Token:      c.Token,
 		RateLimit:  l,
-	}
+	}, nil
+}
 
-	if c.Authorization != nil {
-		err := client.SetOAuth(
-			c.Authorization.Oauth.ConsumerKey,
-			c.Authorization.Oauth.SigningKey,
-		)
-		if err != nil {
-			return nil, errors.Wrap(err, "authorization.oauth.signingKey")
-		}
+// WithAuthenticator returns a new Client that uses the same configuration,
+// HTTPClient, and RateLimiter as the current Client, except authenticated user
+// with the given authenticator instance.
+func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
+	return &Client{
+		httpClient: c.httpClient,
+		URL:        c.URL,
+		RateLimit:  c.RateLimit,
+		Auth:       a,
 	}
-
-	return client, nil
 }
 
 // SetOAuth enables OAuth authentication in a Client, using the given consumer
@@ -149,10 +173,14 @@ func (c *Client) SetOAuth(consumerKey, signingKey string) error {
 		return err
 	}
 
-	c.Oauth = &oauth.Client{
-		Credentials:     oauth.Credentials{Token: consumerKey},
-		PrivateKey:      key,
-		SignatureMethod: oauth.RSASHA1,
+	c.Auth = &SudoableOAuthClient{
+		Client: auth.OAuthClient{
+			Client: &oauth.Client{
+				Credentials:     oauth.Credentials{Token: consumerKey},
+				PrivateKey:      key,
+				SignatureMethod: oauth.RSASHA1,
+			},
+		},
 	}
 
 	return nil
@@ -163,13 +191,30 @@ func (c *Client) SetOAuth(consumerKey, signingKey string) error {
 // Application Link in Bitbucket Server is configured to allow user impersonation,
 // returning an error otherwise.
 func (c *Client) Sudo(username string) (*Client, error) {
-	if c.Oauth == nil {
+	a, ok := c.Auth.(*SudoableOAuthClient)
+	if !ok || a == nil {
 		return nil, errors.New("bitbucketserver.Client: OAuth not configured")
 	}
 
+	authCopy := *a
+	authCopy.Username = username
+
 	sudo := *c
-	sudo.Username = username
+	sudo.Auth = &authCopy
 	return &sudo, nil
+}
+
+// Username returns the username that will be used when communicating with
+// Bitbucket Server, if the authentication method includes a username.
+func (c *Client) Username() (string, error) {
+	switch a := c.Auth.(type) {
+	case *SudoableOAuthClient:
+		return a.Username, nil
+	case *auth.BasicAuth:
+		return a.Username, nil
+	default:
+		return "", errors.New("bitbucketserver.Client: authentication method does not include a username")
+	}
 }
 
 // UserFilters is a list of UserFilter that is ANDed together.
@@ -286,7 +331,7 @@ func (c *Client) UserPermissions(ctx context.Context, username string) (perms []
 	}
 
 	var ps []permission
-	err := c.send(ctx, "GET", "rest/api/1.0/admin/permissions/users", qry, nil, &struct {
+	_, err := c.send(ctx, "GET", "rest/api/1.0/admin/permissions/users", qry, nil, &struct {
 		Values []permission `json:"values"`
 	}{
 		Values: ps,
@@ -314,12 +359,14 @@ func (c *Client) CreateUser(ctx context.Context, u *User) error {
 		"addToDefaultGroup": {"true"},
 	}
 
-	return c.send(ctx, "POST", "rest/api/1.0/admin/users", qry, nil, nil)
+	_, err := c.send(ctx, "POST", "rest/api/1.0/admin/users", qry, nil, nil)
+	return err
 }
 
 // LoadUser loads the given User returning an error in case of failure.
 func (c *Client) LoadUser(ctx context.Context, u *User) error {
-	return c.send(ctx, "GET", "rest/api/1.0/users/"+u.Slug, nil, nil, u)
+	_, err := c.send(ctx, "GET", "rest/api/1.0/users/"+u.Slug, nil, nil, u)
+	return err
 }
 
 // LoadGroup loads the given Group returning an error in case of failure.
@@ -329,7 +376,7 @@ func (c *Client) LoadGroup(ctx context.Context, g *Group) error {
 		Values []*Group `json:"values"`
 	}
 
-	err := c.send(ctx, "GET", "rest/api/1.0/admin/groups", qry, nil, &groups)
+	_, err := c.send(ctx, "GET", "rest/api/1.0/admin/groups", qry, nil, &groups)
 	if err != nil {
 		return err
 	}
@@ -346,7 +393,8 @@ func (c *Client) LoadGroup(ctx context.Context, g *Group) error {
 // CreateGroup creates the given Group returning an error in case of failure.
 func (c *Client) CreateGroup(ctx context.Context, g *Group) error {
 	qry := url.Values{"name": {g.Name}}
-	return c.send(ctx, "POST", "rest/api/1.0/admin/groups", qry, g, g)
+	_, err := c.send(ctx, "POST", "rest/api/1.0/admin/groups", qry, g, g)
+	return err
 }
 
 // CreateGroupMembership creates the given Group's membership returning an error in case of failure.
@@ -356,7 +404,8 @@ func (c *Client) CreateGroupMembership(ctx context.Context, g *Group) error {
 		Users []string `json:"users"`
 	}
 	m := &membership{Group: g.Name, Users: g.Users}
-	return c.send(ctx, "POST", "rest/api/1.0/admin/groups/add-users", nil, m, nil)
+	_, err := c.send(ctx, "POST", "rest/api/1.0/admin/groups/add-users", nil, m, nil)
+	return err
 }
 
 // CreateUserRepoPermission creates the given permission returning an error in case of failure.
@@ -388,27 +437,31 @@ func (c *Client) createPermission(ctx context.Context, path, name string, p Perm
 		"name":       {name},
 		"permission": {string(p)},
 	}
-	return c.send(ctx, "PUT", path, qry, nil, nil)
+	_, err := c.send(ctx, "PUT", path, qry, nil, nil)
+	return err
 }
 
 // CreateRepo creates the given Repo returning an error in case of failure.
 func (c *Client) CreateRepo(ctx context.Context, r *Repo) error {
 	path := "rest/api/1.0/projects/" + r.Project.Key + "/repos"
-	return c.send(ctx, "POST", path, nil, r, &struct {
+	_, err := c.send(ctx, "POST", path, nil, r, &struct {
 		Values []*Repo `json:"values"`
 	}{
 		Values: []*Repo{r},
 	})
+	return err
 }
 
 // LoadProject loads the given Project returning an error in case of failure.
 func (c *Client) LoadProject(ctx context.Context, p *Project) error {
-	return c.send(ctx, "GET", "rest/api/1.0/projects/"+p.Key, nil, nil, p)
+	_, err := c.send(ctx, "GET", "rest/api/1.0/projects/"+p.Key, nil, nil, p)
+	return err
 }
 
 // CreateProject creates the given Project returning an error in case of failure.
 func (c *Client) CreateProject(ctx context.Context, p *Project) error {
-	return c.send(ctx, "POST", "rest/api/1.0/projects", nil, p, p)
+	_, err := c.send(ctx, "POST", "rest/api/1.0/projects", nil, p, p)
+	return err
 }
 
 // LoadPullRequest loads the given PullRequest returning an error in case of failure.
@@ -426,7 +479,8 @@ func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 		pr.ToRef.Repository.Slug,
 		pr.ID,
 	)
-	return c.send(ctx, "GET", path, nil, nil, pr)
+	_, err := c.send(ctx, "GET", path, nil, nil, pr)
+	return err
 }
 
 type UpdatePullRequestInput struct {
@@ -447,7 +501,8 @@ func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInp
 	)
 
 	pr := &PullRequest{}
-	return pr, c.send(ctx, "PUT", path, nil, in, pr)
+	_, err := c.send(ctx, "PUT", path, nil, in, pr)
+	return pr, err
 }
 
 // ErrAlreadyExists is returned by Client.CreatePullRequest when a Pull Request
@@ -513,7 +568,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 		pr.ToRef.Repository.Slug,
 	)
 
-	err := c.send(ctx, "POST", path, nil, payload, pr)
+	_, err := c.send(ctx, "POST", path, nil, payload, pr)
 	if err != nil {
 		if IsDuplicatePullRequest(err) {
 			pr, extractErr := ExtractDuplicatePullRequest(err)
@@ -548,7 +603,8 @@ func (c *Client) DeclinePullRequest(ctx context.Context, pr *PullRequest) error 
 
 	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
 
-	return c.send(ctx, "POST", path, qry, nil, pr)
+	_, err := c.send(ctx, "POST", path, qry, nil, pr)
+	return err
 }
 
 // ReopenPullRequest reopens a previously declined & closed PullRequest,
@@ -571,7 +627,8 @@ func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 
 	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
 
-	return c.send(ctx, "POST", path, qry, nil, pr)
+	_, err := c.send(ctx, "POST", path, qry, nil, pr)
+	return err
 }
 
 // LoadPullRequestActivities loads the given PullRequest's timeline of activities,
@@ -680,7 +737,7 @@ func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, 
 		return nil, err
 	}
 	var resp Repo
-	err = c.do(ctx, req, &resp)
+	_, err = c.do(ctx, req, &resp)
 	return &resp, err
 }
 
@@ -715,7 +772,7 @@ func (c *Client) RepoIDs(ctx context.Context, permission string) ([]uint32, erro
 		return nil, err
 	}
 	var resp []byte
-	err = c.do(ctx, req, &resp)
+	_, err = c.do(ctx, req, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -749,7 +806,7 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 	}
 
 	var next PageToken
-	err = c.do(ctx, req, &struct {
+	_, err = c.do(ctx, req, &struct {
 		*PageToken
 		Values interface{} `json:"values"`
 	}{
@@ -764,7 +821,7 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 	return &next, nil
 }
 
-func (c *Client) send(ctx context.Context, method, path string, qry url.Values, payload, result interface{}) error {
+func (c *Client) send(ctx context.Context, method, path string, qry url.Values, payload, result interface{}) (*http.Response, error) {
 	if qry == nil {
 		qry = make(url.Values)
 	}
@@ -773,20 +830,20 @@ func (c *Client) send(ctx context.Context, method, path string, qry url.Values, 
 	if payload != nil {
 		body = new(bytes.Buffer)
 		if err := json.NewEncoder(body).Encode(payload); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	u := url.URL{Path: path, RawQuery: qry.Encode()}
 	req, err := http.NewRequest(method, u.String(), body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	return c.do(ctx, req, result)
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) error {
+func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (*http.Response, error) {
 	req.URL = c.URL.ResolveReference(req.URL)
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -798,13 +855,13 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
-	if err := c.authenticate(req); err != nil {
-		return err
+	if err := c.Auth.Authenticate(req); err != nil {
+		return nil, err
 	}
 
 	startWait := time.Now()
 	if err := c.RateLimit.Wait(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
 	if d := time.Since(startWait); d > 200*time.Millisecond {
@@ -813,18 +870,18 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defer resp.Body.Close()
 
 	bs, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return errors.WithStack(&httpError{
+		return nil, errors.WithStack(&httpError{
 			URL:        req.URL,
 			StatusCode: resp.StatusCode,
 			Body:       bs,
@@ -835,37 +892,10 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	if s, ok := result.(*[]byte); ok {
 		*s = bs
 	} else if result != nil {
-		return json.Unmarshal(bs, result)
+		return resp, json.Unmarshal(bs, result)
 	}
 
-	return nil
-}
-
-func (c *Client) authenticate(req *http.Request) error {
-	// Authenticate request, in order of preference.
-	if c.Oauth != nil {
-		if c.Username != "" {
-			qry := req.URL.Query()
-			qry.Set("user_id", c.Username)
-			req.URL.RawQuery = qry.Encode()
-		}
-
-		if err := c.Oauth.SetAuthorizationHeader(
-			req.Header,
-			&oauth.Credentials{Token: ""}, // Token must be empty
-			req.Method,
-			req.URL,
-			nil,
-		); err != nil {
-			return err
-		}
-	} else if c.Token != "" {
-		req.Header.Set("Authorization", "Bearer "+c.Token)
-	} else if c.Username != "" || c.Password != "" {
-		req.SetBasicAuth(c.Username, c.Password)
-	}
-
-	return nil
+	return resp, nil
 }
 
 func parseQueryStrings(qs ...string) (url.Values, error) {
@@ -1328,4 +1358,25 @@ func (e *httpError) ExtractExistingPullRequest() (*PullRequest, error) {
 	}
 
 	return nil, errors.New("existing PR not found")
+}
+
+// AuthenticatedUsername returns the username associated with the credentials
+// used by the client.
+// Since BitbucketServer doesn't offer an endpoint in their API to query the
+// currently-authenticated user, we send a request to list a single user on the
+// instance and then inspect the response headers in which BitbucketServer sets
+// the username in X-Ausername.
+// If no username is found in the response headers, an error is returned.
+func (c *Client) AuthenticatedUsername(ctx context.Context) (username string, err error) {
+	resp, err := c.send(ctx, "GET", "rest/api/1.0/users", url.Values{"limit": []string{"1"}}, nil, nil)
+	if err != nil {
+		return "", err
+	}
+
+	username = resp.Header.Get("X-Ausername")
+	if username == "" {
+		return "", errors.New("no username in X-Ausername header")
+	}
+
+	return username, nil
 }

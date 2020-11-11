@@ -179,8 +179,8 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                         Sourcegraph Cloud
                     </a>
                 </div>
-                <div className="options-page__split-section-part" {...linkProps}>
-                    <a href="https://docs.sourcegraph.com">
+                <div className="options-page__split-section-part">
+                    <a href="https://docs.sourcegraph.com" {...linkProps}>
                         <BookOpenPageVariantIcon className="icon-inline mr-2" />
                         Documentation
                     </a>

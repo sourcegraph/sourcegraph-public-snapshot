@@ -1,16 +1,15 @@
 import { getMonacoTokens } from './tokens'
-import { parseSearchQuery, ParseSuccess, Sequence } from './parser'
+import { scanSearchQuery, ScanSuccess, Token, ScanResult } from './scanner'
+
+const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSuccess<Token[]>).term
 
 describe('getMonacoTokens()', () => {
     test('returns the tokens for a parsed search query', () => {
         expect(
-            getMonacoTokens(
-                (parseSearchQuery('r:^github.com/sourcegraph f:code_intelligence trackViews') as ParseSuccess<Sequence>)
-                    .token
-            )
+            getMonacoTokens(toSuccess(scanSearchQuery('r:^github.com/sourcegraph f:code_intelligence trackViews')))
         ).toStrictEqual([
             {
-                scopes: 'keyword',
+                scopes: 'filterKeyword',
                 startIndex: 0,
             },
             {
@@ -22,7 +21,7 @@ describe('getMonacoTokens()', () => {
                 startIndex: 25,
             },
             {
-                scopes: 'keyword',
+                scopes: 'filterKeyword',
                 startIndex: 26,
             },
             {
@@ -41,9 +40,9 @@ describe('getMonacoTokens()', () => {
     })
 
     test('search query containing parenthesized parameters', () => {
-        expect(getMonacoTokens((parseSearchQuery('r:a (f:b and c)') as ParseSuccess<Sequence>).token)).toStrictEqual([
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:a (f:b and c)')))).toStrictEqual([
             {
-                scopes: 'keyword',
+                scopes: 'filterKeyword',
                 startIndex: 0,
             },
             {
@@ -59,7 +58,7 @@ describe('getMonacoTokens()', () => {
                 startIndex: 4,
             },
             {
-                scopes: 'keyword',
+                scopes: 'filterKeyword',
                 startIndex: 5,
             },
             {
@@ -71,7 +70,7 @@ describe('getMonacoTokens()', () => {
                 startIndex: 8,
             },
             {
-                scopes: 'operator',
+                scopes: 'keyword',
                 startIndex: 9,
             },
             {

@@ -1,6 +1,6 @@
 import * as Monaco from 'monaco-editor'
 import { Observable, fromEventPattern, of } from 'rxjs'
-import { parseSearchQuery } from './parser'
+import { scanSearchQuery } from './scanner'
 import { map, first, takeUntil, publishReplay, refCount, switchMap, debounceTime, share } from 'rxjs/operators'
 import { getMonacoTokens } from './tokens'
 import { getDiagnostics } from './diagnostics'
@@ -17,10 +17,10 @@ interface SearchFieldProviders {
 }
 
 /**
- * A dummy parsing state, required for the token provider.
+ * A dummy scanner state, required for the token provider.
  */
-const PARSER_STATE: Monaco.languages.IState = {
-    clone: () => ({ ...PARSER_STATE }),
+const SCANNER_STATE: Monaco.languages.IState = {
+    clone: () => ({ ...SCANNER_STATE }),
     equals: () => false,
 }
 
@@ -40,10 +40,10 @@ export function getProviders(
         interpretComments?: boolean
     }
 ): SearchFieldProviders {
-    const parsedQueries = searchQueries.pipe(
+    const scannedQueries = searchQueries.pipe(
         map(rawQuery => {
-            const parsed = parseSearchQuery(rawQuery, options.interpretComments ?? false)
-            return { rawQuery, parsed }
+            const scanned = scanSearchQuery(rawQuery, options.interpretComments ?? false)
+            return { rawQuery, scanned }
         }),
         publishReplay(1),
         refCount()
@@ -53,24 +53,26 @@ export function getProviders(
 
     return {
         tokens: {
-            getInitialState: () => PARSER_STATE,
+            getInitialState: () => SCANNER_STATE,
             tokenize: line => {
-                const result = parseSearchQuery(line, options.interpretComments ?? false)
+                const result = scanSearchQuery(line, options.interpretComments ?? false)
                 if (result.type === 'success') {
                     return {
-                        tokens: getMonacoTokens(result.token),
-                        endState: PARSER_STATE,
+                        tokens: getMonacoTokens(result.term),
+                        endState: SCANNER_STATE,
                     }
                 }
-                return { endState: PARSER_STATE, tokens: [] }
+                return { endState: SCANNER_STATE, tokens: [] }
             },
         },
         hover: {
             provideHover: (textModel, position, token) =>
-                parsedQueries
+                scannedQueries
                     .pipe(
                         first(),
-                        map(({ parsed }) => (parsed.type === 'error' ? null : getHoverResult(parsed.token, position))),
+                        map(({ scanned }) =>
+                            scanned.type === 'error' ? null : getHoverResult(scanned.term, position)
+                        ),
                         takeUntil(fromEventPattern(handler => token.onCancellationRequested(handler)))
                     )
                     .toPromise(),
@@ -79,14 +81,14 @@ export function getProviders(
             // An explicit list of trigger characters is needed for the Monaco editor to show completions.
             triggerCharacters: [...printable, ...latin1Alpha],
             provideCompletionItems: (textModel, position, context, token) =>
-                parsedQueries
+                scannedQueries
                     .pipe(
                         first(),
-                        switchMap(parsedQuery =>
-                            parsedQuery.parsed.type === 'error'
+                        switchMap(scannedQuery =>
+                            scannedQuery.scanned.type === 'error'
                                 ? of(null)
                                 : getCompletionItems(
-                                      parsedQuery.parsed.token,
+                                      scannedQuery.scanned.term,
                                       position,
                                       debouncedDynamicSuggestions,
                                       options.globbing
@@ -96,8 +98,8 @@ export function getProviders(
                     )
                     .toPromise(),
         },
-        diagnostics: parsedQueries.pipe(
-            map(({ parsed }) => (parsed.type === 'success' ? getDiagnostics(parsed.token, options.patternType) : []))
+        diagnostics: scannedQueries.pipe(
+            map(({ scanned }) => (scanned.type === 'success' ? getDiagnostics(scanned.term, options.patternType) : []))
         ),
     }
 }

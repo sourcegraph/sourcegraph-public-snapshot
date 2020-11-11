@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -18,6 +19,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -26,11 +28,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// An ExternalServicesStore stores external services and their configuration.
+// An ExternalServiceStore stores external services and their configuration.
 // Before updating or creating a new external service, validation is performed.
 // The enterprise code registers additional validators at run-time and sets the
 // global instance in stores.go
-type ExternalServicesStore struct {
+type ExternalServiceStore struct {
+	*basestore.Store
+
 	GitHubValidators          []func(*schema.GitHubConnection) error
 	GitLabValidators          []func(*schema.GitLabConnection, []schema.AuthProviders) error
 	BitbucketServerValidators []func(*schema.BitbucketServerConnection) error
@@ -38,6 +42,34 @@ type ExternalServicesStore struct {
 	// PreCreateExternalService (if set) is invoked as a hook prior to creating a
 	// new external service in the database.
 	PreCreateExternalService func(context.Context) error
+
+	mu sync.Mutex
+}
+
+// NewExternalServicesStoreWithDB instantiates and returns a new ExternalServicesStore with prepared statements.
+func NewExternalServicesStoreWithDB(db dbutil.DB) *ExternalServiceStore {
+	return &ExternalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+}
+
+func (e *ExternalServiceStore) With(other basestore.ShareableStore) *ExternalServiceStore {
+	return &ExternalServiceStore{Store: e.Store.With(other)}
+}
+
+func (e *ExternalServiceStore) Transact(ctx context.Context) (*ExternalServiceStore, error) {
+	txBase, err := e.Store.Transact(ctx)
+	return &ExternalServiceStore{Store: txBase}, err
+}
+
+// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
+// This function ensures access to dbconn happens after the rest of the code or tests have
+// initialized it.
+func (e *ExternalServiceStore) ensureStore() {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	if e.Store == nil {
+		e.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+	}
 }
 
 // ExternalServiceKinds contains a map of all supported kinds of
@@ -63,6 +95,8 @@ type ExternalServiceKind struct {
 
 // ExternalServicesListOptions contains options for listing external services.
 type ExternalServicesListOptions struct {
+	// When specified, only include external services with the given IDs.
+	IDs []int64
 	// When true, only include external services not under any namespace (i.e. owned by all site admins),
 	// and value of NamespaceUserID is ignored.
 	NoNamespace bool
@@ -78,6 +112,13 @@ type ExternalServicesListOptions struct {
 
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	if len(o.IDs) > 0 {
+		ids := make([]*sqlf.Query, 0, len(o.IDs))
+		for _, id := range o.IDs {
+			ids = append(ids, sqlf.Sprintf("%s", id))
+		}
+		conds = append(conds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
+	}
 	if o.NoNamespace {
 		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL`))
 	} else if o.NamespaceUserID > 0 {
@@ -111,7 +152,7 @@ type ValidateExternalServiceConfigOptions struct {
 
 // ValidateConfig validates the given external service configuration.
 // A non zero id indicates we are updating an existing service, 0 indicates we are adding a new one.
-func (e *ExternalServicesStore) ValidateConfig(ctx context.Context, opt ValidateExternalServiceConfigOptions) error {
+func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateExternalServiceConfigOptions) error {
 	// For user-added external services, we need to prevent them from using disallowed fields.
 	if opt.HasNamespace {
 		// We do not allow users to add external service other than GitHub.com, GitLab.com and Bitbucket.org
@@ -127,7 +168,7 @@ func (e *ExternalServicesStore) ValidateConfig(ctx context.Context, opt Validate
 			return errors.New("users are only allowed to add external service for https://github.com/, https://gitlab.com/ and https://bitbucket.org/")
 		}
 
-		disallowedFields := []string{"repositoryPathPattern"}
+		disallowedFields := []string{"repositoryPathPattern", "nameTransformations"}
 		results := gjson.GetMany(opt.Config, disallowedFields...)
 		for i, r := range results {
 			if r.Exists() {
@@ -240,7 +281,7 @@ func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnec
 	return nil
 }
 
-func (e *ExternalServicesStore) validateGitHubConnection(ctx context.Context, id int64, c *schema.GitHubConnection) error {
+func (e *ExternalServiceStore) validateGitHubConnection(ctx context.Context, id int64, c *schema.GitHubConnection) error {
 	err := new(multierror.Error)
 	for _, validate := range e.GitHubValidators {
 		err = multierror.Append(err, validate(c))
@@ -255,7 +296,7 @@ func (e *ExternalServicesStore) validateGitHubConnection(ctx context.Context, id
 	return err.ErrorOrNil()
 }
 
-func (e *ExternalServicesStore) validateGitLabConnection(ctx context.Context, id int64, c *schema.GitLabConnection, ps []schema.AuthProviders) error {
+func (e *ExternalServiceStore) validateGitLabConnection(ctx context.Context, id int64, c *schema.GitLabConnection, ps []schema.AuthProviders) error {
 	err := new(multierror.Error)
 	for _, validate := range e.GitLabValidators {
 		err = multierror.Append(err, validate(c, ps))
@@ -266,7 +307,7 @@ func (e *ExternalServicesStore) validateGitLabConnection(ctx context.Context, id
 	return err.ErrorOrNil()
 }
 
-func (e *ExternalServicesStore) validateBitbucketServerConnection(ctx context.Context, id int64, c *schema.BitbucketServerConnection) error {
+func (e *ExternalServiceStore) validateBitbucketServerConnection(ctx context.Context, id int64, c *schema.BitbucketServerConnection) error {
 	err := new(multierror.Error)
 	for _, validate := range e.BitbucketServerValidators {
 		err = multierror.Append(err, validate(c))
@@ -281,13 +322,13 @@ func (e *ExternalServicesStore) validateBitbucketServerConnection(ctx context.Co
 	return err.ErrorOrNil()
 }
 
-func (e *ExternalServicesStore) validateBitbucketCloudConnection(ctx context.Context, id int64, c *schema.BitbucketCloudConnection) error {
+func (e *ExternalServiceStore) validateBitbucketCloudConnection(ctx context.Context, id int64, c *schema.BitbucketCloudConnection) error {
 	return e.validateDuplicateRateLimits(ctx, id, extsvc.KindBitbucketCloud, c)
 }
 
 // validateDuplicateRateLimits returns an error if given config has duplicated non-default rate limit
 // with another external service for the same code host.
-func (e *ExternalServicesStore) validateDuplicateRateLimits(ctx context.Context, id int64, kind string, parsedConfig interface{}) error {
+func (e *ExternalServiceStore) validateDuplicateRateLimits(ctx context.Context, id int64, kind string, parsedConfig interface{}) error {
 	// Check if rate limit is already defined for this code host on another external service
 	rlc, err := extsvc.GetLimitFromConfig(kind, parsedConfig)
 	if err != nil {
@@ -344,17 +385,21 @@ func (e *ExternalServicesStore) validateDuplicateRateLimits(ctx context.Context,
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 // Otherwise, `es.NamespaceUserID` must be specified (i.e. non-nil) for
 // a user-added external service.
-func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error {
+//
+// 🚨 SECURITY: The value of `es.Unrestricted` is disregarded and will always
+// be recalculated based on whether `"authorization"` is presented in `es.Config`.
+func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error {
 	if Mocks.ExternalServices.Create != nil {
 		return Mocks.ExternalServices.Create(ctx, confGet, es)
 	}
+	e.ensureStore()
 
 	ps := confGet().AuthProviders
 	if err := e.ValidateConfig(ctx, ValidateExternalServiceConfigOptions{
 		Kind:          es.Kind,
 		Config:        es.Config,
 		AuthProviders: ps,
-		HasNamespace:  es.NamespaceUserID != nil,
+		HasNamespace:  es.NamespaceUserID != 0,
 	}); err != nil {
 		return err
 	}
@@ -369,12 +414,120 @@ func (e *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf
 		}
 	}
 
-	return dbconn.Global.QueryRowContext(
+	es.Unrestricted = !gjson.Get(es.Config, "authorization").Exists()
+
+	return e.Store.Handle().DB().QueryRowContext(
 		ctx,
-		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
-		es.Kind, es.DisplayName, secret.StringValue{S: &es.Config}, es.CreatedAt, es.UpdatedAt, es.NamespaceUserID,
+		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id, unrestricted) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+		es.Kind, es.DisplayName, secret.StringValue{S: &es.Config}, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), es.Unrestricted,
 	).Scan(&es.ID)
 }
+
+// Upsert updates or inserts the given ExternalServices.
+//
+// 🚨 SECURITY: The value of `Unrestricted` field is disregarded and will always
+// be recalculated based on whether `"authorization"` is presented in `Config`.
+func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.ExternalService) error {
+	if len(svcs) == 0 {
+		return nil
+	}
+	e.ensureStore()
+
+	for _, s := range svcs {
+		s.Unrestricted = !gjson.Get(s.Config, "authorization").Exists()
+	}
+
+	q := upsertExternalServicesQuery(svcs)
+	rows, err := e.Query(ctx, q)
+	if err != nil {
+		return err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	i := 0
+	for rows.Next() {
+		err = rows.Scan(
+			&svcs[i].ID,
+			&svcs[i].Kind,
+			&svcs[i].DisplayName,
+			&secret.StringValue{S: &svcs[i].Config},
+			&svcs[i].CreatedAt,
+			&dbutil.NullTime{Time: &svcs[i].UpdatedAt},
+			&dbutil.NullTime{Time: &svcs[i].DeletedAt},
+			&dbutil.NullTime{Time: &svcs[i].LastSyncAt},
+			&dbutil.NullTime{Time: &svcs[i].NextSyncAt},
+			&dbutil.NullInt32{N: &svcs[i].NamespaceUserID},
+			&svcs[i].Unrestricted,
+		)
+		if err != nil {
+			return err
+		}
+
+		i++
+	}
+
+	return err
+}
+
+func upsertExternalServicesQuery(svcs []*types.ExternalService) *sqlf.Query {
+	vals := make([]*sqlf.Query, 0, len(svcs))
+	for _, s := range svcs {
+		vals = append(vals, sqlf.Sprintf(
+			upsertExternalServicesQueryValueFmtstr,
+			s.ID,
+			s.Kind,
+			s.DisplayName,
+			s.Config,
+			s.CreatedAt.UTC(),
+			s.UpdatedAt.UTC(),
+			nullTimeColumn(s.DeletedAt),
+			nullTimeColumn(s.LastSyncAt),
+			nullTimeColumn(s.NextSyncAt),
+			nullInt32Column(s.NamespaceUserID),
+			s.Unrestricted,
+		))
+	}
+
+	return sqlf.Sprintf(
+		upsertExternalServicesQueryFmtstr,
+		sqlf.Join(vals, ",\n"),
+	)
+}
+
+const upsertExternalServicesQueryValueFmtstr = `
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s)
+`
+
+const upsertExternalServicesQueryFmtstr = `
+-- source: cmd/repo-updater/repos/store.go:DBStore.UpsertExternalServices
+INSERT INTO external_services (
+  id,
+  kind,
+  display_name,
+  config,
+  created_at,
+  updated_at,
+  deleted_at,
+  last_sync_at,
+  next_sync_at,
+  namespace_user_id,
+  unrestricted
+)
+VALUES %s
+ON CONFLICT(id) DO UPDATE
+SET
+  kind         = UPPER(excluded.kind),
+  display_name = excluded.display_name,
+  config       = excluded.config,
+  created_at   = excluded.created_at,
+  updated_at   = excluded.updated_at,
+  deleted_at   = excluded.deleted_at,
+  last_sync_at = excluded.last_sync_at,
+  next_sync_at = excluded.next_sync_at,
+  namespace_user_id = excluded.namespace_user_id,
+  unrestricted = excluded.unrestricted
+RETURNING *
+`
 
 // ExternalServiceUpdate contains optional fields to update.
 type ExternalServiceUpdate struct {
@@ -386,10 +539,11 @@ type ExternalServiceUpdate struct {
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin,
 // or has the legitimate access to the external service (i.e. the owner).
-func (e *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error {
+func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) (err error) {
 	if Mocks.ExternalServices.Update != nil {
 		return Mocks.ExternalServices.Update(ctx, ps, id, update)
 	}
+	e.ensureStore()
 
 	if update.Config != nil {
 		// Query to get the kind (which is immutable) so we can validate the new config.
@@ -403,13 +557,13 @@ func (e *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProv
 			Kind:          externalService.Kind,
 			Config:        *update.Config,
 			AuthProviders: ps,
-			HasNamespace:  externalService.NamespaceUserID != nil,
+			HasNamespace:  externalService.NamespaceUserID != 0,
 		}); err != nil {
 			return err
 		}
 	}
 
-	execUpdate := func(ctx context.Context, tx *sql.Tx, update *sqlf.Query) error {
+	execUpdate := func(ctx context.Context, tx dbutil.DB, update *sqlf.Query) error {
 		q := sqlf.Sprintf("UPDATE external_services SET %s, updated_at=now() WHERE id=%d AND deleted_at IS NULL", update, id)
 		res, err := tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		if err != nil {
@@ -424,19 +578,26 @@ func (e *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProv
 		}
 		return nil
 	}
-	return dbutil.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
-		if update.DisplayName != nil {
-			if err := execUpdate(ctx, tx, sqlf.Sprintf("display_name=%s", update.DisplayName)); err != nil {
-				return err
-			}
+	tx, err := e.Store.Handle().Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if update.DisplayName != nil {
+		if err := execUpdate(ctx, tx.DB(), sqlf.Sprintf("display_name=%s", update.DisplayName)); err != nil {
+			return err
 		}
-		if update.Config != nil {
-			if err := execUpdate(ctx, tx, sqlf.Sprintf("config=%s, next_sync_at=now()", secret.StringValue{S: update.Config})); err != nil {
-				return err
-			}
+	}
+
+	if update.Config != nil {
+		unrestricted := !gjson.Get(*update.Config, "authorization").Exists()
+		q := sqlf.Sprintf(`config = %s, next_sync_at = NOW(), unrestricted = %s`, secret.StringValue{S: update.Config}, unrestricted)
+		if err := execUpdate(ctx, tx.DB(), q); err != nil {
+			return err
 		}
-		return nil
-	})
+	}
+	return nil
 }
 
 type externalServiceNotFoundError struct {
@@ -454,10 +615,11 @@ func (e externalServiceNotFoundError) NotFound() bool {
 // Delete deletes an external service.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (*ExternalServicesStore) Delete(ctx context.Context, id int64) error {
+func (e *ExternalServiceStore) Delete(ctx context.Context, id int64) error {
 	if Mocks.ExternalServices.Delete != nil {
 		return Mocks.ExternalServices.Delete(ctx, id)
 	}
+	e.ensureStore()
 
 	res, err := dbconn.Global.ExecContext(ctx, "UPDATE external_services SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
@@ -476,10 +638,11 @@ func (*ExternalServicesStore) Delete(ctx context.Context, id int64) error {
 // GetByID returns the external service for id.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (e *ExternalServicesStore) GetByID(ctx context.Context, id int64) (*types.ExternalService, error) {
+func (e *ExternalServiceStore) GetByID(ctx context.Context, id int64) (*types.ExternalService, error) {
 	if Mocks.ExternalServices.GetByID != nil {
 		return Mocks.ExternalServices.GetByID(id)
 	}
+	e.ensureStore()
 
 	conds := []*sqlf.Query{
 		sqlf.Sprintf("deleted_at IS NULL"),
@@ -501,15 +664,19 @@ func (e *ExternalServicesStore) GetByID(ctx context.Context, id int64) (*types.E
 // 🚨 SECURITY: The caller must ensure one of the following:
 // 	- The actor is a site admin
 // 	- The opt.NamespaceUserID is same as authenticated user ID (i.e. actor.UID)
-func (e *ExternalServicesStore) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+func (e *ExternalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
 	if Mocks.ExternalServices.List != nil {
 		return Mocks.ExternalServices.List(opt)
 	}
+	e.ensureStore()
+
 	return e.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
 // DistinctKinds returns the distinct list of external services kinds that are stored in the database.
-func (e *ExternalServicesStore) DistinctKinds(ctx context.Context) ([]string, error) {
+func (e *ExternalServiceStore) DistinctKinds(ctx context.Context) ([]string, error) {
+	e.ensureStore()
+
 	q := sqlf.Sprintf(`
 SELECT ARRAY_AGG(DISTINCT(kind)::TEXT)
 FROM external_services
@@ -517,7 +684,7 @@ WHERE deleted_at IS NULL
 `)
 
 	var kinds []string
-	err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(pq.Array(&kinds))
+	err := e.QueryRow(ctx, q).Scan(pq.Array(&kinds))
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return []string{}, nil
@@ -528,9 +695,9 @@ WHERE deleted_at IS NULL
 	return kinds, nil
 }
 
-func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
+func (e *ExternalServiceStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
 	q := sqlf.Sprintf(`
-		SELECT id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id
+		SELECT id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted
 		FROM external_services
 		WHERE (%s)
 		ORDER BY id DESC
@@ -539,7 +706,7 @@ func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, lim
 		limitOffset.SQL(),
 	)
 
-	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := e.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -548,27 +715,27 @@ func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, lim
 	var results []*types.ExternalService
 	for rows.Next() {
 		var (
-			h              types.ExternalService
-			deletedAt      sql.NullTime
-			lastSyncAt     sql.NullTime
-			nextSyncAt     sql.NullTime
-			namepaceUserID sql.NullInt32
+			h               types.ExternalService
+			deletedAt       sql.NullTime
+			lastSyncAt      sql.NullTime
+			nextSyncAt      sql.NullTime
+			namespaceUserID sql.NullInt32
 		)
-		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &secret.StringValue{S: &h.Config}, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namepaceUserID); err != nil {
+		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &secret.StringValue{S: &h.Config}, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted); err != nil {
 			return nil, err
 		}
 
 		if deletedAt.Valid {
-			h.DeletedAt = &deletedAt.Time
+			h.DeletedAt = deletedAt.Time
 		}
 		if lastSyncAt.Valid {
-			h.LastSyncAt = &lastSyncAt.Time
+			h.LastSyncAt = lastSyncAt.Time
 		}
 		if nextSyncAt.Valid {
-			h.NextSyncAt = &nextSyncAt.Time
+			h.NextSyncAt = nextSyncAt.Time
 		}
-		if namepaceUserID.Valid {
-			h.NamespaceUserID = &namepaceUserID.Int32
+		if namespaceUserID.Valid {
+			h.NamespaceUserID = namespaceUserID.Int32
 		}
 		results = append(results, &h)
 	}
@@ -582,14 +749,15 @@ func (*ExternalServicesStore) list(ctx context.Context, conds []*sqlf.Query, lim
 // Count counts all external services that satisfy the options (ignoring limit and offset).
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (*ExternalServicesStore) Count(ctx context.Context, opt ExternalServicesListOptions) (int, error) {
+func (e *ExternalServiceStore) Count(ctx context.Context, opt ExternalServicesListOptions) (int, error) {
 	if Mocks.ExternalServices.Count != nil {
 		return Mocks.ExternalServices.Count(ctx, opt)
 	}
+	e.ensureStore()
 
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM external_services WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
 	var count int
-	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+	if err := e.QueryRow(ctx, q).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil

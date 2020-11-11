@@ -12,9 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
-	"github.com/google/go-cmp/cmp"
-	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
@@ -36,12 +34,6 @@ type mockHTTPResponseBody struct {
 	count        int
 	responseBody string
 	status       int
-}
-
-func newMockHTTPResponseBody(responseBody string, status int) *mockHTTPResponseBody {
-	return &mockHTTPResponseBody{
-		responseBody: responseBody,
-	}
 }
 
 func (s *mockHTTPResponseBody) Do(req *http.Request) (*http.Response, error) {
@@ -69,15 +61,15 @@ func (s mockHTTPEmptyResponse) Do(req *http.Request) (*http.Response, error) {
 	}, nil
 }
 
-func newTestClient(t *testing.T, cli httpcli.Doer) *Client {
-	return newTestClientWithToken(t, "", cli)
+func newTestClient(t *testing.T, cli httpcli.Doer) *V3Client {
+	return newTestClientWithAuthenticator(t, nil, cli)
 }
 
-func newTestClientWithToken(t *testing.T, token string, cli httpcli.Doer) *Client {
+func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli httpcli.Doer) *V3Client {
 	rcache.SetupForTest(t)
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-	return NewClient(apiURL, token, cli)
+	return NewV3Client(apiURL, auth, cli)
 }
 
 // TestClient_GetRepository tests the behavior of GetRepository.
@@ -133,138 +125,6 @@ func TestClient_GetRepository(t *testing.T) {
 	}
 }
 
-func TestClient_GetRepositoriesByNodeFromAPI(t *testing.T) {
-	tests := []struct {
-		responseBody string
-		want         map[string]*Repository
-		nodeIDs      []string
-	}{
-		{
-			responseBody: `
-{
-  "data": {
-    "nodes": [
-      {
-		"id": "i0",
-		"nameWithOwner": "o/r0",
-		"description": "d0",
-		"url": "https://github.example.com/o/r0",
-		"isFork": false
-      },
-      {
-		"id": "i1",
-		"nameWithOwner": "o/r1",
-		"description": "d1",
-		"url": "https://github.example.com/o/r1",
-		"isFork": false
-      },
-      {
-		"id": "i2",
-		"nameWithOwner": "o/r2",
-		"description": "d2",
-		"url": "https://github.example.com/o/r2",
-		"isFork": false
-      }
-    ]
-  }
-}
-`,
-			want: map[string]*Repository{
-				"i0": {
-					ID:            "i0",
-					NameWithOwner: "o/r0",
-					Description:   "d0",
-					URL:           "https://github.example.com/o/r0",
-				},
-				"i1": {
-					ID:            "i1",
-					NameWithOwner: "o/r1",
-					Description:   "d1",
-					URL:           "https://github.example.com/o/r1",
-				},
-				"i2": {
-					ID:            "i2",
-					NameWithOwner: "o/r2",
-					Description:   "d2",
-					URL:           "https://github.example.com/o/r2",
-				},
-			},
-			nodeIDs: []string{"i0", "i1", "i2"},
-		},
-		{
-			responseBody: `
-{
-  "data": {
-    "nodes": [
-      {
-		"id": "i0",
-		"nameWithOwner": "o/r0",
-		"description": "d0",
-		"url": "https://github.example.com/o/r0",
-		"isFork": false
-      },
-      {
-		"id": "i1",
-		"nameWithOwner": "o/r1",
-		"description": "d1",
-		"url": "https://github.example.com/o/r1",
-		"isFork": false
-      },
-      null
-    ]
-  },
-  "errors": [
-    {
-      "type": "NOT_FOUND",
-      "path": [
-        "nodes",
-        2
-      ],
-      "locations": [
-        {
-          "line": 2,
-          "column": 3
-        }
-      ],
-      "message": "Could not resolve to a node with the global id of 'asdf'"
-    }
-  ]
-}
-`,
-			want: map[string]*Repository{
-				"i0": {
-					ID:            "i0",
-					NameWithOwner: "o/r0",
-					Description:   "d0",
-					URL:           "https://github.example.com/o/r0",
-				},
-				"i1": {
-					ID:            "i1",
-					NameWithOwner: "o/r1",
-					Description:   "d1",
-					URL:           "https://github.example.com/o/r1",
-				},
-			},
-			nodeIDs: []string{"i0", "i1", "asdf"},
-		},
-	}
-
-	for _, test := range tests {
-		mock := mockHTTPResponseBody{
-			responseBody: test.responseBody,
-		}
-		c := newTestClient(t, &mock)
-		gotRepos, err := c.GetRepositoriesByNodeIDFromAPI(context.Background(), test.nodeIDs)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !reflect.DeepEqual(gotRepos, test.want) {
-			dmp := diffmatchpatch.New()
-			t.Error("gotRepos != test.want", dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(test.want), spew.Sdump(gotRepos), false)))
-		}
-	}
-}
-
 // TestClient_GetRepository_nonexistent tests the behavior of GetRepository when called
 // on a repository that does not exist.
 func TestClient_GetRepository_nonexistent(t *testing.T) {
@@ -277,86 +137,6 @@ func TestClient_GetRepository_nonexistent(t *testing.T) {
 	}
 	if err != ErrNotFound {
 		t.Errorf("got err == %q, want ErrNotFound", err)
-	}
-	if repo != nil {
-		t.Error("repo != nil")
-	}
-}
-
-// TestClient_GetRepositoryByNodeID tests the behavior of GetRepositoryByNodeID.
-func TestClient_GetRepositoryByNodeID(t *testing.T) {
-	mock := mockHTTPResponseBody{
-		responseBody: `
-{
-	"data": {
-		"node": {
-			"id": "i",
-			"nameWithOwner": "o/r",
-			"description": "d",
-			"url": "https://github.example.com/o/r",
-			"isFork": true
-		}
-	}
-}
-`,
-	}
-	c := newTestClient(t, &mock)
-
-	want := Repository{
-		ID:            "i",
-		NameWithOwner: "o/r",
-		Description:   "d",
-		URL:           "https://github.example.com/o/r",
-		IsFork:        true,
-	}
-
-	repo, err := c.GetRepositoryByNodeID(context.Background(), "i")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if repo == nil {
-		t.Error("repo == nil")
-	}
-	if mock.count != 1 {
-		t.Errorf("mock.count == %d, expected to miss cache once", mock.count)
-	}
-	if !reflect.DeepEqual(repo, &want) {
-		t.Errorf("got repository %+v, want %+v", repo, &want)
-	}
-
-	// Test that repo is cached (and therefore NOT fetched) from client on second request.
-	repo, err = c.GetRepositoryByNodeID(context.Background(), "i")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if repo == nil {
-		t.Error("repo == nil")
-	}
-	if mock.count != 1 {
-		t.Errorf("mock.count == %d, expected to hit cache", mock.count)
-	}
-	if !reflect.DeepEqual(repo, &want) {
-		t.Errorf("got repository %+v, want %+v", repo, &want)
-	}
-}
-
-// TestClient_GetRepositoryByNodeID_nonexistent tests the behavior of GetRepositoryByNodeID when called
-// on a repository that does not exist.
-func TestClient_GetRepositoryByNodeID_nonexistent(t *testing.T) {
-	mock := mockHTTPResponseBody{
-		responseBody: `
-{
-	"data": {
-		"node": null
-	}
-}
-`,
-	}
-	c := newTestClient(t, &mock)
-
-	repo, err := c.GetRepositoryByNodeID(context.Background(), "i")
-	if !IsNotFound(err) {
-		t.Errorf("got err == %v, want IsNotFound(err) == true", err)
 	}
 	if repo != nil {
 		t.Error("repo != nil")
@@ -523,82 +303,6 @@ func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
 	}
 }
 
-// 🚨 SECURITY: test that cache entries are keyed by auth token
-func TestClient_GetRepositoryByNodeID_security(t *testing.T) {
-	c0 := newTestClient(t, nil)
-	c1 := newTestClientWithToken(t, "tok1", nil)
-	c2 := newTestClientWithToken(t, "tok2", nil)
-
-	// Get "id0" and cache the result for c1
-	c1.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id0-tok1" } } }`, http.StatusOK)
-	got, err := c1.GetRepositoryByNodeID(context.Background(), "id0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	expRepo := &Repository{ID: "id0-tok1"}
-	if diff := cmp.Diff(expRepo, got); diff != "" {
-		t.Fatal(diff)
-	}
-
-	// Verify c1 gets the "id0" from cache in subsequent calls
-	c1.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "SHOULD NOT BE SEEN" } } }`, http.StatusOK)
-	got, err = c1.GetRepositoryByNodeID(context.Background(), "id0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	expRepo = &Repository{ID: "id0-tok1"}
-	if diff := cmp.Diff(expRepo, got); diff != "" {
-		t.Fatal(diff)
-	}
-
-	// c2 should not get "id0" from cache
-	c2.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id0-tok2" } } }`, http.StatusOK)
-	got, err = c2.GetRepositoryByNodeID(context.Background(), "id0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	expRepo = &Repository{ID: "id0-tok2"}
-	if diff := cmp.Diff(expRepo, got); diff != "" {
-		t.Fatal(diff)
-	}
-
-	// Let c1 cache "id1" as not found
-	c1.httpClient = newMockHTTPResponseBody(`{}`, http.StatusNotFound)
-	_, err = c1.GetRepositoryByNodeID(context.Background(), "id1")
-	if err != ErrNotFound {
-		t.Fatalf("want err %v, but got %v", ErrNotFound, err)
-	}
-
-	// Verify c1 sees "id1" as "not found" from cache in subsequent calls
-	c1.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id1-tok1" } } }`, http.StatusOK)
-	_, err = c1.GetRepositoryByNodeID(context.Background(), "id1")
-	if err != ErrNotFound {
-		t.Fatalf("want err %v, but got %v", ErrNotFound, err)
-	}
-
-	// c2 should get "id1" as usual
-	c2.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id1-tok2" } } }`, http.StatusOK)
-	got, err = c2.GetRepositoryByNodeID(context.Background(), "id1")
-	if err != nil {
-		t.Fatal(err)
-	}
-	expRepo = &Repository{ID: "id1-tok2"}
-	if diff := cmp.Diff(expRepo, got); diff != "" {
-		t.Fatal(diff)
-	}
-
-	// For sanity, c0 (unauthenticated) should get "id1" as usual
-	c0.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id1" } } }`, http.StatusOK)
-	got, err = c0.GetRepositoryByNodeID(context.Background(), "id1")
-	if err != nil {
-		t.Fatal(err)
-	}
-	expRepo = &Repository{ID: "id1"}
-	if diff := cmp.Diff(expRepo, got); diff != "" {
-		t.Fatal(diff)
-	}
-}
-
 func TestClient_buildGetRepositoriesBatchQuery(t *testing.T) {
 	repos := []string{
 		"sourcegraph/grapher-tutorial",
@@ -624,7 +328,8 @@ repo7: repository(owner: "sourcegraph", name: "vcsstore") { ... on Repository { 
 repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repository { ...RepositoryFields } }`
 
 	mock := mockHTTPResponseBody{responseBody: ""}
-	c := newTestClient(t, &mock)
+	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
+	c := NewV4Client(apiURL, nil, &mock)
 	query, err := c.buildGetReposBatchQuery(repos)
 	if err != nil {
 		t.Fatal(err)
@@ -775,7 +480,8 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mock := mockHTTPResponseBody{responseBody: tc.mockResponseBody}
-			c := newTestClient(t, &mock)
+			apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
+			c := NewV4Client(apiURL, nil, &mock)
 
 			repos, err := c.GetReposByNameWithOwner(context.Background(), namesWithOwners...)
 			if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); tc.err != "" && have != want {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/inconshreveable/log15"
@@ -18,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-const port = 3192
+const addr = ":3192"
 
 func main() {
 	config := &Config{}
@@ -34,15 +35,25 @@ func main() {
 		log.Fatalf("failed to read config: %s", err)
 	}
 
+	debugServer, err := debugserver.NewServerRoutine()
+	if err != nil {
+		log.Fatalf("Failed to create listener: %s", err)
+	}
+	go debugServer.Start()
+
 	routines := []goroutine.BackgroundRoutine{
-		goroutine.NoopStop(debugserver.NewServerRoutine()),
 		apiworker.NewWorker(config.APIWorkerOptions(nil)),
 	}
 	if !config.DisableHealthServer {
-		routines = append(routines, httpserver.New(port, nil))
+		server, err := httpserver.NewFromAddr(addr, httpserver.NewHandler(nil), httpserver.Options{})
+		if err != nil {
+			log.Fatalf("Failed to create listener: %s", err)
+		}
+
+		routines = append(routines, server)
 	}
 
-	goroutine.MonitorBackgroundRoutines(routines...)
+	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 }
 
 func makeWorkerMetrics() workerutil.WorkerMetrics {
@@ -54,7 +65,7 @@ func makeWorkerMetrics() workerutil.WorkerMetrics {
 
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
-		"index_queue_processor",
+		"executor_queue_processor",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of records processed"),
 	)
