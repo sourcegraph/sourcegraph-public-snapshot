@@ -1149,12 +1149,8 @@
         "current": {
           "selected": true,
           "tags": [],
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
+          "text": ["All"],
+          "value": ["$__all"]
         },
         "datasource": "Prometheus",
         "definition": "label_values(src_gitserver_exec_running, instance)",
