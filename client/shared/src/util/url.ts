@@ -469,7 +469,7 @@ function parseLineOrPosition(
 
 /** Encodes a repository at a revspec for use in a URL. */
 export function encodeRepoRevision({ repoName, revision }: RepoSpec & Partial<RevisionSpec>): string {
-    return revision ? `${repoName}@${escapeRevspecForURL(revision)}` : repoName
+    return revision ? `${encodeURIComponentExceptSlashes(repoName)}@${escapeRevspecForURL(revision)}` : repoName
 }
 
 export function toPrettyBlobURL(
@@ -507,7 +507,7 @@ export function toRepoURL(target: RepoSpec & Partial<RevisionSpec>): string {
  * for (e.g.) branches with slashes look a lot nicer with '/' than '%2F'.
  */
 export function escapeRevspecForURL(revision: string): string {
-    return encodeURIComponent(revision).replace(/%2F/g, '/')
+    return encodeURIComponentExceptSlashes(revision)
 }
 
 export function toViewStateHashComponent(viewState: string | undefined): string {
