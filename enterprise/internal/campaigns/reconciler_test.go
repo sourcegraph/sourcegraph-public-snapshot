@@ -2,6 +2,7 @@ package campaigns
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -1434,6 +1436,11 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		t.Fatal("admin is not site admin")
 	}
 
+	user := createTestUser(ctx, t)
+	if user.SiteAdmin {
+		t.Fatal("user is site admin")
+	}
+
 	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 	gitHubRepo := rs[0]
 	gitHubRepoCloneURL := gitHubRepo.Sources[extSvc.URN()].CloneURL
@@ -1446,9 +1453,6 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	bbsRepo := bbsRepos[0]
 	bbsRepoCloneURL := bbsRepo.Sources[bbsExtSvc.URN()].CloneURL
 
-	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
-	campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
-
 	gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
 	fakeSource := &ct.FakeChangesetSource{Svc: extSvc}
 	sourcer := repos.NewFakeSourcer(nil, fakeSource)
@@ -1458,12 +1462,15 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 
 	tests := []struct {
 		name           string
+		user           *types.User
 		repo           *repos.Repo
 		credentials    auth.Authenticator
+		wantErr        bool
 		wantPushConfig *gitprotocol.PushConfig
 	}{
 		{
 			name:        "github OAuthBearerToken",
+			user:        user,
 			repo:        gitHubRepo,
 			credentials: &auth.OAuthBearerToken{Token: "my-secret-github-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
@@ -1471,14 +1478,22 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			},
 		},
 		{
+			name:    "github no credentials",
+			user:    user,
+			repo:    gitHubRepo,
+			wantErr: true,
+		},
+		{
 			name: "github site-admin and no credentials",
 			repo: gitHubRepo,
+			user: admin,
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: gitHubRepoCloneURL,
 			},
 		},
 		{
 			name:        "gitlab OAuthBearerToken",
+			user:        user,
 			repo:        gitLabRepo,
 			credentials: &auth.OAuthBearerToken{Token: "my-secret-gitlab-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
@@ -1486,7 +1501,14 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			},
 		},
 		{
+			name:    "gitlab no credentials",
+			user:    user,
+			repo:    gitLabRepo,
+			wantErr: true,
+		},
+		{
 			name: "gitlab site-admin and no credentials",
+			user: admin,
 			repo: gitLabRepo,
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: gitLabRepoCloneURL,
@@ -1494,6 +1516,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		},
 		{
 			name:        "bitbucketServer BasicAuth",
+			user:        user,
 			repo:        bbsRepo,
 			credentials: &auth.BasicAuth{Username: "fredwoard johnssen", Password: "my-secret-bbs-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
@@ -1501,7 +1524,14 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			},
 		},
 		{
+			name:    "bitbucketServer no credentials",
+			user:    user,
+			repo:    bbsRepo,
+			wantErr: true,
+		},
+		{
 			name: "bitbucketServer site-admin and no credentials",
+			user: admin,
 			repo: bbsRepo,
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: bbsRepoCloneURL,
@@ -1509,12 +1539,12 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
+	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.credentials != nil {
 				cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
 					Domain:              db.UserCredentialDomainCampaigns,
-					UserID:              admin.ID,
+					UserID:              tt.user.ID,
 					ExternalServiceType: tt.repo.ExternalRepo.ServiceType,
 					ExternalServiceID:   tt.repo.ExternalRepo.ServiceID,
 				}, tt.credentials)
@@ -1523,6 +1553,9 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				}
 				defer func() { db.UserCredentials.Delete(ctx, cred.ID) }()
 			}
+
+			campaignSpec := createCampaignSpec(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
+			campaign := createCampaign(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, campaignSpec.ID)
 
 			ex := &executor{
 				ch: &campaigns.Changeset{
@@ -1540,8 +1573,15 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			}
 
 			err := ex.ExecutePlan(context.Background(), plan)
-			if err != nil {
+			if !tt.wantErr && err != nil {
 				t.Fatalf("executing plan failed: %s", err)
+			}
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("expected error but got none")
+				} else {
+					return
+				}
 			}
 
 			if diff := cmp.Diff(tt.wantPushConfig, gitClient.CreateCommitFromPatchReq.Push); diff != "" {
