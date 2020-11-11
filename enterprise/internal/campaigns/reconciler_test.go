@@ -1436,12 +1436,15 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 
 	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 	gitHubRepo := rs[0]
+	gitHubRepoCloneURL := gitHubRepo.Sources[extSvc.URN()].CloneURL
 
-	gitLabRepos, _ := ct.CreateGitlabTestRepos(t, ctx, dbconn.Global, 1)
+	gitLabRepos, gitLabExtSvc := ct.CreateGitlabTestRepos(t, ctx, dbconn.Global, 1)
 	gitLabRepo := gitLabRepos[0]
+	gitLabRepoCloneURL := gitLabRepo.Sources[gitLabExtSvc.URN()].CloneURL
 
-	bbsRepos, _ := ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
+	bbsRepos, bbsExtSvc := ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
 	bbsRepo := bbsRepos[0]
+	bbsRepoCloneURL := bbsRepo.Sources[bbsExtSvc.URN()].CloneURL
 
 	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
 	campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
@@ -1464,7 +1467,15 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			repo:        gitHubRepo,
 			credentials: &auth.OAuthBearerToken{Token: "my-secret-github-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
-				Username: "my-secret-github-token",
+				Username:  "my-secret-github-token",
+				RemoteURL: "https://my-secret-github-token@github.com/" + gitHubRepo.Name,
+			},
+		},
+		{
+			name: "github site-admin and no credentials",
+			repo: gitHubRepo,
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: gitHubRepoCloneURL,
 			},
 		},
 		{
@@ -1472,8 +1483,16 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			repo:        gitLabRepo,
 			credentials: &auth.OAuthBearerToken{Token: "my-secret-gitlab-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
-				Username: "git",
-				Password: "my-secret-gitlab-token",
+				Username:  "git",
+				Password:  "my-secret-gitlab-token",
+				RemoteURL: "https://git:my-secret-gitlab-token@gitlab.com/" + gitLabRepo.Name,
+			},
+		},
+		{
+			name: "gitlab site-admin and no credentials",
+			repo: gitLabRepo,
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: gitLabRepoCloneURL,
 			},
 		},
 		{
@@ -1481,8 +1500,16 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			repo:        bbsRepo,
 			credentials: &auth.BasicAuth{Username: "fredwoard johnssen", Password: "my-secret-bbs-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
-				Username: "fredwoard johnssen",
-				Password: "my-secret-bbs-token",
+				Username:  "fredwoard johnssen",
+				Password:  "my-secret-bbs-token",
+				RemoteURL: "https://fredwoard%20johnssen:my-secret-bbs-token@bitbucket.sourcegraph.com/scm/" + bbsRepo.Name,
+			},
+		},
+		{
+			name: "bitbucketServer site-admin and no credentials",
+			repo: bbsRepo,
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: bbsRepoCloneURL,
 			},
 		},
 	}
@@ -1490,14 +1517,16 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.credentials != nil {
-				if _, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+				cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
 					Domain:              db.UserCredentialDomainCampaigns,
 					UserID:              admin.ID,
 					ExternalServiceType: tt.repo.ExternalRepo.ServiceType,
 					ExternalServiceID:   tt.repo.ExternalRepo.ServiceID,
-				}, tt.credentials); err != nil {
+				}, tt.credentials)
+				if err != nil {
 					t.Fatal(err)
 				}
+				defer func() { db.UserCredentials.Delete(ctx, cred.ID) }()
 			}
 
 			ex := &executor{

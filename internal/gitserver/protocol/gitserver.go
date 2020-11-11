@@ -206,6 +206,11 @@ type PushConfig struct {
 	// If both fields are blank, the credentials stored in the remote URL of
 	// the origin in the git repository will be used.
 	Username, Password string
+
+	// RemoteURL is the git remote URL to which to push the commits.
+	// The URL needs to include HTTP basic auth credentials if no
+	// unauthenticated requests are allowed by the remote host.
+	RemoteURL string
 }
 
 // CreateCommitFromPatchResponse is the response type returned after creating
