@@ -1,5 +1,6 @@
 import { IRange } from 'monaco-editor'
 import { filterTypeKeysWithAliases } from '../interactive/util'
+import { SearchPatternType } from '../../graphql-operations'
 
 /**
  * Defines common properties for tokens.
@@ -547,8 +548,9 @@ const createScanner = (kind: PatternKind, interpretComments?: boolean): Scanner<
 export const scanSearchQuery = (
     query: string,
     interpretComments?: boolean,
-    kind = PatternKind.Literal
+    searchPatternType = SearchPatternType.literal
 ): ScanResult<Token[]> => {
-    const scanner = createScanner(kind, interpretComments)
+    const patternKind = searchPatternType === SearchPatternType.regexp ? PatternKind.Regexp : PatternKind.Literal
+    const scanner = createScanner(patternKind, interpretComments)
     return scanner(query, 0)
 }
