@@ -290,6 +290,9 @@ function mockCommonGraphQLResponses(
                               },
                               totalCount: 1,
                           },
+                          allCampaigns: {
+                              totalCount: 1,
+                          },
                       },
                   }
                 : {
@@ -310,6 +313,9 @@ function mockCommonGraphQLResponses(
                                   endCursor: null,
                                   hasNextPage: false,
                               },
+                              totalCount: 1,
+                          },
+                          allCampaigns: {
                               totalCount: 1,
                           },
                       },
@@ -345,6 +351,9 @@ describe('Campaigns', () => {
                             endCursor: null,
                             hasNextPage: false,
                         },
+                        totalCount: 1,
+                    },
+                    allCampaigns: {
                         totalCount: 1,
                     },
                 }),
