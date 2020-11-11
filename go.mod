@@ -202,6 +202,7 @@ require (
 )
 
 replace (
+	github.com/ericchiang/k8s => github.com/daxmc99/k8s v1.2.1
 	// protobuf v1.3.5+ causes issues - https://github.com/sourcegraph/sourcegraph/issues/11804
 	github.com/golang/protobuf => github.com/golang/protobuf v1.3.5
 
