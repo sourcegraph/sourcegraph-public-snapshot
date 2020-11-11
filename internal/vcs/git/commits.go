@@ -422,17 +422,9 @@ func logOnelineBatchScanner(scan func() (*onelineCommit, error), maxBatchSize in
 			}
 		}
 
-		if len(commits) > 0 {
-			// Note: err can be non-nil here. The next call to this
-			// function will return err.
-			return commits, nil
-		}
-
-		if err == nil {
-			panic("err should be set if commits is empty")
-		}
-
-		return nil, err
+		// Note: err can be non-nil here. The next call to this
+		// function will return err.
+		return commits, nil
 	}
 
 	return next, cleanup
