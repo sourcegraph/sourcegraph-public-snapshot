@@ -682,7 +682,7 @@ WITH events AS (
   SELECT
     name,
     (argument->>'languageId')::text as language_id,
-    ` + userIDQueryFragment + ` AS user_id,
+    ` + aggregatedUserIDQueryFragment + ` AS user_id,
     ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week
   FROM event_logs
   WHERE
