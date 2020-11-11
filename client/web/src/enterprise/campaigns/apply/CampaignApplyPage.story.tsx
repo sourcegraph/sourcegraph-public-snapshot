@@ -51,7 +51,7 @@ const campaignSpec: CampaignSpecFields = {
         url: '/users/alice',
     },
     viewerCanAdminister: boolean('viewerCanAdminister', true),
-    viewerMissingCodeHostCredentials: {
+    viewerCampaignsCodeHosts: {
         totalCount: 0,
         nodes: [],
     },
@@ -62,7 +62,7 @@ const fetchCampaignSpecCreate: typeof fetchCampaignSpecById = () => of(campaignS
 const fetchCampaignSpecMissingCredentials: typeof fetchCampaignSpecById = () =>
     of({
         ...campaignSpec,
-        viewerMissingCodeHostCredentials: {
+        viewerCampaignsCodeHosts: {
             totalCount: 2,
             nodes: [
                 {

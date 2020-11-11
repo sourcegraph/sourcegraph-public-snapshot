@@ -77,23 +77,19 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 className="test-campaign-apply-page"
             />
             <CampaignSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} className="mb-3" />
-            {spec.viewerMissingCodeHostCredentials.totalCount > 0 && (
+            {spec.viewerCampaignsCodeHosts.totalCount > 0 && (
                 <div className="alert alert-warning">
                     <p className="alert-title">
                         You don't have credentials configured for{' '}
-                        {pluralize(
-                            'this code host',
-                            spec.viewerMissingCodeHostCredentials.totalCount,
-                            'these code hosts'
-                        )}
+                        {pluralize('this code host', spec.viewerCampaignsCodeHosts.totalCount, 'these code hosts')}
                     </p>
                     <ul>
-                        {spec.viewerMissingCodeHostCredentials.nodes.map(node => (
+                        {spec.viewerCampaignsCodeHosts.nodes.map(node => (
                             <MissingCodeHost {...node} key={node.externalServiceKind + node.externalServiceURL} />
                         ))}
                     </ul>
                     <p className="mb-0">
-                        Configure {pluralize('it', spec.viewerMissingCodeHostCredentials.totalCount, 'them')} in your{' '}
+                        Configure {pluralize('it', spec.viewerCampaignsCodeHosts.totalCount, 'them')} in your{' '}
                         <Link to={`${authenticatedUser.url}/settings/campaigns`} target="_blank" rel="noopener">
                             campaigns user settings
                         </Link>{' '}

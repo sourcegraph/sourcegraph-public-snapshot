@@ -90,6 +90,12 @@ type ListCampaignsCodeHostsArgs struct {
 	UserID int32
 }
 
+type ListViewerCampaignsCodeHostsArgs struct {
+	First                 int32
+	After                 *string
+	OnlyWithoutCredential bool
+}
+
 type CampaignsResolver interface {
 	// Mutations
 	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error)
@@ -139,7 +145,7 @@ type CampaignSpecResolver interface {
 
 	AppliesToCampaign(ctx context.Context) (CampaignResolver, error)
 
-	ViewerMissingCodeHostCredentials(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
+	ViewerCampaignsCodeHosts(ctx context.Context, args *ListViewerCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
 }
 
 type CampaignDescriptionResolver interface {

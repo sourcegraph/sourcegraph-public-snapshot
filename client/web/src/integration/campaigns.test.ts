@@ -534,7 +534,7 @@ describe('Campaigns', () => {
                                           url: '/organizations/test-org',
                                       },
                             viewerCanAdminister: true,
-                            viewerMissingCodeHostCredentials: {
+                            viewerCampaignsCodeHosts: {
                                 totalCount: 0,
                                 nodes: [],
                             },

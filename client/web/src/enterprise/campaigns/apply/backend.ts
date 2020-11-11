@@ -45,7 +45,7 @@ export const campaignSpecFragment = gql`
         diffStat {
             ...DiffStatFields
         }
-        viewerMissingCodeHostCredentials {
+        viewerCampaignsCodeHosts(onlyWithoutCredential: true) {
             totalCount
             nodes {
                 externalServiceURL

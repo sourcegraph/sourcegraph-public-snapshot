@@ -204,26 +204,32 @@ func (r *campaignSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlba
 	}, nil
 }
 
-func (r *campaignSpecResolver) ViewerMissingCodeHostCredentials(ctx context.Context, args *graphqlbackend.ListCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
+func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, backend.ErrNotAuthenticated
 	}
-	if authErr := backend.CheckCurrentUserIsSiteAdmin(ctx); authErr == nil {
-		// For site-admins never return anything
-		return &campaignsCodeHostConnectionResolver{
-			store: r.store,
-			customCompute: func(ctx context.Context) (all []*campaigns.CodeHost, page []*campaigns.CodeHost, credsByIDType map[idType]*db.UserCredential, err error) {
-				return []*campaigns.CodeHost{}, []*campaigns.CodeHost{}, nil, nil
-			},
-		}, nil
-	} else if authErr != backend.ErrMustBeSiteAdmin {
-		return nil, authErr
+
+	// Short path for site-admins when OnlyWithoutCredential is true: It will always be an empty list.
+	if args.OnlyWithoutCredential {
+		if authErr := backend.CheckCurrentUserIsSiteAdmin(ctx); authErr == nil {
+			// For site-admins never return anything
+			return &campaignsCodeHostConnectionResolver{
+				store: r.store,
+				customCompute: func(ctx context.Context) (all []*campaigns.CodeHost, page []*campaigns.CodeHost, credsByIDType map[idType]*db.UserCredential, err error) {
+					return []*campaigns.CodeHost{}, []*campaigns.CodeHost{}, nil, nil
+				},
+			}, nil
+		} else if authErr != backend.ErrMustBeSiteAdmin {
+			return nil, authErr
+		}
 	}
+
 	specs, _, err := r.store.ListChangesetSpecs(ctx, ee.ListChangesetSpecsOpts{CampaignSpecID: r.campaignSpec.ID})
 	if err != nil {
 		return nil, err
 	}
+
 	offset := 0
 	if args.After != nil {
 		offset, err = strconv.Atoi(*args.After)
@@ -231,9 +237,10 @@ func (r *campaignSpecResolver) ViewerMissingCodeHostCredentials(ctx context.Cont
 			return nil, err
 		}
 	}
+
 	return &campaignsCodeHostConnectionResolver{
 		userID:                actor.UID,
-		onlyWithoutCredential: true,
+		onlyWithoutCredential: args.OnlyWithoutCredential,
 		store:                 r.store,
 		opts: ee.ListCodeHostsOpts{
 			RepoIDs: specs.RepoIDs(),
