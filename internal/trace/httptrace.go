@@ -188,6 +188,8 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 			origin = trackOrigin
 		}
 		ctx = WithRequestOrigin(ctx, origin)
+		ctx = context.WithValue(ctx, "user-agent", r.UserAgent())
+		ctx = context.WithValue(ctx, "ip-addr", GetIP(r))
 
 		m := httpsnoop.CaptureMetrics(next, rw, r.WithContext(ctx))
 
@@ -231,7 +233,7 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 			"trace", SpanURL(span),
 			"userAgent", r.UserAgent(),
 			"user", userID,
-			"xForwardedFor", r.Header.Get("X-Forwarded-For"),
+			"xForwardedFor", GetIP(r),
 			"written", m.Written,
 			"code", m.Code,
 			"duration", m.Duration,
@@ -250,13 +252,23 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 				"routename":     routeName,
 				"userAgent":     r.UserAgent(),
 				"user":          strconv.FormatInt(int64(userID), 10),
-				"xForwardedFor": r.Header.Get("X-Forwarded-For"),
+				"xForwardedFor": GetIP(r),
 				"written":       strconv.FormatInt(int64(m.Written), 10),
 				"duration":      m.Duration.String(),
 				"graphql_error": strconv.FormatBool(gqlErr),
 			})
 		}
 	}))
+}
+
+// GetIP gets a requests IP address by reading off the forwarded-for
+// header (for proxies) and falls back to use the remote address.
+func GetIP(r *http.Request) string {
+	forwarded := r.Header.Get("X-Forwarded-For")
+	if forwarded != "" {
+		return forwarded
+	}
+	return r.RemoteAddr
 }
 
 func TraceRoute(next http.Handler) http.Handler {

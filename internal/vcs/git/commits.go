@@ -81,6 +81,12 @@ func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (s
 			ev.AddField("no_ensure_revision", opt.NoEnsureRevision)
 			ev.AddField("actor", actor.FromContext(ctx).UIDString())
 
+			userAgent, _ := ctx.Value("user-agent").(string)
+			ev.AddField("user-agent", userAgent)
+
+			ipAddr, _ := ctx.Value("ip-addr").(string)
+			ev.AddField("ip-addr", ipAddr)
+
 			q, _ := ctx.Value("graphql-query").(string)
 			ev.AddField("query", q)
 
