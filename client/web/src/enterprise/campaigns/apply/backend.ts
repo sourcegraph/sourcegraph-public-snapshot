@@ -45,6 +45,13 @@ export const campaignSpecFragment = gql`
         diffStat {
             ...DiffStatFields
         }
+        viewerMissingCodeHostCredentials {
+            totalCount
+            nodes {
+                externalServiceURL
+                externalServiceKind
+            }
+        }
     }
 
     ${diffStatFields}

@@ -1186,7 +1186,7 @@ type CampaignSpec implements Node {
     """
     appliesToCampaign: Campaign
 
-    viewerMissingCodeHostCredentials(first: Int! = 50, after: String): CampaignsCodeHostConnection!
+    viewerMissingCodeHostCredentials(first: Int = 50, after: String): CampaignsCodeHostConnection!
 }
 
 """

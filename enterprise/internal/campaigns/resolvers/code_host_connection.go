@@ -19,6 +19,7 @@ type campaignsCodeHostConnectionResolver struct {
 	opts                  ee.ListCodeHostsOpts
 	limitOffset           db.LimitOffset
 	store                 *ee.Store
+	customCompute         func(ctx context.Context) (all, page []*campaigns.CodeHost, credsByIDType map[idType]*db.UserCredential, err error)
 
 	once          sync.Once
 	chs           []*campaigns.CodeHost
@@ -71,6 +72,13 @@ func (c *campaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]grap
 }
 
 func (c *campaignsCodeHostConnectionResolver) compute(ctx context.Context) (all, page []*campaigns.CodeHost, credsByIDType map[idType]*db.UserCredential, err error) {
+	if c.customCompute != nil {
+		return c.customCompute(ctx)
+	}
+	return c.defaultCompute(ctx)
+}
+
+func (c *campaignsCodeHostConnectionResolver) defaultCompute(ctx context.Context) (all, page []*campaigns.CodeHost, credsByIDType map[idType]*db.UserCredential, err error) {
 	c.once.Do(func() {
 		// Don't pass c.limitOffset here, as we want all code hosts for the totalCount anyways.
 		c.chs, c.chsErr = c.store.ListCodeHosts(ctx, c.opts)

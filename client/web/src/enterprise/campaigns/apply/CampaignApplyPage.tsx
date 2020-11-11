@@ -17,11 +17,16 @@ import { HeroPage } from '../../../components/HeroPage'
 import { CampaignDescription } from '../detail/CampaignDescription'
 import { CampaignSpecInfoByline } from './CampaignSpecInfoByline'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { Link } from '../../../../../shared/src/components/Link'
+import { AuthenticatedUser } from '../../../auth'
+import { ExternalServiceKind } from '../../../graphql-operations'
+import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 
 export interface CampaignApplyPageProps extends ThemeProps, TelemetryProps {
     specID: string
     history: H.History
     location: H.Location
+    authenticatedUser: Pick<AuthenticatedUser, 'url'>
 
     /** Used for testing. */
     fetchCampaignSpecById?: typeof _fetchCampaignSpecById
@@ -37,6 +42,7 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
     specID,
     history,
     location,
+    authenticatedUser,
     isLightTheme,
     telemetryService,
     fetchCampaignSpecById = _fetchCampaignSpecById,
@@ -70,6 +76,19 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 className="test-campaign-apply-page"
             />
             <CampaignSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} className="mb-3" />
+            {spec.viewerMissingCodeHostCredentials.totalCount > 0 && (
+                <div className="alert alert-warning">
+                    <p className="alert-title">
+                        Some credentials are missing to apply this campaign.{' '}
+                        <Link to={`${authenticatedUser.url}/settings/campaigns`}>Configure them here</Link>.
+                    </p>
+                    <ul>
+                        {spec.viewerMissingCodeHostCredentials.nodes.map(node => (
+                            <MissingCodeHost {...node} key={node.externalServiceKind + node.externalServiceURL} />
+                        ))}
+                    </ul>
+                </div>
+            )}
             <CreateUpdateCampaignAlert
                 history={history}
                 specID={spec.id}
@@ -88,5 +107,18 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 expandChangesetDescriptions={expandChangesetDescriptions}
             />
         </>
+    )
+}
+
+const MissingCodeHost: React.FunctionComponent<{
+    externalServiceKind: ExternalServiceKind
+    externalServiceURL: string
+}> = ({ externalServiceKind, externalServiceURL }) => {
+    const Icon = defaultExternalServices[externalServiceKind].icon
+    return (
+        <li>
+            <Icon className="icon-inline" />
+            {externalServiceURL}
+        </li>
     )
 }
