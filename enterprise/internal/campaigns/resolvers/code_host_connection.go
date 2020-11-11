@@ -106,7 +106,7 @@ func (c *campaignsCodeHostConnectionResolver) defaultCompute(ctx context.Context
 					externalServiceID:   ch.ExternalServiceID,
 					externalServiceType: ch.ExternalServiceType,
 				}
-				if _, ok := credsByIDType[t]; !ok {
+				if _, ok := c.credsByIDType[t]; !ok {
 					chs = append(chs, ch)
 				}
 			}

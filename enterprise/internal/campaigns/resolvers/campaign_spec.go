@@ -212,6 +212,7 @@ func (r *campaignSpecResolver) ViewerMissingCodeHostCredentials(ctx context.Cont
 	if authErr := backend.CheckCurrentUserIsSiteAdmin(ctx); authErr == nil {
 		// For site-admins never return anything
 		return &campaignsCodeHostConnectionResolver{
+			store: r.store,
 			customCompute: func(ctx context.Context) (all []*campaigns.CodeHost, page []*campaigns.CodeHost, credsByIDType map[idType]*db.UserCredential, err error) {
 				return []*campaigns.CodeHost{}, []*campaigns.CodeHost{}, nil, nil
 			},
@@ -233,6 +234,7 @@ func (r *campaignSpecResolver) ViewerMissingCodeHostCredentials(ctx context.Cont
 	return &campaignsCodeHostConnectionResolver{
 		userID:                actor.UID,
 		onlyWithoutCredential: true,
+		store:                 r.store,
 		opts: ee.ListCodeHostsOpts{
 			RepoIDs: specs.RepoIDs(),
 		},
