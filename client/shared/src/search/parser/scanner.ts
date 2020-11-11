@@ -2,6 +2,24 @@ import { IRange } from 'monaco-editor'
 import { filterTypeKeysWithAliases } from '../interactive/util'
 
 /**
+ * Defines common properties for tokens.
+ */
+export interface BaseToken {
+    type: Token['type']
+    range: CharacterRange
+}
+
+/**
+ * All recognized tokens.
+ */
+export type Token = Whitespace | OpeningParen | ClosingParen | Keyword | Comment | Literal | Pattern | Filter | Quoted
+
+/**
+ * A scanner produces a term, which is either a token or a list of tokens.
+ */
+export type Term = Token | Token[]
+
+/**
  * Represents a zero-indexed character range in a single-line search query.
  */
 export interface CharacterRange {
@@ -32,9 +50,11 @@ export enum PatternKind {
     Structural,
 }
 
-export interface Pattern {
+/**
+ * A value interpreted as a pattern of kind {@link PatternKind}.
+ */
+export interface Pattern extends BaseToken {
     type: 'pattern'
-    range: CharacterRange
     kind: PatternKind
     value: string
 }
@@ -44,9 +64,8 @@ export interface Pattern {
  *
  * Example: `Conn`.
  */
-export interface Literal {
+export interface Literal extends BaseToken {
     type: 'literal'
-    range: CharacterRange
     value: string
 }
 
@@ -55,9 +74,8 @@ export interface Literal {
  *
  * Example: `repo:^github\.com\/sourcegraph\/sourcegraph$`.
  */
-export interface Filter {
+export interface Filter extends BaseToken {
     type: 'filter'
-    range: CharacterRange
     filterType: Literal
     filterValue: Quoted | Literal | undefined
     negated: boolean
@@ -74,10 +92,9 @@ export enum KeywordKind {
  *
  * Current keywords are: AND, and, OR, or, NOT, not.
  */
-export interface Keyword {
+export interface Keyword extends BaseToken {
     type: 'keyword'
     value: string
-    range: CharacterRange
     kind: KeywordKind
 }
 
@@ -86,9 +103,8 @@ export interface Keyword {
  *
  * Example: "Conn".
  */
-export interface Quoted {
+export interface Quoted extends BaseToken {
     type: 'quoted'
-    range: CharacterRange
     quotedValue: string
 }
 
@@ -97,30 +113,22 @@ export interface Quoted {
  *
  * Example: `// Oh hai`
  */
-export interface Comment {
+export interface Comment extends BaseToken {
     type: 'comment'
-    range: CharacterRange
     value: string
 }
 
-export interface Whitespace {
+export interface Whitespace extends BaseToken {
     type: 'whitespace'
-    range: CharacterRange
 }
 
-export interface OpeningParen {
+export interface OpeningParen extends BaseToken {
     type: 'openingParen'
-    range: CharacterRange
 }
 
-export interface ClosingParen {
+export interface ClosingParen extends BaseToken {
     type: 'closingParen'
-    range: CharacterRange
 }
-
-export type Token = Whitespace | OpeningParen | ClosingParen | Keyword | Comment | Literal | Pattern | Filter | Quoted
-
-export type Term = Token | Token[]
 
 /**
  * Represents the failed result of running a {@link Scanner} on a search query.
