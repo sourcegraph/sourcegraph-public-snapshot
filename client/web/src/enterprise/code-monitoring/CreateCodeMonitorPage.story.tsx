@@ -3,7 +3,6 @@ import { CreateCodeMonitorPage } from './CreateCodeMonitorPage'
 import { storiesOf } from '@storybook/react'
 import { WebStory } from '../../components/WebStory'
 import { AuthenticatedUser } from '../../auth'
-import { boolean } from '@storybook/addon-knobs'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/CreateCodeMonitorPage', module)
 
