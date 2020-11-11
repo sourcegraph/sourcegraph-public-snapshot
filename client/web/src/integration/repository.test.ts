@@ -12,6 +12,7 @@ import {
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import * as path from 'path'
 import { DiffHunkLineType } from '../graphql-operations'
+import { encodeURIComponentExceptSlashes } from '../../../shared/src/util/url'
 
 describe('Repository', () => {
     let driver: Driver
@@ -416,7 +417,9 @@ describe('Repository', () => {
                 ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
                 FileExternalLinks: ({ filePath, repoName, revision }) =>
                     createFileExternalLinksResult(
-                        `https://${repoName}/blob/${revision}/${filePath.split('/').map(encodeURIComponent).join('/')}`
+                        `https://${encodeURIComponentExceptSlashes(repoName)}/blob/${encodeURIComponentExceptSlashes(
+                            revision
+                        )}/${encodeURIComponentExceptSlashes(filePath)}`
                     ),
                 TreeEntries: () => ({
                     repository: {
