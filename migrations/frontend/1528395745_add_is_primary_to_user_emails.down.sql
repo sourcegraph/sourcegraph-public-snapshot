@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TABLE user_emails DROP COLUMN IF EXISTS is_primary;
+
+COMMIT;
