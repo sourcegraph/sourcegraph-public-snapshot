@@ -3269,7 +3269,7 @@ input MonitorEmailInput {
     """
     priority: MonitorEmailPriority!
     """
-    The recipients of the email.
+    A list of users or orgs which will receive the email.
     """
     recipients: [ID!]!
     """
