@@ -1617,7 +1617,7 @@ declare module 'sourcegraph' {
          * @param variables A key/value object with variable values
          * @returns Promise for the result of the GraphQL query
          */
-        export function queryGraphQL<T = any>(query: string, variables: { [key: string]: any }): Promise<T>
+        export function queryGraphQL<TResult extends object = any, TVariables extends object = any>(query: string, variables: TVariables): Promise<TResult>
     }
 
     /**
