@@ -45,6 +45,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Pushing commits to public GitLab repositories with campaigns now works, since we use the configured token even if the repository is public. [#15536](https://github.com/sourcegraph/sourcegraph/pull/15536)
 - `.kts` is now highlighted properly as Kotlin code, fixed various other issues in Kotlin syntax highlighting.
 - Fixed an issue where the value of `content:` was treated literally when the regular expression toggle is active. [#15639](https://github.com/sourcegraph/sourcegraph/pull/15639)
+- Fixed an issue where non-site admins were prohibited from updating some of their other personal metadata when `auth.enableUsernameChanges` was `false`. [#15663](https://github.com/sourcegraph/sourcegraph/issues/15663)
 
 ### Removed
 
