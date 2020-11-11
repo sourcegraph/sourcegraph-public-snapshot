@@ -4,13 +4,17 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"expvar"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -60,10 +64,29 @@ type CommitsOptions struct {
 // -sne` command.
 var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
 
+// XXX(tsenart): This is debugging code to try and understand what GraphQL
+// queries are triggering thousands of calls to getCommit, which overload git-server.
+// This will be removed. In the future, we really need proper tracing to work well.
+// https://github.com/sourcegraph/sourcegraph/issues/15392
+var queries = expvar.NewMap("getCommit-graphql-queries")
+var recordQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
+var flushTicker = time.NewTicker(5 * time.Minute)
+
 // getCommit returns the commit with the given id.
 func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID, opt ResolveRevisionOptions) (*Commit, error) {
 	if Mocks.GetCommit != nil {
 		return Mocks.GetCommit(id)
+	}
+
+	if recordQueries {
+		q, _ := ctx.Value("graphql-query").(string)
+		queries.Add(q, 1)
+
+		select {
+		case <-flushTicker.C:
+			log15.Error("getCommit", "queries", queries.String())
+		default:
+		}
 	}
 
 	if err := checkSpecArgSafety(string(id)); err != nil {
