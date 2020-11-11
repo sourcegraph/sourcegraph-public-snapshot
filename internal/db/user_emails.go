@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
@@ -68,12 +69,50 @@ func (*userEmails) GetPrimaryEmail(ctx context.Context, id int32) (email string,
 		return Mocks.UserEmails.GetPrimaryEmail(ctx, id)
 	}
 
-	if err := dbconn.Global.QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 ORDER BY (verified_at IS NOT NULL) DESC, created_at ASC, email ASC LIMIT 1",
+	if err := dbconn.Global.QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND is_primary",
 		id,
 	).Scan(&email, &verified); err != nil {
 		return "", false, userEmailNotFoundError{[]interface{}{fmt.Sprintf("id %d", id)}}
 	}
 	return email, verified, nil
+}
+
+// SetPrimaryEmail sets the primary email for a user.
+// The address must be verified.
+// All other addresses for the user will be set as not primary.
+func (*userEmails) SetPrimaryEmail(ctx context.Context, userID int32, email string) error {
+	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	// Get the email. It needs to exist and be verified.
+	var verified bool
+	if err := tx.QueryRowContext(ctx, "SELECT verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND email=$2",
+		userID, email,
+	).Scan(&verified); err != nil {
+		return err
+	}
+	if !verified {
+		return errors.New("primary email must be verified")
+	}
+
+	// Set it as primary and all others as not
+	if _, err := tx.ExecContext(ctx, "UPDATE user_emails SET is_primary = (email = $2) WHERE user_id=$1", userID, email); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Get gets information about the user's associated email address.

@@ -130,27 +130,67 @@ func TestUserEmails_GetPrimary(t *testing.T) {
 		}
 	}
 
+	// Initial address should be primary
 	checkPrimaryEmail(t, "a@example.com", false)
-
+	// Add a second address
 	if err := UserEmails.Add(ctx, user.ID, "b1@example.com", nil); err != nil {
 		t.Fatal(err)
 	}
+	// Primary should still be the first one
 	checkPrimaryEmail(t, "a@example.com", false)
-
-	if err := UserEmails.Add(ctx, user.ID, "b2@example.com", nil); err != nil {
-		t.Fatal(err)
-	}
-	checkPrimaryEmail(t, "a@example.com", false)
-
+	// Verify second
 	if err := UserEmails.SetVerified(ctx, user.ID, "b1@example.com", true); err != nil {
 		t.Fatal(err)
 	}
-	checkPrimaryEmail(t, "b1@example.com", true)
-
-	if err := UserEmails.SetVerified(ctx, user.ID, "b2@example.com", true); err != nil {
+	// Set as primary
+	if err := UserEmails.SetPrimaryEmail(ctx, user.ID, "b1@example.com"); err != nil {
 		t.Fatal(err)
 	}
+	// Confirm it is now the primary
 	checkPrimaryEmail(t, "b1@example.com", true)
+}
+
+func TestUserEmails_SetPrimary(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	user, err := Users.Create(ctx, NewUser{
+		Email:                 "a@example.com",
+		Username:              "u2",
+		Password:              "pw",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	checkPrimaryEmail := func(t *testing.T, wantEmail string, wantVerified bool) {
+		t.Helper()
+		email, verified, err := UserEmails.GetPrimaryEmail(ctx, user.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if email != wantEmail {
+			t.Errorf("got email %q, want %q", email, wantEmail)
+		}
+		if verified != wantVerified {
+			t.Errorf("got verified %v, want %v", verified, wantVerified)
+		}
+	}
+
+	// Initial address should be primary
+	checkPrimaryEmail(t, "a@example.com", false)
+	// Add a another address
+	if err := UserEmails.Add(ctx, user.ID, "b1@example.com", nil); err != nil {
+		t.Fatal(err)
+	}
+	// Setting it as primary should fail since it is not verified
+	if err := UserEmails.SetPrimaryEmail(ctx, user.ID, "b1@example.com"); err == nil {
+		t.Fatal("Expected an error as address is not verified")
+	}
 }
 
 func TestUserEmails_ListByUser(t *testing.T) {
