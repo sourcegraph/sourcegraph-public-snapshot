@@ -6,13 +6,17 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -60,10 +64,32 @@ type CommitsOptions struct {
 // -sne` command.
 var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
 
+var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
+
 // getCommit returns the commit with the given id.
-func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID, opt ResolveRevisionOptions) (*Commit, error) {
+func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID, opt ResolveRevisionOptions) (_ *Commit, err error) {
 	if Mocks.GetCommit != nil {
 		return Mocks.GetCommit(id)
+	}
+
+	if honey.Enabled() && recordGetCommitQueries {
+		defer func() {
+			ev := honey.Event("getCommit")
+			ev.SampleRate = 10 // 1 in 10
+			ev.AddField("repo", repo)
+			ev.AddField("commit", id)
+			ev.AddField("no_ensure_revision", opt.NoEnsureRevision)
+			ev.AddField("actor", actor.FromContext(ctx).UIDString())
+
+			q, _ := ctx.Value("graphql-query").(string)
+			ev.AddField("query", q)
+
+			if err != nil {
+				ev.AddField("error", err.Error())
+			}
+
+			_ = ev.Send()
+		}()
 	}
 
 	if err := checkSpecArgSafety(string(id)); err != nil {
