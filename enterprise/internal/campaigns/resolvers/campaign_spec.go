@@ -8,9 +8,12 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
@@ -198,5 +201,34 @@ func (r *campaignSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlba
 		store:       r.store,
 		httpFactory: r.httpFactory,
 		Campaign:    campaign,
+	}, nil
+}
+
+func (r *campaignSpecResolver) ViewerMissingCodeHostCredentials(ctx context.Context, args *graphqlbackend.ListCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return nil, backend.ErrNotAuthenticated
+	}
+	specs, _, err := r.store.ListChangesetSpecs(ctx, ee.ListChangesetSpecsOpts{CampaignSpecID: r.campaignSpec.ID})
+	if err != nil {
+		return nil, err
+	}
+	offset := 0
+	if args.After != nil {
+		offset, err = strconv.Atoi(*args.After)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &campaignsCodeHostConnectionResolver{
+		userID:                actor.UID,
+		onlyWithoutCredential: true,
+		opts: ee.ListCodeHostsOpts{
+			RepoIDs: specs.RepoIDs(),
+		},
+		limitOffset: db.LimitOffset{
+			Limit:  int(args.First),
+			Offset: offset,
+		},
 	}, nil
 }

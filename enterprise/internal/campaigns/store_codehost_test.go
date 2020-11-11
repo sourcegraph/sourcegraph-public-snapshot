@@ -27,7 +27,7 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, reposStore r
 	}
 
 	t.Run("ListCodeHosts", func(t *testing.T) {
-		have, err := s.ListCodeHosts(ctx)
+		have, err := s.ListCodeHosts(ctx, ListCodeHostsOpts{})
 		if err != nil {
 			t.Fatal(err)
 		}

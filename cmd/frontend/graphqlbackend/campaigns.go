@@ -138,6 +138,8 @@ type CampaignSpecResolver interface {
 	DiffStat(ctx context.Context) (*DiffStat, error)
 
 	AppliesToCampaign(ctx context.Context) (CampaignResolver, error)
+
+	ViewerMissingCodeHostCredentials(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
 }
 
 type CampaignDescriptionResolver interface {

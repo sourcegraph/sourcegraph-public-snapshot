@@ -1185,6 +1185,8 @@ type CampaignSpec implements Node {
     campaign doesn't yet exist.
     """
     appliesToCampaign: Campaign
+
+    viewerMissingCodeHostCredentials(first: Int! = 50, after: String): CampaignsCodeHostConnection!
 }
 
 """
