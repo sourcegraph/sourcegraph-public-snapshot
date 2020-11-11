@@ -141,7 +141,7 @@ func TestExecutor_Integration(t *testing.T) {
 				Timeout:     tc.executorTimeout,
 			}
 			if opts.Timeout == 0 {
-				opts.Timeout = 5 * time.Second
+				opts.Timeout = 30 * time.Second
 			}
 
 			executor := newExecutor(opts, client, featuresAllEnabled())
