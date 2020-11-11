@@ -1,13 +1,14 @@
 import * as Monaco from 'monaco-editor'
 import { Token, Pattern, CharacterRange, PatternKind } from './scanner'
 import { RegExpParser, visitRegExpAST } from 'regexpp'
-import { Character, CharacterSet, CapturingGroup, Assertion, Quantifier } from 'regexpp/ast'
+import { Character, CharacterClass, CharacterSet, CapturingGroup, Assertion, Quantifier } from 'regexpp/ast'
 
 export enum RegexpMetaKind {
-    Delimited = 'Delimited',
-    CharacterSet = 'CharacterSet',
-    Quantifier = 'Quantifier',
-    Assertion = 'Assertion',
+    Delimited = 'Delimited', // like ( or )
+    CharacterSet = 'CharacterSet', // like \s
+    CharacterClass = 'CharacterClass', // like [a-z]
+    Quantifier = 'Quantifier', // like +
+    Assertion = 'Assertion', // like ^ or \b
 }
 
 export interface RegexpMeta {
@@ -68,6 +69,22 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                     range: { start: offset + node.start, end: offset + node.end },
                     value: node.raw,
                     kind: RegexpMetaKind.CharacterSet,
+                })
+            },
+            onCharacterClassEnter(node: CharacterClass) {
+                // Push the leading '['
+                tokens.push({
+                    type: 'regexpMeta',
+                    range: { start: offset + node.start, end: offset + node.start + 1 },
+                    value: '[',
+                    kind: RegexpMetaKind.CharacterClass,
+                })
+                // Push the trailing ']'
+                tokens.push({
+                    type: 'regexpMeta',
+                    range: { start: offset + node.end - 1, end: offset + node.end },
+                    value: ']',
+                    kind: RegexpMetaKind.CharacterClass,
                 })
             },
             onQuantifierEnter(node: Quantifier) {

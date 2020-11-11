@@ -249,4 +249,36 @@ describe('getMonacoTokens()', () => {
             ]
         `)
     })
+
+    test('decorate character classes', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('([a-z])', false, SearchPatternType.regexp)), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 1,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "regexpMetaDelimited"
+              }
+            ]
+        `)
+    })
 })
