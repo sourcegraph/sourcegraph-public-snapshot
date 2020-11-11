@@ -43,7 +43,7 @@ To support syntax highlighting on code files, search results, diff views, and mo
 1. Update the [sourcegraph/syntect_server](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+-file:%5C.md+sourcegraph/syntect_server:&patternType=literal) image tags in [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph).
 1. Update the [SyntectLanguageMap](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@56a9eec78566499b108e1f869712865d90cc29cf/-/blob/internal/highlight/syntect_language_map.go#L5:5) in [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph).
 
-To support syntax highlighting in markdown code fences (in hovers):
+To support syntax highlighting in hovers:
 
 1. Update the [highlight.js contributions](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@e7ffd56b10e9bae004dfbb5d7d1c1accc93072fd/-/blob/client/shared/src/highlight/contributions.ts#L21) map in [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph).
 
