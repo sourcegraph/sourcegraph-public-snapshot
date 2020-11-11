@@ -1,15 +1,15 @@
 package httpapi
 
 import (
-	"database/sql"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"log"
 	"net/http"
 	"os"
 	"reflect"
 	"strconv"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
@@ -56,7 +56,7 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, gitlabWebh
 
 	if os.Getenv("USE_NEW_WEBHOOKS") != "" {
 		gh := GithubWebhook{
-			Repos: repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
+			ExternalServices: db.NewExternalServicesStoreWithDB(dbconn.Global),
 		}
 		m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(&gh))
 	} else {

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -47,7 +46,7 @@ func testSyncWorkerPlumbing(db *sql.DB) func(t *testing.T, repoStore *repos.Stor
 				t.Fatalf("Expected 1 row to be affected, got %d", rowsAffected)
 			}
 
-			jobChan := make(chan *internal.SyncJob)
+			jobChan := make(chan *repos.SyncJob)
 
 			h := &fakeRepoSyncHandler{
 				jobChan: jobChan,
@@ -66,7 +65,7 @@ func testSyncWorkerPlumbing(db *sql.DB) func(t *testing.T, repoStore *repos.Stor
 			defer worker.Stop()
 			defer resetter.Stop()
 
-			var job *internal.SyncJob
+			var job *repos.SyncJob
 			select {
 			case job = <-jobChan:
 				t.Log("Job received")
@@ -82,13 +81,13 @@ func testSyncWorkerPlumbing(db *sql.DB) func(t *testing.T, repoStore *repos.Stor
 }
 
 type fakeRepoSyncHandler struct {
-	jobChan chan *internal.SyncJob
+	jobChan chan *repos.SyncJob
 }
 
 func (h *fakeRepoSyncHandler) Handle(ctx context.Context, tx dbws.Store, record workerutil.Record) error {
-	sj, ok := record.(*internal.SyncJob)
+	sj, ok := record.(*repos.SyncJob)
 	if !ok {
-		return fmt.Errorf("expected internal.SyncJob, got %T", record)
+		return fmt.Errorf("expected repos.SyncJob, got %T", record)
 	}
 	select {
 	case <-ctx.Done():

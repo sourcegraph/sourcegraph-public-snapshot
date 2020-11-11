@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
@@ -17,7 +16,8 @@ import (
 
 	gh "github.com/google/go-github/v28/github"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	edb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -28,7 +28,7 @@ var dsn = flag.String("dsn", "", "Database connection string to use in integrati
 func TestGithubWebhookDispatchSuccess(t *testing.T) {
 	h := GithubWebhook{}
 	var called bool
-	h.Register(func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
+	h.Register(func(ctx context.Context, svc *types.ExternalService, payload interface{}) error {
 		called = true
 		return nil
 	}, "test-event-1")
@@ -56,11 +56,11 @@ func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {
 		h      = GithubWebhook{}
 		called = make(chan struct{}, 2)
 	)
-	h.Register(func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
+	h.Register(func(ctx context.Context, svc *types.ExternalService, payload interface{}) error {
 		called <- struct{}{}
 		return nil
 	}, "test-event-1")
-	h.Register(func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
+	h.Register(func(ctx context.Context, svc *types.ExternalService, payload interface{}) error {
 		called <- struct{}{}
 		return nil
 	}, "test-event-1")
@@ -79,11 +79,11 @@ func TestGithubWebhookDispatchError(t *testing.T) {
 		h      = GithubWebhook{}
 		called = make(chan struct{}, 2)
 	)
-	h.Register(func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
+	h.Register(func(ctx context.Context, svc *types.ExternalService, payload interface{}) error {
 		called <- struct{}{}
 		return fmt.Errorf("oh no")
 	}, "test-event-1")
-	h.Register(func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
+	h.Register(func(ctx context.Context, svc *types.ExternalService, payload interface{}) error {
 		called <- struct{}{}
 		return nil
 	}, "test-event-1")
@@ -116,8 +116,8 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 	ctx := context.Background()
 
 	secret := "secret"
-	repoStore := repos.NewDBStore(db, sql.TxOptions{})
-	extSvc := &repos.ExternalService{
+	esStore := edb.NewExternalServicesStoreWithDB(db)
+	extSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: marshalJSON(t, &schema.GitHubConnection{
@@ -128,17 +128,17 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 		}),
 	}
 
-	err := repoStore.UpsertExternalServices(ctx, extSvc)
+	err := esStore.Upsert(ctx, extSvc)
 	if err != nil {
 		t.Fatal(t)
 	}
 
 	hook := GithubWebhook{
-		Repos: repoStore,
+		ExternalServices: esStore,
 	}
 
 	var called bool
-	hook.Register(func(ctx context.Context, extSvc *repos.ExternalService, payload interface{}) error {
+	hook.Register(func(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
 		evt, ok := payload.(*gh.PublicEvent)
 		if !ok {
 			t.Errorf("Expected *gh.PublicEvent event, got %T", payload)

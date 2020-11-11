@@ -16,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -146,9 +145,9 @@ type syncHandler struct {
 }
 
 func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) (err error) {
-	sj, ok := record.(*internal.SyncJob)
+	sj, ok := record.(*SyncJob)
 	if !ok {
-		return fmt.Errorf("expected internal.SyncJob, got %T", record)
+		return fmt.Errorf("expected SyncJob, got %T", record)
 	}
 
 	store := s.store.With(tx)
@@ -184,7 +183,7 @@ func (s *Syncer) TriggerEnqueueSyncJobs() {
 	s.enqueueSignal.Trigger()
 }
 
-type Store interface {
+type RepoStore interface {
 	CountUserAddedRepos(ctx context.Context) (count uint64, err error)
 	UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]types.SourceInfo) (err error)
 	UpsertRepos(ctx context.Context, repos ...*types.Repo) (err error)
@@ -195,7 +194,7 @@ type RepoLister interface {
 }
 
 // SyncExternalService syncs repos using the supplied external service.
-func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, repoLister RepoLister, esStore *db.ExternalServiceStore, externalServiceID int64, minSyncInterval time.Duration) (err error) {
+func (s *Syncer) SyncExternalService(ctx context.Context, tx RepoStore, repoLister RepoLister, esStore *db.ExternalServiceStore, externalServiceID int64, minSyncInterval time.Duration) (err error) {
 	var diff Diff
 
 	if s.Logger != nil {

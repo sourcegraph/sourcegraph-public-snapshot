@@ -50,7 +50,7 @@ func (s FakeSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	}
 
 	for _, r := range s.repos {
-		results <- SourceResult{Source: s, Repo: r.With(Opt.RepoSources(s.svc.URN()))}
+		results <- SourceResult{Source: s, Repo: r.With(types.Opt.RepoSources(s.svc.URN()))}
 	}
 }
 

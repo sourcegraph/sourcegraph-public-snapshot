@@ -21,7 +21,6 @@ import (
 	"github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -46,7 +45,7 @@ func TestIntegration(t *testing.T) {
 
 	db := dbtest.NewDB(t, *dsn)
 
-	store := internal.NewStore(db, sql.TxOptions{
+	store := repos.NewStore(db, sql.TxOptions{
 		Isolation: sql.LevelSerializable,
 	})
 
@@ -254,7 +253,7 @@ func testServerSetRepoEnabled(t *testing.T, store *repos.Store) func(t *testing.
 			testCases = append(testCases, testCase{
 				name:  "excluded from every external service of the same kind/" + k.svc.Kind,
 				svcs:  svcs,
-				repos: types.Repos{k.repo}.With(repos.Opt.RepoSources()),
+				repos: types.Repos{k.repo}.With(types.Opt.RepoSources()),
 				kind:  k.svc.Kind,
 				res: &protocol.ExcludeRepoResponse{
 					ExternalServices: apiExternalServices(svcs.With(func(e *types.ExternalService) {
@@ -523,7 +522,7 @@ func testServerRepoExternalServices(t *testing.T, store *repos.Store) func(t *te
 			RepoFields: &types.RepoFields{
 				Metadata: new(github.Repository),
 			},
-		}).With(repos.Opt.RepoSources(service1.URN(), service2.URN()))
+		}).With(types.Opt.RepoSources(service1.URN(), service2.URN()))
 
 		if err := store.RepoStore().Create(ctx, repoNoSources, repoSources); err != nil {
 			t.Fatal(err)

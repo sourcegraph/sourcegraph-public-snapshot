@@ -12,7 +12,6 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -160,12 +159,12 @@ func scanSingleJob(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 		return nil, false, err
 	}
 
-	jobs, err := internal.ScanJobs(rows)
+	jobs, err := ScanJobs(rows)
 	if err != nil {
 		return nil, false, err
 	}
 
-	var job internal.SyncJob
+	var job SyncJob
 
 	if len(jobs) > 0 {
 		job = jobs[0]

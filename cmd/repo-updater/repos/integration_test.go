@@ -2,22 +2,12 @@ package repos_test
 
 import (
 	"database/sql"
-	"flag"
 	"testing"
 
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 )
-
-// This error is passed to txstore.Done in order to always
-// roll-back the transaction a test case executes in.
-// This is meant to ensure each test case has a clean slate.
-var errRollback = errors.New("tx: rollback")
-
-var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
 func TestIntegration(t *testing.T) {
 	if testing.Short() {
@@ -28,7 +18,7 @@ func TestIntegration(t *testing.T) {
 
 	db := dbtest.NewDB(t, *dsn)
 
-	store := internal.NewStore(db, sql.TxOptions{
+	store := repos.NewStore(db, sql.TxOptions{
 		Isolation: sql.LevelReadCommitted,
 	})
 
@@ -75,15 +65,4 @@ DELETE FROM repo;
 			tc.test(t, store)(t)
 		})
 	}
-}
-
-func insertTestUser(t *testing.T, db *sql.DB) (userID int32) {
-	t.Helper()
-
-	err := db.QueryRow("INSERT INTO users (username) VALUES ('bbs-admin') RETURNING id").Scan(&userID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return userID
 }
