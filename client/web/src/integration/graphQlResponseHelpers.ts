@@ -1,3 +1,4 @@
+import { encodeURIComponentExceptSlashes } from '../../../shared/src/util/url'
 import {
     TreeEntriesResult,
     BlobResult,
@@ -64,8 +65,8 @@ export const createRepositoryRedirectResult = (
         __typename: 'Repository',
         id: `RepositoryID:${repoName}`,
         name: repoName,
-        url: `/${repoName}`,
-        externalURLs: [{ url: new URL(`https://${repoName}`).href, serviceType }],
+        url: `/${encodeURIComponentExceptSlashes(repoName)}`,
+        externalURLs: [{ url: new URL(`https://${encodeURIComponentExceptSlashes(repoName)}`).href, serviceType }],
         description: 'bla',
         viewerCanAdminister: false,
         defaultBranch: { displayName: 'master' },
