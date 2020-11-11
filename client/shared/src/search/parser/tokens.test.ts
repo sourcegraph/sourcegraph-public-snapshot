@@ -205,4 +205,48 @@ describe('getMonacoTokens()', () => {
             ]
         `)
     })
+
+    test('decorate paren groups', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('((a) or b)', false, SearchPatternType.regexp)), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "openingParen"
+              },
+              {
+                "startIndex": 1,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "keyword"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "closingParen"
+              }
+            ]
+        `)
+    })
 })
