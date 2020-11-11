@@ -15,6 +15,7 @@ export function fetchRepository(name: string): Observable<GQL.IRepository> {
                 repository(name: $name) {
                     id
                     name
+                    url
                     isPrivate
                     viewerCanAdminister
                     mirrorInfo {
