@@ -37,7 +37,7 @@ To support precise code intelligence, [write an LSIF indexer](../../code_intelli
 
 ## Syntax highlighting support
 
-To support syntax highlighting on blob and diff views:
+To support syntax highlighting on code files, search results, diff views, and more:
 
 1. Follow the [directions](https://github.com/sourcegraph/syntect_server#adding-languages) to add a language to [syntect server](https://github.com/sourcegraph/syntect_server).
 1. Update the [sourcegraph/syntect_server](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+-file:%5C.md+sourcegraph/syntect_server:&patternType=literal) image tags in [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph).
