@@ -12,7 +12,7 @@ import classnames from 'classnames'
 
 export interface CreateCodeMonitorPageProps extends BreadcrumbsProps, BreadcrumbSetters {
     location: H.Location
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: AuthenticatedUser
 }
 
 interface FormCompletionSteps {
@@ -20,10 +20,15 @@ interface FormCompletionSteps {
     actionCompleted: boolean
 }
 
+interface Action {
+    recipient: string
+    enabled: boolean
+}
 interface CodeMonitorFields {
     description: string
     query: string
     enabled: boolean
+    action: Action
 }
 
 export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPageProps> = props => {
@@ -39,9 +44,9 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
     const [codeMonitor, setCodeMonitor] = useState<CodeMonitorFields>({
         description: '',
         query: '',
+        action: { recipient: props.authenticatedUser.id, enabled: true },
         enabled: true,
     })
-
     const onNameChange = useCallback(
         (description: string): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, description })),
         []
@@ -54,35 +59,20 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
         (enabled: boolean): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, enabled })),
         []
     )
+    const onActionChange = useCallback(
+        (action: Action): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, action })),
+        []
+    )
 
     const [formCompletion, setFormCompletion] = useState<FormCompletionSteps>({
         triggerCompleted: false,
         actionCompleted: false,
     })
-
-    const setTriggerComlpeted = useCallback(() => {
-        setFormCompletion(previousState => ({ ...previousState, triggerCompleted: true }))
+    const setTriggerCompleted = useCallback(() => {
+        setFormCompletion(previousState => ({ ...previousState, triggerCompleted: !previousState.triggerCompleted }))
     }, [])
-
-    const setActionComlpeted = useCallback(() => {
-        setFormCompletion(previousState => ({ ...previousState, actionCompleted: true }))
-    }, [])
-
-    const [showQueryForm, setShowQueryForm] = useState(false)
-    const toggleQueryForm: React.MouseEventHandler = useCallback(event => {
-        event.preventDefault()
-        setShowQueryForm(show => !show)
-    }, [])
-
-    const [showEmailNotificationForm, setShowEmailNotificationForm] = useState(false)
-    const toggleEmailNotificationForm: React.MouseEventHandler = useCallback(event => {
-        event.preventDefault()
-        setShowEmailNotificationForm(show => !show)
-    }, [])
-
-    const [emailNotificationEnabled, setEmailNotificationEnabled] = useState(true)
-    const toggleEmailNotificationEnabled: (value: boolean) => void = useCallback(enabled => {
-        setEmailNotificationEnabled(enabled)
+    const setActionCompleted = useCallback(() => {
+        setFormCompletion(previousState => ({ ...previousState, actionCompleted: !previousState.actionCompleted }))
     }, [])
 
     return (
@@ -119,170 +109,33 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                 <div className="flex">
                     Owner
                     <select className="form-control my-2 w-auto" disabled={true}>
-                        <option value={props.authenticatedUser?.displayName || props.authenticatedUser?.username}>
-                            {props.authenticatedUser?.username}
+                        <option value={props.authenticatedUser.displayName || props.authenticatedUser.username}>
+                            {props.authenticatedUser.username}
                         </option>
                     </select>
                     <small className="text-muted">Event history and configuration will not be shared.</small>
                 </div>
                 <hr className="my-4" />
                 <div className="create-monitor-page__triggers mb-4">
-                    <h3>Trigger</h3>
-                    <div className="card p-3 my-3">
-                        {!formCompletion.triggerCompleted && (
-                            <>
-                                <button
-                                    type="button"
-                                    onClick={toggleQueryForm}
-                                    className="btn btn-link font-weight-bold p-0 text-left"
-                                >
-                                    When there are new search results
-                                </button>
-                                <span className="text-muted">
-                                    This trigger will fire when new search results are found for a given search query.
-                                </span>
-                            </>
-                        )}
-                        {showQueryForm && !formCompletion.triggerCompleted && (
-                            <>
-                                <div className="create-monitor-page__query-input">
-                                    <input
-                                        type="text"
-                                        className="form-control my-2"
-                                        onChange={event => {
-                                            onQueryChange(event.target.value)
-                                        }}
-                                    />
-                                    <a
-                                        href=""
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="create-monitor-page__query-input-preview-link"
-                                    >
-                                        {/* TODO: populate link */}
-                                        Preview results <OpenInNewIcon />
-                                    </a>
-                                </div>
-                                <small className="text-muted mb-4">
-                                    Code monitors only support <code className="bg-code">type:diff</code> and{' '}
-                                    <code className="bg-code">type:commit</code> search queries.
-                                </small>
-                                <div>
-                                    <button
-                                        type="button"
-                                        className="btn btn-outline-secondary mr-1"
-                                        onClick={setTriggerComlpeted}
-                                    >
-                                        Continue
-                                    </button>
-                                    <button type="button" className="btn btn-outline-secondary">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                        {formCompletion.triggerCompleted && (
-                            <>
-                                <button
-                                    type="button"
-                                    onClick={toggleQueryForm}
-                                    className="btn btn-link font-weight-bold p-0 text-left"
-                                >
-                                    When there are new search results
-                                </button>
-                                <code className="text-muted">{codeMonitor.query}</code>
-                            </>
-                        )}
-                    </div>
-                    {!showQueryForm && !formCompletion.actionCompleted && (
-                        <small className="text-muted">
-                            {' '}
-                            What other events would you like to monitor? {/* TODO: populate link */}
-                            <a href="" target="_blank" rel="noopener">
-                                {/* TODO: populate link */}
-                                Share feedback.
-                            </a>
-                        </small>
-                    )}
+                    <TriggerArea
+                        query={codeMonitor.query}
+                        onQueryChange={onQueryChange}
+                        triggerCompleted={formCompletion.triggerCompleted}
+                        setTriggerCompleted={setTriggerCompleted}
+                    />
                 </div>
                 <div
                     className={classnames({
                         'create-monitor-page__actions--disabled': !formCompletion.triggerCompleted,
                     })}
                 >
-                    <h3>Actions</h3>
-                    <p>Run any number of actions in response to an event</p>
-                    <div className="card p-3 my-3">
-                        {/* This should be its own component when you can add multiple email actions */}
-                        {!formCompletion.actionCompleted && (
-                            <button
-                                type="button"
-                                onClick={toggleEmailNotificationForm}
-                                className="btn btn-link font-weight-bold p-0 text-left"
-                                disabled={!formCompletion.triggerCompleted}
-                            >
-                                Send email notifications
-                            </button>
-                        )}
-                        {showEmailNotificationForm && !formCompletion.actionCompleted && (
-                            <>
-                                <div className="mt-4">
-                                    Recipients
-                                    <input
-                                        type="text"
-                                        className="form-control my-2"
-                                        value={`${props.authenticatedUser?.email || ''} (you)`}
-                                        disabled={true}
-                                    />
-                                    <small className="text-muted">
-                                        Code monitors are currently limited to sending emails to your primary email
-                                        address.
-                                    </small>
-                                </div>
-                                <div className="flex my-4">
-                                    <Toggle
-                                        title="Enabled"
-                                        value={emailNotificationEnabled}
-                                        onToggle={toggleEmailNotificationEnabled}
-                                        className="mr-2"
-                                    />
-                                    Enabled
-                                </div>
-                                <div>
-                                    <button
-                                        type="button"
-                                        className="btn btn-outline-secondary mr-1"
-                                        onClick={setActionComlpeted}
-                                    >
-                                        Done
-                                    </button>
-                                    <button type="button" className="btn btn-outline-secondary">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                        {formCompletion.actionCompleted && (
-                            <>
-                                <button
-                                    type="button"
-                                    onClick={toggleEmailNotificationForm}
-                                    className="btn btn-link font-weight-bold p-0 text-left"
-                                    disabled={!formCompletion.triggerCompleted}
-                                >
-                                    Send email notifications
-                                </button>
-                                <span className="text-muted">{props.authenticatedUser?.email}</span>
-                            </>
-                        )}
-                    </div>
-                    <small className="text-muted">
-                        What other actions would you like to do?{' '}
-                        <a href="" target="_blank" rel="noopener">
-                            {/* TODO: populate link */}
-                            Share feedback.
-                        </a>
-                    </small>
+                    <ActionArea
+                        setActionCompleted={setActionCompleted}
+                        actionCompleted={formCompletion.actionCompleted}
+                        authenticatedUser={props.authenticatedUser}
+                        disabled={!formCompletion.triggerCompleted}
+                        onActionChange={onActionChange}
+                    />
                 </div>
                 <div>
                     <div className="d-flex my-4">
@@ -314,5 +167,250 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                 </div>
             </Form>
         </div>
+    )
+}
+
+interface TriggerAreaProps {
+    query: string
+    onQueryChange: (query: string) => void
+    triggerCompleted: boolean
+    setTriggerCompleted: () => void
+}
+
+const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
+    query,
+    onQueryChange,
+    triggerCompleted,
+    setTriggerCompleted,
+}) => {
+    const [showQueryForm, setShowQueryForm] = useState(false)
+    const toggleQueryForm: React.MouseEventHandler = useCallback(event => {
+        event.preventDefault()
+        setShowQueryForm(show => !show)
+    }, [])
+
+    const editOrCompleteForm: React.MouseEventHandler = useCallback(
+        event => {
+            event.preventDefault()
+            toggleQueryForm(event)
+            setTriggerCompleted()
+        },
+        [setTriggerCompleted, toggleQueryForm]
+    )
+
+    return (
+        <>
+            <h3>Trigger</h3>
+            <div className="card p-3 my-3">
+                {!showQueryForm && !triggerCompleted && (
+                    <>
+                        <button
+                            type="button"
+                            onClick={toggleQueryForm}
+                            className="btn btn-link font-weight-bold p-0 text-left"
+                        >
+                            When there are new search results
+                        </button>
+                        <span className="text-muted">
+                            This trigger will fire when new search results are found for a given search query.
+                        </span>
+                    </>
+                )}
+                {showQueryForm && (
+                    <>
+                        <div className="font-weight-bold">When there are new search results</div>
+                        <span className="text-muted">
+                            This trigger will fire when new search results are found for a given search query.
+                        </span>
+                        <div className="create-monitor-page__query-input">
+                            <input
+                                type="text"
+                                className="form-control my-2"
+                                onChange={event => {
+                                    onQueryChange(event.target.value)
+                                }}
+                                value={query}
+                            />
+                            <a
+                                href=""
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="create-monitor-page__query-input-preview-link"
+                            >
+                                {/* TODO: populate link */}
+                                Preview results <OpenInNewIcon />
+                            </a>
+                        </div>
+                        <small className="text-muted mb-4">
+                            Code monitors only support <code className="bg-code">type:diff</code> and{' '}
+                            <code className="bg-code">type:commit</code> search queries.
+                        </small>
+                        <div>
+                            <button
+                                type="button"
+                                className="btn btn-outline-secondary mr-1"
+                                onClick={editOrCompleteForm}
+                            >
+                                Continue
+                            </button>
+                            <button type="button" className="btn btn-outline-secondary">
+                                Cancel
+                            </button>
+                        </div>
+                    </>
+                )}
+                {triggerCompleted && (
+                    <div className="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div className="font-weight-bold">When there are new search results</div>
+                            <code className="text-muted">{query}</code>
+                        </div>
+                        <div>
+                            <button type="button" onClick={editOrCompleteForm} className="btn btn-link p-0 text-left">
+                                Edit
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+            <small className="text-muted">
+                {' '}
+                What other events would you like to monitor? {/* TODO: populate link */}
+                <a href="" target="_blank" rel="noopener">
+                    {/* TODO: populate link */}
+                    Share feedback.
+                </a>
+            </small>
+        </>
+    )
+}
+
+interface ActionAreaProps {
+    actionCompleted: boolean
+    setActionCompleted: () => void
+    disabled: boolean
+    authenticatedUser: AuthenticatedUser
+    onActionChange: (action: Action) => void
+}
+
+const ActionArea: React.FunctionComponent<ActionAreaProps> = ({
+    actionCompleted,
+    setActionCompleted,
+    disabled,
+    authenticatedUser,
+    onActionChange,
+}) => {
+    const [showEmailNotificationForm, setShowEmailNotificationForm] = useState(false)
+    const toggleEmailNotificationForm: React.MouseEventHandler = useCallback(event => {
+        event.preventDefault()
+        setShowEmailNotificationForm(show => !show)
+    }, [])
+
+    const editOrCompleteForm: React.MouseEventHandler = useCallback(
+        event => {
+            event?.preventDefault()
+            toggleEmailNotificationForm(event)
+            setActionCompleted()
+        },
+        [toggleEmailNotificationForm, setActionCompleted]
+    )
+
+    const [emailNotificationEnabled, setEmailNotificationEnabled] = useState(true)
+    const toggleEmailNotificationEnabled: (value: boolean) => void = useCallback(
+        enabled => {
+            setEmailNotificationEnabled(enabled)
+            onActionChange({ recipient: authenticatedUser.email, enabled })
+        },
+        [authenticatedUser, onActionChange]
+    )
+
+    return (
+        <>
+            <h3 className="mb-1">Actions</h3>
+            <span className="text-muted">Run any number of actions in response to an event</span>
+            <div className="card p-3 my-3">
+                {/* This should be its own component when you can add multiple email actions */}
+                {!showEmailNotificationForm && !actionCompleted && (
+                    <>
+                        <button
+                            type="button"
+                            onClick={toggleEmailNotificationForm}
+                            className="btn btn-link font-weight-bold p-0 text-left"
+                            disabled={disabled}
+                        >
+                            Send email notifications
+                        </button>
+                        <span className="text-muted">Deliver email notifications to specified recipients.</span>
+                    </>
+                )}
+                {showEmailNotificationForm && !actionCompleted && (
+                    <>
+                        <div className="font-weight-bold">Send email notifications</div>
+                        <span className="text-muted">Deliver email notifications to specified recipients.</span>
+                        <div className="mt-4">
+                            Recipients
+                            <input
+                                type="text"
+                                className="form-control my-2"
+                                value={`${authenticatedUser.email || ''} (you)`}
+                                disabled={true}
+                            />
+                            <small className="text-muted">
+                                Code monitors are currently limited to sending emails to your primary email address.
+                            </small>
+                        </div>
+                        <div className="flex my-4">
+                            <Toggle
+                                title="Enabled"
+                                value={emailNotificationEnabled}
+                                onToggle={toggleEmailNotificationEnabled}
+                                className="mr-2"
+                            />
+                            Enabled
+                        </div>
+                        <div>
+                            <button
+                                type="button"
+                                className="btn btn-outline-secondary mr-1"
+                                onClick={editOrCompleteForm}
+                            >
+                                Done
+                            </button>
+                            <button type="button" className="btn btn-outline-secondary">
+                                Cancel
+                            </button>
+                        </div>
+                    </>
+                )}
+                {actionCompleted && (
+                    <div className="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div className="font-weight-bold">Send email notifications</div>
+                            <span className="text-muted">{authenticatedUser.email}</span>
+                        </div>
+                        <div className="d-flex">
+                            <div className="flex my-4">
+                                <Toggle
+                                    title="Enabled"
+                                    value={emailNotificationEnabled}
+                                    onToggle={toggleEmailNotificationEnabled}
+                                    className="mr-2"
+                                />
+                            </div>
+                            <button type="button" onClick={editOrCompleteForm} className="btn btn-link p-0 text-left">
+                                Edit
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+            <small className="text-muted">
+                What other actions would you like to do?{' '}
+                <a href="" target="_blank" rel="noopener">
+                    {/* TODO: populate link */}
+                    Share feedback.
+                </a>
+            </small>
+        </>
     )
 }
