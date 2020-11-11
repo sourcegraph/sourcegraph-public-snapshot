@@ -1,4 +1,4 @@
-package internal_test
+package shared_test
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	internaldb "github.com/sourcegraph/sourcegraph/internal/db"
@@ -32,7 +32,7 @@ var errRollback = errors.New("tx: rollback")
 
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
-func transact(ctx context.Context, s *internal.Store, test func(testing.TB, *internal.Store)) func(*testing.T) {
+func transact(ctx context.Context, s *shared.Store, test func(testing.TB, *shared.Store)) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
 
@@ -74,7 +74,7 @@ func confGet() *conf.Unified {
 	return &conf.Unified{}
 }
 
-func mustCreateServices(t testing.TB, store *internal.Store, svcs types.ExternalServices) {
+func mustCreateServices(t testing.TB, store *shared.Store, svcs types.ExternalServices) {
 	t.Helper()
 
 	ctx := context.Background()
@@ -95,7 +95,7 @@ func TestIntegration(t *testing.T) {
 
 	db := dbtest.NewDB(t, *dsn)
 
-	store := internal.NewStore(db, sql.TxOptions{
+	store := shared.NewStore(db, sql.TxOptions{
 		Isolation: sql.LevelReadCommitted,
 	})
 	lg := log15.New()
@@ -104,7 +104,7 @@ func TestIntegration(t *testing.T) {
 
 	for _, tc := range []struct {
 		name string
-		test func(*testing.T, *internal.Store) func(*testing.T)
+		test func(*testing.T, *shared.Store) func(*testing.T)
 	}{
 		{"Store/UpsertRepos", testStoreUpsertRepos},
 		{"Store/UpsertSources", testStoreUpsertSources},
@@ -144,7 +144,7 @@ func insertTestUser(t *testing.T, db *sql.DB) (userID int32) {
 	return userID
 }
 
-func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) {
+func testStoreUpsertRepos(t *testing.T, store *shared.Store) func(*testing.T) {
 	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 	ctx := context.Background()
@@ -182,7 +182,7 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 			}
 		})
 
-		t.Run("many repos", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("many repos", transact(ctx, store, func(t testing.TB, tx *shared.Store) {
 			want := types.GenerateRepos(7, repositories...)
 
 			if err := tx.UpsertRepos(ctx, want...); err != nil {
@@ -274,7 +274,7 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 			}
 		}))
 
-		t.Run("many repos soft-deleted and single repo reinserted", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("many repos soft-deleted and single repo reinserted", transact(ctx, store, func(t testing.TB, tx *shared.Store) {
 			all := types.GenerateRepos(7, repositories...)
 
 			if err := tx.UpsertRepos(ctx, all...); err != nil {
@@ -333,7 +333,7 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 			}
 		}))
 
-		t.Run("it shouldn't modify the cloned column", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("it shouldn't modify the cloned column", transact(ctx, store, func(t testing.TB, tx *shared.Store) {
 			// UpsertRepos shouldn't set the cloned column to true
 			r := types.GenerateRepos(1, repositories...)[0]
 			r.Cloned = true
@@ -370,7 +370,7 @@ func testStoreUpsertRepos(t *testing.T, store *internal.Store) func(*testing.T) 
 	}
 }
 
-func testStoreUpsertSources(t *testing.T, store *internal.Store) func(*testing.T) {
+func testStoreUpsertSources(t *testing.T, store *shared.Store) func(*testing.T) {
 	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
@@ -395,7 +395,7 @@ func testStoreUpsertSources(t *testing.T, store *internal.Store) func(*testing.T
 			}
 		})
 
-		t.Run("delete repo", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("delete repo", transact(ctx, store, func(t testing.TB, tx *shared.Store) {
 			want := types.GenerateRepos(7, repositories...)
 
 			if err := tx.UpsertRepos(ctx, want...); err != nil {
@@ -433,7 +433,7 @@ func testStoreUpsertSources(t *testing.T, store *internal.Store) func(*testing.T
 			}
 		}))
 
-		t.Run("delete external service", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("delete external service", transact(ctx, store, func(t testing.TB, tx *shared.Store) {
 			origRepos := types.GenerateRepos(7, repositories...)
 
 			if err := tx.UpsertRepos(ctx, origRepos...); err != nil {
@@ -482,7 +482,7 @@ func testStoreUpsertSources(t *testing.T, store *internal.Store) func(*testing.T
 			}
 		}))
 
-		t.Run("inserts updates and deletes", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("inserts updates and deletes", transact(ctx, store, func(t testing.TB, tx *shared.Store) {
 			want := types.GenerateRepos(7, repositories...)
 
 			if err := tx.UpsertRepos(ctx, want...); err != nil {
@@ -536,7 +536,7 @@ func testStoreUpsertSources(t *testing.T, store *internal.Store) func(*testing.T
 	}
 }
 
-func testStoreSetClonedRepos(t *testing.T, store *internal.Store) func(*testing.T) {
+func testStoreSetClonedRepos(t *testing.T, store *shared.Store) func(*testing.T) {
 	services := types.MakeExternalServices()
 	servicesPerKind := types.ExternalServicesToMap(services)
 	mustCreateServices(t, store, services)
@@ -547,7 +547,7 @@ func testStoreSetClonedRepos(t *testing.T, store *internal.Store) func(*testing.
 			repositories = append(repositories, types.MakeGithubRepo(servicesPerKind[extsvc.KindGitHub]))
 		}
 
-		check := func(t testing.TB, ctx context.Context, tx *internal.Store, wantNames []string) {
+		check := func(t testing.TB, ctx context.Context, tx *shared.Store, wantNames []string) {
 			t.Helper()
 
 			res, err := tx.RepoStore().List(ctx, internaldb.ReposListOptions{})
@@ -571,7 +571,7 @@ func testStoreSetClonedRepos(t *testing.T, store *internal.Store) func(*testing.
 			}
 		})
 
-		t.Run("many repo names", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("many repo names", transact(ctx, store, func(t testing.TB, tx *shared.Store) {
 			stored := types.GenerateRepos(9, repositories...)
 
 			if err := tx.RepoStore().Create(ctx, stored...); err != nil {
@@ -605,7 +605,7 @@ func testStoreSetClonedRepos(t *testing.T, store *internal.Store) func(*testing.
 			check(t, ctx, tx, names)
 		}))
 
-		t.Run("repo names in mixed case", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("repo names in mixed case", transact(ctx, store, func(t testing.TB, tx *shared.Store) {
 			stored := types.GenerateRepos(9, repositories...)
 			for i := range stored {
 				if i%2 == 0 {
@@ -636,7 +636,7 @@ func testStoreSetClonedRepos(t *testing.T, store *internal.Store) func(*testing.
 	}
 }
 
-func testStoreCountNotClonedRepos(t *testing.T, store *internal.Store) func(*testing.T) {
+func testStoreCountNotClonedRepos(t *testing.T, store *shared.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		services := types.MakeExternalServices()
 		servicesPerKind := types.ExternalServicesToMap(services)
@@ -660,7 +660,7 @@ func testStoreCountNotClonedRepos(t *testing.T, store *internal.Store) func(*tes
 			}
 		})
 
-		t.Run("multiple cloned repos", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("multiple cloned repos", transact(ctx, store, func(t testing.TB, tx *shared.Store) {
 			stored := types.GenerateRepos(10, repositories...)
 
 			if err := tx.RepoStore().Create(ctx, stored...); err != nil {
@@ -685,7 +685,7 @@ func testStoreCountNotClonedRepos(t *testing.T, store *internal.Store) func(*tes
 			}
 		}))
 
-		t.Run("deleted non cloned repos", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("deleted non cloned repos", transact(ctx, store, func(t testing.TB, tx *shared.Store) {
 			stored := types.GenerateRepos(10, repositories...)
 
 			if err := tx.RepoStore().Create(ctx, stored...); err != nil {
@@ -717,7 +717,7 @@ func testStoreCountNotClonedRepos(t *testing.T, store *internal.Store) func(*tes
 	}
 }
 
-func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
+func testStoreListRepos(t *testing.T, store *shared.Store) func(*testing.T) {
 	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
@@ -894,7 +894,7 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 		for _, tc := range testCases {
 			tc := tc
 
-			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx *shared.Store) {
 				stored := tc.stored.Clone()
 
 				if err := tx.RepoStore().Create(ctx, stored...); err != nil {
@@ -917,7 +917,7 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 			}))
 		}
 
-		t.Run("only include cloned", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("only include cloned", transact(ctx, store, func(t testing.TB, tx *shared.Store) {
 			stored := types.GenerateRepos(5, repositories...).Clone()
 			if err := tx.RepoStore().Create(ctx, stored...); err != nil {
 				t.Fatalf("failed to setup store: %v", err)
@@ -948,7 +948,7 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 	}
 }
 
-func testStoreListReposPagination(t *testing.T, store *internal.Store) func(*testing.T) {
+func testStoreListReposPagination(t *testing.T, store *shared.Store) func(*testing.T) {
 	services := types.MakeExternalServices()
 	servicesPerKind := types.ExternalServicesToMap(services)
 	mustCreateServices(t, store, services)
@@ -957,7 +957,7 @@ func testStoreListReposPagination(t *testing.T, store *internal.Store) func(*tes
 
 	return func(t *testing.T) {
 		ctx := context.Background()
-		t.Run("", transact(ctx, store, func(t testing.TB, tx *internal.Store) {
+		t.Run("", transact(ctx, store, func(t testing.TB, tx *shared.Store) {
 			stored := types.GenerateRepos(7, github)
 			if err := tx.RepoStore().Create(ctx, stored...); err != nil {
 				t.Fatalf("RepoStore.Create error: %s", err)
@@ -996,8 +996,8 @@ func testStoreListReposPagination(t *testing.T, store *internal.Store) func(*tes
 	}
 }
 
-func testStoreListExternalRepoSpecs(db *sql.DB) func(t *testing.T, repoStore *internal.Store) func(*testing.T) {
-	return func(t *testing.T, store *internal.Store) func(*testing.T) {
+func testStoreListExternalRepoSpecs(db *sql.DB) func(t *testing.T, repoStore *shared.Store) func(*testing.T) {
+	return func(t *testing.T, store *shared.Store) func(*testing.T) {
 		return func(t *testing.T) {
 			ctx := context.Background()
 
@@ -1033,8 +1033,8 @@ VALUES
 	}
 }
 
-func testStoreEnqueueSyncJobs(db *sql.DB, store *internal.Store) func(t *testing.T, store *internal.Store) func(*testing.T) {
-	return func(t *testing.T, _ *internal.Store) func(*testing.T) {
+func testStoreEnqueueSyncJobs(db *sql.DB, store *shared.Store) func(t *testing.T, store *shared.Store) func(*testing.T) {
+	return func(t *testing.T, _ *shared.Store) func(*testing.T) {
 		t.Helper()
 
 		clock := dbtesting.NewFakeClock(time.Now(), 0)
