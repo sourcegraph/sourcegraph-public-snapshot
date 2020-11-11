@@ -1611,7 +1611,7 @@ declare module 'sourcegraph' {
 
     export namespace graphQL {
         /**
-         * Executes a Sourcegraph GraphQL API query or mutation on the associated Sourcegraph instance and returns a promise for the result.
+         * Executes a [Sourcegraph GraphQL API](https://docs.sourcegraph.com/api/graphql)  query or mutation on the associated Sourcegraph instance and returns a promise for the result.
          *
          * @param query The GraphQL query
          * @param variables A key/value object with variable values
