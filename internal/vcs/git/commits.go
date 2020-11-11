@@ -336,6 +336,10 @@ type onelineCommit struct {
 	sourceRef string // `git log --source` source ref
 }
 
+// errLogOnelineBatchScannerClosed is returned if a read is attempted on a
+// closed logOnelineBatchScanner.
+var errLogOnelineBatchScannerClosed = errors.New("logOnelineBatchScanner closed")
+
 // logOnelineBatchScanner wraps logOnelineScanner to batch up reads.
 //
 // next will return at least 1 commit and at most maxBatchSize entries. After
@@ -363,6 +367,7 @@ func logOnelineBatchScanner(scan func() (*onelineCommit, error), maxBatchSize in
 	// send.
 	resultC := make(chan result, maxBatchSize)
 	go func() {
+		defer close(resultC)
 		for {
 			commit, err := scan()
 			select {
@@ -390,8 +395,10 @@ func logOnelineBatchScanner(scan func() (*onelineCommit, error), maxBatchSize in
 		defer deadline.Stop()
 
 		// We always want 1 result. Ignore deadline for the first result.
-		r := <-resultC
-		if r.err != nil {
+		r, ok := <-resultC
+		if !ok {
+			return nil, errLogOnelineBatchScannerClosed
+		} else if r.err != nil {
 			err = r.err
 			return nil, r.err
 		}
@@ -402,8 +409,10 @@ func logOnelineBatchScanner(scan func() (*onelineCommit, error), maxBatchSize in
 		timedout := false
 		for err == nil && len(commits) < maxBatchSize && !timedout {
 			select {
-			case r := <-resultC:
-				if r.err != nil {
+			case r, ok := <-resultC:
+				if !ok {
+					err = errLogOnelineBatchScannerClosed
+				} else if r.err != nil {
 					err = r.err
 				} else {
 					commits = append(commits, r.commit)

@@ -405,3 +405,26 @@ func TestRepository_Commits_options_path(t *testing.T) {
 		}
 	}
 }
+
+// Test we return errLogOnelineBatchScannerClosed is returned. I fear this may
+// introduce flakey coverage.
+func TestLogOnelineBatchScanner_closed(t *testing.T) {
+	t.Parallel()
+
+	scan := func() (*onelineCommit, error) {
+		return &onelineCommit{}, nil
+	}
+
+	next, cleanup := logOnelineBatchScanner(scan, 100, 5*time.Second)
+	_, _ = next()
+
+	cleanup()
+
+	var err error
+	for err == nil {
+		_, err = next()
+	}
+	if err != errLogOnelineBatchScannerClosed {
+		t.Fatal("unexpected error:", err)
+	}
+}
