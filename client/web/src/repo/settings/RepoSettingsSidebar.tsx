@@ -41,7 +41,7 @@ export const RepoSettingsSidebar: React.FunctionComponent<Props> = ({
                                     ({ label, to, exact, condition = () => true }) =>
                                         condition({}) && (
                                             <NavLink
-                                                to={`/${repo?.name}/-/settings${to}`}
+                                                to={`${repo.url}/-/settings${to}`}
                                                 exact={exact}
                                                 key={label}
                                                 className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
