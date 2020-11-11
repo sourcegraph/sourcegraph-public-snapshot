@@ -29,7 +29,7 @@ import (
 type Syncer struct {
 	Sourcer Sourcer
 	Worker  *workerutil.Worker
-	Store   *internal.Store
+	Store   *Store
 
 	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
 	Synced chan Diff
@@ -71,7 +71,7 @@ type RunOptions struct {
 }
 
 // Run runs the Sync at the specified interval.
-func (s *Syncer) Run(pctx context.Context, db *sql.DB, store *internal.Store, opts RunOptions) error {
+func (s *Syncer) Run(pctx context.Context, db *sql.DB, store *Store, opts RunOptions) error {
 	if opts.EnqueueInterval == nil {
 		opts.EnqueueInterval = func() time.Duration { return time.Minute }
 	}
@@ -119,10 +119,29 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store *internal.Store, op
 	return pctx.Err()
 }
 
+// SyncJob represents an external service that needs to be synced
+type SyncJob struct {
+	ID                int
+	State             string
+	FailureMessage    sql.NullString
+	StartedAt         sql.NullTime
+	FinishedAt        sql.NullTime
+	ProcessAfter      sql.NullTime
+	NumResets         int
+	NumFailures       int
+	ExternalServiceID int64
+	NextSyncAt        sql.NullTime
+}
+
+// RecordID implements workerutil.Record and indicates the queued item id
+func (s *SyncJob) RecordID() int {
+	return s.ID
+}
+
 type syncHandler struct {
 	db              *sql.DB
 	syncer          *Syncer
-	store           *internal.Store
+	store           *Store
 	minSyncInterval func() time.Duration
 }
 
@@ -426,7 +445,7 @@ func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Du
 }
 
 // SyncRepo runs the syncer on a single repository.
-func (s *Syncer) SyncRepo(ctx context.Context, store *internal.Store, sourcedRepo *types.Repo) (err error) {
+func (s *Syncer) SyncRepo(ctx context.Context, store *Store, sourcedRepo *types.Repo) (err error) {
 	var diff Diff
 
 	ctx, save := s.observe(ctx, "Syncer.SyncRepo", string(sourcedRepo.Name))
@@ -444,7 +463,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, store *internal.Store, sourcedRep
 
 // insertIfNew is a specialization of SyncRepo. It will insert sourcedRepo
 // if there are no related repositories, otherwise does nothing.
-func (s *Syncer) insertIfNew(ctx context.Context, store *internal.Store, publicOnly bool, sourcedRepo *types.Repo) (err error) {
+func (s *Syncer) insertIfNew(ctx context.Context, store *Store, publicOnly bool, sourcedRepo *types.Repo) (err error) {
 	var diff Diff
 
 	ctx, save := s.observe(ctx, "Syncer.InsertIfNew", string(sourcedRepo.Name))
@@ -454,7 +473,7 @@ func (s *Syncer) insertIfNew(ctx context.Context, store *internal.Store, publicO
 	return err
 }
 
-func (s *Syncer) syncRepo(ctx context.Context, store *internal.Store, insertOnly bool, publicOnly bool, sourcedRepo *types.Repo) (diff Diff, err error) {
+func (s *Syncer) syncRepo(ctx context.Context, store *Store, insertOnly bool, publicOnly bool, sourcedRepo *types.Repo) (diff Diff, err error) {
 	if publicOnly && sourcedRepo.Private {
 		return Diff{}, nil
 	}
@@ -616,7 +635,7 @@ func (s *Syncer) sourceDiff(repoID api.RepoID, diff *sourceDiff, oldSources, new
 // of s.Synced will receive a list of repos. In particular this is so that the
 // git update scheduler can start working straight away on existing
 // repositories.
-func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store *internal.Store) {
+func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store *Store) {
 	if s.Synced == nil {
 		return
 	}
@@ -624,7 +643,7 @@ func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store *inte
 	stored, err := store.RepoStore().List(ctx, db.ReposListOptions{})
 	if err != nil {
 		if s.Logger != nil {
-			s.Logger.Warn("initialUnmodifiedDiffFromstore *internal.Store.RepoStore().List", "error", err)
+			s.Logger.Warn("initialUnmodifiedDiffFromstore *Store.RepoStore().List", "error", err)
 		}
 		return
 	}
@@ -774,7 +793,7 @@ func (s *Syncer) sourced(ctx context.Context, svcs []*types.ExternalService, onS
 
 // makeNewRepoInserter returns a function that will insert repos.
 // If publicOnly is set it will never insert a private repo.
-func (s *Syncer) makeNewRepoInserter(ctx context.Context, store *internal.Store, publicOnly bool) (func(*types.Repo) error, error) {
+func (s *Syncer) makeNewRepoInserter(ctx context.Context, store *Store, publicOnly bool) (func(*types.Repo) error, error) {
 	// insertIfNew requires querying the store for related repositories, and
 	// will do nothing if `insertOnly` is set and there are any related repositories. Most
 	// repositories will already have related repos, so to avoid that cost we

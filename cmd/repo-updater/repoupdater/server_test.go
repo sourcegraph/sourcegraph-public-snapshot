@@ -56,7 +56,7 @@ func TestIntegration(t *testing.T) {
 
 	for _, tc := range []struct {
 		name string
-		test func(*testing.T, *internal.Store) func(*testing.T)
+		test func(*testing.T, *repos.Store) func(*testing.T)
 	}{
 		{"Server/SetRepoEnabled", testServerSetRepoEnabled},
 		{"Server/EnqueueRepoUpdate", testServerEnqueueRepoUpdate},
@@ -176,7 +176,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 	})
 }
 
-func testServerSetRepoEnabled(t *testing.T, store *internal.Store) func(t *testing.T) {
+func testServerSetRepoEnabled(t *testing.T, store *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		githubService := &types.ExternalService{
 			ID:          1,
@@ -335,7 +335,7 @@ func testServerSetRepoEnabled(t *testing.T, store *internal.Store) func(t *testi
 	}
 }
 
-func testServerEnqueueRepoUpdate(t *testing.T, store *internal.Store) func(t *testing.T) {
+func testServerEnqueueRepoUpdate(t *testing.T, store *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 
@@ -470,7 +470,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *internal.Store) func(t *te
 	}
 }
 
-func testServerRepoExternalServices(t *testing.T, store *internal.Store) func(t *testing.T) {
+func testServerRepoExternalServices(t *testing.T, store *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 
 		service1 := &types.ExternalService{
@@ -571,7 +571,7 @@ func testServerRepoExternalServices(t *testing.T, store *internal.Store) func(t 
 	}
 }
 
-func testServerStatusMessages(t *testing.T, store *internal.Store) func(t *testing.T) {
+func testServerStatusMessages(t *testing.T, store *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 
@@ -809,8 +809,8 @@ func apiExternalServices(es ...*types.ExternalService) []api.ExternalService {
 	return svcs
 }
 
-func testRepoLookup(sqlDB *sql.DB) func(t *testing.T, repoStore *internal.Store) func(t *testing.T) {
-	return func(t *testing.T, store *internal.Store) func(t *testing.T) {
+func testRepoLookup(sqlDB *sql.DB) func(t *testing.T, repoStore *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx := context.Background()
 			clock := dbtesting.NewFakeClock(time.Now(), 0)
@@ -1292,7 +1292,7 @@ func formatJSON(s string) string {
 }
 
 type storeWithErrors struct {
-	*internal.Store
+	*repos.Store
 
 	UpsertReposErr error
 }

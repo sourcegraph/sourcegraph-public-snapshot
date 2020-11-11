@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 
@@ -128,12 +127,12 @@ func (s GitoliteSource) makeRepo(repo *gitolite.Repo) *types.Repo {
 type GitolitePhabricatorMetadataSyncer struct {
 	sem     *semaphore.Weighted // Only one sync at a time, like it was done before.
 	counter int64               // Only sync every 10th time, like it was done before.
-	store   *internal.Store     // Use to load the external services that yielded a given repo.
+	store   *Store              // Use to load the external services that yielded a given repo.
 }
 
 // NewGitolitePhabricatorMetadataSyncer returns a GitolitePhabricatorMetadataSyncer with
 // the given parameters.
-func NewGitolitePhabricatorMetadataSyncer(s *internal.Store) *GitolitePhabricatorMetadataSyncer {
+func NewGitolitePhabricatorMetadataSyncer(s *Store) *GitolitePhabricatorMetadataSyncer {
 	return &GitolitePhabricatorMetadataSyncer{
 		sem:     semaphore.NewWeighted(1),
 		counter: -1,

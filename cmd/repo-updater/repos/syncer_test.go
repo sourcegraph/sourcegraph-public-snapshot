@@ -29,7 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
-func testSyncerSyncWithErrors(t *testing.T, store *internal.Store) func(t *testing.T) {
+func testSyncerSyncWithErrors(t *testing.T, store *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 
@@ -103,7 +103,7 @@ func testSyncerSyncWithErrors(t *testing.T, store *internal.Store) func(t *testi
 }
 
 type storeWithErrors struct {
-	*internal.Store
+	*repos.Store
 
 	ListReposErr   error
 	UpsertReposErr error
@@ -123,7 +123,7 @@ func (s *storeWithErrors) UpsertRepos(ctx context.Context, repos ...*types.Repo)
 	return s.Store.UpsertRepos(ctx, repos...)
 }
 
-func testSyncerSync(t *testing.T, s *internal.Store) func(*testing.T) {
+func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 	services := types.MakeExternalServices()
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
@@ -182,7 +182,7 @@ func testSyncerSync(t *testing.T, s *internal.Store) func(*testing.T) {
 	type testCase struct {
 		name    string
 		sourcer repos.Sourcer
-		store   *internal.Store
+		store   *repos.Store
 		stored  types.Repos
 		svcs    []*types.ExternalService
 		ctx     context.Context
@@ -517,7 +517,7 @@ func testSyncerSync(t *testing.T, s *internal.Store) func(*testing.T) {
 			tc := tc
 			ctx := context.Background()
 
-			t.Run(tc.name, internal.Transact(ctx, tc.store, func(t testing.TB, st *internal.Store) {
+			t.Run(tc.name, internal.Transact(ctx, tc.store, func(t testing.TB, st *repos.Store) {
 				defer func() {
 					if err := recover(); err != nil {
 						t.Fatalf("%q panicked: %v", tc.name, err)
@@ -576,7 +576,7 @@ func testSyncerSync(t *testing.T, s *internal.Store) func(*testing.T) {
 	}
 }
 
-func createExternalServices(t *testing.T, s *internal.Store) map[string]*types.ExternalService {
+func createExternalServices(t *testing.T, s *repos.Store) map[string]*types.ExternalService {
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
@@ -591,7 +591,7 @@ func createExternalServices(t *testing.T, s *internal.Store) map[string]*types.E
 	return types.ExternalServicesToMap(services)
 }
 
-func testSyncRepo(t *testing.T, s *internal.Store) func(*testing.T) {
+func testSyncRepo(t *testing.T, s *repos.Store) func(*testing.T) {
 	clock := dbtesting.NewFakeClock(time.Now(), time.Second)
 
 	servicesPerKind := createExternalServices(t, s)
@@ -657,7 +657,7 @@ func testSyncRepo(t *testing.T, s *internal.Store) func(*testing.T) {
 			tc := tc
 			ctx := context.Background()
 
-			t.Run(tc.name, internal.Transact(ctx, s, func(t testing.TB, st *internal.Store) {
+			t.Run(tc.name, internal.Transact(ctx, s, func(t testing.TB, st *repos.Store) {
 				defer func() {
 					if err := recover(); err != nil {
 						t.Fatalf("%q panicked: %v", tc.name, err)
@@ -957,8 +957,8 @@ func TestDiff(t *testing.T) {
 	}
 }
 
-func testSyncRun(db *sql.DB) func(t *testing.T, store *internal.Store) func(t *testing.T) {
-	return func(t *testing.T, store *internal.Store) func(t *testing.T) {
+func testSyncRun(db *sql.DB) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -1052,8 +1052,8 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store *internal.Store) func(t *t
 	}
 }
 
-func testSyncer(db *sql.DB) func(t *testing.T, store *internal.Store) func(t *testing.T) {
-	return func(t *testing.T, store *internal.Store) func(t *testing.T) {
+func testSyncer(db *sql.DB) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -1187,8 +1187,8 @@ func testSyncer(db *sql.DB) func(t *testing.T, store *internal.Store) func(t *te
 	}
 }
 
-func testOrphanedRepo(sqlDB *sql.DB) func(t *testing.T, store *internal.Store) func(t *testing.T) {
-	return func(t *testing.T, store *internal.Store) func(t *testing.T) {
+func testOrphanedRepo(sqlDB *sql.DB) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -1299,7 +1299,7 @@ func testOrphanedRepo(sqlDB *sql.DB) func(t *testing.T, store *internal.Store) f
 
 // storeWrapper executes arbitrary code before store methods.
 type storeWrapper struct {
-	*internal.Store
+	*repos.Store
 
 	onUpsertRepos func()
 }
@@ -1312,8 +1312,8 @@ func (s *storeWrapper) UpsertRepos(ctx context.Context, rs ...*types.Repo) error
 	return s.Store.UpsertRepos(ctx, rs...)
 }
 
-func testConflictingSyncers(sqlDB *sql.DB) func(t *testing.T, store *internal.Store) func(t *testing.T) {
-	return func(t *testing.T, store *internal.Store) func(t *testing.T) {
+func testConflictingSyncers(sqlDB *sql.DB) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -1454,8 +1454,8 @@ func testConflictingSyncers(sqlDB *sql.DB) func(t *testing.T, store *internal.St
 	}
 }
 
-func testUserAddedRepos(sqlDB *sql.DB, userID int32) func(t *testing.T, store *internal.Store) func(t *testing.T) {
-	return func(t *testing.T, store *internal.Store) func(t *testing.T) {
+func testUserAddedRepos(sqlDB *sql.DB, userID int32) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -1595,8 +1595,8 @@ func testUserAddedRepos(sqlDB *sql.DB, userID int32) func(t *testing.T, store *i
 	}
 }
 
-func testNameOnConflictDiscardOld(sqlDB *sql.DB) func(t *testing.T, store *internal.Store) func(t *testing.T) {
-	return func(t *testing.T, store *internal.Store) func(t *testing.T) {
+func testNameOnConflictDiscardOld(sqlDB *sql.DB) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			// Test the case where more than one external service returns the same name for different repos. The names
 			// are the same, but the external id are different.
@@ -1697,8 +1697,8 @@ func testNameOnConflictDiscardOld(sqlDB *sql.DB) func(t *testing.T, store *inter
 	}
 }
 
-func testNameOnConflictDiscardNew(sqlDB *sql.DB) func(t *testing.T, store *internal.Store) func(t *testing.T) {
-	return func(t *testing.T, store *internal.Store) func(t *testing.T) {
+func testNameOnConflictDiscardNew(sqlDB *sql.DB) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			// Test the case where more than one external service returns the same name for different repos. The names
 			// are the same, but the external id are different.
@@ -1799,8 +1799,8 @@ func testNameOnConflictDiscardNew(sqlDB *sql.DB) func(t *testing.T, store *inter
 	}
 }
 
-func testNameOnConflictOnRename(sqlDB *sql.DB) func(t *testing.T, store *internal.Store) func(t *testing.T) {
-	return func(t *testing.T, store *internal.Store) func(t *testing.T) {
+func testNameOnConflictOnRename(sqlDB *sql.DB) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			// Test the case where more than one external service returns the same name for different repos. The names
 			// are the same, but the external id are different.
@@ -1915,8 +1915,8 @@ func testNameOnConflictOnRename(sqlDB *sql.DB) func(t *testing.T, store *interna
 		}
 	}
 }
-func testDeleteExternalService(db *sql.DB) func(t *testing.T, store *internal.Store) func(t *testing.T) {
-	return func(t *testing.T, store *internal.Store) func(t *testing.T) {
+func testDeleteExternalService(db *sql.DB) func(t *testing.T, store *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()

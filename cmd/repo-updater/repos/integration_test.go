@@ -8,6 +8,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 )
 
@@ -39,7 +40,7 @@ func TestIntegration(t *testing.T) {
 
 	for _, tc := range []struct {
 		name string
-		test func(*testing.T, *internal.Store) func(*testing.T)
+		test func(*testing.T, *repos.Store) func(*testing.T)
 	}{
 		{"DBStore/SyncRateLimiters", testSyncRateLimiters},
 		{"DBStore/Syncer/Sync", testSyncerSync},

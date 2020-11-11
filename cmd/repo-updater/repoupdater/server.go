@@ -14,7 +14,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -30,7 +29,7 @@ import (
 
 // Server is a repoupdater server.
 type Server struct {
-	*internal.Store
+	*repos.Store
 	RepoLister RepoLister
 	*repos.Syncer
 	SourcegraphDotComMode bool
