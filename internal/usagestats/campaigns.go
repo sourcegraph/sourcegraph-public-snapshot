@@ -53,17 +53,23 @@ FROM changesets;
 		return nil, err
 	}
 
-	const specsCountsQuery = `
+	const eventLogsCountsQuery = `
 SELECT
-    COUNT(*) AS campaign_specs_created,
-    COALESCE(SUM((argument->>'changeset_specs_count')::int), 0) AS changeset_specs_created_count
+    COUNT(*)                                                FILTER (WHERE name = 'CampaignSpecCreated')                       AS campaign_specs_created,
+    COALESCE(SUM((argument->>'changeset_specs_count')::int) FILTER (WHERE name = 'CampaignSpecCreated'), 0)                   AS changeset_specs_created_count,
+    COUNT(*)                                                FILTER (WHERE name = 'ViewCampaignApplyPage')                     AS view_campaign_apply_page_count,
+    COUNT(*)                                                FILTER (WHERE name = 'ViewCampaignDetailsPageAfterCreate')   AS view_campaign_details_page_after_create_count,
+    COUNT(*)                                                FILTER (WHERE name = 'ViewCampaignDetailsPageAfterUpdate')   AS view_campaign_details_page_after_update_count
 FROM event_logs
-WHERE name = 'CampaignSpecCreated';
+WHERE name IN ('CampaignSpecCreated', 'ViewCampaignApplyPage', 'ViewCampaignDetailsPageAfterCreate', 'ViewCampaignDetailsPageAfterUpdate');
 `
 
-	err := dbconn.Global.QueryRowContext(ctx, specsCountsQuery).Scan(
+	err := dbconn.Global.QueryRowContext(ctx, eventLogsCountsQuery).Scan(
 		&stats.CampaignSpecsCreatedCount,
 		&stats.ChangesetSpecsCreatedCount,
+		&stats.ViewCampaignApplyPageCount,
+		&stats.ViewCampaignDetailsPageAfterCreateCount,
+		&stats.ViewCampaignDetailsPageAfterUpdateCount,
 	)
 
 	return &stats, err

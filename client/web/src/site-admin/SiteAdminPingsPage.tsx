@@ -137,6 +137,9 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                 <li>
                     Campaign usage data
                     <ul>
+                        <li>Total count of page views on the campaign apply page</li>
+                        <li>Total count of page views on the campaign details page after creating a campaige</li>
+                        <li>Total count of page views on the campaign details page after updating a campaige</li>
                         <li>Total count of created changeset specs</li>
                         <li>Total count of created campaign specs</li>
                         <li>Total count of created campaigns</li>

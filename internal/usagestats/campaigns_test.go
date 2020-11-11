@@ -70,14 +70,17 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create two event logs for the campaign specs
+	// Create event logs
 	_, err = dbconn.Global.Exec(`
 		INSERT INTO event_logs
 			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
 		VALUES
 			(1, 'CampaignSpecCreated', '{"changeset_specs_count": 3}', '', 23, '', 'backend', 'version', now()),
 			(2, 'CampaignSpecCreated', '{"changeset_specs_count": 1}', '', 23, '', 'backend', 'version', now()),
-			(3, 'CampaignSpecCreated', '{}', '', 23, '', 'backend', 'version', now())
+			(3, 'CampaignSpecCreated', '{}', '', 23, '', 'backend', 'version', now()),
+            (4, 'ViewCampaignApplyPage', '{}', 'https://sourcegraph.test:3443/users/mrnugget/campaigns/apply/RANDID', 23, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', now()),
+            (5, 'ViewCampaignDetailsPageAfterCreate', '{}', 'https://sourcegraph.test:3443/users/mrnugget/campaigns/gitignore-files', 23, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', now()),
+            (6, 'ViewCampaignDetailsPageAfterUpdate', '{}', 'https://sourcegraph.test:3443/users/mrnugget/campaigns/gitignore-files', 23, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', now())
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -120,6 +123,9 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := &types.CampaignsUsageStatistics{
+		ViewCampaignApplyPageCount:               1,
+		ViewCampaignDetailsPageAfterCreateCount:  1,
+		ViewCampaignDetailsPageAfterUpdateCount:  1,
 		CampaignsCount:                           2,
 		CampaignsClosedCount:                     1,
 		ActionChangesetsCount:                    4,
