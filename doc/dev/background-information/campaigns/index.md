@@ -90,7 +90,7 @@ Here is a short description of what `src-cli` does when you run with `src campai
 2. Unzip archive, e.g. into `~/Library/Caches/sourcegraph/campaigns` (see `src campaign preview -h` for default value of cache dir, overwrite with `-cache`)
 3. `cd` into unzipped archive
 4. In the unzipped archive directory, create a git repository:
-	- Configure `git` to not use local config (see [the code for explanations on what each varable does](https://github.com/sourcegraph/src-cli/blob/038180005c9ebf5c0f9e8d3b2eda63c109cea904/internal/campaigns/run_steps.go#L31-L44)):
+	- Configure `git` to not use local config (see [the code for explanations on what each variable does](https://github.com/sourcegraph/src-cli/blob/038180005c9ebf5c0f9e8d3b2eda63c109cea904/internal/campaigns/run_steps.go#L31-L44)):
 
     ```
     export GIT_CONFIG_NOSYSTEM=1 \
