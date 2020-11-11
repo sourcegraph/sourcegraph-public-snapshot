@@ -597,10 +597,8 @@ func withDeadlinePercentage(ctx context.Context, p float64) (context.Context, co
 }
 
 func deadlineLabel(ctx context.Context) string {
-	deadline, ok := ctx.Deadline()
-	if ok {
+	if deadline, ok := ctx.Deadline(); ok {
 		return time.Until(deadline).String()
-	} else {
-		return "unlimited"
 	}
+	return "unlimited"
 }
