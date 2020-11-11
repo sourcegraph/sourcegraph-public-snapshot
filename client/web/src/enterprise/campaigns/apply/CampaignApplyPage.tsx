@@ -17,11 +17,8 @@ import { HeroPage } from '../../../components/HeroPage'
 import { CampaignDescription } from '../detail/CampaignDescription'
 import { CampaignSpecInfoByline } from './CampaignSpecInfoByline'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { Link } from '../../../../../shared/src/components/Link'
 import { AuthenticatedUser } from '../../../auth'
-import { ExternalServiceKind } from '../../../graphql-operations'
-import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import { pluralize } from '../../../../../shared/src/util/strings'
+import { CampaignSpecMissingCredentialsAlert } from './CampaignSpecMissingCredentialsAlert'
 
 export interface CampaignApplyPageProps extends ThemeProps, TelemetryProps {
     specID: string
@@ -77,26 +74,10 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 className="test-campaign-apply-page"
             />
             <CampaignSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} className="mb-3" />
-            {spec.viewerCampaignsCodeHosts.totalCount > 0 && (
-                <div className="alert alert-warning">
-                    <p className="alert-title">
-                        You don't have credentials configured for{' '}
-                        {pluralize('this code host', spec.viewerCampaignsCodeHosts.totalCount, 'these code hosts')}
-                    </p>
-                    <ul>
-                        {spec.viewerCampaignsCodeHosts.nodes.map(node => (
-                            <MissingCodeHost {...node} key={node.externalServiceKind + node.externalServiceURL} />
-                        ))}
-                    </ul>
-                    <p className="mb-0">
-                        Configure {pluralize('it', spec.viewerCampaignsCodeHosts.totalCount, 'them')} in your{' '}
-                        <Link to={`${authenticatedUser.url}/settings/campaigns`} target="_blank" rel="noopener">
-                            campaigns user settings
-                        </Link>{' '}
-                        to apply this spec.
-                    </p>
-                </div>
-            )}
+            <CampaignSpecMissingCredentialsAlert
+                authenticatedUser={authenticatedUser}
+                viewerCampaignsCodeHosts={spec.viewerCampaignsCodeHosts}
+            />
             <CreateUpdateCampaignAlert
                 history={history}
                 specID={spec.id}
@@ -115,18 +96,5 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 expandChangesetDescriptions={expandChangesetDescriptions}
             />
         </>
-    )
-}
-
-const MissingCodeHost: React.FunctionComponent<{
-    externalServiceKind: ExternalServiceKind
-    externalServiceURL: string
-}> = ({ externalServiceKind, externalServiceURL }) => {
-    const Icon = defaultExternalServices[externalServiceKind].icon
-    return (
-        <li>
-            <Icon className="icon-inline mr-2" />
-            {externalServiceURL}
-        </li>
     )
 }
