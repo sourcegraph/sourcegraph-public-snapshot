@@ -9,7 +9,8 @@ import (
 )
 
 type CodeMonitorsResolver interface {
-	Monitors(ctx context.Context, userID graphql.ID, args *ListMonitorsArgs) (MonitorConnectionResolver, error)
+	Monitors(ctx context.Context, userID int32, args *ListMonitorsArgs) (MonitorConnectionResolver, error)
+	CreateCodeMonitor(ctx context.Context, args *CreateCodeMonitorArgs) (MonitorResolver, error)
 }
 
 type MonitorConnectionResolver interface {
@@ -104,6 +105,29 @@ type ListActionArgs struct {
 	After *string
 }
 
+type CreateCodeMonitorArgs struct {
+	Namespace   graphql.ID
+	Description string
+	Enabled     bool
+	Trigger     *CreateTriggerArgs
+	Actions     []*CreateActionArgs
+}
+
+type CreateTriggerArgs struct {
+	Query string
+}
+
+type CreateActionArgs struct {
+	Email *CreateActionEmailArgs
+}
+
+type CreateActionEmailArgs struct {
+	Enabled    bool
+	Priority   string
+	Recipients []graphql.ID
+	Header     string
+}
+
 var DefaultCodeMonitorsResolver = &defaultCodeMonitorsResolver{}
 
 var codeMonitorsOnlyInEnterprise = errors.New("code monitors are only available in enterprise")
@@ -111,6 +135,10 @@ var codeMonitorsOnlyInEnterprise = errors.New("code monitors are only available 
 type defaultCodeMonitorsResolver struct {
 }
 
-func (d defaultCodeMonitorsResolver) Monitors(ctx context.Context, userID graphql.ID, args *ListMonitorsArgs) (MonitorConnectionResolver, error) {
+func (d defaultCodeMonitorsResolver) Monitors(ctx context.Context, userID int32, args *ListMonitorsArgs) (MonitorConnectionResolver, error) {
+	return nil, codeMonitorsOnlyInEnterprise
+}
+
+func (d defaultCodeMonitorsResolver) CreateCodeMonitor(ctx context.Context, args *CreateCodeMonitorArgs) (MonitorResolver, error) {
 	return nil, codeMonitorsOnlyInEnterprise
 }
