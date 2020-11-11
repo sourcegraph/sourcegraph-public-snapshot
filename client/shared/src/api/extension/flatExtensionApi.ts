@@ -14,10 +14,11 @@ import { fromLocation, toPosition } from './api/types'
 import { TextDocumentPositionParameters } from '../protocol'
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
-import { Hover, Location, WorkspaceRoot } from '@sourcegraph/extension-api-types'
+import * as extensionApiTypes from '@sourcegraph/extension-api-types'
 import { castArray, isEqual } from 'lodash'
 import { fromHoverMerged, HoverMerged } from '../client/types/hover'
 import { isNot, isExactly, isDefined } from '../../util/types'
+import { WorkspaceRoot } from './api/workspace'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -27,7 +28,7 @@ export interface ExtensionHostState {
     settings: Readonly<SettingsCascade<object>>
 
     // Workspace
-    roots: readonly sourcegraph.WorkspaceRoot[]
+    roots: WorkspaceRoot[]
     versionContext: string | undefined
 
     // Search
@@ -65,25 +66,6 @@ export type PartialWorkspaceNamespace = Omit<
     typeof sourcegraph['workspace'],
     'textDocuments' | 'onDidOpenTextDocument' | 'openedTextDocuments' | 'roots' | 'versionContext'
 >
-
-/**
- * A workspace root with additional metadata that is not exposed to extensions.
- */
-export interface WorkspaceRootWithMetadata extends WorkspaceRoot {
-    /**
-     * The original input Git revision that the user requested. The {@link WorkspaceRoot#uri} value will contain
-     * the Git commit SHA resolved from the input revision, but it is useful to also know the original revision
-     * (e.g., to construct URLs for the user that don't result in them navigating from a branch view to a commit
-     * SHA view).
-     *
-     * For example, if the user is viewing the web page https://github.com/alice/myrepo/blob/master/foo.js (note
-     * that the URL contains a Git revision "master"), the input revision is "master".
-     *
-     * The empty string is a valid value (meaning that the default should be used, such as "HEAD" in Git) and is
-     * distinct from undefined. If undefined, the Git commit SHA from {@link WorkspaceRoot#uri} should be used.
-     */
-    inputRevision?: string
-}
 
 /**
  * Holds internally ExtState and manages communication with the Client
@@ -128,13 +110,13 @@ export const initNewExtensionAPI = (
         },
 
         // Workspace
-        addWorkspaceRoot: (root: WorkspaceRoot) => {
+        addWorkspaceRoot: (root: extensionApiTypes.WorkspaceRoot) => {
             if (!state.roots.some(existingRoot => existingRoot.uri.toString() !== root.uri)) {
-                state.roots = [...state.roots, { ...root, uri: new URL(root.uri) }]
+                state.roots = [...state.roots, new WorkspaceRoot(new URL(root.uri), root.inputRevision)]
             }
             rootChanges.next()
         },
-        getWorkspaceRoots: () => state.roots.map(root => ({ ...root, uri: root.uri.toString() })), // TODO remove if this isn't needed
+        getWorkspaceRoots: () => state.roots.map(root => ({ ...root, uri: root.uri.toString() })),
         removeWorkspaceRoot: (uri: string) => {
             state.roots = state.roots.filter(root => root.uri.toString() !== uri)
             rootChanges.next()
@@ -370,7 +352,9 @@ export function callProviders<TProvider, TProviderResult, TMergedResult>(
  * @param results latests results from hover providers
  * @returns a {@link HoverMerged} results if there are any actual Hover results or null in case of no results or loading
  */
-export function mergeHoverResults(results: (typeof LOADING | Hover | null | undefined)[]): HoverMerged | null {
+export function mergeHoverResults(
+    results: (typeof LOADING | extensionApiTypes.Hover | null | undefined)[]
+): HoverMerged | null {
     return fromHoverMerged(results.filter(isNot(isExactly(LOADING))))
 }
 
@@ -379,7 +363,9 @@ export function mergeHoverResults(results: (typeof LOADING | Hover | null | unde
  *
  * @param results Results from all definition providers.
  */
-export function mergeDefinition(results: (typeof LOADING | sourcegraph.Definition | null | undefined)[]): Location[] {
+export function mergeDefinition(
+    results: (typeof LOADING | sourcegraph.Definition | null | undefined)[]
+): extensionApiTypes.Location[] {
     return results
         .filter(isNot(isExactly(LOADING)))
         .flatMap(castArray)

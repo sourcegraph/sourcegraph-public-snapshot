@@ -12,7 +12,7 @@ import { TextModel } from '../client/services/modelService'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
 import { FlatExtensionHostAPI } from '../contract'
 import { Remote } from 'comlink'
-import { WorkspaceRootWithMetadata } from '../extension/flatExtensionApi'
+import * as extensionApiTypes from '@sourcegraph/extension-api-types'
 
 export function assertToJSON(a: any, expected: any): void {
     const raw = JSON.stringify(a)
@@ -21,7 +21,7 @@ export function assertToJSON(a: any, expected: any): void {
 }
 
 interface TestInitData {
-    roots: readonly WorkspaceRootWithMetadata[]
+    roots: readonly extensionApiTypes.WorkspaceRoot[]
     models?: readonly TextModel[]
     viewers: readonly ViewerData[]
 }
