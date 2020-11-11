@@ -17,8 +17,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
 	edb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -237,7 +237,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				store, sstore, clock := gitLabTestSetup(t, db)
 				h := NewGitLabWebhook(store, sstore, clock.now)
 				es := createGitLabExternalService(t, ctx, sstore)
-				repo := createGitLabRepo(t, ctx, edb.NewRepoStoreWithDB(db), es)
+				repo := createGitLabRepo(t, ctx, edb.NewRepoStoreWithDB(sstore.Handle().DB()), es)
 				changeset := createGitLabChangeset(t, ctx, store, repo)
 				body := createMergeRequestPayload(t, repo, changeset, "close")
 
@@ -283,7 +283,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 						store, sstore, clock := gitLabTestSetup(t, db)
 						h := NewGitLabWebhook(store, sstore, clock.now)
 						es := createGitLabExternalService(t, ctx, sstore)
-						repo := createGitLabRepo(t, ctx, edb.NewRepoStoreWithDB(db), es)
+						repo := createGitLabRepo(t, ctx, edb.NewRepoStoreWithDB(store.Handle().DB()), es)
 						changeset := createGitLabChangeset(t, ctx, store, repo)
 						body := createMergeRequestPayload(t, repo, changeset, "approved")
 
@@ -328,7 +328,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 						store, sstore, clock := gitLabTestSetup(t, db)
 						h := NewGitLabWebhook(store, sstore, clock.now)
 						es := createGitLabExternalService(t, ctx, sstore)
-						repo := createGitLabRepo(t, ctx, edb.NewRepoStoreWithDB(db), es)
+						repo := createGitLabRepo(t, ctx, edb.NewRepoStoreWithDB(store.Handle().DB()), es)
 						changeset := createGitLabChangeset(t, ctx, store, repo)
 						body := createMergeRequestPayload(t, repo, changeset, action)
 
@@ -357,7 +357,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				store, sstore, clock := gitLabTestSetup(t, db)
 				h := NewGitLabWebhook(store, sstore, clock.now)
 				es := createGitLabExternalService(t, ctx, sstore)
-				repo := createGitLabRepo(t, ctx, edb.NewRepoStoreWithDB(db), es)
+				repo := createGitLabRepo(t, ctx, edb.NewRepoStoreWithDB(store.Handle().DB()), es)
 				changeset := createGitLabChangeset(t, ctx, store, repo)
 				body := createPipelinePayload(t, repo, changeset, gitlab.Pipeline{
 					ID:     123,
@@ -565,7 +565,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			store, sstore, clock := gitLabTestSetup(t, db)
 			h := NewGitLabWebhook(store, sstore, clock.now)
 			es := createGitLabExternalService(t, ctx, sstore)
-			repo := createGitLabRepo(t, ctx, edb.NewRepoStoreWithDB(db), es)
+			repo := createGitLabRepo(t, ctx, edb.NewRepoStoreWithDB(store.Handle().DB()), es)
 			changeset := createGitLabChangeset(t, ctx, store, repo)
 
 			// Extract IDs we'll need to build events.
@@ -914,8 +914,18 @@ func createGitLabExternalService(t *testing.T, ctx context.Context, store *edb.E
 
 // createGitLabRepo creates a mock GitLab repo attached to the given external
 // service.
-func createGitLabRepo(t *testing.T, ctx context.Context, rstore *db.RepoStore, es *types.ExternalService) *types.Repo {
-	repo := types.MakeGitlabRepo(es)
+func createGitLabRepo(t *testing.T, ctx context.Context, rstore *edb.RepoStore, es *types.ExternalService) *types.Repo {
+	repo := (&types.Repo{
+		Name: "gitlab.com/sourcegraph/test",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "123",
+			ServiceType: extsvc.TypeGitLab,
+			ServiceID:   "https://gitlab.com/",
+		},
+		RepoFields: &types.RepoFields{
+			URI: "gitlab.com/sourcegraph/test",
+		},
+	}).With(types.Opt.RepoSources(es.URN()))
 	if err := rstore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
