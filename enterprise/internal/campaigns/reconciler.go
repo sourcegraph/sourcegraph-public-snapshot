@@ -593,9 +593,7 @@ func buildCommitOpts(repo *repos.Repo, extSvc *repos.ExternalService, spec *camp
 	return opts, nil
 }
 
-func buildPushConfig(extSvcType string, cloneURL string, a auth.Authenticator) (*protocol.PushConfig, error) {
-	pc := &protocol.PushConfig{}
-
+func buildPushConfig(extSvcType, cloneURL string, a auth.Authenticator) (*protocol.PushConfig, error) {
 	u, err := url.Parse(cloneURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing repository clone URL")
@@ -605,12 +603,9 @@ func buildPushConfig(extSvcType string, cloneURL string, a auth.Authenticator) (
 	case *auth.OAuthBearerToken:
 		switch extSvcType {
 		case extsvc.TypeGitHub:
-			pc.Username = av.Token
 			u.User = url.User(av.Token)
 
 		case extsvc.TypeGitLab:
-			pc.Username = "git"
-			pc.Password = av.Token
 			u.User = url.UserPassword("git", av.Token)
 
 		case extsvc.TypeBitbucketServer:
@@ -623,8 +618,6 @@ func buildPushConfig(extSvcType string, cloneURL string, a auth.Authenticator) (
 			return nil, errors.New("need token to push commits to " + extSvcType)
 
 		case extsvc.TypeBitbucketServer:
-			pc.Username = av.Username
-			pc.Password = av.Password
 			u.User = url.UserPassword(av.Username, av.Password)
 		}
 
@@ -636,9 +629,7 @@ func buildPushConfig(extSvcType string, cloneURL string, a auth.Authenticator) (
 		return nil, ErrNoPushCredentials{credentialsType: fmt.Sprintf("%T", a)}
 	}
 
-	pc.RemoteURL = u.String()
-
-	return pc, nil
+	return &protocol.PushConfig{RemoteURL: u.String()}, nil
 }
 
 // ErrNoPushCredentials is returned by buildCommitOpts if the credentials
