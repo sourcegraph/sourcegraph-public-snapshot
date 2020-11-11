@@ -58,14 +58,14 @@ func (c *campaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]grap
 		return nil, err
 	}
 
-	nodes := make([]graphqlbackend.CampaignsCodeHostResolver, 0)
-	for _, ch := range page {
+	nodes := make([]graphqlbackend.CampaignsCodeHostResolver, len(page))
+	for i, ch := range page {
 		t := idType{
 			externalServiceID:   ch.ExternalServiceID,
 			externalServiceType: ch.ExternalServiceType,
 		}
 		cred := credsByIDType[t]
-		nodes = append(nodes, &campaignsCodeHostResolver{externalServiceKind: extsvc.TypeToKind(ch.ExternalServiceType), externalServiceURL: ch.ExternalServiceID, credential: cred})
+		nodes[i] = &campaignsCodeHostResolver{externalServiceKind: extsvc.TypeToKind(ch.ExternalServiceType), externalServiceURL: ch.ExternalServiceID, credential: cred}
 	}
 
 	return nodes, nil
@@ -82,6 +82,9 @@ func (c *campaignsCodeHostConnectionResolver) defaultCompute(ctx context.Context
 	c.once.Do(func() {
 		// Don't pass c.limitOffset here, as we want all code hosts for the totalCount anyways.
 		c.chs, c.chsErr = c.store.ListCodeHosts(ctx, c.opts)
+		if c.chsErr != nil {
+			return
+		}
 
 		// Fetch all user credentials to avoid N+1 per credential resolver.
 		creds, _, err := db.UserCredentials.List(ctx, db.UserCredentialsListOpts{Scope: db.UserCredentialScope{Domain: db.UserCredentialDomainCampaigns, UserID: c.userID}})

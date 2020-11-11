@@ -220,7 +220,7 @@ func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, arg
 					return []*campaigns.CodeHost{}, []*campaigns.CodeHost{}, nil, nil
 				},
 			}, nil
-		} else if authErr != backend.ErrMustBeSiteAdmin {
+		} else if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
 			return nil, authErr
 		}
 	}
