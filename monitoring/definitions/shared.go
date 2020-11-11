@@ -243,3 +243,46 @@ var sharedKubernetesPodsAvailable sharedObservable = func(containerName string, 
 		PossibleSolutions: "none",
 	}
 }
+
+// Postgres monitoring overviews
+
+var postgresVersion sharedObservable = func(dbName string, owner ObservableOwner) Observable {
+	return Observable{
+		Name:              "postgres_version",
+		Description:       "postgres version",
+		Query:             fmt.Sprintf(`pg_settings_server_version_num{app="%s"}`, dbName),
+		DataMayNotExist:   true,
+		Critical:          Alert().LessOrEqual(9.6),
+		PanelOptions:      PanelOptions().LegendFormat("time_series").Unit(Seconds),
+		Owner:             owner,
+		PossibleSolutions: "none",
+	}
+}
+
+var postgresMaxConnections sharedObservable = func(dbName string, owner ObservableOwner) Observable {
+	return Observable{
+		Name:            "max_connections",
+		Description:     "max connections",
+		Query:           fmt.Sprintf(`pg_settings_max_connections{app="%s"}`, dbName),
+		DataMayNotExist: true,
+
+		Warning:           Alert().GreaterOrEqual(500),
+		PanelOptions:      PanelOptions().LegendFormat("time_series").Unit(Seconds),
+		Owner:             owner,
+		PossibleSolutions: "none",
+	}
+}
+
+var postgresSharedBuffers sharedObservable = func(dbName string, owner ObservableOwner) Observable {
+	return Observable{
+		Name:              "shared_buffers",
+		Description:       "shared buffers",
+		Query:             fmt.Sprintf(`pg_settings_shared_buffers_bytes{app="%s}`, dbName),
+		DataMayNotExist:   false,
+		DataMayNotBeNaN:   false,
+		Warning:           Alert().GreaterOrEqual(128000000),
+		PanelOptions:      PanelOptions().LegendFormat("time_series").Unit(Bytes),
+		Owner:             owner,
+		PossibleSolutions: "none",
+	}
+}
