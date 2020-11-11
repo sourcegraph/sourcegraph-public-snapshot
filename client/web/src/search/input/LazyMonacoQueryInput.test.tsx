@@ -29,6 +29,7 @@ describe('PlainQueryInput', () => {
                         copyQueryButton={false}
                         versionContext={undefined}
                         globbing={false}
+                        enableSmartQuery={false}
                         showOnboardingTour={false}
                     />
                 )
@@ -57,6 +58,7 @@ describe('PlainQueryInput', () => {
                         copyQueryButton={false}
                         versionContext={undefined}
                         globbing={false}
+                        enableSmartQuery={false}
                         showOnboardingTour={false}
                     />
                 )

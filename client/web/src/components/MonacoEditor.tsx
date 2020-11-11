@@ -35,6 +35,11 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
         { token: 'filterKeyword', foreground: '#569cd6' },
         { token: 'keyword', foreground: '#da77f2' },
         { token: 'comment', foreground: '#ffa94d' },
+        // Regexp pattern highlighting
+        { token: 'regexpMetaDelimited', foreground: '#ff6b6b' },
+        { token: 'regexpMetaAssertion', foreground: '#ff6b6b' },
+        { token: 'regexpMetaCharacterSet', foreground: '#3bc9db' },
+        { token: 'regexpMetaQuantifier', foreground: '#3bc9db' },
     ],
 })
 
@@ -61,6 +66,11 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
         { token: 'filterKeyword', foreground: '#268bd2' },
         { token: 'keyword', foreground: '#ae3ec9' },
         { token: 'comment', foreground: '#d9480f' },
+        // Regexp pattern highlighting
+        { token: 'regexpMetaDelimited', foreground: '#c92a2a' },
+        { token: 'regexpMetaAssertion', foreground: '#c92a2a' },
+        { token: 'regexpMetaCharacterSet', foreground: '#1098ad' },
+        { token: 'regexpMetaQuantifier', foreground: '#1098ad' },
     ],
 })
 
