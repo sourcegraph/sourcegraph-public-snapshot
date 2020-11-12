@@ -69,6 +69,15 @@ func TestCreateCodeMonitor(t *testing.T) {
 		t.Fatalf("got enabled=%T, want enabled=%T", got.(*monitor).enabled, false)
 	}
 
+	// Delete code monitor
+	_, err = r.DeleteCodeMonitor(ctx, &graphqlbackend.DeleteCodeMonitorArgs{Id: got.ID()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = r.monitorForIDInt32(ctx, t, got.(*monitor).id)
+	if err == nil {
+		t.Fatalf("monitor should have been deleted")
+	}
 }
 
 func TestIsAllowedToEdit(t *testing.T) {
@@ -176,4 +185,11 @@ func newTestResolver(t *testing.T) *Resolver {
 		return now.UTC().Truncate(time.Microsecond)
 	}
 	return newResolverWithClock(dbconn.Global, clock).(*Resolver)
+}
+
+func (r *Resolver) monitorForIDInt32(ctx context.Context, t *testing.T, monitorId int64) (graphqlbackend.MonitorResolver, error) {
+	t.Helper()
+
+	q := sqlf.Sprintf("SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id, namespace_org_id FROM cm_monitors WHERE id = %s", monitorId)
+	return r.runMonitorQuery(ctx, q)
 }
