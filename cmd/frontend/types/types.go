@@ -972,14 +972,6 @@ type User struct {
 	InvalidatedSessionsAt time.Time
 }
 
-// GetUsername returns the username if available, or a blank string.
-func (u *User) GetUsername() string {
-	if u == nil {
-		return ""
-	}
-	return u.Username
-}
-
 type Org struct {
 	ID          int32
 	Name        string
