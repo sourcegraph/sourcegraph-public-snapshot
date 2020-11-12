@@ -984,7 +984,7 @@ func TestSearchResultsHydration(t *testing.T) {
 func TestDedupSort(t *testing.T) {
 	repos := make(types.Repos, 512)
 	for i := range repos {
-		repos[i] = &types.Repo{ID: api.RepoID(i % 256)}
+		repos[i] = &types.Repo{ID: api.RepoID(i % 256), RepoFields: &types.RepoFields{}}
 	}
 
 	rand.Shuffle(len(repos), func(i, j int) {

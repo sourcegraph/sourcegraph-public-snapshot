@@ -75,6 +75,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	}
 
 	store := repos.NewStore(testDB, sql.TxOptions{})
+	repoStore := store.RepoStore()
 
 	svc := types.ExternalService{
 		Kind:      extsvc.KindGitHub,
@@ -107,7 +108,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			ServiceID:   "https://github.com/",
 		},
 	}
-	err = store.RepoStore().Create(ctx, &repo)
+	err = repoStore.Create(ctx, &repo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,8 +130,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	}
 
 	permsStore := edb.NewPermsStore(testDB, clock)
-	syncer := NewPermsSyncer(nil, permsStore, clock, nil)
-	syncer.repoLister = store.RepoStore()
+	syncer := NewPermsSyncer(repoStore, permsStore, clock, nil)
 
 	err = syncer.syncRepoPerms(ctx, repo.ID, false)
 	if err != nil {
