@@ -97,6 +97,25 @@ type LogCommitSearchResult struct {
 	Incomplete bool
 }
 
+// LogCommitSearchEvent are emitted by RawLogDiffSearchStream
+type LogCommitSearchEvent struct {
+	// Results are new commit results found.
+	Results []*LogCommitSearchResult
+
+	// Complete is false when the results may have been parsed from only
+	// partial output from the underlying git command (because, e.g., it timed
+	// out during execution and only returned partial output).
+	//
+	// Complete defaults to true, but once false will remain false.
+	Complete bool
+
+	// Error is non-nil if an error occurred. It will be the last event if
+	// set.
+	//
+	// Note: Results will be empty if Error is set.
+	Error error
+}
+
 // A RawDiff represents changes between two commits.
 type RawDiff struct {
 	Raw string // the raw diff output
@@ -123,40 +142,79 @@ func isValidRawLogDiffSearchFormatArgs(formatArgs []string) bool {
 	return false
 }
 
-// RawLogDiffSearch runs a raw `git log` command that is expected to return logs with patches. It
-// returns a subset of the output, including only hunks that actually match the given pattern.
-//
-// If complete is false, then the results may have been parsed from only partial output from the
-// underlying git command (because, e.g., it timed out during execution and only returned partial
-// output).
+// RawLogDiffSearch wraps RawLogDiffSearchStream providing a blocking API. See
+// RawLogDiffSearchStream.
 func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions) (results []*LogCommitSearchResult, complete bool, err error) {
-	if Mocks.RawLogDiffSearch != nil {
-		return Mocks.RawLogDiffSearch(opt)
+	for event := range RawLogDiffSearchStream(ctx, repo, opt) {
+		results = append(results, event.Results...)
+		complete = event.Complete
+		err = event.Error
 	}
+	return results, complete, err
+}
 
+// RawLogDiffSearchStream runs a raw `git log` command that is expected to
+// return logs with patches. It returns a subset of the output, including only
+// hunks that actually match the given pattern.
+//
+// The returned channel must be read until closed, otherwise you may leak
+// resources.
+func RawLogDiffSearchStream(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions) <-chan LogCommitSearchEvent {
+	c := make(chan LogCommitSearchEvent)
+	go func() {
+		defer close(c)
+		_, _ = doLogDiffSearchStream(ctx, repo, opt, c)
+	}()
+
+	return c
+}
+
+// doLogDiffSearchStream is called by RawLogDiffSearchStream to send events
+// down c. It uses named return values to simplify sending errors down the
+// channel. The return values can be ignored.
+func doLogDiffSearchStream(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions, c chan LogCommitSearchEvent) (complete bool, err error) {
+	resultCount := 0
+	tr, ctx := trace.New(ctx, "Git: RawLogDiffSearch", fmt.Sprintf("%+v, timeout=%s", opt, deadlineLabel(ctx)))
+	defer func() {
+		tr.LazyPrintf("%d results, complete=%v, err=%v", resultCount, complete, err)
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// This defer will read the named return values. This is a convenient way
+	// to send errors down the channel, since we only want to do this once.
+	empty := true
 	defer func() {
 		// We do best-effort in case of timeout. So we clear out the error and
 		// indicate the results are incomplete.
 		if err != nil && errors.Is(err, context.DeadlineExceeded) {
+			c <- LogCommitSearchEvent{Complete: false}
 			complete = false
 			err = nil
+			return
+		}
+
+		// Send a final event if we had an error or if we hadn't sent down the
+		// channel.
+		if err != nil || empty {
+			c <- LogCommitSearchEvent{
+				Complete: complete,
+				Error:    err,
+			}
 		}
 	}()
 
-	deadline, ok := ctx.Deadline()
-	var timeoutLabel string
-	if ok {
-		timeoutLabel = time.Until(deadline).String()
-	} else {
-		timeoutLabel = "unlimited"
+	if Mocks.RawLogDiffSearch != nil {
+		results, complete, err := Mocks.RawLogDiffSearch(opt)
+		if len(results) > 0 {
+			c <- LogCommitSearchEvent{
+				Results:  results,
+				Complete: complete,
+			}
+			empty = false
+		}
+		return complete, err
 	}
-
-	tr, ctx := trace.New(ctx, "Git: RawLogDiffSearch", fmt.Sprintf("%+v, timeout=%s", opt, timeoutLabel))
-	defer func() {
-		tr.LazyPrintf("%d results, complete=%v, err=%v", len(results), complete, err)
-		tr.SetError(err)
-		tr.Finish()
-	}()
 
 	if opt.FormatArgs == nil {
 		if opt.Diff {
@@ -166,27 +224,27 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 		}
 	}
 	if opt.FormatArgs != nil && !isValidRawLogDiffSearchFormatArgs(opt.FormatArgs) {
-		return nil, false, fmt.Errorf("invalid FormatArgs: %q", opt.FormatArgs)
+		return false, fmt.Errorf("invalid FormatArgs: %q", opt.FormatArgs)
 	}
 	for _, arg := range opt.Args {
 		if arg == "--" {
-			return nil, false, fmt.Errorf("invalid Args (must not contain \"--\" element): %q", opt.Args)
+			return false, fmt.Errorf("invalid Args (must not contain \"--\" element): %q", opt.Args)
 		}
 	}
 
 	if opt.Query.IsCaseSensitive != opt.Paths.IsCaseSensitive {
 		// These options can't be set separately in `git log`, so fail.
-		return nil, false, fmt.Errorf("invalid options: Query.IsCaseSensitive != Paths.IsCaseSensitive")
+		return false, fmt.Errorf("invalid options: Query.IsCaseSensitive != Paths.IsCaseSensitive")
 	}
 
 	// We do a search with git log returning just the commits (and source sha).
 	onelineCmd, err := rawLogSearchCmd(ctx, repo, opt)
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 	onelineReader, err := gitserver.StdoutReader(ctx, onelineCmd)
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 	defer onelineReader.Close()
 
@@ -207,19 +265,26 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			return results, complete, err
+			return complete, err
 		}
 
-		results2, complete2, err := rawShowSearch(ctx, repo, opt, &cache, commits)
-		results = append(results, results2...)
+		results, complete2, err := rawShowSearch(ctx, repo, opt, &cache, commits)
 		complete = complete && complete2
 
+		if len(results) > 0 {
+			c <- LogCommitSearchEvent{
+				Results:  results,
+				Complete: true,
+			}
+			empty = false
+		}
+
 		if err != nil {
-			return results, complete, err
+			return complete, err
 		}
 	}
 
-	return results, complete, nil
+	return complete, nil
 }
 
 func rawLogSearchCmd(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions) (*gitserver.Cmd, error) {
@@ -529,4 +594,11 @@ func withDeadlinePercentage(ctx context.Context, p float64) (context.Context, co
 		return context.WithDeadline(ctx, now.Add(d))
 	}
 	return context.WithCancel(ctx)
+}
+
+func deadlineLabel(ctx context.Context) string {
+	if deadline, ok := ctx.Deadline(); ok {
+		return time.Until(deadline).String()
+	}
+	return "unlimited"
 }
