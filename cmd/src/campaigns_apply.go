@@ -16,10 +16,12 @@ instance, creating or updating the described campaign if necessary.
 
 Usage:
 
-    src campaigns apply -f FILE -namespace NAMESPACE [command options]
+    src campaigns apply -f FILE [command options]
 
 Examples:
 
+    $ src campaigns apply -f campaign.spec.yaml
+  
     $ src campaigns apply -f campaign.spec.yaml -namespace myorg
 
 `

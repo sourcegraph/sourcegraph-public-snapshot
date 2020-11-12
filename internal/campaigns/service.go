@@ -3,6 +3,7 @@ package campaigns
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"reflect"
@@ -312,7 +313,34 @@ query NamespaceQuery($name: String!) {
 }
 `
 
+const usernameQuery = `
+query GetCurrentUserID {
+    currentUser {
+        id
+    }
+}
+`
+
 func (svc *Service) ResolveNamespace(ctx context.Context, namespace string) (string, error) {
+	if namespace == "" {
+		// if no namespace is provided, default to logged in user as namespace
+		var resp struct {
+			Data struct {
+				CurrentUser struct {
+					ID string `json:"id"`
+				} `json:"currentUser"`
+			} `json:"data"`
+		}
+		if ok, err := svc.client.NewRequest(usernameQuery, nil).DoRaw(ctx, &resp); err != nil || !ok {
+			return "", errors.WithMessage(err, "failed to resolve namespace: no user logged in")
+		}
+
+		if resp.Data.CurrentUser.ID == "" {
+			return "", errors.New("cannot resolve current user")
+		}
+		return resp.Data.CurrentUser.ID, nil
+	}
+
 	var result struct {
 		Data struct {
 			User         *struct{ ID string }
@@ -332,7 +360,7 @@ func (svc *Service) ResolveNamespace(ctx context.Context, namespace string) (str
 	if result.Data.Organization != nil {
 		return result.Data.Organization.ID, nil
 	}
-	return "", errors.New("no user or organization found")
+	return "", fmt.Errorf("failed to resolve namespace %q: no user or organization found", namespace)
 }
 
 func (svc *Service) ResolveRepositories(ctx context.Context, spec *CampaignSpec) ([]*graphql.Repository, error) {

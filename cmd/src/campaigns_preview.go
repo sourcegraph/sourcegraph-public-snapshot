@@ -16,11 +16,11 @@ a Sourcegraph instance, ready to be previewed and applied.
 
 Usage:
 
-    src campaigns preview -f FILE -namespace NAMESPACE [command options]
+    src campaigns preview -f FILE [command options]
 
 Examples:
 
-    $ src campaigns preview -f campaign.spec.yaml -namespace myuser
+    $ src campaigns preview -f campaign.spec.yaml
 
 `
 

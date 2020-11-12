@@ -79,7 +79,7 @@ func newCampaignsApplyFlags(flagSet *flag.FlagSet, cacheDir, tempDir string) *ca
 	)
 	flagSet.StringVar(
 		&caf.namespace, "namespace", "",
-		"The user or organization namespace to place the campaign within.",
+		"The user or organization namespace to place the campaign within. Default is the currently authenticated user.",
 	)
 	flagSet.StringVar(&caf.namespace, "n", "", "Alias for -namespace.")
 
@@ -167,10 +167,6 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 		errs = multierror.Append(errs, err)
 	} else {
 		defer specFile.Close()
-	}
-
-	if flags.namespace == "" {
-		errs = multierror.Append(errs, &usageError{errors.New("a namespace must be provided with -namespace")})
 	}
 
 	opts := campaigns.ExecutorOpts{
