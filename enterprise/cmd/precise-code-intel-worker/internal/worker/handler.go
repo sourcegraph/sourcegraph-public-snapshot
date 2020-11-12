@@ -72,13 +72,11 @@ func (h *handler) getSize(record workerutil.Record) int64 {
 // CloneInProgressDelay is the delay between processing attempts when a repo is currently being cloned.
 const CloneInProgressDelay = time.Minute
 
-// handle converts a raw upload into a dump within the given transaction context. Returns true if the
-// upload record was requeued and false otherwise.
-func (h *handler) handle(ctx context.Context, dbStore DBStore, upload store.Upload) (_ bool, err error) {
-	// Ensure that the repo and revision are resolvable. If the repo does not exist, or if the repo has finished
-	// cloning and the revision does not exist, then the upload will fail to process. If the repo is currently
-	// cloning, then we'll requeue the upload to be tried again later. This will not increase the reset count
-	// of the record (so this doesn't count against the upload as a legitimate attempt).
+// requeueIfCloning ensures that the repo and revision are resolvable. If the repo does not exist, or
+// if the repo has finished cloning and the revision does not exist, then the upload will fail to process.
+// If the repo is currently cloning, then we'll requeue the upload to be tried again later. This will not
+// increase the reset count of the record (so this doesn't count against the upload as a legitimate attempt).
+func (h *handler) requeueIfCloning(ctx context.Context, dbStore DBStore, upload store.Upload) (requeued bool, err error) {
 	if cloneInProgress, err := h.isRepoCurrentlyCloning(ctx, upload.RepositoryID, upload.Commit); err != nil {
 		return false, err
 	} else if cloneInProgress {
@@ -87,6 +85,16 @@ func (h *handler) handle(ctx context.Context, dbStore DBStore, upload store.Uplo
 		}
 
 		return true, nil
+	}
+
+	return false, nil
+}
+
+// handle converts a raw upload into a dump within the given transaction context. Returns true if the
+// upload record was requeued and false otherwise.
+func (h *handler) handle(ctx context.Context, dbStore DBStore, upload store.Upload) (requeued bool, err error) {
+	if requeued, err := h.requeueIfCloning(ctx, dbStore, upload); err != nil || requeued {
+		return requeued, err
 	}
 
 	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", upload.ID)
