@@ -1634,6 +1634,12 @@ type aggregator struct {
 	fileMatches map[string]*FileMatchResolver
 }
 
+func (a *aggregator) get() ([]SearchResultResolver, searchResultsCommon, *multierror.Error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.results, a.common, a.multiErr
+}
+
 func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *searchResultsCommon, err error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -1885,9 +1891,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	args.RepoPromise.Resolve(resolved.repoRevs)
 
-	agg.mu.Lock()
-	agg.common.excluded = resolved.excludedRepos
-	agg.mu.Unlock()
+	agg.report(ctx, nil, &searchResultsCommon{excluded: resolved.excludedRepos}, nil)
 
 	// Apply search limits and generate warnings before firing off workers.
 	// This currently limits diff and commit search to a set number of
@@ -1959,21 +1963,23 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	timer.Stop()
 
-	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d excludedFork=%d excludedArchived=%d timedout=%d",
-		len(agg.results),
-		agg.common.limitHit,
-		len(agg.common.cloning),
-		len(agg.common.missing),
-		agg.common.excluded.forks,
-		agg.common.excluded.archived,
-		len(agg.common.timedout))
+	results, common, multiErr := agg.get()
 
-	multiErr, newAlert := alertForStructuralSearch(agg.multiErr)
+	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d excludedFork=%d excludedArchived=%d timedout=%d",
+		len(results),
+		common.limitHit,
+		len(common.cloning),
+		len(common.missing),
+		common.excluded.forks,
+		common.excluded.archived,
+		len(common.timedout))
+
+	multiErr, newAlert := alertForStructuralSearch(multiErr)
 	if newAlert != nil {
 		alert = newAlert // takes higher precedence
 	}
 
-	if len(agg.results) == 0 && r.patternType != query.SearchTypeStructural && matchHoleRegexp.MatchString(r.originalQuery) {
+	if len(results) == 0 && r.patternType != query.SearchTypeStructural && matchHoleRegexp.MatchString(r.originalQuery) {
 		alert = alertForStructuralSearchNotSet(r.originalQuery)
 	}
 
@@ -1981,23 +1987,23 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		alert = alertForMissingRepoRevs(r.patternType, resolved.missingRepoRevs)
 	}
 
-	if len(agg.results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
+	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
 		alert = alertForQuotesInQueryInLiteralMode(r.query.ParseTree())
 	}
 
 	// If we have some results, only log the error instead of returning it,
 	// because otherwise the client would not receive the partial results
-	if len(agg.results) > 0 && multiErr != nil {
+	if len(results) > 0 && multiErr != nil {
 		log15.Error("Errors during search", "error", multiErr)
 		multiErr = nil
 	}
 
-	r.sortResults(ctx, agg.results)
+	r.sortResults(ctx, results)
 
 	resultsResolver := SearchResultsResolver{
 		start:               start,
-		searchResultsCommon: agg.common,
-		SearchResults:       agg.results,
+		searchResultsCommon: common,
+		SearchResults:       results,
 		alert:               alert,
 	}
 
