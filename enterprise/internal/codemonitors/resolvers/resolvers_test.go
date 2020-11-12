@@ -2,17 +2,16 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"reflect"
 	"testing"
-	"time"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/resolvers/apitest"
+
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	campaignApitest "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -135,61 +134,122 @@ func TestIsAllowedToEdit(t *testing.T) {
 	}
 }
 
-func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID int32) {
-	t.Helper()
+func TestQueryMonitor(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
 
-	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+	r := newTestResolver(t)
 
-	err := db.QueryRow(q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
+	userName := "cm-user1"
+	userID := insertTestUser(t, dbconn.Global, userName, true)
+
+	// Create a monitor
+	ctx = actor.WithActor(ctx, actor.FromUser(userID))
+	ns := relay.MarshalID("User", userID)
+	_, err := r.insertTestMonitor(ctx, t, ns)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	return userID
-}
-
-func addUserToOrg(t *testing.T, db *sql.DB, userID int32, orgID int32) {
-	t.Helper()
-
-	q := sqlf.Sprintf("INSERT INTO org_members (org_id, user_id) VALUES (%s, %s)", orgID, userID)
-
-	_, err := db.Exec(q.Query(sqlf.PostgresBindVar), q.Args()...)
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r)
 	if err != nil {
 		t.Fatal(err)
 	}
-}
-
-func (r *Resolver) insertTestMonitor(ctx context.Context, t *testing.T, owner graphql.ID) (graphqlbackend.MonitorResolver, error) {
-	t.Helper()
-
-	return r.CreateCodeMonitor(ctx, &graphqlbackend.CreateCodeMonitorArgs{
-		Namespace:   owner,
-		Description: "test monitor",
-		Enabled:     true,
-		Trigger:     &graphqlbackend.CreateTriggerArgs{Query: "repo:foo"},
-		Actions: []*graphqlbackend.CreateActionArgs{
-			{Email: &graphqlbackend.CreateActionEmailArgs{
-				Enabled:    true,
-				Priority:   "NORMAL",
-				Recipients: []graphql.ID{owner},
-				Header:     "test header",
-			}}},
-	})
-}
-
-func newTestResolver(t *testing.T) *Resolver {
-	t.Helper()
-
-	now := time.Now().UTC().Truncate(time.Microsecond)
-	clock := func() time.Time {
-		return now.UTC().Truncate(time.Microsecond)
+	input := map[string]interface{}{
+		"userName": userName,
 	}
-	return newResolverWithClock(dbconn.Global, clock).(*Resolver)
+	response := apitest.Response{}
+	campaignApitest.MustExec(actorCtx, t, schema, input, &response, queryMonitor)
+
+	want := apitest.Response{
+		User: apitest.User{
+			Monitors: apitest.MonitorConnection{
+				TotalCount: 1,
+				Nodes: []apitest.Monitor{{
+					Id:          string(relay.MarshalID(monitorKind, 1)),
+					Description: "test monitor",
+					Enabled:     true,
+					Owner:       apitest.UserOrg{Name: userName},
+					CreatedBy:   apitest.UserOrg{Name: userName},
+					CreatedAt:   marshalDateTime(t, r.clock()),
+					Trigger: apitest.Trigger{
+						Id:    string(relay.MarshalID(monitorTriggerQueryKind, 1)),
+						Query: "repo:foo",
+					},
+					Actions: apitest.ActionConnection{
+						TotalCount: 1,
+						Nodes: []apitest.Action{{
+							ActionEmail: apitest.ActionEmail{
+								Id:       string(relay.MarshalID(monitorActionEmailKind, 1)),
+								Enabled:  true,
+								Priority: "NORMAL",
+								Recipients: apitest.RecipientsConnection{
+									TotalCount: 1,
+									Nodes: []apitest.UserOrg{{
+										Name: userName,
+									}},
+								},
+								Header: "test header",
+							},
+						}},
+					},
+				}},
+			},
+		},
+	}
+	if !reflect.DeepEqual(&response, &want) {
+		t.Fatalf("\ngot:\t%+v\nwant:\t%+v\n", response, want)
+	}
 }
 
-func (r *Resolver) monitorForIDInt32(ctx context.Context, t *testing.T, monitorId int64) (graphqlbackend.MonitorResolver, error) {
-	t.Helper()
+const queryMonitor = `
+fragment u on User { id, username }
+fragment o on Org { id, name }
 
-	q := sqlf.Sprintf("SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id, namespace_org_id FROM cm_monitors WHERE id = %s", monitorId)
-	return r.runMonitorQuery(ctx, q)
+query($userName: String!){
+	user(username:$userName){
+		monitors{
+			totalCount
+			nodes{
+				id
+				description
+				enabled
+				owner {
+					... on User { ...u }
+					... on Org { ...o }
+				}
+				createdBy { ...u }
+				createdAt
+				trigger {
+					... on MonitorQuery {
+						id
+						query
+					}
+				}
+				actions{
+					totalCount
+					nodes{
+						... on MonitorEmail{
+							id
+							priority
+							header
+							enabled
+							recipients {
+								totalCount
+								nodes {
+									... on User { ...u }
+									... on Org { ...o }
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 }
+`
