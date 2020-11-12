@@ -70,12 +70,12 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
                                 className="btn btn-sm btn-secondary"
                                 onClick={this.setAsPrimary}
                                 disabled={this.state.loading}
-                            >Set as primary
+                            >
+                                Set as primary
                             </button>
-                        )}
-                        {' '}
+                        )}{' '}
                         {this.props.node.viewerCanManuallyVerify && (
-                              <button
+                            <button
                                 type="button"
                                 className="btn btn-sm btn-secondary"
                                 onClick={this.props.node.verified ? this.setAsUnverified : this.setAsVerified}
@@ -108,23 +108,23 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
             `,
             { user: this.props.user.id, email: this.props.node.email }
         )
-        .pipe(
-            map(({ data, errors }) => {
-                if (!data || (errors && errors.length > 0)) {
-                    throw createAggregateError(errors)
-                }
-            })
-        )
-        .subscribe(
-            () => {
-                this.setState({ loading: false })
-                eventLogger.log('UserEmailAddressSetAsPrimary')
-                if (this.props.onDidUpdate) {
-                    this.props.onDidUpdate()
-                }
-            },
-            error => this.setState({ loading: false, errorDescription: asError(error).message })
-        )
+            .pipe(
+                map(({ data, errors }) => {
+                    if (!data || (errors && errors.length > 0)) {
+                        throw createAggregateError(errors)
+                    }
+                })
+            )
+            .subscribe(
+                () => {
+                    this.setState({ loading: false })
+                    eventLogger.log('UserEmailAddressSetAsPrimary')
+                    if (this.props.onDidUpdate) {
+                        this.props.onDidUpdate()
+                    }
+                },
+                error => this.setState({ loading: false, errorDescription: asError(error).message })
+            )
     }
 
     private remove = (): void => {
