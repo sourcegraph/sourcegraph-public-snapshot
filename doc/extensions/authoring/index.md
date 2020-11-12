@@ -2,7 +2,7 @@
 
 A [Sourcegraph extension](../index.md) is a single JavaScript file that runs in users' web browsers in a Web Worker and has an exported `activate` function. The JavaScript file is usually produced by compiling and bundling one or more TypeScript source files.
 
-The [Sourcegraph extension API](https://unpkg.com/sourcegraph/dist/docs/index.html) (generated from [`sourcegraph.d.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/packages/sourcegraph-extension-api/src/sourcegraph.d.ts)) is available to extensions by importing the `sourcegraph` module (`import * as sourcegraph from 'sourcegraph'` or `require('sourcegraph')`). Writing a Sourcegraph extension is very similar to writing an editor extension for [VS Code](https://code.visualstudio.com/docs/extensions/overview).
+The [Sourcegraph extension API](https://unpkg.com/sourcegraph/dist/docs/index.html) (generated from [`sourcegraph.d.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/packages/sourcegraph-extension-api/src/sourcegraph.d.ts)) is available to extensions by [importing the `sourcegraph` module](importing_sourcegraph.md). Writing a Sourcegraph extension is very similar to writing an editor extension for [VS Code](https://code.visualstudio.com/docs/extensions/overview).
 
 ## Explanations
 - [Activation and deactivation](activation.md)
@@ -13,9 +13,17 @@ The [Sourcegraph extension API](https://unpkg.com/sourcegraph/dist/docs/index.ht
 ## How-tos
 - [Set up your development environment](development_environment.md)
 - [Creating an extension](creating.md)
+- [Importing the `sourcegraph` module](importing_sourcegraph.md)
 - [Local development](local_development.md)
 - [Publishing an extension](publishing.md)
 - [Debugging an extension](debugging.md)
+- [Activation](activation.md)
+- [Builtin commands](builtin_commands.md)
+- [Sample extensions (`sourcegraph-extension-samples`)](https://github.com/sourcegraph/sourcegraph-extension-samples)
+- [Cookbook (sample code)](cookbook.md)
+- [UX style guide](ux_style_guide.md)
+- [Context key expressions](context_key_expressions.md)
+- [Testing extensions](testing_extensions.md)
 
 ## Tutorials
 - [Hello world](tutorials/hello_world.md)

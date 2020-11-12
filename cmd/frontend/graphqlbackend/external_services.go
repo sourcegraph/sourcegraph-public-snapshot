@@ -87,7 +87,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		Config:      args.Input.Config,
 	}
 	if namespaceUserID > 0 {
-		externalService.NamespaceUserID = &namespaceUserID
+		externalService.NamespaceUserID = namespaceUserID
 	}
 
 	if err := db.ExternalServices.Create(ctx, conf.Get, externalService); err != nil {
@@ -130,9 +130,9 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *updateEx
 	// 🚨 SECURITY: Only site admins may update all or a user's external services.
 	// Otherwise, the authenticated user can only update external services under the same namespace.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		if es.NamespaceUserID == nil {
+		if es.NamespaceUserID == 0 {
 			return nil, err
-		} else if actor.FromContext(ctx).UID != *es.NamespaceUserID {
+		} else if actor.FromContext(ctx).UID != es.NamespaceUserID {
 			return nil, errors.New("the authenticated user does not have access to this external service")
 		}
 	}
@@ -212,9 +212,9 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *deleteEx
 	// 🚨 SECURITY: Only site admins may delete all or a user's external services.
 	// Otherwise, the authenticated user can only delete external services under the same namespace.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		if es.NamespaceUserID == nil {
+		if es.NamespaceUserID == 0 {
 			return nil, err
-		} else if actor.FromContext(ctx).UID != *es.NamespaceUserID {
+		} else if actor.FromContext(ctx).UID != es.NamespaceUserID {
 			return nil, errors.New("the authenticated user does not have access to this external service")
 		}
 	}
@@ -223,7 +223,7 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *deleteEx
 		return nil, err
 	}
 	now := time.Now()
-	es.DeletedAt = &now
+	es.DeletedAt = now
 
 	// The user doesn't care if triggering syncing failed when deleting a
 	// service, so kick off in the background.

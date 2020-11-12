@@ -38,6 +38,7 @@ import {
     RepogroupHomepageProps,
     OnboardingTourProps,
     HomePanelsProps,
+    SearchStreamingProps,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -82,7 +83,8 @@ export interface LayoutProps
         VersionContextProps,
         RepogroupHomepageProps,
         OnboardingTourProps,
-        HomePanelsProps {
+        HomePanelsProps,
+        SearchStreamingProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
@@ -128,6 +130,7 @@ export interface LayoutProps
     globbing: boolean
     showMultilineSearchConsole: boolean
     showQueryBuilder: boolean
+    enableSmartQuery: boolean
     isSourcegraphDotCom: boolean
     showCampaigns: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>

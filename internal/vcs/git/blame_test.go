@@ -1,6 +1,7 @@
 package git
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
@@ -10,6 +11,7 @@ import (
 
 func TestRepository_BlameFile(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
 
 	gitCommands := []string{
 		"echo line1 > f",

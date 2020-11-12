@@ -31,6 +31,7 @@ func TestIntegration(t *testing.T) {
 		t.Run("ListChangesetSyncData", storeTest(db, testStoreListChangesetSyncData))
 		t.Run("CampaignSpecs", storeTest(db, testStoreCampaignSpecs))
 		t.Run("ChangesetSpecs", storeTest(db, testStoreChangesetSpecs))
+		t.Run("CodeHosts", storeTest(db, testStoreCodeHost))
 	})
 
 	t.Run("GitHubWebhook", testGitHubWebhook(db, userID))

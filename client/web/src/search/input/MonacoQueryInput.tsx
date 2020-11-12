@@ -48,6 +48,9 @@ export interface MonacoQueryInputProps
     // Whether globbing is enabled for filters.
     globbing: boolean
 
+    // Whether to additionally highlight or provide hovers for tokens, e.g., regexp character sets.
+    enableSmartQuery: boolean
+
     // Whether comments are parsed and highlighted
     interpretComments?: boolean
 }
@@ -73,6 +76,7 @@ export function addSourcegraphSearchCodeIntelligence(
         patternType: SearchPatternType
         globbing: boolean
         interpretComments?: boolean
+        enableSmartQuery: boolean
     }
 ): Subscription {
     const subscriptions = new Subscription()
@@ -292,9 +296,10 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
-                    map(({ patternType, globbing, interpretComments }) => ({
+                    map(({ patternType, globbing, enableSmartQuery, interpretComments }) => ({
                         patternType,
                         globbing,
+                        enableSmartQuery,
                         interpretComments,
                     })),
                     distinctUntilChanged((a, b) => isEqual(a, b)),

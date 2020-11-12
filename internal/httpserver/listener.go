@@ -31,7 +31,7 @@ func SanitizeAddr(addr string) (string, error) {
 		return "", err
 	}
 
-	if host == "" || env.InsecureDev {
+	if host == "" && env.InsecureDev {
 		host = "127.0.0.1"
 	}
 

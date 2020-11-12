@@ -31,7 +31,7 @@ We recommend that use the latest version of Sourcegraph when working with campai
 1. ["Quickstart"](../quickstart.md)
 1. ["Introduction to campaigns"](../explanations/introduction_to_campaigns.md)
 
-### Create the camapign spec
+### Create the campaign spec
 
 Save the following campaign spec YAML as `sprintf-to-itoa.campaign.yaml`:
 

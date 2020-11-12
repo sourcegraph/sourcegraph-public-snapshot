@@ -7,14 +7,13 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
 type HardDeleter struct {
-	store     store.Store
-	lsifStore lsifstore.Store
+	dbStore   DBStore
+	lsifStore LSIFStore
 	metrics   Metrics
 }
 
@@ -29,9 +28,9 @@ var _ goroutine.Handler = &HardDeleter{}
 // did not have an associated upload record. Doing a soft-delete and a transactional
 // cleanup routine instead ensures we delete unreachable data as soon as it's no longer
 // referenceable.
-func NewHardDeleter(store store.Store, lsifStore lsifstore.Store, interval time.Duration, metrics Metrics) goroutine.BackgroundRoutine {
+func NewHardDeleter(dbStore DBStore, lsifStore LSIFStore, interval time.Duration, metrics Metrics) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &HardDeleter{
-		store:     store,
+		dbStore:   dbStore,
 		lsifStore: lsifStore,
 		metrics:   metrics,
 	})
@@ -50,7 +49,7 @@ func (d *HardDeleter) Handle(ctx context.Context) error {
 		// the first iteration of the loop, then the previous iteration has
 		// deleted the records that composed the previous page, and the
 		// previous "second" page is now the first page.
-		uploads, totalCount, err := d.store.GetUploads(ctx, options)
+		uploads, totalCount, err := d.dbStore.GetUploads(ctx, options)
 		if err != nil {
 			return errors.Wrap(err, "GetUploads")
 		}
@@ -77,7 +76,7 @@ func (d *HardDeleter) HandleError(err error) {
 }
 
 func (d *HardDeleter) deleteBatch(ctx context.Context, ids []int) (err error) {
-	tx, err := d.store.Transact(ctx)
+	tx, err := d.dbStore.Transact(ctx)
 	if err != nil {
 		return err
 	}

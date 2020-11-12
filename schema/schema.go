@@ -1095,8 +1095,12 @@ type Settings struct {
 type SettingsExperimentalFeatures struct {
 	// CodeInsights description: Enables code insights on directory pages.
 	CodeInsights *bool `json:"codeInsights,omitempty"`
+	// CodeMonitoring description: Enables code monitoring on directory pages.
+	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
 	// CopyQueryButton description: Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
+	// EnableSmartQuery description: Enables contextual syntax highlighting and hovers for search queries in the web app
+	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
 	// SearchStats description: Enables a new page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// SearchStreaming description: Enables experimental streaming support.
@@ -1179,7 +1183,7 @@ type SiteConfiguration struct {
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: Configures Sourcegraph extensions.
 	Extensions *Extensions `json:"extensions,omitempty"`
-	// ExternalServiceUserMode description: Enable to allow users to add external services for public reposirories to the Sourcegraph instance.
+	// ExternalServiceUserMode description: Enable to allow users to add external services for public repositories to the Sourcegraph instance.
 	ExternalServiceUserMode string `json:"externalService.userMode,omitempty"`
 	// ExternalURL description: The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called `appURL`. Only root URLs are allowed.
 	ExternalURL string `json:"externalURL,omitempty"`

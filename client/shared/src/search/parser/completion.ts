@@ -1,7 +1,7 @@
 import * as Monaco from 'monaco-editor'
 import { escapeRegExp, startCase } from 'lodash'
 import { FILTERS, resolveFilter } from './filters'
-import { Sequence, toMonacoRange } from './parser'
+import { Token, toMonacoRange } from './scanner'
 import { Omit } from 'utility-types'
 import { Observable } from 'rxjs'
 import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup } from '../../graphql/schema'
@@ -185,7 +185,7 @@ const TRIGGER_SUGGESTIONS: Monaco.languages.Command = {
  * including both static and dynamically fetched suggestions.
  */
 export async function getCompletionItems(
-    { members }: Pick<Sequence, 'members'>,
+    tokens: Token[],
     { column }: Pick<Monaco.Position, 'column'>,
     dynamicSuggestions: Observable<SearchSuggestion[]>,
     globbing: boolean
@@ -209,14 +209,14 @@ export async function getCompletionItems(
             ),
         }
     }
-    const tokenAtColumn = members.find(({ range }) => range.start + 1 <= column && range.end + 1 >= column)
+    const tokenAtColumn = tokens.find(({ range }) => range.start + 1 <= column && range.end + 1 >= column)
     if (!tokenAtColumn) {
         throw new Error('getCompletionItems: no token at column')
     }
     const token = tokenAtColumn
-    // When the token at column is a literal or whitespace, show
-    // static filter type suggestions, followed by dynamic suggestions.
-    if (token.type === 'literal' || token.type === 'whitespace') {
+    // When the token at column is labeled as a pattern or whitespace, and none of filter,
+    // operator, nor quoted value, show static filter type suggestions, followed by dynamic suggestions.
+    if (token.type === 'pattern' || token.type === 'whitespace') {
         // Offer autocompletion of filter values
         const staticSuggestions = FILTER_TYPE_COMPLETIONS.map(
             (suggestion): Monaco.languages.CompletionItem => ({
@@ -230,7 +230,7 @@ export async function getCompletionItems(
         // This avoids blocking on dynamic suggestions to display
         // the suggestions widget.
         if (
-            token.type === 'literal' &&
+            token.type === 'pattern' &&
             staticSuggestions.some(({ label }) => label.startsWith(token.value.toLowerCase()))
         ) {
             return { suggestions: staticSuggestions }

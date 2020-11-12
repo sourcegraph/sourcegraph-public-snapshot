@@ -448,7 +448,7 @@ func (c *Container) dashboard() *sdk.Board {
 	description.TextPanel.Content = fmt.Sprintf(`
 	<div style="text-align: left;">
 	  <img src="https://sourcegraphstatic.com/sourcegraph-logo-light.png" style="height:30px; margin:0.5rem"></img>
-	  <div style="margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;"><span style="color: #8e8e8e">%s:</span> %s <a style="font-size: 15px" target="_blank" href="https://docs.sourcegraph.com/dev/architecture">(⧉ architecture diagram)</a></span>
+	  <div style="margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;"><span style="color: #8e8e8e">%s:</span> %s <a style="font-size: 15px" target="_blank" href="https://docs.sourcegraph.com/dev/background-information/architecture">(⧉ architecture diagram)</a></span>
 	</div>
 	`, c.Name, c.Description)
 	board.Panels = append(board.Panels, description)
@@ -944,9 +944,7 @@ func main() {
 		Frontend(),
 		GitServer(),
 		GitHubProxy(),
-		PreciseCodeIntelBundleManager(),
 		PreciseCodeIntelWorker(),
-		PreciseCodeIntelIndexer(),
 		QueryRunner(),
 		RepoUpdater(),
 		Searcher(),
@@ -955,6 +953,7 @@ func main() {
 		ZoektIndexServer(),
 		ZoektWebServer(),
 		Prometheus(),
+		ExecutorAndExecutorQueue(),
 	}
 	var filelist []string
 	for _, container := range containers {

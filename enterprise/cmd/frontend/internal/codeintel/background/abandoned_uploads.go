@@ -7,12 +7,11 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
 type AbandonedUploadJanitor struct {
-	store   store.Store
+	dbStore DBStore
 	ttl     time.Duration
 	metrics Metrics
 }
@@ -21,16 +20,16 @@ var _ goroutine.Handler = &AbandonedUploadJanitor{}
 
 // NewAbandonedUploadJanitor returns a background routine that periodically removes
 // upload records which have not left the uploading state within the given TTL.
-func NewAbandonedUploadJanitor(store store.Store, ttl, interval time.Duration, metrics Metrics) goroutine.BackgroundRoutine {
+func NewAbandonedUploadJanitor(dbStore DBStore, ttl, interval time.Duration, metrics Metrics) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &AbandonedUploadJanitor{
-		store:   store,
+		dbStore: dbStore,
 		ttl:     ttl,
 		metrics: metrics,
 	})
 }
 
 func (h *AbandonedUploadJanitor) Handle(ctx context.Context) error {
-	count, err := h.store.DeleteUploadsStuckUploading(ctx, time.Now().UTC().Add(-h.ttl))
+	count, err := h.dbStore.DeleteUploadsStuckUploading(ctx, time.Now().UTC().Add(-h.ttl))
 	if err != nil {
 		return errors.Wrap(err, "DeleteUploadsStuckUploading")
 	}

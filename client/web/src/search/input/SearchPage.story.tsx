@@ -30,6 +30,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     setVersionContext: () => undefined,
     availableVersionContexts: [],
     globbing: false,
+    enableSmartQuery: false,
     patternType: SearchPatternType.literal,
     setPatternType: () => undefined,
     caseSensitive: false,
