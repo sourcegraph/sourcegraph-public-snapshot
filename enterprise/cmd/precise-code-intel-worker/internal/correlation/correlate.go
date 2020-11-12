@@ -17,45 +17,26 @@ import (
 // the same data canonicalized and pruned for storage.
 func Correlate(ctx context.Context, r io.Reader, dumpID int, root string, getChildren existence.GetChildrenFunc) (*GroupedBundleData, error) {
 	// Read raw upload stream and return a correlation state
-	state, err := correlateFromReaderWrapped(ctx, r, root)
+	state, err := correlateFromReader(ctx, r, root)
 	if err != nil {
 		return nil, err
 	}
 
 	// Remove duplicate elements, collapse linked elements
-	if err := canonicalizeWrapped(ctx, state); err != nil {
-		return nil, err
-	}
+	canonicalize(state)
 
 	// Remove elements we don't need to store
-	if err := pruneWrapped(ctx, state, root, getChildren); err != nil {
+	if err := prune(ctx, state, root, getChildren); err != nil {
 		return nil, err
 	}
 
 	// Convert data to the format we send to the writer
-	groupedBundleData, err := groupBundleDataWrapped(ctx, state, dumpID)
+	groupedBundleData, err := groupBundleData(ctx, state, dumpID)
 	if err != nil {
 		return nil, err
 	}
 
 	return groupedBundleData, nil
-}
-
-func correlateFromReaderWrapped(ctx context.Context, r io.Reader, root string) (_ *State, err error) {
-	return correlateFromReader(ctx, r, root)
-}
-
-func canonicalizeWrapped(ctx context.Context, state *State) (err error) {
-	canonicalize(state)
-	return nil
-}
-
-func pruneWrapped(ctx context.Context, state *State, root string, getChildren existence.GetChildrenFunc) (err error) {
-	return prune(ctx, state, root, getChildren)
-}
-
-func groupBundleDataWrapped(ctx context.Context, state *State, dumpID int) (_ *GroupedBundleData, err error) {
-	return groupBundleData(ctx, state, dumpID)
 }
 
 // correlateFromReader reads the given upload stream and returns a correlation state object.
