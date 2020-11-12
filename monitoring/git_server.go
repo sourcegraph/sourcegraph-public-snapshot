@@ -21,10 +21,12 @@ func GitServer() *Container {
 							Description:     "disk space remaining by instance",
 							Query:           `(src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100`,
 							DataMayNotExist: true,
-							Warning:         Alert().LessOrEqual(25),
-							Critical:        Alert().LessOrEqual(15),
-							PanelOptions:    PanelOptions().LegendFormat("{{instance}}").Unit(Percentage),
-							Owner:           ObservableOwnerCloud,
+							Alerts: []Alert{
+								{Level: AlertLevelWarning, LessOrEqual: Threshold(25)},
+								{Level: AlertLevelCritical, LessOrEqual: Threshold(15)},
+							},
+							PanelOptions: PanelOptions().LegendFormat("{{instance}}").Unit(Percentage),
+							Owner:        ObservableOwnerCloud,
 							PossibleSolutions: `
 								- **Provision more disk space:** Sourcegraph will begin deleting least-used repository clones at 10% disk space remaining which may result in decreased performance, users having to wait for repositories to clone, etc.
 							`,
@@ -34,10 +36,12 @@ func GitServer() *Container {
 							Description:     "running git commands (signals load)",
 							Query:           "max(src_gitserver_exec_running)",
 							DataMayNotExist: true,
-							Warning:         Alert().GreaterOrEqual(50).For(2 * time.Minute),
-							Critical:        Alert().GreaterOrEqual(100).For(5 * time.Minute),
-							PanelOptions:    PanelOptions().LegendFormat("running commands"),
-							Owner:           ObservableOwnerCloud,
+							Alerts: []Alert{
+								{Level: AlertLevelWarning, GreaterOrEqual: Threshold(50), For: 2 * time.Minute},
+								{Level: AlertLevelCritical, GreaterOrEqual: Threshold(100), For: 5 * time.Minute},
+							},
+							PanelOptions: PanelOptions().LegendFormat("running commands"),
+							Owner:        ObservableOwnerCloud,
 							PossibleSolutions: `
 								- **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
 								- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
@@ -50,7 +54,7 @@ func GitServer() *Container {
 							Description:     "repository clone queue size",
 							Query:           "sum(src_gitserver_clone_queue)",
 							DataMayNotExist: true,
-							Warning:         Alert().GreaterOrEqual(25),
+							Alerts:          []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(25)}},
 							PanelOptions:    PanelOptions().LegendFormat("queue size"),
 							Owner:           ObservableOwnerCloud,
 							PossibleSolutions: `
@@ -63,7 +67,7 @@ func GitServer() *Container {
 							Description:     "repository existence check queue size",
 							Query:           "sum(src_gitserver_lsremote_queue)",
 							DataMayNotExist: true,
-							Warning:         Alert().GreaterOrEqual(25),
+							Alerts:          []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(25)}},
 							PanelOptions:    PanelOptions().LegendFormat("queue size"),
 							Owner:           ObservableOwnerCloud,
 							PossibleSolutions: `
@@ -78,10 +82,12 @@ func GitServer() *Container {
 							Description:     "echo command duration test",
 							Query:           "max(src_gitserver_echo_duration_seconds)",
 							DataMayNotExist: true,
-							Warning:         Alert().GreaterOrEqual(1),
-							Critical:        Alert().GreaterOrEqual(2),
-							PanelOptions:    PanelOptions().LegendFormat("running commands").Unit(Seconds),
-							Owner:           ObservableOwnerCloud,
+							Alerts: []Alert{
+								{Level: AlertLevelWarning, GreaterOrEqual: Threshold(1)},
+								{Level: AlertLevelCritical, GreaterOrEqual: Threshold(2)},
+							},
+							PanelOptions: PanelOptions().LegendFormat("running commands").Unit(Seconds),
+							Owner:        ObservableOwnerCloud,
 							PossibleSolutions: `
 								- **Query a graph for individual commands** using 'sum by (cmd)(src_gitserver_exec_running)' in Grafana ('/-/debug/grafana') to see if a command might be spiking in frequency.
 								- **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
@@ -111,7 +117,7 @@ func GitServer() *Container {
 							Description:       "filesystem reads and writes rate by instance over 1h",
 							Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, promCadvisorContainerMatchers("gitserver")),
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(5000),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(5000)}},
 							PanelOptions:      PanelOptions().LegendFormat("{{name}}"),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
@@ -132,7 +138,7 @@ func GitServer() *Container {
 							Description:     "container memory usage (1d maximum) by instance",
 							Query:           fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[1d])`, promCadvisorContainerMatchers("gitserver")),
 							DataMayNotExist: true,
-							Warning:         Alert().LessOrEqual(30).For(14 * 24 * time.Hour),
+							Alerts:          []Alert{{Level: AlertLevelWarning, LessOrEqual: Threshold(30), For: 14 * 24 * time.Hour}},
 							PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Max(100).Min(0),
 							Owner:           ObservableOwnerDistribution,
 							PossibleSolutions: strings.Replace(`

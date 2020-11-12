@@ -11,11 +11,14 @@ func ExecutorAndExecutorQueue() *Container {
 				Rows: []Row{
 					{
 						{
-							Name:              "executor_queue_size",
-							Description:       "executor queue size",
-							Query:             `max(src_executor_queue_total)`,
-							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(100),
+							Name:            "executor_queue_size",
+							Description:     "executor queue size",
+							Query:           `max(src_executor_queue_total)`,
+							DataMayNotExist: true,
+
+							Alerts: []Alert{
+								{Level: AlertLevelWarning, GreaterOrEqual: Threshold(100)},
+							},
 							PanelOptions:      PanelOptions().LegendFormat("uploads queued for processing"),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
@@ -26,7 +29,9 @@ func ExecutorAndExecutorQueue() *Container {
 							Query:           `sum(increase(src_executor_queue_total[30m])) / sum(increase(src_executor_queue_processor_total[30m]))`,
 							DataMayNotExist: true,
 
-							Warning:           Alert().GreaterOrEqual(5),
+							Alerts: []Alert{
+								{Level: AlertLevelWarning, GreaterOrEqual: Threshold(5)},
+							},
 							PanelOptions:      PanelOptions().LegendFormat("executor queue growth rate"),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
@@ -36,7 +41,7 @@ func ExecutorAndExecutorQueue() *Container {
 							Description:       "executor process errors every 5m",
 							Query:             `sum(increase(src_executor_queue_processor_errors_total[5m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(20),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(20)}},
 							PanelOptions:      PanelOptions().LegendFormat("errors"),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",

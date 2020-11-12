@@ -13,12 +13,14 @@ func ZoektIndexServer() *Container {
 				Rows: []Row{
 					{
 						{
-							Name:              "average_resolve_revision_duration",
-							Description:       "average resolve revision duration over 5m",
-							Query:             `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,
-							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(15),
-							Critical:          Alert().GreaterOrEqual(30),
+							Name:            "average_resolve_revision_duration",
+							Description:     "average resolve revision duration over 5m",
+							Query:           `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,
+							DataMayNotExist: true,
+							Alerts: []Alert{
+								{Level: AlertLevelWarning, GreaterOrEqual: Threshold(15)},
+								{Level: AlertLevelCritical, GreaterOrEqual: Threshold(30)},
+							},
 							PanelOptions:      PanelOptions().LegendFormat("{{duration}}").Unit(Seconds),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
@@ -44,7 +46,7 @@ func ZoektIndexServer() *Container {
 							Description:       "filesystem reads and writes rate by instance over 1h",
 							Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, promCadvisorContainerMatchers("zoekt-indexserver")),
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(5000),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(5000)}},
 							PanelOptions:      PanelOptions().LegendFormat("{{name}}"),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",

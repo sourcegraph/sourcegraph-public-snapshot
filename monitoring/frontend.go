@@ -18,7 +18,7 @@ func Frontend() *Container {
 							Query:           `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",name!="CodeIntelSearch"}[5m])))`,
 							DataMayNotExist: true,
 
-							Warning:      Alert().GreaterOrEqual(20),
+							Alerts:       []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(20)}},
 							PanelOptions: PanelOptions().LegendFormat("duration").Unit(Seconds),
 							Owner:        ObservableOwnerSearch,
 							PossibleSolutions: `
@@ -34,7 +34,7 @@ func Frontend() *Container {
 							Query:           `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",name!="CodeIntelSearch"}[5m])))`,
 							DataMayNotExist: true,
 
-							Warning:      Alert().GreaterOrEqual(15),
+							Alerts:       []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(15)}},
 							PanelOptions: PanelOptions().LegendFormat("duration").Unit(Seconds),
 							Owner:        ObservableOwnerSearch,
 							PossibleSolutions: `
@@ -52,8 +52,10 @@ func Frontend() *Container {
 							Query:           `(sum(increase(src_graphql_search_response{status="timeout",source="browser",name!="CodeIntelSearch"}[5m])) + sum(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="browser",name!="CodeIntelSearch"}[5m]))) / sum(increase(src_graphql_search_response{source="browser",name!="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist: true,
 
-							Warning:           Alert().GreaterOrEqual(2).For(15 * time.Minute),
-							Critical:          Alert().GreaterOrEqual(5).For(15 * time.Minute),
+							Alerts: []Alert{
+								{Level: AlertLevelWarning, GreaterOrEqual: Threshold(2), For: 15 * time.Minute},
+								{Level: AlertLevelCritical, GreaterOrEqual: Threshold(5), For: 15 * time.Minute},
+							},
 							PanelOptions:      PanelOptions().LegendFormat("hard timeout").Unit(Percentage),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
@@ -64,8 +66,10 @@ func Frontend() *Container {
 							Query:           `sum by (status)(increase(src_graphql_search_response{status=~"error",source="browser",name!="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="browser",name!="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist: true,
 
-							Warning:           Alert().GreaterOrEqual(2).For(15 * time.Minute),
-							Critical:          Alert().GreaterOrEqual(5).For(15 * time.Minute),
+							Alerts: []Alert{
+								{Level: AlertLevelWarning, GreaterOrEqual: Threshold(2), For: 15 * time.Minute},
+								{Level: AlertLevelCritical, GreaterOrEqual: Threshold(5), For: 15 * time.Minute},
+							},
 							PanelOptions:      PanelOptions().LegendFormat("{{status}}").Unit(Percentage),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
@@ -76,7 +80,7 @@ func Frontend() *Container {
 							Query:           `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="browser",name!="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="browser",name!="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist: true,
 
-							Warning:           Alert().GreaterOrEqual(5).For(15 * time.Minute),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(5), For: 15 * time.Minute}},
 							PanelOptions:      PanelOptions().LegendFormat("{{status}}").Unit(Percentage),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
@@ -87,7 +91,7 @@ func Frontend() *Container {
 							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out|no_results__suggest_quotes",source="browser",name!="CodeIntelSearch"}[5m])) / ignoring(alert_type) group_left sum(increase(src_graphql_search_response{source="browser",name!="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist: true,
 
-							Warning:      Alert().GreaterOrEqual(5).For(15 * time.Minute),
+							Alerts:       []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(5), For: 15 * time.Minute}},
 							PanelOptions: PanelOptions().LegendFormat("{{alert_type}}").Unit(Percentage),
 							Owner:        ObservableOwnerSearch,
 							PossibleSolutions: `
@@ -102,7 +106,7 @@ func Frontend() *Container {
 							Query:           `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route!="raw",route!="blob",route!~"graphql.*"}[10m])))`,
 							DataMayNotExist: true,
 
-							Critical:     Alert().GreaterOrEqual(2),
+							Alerts:       []Alert{{Level: AlertLevelCritical, GreaterOrEqual: Threshold(2)}},
 							PanelOptions: PanelOptions().LegendFormat("latency").Unit(Seconds),
 							Owner:        ObservableOwnerCloud,
 							PossibleSolutions: `
@@ -115,7 +119,7 @@ func Frontend() *Container {
 							Description:     "90th percentile blob load latency over 10m",
 							Query:           `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))`,
 							DataMayNotExist: true,
-							Critical:        Alert().GreaterOrEqual(5),
+							Alerts:          []Alert{{Level: AlertLevelCritical, GreaterOrEqual: Threshold(5)}},
 							PanelOptions:    PanelOptions().LegendFormat("latency").Unit(Seconds),
 							Owner:           ObservableOwnerCloud,
 							PossibleSolutions: `
@@ -138,7 +142,7 @@ func Frontend() *Container {
 							Query:           `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",request_name="CodeIntelSearch"}[5m])))`,
 							DataMayNotExist: true,
 
-							Warning:      Alert().GreaterOrEqual(20),
+							Alerts:       []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(20)}},
 							PanelOptions: PanelOptions().LegendFormat("duration").Unit(Seconds),
 							PossibleSolutions: `
 								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 20,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
@@ -153,7 +157,7 @@ func Frontend() *Container {
 							Query:           `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",request_name="CodeIntelSearch"}[5m])))`,
 							DataMayNotExist: true,
 
-							Warning:      Alert().GreaterOrEqual(15),
+							Alerts:       []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(15)}},
 							PanelOptions: PanelOptions().LegendFormat("duration").Unit(Seconds),
 							Owner:        ObservableOwnerCodeIntel,
 							PossibleSolutions: `
@@ -171,8 +175,10 @@ func Frontend() *Container {
 							Query:           `(sum(increase(src_graphql_search_response{status="timeout",source="browser",request_name="CodeIntelSearch"}[5m])) + sum(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="browser",request_name="CodeIntelSearch"}[5m]))) / sum(increase(src_graphql_search_response{source="browser",request_name="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist: true,
 
-							Warning:           Alert().GreaterOrEqual(2).For(15 * time.Minute),
-							Critical:          Alert().GreaterOrEqual(5).For(15 * time.Minute),
+							Alerts: []Alert{
+								{Level: AlertLevelWarning, GreaterOrEqual: Threshold(2), For: 15 * time.Minute},
+								{Level: AlertLevelCritical, GreaterOrEqual: Threshold(5), For: 15 * time.Minute},
+							},
 							PanelOptions:      PanelOptions().LegendFormat("hard timeout").Unit(Percentage),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
@@ -183,8 +189,10 @@ func Frontend() *Container {
 							Query:           `sum by (status)(increase(src_graphql_search_response{status=~"error",source="browser",request_name="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="browser",request_name="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist: true,
 
-							Warning:           Alert().GreaterOrEqual(2).For(15 * time.Minute),
-							Critical:          Alert().GreaterOrEqual(5).For(15 * time.Minute),
+							Alerts: []Alert{
+								{Level: AlertLevelWarning, GreaterOrEqual: Threshold(2), For: 15 * time.Minute},
+								{Level: AlertLevelCritical, GreaterOrEqual: Threshold(5), For: 15 * time.Minute},
+							},
 							PanelOptions:      PanelOptions().LegendFormat("hard error").Unit(Percentage),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
@@ -195,7 +203,7 @@ func Frontend() *Container {
 							Query:           `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="browser",request_name="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{status="partial_timeout",source="browser",request_name="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist: true,
 
-							Warning:           Alert().GreaterOrEqual(5).For(15 * time.Minute),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(5), For: 15 * time.Minute}},
 							PanelOptions:      PanelOptions().LegendFormat("partial timeout").Unit(Percentage),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
@@ -206,7 +214,7 @@ func Frontend() *Container {
 							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out",source="browser",request_name="CodeIntelSearch"}[5m])) / ignoring(alert_type) group_left sum(increase(src_graphql_search_response{source="browser",request_name="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist: true,
 
-							Warning:      Alert().GreaterOrEqual(5).For(15 * time.Minute),
+							Alerts:       []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(5), For: 15 * time.Minute}},
 							PanelOptions: PanelOptions().LegendFormat("{{alert_type}}").Unit(Percentage),
 							Owner:        ObservableOwnerCodeIntel,
 							PossibleSolutions: `
@@ -227,7 +235,7 @@ func Frontend() *Container {
 							Query:           `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="other"}[5m])))`,
 							DataMayNotExist: true,
 
-							Warning:      Alert().GreaterOrEqual(50),
+							Alerts:       []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(50)}},
 							PanelOptions: PanelOptions().LegendFormat("duration").Unit(Seconds),
 							Owner:        ObservableOwnerSearch,
 							PossibleSolutions: `
@@ -244,7 +252,7 @@ func Frontend() *Container {
 							Query:           `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="other"}[5m])))`,
 							DataMayNotExist: true,
 
-							Warning:      Alert().GreaterOrEqual(40),
+							Alerts:       []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(40)}},
 							PanelOptions: PanelOptions().LegendFormat("duration").Unit(Seconds),
 							Owner:        ObservableOwnerSearch,
 							PossibleSolutions: `
@@ -263,8 +271,10 @@ func Frontend() *Container {
 							Query:           `(sum(increase(src_graphql_search_response{status="timeout",source="other"}[5m])) + sum(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="other"}[5m]))) / sum(increase(src_graphql_search_response{source="other"}[5m])) * 100`,
 							DataMayNotExist: true,
 
-							Warning:           Alert().GreaterOrEqual(2).For(15 * time.Minute),
-							Critical:          Alert().GreaterOrEqual(5).For(15 * time.Minute),
+							Alerts: []Alert{
+								{Level: AlertLevelWarning, GreaterOrEqual: Threshold(2), For: 15 * time.Minute},
+								{Level: AlertLevelCritical, GreaterOrEqual: Threshold(5), For: 15 * time.Minute},
+							},
 							PanelOptions:      PanelOptions().LegendFormat("hard timeout").Unit(Percentage),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
@@ -275,8 +285,10 @@ func Frontend() *Container {
 							Query:           `sum by (status)(increase(src_graphql_search_response{status=~"error",source="other"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="other"}[5m]))`,
 							DataMayNotExist: true,
 
-							Warning:           Alert().GreaterOrEqual(2).For(15 * time.Minute),
-							Critical:          Alert().GreaterOrEqual(5).For(15 * time.Minute),
+							Alerts: []Alert{
+								{Level: AlertLevelWarning, GreaterOrEqual: Threshold(2), For: 15 * time.Minute},
+								{Level: AlertLevelCritical, GreaterOrEqual: Threshold(5), For: 15 * time.Minute},
+							},
 							PanelOptions:      PanelOptions().LegendFormat("{{status}}").Unit(Percentage),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
@@ -287,7 +299,7 @@ func Frontend() *Container {
 							Query:           `sum(increase(src_graphql_search_response{status="partial_timeout",source="other"}[5m])) / sum(increase(src_graphql_search_response{source="other"}[5m]))`,
 							DataMayNotExist: true,
 
-							Warning:           Alert().GreaterOrEqual(5).For(15 * time.Minute),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(5), For: 15 * time.Minute}},
 							PanelOptions:      PanelOptions().LegendFormat("partial timeout").Unit(Percentage),
 							Owner:             ObservableOwnerSearch,
 							PossibleSolutions: "none",
@@ -298,7 +310,7 @@ func Frontend() *Container {
 							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out|no_results__suggest_quotes",source="other"}[5m])) / ignoring(alert_type) group_left sum(increase(src_graphql_search_response{status="alert",source="other"}[5m]))`,
 							DataMayNotExist: true,
 
-							Warning:      Alert().GreaterOrEqual(5),
+							Alerts:       []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(5)}},
 							PanelOptions: PanelOptions().LegendFormat("{{alert_type}}").Unit(Percentage),
 							Owner:        ObservableOwnerSearch,
 							PossibleSolutions: `
@@ -318,7 +330,7 @@ func Frontend() *Container {
 							Description:       "99th percentile successful api operation duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_api_duration_seconds_bucket{job="sourcegraph-frontend"}[5m])))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(20),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(20)}},
 							PanelOptions:      PanelOptions().LegendFormat("api operation").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
@@ -328,7 +340,7 @@ func Frontend() *Container {
 							Description:       "api errors every 5m",
 							Query:             `increase(src_codeintel_api_errors_total{job="sourcegraph-frontend"}[5m])`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(20),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(20)}},
 							PanelOptions:      PanelOptions().LegendFormat("error"),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
@@ -340,7 +352,7 @@ func Frontend() *Container {
 							Description:       "99th percentile successful dbstore operation duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_dbstore_duration_seconds_bucket{job="sourcegraph-frontend"}[5m])))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(20),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(20)}},
 							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
@@ -350,7 +362,7 @@ func Frontend() *Container {
 							Description:       "dbstore errors every 5m",
 							Query:             `increase(src_codeintel_dbstore_errors_total{job="sourcegraph-frontend"}[5m])`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(20),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(20)}},
 							PanelOptions:      PanelOptions().LegendFormat("error"),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
@@ -362,7 +374,7 @@ func Frontend() *Container {
 							Description:       "99th percentile successful lsifstore operation duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job="sourcegraph-frontend"}[5m])))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(20),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(20)}},
 							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
@@ -372,7 +384,7 @@ func Frontend() *Container {
 							Description:       "lsifstore errors every 5m",
 							Query:             `increase(src_codeintel_lsifstore_errors_total{job="sourcegraph-frontend"}[5m])`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(20),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(20)}},
 							PanelOptions:      PanelOptions().LegendFormat("error"),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
@@ -384,7 +396,7 @@ func Frontend() *Container {
 							Description:       "99th percentile successful uploadstore operation duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_uploadstore_duration_seconds_bucket{job="sourcegraph-frontend"}[5m])))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(20),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(20)}},
 							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
@@ -394,7 +406,7 @@ func Frontend() *Container {
 							Description:       "uploadstore errors every 5m",
 							Query:             `increase(src_codeintel_uploadstore_errors_total{job="sourcegraph-frontend"}[5m])`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(20),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(20)}},
 							PanelOptions:      PanelOptions().LegendFormat("error"),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
@@ -406,7 +418,7 @@ func Frontend() *Container {
 							Description:       "99th percentile successful gitserver operation duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_gitserver_duration_seconds_bucket{job="sourcegraph-frontend"}[5m])))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(20),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(20)}},
 							PanelOptions:      PanelOptions().LegendFormat("store operation").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
@@ -416,7 +428,7 @@ func Frontend() *Container {
 							Description:       "gitserver errors every 5m",
 							Query:             `increase(src_codeintel_gitserver_errors_total{job="sourcegraph-frontend"}[5m])`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(20),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(20)}},
 							PanelOptions:      PanelOptions().LegendFormat("error"),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
@@ -434,7 +446,7 @@ func Frontend() *Container {
 							Description:     "internal indexed search error responses every 5m",
 							Query:           `sum by(code) (increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`,
 							DataMayNotExist: true,
-							Warning:         Alert().GreaterOrEqual(5).For(15 * time.Minute),
+							Alerts:          []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(5), For: 15 * time.Minute}},
 							PanelOptions:    PanelOptions().LegendFormat("{{code}}").Unit(Percentage),
 							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
@@ -446,7 +458,7 @@ func Frontend() *Container {
 							Description:     "internal unindexed search error responses every 5m",
 							Query:           `sum by(code) (increase(searcher_service_request_total{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(searcher_service_request_total[5m])) * 100`,
 							DataMayNotExist: true,
-							Warning:         Alert().GreaterOrEqual(5).For(15 * time.Minute),
+							Alerts:          []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(5), For: 15 * time.Minute}},
 							PanelOptions:    PanelOptions().LegendFormat("{{code}}").Unit(Percentage),
 							Owner:           ObservableOwnerSearch,
 							PossibleSolutions: `
@@ -458,7 +470,7 @@ func Frontend() *Container {
 							Description:     "internal API error responses every 5m by route",
 							Query:           `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_frontend_internal_request_duration_seconds_count[5m])) * 100`,
 							DataMayNotExist: true,
-							Warning:         Alert().GreaterOrEqual(5).For(15 * time.Minute),
+							Alerts:          []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(5), For: 15 * time.Minute}},
 							PanelOptions:    PanelOptions().LegendFormat("{{category}}").Unit(Percentage),
 							Owner:           ObservableOwnerCloud,
 							PossibleSolutions: `
@@ -472,7 +484,7 @@ func Frontend() *Container {
 							Description:       "99th percentile successful precise-code-intel-bundle-manager query duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_precise_code_intel_bundle_manager_request_duration_seconds_bucket{job="sourcegraph-frontend",category!="transfer"}[5m])))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(20),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(20)}},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
@@ -482,7 +494,7 @@ func Frontend() *Container {
 							Description:       "99th percentile successful precise-code-intel-bundle-manager data transfer duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_precise_code_intel_bundle_manager_request_duration_seconds_bucket{job="sourcegraph-frontend",category="transfer"}[5m])))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(300),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(300)}},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
@@ -492,7 +504,7 @@ func Frontend() *Container {
 							Description:       "precise-code-intel-bundle-manager error responses every 5m",
 							Query:             `sum by(category) (increase(src_precise_code_intel_bundle_manager_request_duration_seconds_count{job="sourcegraph-frontend",code!~"2.."}[5m]))  / ignoring(code) group_left sum by(category) (increase(src_precise_code_intel_bundle_manager_request_duration_seconds_count{job="sourcegraph-frontend"}[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(5).For(15 * time.Minute),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(5), For: 15 * time.Minute}},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Percentage),
 							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
@@ -504,7 +516,7 @@ func Frontend() *Container {
 							Description:       "99th percentile successful gitserver query duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_gitserver_request_duration_seconds_bucket{job="sourcegraph-frontend"}[5m])))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(20),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(20)}},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Seconds),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "none",
@@ -514,7 +526,7 @@ func Frontend() *Container {
 							Description:       "gitserver error responses every 5m",
 							Query:             `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="sourcegraph-frontend",code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job="sourcegraph-frontend"}[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(5).For(15 * time.Minute),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(5), For: 15 * time.Minute}},
 							PanelOptions:      PanelOptions().LegendFormat("{{category}}").Unit(Percentage),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "none",
@@ -526,7 +538,7 @@ func Frontend() *Container {
 							Description:       "warning test alert metric",
 							Query:             `max by(owner) (observability_test_metric_warning)`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(1),
+							Alerts:            []Alert{{Level: AlertLevelWarning, GreaterOrEqual: Threshold(1)}},
 							PanelOptions:      PanelOptions().Max(1),
 							Owner:             ObservableOwnerDistribution,
 							PossibleSolutions: "This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.",
@@ -536,7 +548,7 @@ func Frontend() *Container {
 							Description:       "critical test alert metric",
 							Query:             `max by(owner) (observability_test_metric_critical)`,
 							DataMayNotExist:   true,
-							Critical:          Alert().GreaterOrEqual(1),
+							Alerts:            []Alert{{Level: AlertLevelCritical, GreaterOrEqual: Threshold(1)}},
 							PanelOptions:      PanelOptions().Max(1),
 							Owner:             ObservableOwnerDistribution,
 							PossibleSolutions: "This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.",

@@ -180,12 +180,8 @@ type Observable struct {
 	// set this to true.
 	DataMayNotBeNaN bool
 
-	// Warning and Critical alert definitions. At least a Warning alert must be present.
-	// Alerts are created using the Alert() constructor.
-	//
-	// See README.md for why it is intentionally impossible to create a dashboard to monitor
-	// something without at least a warning alert being defined.
-	Warning, Critical alertDefinition
+	// A list of alert definitions associated with this Observable.
+	Alerts []Alert
 
 	// PossibleSolutions is Markdown describing possible solutions in the event that the alert is
 	// firing. If there is no clear potential resolution, "none" must be explicitly stated.
@@ -211,7 +207,6 @@ type Observable struct {
 	// 2. The indentation in the string literal is removed (based on the last line).
 	// 3. Single quotes become backticks.
 	// 4. The last line (which is all indention) is removed.
-	//
 	PossibleSolutions string
 
 	// PanelOptions describes some options for how to render the metric in the Grafana panel.
@@ -222,78 +217,71 @@ func (o Observable) validate() error {
 	if strings.Contains(o.Name, " ") || strings.ToLower(o.Name) != o.Name {
 		return fmt.Errorf("Observable.Name must be in lower_snake_case; found \"%s\"", o.Name)
 	}
+
 	if v := string([]rune(o.Description)[0]); v != strings.ToLower(v) {
 		return fmt.Errorf("Observable.Description must be lowercase; found \"%s\"", o.Description)
 	}
-	if o.Warning.isEmpty() && o.Critical.isEmpty() {
-		return fmt.Errorf("%s: a Warning or Critical alert MUST be defined", o.Name)
+
+	if o.Alerts == nil {
+		return fmt.Errorf("%s: Alerts must be set. If you don't need alerts, set this field to NoAlerts", o.Name)
 	}
-	if err := o.Warning.validate(); err != nil && !o.Warning.isEmpty() {
-		return fmt.Errorf("warning: %v", err)
-	}
-	if err := o.Critical.validate(); err != nil && !o.Critical.isEmpty() {
-		return fmt.Errorf("critical: %v", err)
-	}
-	if l := strings.ToLower(o.PossibleSolutions); strings.Contains(l, "contact support") || strings.Contains(l, "contact us") {
-		return fmt.Errorf("PossibleSolutions: should not include mentions of contacting support")
-	}
-	if o.PossibleSolutions == "" {
-		return fmt.Errorf(`PossibleSolutions: must list solutions or "none"`)
-	} else if o.PossibleSolutions != "none" {
-		if _, err := goMarkdown(o.PossibleSolutions); err != nil {
-			return fmt.Errorf("PossibleSolutions: %v", err)
+
+	for i, a := range o.Alerts {
+		if a.isEmpty() {
+			return fmt.Errorf("%s: Alert #%d is empty", o.Name, i)
 		}
 	}
-	if o.Owner == "" {
-		return errors.New("Observable.Owner must be defined")
+
+	if len(o.Alerts) > 0 {
+		if o.PossibleSolutions == "" {
+			return fmt.Errorf(`%s: PossibleSolutions: must list solutions or "none"`, o.Name)
+		} else if o.PossibleSolutions != "none" {
+			if _, err := goMarkdown(o.PossibleSolutions); err != nil {
+				return fmt.Errorf(`%s: PossibleSolutions: %v`, o.Name, err)
+			}
+		}
 	}
+
+	if o.Owner == "" {
+		return fmt.Errorf("%s: has now Owner set", o.Name)
+	}
+
 	return nil
 }
 
-func Alert() alertDefinition {
-	return alertDefinition{}
-}
+// NoAlerts is used by Observables that don't need any alerts.
+// We want to be explicit about this to ensure engineers think about it.
+var NoAlerts = []Alert{}
 
-// alertDefinition defines when an alert would be considered firing.
-type alertDefinition struct {
+// AlertLevel defines different levels of Alerts
+type AlertLevel string
+
+const (
+	AlertLevelWarning  AlertLevel = "warning"
+	AlertLevelCritical AlertLevel = "critical"
+)
+
+// Alert defines when an alert would be considered firing.
+type Alert struct {
+	// Level of the alert.
+	Level AlertLevel
+
 	// GreaterOrEqual, when non-zero, indicates the alert should fire when
 	// greater or equal to this value.
-	greaterOrEqual *float64
+	GreaterOrEqual *float32
 
 	// LessOrEqual, when non-zero, indicates the alert should fire when less
 	// than or equal to this value.
-	lessOrEqual *float64
+	LessOrEqual *float32
 
 	// For indicates how long the given thresholds must be exceeded for this
 	// alert to be considered firing. Defaults to 0s.
-	duration time.Duration
+	For time.Duration
 }
 
-func (a alertDefinition) GreaterOrEqual(f float64) alertDefinition {
-	a.greaterOrEqual = &f
-	return a
-}
+func Threshold(f float32) *float32 { return &f }
 
-func (a alertDefinition) LessOrEqual(f float64) alertDefinition {
-	a.lessOrEqual = &f
-	return a
-}
-
-func (a alertDefinition) For(d time.Duration) alertDefinition {
-	a.duration = d
-	return a
-}
-
-func (a alertDefinition) isEmpty() bool {
-	return a == alertDefinition{} || (a.greaterOrEqual == nil && a.lessOrEqual == nil)
-}
-
-func (a alertDefinition) validate() error {
-	if a.isEmpty() {
-		return errors.New("empty")
-	}
-	return nil
-}
+func (a Alert) isEmpty() bool { return a == Alert{} }
 
 // UnitType for controlling the unit type display on graphs.
 type UnitType string
@@ -411,6 +399,11 @@ func (p panelOptions) withDefaults() panelOptions {
 }
 
 func PanelOptions() panelOptions { return panelOptions{} }
+
+var alertThresholdFillColors = map[AlertLevel]string{
+	AlertLevelWarning:  "rgba(255, 73, 53, 0.8)",
+	AlertLevelCritical: "rgba(255, 17, 36, 0.8)",
+}
 
 // dashboard generates the Grafana dashboard for this container.
 func (c *Container) dashboard() *sdk.Board {
@@ -569,49 +562,28 @@ func (c *Container) dashboard() *sdk.Board {
 					Show:     true,
 				}
 
-				if o.Warning.greaterOrEqual != nil {
-					// Warning threshold
-					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(*o.Warning.greaterOrEqual),
-						Op:        "gt",
-						ColorMode: "custom",
-						Fill:      true,
-						Line:      false,
-						FillColor: "rgba(255, 73, 53, 0.8)",
-					})
-				}
-				if o.Critical.greaterOrEqual != nil {
-					// Critical threshold
-					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(*o.Critical.greaterOrEqual),
-						Op:        "gt",
-						ColorMode: "custom",
-						Fill:      true,
-						Line:      false,
-						FillColor: "rgba(255, 17, 36, 0.8)",
-					})
-				}
-				if o.Warning.lessOrEqual != nil {
-					// Warning threshold
-					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(*o.Warning.lessOrEqual),
-						Op:        "lt",
-						ColorMode: "custom",
-						Fill:      true,
-						Line:      false,
-						FillColor: "rgba(255, 73, 53, 0.8)",
-					})
-				}
-				if o.Critical.lessOrEqual != nil {
-					// Critical threshold
-					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(*o.Critical.lessOrEqual),
-						Op:        "lt",
-						ColorMode: "custom",
-						Fill:      true,
-						Line:      false,
-						FillColor: "rgba(255, 17, 36, 0.8)",
-					})
+				for _, a := range o.Alerts {
+					if a.GreaterOrEqual != nil {
+						panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
+							Value:     *a.GreaterOrEqual,
+							Op:        "gt",
+							ColorMode: "custom",
+							Fill:      true,
+							Line:      false,
+							FillColor: alertThresholdFillColors[a.Level],
+						})
+					}
+
+					if a.LessOrEqual != nil {
+						panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
+							Value:     *a.LessOrEqual,
+							Op:        "lt",
+							ColorMode: "custom",
+							Fill:      true,
+							Line:      false,
+							FillColor: alertThresholdFillColors[a.Level],
+						})
+					}
 				}
 
 				if opt.min != nil {
@@ -645,7 +617,7 @@ func (c *Container) dashboard() *sdk.Board {
 }
 
 // alertDescription generates an alert description for the specified coontainer's alert.
-func (c *Container) alertDescription(o Observable, alert alertDefinition) string {
+func (c *Container) alertDescription(o Observable, alert Alert) string {
 	if alert.isEmpty() {
 		panic("never here")
 	}
@@ -653,21 +625,21 @@ func (c *Container) alertDescription(o Observable, alert alertDefinition) string
 
 	// description based on thresholds
 	units := o.PanelOptions.unitType.short()
-	if alert.greaterOrEqual != nil && alert.lessOrEqual != nil {
-		description = fmt.Sprintf("%s: %v%s+ or less than %v%s %s", c.Name, *alert.greaterOrEqual, units, *alert.lessOrEqual, units, o.Description)
-	} else if alert.greaterOrEqual != nil {
+	if alert.GreaterOrEqual != nil && alert.LessOrEqual != nil {
+		description = fmt.Sprintf("%s: %v%s+ or less than %v%s %s", c.Name, *alert.GreaterOrEqual, units, *alert.LessOrEqual, units, o.Description)
+	} else if alert.GreaterOrEqual != nil {
 		// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
-		description = fmt.Sprintf("%s: %v%s+ %s", c.Name, *alert.greaterOrEqual, units, o.Description)
-	} else if alert.lessOrEqual != nil {
+		description = fmt.Sprintf("%s: %v%s+ %s", c.Name, *alert.GreaterOrEqual, units, o.Description)
+	} else if alert.LessOrEqual != nil {
 		// e.g. "zoekt-indexserver: less than 20 indexed search requests every 5m by code"
-		description = fmt.Sprintf("%s: less than %v%s %s", c.Name, *alert.lessOrEqual, units, o.Description)
+		description = fmt.Sprintf("%s: less than %v%s %s", c.Name, *alert.LessOrEqual, units, o.Description)
 	} else {
 		panic(fmt.Sprintf("unable to generate description for observable %+v", o))
 	}
 
 	// add information about "for"
-	if alert.duration > 0 {
-		return fmt.Sprintf("%s for %s", description, alert.duration)
+	if alert.For > 0 {
+		return fmt.Sprintf("%s for %s", description, alert.For)
 	}
 	return description
 }
@@ -684,15 +656,12 @@ func (c *Container) promAlertsFile() *promRulesFile {
 	for _, g := range c.Groups {
 		for _, r := range g.Rows {
 			for _, o := range r {
-				for level, a := range map[string]alertDefinition{
-					"warning":  o.Warning,
-					"critical": o.Critical,
-				} {
+				for _, a := range o.Alerts {
 					if a.isEmpty() {
 						continue
 					}
 
-					hasUpperAndLowerBounds := (a.greaterOrEqual != nil) && (a.lessOrEqual != nil)
+					hasUpperAndLowerBounds := (a.GreaterOrEqual != nil) && (a.LessOrEqual != nil)
 					makeLabels := func(bound string) map[string]string {
 						var name, description string
 						if hasUpperAndLowerBounds {
@@ -700,12 +669,12 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							// make sure the prometheus alert description only describes one bound
 							name = fmt.Sprintf("%s_%s", o.Name, bound)
 							if bound == "high" {
-								description = c.alertDescription(o, alertDefinition{
-									greaterOrEqual: a.greaterOrEqual,
+								description = c.alertDescription(o, Alert{
+									GreaterOrEqual: a.GreaterOrEqual,
 								})
 							} else if bound == "low" {
-								description = c.alertDescription(o, alertDefinition{
-									lessOrEqual: a.lessOrEqual,
+								description = c.alertDescription(o, Alert{
+									LessOrEqual: a.LessOrEqual,
 								})
 							} else {
 								panic(fmt.Sprintf("never here, bad alert bound: %s", bound))
@@ -716,7 +685,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 						}
 						return map[string]string{
 							"name":         name,
-							"level":        level,
+							"level":        string(a.Level),
 							"service_name": c.Name,
 							"description":  description,
 							"owner":        string(o.Owner),
@@ -733,16 +702,16 @@ func (c *Container) promAlertsFile() *promRulesFile {
 						fireOnNan = "1"
 					}
 
-					if a.greaterOrEqual != nil {
-						// By dividing the query value and the greaterOrEqual value, we produce a
-						// value of 1 when the query reaches the greaterOrEqual value and < 1
+					if a.GreaterOrEqual != nil {
+						// By dividing the query value and the GreaterOrEqual value, we produce a
+						// value of 1 when the query reaches the GreaterOrEqual value and < 1
 						// otherwise. Examples:
 						//
-						// 	query_value=50 / greaterOrEqual=50 == 1.0
-						// 	query_value=25 / greaterOrEqual=50 == 0.5
-						// 	query_value=0 / greaterOrEqual=50 == 0.0
+						// 	query_value=50 / GreaterOrEqual=50 == 1.0
+						// 	query_value=25 / GreaterOrEqual=50 == 0.5
+						// 	query_value=0 / GreaterOrEqual=50 == 0.0
 						//
-						alertQuery = fmt.Sprintf("(%s) / %v", o.Query, *a.greaterOrEqual)
+						alertQuery = fmt.Sprintf("(%s) / %v", o.Query, *a.GreaterOrEqual)
 
 						// Replace no-data with zero values, so the alert does not fire, if desired.
 						if o.DataMayNotExist {
@@ -755,17 +724,17 @@ func (c *Container) promAlertsFile() *promRulesFile {
 						// get flattened into a single one (we only support per-service alerts,
 						// not per-container/replica).
 						// More context: https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953
-						group.AppendRow(fmt.Sprintf("max(%s)", alertQuery), makeLabels("high"), a.duration)
+						group.AppendRow(fmt.Sprintf("max(%s)", alertQuery), makeLabels("high"), a.For)
 					}
-					if a.lessOrEqual != nil {
+					if a.LessOrEqual != nil {
 						//
-						// 	lessOrEqual=50 / query_value=100 == 0.5
-						// 	lessOrEqual=50 / query_value=50 == 1.0
-						// 	lessOrEqual=50 / query_value=25 == 2.0
-						// 	lessOrEqual=50 / query_value=0 (0.0000001) == 500000000
-						// 	lessOrEqual=50 / query_value=-50 (0.0000001) == 500000000
+						// 	LessOrEqual=50 / query_value=100 == 0.5
+						// 	LessOrEqual=50 / query_value=50 == 1.0
+						// 	LessOrEqual=50 / query_value=25 == 2.0
+						// 	LessOrEqual=50 / query_value=0 (0.0000001) == 500000000
+						// 	LessOrEqual=50 / query_value=-50 (0.0000001) == 500000000
 						//
-						alertQuery = fmt.Sprintf("%v / clamp_min(%s, 0.0000001)", *a.lessOrEqual, o.Query)
+						alertQuery = fmt.Sprintf("%v / clamp_min(%s, 0.0000001)", *a.LessOrEqual, o.Query)
 
 						// Replace no-data with zero values, so the alert does not fire, if desired.
 						if o.DataMayNotExist {
@@ -778,7 +747,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 						// get flattened into a single one (we only support per-service alerts,
 						// not per-container/replica).
 						// More context: https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953
-						group.AppendRow(fmt.Sprintf("min(%s)", alertQuery), makeLabels("low"), a.duration)
+						group.AppendRow(fmt.Sprintf("min(%s)", alertQuery), makeLabels("low"), a.For)
 					}
 				}
 			}
@@ -837,27 +806,25 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 		for _, g := range c.Groups {
 			for _, r := range g.Rows {
 				for _, o := range r {
+					if len(o.Alerts) == 0 {
+						continue
+					}
+
 					fmt.Fprintf(&b, "## %s: %s\n\n", c.Name, o.Name)
 					fmt.Fprintf(&b, `<p class="subtitle">%s: %s</p>`, o.Owner, o.Description)
 
 					// Render descriptions of various levels of this alert
 					fmt.Fprintf(&b, "**Descriptions:**\n\n")
 					var prometheusAlertNames []string
-					for _, alert := range []struct {
-						level     string
-						threshold alertDefinition
-					}{
-						{level: "warning", threshold: o.Warning},
-						{level: "critical", threshold: o.Critical},
-					} {
-						if alert.threshold.isEmpty() {
+					for _, alert := range o.Alerts {
+						if alert.isEmpty() {
 							continue
 						}
-						fmt.Fprintf(&b, "- _%s_\n", c.alertDescription(o, alert.threshold))
+						fmt.Fprintf(&b, "- _%s_\n", c.alertDescription(o, alert))
 						prometheusAlertNames = append(prometheusAlertNames,
-							fmt.Sprintf("  \"%s\"", prometheusAlertName(alert.level, c.Name, o.Name)))
+							fmt.Sprintf("  \"%s\"", prometheusAlertName(string(alert.Level), c.Name, o.Name)))
+
 					}
-					fmt.Fprint(&b, "\n")
 
 					// Render solutions for dealing with this alert
 					fmt.Fprintf(&b, "**Possible solutions:**\n\n")
@@ -865,6 +832,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 						possibleSolutions, _ := goMarkdown(o.PossibleSolutions)
 						fmt.Fprintf(&b, "%s\n", possibleSolutions)
 					}
+					fmt.Fprint(&b, "\n")
+
 					// add silencing configuration as another solution
 					fmt.Fprintf(&b, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:\n\n")
 					fmt.Fprintf(&b, "```json\n%s\n```\n\n", fmt.Sprintf(`"observability.silenceAlerts": [
