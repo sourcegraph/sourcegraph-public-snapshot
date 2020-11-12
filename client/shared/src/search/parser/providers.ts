@@ -37,6 +37,7 @@ export function getProviders(
     options: {
         patternType: SearchPatternType
         globbing: boolean
+        enableSmartQuery: boolean
         interpretComments?: boolean
     }
 ): SearchFieldProviders {
@@ -55,10 +56,10 @@ export function getProviders(
         tokens: {
             getInitialState: () => SCANNER_STATE,
             tokenize: line => {
-                const result = scanSearchQuery(line, options.interpretComments ?? false)
+                const result = scanSearchQuery(line, options.interpretComments ?? false, options.patternType)
                 if (result.type === 'success') {
                     return {
-                        tokens: getMonacoTokens(result.token),
+                        tokens: getMonacoTokens(result.term, options.enableSmartQuery),
                         endState: SCANNER_STATE,
                     }
                 }
@@ -71,7 +72,7 @@ export function getProviders(
                     .pipe(
                         first(),
                         map(({ scanned }) =>
-                            scanned.type === 'error' ? null : getHoverResult(scanned.token, position)
+                            scanned.type === 'error' ? null : getHoverResult(scanned.term, position)
                         ),
                         takeUntil(fromEventPattern(handler => token.onCancellationRequested(handler)))
                     )
@@ -88,7 +89,7 @@ export function getProviders(
                             scannedQuery.scanned.type === 'error'
                                 ? of(null)
                                 : getCompletionItems(
-                                      scannedQuery.scanned.token,
+                                      scannedQuery.scanned.term,
                                       position,
                                       debouncedDynamicSuggestions,
                                       options.globbing
@@ -99,7 +100,7 @@ export function getProviders(
                     .toPromise(),
         },
         diagnostics: scannedQueries.pipe(
-            map(({ scanned }) => (scanned.type === 'success' ? getDiagnostics(scanned.token, options.patternType) : []))
+            map(({ scanned }) => (scanned.type === 'success' ? getDiagnostics(scanned.term, options.patternType) : []))
         ),
     }
 }

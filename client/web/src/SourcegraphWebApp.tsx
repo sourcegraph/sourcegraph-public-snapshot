@@ -190,6 +190,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether we show the mulitiline editor at /search/query-builder
      */
     showQueryBuilder: boolean
+
+    /**
+     * Wether to enable enable contextual syntax highlighting and hovers for search queries
+     */
+    enableSmartQuery: boolean
 }
 
 const notificationClassNames = {
@@ -275,6 +280,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             globbing: false,
             showMultilineSearchConsole: false,
             showQueryBuilder: false,
+            enableSmartQuery: false,
         }
     }
 
@@ -452,6 +458,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     globbing={this.state.globbing}
                                     showMultilineSearchConsole={this.state.showMultilineSearchConsole}
                                     showQueryBuilder={this.state.showQueryBuilder}
+                                    enableSmartQuery={this.state.enableSmartQuery}
                                     fetchSavedSearches={fetchSavedSearches}
                                     fetchRecentSearches={fetchRecentSearches}
                                     fetchRecentFileViews={fetchRecentFileViews}

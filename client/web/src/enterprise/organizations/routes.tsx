@@ -3,11 +3,11 @@ import { OrgAreaRoute } from '../../org/area/OrgArea'
 import { orgAreaRoutes } from '../../org/area/routes'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
 import { lazyComponent } from '../../util/lazyComponent'
-import { OrgCampaignsAreaProps } from '../campaigns/global/GlobalCampaignsArea'
+import { NamespaceCampaignsAreaProps } from '../campaigns/global/GlobalCampaignsArea'
 
-const OrgCampaignsArea = lazyComponent<OrgCampaignsAreaProps, 'OrgCampaignsArea'>(
+const NamespaceCampaignsArea = lazyComponent<NamespaceCampaignsAreaProps, 'NamespaceCampaignsArea'>(
     () => import('../campaigns/global/GlobalCampaignsArea'),
-    'OrgCampaignsArea'
+    'NamespaceCampaignsArea'
 )
 
 export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
@@ -15,7 +15,7 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
     ...enterpriseNamespaceAreaRoutes,
     {
         path: '/campaigns',
-        render: props => <OrgCampaignsArea {...props} orgID={props.org.id} />,
+        render: props => <NamespaceCampaignsArea {...props} namespaceID={props.org.id} />,
         condition: props => !props.isSourcegraphDotCom && window.context.campaignsEnabled,
     },
 ]

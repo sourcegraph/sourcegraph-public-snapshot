@@ -155,7 +155,7 @@ func (h *handler) handle(ctx context.Context, dbStore DBStore, upload store.Uplo
 		err = tx.Done(err)
 	}()
 
-	if err := h.updateXrepoData(ctx, dbStore, upload, groupedBundleData.Packages, groupedBundleData.PackageReferences); err != nil {
+	if err := h.updateXrepoData(ctx, tx, upload, groupedBundleData.Packages, groupedBundleData.PackageReferences); err != nil {
 		return false, err
 	}
 

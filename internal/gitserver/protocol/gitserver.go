@@ -197,14 +197,10 @@ type PatchCommitInfo struct {
 // PushConfig provides the configuration required to push one or more commits to
 // a code host.
 type PushConfig struct {
-	// Token, if set, provides the OAuth bearer token that should be used to
-	// push the target ref to the code host. If unset, the default code host
-	// configuration should be used.
-	Token string
-
-	// Type specifies the type of code host being pushed to.
-	// It's one of the extsvc.Type* constants.
-	Type string
+	// RemoteURL is the git remote URL to which to push the commits.
+	// The URL needs to include HTTP basic auth credentials if no
+	// unauthenticated requests are allowed by the remote host.
+	RemoteURL string
 }
 
 // CreateCommitFromPatchResponse is the response type returned after creating

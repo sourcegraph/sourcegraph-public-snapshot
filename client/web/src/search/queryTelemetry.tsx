@@ -1,5 +1,5 @@
 import { count } from '../../../shared/src/util/strings'
-import { scanSearchQuery, ScanResult, Sequence } from '../../../shared/src/search/parser/scanner'
+import { scanSearchQuery, ScanResult, Token } from '../../../shared/src/search/parser/scanner'
 import { resolveFilter } from '../../../shared/src/search/parser/filters'
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -11,10 +11,10 @@ export function queryTelemetryData(query: string, caseSensitive: boolean) {
         empty: !query,
     }
 }
-function filterExistsInQuery(parsedQuery: ScanResult<Sequence>, filterToMatch: string): boolean {
+function filterExistsInQuery(parsedQuery: ScanResult<Token[]>, filterToMatch: string): boolean {
     if (parsedQuery.type === 'success') {
-        const members = parsedQuery.token.members
-        for (const token of members) {
+        const tokens = parsedQuery.term
+        for (const token of tokens) {
             if (token.type === 'filter') {
                 const resolvedFilter = resolveFilter(token.filterType.value)
                 if (resolvedFilter !== undefined && resolvedFilter.type === filterToMatch) {

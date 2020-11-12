@@ -345,4 +345,7 @@ var SyntectLanguageMap = map[string]string{
 	"yaml":                 "yaml",
 	"yml":                  "yml",
 	"sublime-syntax":       "sublime-syntax",
+	"kotlin":               "kt",
+	"kt":                   "kt",
+	"kts":                  "kts",
 }

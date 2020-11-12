@@ -87,7 +87,7 @@ func TestChangeset_SetMetadata(t *testing.T) {
 			want: &Changeset{
 				ExternalID:          "12345",
 				ExternalServiceType: extsvc.TypeBitbucketServer,
-				ExternalBranch:      "branch",
+				ExternalBranch:      "refs/heads/branch",
 				ExternalUpdatedAt:   time.Unix(10, 0),
 			},
 		},
@@ -100,7 +100,7 @@ func TestChangeset_SetMetadata(t *testing.T) {
 			want: &Changeset{
 				ExternalID:          "12345",
 				ExternalServiceType: extsvc.TypeGitHub,
-				ExternalBranch:      "branch",
+				ExternalBranch:      "refs/heads/branch",
 				ExternalUpdatedAt:   time.Unix(10, 0),
 			},
 		},
@@ -113,7 +113,7 @@ func TestChangeset_SetMetadata(t *testing.T) {
 			want: &Changeset{
 				ExternalID:          "12345",
 				ExternalServiceType: extsvc.TypeGitLab,
-				ExternalBranch:      "branch",
+				ExternalBranch:      "refs/heads/branch",
 				ExternalUpdatedAt:   time.Unix(10, 0),
 			},
 		},

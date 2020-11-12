@@ -19,13 +19,13 @@ import { validateFilter, isSingularFilter } from '../../../../shared/src/search/
 export function convertPlainTextToInteractiveQuery(
     query: string
 ): { filtersInQuery: FiltersToTypeAndValue; navbarQuery: string } {
-    const parsedQuery = scanSearchQuery(query)
+    const scannedQuery = scanSearchQuery(query)
 
     const newFiltersInQuery: FiltersToTypeAndValue = {}
     let newNavbarQuery = ''
 
-    if (parsedQuery.type === 'success') {
-        for (const token of parsedQuery.token.members) {
+    if (scannedQuery.type === 'success') {
+        for (const token of scannedQuery.term) {
             if (
                 token.type === 'filter' &&
                 token.filterValue &&
