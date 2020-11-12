@@ -232,6 +232,8 @@ type searchCommitsInRepoEvent struct {
 
 	// Error is non-nil if an error occurred. It will be the last event if
 	// set.
+	//
+	// Note: Results will be empty if Error is set.
 	Error error
 }
 
@@ -254,39 +256,44 @@ func searchCommitsInRepoStream(ctx context.Context, op search.CommitParameters) 
 	c := make(chan searchCommitsInRepoEvent)
 	go func() {
 		defer close(c)
-		_, _, _, _ = doSearchCommitsInRepoStream(ctx, op, c)
+		_, _, _ = doSearchCommitsInRepoStream(ctx, op, c)
 	}()
 
 	return c
 }
 
-func doSearchCommitsInRepoStream(ctx context.Context, op search.CommitParameters, c chan searchCommitsInRepoEvent) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
+func doSearchCommitsInRepoStream(ctx context.Context, op search.CommitParameters, c chan searchCommitsInRepoEvent) (limitHit, timedOut bool, err error) {
+	resultCount := 0
 	tr, ctx := trace.New(ctx, "searchCommitsInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v", op.RepoRevs, op.PatternInfo))
 	defer func() {
-		tr.LazyPrintf("%d results, limitHit=%v, timedOut=%v", len(results), limitHit, timedOut)
+		tr.LazyPrintf("%d results, limitHit=%v, timedOut=%v", resultCount, limitHit, timedOut)
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
 	// This defer will read the named return values. This is a convenient way
 	// to send errors down the channel, since we only want to do this once.
+	empty := true
 	defer func() {
-		c <- searchCommitsInRepoEvent{
-			Results:  results,
-			LimitHit: limitHit,
-			TimedOut: timedOut,
-			Error:    err,
+		// Send a final event if we had an error or if we hadn't sent down the
+		// channel.
+		if err != nil || empty {
+			c <- searchCommitsInRepoEvent{
+				LimitHit: limitHit,
+				TimedOut: timedOut,
+				Error:    err,
+			}
 		}
 	}()
 
 	diffParameters, err := commitParametersToDiffParameters(ctx, &op)
 	if err != nil {
-		return nil, false, false, err
+		return false, false, err
 	}
 
 	rawResults, complete, err := git.RawLogDiffSearch(ctx, diffParameters.Repo, diffParameters.Options)
 	if err != nil {
-		return nil, false, false, err
+		return false, false, err
 	}
 
 	// if the result is incomplete, git log timed out and the client should be notified of that
@@ -297,8 +304,17 @@ func doSearchCommitsInRepoStream(ctx context.Context, op search.CommitParameters
 	}
 
 	repoResolver := &RepositoryResolver{repo: op.RepoRevs.Repo}
-	results, err = logCommitSearchResultsToResolvers(ctx, &op, repoResolver, rawResults)
-	return results, limitHit, timedOut, err
+	results, err := logCommitSearchResultsToResolvers(ctx, &op, repoResolver, rawResults)
+	if len(results) > 0 {
+		c <- searchCommitsInRepoEvent{
+			Results:  results,
+			LimitHit: limitHit,
+			TimedOut: timedOut,
+		}
+		empty = false
+		resultCount += len(results)
+	}
+	return limitHit, timedOut, err
 }
 
 func logCommitSearchResultsToResolvers(ctx context.Context, op *search.CommitParameters, repoResolver *RepositoryResolver, rawResults []*git.LogCommitSearchResult) ([]*CommitSearchResultResolver, error) {

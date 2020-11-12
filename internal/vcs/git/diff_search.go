@@ -277,6 +277,7 @@ func doLogDiffSearchStream(ctx context.Context, repo gitserver.Repo, opt RawLogD
 				Complete: true,
 			}
 			empty = false
+			resultCount += len(results)
 		}
 
 		if err != nil {
