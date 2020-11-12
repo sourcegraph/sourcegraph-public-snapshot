@@ -51,6 +51,6 @@ Here are some references to help you understand how multiple systems fit togethe
   - [Uploads](../codeintel/uploads.md)
   - [Queries](../codeintel/queries.md)
   - [Extensions](../codeintel/extensions.md)
+- [Sourcegraph extension architecture](sourcegraph-extensions.md)
 - Future topics we will cover here:
-  - Sourcegraph extension architecture
   - Web app and browser extension architecture
