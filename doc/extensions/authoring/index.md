@@ -8,6 +8,7 @@ The [Sourcegraph extension API](https://unpkg.com/sourcegraph/dist/docs/index.ht
 - [Activation and deactivation](activation.md)
 - [Contribution points (actions, menus, etc.)](contributions.md)
 - [Builtin commands](builtin_commands.md)
+- [Context key expressions](context_key_expressions.md)
 - [Principles of the Sourcegraph extension API](../principles.md)
 
 ## How-tos
@@ -17,13 +18,6 @@ The [Sourcegraph extension API](https://unpkg.com/sourcegraph/dist/docs/index.ht
 - [Local development](local_development.md)
 - [Publishing an extension](publishing.md)
 - [Debugging an extension](debugging.md)
-- [Activation](activation.md)
-- [Builtin commands](builtin_commands.md)
-- [Sample extensions (`sourcegraph-extension-samples`)](https://github.com/sourcegraph/sourcegraph-extension-samples)
-- [Cookbook (sample code)](cookbook.md)
-- [UX style guide](ux_style_guide.md)
-- [Context key expressions](context_key_expressions.md)
-- [Testing extensions](testing_extensions.md)
 
 ## Tutorials
 - [Hello world](tutorials/hello_world.md)
@@ -33,8 +27,9 @@ The [Sourcegraph extension API](https://unpkg.com/sourcegraph/dist/docs/index.ht
 ## References
 - [Extension API documentation](https://unpkg.com/sourcegraph/dist/docs/index.html) (full API is in [`sourcegraph.d.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/packages/sourcegraph-extension-api/src/sourcegraph.d.ts))
 - [Extension manifest (`package.json`)](manifest.md)
+- [Testing extensions](testing_extensions.md)
 - [Example extension: Token Highlights](https://github.com/sourcegraph/sourcegraph-extension-samples/tree/master/token-highlights)
-- [Additional examples: Sourcegraph.com extension registry](https://sourcegraph.com/extensions) (most extensions link to their source repository)
+- [More examples: Sourcegraph.com extension registry](https://sourcegraph.com/extensions) (most extensions link to their source repository)
 - [Cookbook (sample code)](cookbook.md)
 - [UX style guide](ux_style_guide.md)
 
