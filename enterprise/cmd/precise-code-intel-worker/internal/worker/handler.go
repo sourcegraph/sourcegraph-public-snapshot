@@ -4,6 +4,7 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
 	"sync/atomic"
 	"time"
 
@@ -75,32 +76,6 @@ func (h *handler) handle(ctx context.Context, dbStore DBStore, upload store.Uplo
 		return requeued, err
 	}
 
-	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", upload.ID)
-
-	// Pull raw uploaded data from bucket
-	rc, err := h.uploadStore.Get(ctx, uploadFilename, 0)
-	if err != nil {
-		return false, errors.Wrap(err, "uploadStore.Get")
-	}
-	defer rc.Close()
-
-	rc, err = gzip.NewReader(rc)
-	if err != nil {
-		return false, errors.Wrap(err, "gzip.NewReader")
-	}
-	defer rc.Close()
-
-	defer func() {
-		if err == nil {
-			// Remove upload file after processing - we won't need it anymore. On failure we
-			// may want to retry, so we should keep the upload data around for a bit. Older
-			// uploads will be cleaned up periodically.
-			if deleteErr := h.uploadStore.Delete(ctx, uploadFilename); deleteErr != nil {
-				log15.Warn("Failed to delete upload file", "err", err)
-			}
-		}
-	}()
-
 	getChildren := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
 		directoryChildren, err := h.gitserverClient.DirectoryChildren(ctx, dbStore, upload.RepositoryID, upload.Commit, dirnames)
 		if err != nil {
@@ -109,64 +84,66 @@ func (h *handler) handle(ctx context.Context, dbStore DBStore, upload store.Uplo
 		return directoryChildren, nil
 	}
 
-	groupedBundleData, err := correlation.Correlate(ctx, rc, upload.ID, upload.Root, getChildren)
-	if err != nil {
-		return false, errors.Wrap(err, "correlation.Correlate")
-	}
+	return false, withData(ctx, h.uploadStore, upload.ID, func(r io.Reader) (err error) {
+		groupedBundleData, err := correlation.Correlate(ctx, r, upload.ID, upload.Root, getChildren)
+		if err != nil {
+			return errors.Wrap(err, "correlation.Correlate")
+		}
 
-	if err := writeData(ctx, h.lsifStore, upload.ID, groupedBundleData); err != nil {
-		return false, err
-	}
+		if err := writeData(ctx, h.lsifStore, upload.ID, groupedBundleData); err != nil {
+			return err
+		}
 
-	// Start a nested transaction. In the event that something after this point fails, we want to
-	// update the upload record with an error message but do not want to alter any other data in
-	// the database. Rolling back to this savepoint will allow us to discard any other changes
-	// but still commit the transaction as a whole.
+		// Start a nested transaction. In the event that something after this point fails, we want to
+		// update the upload record with an error message but do not want to alter any other data in
+		// the database. Rolling back to this savepoint will allow us to discard any other changes
+		// but still commit the transaction as a whole.
 
-	// with Postgres savepoints. In the event that something after this point fails, we want to
-	// update the upload record with an error message but do not want to alter any other data in
-	// the database. Rolling back to this savepoint will allow us to discard any other changes
-	// but still commit the transaction as a whole.
-	tx, err := dbStore.Transact(ctx)
-	if err != nil {
-		return false, errors.Wrap(err, "store.Transact")
-	}
-	defer func() {
-		err = tx.Done(err)
-	}()
+		// with Postgres savepoints. In the event that something after this point fails, we want to
+		// update the upload record with an error message but do not want to alter any other data in
+		// the database. Rolling back to this savepoint will allow us to discard any other changes
+		// but still commit the transaction as a whole.
+		tx, err := dbStore.Transact(ctx)
+		if err != nil {
+			return errors.Wrap(err, "store.Transact")
+		}
+		defer func() { err = tx.Done(err) }()
 
-	// Update package and package reference data to support cross-repo queries.
-	if err := tx.UpdatePackages(ctx, groupedBundleData.Packages); err != nil {
-		return false, errors.Wrap(err, "store.UpdatePackages")
-	}
-	if err := tx.UpdatePackageReferences(ctx, groupedBundleData.PackageReferences); err != nil {
-		return false, errors.Wrap(err, "store.UpdatePackageReferences")
-	}
+		// Update package and package reference data to support cross-repo queries.
+		if err := tx.UpdatePackages(ctx, groupedBundleData.Packages); err != nil {
+			return errors.Wrap(err, "store.UpdatePackages")
+		}
+		if err := tx.UpdatePackageReferences(ctx, groupedBundleData.PackageReferences); err != nil {
+			return errors.Wrap(err, "store.UpdatePackageReferences")
+		}
 
-	// Before we mark the upload as complete, we need to delete any existing completed uploads
-	// that have the same repository_id, commit, root, and indexer values. Otherwise the transaction
-	// will fail as these values form a unique constraint.
-	if err := tx.DeleteOverlappingDumps(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
-		return false, errors.Wrap(err, "store.DeleteOverlappingDumps")
-	}
+		// Before we mark the upload as complete, we need to delete any existing completed uploads
+		// that have the same repository_id, commit, root, and indexer values. Otherwise the transaction
+		// will fail as these values form a unique constraint.
+		if err := tx.DeleteOverlappingDumps(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
+			return errors.Wrap(err, "store.DeleteOverlappingDumps")
+		}
 
-	// Almost-success: we need to mark this upload as complete at this point as the next step changes	// the visibility of the dumps for this repository. This requires that the new dump be available in
-	// the lsif_dumps view, which requires a change of state. In the event of a future failure we can
-	// still roll back to the save point and mark the upload as errored.
-	if err := tx.MarkComplete(ctx, upload.ID); err != nil {
-		return false, errors.Wrap(err, "store.MarkComplete")
-	}
+		// Almost-success: we need to mark this upload as complete at this point as the next step changes
+		// the visibility of the dumps for this repository. This requires that the new dump be available in
+		// the lsif_dumps view, which requires a change of state. In the event of a future failure we can
+		// still roll back to the save point and mark the upload as errored.
+		if err := tx.MarkComplete(ctx, upload.ID); err != nil {
+			return errors.Wrap(err, "store.MarkComplete")
+		}
 
-	// Mark this repository so that the commit updater process will pull the full commit graph from gitserver
-	// and recalculate the nearest upload for each commit as well as which uploads are visible from the tip of
-	// the default branch. We don't do this inside of the transaction as we re-calcalute the entire set of data
-	// from scratch and we want to be able to coalesce requests for the same repository rather than having a set
-	// of uploads for the same repo re-calculate nearly identical data multiple times.
-	if err := tx.MarkRepositoryAsDirty(ctx, upload.RepositoryID); err != nil {
-		return false, errors.Wrap(err, "store.MarkRepositoryDirty")
-	}
+		// Mark this repository so that the commit updater process will pull the full commit graph from
+		// gitserver and recalculate the nearest upload for each commit as well as which uploads are visible
+		// from the tip of the default branch. We don't do this inside of the transaction as we re-calcalute
+		// the entire set of data from scratch and we want to be able to coalesce requests for the same
+		// repository rather than having a set of uploads for the same repo re-calculate nearly identical
+		// data multiple times.
+		if err := tx.MarkRepositoryAsDirty(ctx, upload.RepositoryID); err != nil {
+			return errors.Wrap(err, "store.MarkRepositoryDirty")
+		}
 
-	return false, nil
+		return nil
+	})
 }
 
 // CloneInProgressDelay is the delay between processing attempts when a repo is currently being cloned.
@@ -197,14 +174,43 @@ func requeueIfCloning(ctx context.Context, dbStore DBStore, upload store.Upload)
 	return false, nil
 }
 
+// withData will invoke the given function with a reader of the upload's raw data. The consumer
+// should expect raw newline-delimited JSON content. If the function returns without an error,
+// the upload file will be deleted.
+func withData(ctx context.Context, uploadStore uploadstore.Store, id int, fn func(r io.Reader) error) (err error) {
+	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", id)
+
+	// Pull raw uploaded data from bucket
+	rc, err := uploadStore.Get(ctx, uploadFilename, 0)
+	if err != nil {
+		return errors.Wrap(err, "uploadStore.Get")
+	}
+	defer rc.Close()
+
+	rc, err = gzip.NewReader(rc)
+	if err != nil {
+		return errors.Wrap(err, "gzip.NewReader")
+	}
+	defer rc.Close()
+
+	defer func() {
+		if err == nil {
+			if deleteErr := uploadStore.Delete(ctx, uploadFilename); deleteErr != nil {
+				log15.Warn("Failed to delete upload file", "err", err, "filename", uploadFilename)
+			}
+		}
+	}()
+
+	return fn(rc)
+}
+
+// writeData transactionally writes the given grouped bundle data into the given LSIF store.
 func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleData *correlation.GroupedBundleData) (err error) {
 	tx, err := lsifStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		err = tx.Done(err)
-	}()
+	defer func() { err = tx.Done(err) }()
 
 	if err := tx.WriteMeta(ctx, id, groupedBundleData.Meta); err != nil {
 		return errors.Wrap(err, "store.WriteMeta")
@@ -213,7 +219,7 @@ func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleDa
 		return errors.Wrap(err, "store.WriteDocuments")
 	}
 	if err := tx.WriteResultChunks(ctx, id, groupedBundleData.ResultChunks); err != nil {
-		return errors.Wrap(err, "writer.WriteResultChunks")
+		return errors.Wrap(err, "store.WriteResultChunks")
 	}
 	if err := tx.WriteDefinitions(ctx, id, groupedBundleData.Definitions); err != nil {
 		return errors.Wrap(err, "store.WriteDefinitions")
