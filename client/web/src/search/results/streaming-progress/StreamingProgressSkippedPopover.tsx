@@ -18,22 +18,19 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<StreamingP
         },
         [selectedSuggestedSearches, onSearchAgain]
     )
-    const checkboxHandler = useCallback(
-        (event: React.FormEvent<HTMLInputElement>) => {
-            const itemToToggle = event.currentTarget.value
-            const checked = event.currentTarget.checked
-            setSelectedSuggestedSearches(selected => {
-                const newSelected = new Set(selected)
-                if (checked) {
-                    newSelected.add(itemToToggle)
-                } else {
-                    newSelected.delete(itemToToggle)
-                }
-                return newSelected
-            })
-        },
-        [setSelectedSuggestedSearches]
-    )
+    const checkboxHandler = useCallback((event: React.FormEvent<HTMLInputElement>) => {
+        const itemToToggle = event.currentTarget.value
+        const checked = event.currentTarget.checked
+        setSelectedSuggestedSearches(selected => {
+            const newSelected = new Set(selected)
+            if (checked) {
+                newSelected.add(itemToToggle)
+            } else {
+                newSelected.delete(itemToToggle)
+            }
+            return newSelected
+        })
+    }, [])
 
     return (
         <>
@@ -57,7 +54,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<StreamingP
                         {progress.skipped.map(
                             skipped =>
                                 skipped.suggested && (
-                                    <Label check={true} className="mb-1">
+                                    <Label check={true} className="mb-1" key={skipped.suggested.queryExpression}>
                                         <Input
                                             type="checkbox"
                                             value={skipped.suggested.queryExpression}
