@@ -530,6 +530,10 @@ const SiteSchemaJSON = `{
           "type": "string"
         },
         "disableTLS": {
+          "description": "DEPRECATED: use noVerifyTLS instead, this field will be removed in a future release",
+          "type": "boolean"
+        },
+        "noVerifyTLS": {
           "description": "Disable TLS verification",
           "type": "boolean"
         }

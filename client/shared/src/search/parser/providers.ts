@@ -37,6 +37,7 @@ export function getProviders(
     options: {
         patternType: SearchPatternType
         globbing: boolean
+        enableSmartQuery: boolean
         interpretComments?: boolean
     }
 ): SearchFieldProviders {
@@ -55,10 +56,10 @@ export function getProviders(
         tokens: {
             getInitialState: () => SCANNER_STATE,
             tokenize: line => {
-                const result = scanSearchQuery(line, options.interpretComments ?? false)
+                const result = scanSearchQuery(line, options.interpretComments ?? false, options.patternType)
                 if (result.type === 'success') {
                     return {
-                        tokens: getMonacoTokens(result.term),
+                        tokens: getMonacoTokens(result.term, options.enableSmartQuery),
                         endState: SCANNER_STATE,
                     }
                 }

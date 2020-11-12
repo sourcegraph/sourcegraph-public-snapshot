@@ -3,6 +3,7 @@ package git
 import (
 	"context"
 	"fmt"
+	"io"
 	"testing"
 	"time"
 
@@ -403,5 +404,154 @@ func TestRepository_Commits_options_path(t *testing.T) {
 				t.Errorf("%s: got commit %d == %+v, want %+v", label, i, gotC, wantC)
 			}
 		}
+	}
+}
+
+// Test we return errLogOnelineBatchScannerClosed is returned. It is very
+// complicated to ensure we cover the code paths we care about.
+func TestLogOnelineBatchScanner_batchclosed(t *testing.T) {
+	t.Parallel()
+
+	// We want this flow. This is to ensure we close while doing batch
+	// collection.
+	//
+	// 1. scan
+	// 2. scan
+	// 3. cleanup
+	// 4. scan
+	//
+	// So we use channels to orchestrate it, named after the numbered step
+	// above.
+	step3 := make(chan struct{})
+	step4 := make(chan struct{})
+	scanCount := 0
+	scan := func() (*onelineCommit, error) {
+		// make things a little slower to allow other goroutines to run.
+		time.Sleep(10 * time.Millisecond)
+
+		scanCount++
+		if scanCount == 2 {
+			// allow step3 to run (cleanup)
+			close(step3)
+		} else if scanCount == 3 {
+			// we are step4, wait for step3 to run
+			<-step4
+		}
+		return &onelineCommit{}, nil
+	}
+
+	next, cleanup := logOnelineBatchScanner(scan, 10000, 5*time.Second)
+
+	go func() {
+		<-step3
+		cleanup()
+		close(step4)
+	}()
+
+	var err error
+	for err == nil {
+		_, err = next()
+	}
+	if err != errLogOnelineBatchScannerClosed {
+		t.Fatal("unexpected error:", err)
+	}
+}
+
+// This test is much simpler since we just set the batchsize to 1 to ensure we
+// only ever test the first attempt to read resultC
+func TestLogOnelineBatchScanner_closed(t *testing.T) {
+	t.Parallel()
+
+	scan := func() (*onelineCommit, error) {
+		return &onelineCommit{}, nil
+	}
+
+	next, cleanup := logOnelineBatchScanner(scan, 1, 5*time.Second)
+	cleanup()
+
+	var err error
+	for err == nil {
+		_, err = next()
+	}
+	if err != errLogOnelineBatchScannerClosed {
+		t.Fatal("unexpected error:", err)
+	}
+}
+
+func TestLogOnelineBatchScanner_debounce(t *testing.T) {
+	t.Parallel()
+
+	// used to prevent scan blocking forever.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// First call return a commit. Second call wait until timeout on ctx.
+	scanCount := 0
+	scan := func() (*onelineCommit, error) {
+		scanCount++
+		if scanCount == 1 {
+			return &onelineCommit{}, nil
+		} else {
+			<-ctx.Done()
+			return nil, ctx.Err()
+		}
+	}
+
+	next, cleanup := logOnelineBatchScanner(scan, 100, time.Millisecond)
+	defer cleanup()
+
+	commits, err := next()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(commits) != 1 {
+		t.Fatalf("expected 1 commit, got %d", len(commits))
+	}
+	if ctx.Err() != nil {
+		t.Fatal("timedout out before debounce timeout")
+	}
+}
+
+func TestLogOnelineBatchScanner_empty(t *testing.T) {
+	t.Parallel()
+
+	scan := func() (*onelineCommit, error) {
+		return nil, io.EOF
+	}
+
+	next, cleanup := logOnelineBatchScanner(scan, 100, 5*time.Second)
+	defer cleanup()
+
+	if _, err := next(); err != io.EOF {
+		t.Fatal("unexpected error:", err)
+	}
+}
+
+func TestLogOnelineBatchScanner_small(t *testing.T) {
+	t.Parallel()
+
+	wantCommits := 20
+	scanCount := 0
+	scan := func() (*onelineCommit, error) {
+		scanCount++
+		if scanCount <= wantCommits {
+			return &onelineCommit{}, nil
+		} else {
+			return nil, io.EOF
+		}
+	}
+
+	// ensure batch size is bigger than number of commits we return.
+	next, cleanup := logOnelineBatchScanner(scan, wantCommits*3, 5*time.Second)
+	defer cleanup()
+
+	if commits, err := next(); err != nil {
+		t.Fatal("expected commits, got err:", err)
+	} else if len(commits) != wantCommits {
+		t.Fatalf("wanted %d commits, got %d", wantCommits, len(commits))
+	}
+
+	if _, err := next(); err != io.EOF {
+		t.Fatal("unexpected error:", err)
 	}
 }
