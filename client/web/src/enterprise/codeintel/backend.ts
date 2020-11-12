@@ -58,7 +58,6 @@ export const lsifIndexFieldsFragment = gql`
             }
         }
         state
-        # logContents
         failure
         queuedAt
         startedAt
