@@ -66,6 +66,8 @@ interface Props
     availableVersionContexts: VersionContext[] | undefined
     /** Whether globbing is enabled for filters. */
     globbing: boolean
+    // Whether to additionally highlight or provide hovers for tokens, e.g., regexp character sets.
+    enableSmartQuery: boolean
     /** Show the query builder link. */
     showQueryBuilder: boolean
     /** A query fragment to appear at the beginning of the input. */

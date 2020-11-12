@@ -800,7 +800,7 @@ END
 `
 
 // aggregatedUserIDQueryFragment is a query fragment that can be used to canonicalize the
-// values of the  user_id and anonymous_user_id fields (assumed in scope) int a unified value.
+// values of the user_id and anonymous_user_id fields (assumed in scope) int a unified value.
 const aggregatedUserIDQueryFragment = `
 CASE WHEN user_id = 0
   -- It's faster to group by an int rather than text, so we convert
