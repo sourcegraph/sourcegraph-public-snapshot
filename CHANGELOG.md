@@ -19,6 +19,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- `src campaign [apply|preview]` now caches the result of running steps in a repository even if they didn't produce changes.
+
 ## 3.21.8
 
 ### Fixed
