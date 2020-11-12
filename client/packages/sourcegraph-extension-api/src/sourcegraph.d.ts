@@ -1611,16 +1611,29 @@ declare module 'sourcegraph' {
 
     export namespace graphQL {
         /**
-         * Executes a [Sourcegraph GraphQL API](https://docs.sourcegraph.com/api/graphql)  query or mutation on the associated Sourcegraph instance and returns a promise for the result.
+         * Executes a [Sourcegraph GraphQL API](https://docs.sourcegraph.com/api/graphql) query or mutation on the associated Sourcegraph instance and returns a promise for the result.
          *
-         * @param query The GraphQL query
-         * @param variables A key/value object with variable values
-         * @returns Promise for the result of the GraphQL query
+         * @template TResult The GraphQL result type
+         * @template TVariables The type of the variables object
+         * @param request The GraphQL request (query or mutation)
+         * @param variables An object whose properties are GraphQL query name-value variable pairs
+         * @returns A Promise for the result of the GraphQL request
          */
-        export function queryGraphQL<TResult extends object = any, TVariables extends object = any>(
-            query: string,
+        export function requestGraphQL<TResult, TVariables extends object>(
+            request: string,
             variables: TVariables
-        ): Promise<TResult>
+        ): Promise<GraphQLResult<TResult>>
+
+        export type GraphQLResult<T> = SuccessGraphQLResult<T> | ErrorGraphQLResult
+
+        export interface SuccessGraphQLResult<T> {
+            data: T
+            errors: undefined
+        }
+        export interface ErrorGraphQLResult {
+            data: undefined
+            errors: GQL.IGraphQLResponseError[]
+        }
     }
 
     /**

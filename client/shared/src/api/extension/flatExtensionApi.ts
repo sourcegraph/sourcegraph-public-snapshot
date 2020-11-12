@@ -18,6 +18,7 @@ import { Hover, Location } from '@sourcegraph/extension-api-types'
 import { castArray, isEqual } from 'lodash'
 import { fromHoverMerged, HoverMerged } from '../client/types/hover'
 import { isNot, isExactly, isDefined } from '../../util/types'
+import { GraphQLResult } from '../../graphql/graphql'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -229,8 +230,9 @@ export const initNewExtensionAPI = (
 
     // GraphQL
     const graphQL: typeof sourcegraph['graphQL'] = {
-        // `graphQL.queryGraphQL` is simply a discoverable wrapper over the `queryGraphQL` command.
-        queryGraphQL: (query, variables) => commands.executeCommand('queryGraphQL', query, variables),
+        requestGraphQL: <TResult, TVariables extends object>(query: string, variables: TVariables) =>
+            // Remote functions lose generic type parameters, so we have to cast the result
+            (mainAPI.requestGraphQL(query, variables) as unknown) as Promise<GraphQLResult<TResult>>,
     }
 
     return {

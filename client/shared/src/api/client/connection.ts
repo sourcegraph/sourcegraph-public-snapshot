@@ -56,7 +56,7 @@ export async function createExtensionHostClientConnection(
     endpointsPromise: Promise<ClosableEndpointPair>,
     services: Services,
     initData: Omit<InitData, 'initialSettings'>,
-    platformContext: Pick<PlatformContext, 'settings' | 'updateSettings'>
+    platformContext: Pick<PlatformContext, 'settings' | 'updateSettings' | 'requestGraphQL'>
 ): Promise<{ subscription: Unsubscribable; api: comlink.Remote<FlatExtensionHostAPI> }> {
     const subscription = new Subscription()
 

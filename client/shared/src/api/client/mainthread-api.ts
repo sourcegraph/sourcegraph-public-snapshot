@@ -13,7 +13,7 @@ export type MainThreadAPIDependencies = Pick<Services, 'commands' | 'workspace'>
 
 export const initMainThreadAPI = (
     extensionHost: Remote<FlatExtensionHostAPI>,
-    platformContext: Pick<PlatformContext, 'updateSettings' | 'settings'>,
+    platformContext: Pick<PlatformContext, 'updateSettings' | 'settings' | 'requestGraphQL'>,
     dependencies: MainThreadAPIDependencies
 ): { api: MainThreadAPI; subscription: Subscription } => {
     const {
@@ -48,9 +48,20 @@ export const initMainThreadAPI = (
             .subscribe()
     )
 
-    // Commands
     const api: MainThreadAPI = {
         applySettingsEdit: edit => updateSettings(platformContext, edit),
+        requestGraphQL: <TResult extends object = any, TVariables extends object = any>(
+            request: string,
+            variables: TVariables
+        ) =>
+            from(
+                platformContext.requestGraphQL<TResult, TVariables>({
+                    request,
+                    variables,
+                    mightContainPrivateInfo: true,
+                })
+            ).toPromise(),
+        // Commands
         executeCommand: (command, args) => commands.executeCommand({ command, arguments: args }),
         registerCommand: (command, run) => {
             const subscription = new Subscription()
