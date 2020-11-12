@@ -52,4 +52,4 @@ Campaigns are uniquely identified by their name and namespace. The namespace can
 
 By default, campaigns will use your username on Sourcegraph as your namespace. To create campaigns in a different namespace:
 
-  <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -namespace <em>USERNAME_OR_ORG</em></code></pre>
+<pre><code>src campaign preview -f YOUR_CAMPAIGN_SPEC.campaign.yaml -namespace <em>USERNAME_OR_ORG</em></code></pre>
