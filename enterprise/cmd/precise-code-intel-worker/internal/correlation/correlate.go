@@ -46,7 +46,7 @@ func Correlate(ctx context.Context, r io.Reader, dumpID int, root string, getChi
 func correlateFromReaderWrapped(ctx context.Context, r io.Reader, root string, metrics metrics.WorkerMetrics) (_ *State, err error) {
 	_, endOperation := metrics.CorrelateOperation.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
-	return correlateFromReader(r, root)
+	return correlateFromReader(ctx, r, root)
 }
 
 func canonicalizeWrapped(ctx context.Context, state *State, metrics metrics.WorkerMetrics) (err error) {
@@ -70,8 +70,8 @@ func groupBundleDataWrapped(ctx context.Context, state *State, dumpID int, metri
 
 // correlateFromReader reads the given upload stream and returns a correlation state object.
 // The data in the correlation state is neither canonicalized nor pruned.
-func correlateFromReader(r io.Reader, root string) (*State, error) {
-	ctx, cancel := context.WithCancel(context.Background())
+func correlateFromReader(ctx context.Context, r io.Reader, root string) (*State, error) {
+	ctx, cancel := context.WithCancel(ctx)
 	ch := lsif.Read(ctx, r)
 	defer func() {
 		// stop producer from reading more input on correlation error
