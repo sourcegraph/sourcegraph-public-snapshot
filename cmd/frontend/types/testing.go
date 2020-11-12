@@ -50,21 +50,35 @@ func MakeRepo(name, serviceID, serviceType string, services ...*ExternalService)
 // MakeGithubRepo returns a configured Github repository.
 func MakeGithubRepo(services ...*ExternalService) *Repo {
 	repo := MakeRepo("github.com/foo/bar", "http://github.com", extsvc.TypeGitHub, services...)
-	repo.RepoFields.Metadata = new(github.Repository)
+	repo.RepoFields.Metadata = &github.Repository{
+		ID:            "bar",
+		NameWithOwner: "foo/bar",
+	}
 	return repo
 }
 
 // MakeGitlabRepo returns a configured Gitlab repository.
 func MakeGitlabRepo(services ...*ExternalService) *Repo {
 	repo := MakeRepo("gitlab.com/foo/bar", "http://gitlab.com", extsvc.TypeGitLab, services...)
-	repo.RepoFields.Metadata = new(gitlab.Project)
+	repo.RepoFields.Metadata = &gitlab.Project{
+		ProjectCommon: gitlab.ProjectCommon{
+			ID:                1,
+			PathWithNamespace: "foo/bar",
+		},
+	}
 	return repo
 }
 
 // MakeBitbucketServerRepo returns a configured Bitbucket Server repository.
 func MakeBitbucketServerRepo(services ...*ExternalService) *Repo {
 	repo := MakeRepo("bitbucketserver.mycorp.com/foo/bar", "http://bitbucketserver.mycorp.com", extsvc.TypeBitbucketServer, services...)
-	repo.RepoFields.Metadata = new(bitbucketserver.Repo)
+	repo.RepoFields.Metadata = &bitbucketserver.Repo{
+		ID:   1,
+		Slug: "bar",
+		Project: &bitbucketserver.Project{
+			Key: "foo",
+		},
+	}
 	return repo
 }
 

@@ -93,6 +93,11 @@ func Main(enterpriseInit EnterpriseInit) {
 	repos.MustRegisterMetrics(db)
 
 	store := repos.NewStore(db, sql.TxOptions{Isolation: sql.LevelDefault})
+	{
+		m := repos.NewStoreMetrics()
+		m.MustRegister(prometheus.DefaultRegisterer)
+		store.Metrics = m
+	}
 
 	cf := httpcli.NewExternalHTTPClientFactory()
 

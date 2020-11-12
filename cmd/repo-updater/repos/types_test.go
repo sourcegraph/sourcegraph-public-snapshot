@@ -540,7 +540,7 @@ func TestSyncRateLimiters(t *testing.T) {
 			services = append(services, svc)
 		}
 		return &MockExternalServicesLister{
-			listExternalServices: func(ctx context.Context, opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			list: func(ctx context.Context, opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				return services, nil
 			},
 		}
@@ -684,9 +684,9 @@ func TestSyncRateLimiters(t *testing.T) {
 }
 
 type MockExternalServicesLister struct {
-	listExternalServices func(ctx context.Context, opt db.ExternalServicesListOptions) ([]*types.ExternalService, error)
+	list func(ctx context.Context, opt db.ExternalServicesListOptions) ([]*types.ExternalService, error)
 }
 
 func (m MockExternalServicesLister) List(ctx context.Context, opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-	return m.List(ctx, opt)
+	return m.list(ctx, opt)
 }

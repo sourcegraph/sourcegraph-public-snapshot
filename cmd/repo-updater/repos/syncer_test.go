@@ -49,17 +49,19 @@ func testSyncerSyncWithErrors(t *testing.T, store *repos.Store) func(t *testing.
 			err        string
 		}{
 			{
-				name:    "sourcer error aborts sync",
-				sourcer: repos.NewFakeSourcer(errors.New("boom")),
-				store:   store,
-				err:     "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
+				name:       "sourcer error aborts sync",
+				sourcer:    repos.NewFakeSourcer(errors.New("boom")),
+				store:      store,
+				repoLister: store.RepoStore(),
+				err:        "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
 			},
 			{
 				name:    "store list error aborts sync",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(&githubService, nil)),
-				store: &storeWithErrors{
-					Store:        store,
-					ListReposErr: errors.New("boom"),
+				store:   store,
+				repoLister: &repoListerWithErrors{
+					RepoStore: store.RepoStore(),
+					ListErr:   errors.New("boom"),
 				},
 				err: "syncer.sync.store.list-repos: boom",
 			},
@@ -70,7 +72,8 @@ func testSyncerSyncWithErrors(t *testing.T, store *repos.Store) func(t *testing.
 					Store:          store,
 					UpsertReposErr: errors.New("booya"),
 				},
-				err: "syncer.sync.store.upsert-repos: booya",
+				repoLister: store.RepoStore(),
+				err:        "syncer.sync.store.upsert-repos: booya",
 			},
 		} {
 			tc := tc
@@ -104,15 +107,7 @@ func testSyncerSyncWithErrors(t *testing.T, store *repos.Store) func(t *testing.
 type storeWithErrors struct {
 	*repos.Store
 
-	ListReposErr   error
 	UpsertReposErr error
-}
-
-func (s *storeWithErrors) ListRepos(ctx context.Context, args db.ReposListOptions) ([]*types.Repo, error) {
-	if s.ListReposErr != nil {
-		return nil, s.ListReposErr
-	}
-	return s.Store.RepoStore().List(ctx, args)
 }
 
 func (s *storeWithErrors) UpsertRepos(ctx context.Context, repos ...*types.Repo) error {
@@ -120,6 +115,19 @@ func (s *storeWithErrors) UpsertRepos(ctx context.Context, repos ...*types.Repo)
 		return s.UpsertReposErr
 	}
 	return s.Store.UpsertRepos(ctx, repos...)
+}
+
+type repoListerWithErrors struct {
+	*db.RepoStore
+
+	ListErr error
+}
+
+func (s *repoListerWithErrors) List(ctx context.Context, args db.ReposListOptions) ([]*types.Repo, error) {
+	if s.ListErr != nil {
+		return nil, s.ListErr
+	}
+	return s.RepoStore.List(ctx, args)
 }
 
 func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {

@@ -178,7 +178,7 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 	urn := s.svc.URN()
 	for _, r := range data.Items {
 		// The only required field is URI
-		if r.URI == "" {
+		if r.RepoFields == nil || r.URI == "" {
 			return nil, errors.Errorf("repo without URI returned from src-expose: %+v", r)
 		}
 

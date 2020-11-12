@@ -12,7 +12,6 @@ import (
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	internaldb "github.com/sourcegraph/sourcegraph/internal/db"
@@ -41,14 +40,10 @@ type Store struct {
 // NewStore instantiates and returns a new Store with prepared statements.
 // Store wraps a basestore with error logging, Prometheus metrics and tracing.
 func NewStore(db dbutil.DB, txOpts sql.TxOptions) *Store {
-	m := NewStoreMetrics()
-	m.MustRegister(prometheus.DefaultRegisterer)
-
 	return &Store{
-		Store:   basestore.NewWithDB(db, txOpts),
-		Log:     log15.Root(),
-		Metrics: m,
-		Tracer:  trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Store:  basestore.NewWithDB(db, txOpts),
+		Log:    log15.Root(),
+		Tracer: trace.Tracer{Tracer: opentracing.GlobalTracer()},
 	}
 }
 
