@@ -2,23 +2,16 @@ import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import React, { useCallback, useState, useMemo, useEffect } from 'react'
+import React, { useCallback, useState, useMemo } from 'react'
 import { Button, Popover, PopoverBody } from 'reactstrap'
 import { defaultProgress, StreamingProgressProps } from './StreamingProgress'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
 export const StreamingProgressSkippedButton: React.FunctionComponent<StreamingProgressProps> = ({
     progress = defaultProgress,
-    popoverOpen = false,
 }) => {
-    const [isOpen, setIsOpen] = useState(popoverOpen)
+    const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => setIsOpen(previous => !previous), [setIsOpen])
-
-    // Shouldn't render popover initially, wait until component is initialized to render it.
-    const [renderPopover, setRenderPopover] = useState(false)
-    useEffect(() => {
-        setRenderPopover(true)
-    }, [])
 
     const skippedWithWarning = useMemo(() => progress.skipped.some(skipped => skipped.severity === 'warn'), [progress])
 
@@ -42,19 +35,17 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<StreamingPr
                         Some repositories excluded
                         <MenuDownIcon className="icon-inline" />
                     </Button>
-                    {renderPopover && (
-                        <Popover
-                            placement="bottom-start"
-                            isOpen={isOpen}
-                            toggle={toggleOpen}
-                            target="streaming-progress__skipped"
-                            hideArrow={true}
-                        >
-                            <PopoverBody className="streaming-progress__skipped-popover">
-                                <StreamingProgressSkippedPopover progress={progress} />
-                            </PopoverBody>
-                        </Popover>
-                    )}
+                    <Popover
+                        placement="bottom-start"
+                        isOpen={isOpen}
+                        toggle={toggleOpen}
+                        target="streaming-progress__skipped"
+                        hideArrow={true}
+                    >
+                        <PopoverBody className="streaming-progress__skipped-popover">
+                            <StreamingProgressSkippedPopover progress={progress} />
+                        </PopoverBody>
+                    </Popover>
                 </>
             )}
         </>

@@ -323,7 +323,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         >
           <Label
             check={true}
-            className="mb-1"
+            className="mb-1 d-block"
             key="forked:yes"
             tag="label"
             widths={
@@ -337,7 +337,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             }
           >
             <label
-              className="mb-1 form-check-label"
+              className="mb-1 d-block form-check-label"
             >
               <Input
                 onChange={[Function]}
@@ -368,7 +368,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           </Label>
           <Label
             check={true}
-            className="mb-1"
+            className="mb-1 d-block"
             key="archived:yes"
             tag="label"
             widths={
@@ -382,7 +382,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             }
           >
             <label
-              className="mb-1 form-check-label"
+              className="mb-1 d-block form-check-label"
             >
               <Input
                 onChange={[Function]}
@@ -419,7 +419,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           </Label>
           <Label
             check={true}
-            className="mb-1"
+            className="mb-1 d-block"
             key="timeout:2m"
             tag="label"
             widths={
@@ -433,7 +433,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             }
           >
             <label
-              className="mb-1 form-check-label"
+              className="mb-1 d-block form-check-label"
             >
               <Input
                 onChange={[Function]}

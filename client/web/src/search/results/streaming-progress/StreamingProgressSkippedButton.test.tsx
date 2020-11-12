@@ -150,42 +150,4 @@ describe('StreamingProgressSkippedButton', () => {
         popover = element.find(Popover)
         expect(popover.prop('isOpen')).toBe(false)
     })
-
-    it('should start with popover open if prop is set', () => {
-        const progress: Progress = {
-            done: true,
-            durationMs: 1500,
-            matchCount: 2,
-            repositoriesCount: 2,
-            skipped: [
-                {
-                    reason: 'excluded-fork',
-                    message: '10k forked repositories excluded',
-                    severity: 'info',
-                    title: '10k forked repositories excluded',
-                    suggested: {
-                        title: 'forked:yes',
-                        queryExpression: 'forked:yes',
-                    },
-                },
-                {
-                    reason: 'excluded-archive',
-                    message: '60k archived repositories excluded',
-                    severity: 'info',
-                    title: '60k archived repositories excluded',
-                    suggested: {
-                        title: 'archived:yes',
-                        queryExpression: 'archived:yes',
-                    },
-                },
-            ],
-        }
-
-        const element = mount(<StreamingProgressSkippedButton progress={progress} popoverOpen={true} />, {
-            attachTo: div,
-        })
-
-        const popover = element.find(Popover)
-        expect(popover.prop('isOpen')).toBe(true)
-    })
 })

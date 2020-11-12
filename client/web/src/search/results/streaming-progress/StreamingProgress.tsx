@@ -5,7 +5,6 @@ import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton
 
 export interface StreamingProgressProps {
     progress?: Progress
-    popoverOpen?: boolean
     onSearchAgain?: (additionalFilters: string[]) => void
 }
 

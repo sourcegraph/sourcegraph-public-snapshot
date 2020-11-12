@@ -54,7 +54,11 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<StreamingP
                         {progress.skipped.map(
                             skipped =>
                                 skipped.suggested && (
-                                    <Label check={true} className="mb-1" key={skipped.suggested.queryExpression}>
+                                    <Label
+                                        check={true}
+                                        className="mb-1 d-block"
+                                        key={skipped.suggested.queryExpression}
+                                    >
                                         <Input
                                             type="checkbox"
                                             value={skipped.suggested.queryExpression}
