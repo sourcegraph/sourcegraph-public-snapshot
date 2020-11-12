@@ -50,6 +50,6 @@ You can update a campaign's changes at any time, even after you've published cha
 
 Campaigns are uniquely identified by their name and namespace. The namespace can be any Sourcegraph username or the name of a Sourcegraph organization.
 
-By default, campaigns will use your username on Sourcegraph as your namespace. To create campaigns in a different namespace:
+By default, campaigns will use your username on Sourcegraph as your namespace. To create campaigns in a different namespace use the `-namespace` flag when running previewing or applying a campaign spec:
 
 <pre><code>src campaign preview -f YOUR_CAMPAIGN_SPEC.campaign.yaml -namespace <em>USERNAME_OR_ORG</em></code></pre>
