@@ -375,9 +375,7 @@ func rawShowSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearc
 	}
 	showCmd := gitserver.DefaultClient.Command("git", showArgs...)
 	showCmd.Repo = repo
-	ctxShow, cancel := withDeadlinePercentage(ctx, 0.8) // leave time for the filterAndResolveRef calls (HACK(sqs): hacky heuristic!)
-	data, complete, err := readUntilTimeout(ctxShow, showCmd)
-	cancel()
+	data, complete, err := readUntilTimeout(ctx, showCmd)
 	if err != nil {
 		return nil, complete, err
 	}
@@ -581,19 +579,6 @@ func filterAndResolveRefs(ctx context.Context, repo gitserver.Repo, refs []strin
 		filtered = append(filtered, ref)
 	}
 	return filtered, nil
-}
-
-// withDeadlinePercentage returns a context which expires once p of the
-// remaining time has passed. p decimal fraction in [0,1]. For example to
-// expire in half the remaining time set p to 0.5. To expire in 80% of the
-// remaining time, set p to 0.8.
-func withDeadlinePercentage(ctx context.Context, p float64) (context.Context, context.CancelFunc) {
-	if deadline, ok := ctx.Deadline(); ok {
-		now := time.Now()
-		d := time.Duration(float64(deadline.Sub(now)) * p)
-		return context.WithDeadline(ctx, now.Add(d))
-	}
-	return context.WithCancel(ctx)
 }
 
 func deadlineLabel(ctx context.Context) string {
