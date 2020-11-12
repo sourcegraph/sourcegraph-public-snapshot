@@ -74,7 +74,16 @@ func templateToRegexp(buf []byte) []Term {
 		r = next()
 		switch r {
 		case ':':
+			if open > 0 {
+				currentHole = append(currentHole, ':')
+				continue
+			}
 			if len(buf[advance:]) > 0 {
+				if buf[advance] == ':' {
+					// maybe the start of another hole like ::[foo]
+					currentLiteral = append(currentLiteral, ':')
+					continue
+				}
 				r = next()
 				if r == '[' {
 					open++

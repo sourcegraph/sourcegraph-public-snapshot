@@ -30,12 +30,10 @@ body,
 // or identifying the token the references panel is toggled for
 .selection-highlight,
 .selection-highlight-sticky {
-    background-color: rgba(217, 72, 15, 0.5);
-}
-
-.theme-light {
-    .selection-highlight,
-    .selection-highlight-sticky {
+    .theme-dark & {
+        background-color: rgba(217, 72, 15, 0.5);
+    }
+    .theme-light & {
         background-color: rgba(255, 192, 120, 0.5);
     }
 }
@@ -107,13 +105,11 @@ body,
 @import './repo/settings/RepoSettingsArea';
 @import './repo/actions//InstallBrowserExtensionPopover.scss';
 @import './repo/actions/InstallBrowserExtensionAlert.scss';
-@import '../../branded/src/components/CodeSnippet';
 @import './components/PageHeader';
 @import './components/completion/CompletionWidgetDropdown';
 @import './components/CopyableText';
 @import './components/FilteredConnection';
 @import './components/SaveToolbar';
-@import './components/DecoratedTextLines';
 @import './components/HeroPage';
 @import './components/ModalPage';
 @import './components/RadioButtons';

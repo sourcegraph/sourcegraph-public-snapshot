@@ -8,8 +8,6 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
-
-	"github.com/inconshreveable/log15"
 )
 
 /*
@@ -68,13 +66,10 @@ type Operator struct {
 }
 
 func (node Pattern) String() string {
-	var v string
 	if node.Negated {
-		v = fmt.Sprintf("NOT %s", node.Value)
-	} else {
-		v = node.Value
+		return fmt.Sprintf("(not %s)", strconv.Quote(node.Value))
 	}
-	return strconv.Quote(v)
+	return strconv.Quote(node.Value)
 }
 
 func (node Parameter) String() string {
@@ -239,7 +234,8 @@ func (p *parser) matchKeyword(keyword keyword) bool {
 
 // matchUnaryKeyword is like match but expects the keyword to be followed by whitespace.
 func (p *parser) matchUnaryKeyword(keyword keyword) bool {
-	if p.pos != 0 && !isSpace(p.buf[p.pos-1:p.pos]) {
+	if p.pos != 0 && !(isSpace(p.buf[p.pos-1:p.pos]) || p.buf[p.pos-1] == '(') {
+		// "not" must be preceded by a space or ( anywhere except the beginning of the string
 		return false
 	}
 	v, err := p.peek(len(string(keyword)))
@@ -267,9 +263,9 @@ func (p *parser) skipSpaces() error {
 	return nil
 }
 
-// ScanAnyPatternLiteral consumes all characters up to a whitespace character
+// ScanAnyPattern consumes all characters up to a whitespace character
 // and returns the string and how much it consumed.
-func ScanAnyPatternLiteral(buf []byte) (scanned string, count int) {
+func ScanAnyPattern(buf []byte) (scanned string, count int) {
 	var advance int
 	var r rune
 	var result []rune
@@ -293,18 +289,26 @@ func ScanAnyPatternLiteral(buf []byte) (scanned string, count int) {
 	return scanned, count
 }
 
-// isField returns whether the prefix of the buf matches a recognized field.
-func isField(buf []byte) bool {
-	field, _, _ := ScanField(buf)
-	return field != ""
-}
-
-// ScanBalancedPatternLiteral attempts to scan parentheses as literal patterns.
-// It returns the scanned string, how much to advance, and whether it succeeded.
-// Basically it scans any literal string, including whitespace, but ensures that
-// a resulting string does not contain 'and' or 'or keywords, nor parameters, and
-// is balanced.
-func ScanBalancedPatternLiteral(buf []byte) (scanned string, count int, ok bool) {
+// ScanBalancedPattern attempts to scan parentheses as literal patterns. This
+// ensures that we interpret patterns containing parentheses _as patterns_ and not
+// groups. For example, it accepts these patterns:
+//
+// ((a|b)|c)              - a regular expression with balanced parentheses for grouping
+// myFunction(arg1, arg2) - a literal string with parens that should be literally interpreted
+// foo(...)               - a structural search pattern
+//
+// If it weren't for this scanner, the above parentheses would have to be
+// interpreted as part of the query language group syntax, like these:
+//
+// (foo or (bar and baz))
+//
+// So, this scanner detects parentheses as patterns without needing the user to
+// explicitly escape them. As such, there are cases where this scanner should
+// not succeed:
+//
+// (foo or (bar and baz)) - a valid query with and/or expression groups in the query langugae
+// (repo:foo bar baz)     - a valid query containing a recognized repo: field. Here parentheses are interpreted as a group, not a pattern.
+func ScanBalancedPattern(buf []byte) (scanned string, count int, ok bool) {
 	var advance, balanced int
 	var r rune
 	var result []rune
@@ -316,7 +320,31 @@ func ScanBalancedPatternLiteral(buf []byte) (scanned string, count int, ok bool)
 		return r
 	}
 
-	var token []byte
+	// looks ahead to see if there are any recognized fields or operators.
+	keepScanning := func() bool {
+		if field, _, _ := ScanField(buf); field != "" {
+			// This "pattern" contains a recognized field, reject it.
+			return false
+		}
+		lookahead := func(v string) bool {
+			if len(buf) < len(v) {
+				return false
+			}
+			lookaheadStr := string(buf[:len(v)])
+			return strings.EqualFold(lookaheadStr, v)
+		}
+		if lookahead("and ") ||
+			lookahead("or ") ||
+			lookahead("not ") {
+			// This "pattern" contains a recognized keyword, reject it.
+			return false
+		}
+		return true
+	}
+
+	if !keepScanning() {
+		return "", 0, false
+	}
 
 loop:
 	for len(buf) > 0 {
@@ -329,6 +357,9 @@ loop:
 			count = start
 			break loop
 		case r == '(':
+			if !keepScanning() {
+				return "", 0, false
+			}
 			balanced++
 			result = append(result, r)
 		case r == ')':
@@ -343,11 +374,9 @@ loop:
 			}
 			result = append(result, r)
 		case unicode.IsSpace(r):
-			if isField(token) {
-				// This is not a pattern, one of the tokens match a field.
+			if !keepScanning() {
 				return "", 0, false
 			}
-			token = []byte{}
 
 			// We see a space and the pattern is unbalanced, so assume this
 			// this space is still part of the pattern.
@@ -365,23 +394,11 @@ loop:
 			}
 			result = append(result, r)
 		default:
-			token = append(token, []byte(string(r))...)
 			result = append(result, r)
 		}
 	}
 
-	if isField(token) {
-		// This is not a pattern, one of the tokens match a field.
-		return "", 0, false
-	}
-
-	scanned = string(result)
-	if ContainsAndOrKeyword(scanned) {
-		// Reject if we scanned 'and' or 'or'. Preceding parentheses
-		// likely refer to a group, not a pattern.
-		return "", 0, false
-	}
-	return scanned, count, balanced == 0
+	return string(result), count, balanced == 0
 }
 
 // ScanDelimited takes a delimited (e.g., quoted) value for some arbitrary
@@ -514,9 +531,9 @@ func ScanField(buf []byte) (string, bool, int) {
 // ScanValue scans for a value (e.g., of a parameter, or a string corresponding
 // to a search pattern). Its main function is to determine when to stop scanning
 // a value (e.g., at a parentheses), and which escape sequences to interpret. It
-// returns the scanned value, how much was advanced, and whether the
-// allowDanglingParenthesis heuristic was applied
-func ScanValue(buf []byte, allowDanglingParens bool) (string, int, bool) {
+// returns the scanned value, how much was advanced, and whether to allow
+// scanning dangling parentheses in patterns like "foo(".
+func ScanValue(buf []byte, allowDanglingParens bool) (string, int) {
 	var count, advance, balanced int
 	var r rune
 	var result []rune
@@ -559,7 +576,7 @@ func ScanValue(buf []byte, allowDanglingParens bool) (string, int, bool) {
 		}
 		result = append(result, r)
 	}
-	return string(result), count, balanced != 0
+	return string(result), count
 }
 
 // TryParseDelimiter tries to parse a delimited string, returning the
@@ -621,21 +638,18 @@ func (p *parser) ParseFieldValue() (string, error) {
 	}
 	// First try scan a field value for cases like (a b repo:foo), where a
 	// trailing ) may be closing a group, and not part of the value.
-	value, advance, ok := ScanBalancedPatternLiteral(p.buf[p.pos:])
+	value, advance, ok := ScanBalancedPattern(p.buf[p.pos:])
 	if !ok {
 		// The above failed, so attempt a best effort.
-		value, advance, _ = ScanValue(p.buf[p.pos:], false)
+		value, advance = ScanValue(p.buf[p.pos:], false)
 	}
 	p.pos += advance
 	return value, nil
 }
 
-// ParsePatternRegexp parses a leaf node Pattern that corresponds to a search pattern.
-// Note that ParsePattern may be called multiple times (a query can have
-// multiple Patterns concatenated together).
-func (p *parser) ParsePatternRegexp() Pattern {
+// Try parse a delimited pattern, quoted as "...", '...', or /.../.
+func (p *parser) TryParseDelimitedPattern() (Pattern, bool) {
 	start := p.pos
-	// If we can parse a well-delimited value, that takes precedence.
 	if value, delimiter, ok := p.TryParseDelimiter(); ok {
 		var labels labels
 		if delimiter == '/' {
@@ -644,73 +658,62 @@ func (p *parser) ParsePatternRegexp() Pattern {
 		} else {
 			labels = Literal | Quoted
 		}
-		return Pattern{
-			Value:   value,
-			Negated: false,
-			Annotation: Annotation{
-				Labels: labels,
-				Range:  newRange(start, p.pos),
-			},
-		}
+		return newPattern(value, false, labels, newRange(start, p.pos)), true
 	}
+	return Pattern{}, false
+}
 
-	if isSet(p.heuristics, parensAsPatterns) {
-		if value, advance, ok := ScanBalancedPatternLiteral(p.buf[p.pos:]); ok {
-			pattern := Pattern{
-				Value:   value,
-				Negated: false,
-				Annotation: Annotation{
-					Labels: Regexp,
-					Range:  newRange(p.pos, p.pos+advance),
-				},
-			}
-			p.pos += advance
-			return pattern
-		}
+func (p *parser) TryScanBalancedPattern(label labels) (Pattern, bool) {
+	if value, advance, ok := ScanBalancedPattern(p.buf[p.pos:]); ok {
+		pattern := newPattern(value, false, label, newRange(p.pos, p.pos+advance))
+		p.pos += advance
+		return pattern, true
 	}
+	return Pattern{}, false
+}
 
-	value, advance, sawDanglingParen := ScanValue(p.buf[p.pos:], isSet(p.heuristics, allowDanglingParens))
-	var labels labels
-	if sawDanglingParen {
-		labels = HeuristicDanglingParens | Regexp
-	} else {
-		labels = Regexp
-	}
-	p.pos += advance
-	// Invariant: the pattern can't be quoted since we checked for that.
+func newPattern(value string, negated bool, labels labels, range_ Range) Pattern {
 	return Pattern{
 		Value:   value,
 		Negated: false,
 		Annotation: Annotation{
 			Labels: labels,
-			Range:  newRange(start, p.pos),
+			Range:  range_,
 		},
 	}
 }
 
-func (p *parser) ParsePatternLiteral() Pattern {
-	start := p.pos
-	if value, advance, ok := ScanBalancedPatternLiteral(p.buf[p.pos:]); ok && value != "" {
-		p.pos += advance
-		return Pattern{
-			Value:   value,
-			Negated: false,
-			Annotation: Annotation{
-				Labels: Literal,
-				Range:  newRange(start, p.pos),
-			},
+// ParsePattern parses a leaf node Pattern that corresponds to a search pattern.
+// Note that ParsePattern may be called multiple times (a query can have
+// multiple Patterns concatenated together).
+func (p *parser) ParsePattern(label labels) Pattern {
+	if label.isSet(Regexp) {
+		// First try parse delimited values for regexp.
+		if pattern, ok := p.TryParseDelimitedPattern(); ok {
+			return pattern
 		}
 	}
-	value, advance := ScanAnyPatternLiteral(p.buf[p.pos:])
-	p.pos += advance
-	return Pattern{
-		Value:   value,
-		Negated: false,
-		Annotation: Annotation{
-			Labels: Literal,
-			Range:  newRange(start, p.pos),
-		},
+
+	if isSet(p.heuristics, parensAsPatterns) {
+		if pattern, ok := p.TryScanBalancedPattern(label); ok {
+			return pattern
+		}
 	}
+
+	start := p.pos
+	var value string
+	var advance int
+	if label.isSet(Regexp) {
+		value, advance = ScanValue(p.buf[p.pos:], isSet(p.heuristics, allowDanglingParens))
+	} else {
+		value, advance = ScanAnyPattern(p.buf[p.pos:])
+	}
+	if isSet(p.heuristics, allowDanglingParens) {
+		label.set(HeuristicDanglingParens)
+	}
+	p.pos += advance
+	return newPattern(value, false, label, newRange(start, p.pos))
+
 }
 
 // ParseParameter returns a leaf node corresponding to the syntax
@@ -769,155 +772,9 @@ func partitionParameters(nodes []Node) []Node {
 	return newOperator(append(unorderedParams, patterns...), And)
 }
 
-// concatPatterns extends the left pattern with the right pattern, appropriately
-// updating the ranges and annotations.
-func concatPatterns(left, right Pattern) (Pattern, error) {
-	if left.Annotation.Range.End.Column != right.Annotation.Range.Start.Column {
-		log15.Warn("parser can't process concatPatterns",
-			"left", left, "right", right,
-			"leftEnd", left.Annotation.Range.End.Column,
-			"rightBegin", right.Annotation.Range.Start.Column)
-		return Pattern{}, &UnsupportedError{Msg: "invalid query syntax"}
-	}
-	left.Value += right.Value
-	left.Annotation.Labels |= right.Annotation.Labels
-	left.Annotation.Range.End.Column += len(right.Value)
-	return left, nil
-}
-
-// parseLeavesLiteral scans for consecutive leaf nodes when interpreting the
-// query as containing literal patterns.
-func (p *parser) parseLeavesLiteral() ([]Node, error) {
-	var nodes []Node
-	start := p.pos
-loop:
-	for {
-		if err := p.skipSpaces(); err != nil {
-			return nil, err
-		}
-		if p.done() {
-			break loop
-		}
-		switch {
-		case p.match(LPAREN):
-			if value, advance, ok := ScanBalancedPatternLiteral(p.buf[p.pos:]); ok {
-				p.pos += advance
-				pattern := Pattern{
-					Value:   value,
-					Negated: false,
-					Annotation: Annotation{
-						Labels: Literal | HeuristicParensAsPatterns,
-						Range:  newRange(start, p.pos),
-					},
-				}
-				nodes = append(nodes, pattern)
-				continue
-			}
-			if isSet(p.heuristics, allowDanglingParens) {
-				// Consume strings containing unbalanced
-				// parentheses up to whitespace.
-				pattern := p.ParsePatternLiteral()
-				pattern.Annotation.Labels |= HeuristicDanglingParens
-				nodes = append(nodes, pattern)
-				continue
-			}
-			_ = p.expect(LPAREN) // Guaranteed to succeed.
-			p.balanced++
-			p.heuristics |= disambiguated
-			result, err := p.parseOr()
-			if err != nil {
-				return nil, err
-			}
-			nodes = append(nodes, result...)
-		case p.match(RPAREN):
-			if p.balanced <= 0 {
-				// This is a dangling right paren. It can't possibly help
-				// us parse a well-formed query, so try treat it as a pattern.
-				pattern := p.ParsePatternLiteral()
-				pattern.Annotation.Labels |= HeuristicDanglingParens
-
-				// Heuristic: This right paren may be one we should associate with a previous pattern, and not
-				// just a dangling one. Check if a pattern occurred before it and append it if so.
-				if pattern.Annotation.Range.Start.Column > 0 {
-					// Heuristic is imprecise and that's OK: It will only look for a 1-byte whitespace
-					// character (not any unicode whitespace) before this paren.
-					if r, _ := utf8.DecodeRune([]byte{p.buf[pattern.Annotation.Range.Start.Column-1]}); !unicode.IsSpace(r) {
-						if len(nodes) > 0 {
-							if previous, ok := nodes[len(nodes)-1].(Pattern); ok {
-								result, err := concatPatterns(previous, pattern)
-								if err != nil {
-									return nil, err
-								}
-								nodes[len(nodes)-1] = result
-								continue
-							}
-						}
-					}
-				}
-
-				nodes = append(nodes, pattern)
-				continue
-			}
-			_ = p.expect(RPAREN) // Guaranteed to succeed.
-			p.balanced--
-			p.heuristics |= disambiguated
-			if len(nodes) == 0 {
-				// We parsed "()", interpret it literally.
-				nodes = []Node{
-					Pattern{
-						Value: "()",
-						Annotation: Annotation{
-							Labels: Literal | HeuristicParensAsPatterns,
-							Range:  newRange(start, p.pos),
-						},
-					},
-				}
-			}
-			break loop
-		case p.matchKeyword(AND), p.matchKeyword(OR):
-			// Caller advances.
-			break loop
-		case p.matchUnaryKeyword(NOT):
-			start := p.pos
-			_ = p.expect(NOT)
-			err := p.skipSpaces()
-			if err != nil {
-				return nil, err
-			}
-			if parameter, ok, _ := p.ParseParameter(); ok {
-				// we don't support NOT -field:value
-				if parameter.Negated {
-					return nil, fmt.Errorf("unexpected NOT before \"-%s:%s\". Remove NOT and try again",
-						parameter.Field, parameter.Value)
-				}
-				parameter.Negated = true
-				parameter.Annotation.Range = newRange(start, p.pos)
-				nodes = append(nodes, parameter)
-				continue
-			}
-			pattern := p.ParsePatternLiteral()
-			pattern.Negated = true
-			pattern.Annotation.Range = newRange(start, p.pos)
-			nodes = append(nodes, pattern)
-		default:
-			parameter, ok, err := p.ParseParameter()
-			if err != nil {
-				return nil, err
-			}
-			if ok {
-				nodes = append(nodes, parameter)
-			} else {
-				pattern := p.ParsePatternLiteral()
-				nodes = append(nodes, pattern)
-			}
-		}
-	}
-	return partitionParameters(nodes), nil
-}
-
-// parseLeavesRegexp scans for consecutive leaf nodes when interpreting the
-// query as containing regexp patterns.
-func (p *parser) parseLeavesRegexp() ([]Node, error) {
+// parseLeaves scans for consecutive leaf nodes and applies
+// label to patterns.
+func (p *parser) parseLeaves(label labels) ([]Node, error) {
 	var nodes []Node
 	start := p.pos
 loop:
@@ -931,16 +788,11 @@ loop:
 		switch {
 		case p.match(LPAREN) && !isSet(p.heuristics, allowDanglingParens):
 			if isSet(p.heuristics, parensAsPatterns) {
-				if value, advance, ok := ScanBalancedPatternLiteral(p.buf[p.pos:]); ok {
-					pattern := Pattern{
-						Value:   value,
-						Negated: false,
-						Annotation: Annotation{
-							Labels: Regexp,
-							Range:  newRange(p.pos, p.pos+advance),
-						},
+				if value, advance, ok := ScanBalancedPattern(p.buf[p.pos:]); ok {
+					if label.isSet(Literal) {
+						label.set(HeuristicParensAsPatterns)
 					}
-
+					pattern := newPattern(value, false, label, newRange(p.pos, p.pos+advance))
 					p.pos += advance
 					nodes = append(nodes, pattern)
 					continue
@@ -957,21 +809,16 @@ loop:
 			}
 			nodes = append(nodes, result...)
 		case p.expect(RPAREN) && !isSet(p.heuristics, allowDanglingParens):
+			if p.balanced <= 0 {
+				return nil, errors.New("unbalanced expression: unmatched closing parenthesis )")
+			}
 			p.balanced--
 			p.heuristics |= disambiguated
 			if len(nodes) == 0 {
 				// We parsed "()".
 				if isSet(p.heuristics, parensAsPatterns) {
 					// Interpret literally.
-					nodes = []Node{
-						Pattern{
-							Value: "()",
-							Annotation: Annotation{
-								Labels: Literal | HeuristicParensAsPatterns,
-								Range:  newRange(start, p.pos),
-							},
-						},
-					}
+					nodes = []Node{newPattern("()", false, Literal|HeuristicParensAsPatterns, newRange(start, p.pos))}
 				} else {
 					// Interpret as a group: return an empty non-nil node.
 					nodes = []Node{Parameter{}}
@@ -999,7 +846,7 @@ loop:
 				nodes = append(nodes, parameter)
 				continue
 			}
-			pattern := p.ParsePatternRegexp()
+			pattern := p.ParsePattern(label)
 			pattern.Negated = true
 			pattern.Annotation.Range = newRange(start, p.pos)
 			nodes = append(nodes, pattern)
@@ -1011,7 +858,7 @@ loop:
 			if ok {
 				nodes = append(nodes, parameter)
 			} else {
-				pattern := p.ParsePatternRegexp()
+				pattern := p.ParsePattern(label)
 				nodes = append(nodes, pattern)
 			}
 		}
@@ -1094,9 +941,9 @@ func (p *parser) parseAnd() ([]Node, error) {
 	var left []Node
 	var err error
 	if p.leafParser == SearchTypeRegex {
-		left, err = p.parseLeavesRegexp()
+		left, err = p.parseLeaves(Regexp)
 	} else {
-		left, err = p.parseLeavesLiteral()
+		left, err = p.parseLeaves(Literal)
 	}
 	if err != nil {
 		return nil, err
@@ -1214,7 +1061,7 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	query = Map(query, LowercaseFieldNames, SubstituteAliases)
+	query = Map(query, LowercaseFieldNames, SubstituteAliases(options.SearchType))
 
 	switch options.SearchType {
 	case SearchTypeLiteral:

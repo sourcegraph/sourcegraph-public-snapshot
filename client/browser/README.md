@@ -80,12 +80,12 @@ Now, follow the steps below for the browser you intend to work with.
 ### Chrome
 
 - Browse to [chrome://extensions](chrome://extensions).
-- If you already have the Sourcegraph extension installed, disable it by unchecking the "Enabled" box.
-- Click on [Load unpacked extensions](https://developer.chrome.com/extensions/getstarted#unpacked), and select the `build/chrome` folder.
+- If you already have the Sourcegraph extension installed, disable it using the toggle.
+- Enable 'developer mode', click on [Load unpacked extensions](https://developer.chrome.com/extensions/getstarted#unpacked), save it in the `sourcegraph/client/browser/build/chrome` folder.
 - Browse to any public repository on GitHub to confirm it is working.
-- After making changes it is necessary to refresh the extension. This is done by going to [chrome://extensions](chrome://extensions) and clicking "Reload".
+- After making changes it is sometimes necessary to refresh the extension. This is done by going to [chrome://extensions](chrome://extensions) and clicking the "Reload" icon.
 
-![Add dist folder](readme-load-extension-asset.png)
+![File-path](https://user-images.githubusercontent.com/20326070/96859153-75764300-1461-11eb-8b82-0febc9327723.png)
 
 #### Updating the bundle
 
@@ -148,10 +148,10 @@ Releases are also uploaded to the [GitHub releases
 page](https://github.com/sourcegraph/browser-extensions/releases) and tagged in
 git.
 
-To release the latest commit on master, ensure your master is up-to-date and run
+To release the latest commit on `main`, ensure your `main` branch is up-to-date and run:
 
 ```sh
-git push origin master:bext/release
+git push origin main:bext/release
 ```
 
 ## Manual build of the browser extension

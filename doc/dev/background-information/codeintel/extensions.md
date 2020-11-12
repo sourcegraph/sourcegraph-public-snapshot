@@ -4,7 +4,7 @@ Definition, reference, and hover providers are invoked from the extension host w
 
 These providers receive the current text document (denoting a repository, commit, and path) and the position the user is hovering (a line and column offset within the file). The providers return results as an asynchronous iterator, which allows additional results to be streamed into the UI as they are received from the backend.
 
-Code intelligence queries are resolved favoring [precise](http://localhost:5080/user/code_intelligence/explanations/precise_code_intelligence) code intelligence, if available, then falling back to [search-based](http://localhost:5080/user/code_intelligence/explanations/basic_code_intelligence).
+Code intelligence queries are resolved favoring [precise](http://localhost:5080/code_intelligence/explanations/precise_code_intelligence) code intelligence, if available, then falling back to [search-based](http://localhost:5080/code_intelligence/explanations/basic_code_intelligence).
 
 ## Definitions
 
@@ -80,6 +80,6 @@ Queries will also include the term `fork:yes` if the setting `basicCodeIntel.inc
 
 ## Code appendix
 
-- LSIF providers: [definitionAndHover](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions@master/-/blob/shared/lsif/providers.ts#L98:10), [references](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions@master/-/blob/shared/lsif/providers.ts#L134:10)
-- Search providers: [definition](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions@master/-/blob/shared/search/providers.ts#L112:11), [references](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions@master/-/blob/shared/search/providers.ts#L163:11), [hover](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions@master/-/blob/shared/search/providers.ts#L209:11)
-- Combined providers: [createDefinitionProvider](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions@master/-/blob/shared/providers.ts#L174:17), [createReferencesProvider](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions@master/-/blob/shared/providers.ts#L242:17), [createHoverProvider](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions@master/-/blob/shared/providers.ts#L313:17)
+- LSIF providers: [definitionAndHover](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions@cdadc21ac26e4c68ed7e061564b44fac52867d57/-/blob/shared/lsif/providers.ts#L53:10), [references](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions@cdadc21ac26e4c68ed7e061564b44fac52867d57/-/blob/shared/lsif/providers.ts#L92:10)
+- Search providers: [definition](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions@cdadc21ac26e4c68ed7e061564b44fac52867d57/-/blob/shared/search/providers.ts#L112:11), [references](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions@cdadc21ac26e4c68ed7e061564b44fac52867d57/-/blob/shared/search/providers.ts#L163:11), [hover](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions@cdadc21ac26e4c68ed7e061564b44fac52867d57/-/blob/shared/search/providers.ts#L209:11)
+- Combined providers: [createDefinitionProvider](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions@cdadc21ac26e4c68ed7e061564b44fac52867d57/-/blob/shared/providers.ts#L174:17), [createReferencesProvider](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions@cdadc21ac26e4c68ed7e061564b44fac52867d57/-/blob/shared/providers.ts#L242:17), [createHoverProvider](https://sourcegraph.com/github.com/sourcegraph/code-intel-extensions@cdadc21ac26e4c68ed7e061564b44fac52867d57/-/blob/shared/providers.ts#L314:17)

@@ -4,10 +4,8 @@ import { Observable } from 'rxjs'
 import {
     CampaignsVariables,
     CampaignsResult,
-    CampaignsByUserResult,
-    CampaignsByUserVariables,
-    CampaignsByOrgResult,
-    CampaignsByOrgVariables,
+    CampaignsByNamespaceResult,
+    CampaignsByNamespaceVariables,
 } from '../../../graphql-operations'
 import { requestGraphQL } from '../../../backend/graphql'
 
@@ -23,22 +21,25 @@ const ListCampaignFragment = gql`
         description
         createdAt
         closedAt
-        changesets {
-            stats {
-                open
-                closed
-                merged
-            }
+        changesetsStats {
+            open
+            closed
+            merged
         }
     }
 `
+
+export interface ListCampaignsResult {
+    campaigns: CampaignsResult['campaigns']
+    totalCount: number
+}
 
 export const queryCampaigns = ({
     first,
     after,
     state,
     viewerCanAdminister,
-}: Partial<CampaignsVariables>): Observable<CampaignsResult['campaigns']> =>
+}: Partial<CampaignsVariables>): Observable<ListCampaignsResult> =>
     requestGraphQL<CampaignsResult, CampaignsVariables>(
         gql`
             query Campaigns($first: Int, $after: String, $state: CampaignState, $viewerCanAdminister: Boolean) {
@@ -50,6 +51,9 @@ export const queryCampaigns = ({
                         endCursor
                         hasNextPage
                     }
+                    totalCount
+                }
+                allCampaigns: campaigns(first: 0) {
                     totalCount
                 }
             }
@@ -64,26 +68,29 @@ export const queryCampaigns = ({
         }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.campaigns)
+        map(data => ({
+            campaigns: data.campaigns,
+            totalCount: data.allCampaigns.totalCount,
+        }))
     )
 
-export const queryCampaignsByUser = ({
-    userID,
+export const queryCampaignsByNamespace = ({
+    namespaceID,
     first,
     after,
     state,
     viewerCanAdminister,
-}: CampaignsByUserVariables): Observable<CampaignsResult['campaigns']> =>
-    requestGraphQL<CampaignsByUserResult, CampaignsByUserVariables>(
+}: CampaignsByNamespaceVariables): Observable<ListCampaignsResult> =>
+    requestGraphQL<CampaignsByNamespaceResult, CampaignsByNamespaceVariables>(
         gql`
-            query CampaignsByUser(
-                $userID: ID!
+            query CampaignsByNamespace(
+                $namespaceID: ID!
                 $first: Int
                 $after: String
                 $state: CampaignState
                 $viewerCanAdminister: Boolean
             ) {
-                node(id: $userID) {
+                node(id: $namespaceID) {
                     __typename
                     ... on User {
                         campaigns(
@@ -92,53 +99,12 @@ export const queryCampaignsByUser = ({
                             state: $state
                             viewerCanAdminister: $viewerCanAdminister
                         ) {
-                            nodes {
-                                ...ListCampaign
-                            }
-                            pageInfo {
-                                endCursor
-                                hasNextPage
-                            }
+                            ...CampaignsFields
+                        }
+                        allCampaigns: campaigns(first: 0) {
                             totalCount
                         }
                     }
-                }
-            }
-
-            ${ListCampaignFragment}
-        `,
-        { first, after, state, viewerCanAdminister, userID }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.node) {
-                throw new Error('User not found')
-            }
-            if (data.node.__typename !== 'User') {
-                throw new Error(`Requested node is a ${data.node.__typename}, not a User`)
-            }
-            return data.node.campaigns
-        })
-    )
-
-export const queryCampaignsByOrg = ({
-    orgID,
-    first,
-    after,
-    state,
-    viewerCanAdminister,
-}: CampaignsByOrgVariables): Observable<CampaignsResult['campaigns']> =>
-    requestGraphQL<CampaignsByOrgResult, CampaignsByOrgVariables>(
-        gql`
-            query CampaignsByOrg(
-                $orgID: ID!
-                $first: Int
-                $after: String
-                $state: CampaignState
-                $viewerCanAdminister: Boolean
-            ) {
-                node(id: $orgID) {
-                    __typename
                     ... on Org {
                         campaigns(
                             first: $first
@@ -146,31 +112,42 @@ export const queryCampaignsByOrg = ({
                             state: $state
                             viewerCanAdminister: $viewerCanAdminister
                         ) {
-                            nodes {
-                                ...ListCampaign
-                            }
-                            pageInfo {
-                                endCursor
-                                hasNextPage
-                            }
+                            ...CampaignsFields
+                        }
+                        allCampaigns: campaigns(first: 0) {
                             totalCount
                         }
                     }
                 }
             }
 
+            fragment CampaignsFields on CampaignConnection {
+                nodes {
+                    ...ListCampaign
+                }
+                pageInfo {
+                    endCursor
+                    hasNextPage
+                }
+                totalCount
+            }
+
             ${ListCampaignFragment}
         `,
-        { first, after, state, viewerCanAdminister, orgID }
+        { first, after, state, viewerCanAdminister, namespaceID }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
             if (!data.node) {
-                throw new Error('Org not found')
+                throw new Error('Namespace not found')
             }
-            if (data.node.__typename !== 'Org') {
-                throw new Error(`Requested node is a ${data.node.__typename}, not an Org`)
+
+            if (data.node.__typename !== 'Org' && data.node.__typename !== 'User') {
+                throw new Error(`Requested node is a ${data.node.__typename}, not a User or Org`)
             }
-            return data.node.campaigns
+            return {
+                campaigns: data.node.campaigns,
+                totalCount: data.node.allCampaigns.totalCount,
+            }
         })
     )

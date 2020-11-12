@@ -373,6 +373,14 @@ declare module 'sourcegraph' {
          * @returns A range spanning a word, or `undefined`.
          */
         getWordRangeAtPosition(position: Position): Range | undefined
+
+        /**
+         * Get the substring of text content from the provided range.
+         *
+         * @param range A range
+         * @returns The text inside the provided range, or the whole text if no range is provided
+         */
+        getText(range?: Range): string | undefined
     }
 
     /**
@@ -716,7 +724,9 @@ declare module 'sourcegraph' {
          * Display the results of the location provider (with the given ID) in this panel below the
          * {@link PanelView#contents}.
          *
-         * @internal Experimental. Subject to change or removal without notice.
+         * Experimental. Subject to change or removal without notice.
+         *
+         * @internal
          */
         component: { locationProvider: string } | null
     }
@@ -1113,8 +1123,8 @@ declare module 'sourcegraph' {
 
     /**
      * A provider result represents the values that a provider, such as the {@link HoverProvider}, may return. The
-     * result may be a single value, a Promise that resolves to a single value, or a Subscribable that emits zero
-     * or more values.
+     * result may be a single value, a Promise that resolves to a single value, a Subscribable that emits zero
+     * or more values, or an AsyncIterable that yields zero or more values.
      */
     export type ProviderResult<T> =
         | T
@@ -1122,6 +1132,7 @@ declare module 'sourcegraph' {
         | null
         | Promise<T | undefined | null>
         | Subscribable<T | undefined | null>
+        | AsyncIterable<T | undefined | null>
 
     /** The kinds of markup that can be used. */
     export enum MarkupKind {

@@ -33,7 +33,7 @@ import (
 //
 //     func (s *SprocketStore) Transact(ctx context.Context) (*SprocketStore, error) {
 //         txBase, err := s.Store.Transact(ctx)
-//         return &SprocketStore{Store: txBase}, nil
+//         return &SprocketStore{Store: txBase}, err
 //     }
 type Store struct {
 	handle *TransactableHandle
@@ -95,6 +95,11 @@ func (s *Store) With(other ShareableStore) *Store {
 // Query performs QueryContext on the underlying connection.
 func (s *Store) Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error) {
 	return s.handle.db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+}
+
+// QueryRow performs QueryRowContext on the underlying connection.
+func (s *Store) QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row {
+	return s.handle.db.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 }
 
 // Exec performs a query and throws away the result.

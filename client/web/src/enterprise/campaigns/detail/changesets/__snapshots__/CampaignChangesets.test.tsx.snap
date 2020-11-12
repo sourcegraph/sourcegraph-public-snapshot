@@ -35,6 +35,7 @@ exports[`CampaignChangesets renders 1`] = `
               "ERRORED",
               "PROCESSING",
               "OPEN",
+              "DRAFT",
               "CLOSED",
               "MERGED",
               "DELETED",
@@ -86,6 +87,14 @@ exports[`CampaignChangesets renders 1`] = `
             </button>
             <button
               className="btn btn-outline-secondary"
+              key="DRAFT"
+              onClick={[Function]}
+              type="button"
+            >
+              Draft
+            </button>
+            <button
+              className="btn btn-outline-secondary"
               key="CLOSED"
               onClick={[Function]}
               type="button"
@@ -119,6 +128,7 @@ exports[`CampaignChangesets renders 1`] = `
                 "ERRORED",
                 "PROCESSING",
                 "OPEN",
+                "DRAFT",
                 "CLOSED",
                 "MERGED",
                 "DELETED",
@@ -157,6 +167,12 @@ exports[`CampaignChangesets renders 1`] = `
                 value="OPEN"
               >
                 Open
+              </option>
+              <option
+                key="DRAFT"
+                value="DRAFT"
+              >
+                Draft
               </option>
               <option
                 key="CLOSED"

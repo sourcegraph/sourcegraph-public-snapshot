@@ -30,42 +30,6 @@ $gray-22: #151c28;
 $gray-23: #0e121b;
 $black: #07090d;
 
-// Dark Theme
-
-$color-bg-1: #151c28;
-$color-bg-2: #1d2535;
-$color-bg-3: #2b3750;
-$color-bg-4: $gray-23;
-$color-bg-5: #39496a;
-$color-text: #f2f4f8;
-$color-text-1: #a2b0cd;
-$color-text-2: #f2f4f8;
-$color-text-3: #ffffff;
-$color-border: #2b3750;
-$color-border-hover: #566e9f;
-
-$color-border-active: #329af0;
-
-// TODO add Basics color standards to Dark Theme
-
-// Light Theme
-// Basics
-$color-light-bg-1: #ffffff;
-$color-light-bg-2: #f2f4f8;
-$color-light-bg-3: #cad2e2;
-$color-light-bg-4: $gray-02;
-$color-light-bg-5: #566e9f;
-$color-light-bg-6: #070a0d;
-$color-light-text-1: #2b3750;
-$color-light-text-2: #6d727c;
-$color-light-text-3: rgba(57, 73, 106, 0.5);
-$color-light-text-4: #ffffff;
-$color-light-text-5: #07090d;
-$color-light-text-6: #1d2535;
-
-$color-light-border: #cad2e2;
-$color-light-border-2: #e4e9f1;
-
 // Tell Bootstrap to use colors from OpenColor
 $blue: $oc-blue-7;
 $indigo: $oc-indigo-7;
@@ -101,12 +65,6 @@ $body-bg: var(--body-bg);
 
 $text-muted: var(--text-muted);
 
-$body-color-light: $gray-19;
-$body-color-dark: $white;
-
-$body-bg-color-light: #fbfdff;
-$body-bg-color-dark: #04070e;
-
 :root {
     --primary: #{$primary};
     --secondary: #{$secondary-light};
@@ -115,33 +73,51 @@ $body-bg-color-dark: #04070e;
     --warning: #{$warning};
     --danger: #{$danger};
     --merged: #{$merged};
-    --body-color: #{$body-color-light};
-    --body-bg: #{$body-bg-color-light};
-    --color-bg-1: #{$color-light-bg-1};
-    --color-bg-2: #{$color-light-bg-2};
-    --color-bg-3: #{$color-light-bg-3};
-    --color-bg-4: #{$color-light-bg-4};
-    --text-muted: #{$color-light-text-2};
+}
+.theme-light {
+    // Affects default browser styles
+    color-scheme: light;
+
+    --body-color: #{$gray-19};
+    --body-bg: #fbfdff;
+    --color-bg-1: #ffffff;
+    --color-bg-2: #{$gray-01};
+    --color-bg-3: #{$gray-04};
+    --color-bg-4: #{$gray-02};
+    --color-bg-5: #{$gray-13};
+    --text-muted: #6d727c;
+    --line-number-color: #{$gray-05};
+    --header-icon-color: #{$gray-13};
     --link-color: #{$gray-13};
     --link-active-color: #{$gray-18};
     --link-hover-color: #{$gray-21};
-    --color-border: #{$color-light-border};
-    --color-border-2: #{$color-light-border-2};
+    --border-color: #{$gray-04};
+    --border-color-2: #{$gray-02};
     --sourcegraph-logo-text-color: #242427;
+    --search-filter-keyword-color: #1c7cd6;
+    --search-keyword-color: #{$oc-grape-7};
 }
 .theme-dark {
+    // Affects default browser styles
+    color-scheme: dark;
+
     --secondary: #{$secondary};
-    --color-border: #{$color-border};
-    --color-border-2: #{$color-border};
-    --body-color: #{$body-color-dark};
-    --body-bg: #{$body-bg-color-dark};
-    --color-bg-1: #{$color-bg-1};
-    --color-bg-2: #{$color-bg-2};
-    --color-bg-3: #{$color-bg-3};
-    --color-bg-4: #{$color-bg-4};
-    --text-muted: #{$color-text-1};
+    --border-color: #{$gray-19};
+    --border-color-2: #1b1730;
+    --body-color: #ffffff;
+    --body-bg: #04070e;
+    --color-bg-1: #{$gray-22};
+    --color-bg-2: #{$gray-21};
+    --color-bg-3: #{$gray-19};
+    --color-bg-4: #{$gray-22};
+    --color-bg-5: #{$gray-17};
+    --text-muted: #{$gray-07};
+    --line-number-color: #{$gray-18};
+    --header-icon-color: #{$gray-11};
     --link-color: #{$gray-07};
     --link-active-color: #{$gray-02};
-    --link-hover-color: #{$white};
-    --sourcegraph-logo-text-color: #{$white};
+    --link-hover-color: #ffffff;
+    --sourcegraph-logo-text-color: #ffffff;
+    --search-filter-keyword-color: #329af0;
+    --search-keyword-color: #{$oc-grape-4};
 }

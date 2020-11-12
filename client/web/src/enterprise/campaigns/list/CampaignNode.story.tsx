@@ -7,6 +7,8 @@ import { ListCampaign } from '../../../graphql-operations'
 import { subDays } from 'date-fns'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
+const now = new Date()
+
 export const nodes: Record<string, ListCampaign> = {
     'Open campaign': {
         id: 'test',
@@ -15,14 +17,12 @@ export const nodes: Record<string, ListCampaign> = {
         description: `# What this does
 
 This is my thorough explanation. And it can also get very long, in that case the UI doesn't break though, which is good. And one more line to finally be longer than the viewport.`,
-        createdAt: subDays(new Date(), 5).toISOString(),
+        createdAt: subDays(now, 5).toISOString(),
         closedAt: null,
-        changesets: {
-            stats: {
-                open: 10,
-                closed: 0,
-                merged: 5,
-            },
+        changesetsStats: {
+            open: 10,
+            closed: 0,
+            merged: 5,
         },
         namespace: {
             namespaceName: 'alice',
@@ -34,14 +34,12 @@ This is my thorough explanation. And it can also get very long, in that case the
         url: '/users/alice/campaigns/test2',
         name: 'Awesome campaign',
         description: null,
-        createdAt: subDays(new Date(), 5).toISOString(),
+        createdAt: subDays(now, 5).toISOString(),
         closedAt: null,
-        changesets: {
-            stats: {
-                open: 10,
-                closed: 0,
-                merged: 5,
-            },
+        changesetsStats: {
+            open: 10,
+            closed: 0,
+            merged: 5,
         },
         namespace: {
             namespaceName: 'alice',
@@ -55,14 +53,12 @@ This is my thorough explanation. And it can also get very long, in that case the
         description: `# My campaign
 
         This is my thorough explanation.`,
-        createdAt: subDays(new Date(), 5).toISOString(),
-        closedAt: subDays(new Date(), 3).toISOString(),
-        changesets: {
-            stats: {
-                open: 0,
-                closed: 10,
-                merged: 5,
-            },
+        createdAt: subDays(now, 5).toISOString(),
+        closedAt: subDays(now, 3).toISOString(),
+        changesetsStats: {
+            open: 0,
+            closed: 10,
+            merged: 5,
         },
         namespace: {
             namespaceName: 'alice',
@@ -83,7 +79,7 @@ for (const key of Object.keys(nodes)) {
                     {...props}
                     node={nodes[key]}
                     displayNamespace={boolean('Display namespace', true)}
-                    now={isChromatic() ? subDays(new Date(), 5) : undefined}
+                    now={isChromatic() ? () => subDays(now, 5) : undefined}
                 />
             )}
         </EnterpriseWebStory>

@@ -8,11 +8,12 @@ import { Link } from '../../../../shared/src/components/Link'
 import { LoadingPanelView } from './LoadingPanelView'
 import { Observable } from 'rxjs'
 import { PanelContainer } from './PanelContainer'
-import { parseSearchQuery } from '../../../../shared/src/search/parser/parser'
+import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
 import { parseSearchURLQuery } from '..'
 import { ShowMoreButton } from './ShowMoreButton'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { useObservable } from '../../../../shared/src/util/useObservable'
+import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 
 interface Props extends TelemetryProps {
     className?: string
@@ -44,12 +45,12 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
                 <p className="mb-1">
                     Search in repositories with the <strong>repo:</strong> filter:
                 </p>
-                <p className="mb-1 text-monospace">
-                    <span className="search-keyword">repo:</span>sourcegraph/sourcegraph
+                <p className="mb-1">
+                    <SyntaxHighlightedSearchQuery query="repo:sourcegraph/sourcegraph" />
                 </p>
                 <p className="mb-1">Add the code host to scope to a single repository:</p>
-                <p className="mb-1 text-monospace">
-                    <span className="search-keyword">repo:</span>^git\.local/my/repo$
+                <p className="mb-1">
+                    <SyntaxHighlightedSearchQuery query="repo:^git\.local/my/repo$" />
                 </p>
             </small>
         </div>
@@ -93,8 +94,7 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
                 <dd key={`${repoFilterValue}-${index}`} className="text-monospace text-break">
                     <small>
                         <Link to={`/search?q=repo:${repoFilterValue}`} onClick={logRepoClicked}>
-                            <span className="search-keyword">repo:</span>
-                            <span className="repositories-panel__search-value">{repoFilterValue}</span>
+                            <SyntaxHighlightedSearchQuery query={`repo:${repoFilterValue}`} />
                         </Link>
                     </small>
                 </dd>
@@ -127,25 +127,25 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
     for (const node of eventLogResult.nodes) {
         const url = new URL(node.url)
         const queryFromURL = parseSearchURLQuery(url.search)
-        const parsedQuery = parseSearchQuery(queryFromURL || '')
-        if (parsedQuery.type === 'success') {
-            for (const member of parsedQuery.token.members) {
+        const scannedQuery = scanSearchQuery(queryFromURL || '')
+        if (scannedQuery.type === 'success') {
+            for (const token of scannedQuery.term) {
                 if (
-                    member.token.type === 'filter' &&
-                    (member.token.filterType.token.value === FilterType.repo ||
-                        member.token.filterType.token.value === FILTERS[FilterType.repo].alias)
+                    token.type === 'filter' &&
+                    (token.filterType.value === FilterType.repo ||
+                        token.filterType.value === FILTERS[FilterType.repo].alias)
                 ) {
                     if (
-                        member.token.filterValue?.token.type === 'literal' &&
-                        !recentlySearchedRepos.includes(member.token.filterValue.token.value)
+                        token.filterValue?.type === 'literal' &&
+                        !recentlySearchedRepos.includes(token.filterValue.value)
                     ) {
-                        recentlySearchedRepos.push(member.token.filterValue.token.value)
+                        recentlySearchedRepos.push(token.filterValue.value)
                     }
                     if (
-                        member.token.filterValue?.token.type === 'quoted' &&
-                        !recentlySearchedRepos.includes(member.token.filterValue.token.quotedValue)
+                        token.filterValue?.type === 'quoted' &&
+                        !recentlySearchedRepos.includes(token.filterValue.quotedValue)
                     ) {
-                        recentlySearchedRepos.push(member.token.filterValue.token.quotedValue)
+                        recentlySearchedRepos.push(token.filterValue.quotedValue)
                     }
                 }
             }

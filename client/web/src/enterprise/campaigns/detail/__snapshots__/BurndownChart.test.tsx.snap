@@ -85,6 +85,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
             Object {
               "closed": 1,
               "date": 1573646400000,
+              "draft": 0,
               "merged": 1,
               "openApproved": 1,
               "openChangesRequested": 1,
@@ -94,6 +95,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
             Object {
               "closed": 1,
               "date": 1573732800000,
+              "draft": 0,
               "merged": 5,
               "openApproved": 1,
               "openChangesRequested": 1,
@@ -765,6 +767,448 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                 bottom={35}
                 brushBottom={35}
                 connectNulls={false}
+                dataKey="draft"
+                dot={false}
+                fill="var(--text-muted)"
+                fillOpacity={0.6}
+                height={260}
+                hide={false}
+                isAnimationActive={false}
+                isRange={false}
+                key="5"
+                layout="horizontal"
+                left={65}
+                legendType="line"
+                name="Draft"
+                points={
+                  Array [
+                    Object {
+                      "payload": Object {
+                        "closed": 1,
+                        "date": 1573646400000,
+                        "draft": 0,
+                        "merged": 1,
+                        "openApproved": 1,
+                        "openChangesRequested": 1,
+                        "openPending": 1,
+                        "total": 10,
+                      },
+                      "value": Array [
+                        0,
+                        0,
+                      ],
+                      "x": 65,
+                      "y": 265,
+                    },
+                    Object {
+                      "payload": Object {
+                        "closed": 1,
+                        "date": 1573732800000,
+                        "draft": 0,
+                        "merged": 5,
+                        "openApproved": 1,
+                        "openChangesRequested": 1,
+                        "openPending": 1,
+                        "total": 10,
+                      },
+                      "value": Array [
+                        0,
+                        0,
+                      ],
+                      "x": 495,
+                      "y": 265,
+                    },
+                  ]
+                }
+                right={5}
+                stackId="stack"
+                stroke="var(--text-muted)"
+                strokeWidth={0}
+                top={5}
+                type="stepBefore"
+                width={430}
+                xAxis={
+                  Object {
+                    "allowDataOverflow": false,
+                    "allowDecimals": true,
+                    "allowDuplicatedCategory": true,
+                    "axisType": "xAxis",
+                    "bandSize": 0,
+                    "categoricalDomain": Array [
+                      1573646400000,
+                      1573732800000,
+                    ],
+                    "dataKey": "date",
+                    "domain": Array [
+                      1573646400000,
+                      1573732800000,
+                    ],
+                    "duplicateDomain": undefined,
+                    "height": 30,
+                    "hide": false,
+                    "isCategorial": true,
+                    "layout": "horizontal",
+                    "mirror": false,
+                    "name": "Time",
+                    "orientation": "bottom",
+                    "originalDomain": Array [
+                      "2019-11-13T12:00:00Z",
+                      "2019-11-14T12:00:00Z",
+                    ],
+                    "padding": Object {
+                      "left": 0,
+                      "right": 0,
+                    },
+                    "realScaleType": "scaleTime",
+                    "reversed": false,
+                    "scale": [Function],
+                    "stroke": "var(--text-muted)",
+                    "tickCount": 5,
+                    "tickFormatter": [Function],
+                    "type": "number",
+                    "width": 430,
+                    "x": 65,
+                    "xAxisId": 0,
+                    "y": 265,
+                  }
+                }
+                xAxisId={0}
+                yAxis={
+                  Object {
+                    "allowDataOverflow": false,
+                    "allowDecimals": false,
+                    "allowDuplicatedCategory": true,
+                    "axisType": "yAxis",
+                    "bandSize": 0,
+                    "categoricalDomain": undefined,
+                    "domain": Array [
+                      0,
+                      9,
+                    ],
+                    "duplicateDomain": undefined,
+                    "height": 260,
+                    "hide": false,
+                    "isCategorial": false,
+                    "layout": "horizontal",
+                    "mirror": false,
+                    "niceTicks": Array [
+                      0,
+                      3,
+                      6,
+                      9,
+                    ],
+                    "orientation": "left",
+                    "originalDomain": Array [
+                      0,
+                      "dataMax",
+                    ],
+                    "padding": Object {
+                      "bottom": 0,
+                      "top": 0,
+                    },
+                    "realScaleType": "linear",
+                    "reversed": false,
+                    "scale": [Function],
+                    "stroke": "var(--text-muted)",
+                    "tickCount": 5,
+                    "tickFormatter": [Function],
+                    "type": "number",
+                    "width": 60,
+                    "x": 5,
+                    "y": 5,
+                    "yAxisId": 0,
+                  }
+                }
+                yAxisId={0}
+              >
+                <Layer
+                  className="recharts-area"
+                >
+                  <g
+                    className="recharts-layer recharts-area"
+                  >
+                    <Layer
+                      clipPath={null}
+                    >
+                      <g
+                        className="recharts-layer"
+                        clipPath={null}
+                      >
+                        <Curve
+                          activeDot={true}
+                          animationBegin={0}
+                          animationDuration={1500}
+                          animationEasing="ease"
+                          animationId={0}
+                          baseLine={
+                            Array [
+                              Object {
+                                "x": 65,
+                                "y": 265,
+                              },
+                              Object {
+                                "x": 495,
+                                "y": 265,
+                              },
+                            ]
+                          }
+                          bottom={35}
+                          brushBottom={35}
+                          className="recharts-area-area"
+                          connectNulls={false}
+                          dataKey="draft"
+                          dot={false}
+                          fill="var(--text-muted)"
+                          fillOpacity={0.6}
+                          height={260}
+                          hide={false}
+                          isAnimationActive={false}
+                          isRange={false}
+                          layout="horizontal"
+                          left={65}
+                          legendType="line"
+                          name="Draft"
+                          points={
+                            Array [
+                              Object {
+                                "payload": Object {
+                                  "closed": 1,
+                                  "date": 1573646400000,
+                                  "draft": 0,
+                                  "merged": 1,
+                                  "openApproved": 1,
+                                  "openChangesRequested": 1,
+                                  "openPending": 1,
+                                  "total": 10,
+                                },
+                                "value": Array [
+                                  0,
+                                  0,
+                                ],
+                                "x": 65,
+                                "y": 265,
+                              },
+                              Object {
+                                "payload": Object {
+                                  "closed": 1,
+                                  "date": 1573732800000,
+                                  "draft": 0,
+                                  "merged": 5,
+                                  "openApproved": 1,
+                                  "openChangesRequested": 1,
+                                  "openPending": 1,
+                                  "total": 10,
+                                },
+                                "value": Array [
+                                  0,
+                                  0,
+                                ],
+                                "x": 495,
+                                "y": 265,
+                              },
+                            ]
+                          }
+                          right={5}
+                          stackId="stack"
+                          stroke="none"
+                          strokeWidth={0}
+                          top={5}
+                          type="stepBefore"
+                          width={430}
+                          xAxis={
+                            Object {
+                              "allowDataOverflow": false,
+                              "allowDecimals": true,
+                              "allowDuplicatedCategory": true,
+                              "axisType": "xAxis",
+                              "bandSize": 0,
+                              "categoricalDomain": Array [
+                                1573646400000,
+                                1573732800000,
+                              ],
+                              "dataKey": "date",
+                              "domain": Array [
+                                1573646400000,
+                                1573732800000,
+                              ],
+                              "duplicateDomain": undefined,
+                              "height": 30,
+                              "hide": false,
+                              "isCategorial": true,
+                              "layout": "horizontal",
+                              "mirror": false,
+                              "name": "Time",
+                              "orientation": "bottom",
+                              "originalDomain": Array [
+                                "2019-11-13T12:00:00Z",
+                                "2019-11-14T12:00:00Z",
+                              ],
+                              "padding": Object {
+                                "left": 0,
+                                "right": 0,
+                              },
+                              "realScaleType": "scaleTime",
+                              "reversed": false,
+                              "scale": [Function],
+                              "stroke": "var(--text-muted)",
+                              "tickCount": 5,
+                              "tickFormatter": [Function],
+                              "type": "number",
+                              "width": 430,
+                              "x": 65,
+                              "xAxisId": 0,
+                              "y": 265,
+                            }
+                          }
+                          xAxisId={0}
+                          yAxis={
+                            Object {
+                              "allowDataOverflow": false,
+                              "allowDecimals": false,
+                              "allowDuplicatedCategory": true,
+                              "axisType": "yAxis",
+                              "bandSize": 0,
+                              "categoricalDomain": undefined,
+                              "domain": Array [
+                                0,
+                                9,
+                              ],
+                              "duplicateDomain": undefined,
+                              "height": 260,
+                              "hide": false,
+                              "isCategorial": false,
+                              "layout": "horizontal",
+                              "mirror": false,
+                              "niceTicks": Array [
+                                0,
+                                3,
+                                6,
+                                9,
+                              ],
+                              "orientation": "left",
+                              "originalDomain": Array [
+                                0,
+                                "dataMax",
+                              ],
+                              "padding": Object {
+                                "bottom": 0,
+                                "top": 0,
+                              },
+                              "realScaleType": "linear",
+                              "reversed": false,
+                              "scale": [Function],
+                              "stroke": "var(--text-muted)",
+                              "tickCount": 5,
+                              "tickFormatter": [Function],
+                              "type": "number",
+                              "width": 60,
+                              "x": 5,
+                              "y": 5,
+                              "yAxisId": 0,
+                            }
+                          }
+                          yAxisId={0}
+                        >
+                          <path
+                            className="recharts-curve recharts-area-area"
+                            d="M65,265L65,265L495,265L495,265L65,265L65,265Z"
+                            fill="var(--text-muted)"
+                            fillOpacity={0.6}
+                            height={260}
+                            stroke="none"
+                            strokeWidth={0}
+                            width={430}
+                          />
+                        </Curve>
+                        <Curve
+                          className="recharts-area-curve"
+                          connectNulls={false}
+                          fill="none"
+                          fillOpacity={0.6}
+                          height={260}
+                          layout="horizontal"
+                          points={
+                            Array [
+                              Object {
+                                "payload": Object {
+                                  "closed": 1,
+                                  "date": 1573646400000,
+                                  "draft": 0,
+                                  "merged": 1,
+                                  "openApproved": 1,
+                                  "openChangesRequested": 1,
+                                  "openPending": 1,
+                                  "total": 10,
+                                },
+                                "value": Array [
+                                  0,
+                                  0,
+                                ],
+                                "x": 65,
+                                "y": 265,
+                              },
+                              Object {
+                                "payload": Object {
+                                  "closed": 1,
+                                  "date": 1573732800000,
+                                  "draft": 0,
+                                  "merged": 5,
+                                  "openApproved": 1,
+                                  "openChangesRequested": 1,
+                                  "openPending": 1,
+                                  "total": 10,
+                                },
+                                "value": Array [
+                                  0,
+                                  0,
+                                ],
+                                "x": 495,
+                                "y": 265,
+                              },
+                            ]
+                          }
+                          stroke="var(--text-muted)"
+                          strokeWidth={0}
+                          type="stepBefore"
+                          width={430}
+                        >
+                          <path
+                            className="recharts-curve recharts-area-curve"
+                            d="M65,265L65,265L495,265"
+                            fill="none"
+                            fillOpacity={0.6}
+                            height={260}
+                            stroke="var(--text-muted)"
+                            strokeWidth={0}
+                            width={430}
+                          />
+                        </Curve>
+                      </g>
+                    </Layer>
+                  </g>
+                </Layer>
+              </Area>
+              <Area
+                activeDot={true}
+                animationBegin={0}
+                animationDuration={1500}
+                animationEasing="ease"
+                animationId={0}
+                baseLine={
+                  Array [
+                    Object {
+                      "x": 65,
+                      "y": 265,
+                    },
+                    Object {
+                      "x": 495,
+                      "y": 265,
+                    },
+                  ]
+                }
+                bottom={35}
+                brushBottom={35}
+                connectNulls={false}
                 dataKey="openPending"
                 dot={false}
                 fill="var(--warning)"
@@ -784,6 +1228,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                       "payload": Object {
                         "closed": 1,
                         "date": 1573646400000,
+                        "draft": 0,
                         "merged": 1,
                         "openApproved": 1,
                         "openChangesRequested": 1,
@@ -801,6 +1246,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                       "payload": Object {
                         "closed": 1,
                         "date": 1573732800000,
+                        "draft": 0,
                         "merged": 5,
                         "openApproved": 1,
                         "openChangesRequested": 1,
@@ -970,6 +1416,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573646400000,
+                                  "draft": 0,
                                   "merged": 1,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -987,6 +1434,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573732800000,
+                                  "draft": 0,
                                   "merged": 5,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -1127,6 +1575,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573646400000,
+                                  "draft": 0,
                                   "merged": 1,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -1144,6 +1593,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573732800000,
+                                  "draft": 0,
                                   "merged": 5,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -1220,6 +1670,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                       "payload": Object {
                         "closed": 1,
                         "date": 1573646400000,
+                        "draft": 0,
                         "merged": 1,
                         "openApproved": 1,
                         "openChangesRequested": 1,
@@ -1237,6 +1688,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                       "payload": Object {
                         "closed": 1,
                         "date": 1573732800000,
+                        "draft": 0,
                         "merged": 5,
                         "openApproved": 1,
                         "openChangesRequested": 1,
@@ -1406,6 +1858,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573646400000,
+                                  "draft": 0,
                                   "merged": 1,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -1423,6 +1876,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573732800000,
+                                  "draft": 0,
                                   "merged": 5,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -1563,6 +2017,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573646400000,
+                                  "draft": 0,
                                   "merged": 1,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -1580,6 +2035,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573732800000,
+                                  "draft": 0,
                                   "merged": 5,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -1656,6 +2112,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                       "payload": Object {
                         "closed": 1,
                         "date": 1573646400000,
+                        "draft": 0,
                         "merged": 1,
                         "openApproved": 1,
                         "openChangesRequested": 1,
@@ -1673,6 +2130,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                       "payload": Object {
                         "closed": 1,
                         "date": 1573732800000,
+                        "draft": 0,
                         "merged": 5,
                         "openApproved": 1,
                         "openChangesRequested": 1,
@@ -1842,6 +2300,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573646400000,
+                                  "draft": 0,
                                   "merged": 1,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -1859,6 +2318,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573732800000,
+                                  "draft": 0,
                                   "merged": 5,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -1999,6 +2459,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573646400000,
+                                  "draft": 0,
                                   "merged": 1,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -2016,6 +2477,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573732800000,
+                                  "draft": 0,
                                   "merged": 5,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -2092,6 +2554,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                       "payload": Object {
                         "closed": 1,
                         "date": 1573646400000,
+                        "draft": 0,
                         "merged": 1,
                         "openApproved": 1,
                         "openChangesRequested": 1,
@@ -2109,6 +2572,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                       "payload": Object {
                         "closed": 1,
                         "date": 1573732800000,
+                        "draft": 0,
                         "merged": 5,
                         "openApproved": 1,
                         "openChangesRequested": 1,
@@ -2278,6 +2742,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573646400000,
+                                  "draft": 0,
                                   "merged": 1,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -2295,6 +2760,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573732800000,
+                                  "draft": 0,
                                   "merged": 5,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -2435,6 +2901,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573646400000,
+                                  "draft": 0,
                                   "merged": 1,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -2452,6 +2919,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573732800000,
+                                  "draft": 0,
                                   "merged": 5,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -2528,6 +2996,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                       "payload": Object {
                         "closed": 1,
                         "date": 1573646400000,
+                        "draft": 0,
                         "merged": 1,
                         "openApproved": 1,
                         "openChangesRequested": 1,
@@ -2545,6 +3014,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                       "payload": Object {
                         "closed": 1,
                         "date": 1573732800000,
+                        "draft": 0,
                         "merged": 5,
                         "openApproved": 1,
                         "openChangesRequested": 1,
@@ -2714,6 +3184,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573646400000,
+                                  "draft": 0,
                                   "merged": 1,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -2731,6 +3202,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573732800000,
+                                  "draft": 0,
                                   "merged": 5,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -2871,6 +3343,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573646400000,
+                                  "draft": 0,
                                   "merged": 1,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -2888,6 +3361,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                                 "payload": Object {
                                   "closed": 1,
                                   "date": 1573732800000,
+                                  "draft": 0,
                                   "merged": 5,
                                   "openApproved": 1,
                                   "openChangesRequested": 1,
@@ -2944,6 +3418,35 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
             onBBoxUpdate={[Function]}
             payload={
               Array [
+                Object {
+                  "color": "var(--text-muted)",
+                  "dataKey": "draft",
+                  "inactive": false,
+                  "payload": Object {
+                    "activeDot": true,
+                    "animationBegin": 0,
+                    "animationDuration": 1500,
+                    "animationEasing": "ease",
+                    "connectNulls": false,
+                    "dataKey": "draft",
+                    "dot": false,
+                    "fill": "var(--text-muted)",
+                    "fillOpacity": 0.6,
+                    "hide": false,
+                    "isAnimationActive": false,
+                    "legendType": "line",
+                    "name": "Draft",
+                    "points": Array [],
+                    "stackId": "stack",
+                    "stroke": "var(--text-muted)",
+                    "strokeWidth": 0,
+                    "type": "stepBefore",
+                    "xAxisId": 0,
+                    "yAxisId": 0,
+                  },
+                  "type": "square",
+                  "value": "Draft",
+                },
                 Object {
                   "color": "var(--warning)",
                   "dataKey": "openPending",
@@ -3125,6 +3628,35 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                 onBBoxUpdate={[Function]}
                 payload={
                   Array [
+                    Object {
+                      "color": "var(--text-muted)",
+                      "dataKey": "draft",
+                      "inactive": false,
+                      "payload": Object {
+                        "activeDot": true,
+                        "animationBegin": 0,
+                        "animationDuration": 1500,
+                        "animationEasing": "ease",
+                        "connectNulls": false,
+                        "dataKey": "draft",
+                        "dot": false,
+                        "fill": "var(--text-muted)",
+                        "fillOpacity": 0.6,
+                        "hide": false,
+                        "isAnimationActive": false,
+                        "legendType": "line",
+                        "name": "Draft",
+                        "points": Array [],
+                        "stackId": "stack",
+                        "stroke": "var(--text-muted)",
+                        "strokeWidth": 0,
+                        "type": "stepBefore",
+                        "xAxisId": 0,
+                        "yAxisId": 0,
+                      },
+                      "type": "square",
+                      "value": "Draft",
+                    },
                     Object {
                       "color": "var(--warning)",
                       "dataKey": "openPending",
@@ -3331,6 +3863,72 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                         <Symbols
                           cx={16}
                           cy={16}
+                          fill="var(--text-muted)"
+                          size={32}
+                          sizeType="diameter"
+                          type="square"
+                        >
+                          <path
+                            className="recharts-symbols"
+                            d="M-16,-16h32v32h-32Z"
+                            fill="var(--text-muted)"
+                            transform="translate(16, 16)"
+                          />
+                        </Symbols>
+                      </svg>
+                    </Surface>
+                    <span
+                      className="recharts-legend-item-text"
+                    >
+                      Draft
+                    </span>
+                  </li>
+                  <li
+                    className="recharts-legend-item legend-item-1"
+                    key="legend-item-1"
+                    style={
+                      Object {
+                        "display": "inline-block",
+                        "marginRight": 10,
+                      }
+                    }
+                  >
+                    <Surface
+                      height={14}
+                      style={
+                        Object {
+                          "display": "inline-block",
+                          "marginRight": 4,
+                          "verticalAlign": "middle",
+                        }
+                      }
+                      viewBox={
+                        Object {
+                          "height": 32,
+                          "width": 32,
+                          "x": 0,
+                          "y": 0,
+                        }
+                      }
+                      width={14}
+                    >
+                      <svg
+                        className="recharts-surface"
+                        height={14}
+                        style={
+                          Object {
+                            "display": "inline-block",
+                            "marginRight": 4,
+                            "verticalAlign": "middle",
+                          }
+                        }
+                        version="1.1"
+                        viewBox="0 0 32 32"
+                        width={14}
+                      >
+                        <Symbols
+                          cx={16}
+                          cy={16}
                           fill="var(--warning)"
                           size={32}
                           sizeType="diameter"
@@ -3352,8 +3950,8 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                     </span>
                   </li>
                   <li
-                    className="recharts-legend-item legend-item-1"
-                    key="legend-item-1"
+                    className="recharts-legend-item legend-item-2"
+                    key="legend-item-2"
                     style={
                       Object {
                         "display": "inline-block",
@@ -3418,8 +4016,8 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                     </span>
                   </li>
                   <li
-                    className="recharts-legend-item legend-item-2"
-                    key="legend-item-2"
+                    className="recharts-legend-item legend-item-3"
+                    key="legend-item-3"
                     style={
                       Object {
                         "display": "inline-block",
@@ -3484,8 +4082,8 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                     </span>
                   </li>
                   <li
-                    className="recharts-legend-item legend-item-3"
-                    key="legend-item-3"
+                    className="recharts-legend-item legend-item-4"
+                    key="legend-item-4"
                     style={
                       Object {
                         "display": "inline-block",
@@ -3550,8 +4148,8 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                     </span>
                   </li>
                   <li
-                    className="recharts-legend-item legend-item-4"
-                    key="legend-item-4"
+                    className="recharts-legend-item legend-item-5"
+                    key="legend-item-5"
                     style={
                       Object {
                         "display": "inline-block",
@@ -3679,7 +4277,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
             }
             wrapperStyle={
               Object {
-                "border": "1px solid var(--color-border)",
+                "border": "1px solid var(--border-color)",
               }
             }
           >
@@ -3690,7 +4288,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                   "MozTransform": "translate(undefinedpx, undefinedpx)",
                   "OTransform": "translate(undefinedpx, undefinedpx)",
                   "WebkitTransform": "translate(undefinedpx, undefinedpx)",
-                  "border": "1px solid var(--color-border)",
+                  "border": "1px solid var(--border-color)",
                   "msTransform": "translate(undefinedpx, undefinedpx)",
                   "pointerEvents": "none",
                   "position": "absolute",
@@ -3760,7 +4358,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                 }
                 wrapperStyle={
                   Object {
-                    "border": "1px solid var(--color-border)",
+                    "border": "1px solid var(--border-color)",
                   }
                 }
               >

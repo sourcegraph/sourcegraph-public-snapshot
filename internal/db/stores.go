@@ -2,9 +2,9 @@ package db
 
 var (
 	AccessTokens     = &accessTokens{}
-	ExternalServices = &ExternalServicesStore{}
+	ExternalServices = &ExternalServiceStore{}
 	DefaultRepos     = &defaultRepos{}
-	Repos            = &repos{}
+	Repos            = &RepoStore{}
 	Phabricator      = &phabricator{}
 	QueryRunnerState = &queryRunnerState{}
 	Namespaces       = &namespaces{}
@@ -13,6 +13,7 @@ var (
 	SavedSearches    = &savedSearches{}
 	Settings         = &settings{}
 	Users            = &users{}
+	UserCredentials  = &userCredentials{}
 	UserEmails       = &userEmails{}
 	EventLogs        = &eventLogs{}
 

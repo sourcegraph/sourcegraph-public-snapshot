@@ -33,10 +33,9 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 className="text-monospace"
                 to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
               >
-                lang:c if(:[eval_match]) 
-                {
-                 :[statement_match] 
-                }
+                <SyntaxHighlightedSearchQuery
+                  query="lang:c if(:[eval_match]) { :[statement_match] }"
+                />
               </AnchorLink>
             </small>
           </li>
@@ -48,7 +47,9 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 className="text-monospace"
                 to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
               >
-                lang:java type:diff after:"1 week ago"
+                <SyntaxHighlightedSearchQuery
+                  query="lang:java type:diff after:\\"1 week ago\\""
+                />
               </AnchorLink>
             </small>
           </li>
@@ -60,7 +61,9 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 className="text-monospace"
                 to="/search?q=lang:java&patternType=literal"
               >
-                lang:java
+                <SyntaxHighlightedSearchQuery
+                  query="lang:java"
+                />
               </AnchorLink>
             </small>
           </li>
@@ -102,11 +105,12 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
                   >
-                    test
+                    <SyntaxHighlightedSearchQuery
+                      query="test"
+                    />
                   </AnchorLink>
                 </small>
               </td>
@@ -126,11 +130,12 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
                   >
-                    r:sourcegraph
+                    <SyntaxHighlightedSearchQuery
+                      query="r:sourcegraph"
+                    />
                   </AnchorLink>
                 </small>
               </td>
@@ -199,16 +204,22 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
                   >
                     <a
-                      className="text-monospace"
                       href="/search?q=test&patternType=literal"
                       onClick={[Function]}
                     >
-                      test
+                      <SyntaxHighlightedSearchQuery
+                        query="test"
+                      >
+                        <span
+                          className="text-monospace search-query-link"
+                        >
+                          test
+                        </span>
+                      </SyntaxHighlightedSearchQuery>
                     </a>
                   </AnchorLink>
                 </small>
@@ -237,16 +248,28 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
                   >
                     <a
-                      className="text-monospace"
                       href="/search?q=r:sourcegraph&patternType=literal"
                       onClick={[Function]}
                     >
-                      r:sourcegraph
+                      <SyntaxHighlightedSearchQuery
+                        query="r:sourcegraph"
+                      >
+                        <span
+                          className="text-monospace search-query-link"
+                        >
+                          <span
+                            className="search-filter-keyword"
+                          >
+                            r
+                            :
+                          </span>
+                          sourcegraph
+                        </span>
+                      </SyntaxHighlightedSearchQuery>
                     </a>
                   </AnchorLink>
                 </small>
@@ -326,10 +349,9 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 className="text-monospace"
                 to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
               >
-                lang:c if(:[eval_match]) 
-                {
-                 :[statement_match] 
-                }
+                <SyntaxHighlightedSearchQuery
+                  query="lang:c if(:[eval_match]) { :[statement_match] }"
+                />
               </AnchorLink>
             </small>
           </li>
@@ -341,7 +363,9 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 className="text-monospace"
                 to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
               >
-                lang:java type:diff after:"1 week ago"
+                <SyntaxHighlightedSearchQuery
+                  query="lang:java type:diff after:\\"1 week ago\\""
+                />
               </AnchorLink>
             </small>
           </li>
@@ -353,7 +377,9 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 className="text-monospace"
                 to="/search?q=lang:java&patternType=literal"
               >
-                lang:java
+                <SyntaxHighlightedSearchQuery
+                  query="lang:java"
+                />
               </AnchorLink>
             </small>
           </li>
@@ -395,11 +421,12 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
                   >
-                    test
+                    <SyntaxHighlightedSearchQuery
+                      query="test"
+                    />
                   </AnchorLink>
                 </small>
               </td>
@@ -419,11 +446,12 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
                   >
-                    r:sourcegraph
+                    <SyntaxHighlightedSearchQuery
+                      query="r:sourcegraph"
+                    />
                   </AnchorLink>
                 </small>
               </td>
@@ -443,11 +471,12 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
                   >
-                    test
+                    <SyntaxHighlightedSearchQuery
+                      query="test"
+                    />
                   </AnchorLink>
                 </small>
               </td>
@@ -467,11 +496,12 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
                   >
-                    r:sourcegraph
+                    <SyntaxHighlightedSearchQuery
+                      query="r:sourcegraph"
+                    />
                   </AnchorLink>
                 </small>
               </td>
@@ -536,16 +566,22 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
                   >
                     <a
-                      className="text-monospace"
                       href="/search?q=test&patternType=literal"
                       onClick={[Function]}
                     >
-                      test
+                      <SyntaxHighlightedSearchQuery
+                        query="test"
+                      >
+                        <span
+                          className="text-monospace search-query-link"
+                        >
+                          test
+                        </span>
+                      </SyntaxHighlightedSearchQuery>
                     </a>
                   </AnchorLink>
                 </small>
@@ -574,16 +610,28 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
                   >
                     <a
-                      className="text-monospace"
                       href="/search?q=r:sourcegraph&patternType=literal"
                       onClick={[Function]}
                     >
-                      r:sourcegraph
+                      <SyntaxHighlightedSearchQuery
+                        query="r:sourcegraph"
+                      >
+                        <span
+                          className="text-monospace search-query-link"
+                        >
+                          <span
+                            className="search-filter-keyword"
+                          >
+                            r
+                            :
+                          </span>
+                          sourcegraph
+                        </span>
+                      </SyntaxHighlightedSearchQuery>
                     </a>
                   </AnchorLink>
                 </small>
@@ -612,16 +660,22 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
                   >
                     <a
-                      className="text-monospace"
                       href="/search?q=test&patternType=literal"
                       onClick={[Function]}
                     >
-                      test
+                      <SyntaxHighlightedSearchQuery
+                        query="test"
+                      >
+                        <span
+                          className="text-monospace search-query-link"
+                        >
+                          test
+                        </span>
+                      </SyntaxHighlightedSearchQuery>
                     </a>
                   </AnchorLink>
                 </small>
@@ -650,16 +704,28 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
                   >
                     <a
-                      className="text-monospace"
                       href="/search?q=r:sourcegraph&patternType=literal"
                       onClick={[Function]}
                     >
-                      r:sourcegraph
+                      <SyntaxHighlightedSearchQuery
+                        query="r:sourcegraph"
+                      >
+                        <span
+                          className="text-monospace search-query-link"
+                        >
+                          <span
+                            className="search-filter-keyword"
+                          >
+                            r
+                            :
+                          </span>
+                          sourcegraph
+                        </span>
+                      </SyntaxHighlightedSearchQuery>
                     </a>
                   </AnchorLink>
                 </small>
@@ -722,10 +788,9 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 className="text-monospace"
                 to="/search?q=lang:c+if%28:%5Beval_match%5D%29+%7B+:%5Bstatement_match%5D+%7D&patternType=structural"
               >
-                lang:c if(:[eval_match]) 
-                {
-                 :[statement_match] 
-                }
+                <SyntaxHighlightedSearchQuery
+                  query="lang:c if(:[eval_match]) { :[statement_match] }"
+                />
               </AnchorLink>
             </small>
           </li>
@@ -737,7 +802,9 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 className="text-monospace"
                 to="/search?q=lang:java+type:diff+after:%221+week+ago%22&patternType=literal"
               >
-                lang:java type:diff after:"1 week ago"
+                <SyntaxHighlightedSearchQuery
+                  query="lang:java type:diff after:\\"1 week ago\\""
+                />
               </AnchorLink>
             </small>
           </li>
@@ -749,7 +816,9 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 className="text-monospace"
                 to="/search?q=lang:java&patternType=literal"
               >
-                lang:java
+                <SyntaxHighlightedSearchQuery
+                  query="lang:java"
+                />
               </AnchorLink>
             </small>
           </li>
@@ -791,11 +860,12 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
                   >
-                    test
+                    <SyntaxHighlightedSearchQuery
+                      query="test"
+                    />
                   </AnchorLink>
                 </small>
               </td>
@@ -815,11 +885,12 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
                   >
-                    r:sourcegraph
+                    <SyntaxHighlightedSearchQuery
+                      query="r:sourcegraph"
+                    />
                   </AnchorLink>
                 </small>
               </td>
@@ -884,16 +955,22 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
                   >
                     <a
-                      className="text-monospace"
                       href="/search?q=test&patternType=literal"
                       onClick={[Function]}
                     >
-                      test
+                      <SyntaxHighlightedSearchQuery
+                        query="test"
+                      >
+                        <span
+                          className="text-monospace search-query-link"
+                        >
+                          test
+                        </span>
+                      </SyntaxHighlightedSearchQuery>
                     </a>
                   </AnchorLink>
                 </small>
@@ -922,16 +999,28 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               <td>
                 <small>
                   <AnchorLink
-                    className="text-monospace"
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
                   >
                     <a
-                      className="text-monospace"
                       href="/search?q=r:sourcegraph&patternType=literal"
                       onClick={[Function]}
                     >
-                      r:sourcegraph
+                      <SyntaxHighlightedSearchQuery
+                        query="r:sourcegraph"
+                      >
+                        <span
+                          className="text-monospace search-query-link"
+                        >
+                          <span
+                            className="search-filter-keyword"
+                          >
+                            r
+                            :
+                          </span>
+                          sourcegraph
+                        </span>
+                      </SyntaxHighlightedSearchQuery>
                     </a>
                   </AnchorLink>
                 </small>

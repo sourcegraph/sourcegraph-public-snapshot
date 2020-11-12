@@ -46,6 +46,7 @@ describe('SearchResults', () => {
         setVersionContext: () => undefined,
         availableVersionContexts: undefined,
         previousVersionContext: 'sg-last-version-context',
+        searchStreaming: false,
     }
 
     it('calls the search request once', () => {

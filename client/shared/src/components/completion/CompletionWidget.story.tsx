@@ -1,5 +1,5 @@
 import { action } from '@storybook/addon-actions'
-import { text } from '@storybook/addon-knobs'
+import { radios, text } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
 import { CompletionList } from 'sourcegraph'
@@ -13,12 +13,18 @@ const onSelectItem = action('onSelectItem')
 // propagating them to the CompletionWidget element.
 const { add } = storiesOf('shared/CompletionWidget', module)
     .addParameters({ options: { enableShortcuts: false } })
-    .addDecorator(story => (
-        <>
-            <div>{story()}</div>
-            <style>{webStyles}</style>
-        </>
-    ))
+    .addDecorator(story => {
+        const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
+        document.body.classList.toggle('theme-light', theme === 'light')
+        document.body.classList.toggle('theme-dark', theme === 'dark')
+
+        return (
+            <>
+                <div>{story()}</div>
+                <style>{webStyles}</style>
+            </>
+        )
+    })
 
 const completionWidgetListItemClassName = 'completion-widget-dropdown__item d-flex align-items-center p-2'
 const StyledCompletionWidget: React.FunctionComponent<CompletionWidgetProps> = props => (
@@ -26,7 +32,7 @@ const StyledCompletionWidget: React.FunctionComponent<CompletionWidgetProps> = p
         {...props}
         listClassName="completion-widget-dropdown d-block list-unstyled rounded border p-0 m-0 mt-3"
         listItemClassName={completionWidgetListItemClassName}
-        selectedListItemClassName="completion-widget-dropdown__item--selected bg-primary"
+        selectedListItemClassName="completion-widget-dropdown__item--selected"
         loadingClassName={completionWidgetListItemClassName}
         noResultsClassName={completionWidgetListItemClassName}
     />

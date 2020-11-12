@@ -35,14 +35,11 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
              filter:
           </p>
           <p
-            className="mb-1 text-monospace"
+            className="mb-1"
           >
-            <span
-              className="search-keyword"
-            >
-              repo:
-            </span>
-            sourcegraph/sourcegraph
+            <SyntaxHighlightedSearchQuery
+              query="repo:sourcegraph/sourcegraph"
+            />
           </p>
           <p
             className="mb-1"
@@ -50,14 +47,11 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
             Add the code host to scope to a single repository:
           </p>
           <p
-            className="mb-1 text-monospace"
+            className="mb-1"
           >
-            <span
-              className="search-keyword"
-            >
-              repo:
-            </span>
-            ^git\\.local/my/repo$
+            <SyntaxHighlightedSearchQuery
+              query="repo:^git\\\\.local/my/repo$"
+            />
           </p>
         </small>
       </div>
@@ -86,16 +80,9 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
               onClick={[Function]}
               to="/search?q=repo:sourcegraph"
             >
-              <span
-                className="search-keyword"
-              >
-                repo:
-              </span>
-              <span
-                className="repositories-panel__search-value"
-              >
-                sourcegraph
-              </span>
+              <SyntaxHighlightedSearchQuery
+                query="repo:sourcegraph"
+              />
             </AnchorLink>
           </small>
         </dd>
@@ -107,16 +94,9 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
               onClick={[Function]}
               to="/search?q=repo:test"
             >
-              <span
-                className="search-keyword"
-              >
-                repo:
-              </span>
-              <span
-                className="repositories-panel__search-value"
-              >
-                test
-              </span>
+              <SyntaxHighlightedSearchQuery
+                query="repo:test"
+              />
             </AnchorLink>
           </small>
         </dd>
@@ -163,16 +143,21 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
                   href="/search?q=repo:sourcegraph"
                   onClick={[Function]}
                 >
-                  <span
-                    className="search-keyword"
+                  <SyntaxHighlightedSearchQuery
+                    query="repo:sourcegraph"
                   >
-                    repo:
-                  </span>
-                  <span
-                    className="repositories-panel__search-value"
-                  >
-                    sourcegraph
-                  </span>
+                    <span
+                      className="text-monospace search-query-link"
+                    >
+                      <span
+                        className="search-filter-keyword"
+                      >
+                        repo
+                        :
+                      </span>
+                      sourcegraph
+                    </span>
+                  </SyntaxHighlightedSearchQuery>
                 </a>
               </AnchorLink>
             </small>
@@ -190,16 +175,21 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
                   href="/search?q=repo:test"
                   onClick={[Function]}
                 >
-                  <span
-                    className="search-keyword"
+                  <SyntaxHighlightedSearchQuery
+                    query="repo:test"
                   >
-                    repo:
-                  </span>
-                  <span
-                    className="repositories-panel__search-value"
-                  >
-                    test
-                  </span>
+                    <span
+                      className="text-monospace search-query-link"
+                    >
+                      <span
+                        className="search-filter-keyword"
+                      >
+                        repo
+                        :
+                      </span>
+                      test
+                    </span>
+                  </SyntaxHighlightedSearchQuery>
                 </a>
               </AnchorLink>
             </small>
@@ -246,14 +236,11 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
              filter:
           </p>
           <p
-            className="mb-1 text-monospace"
+            className="mb-1"
           >
-            <span
-              className="search-keyword"
-            >
-              repo:
-            </span>
-            sourcegraph/sourcegraph
+            <SyntaxHighlightedSearchQuery
+              query="repo:sourcegraph/sourcegraph"
+            />
           </p>
           <p
             className="mb-1"
@@ -261,14 +248,11 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
             Add the code host to scope to a single repository:
           </p>
           <p
-            className="mb-1 text-monospace"
+            className="mb-1"
           >
-            <span
-              className="search-keyword"
-            >
-              repo:
-            </span>
-            ^git\\.local/my/repo$
+            <SyntaxHighlightedSearchQuery
+              query="repo:^git\\\\.local/my/repo$"
+            />
           </p>
         </small>
       </div>
@@ -297,16 +281,9 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
               onClick={[Function]}
               to="/search?q=repo:test"
             >
-              <span
-                className="search-keyword"
-              >
-                repo:
-              </span>
-              <span
-                className="repositories-panel__search-value"
-              >
-                test
-              </span>
+              <SyntaxHighlightedSearchQuery
+                query="repo:test"
+              />
             </AnchorLink>
           </small>
         </dd>
@@ -318,16 +295,9 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
               onClick={[Function]}
               to="/search?q=repo:sourcegraph"
             >
-              <span
-                className="search-keyword"
-              >
-                repo:
-              </span>
-              <span
-                className="repositories-panel__search-value"
-              >
-                sourcegraph
-              </span>
+              <SyntaxHighlightedSearchQuery
+                query="repo:sourcegraph"
+              />
             </AnchorLink>
           </small>
         </dd>
@@ -339,16 +309,9 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
               onClick={[Function]}
               to="/search?q=repo:test-two"
             >
-              <span
-                className="search-keyword"
-              >
-                repo:
-              </span>
-              <span
-                className="repositories-panel__search-value"
-              >
-                test-two
-              </span>
+              <SyntaxHighlightedSearchQuery
+                query="repo:test-two"
+              />
             </AnchorLink>
           </small>
         </dd>
@@ -399,16 +362,21 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
                   href="/search?q=repo:test"
                   onClick={[Function]}
                 >
-                  <span
-                    className="search-keyword"
+                  <SyntaxHighlightedSearchQuery
+                    query="repo:test"
                   >
-                    repo:
-                  </span>
-                  <span
-                    className="repositories-panel__search-value"
-                  >
-                    test
-                  </span>
+                    <span
+                      className="text-monospace search-query-link"
+                    >
+                      <span
+                        className="search-filter-keyword"
+                      >
+                        repo
+                        :
+                      </span>
+                      test
+                    </span>
+                  </SyntaxHighlightedSearchQuery>
                 </a>
               </AnchorLink>
             </small>
@@ -426,16 +394,21 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
                   href="/search?q=repo:sourcegraph"
                   onClick={[Function]}
                 >
-                  <span
-                    className="search-keyword"
+                  <SyntaxHighlightedSearchQuery
+                    query="repo:sourcegraph"
                   >
-                    repo:
-                  </span>
-                  <span
-                    className="repositories-panel__search-value"
-                  >
-                    sourcegraph
-                  </span>
+                    <span
+                      className="text-monospace search-query-link"
+                    >
+                      <span
+                        className="search-filter-keyword"
+                      >
+                        repo
+                        :
+                      </span>
+                      sourcegraph
+                    </span>
+                  </SyntaxHighlightedSearchQuery>
                 </a>
               </AnchorLink>
             </small>
@@ -453,16 +426,21 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
                   href="/search?q=repo:test-two"
                   onClick={[Function]}
                 >
-                  <span
-                    className="search-keyword"
+                  <SyntaxHighlightedSearchQuery
+                    query="repo:test-two"
                   >
-                    repo:
-                  </span>
-                  <span
-                    className="repositories-panel__search-value"
-                  >
-                    test-two
-                  </span>
+                    <span
+                      className="text-monospace search-query-link"
+                    >
+                      <span
+                        className="search-filter-keyword"
+                      >
+                        repo
+                        :
+                      </span>
+                      test-two
+                    </span>
+                  </SyntaxHighlightedSearchQuery>
                 </a>
               </AnchorLink>
             </small>
@@ -526,14 +504,11 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
              filter:
           </p>
           <p
-            className="mb-1 text-monospace"
+            className="mb-1"
           >
-            <span
-              className="search-keyword"
-            >
-              repo:
-            </span>
-            sourcegraph/sourcegraph
+            <SyntaxHighlightedSearchQuery
+              query="repo:sourcegraph/sourcegraph"
+            />
           </p>
           <p
             className="mb-1"
@@ -541,14 +516,11 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             Add the code host to scope to a single repository:
           </p>
           <p
-            className="mb-1 text-monospace"
+            className="mb-1"
           >
-            <span
-              className="search-keyword"
-            >
-              repo:
-            </span>
-            ^git\\.local/my/repo$
+            <SyntaxHighlightedSearchQuery
+              query="repo:^git\\\\.local/my/repo$"
+            />
           </p>
         </small>
       </div>
@@ -577,16 +549,9 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
               onClick={[Function]}
               to="/search?q=repo:test"
             >
-              <span
-                className="search-keyword"
-              >
-                repo:
-              </span>
-              <span
-                className="repositories-panel__search-value"
-              >
-                test
-              </span>
+              <SyntaxHighlightedSearchQuery
+                query="repo:test"
+              />
             </AnchorLink>
           </small>
         </dd>
@@ -598,16 +563,9 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
               onClick={[Function]}
               to="/search?q=repo:sourcegraph"
             >
-              <span
-                className="search-keyword"
-              >
-                repo:
-              </span>
-              <span
-                className="repositories-panel__search-value"
-              >
-                sourcegraph
-              </span>
+              <SyntaxHighlightedSearchQuery
+                query="repo:sourcegraph"
+              />
             </AnchorLink>
           </small>
         </dd>
@@ -619,16 +577,9 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
               onClick={[Function]}
               to="/search?q=repo:test-two"
             >
-              <span
-                className="search-keyword"
-              >
-                repo:
-              </span>
-              <span
-                className="repositories-panel__search-value"
-              >
-                test-two
-              </span>
+              <SyntaxHighlightedSearchQuery
+                query="repo:test-two"
+              />
             </AnchorLink>
           </small>
         </dd>
@@ -640,16 +591,9 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
               onClick={[Function]}
               to="/search?q=repo:test-three"
             >
-              <span
-                className="search-keyword"
-              >
-                repo:
-              </span>
-              <span
-                className="repositories-panel__search-value"
-              >
-                test-three
-              </span>
+              <SyntaxHighlightedSearchQuery
+                query="repo:test-three"
+              />
             </AnchorLink>
           </small>
         </dd>
@@ -661,16 +605,9 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
               onClick={[Function]}
               to="/search?q=repo:r:test-four"
             >
-              <span
-                className="search-keyword"
-              >
-                repo:
-              </span>
-              <span
-                className="repositories-panel__search-value"
-              >
-                r:test-four
-              </span>
+              <SyntaxHighlightedSearchQuery
+                query="repo:r:test-four"
+              />
             </AnchorLink>
           </small>
         </dd>
@@ -682,16 +619,9 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
               onClick={[Function]}
               to="/search?q=repo:test-five"
             >
-              <span
-                className="search-keyword"
-              >
-                repo:
-              </span>
-              <span
-                className="repositories-panel__search-value"
-              >
-                test-five
-              </span>
+              <SyntaxHighlightedSearchQuery
+                query="repo:test-five"
+              />
             </AnchorLink>
           </small>
         </dd>
@@ -738,16 +668,21 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
                   href="/search?q=repo:test"
                   onClick={[Function]}
                 >
-                  <span
-                    className="search-keyword"
+                  <SyntaxHighlightedSearchQuery
+                    query="repo:test"
                   >
-                    repo:
-                  </span>
-                  <span
-                    className="repositories-panel__search-value"
-                  >
-                    test
-                  </span>
+                    <span
+                      className="text-monospace search-query-link"
+                    >
+                      <span
+                        className="search-filter-keyword"
+                      >
+                        repo
+                        :
+                      </span>
+                      test
+                    </span>
+                  </SyntaxHighlightedSearchQuery>
                 </a>
               </AnchorLink>
             </small>
@@ -765,16 +700,21 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
                   href="/search?q=repo:sourcegraph"
                   onClick={[Function]}
                 >
-                  <span
-                    className="search-keyword"
+                  <SyntaxHighlightedSearchQuery
+                    query="repo:sourcegraph"
                   >
-                    repo:
-                  </span>
-                  <span
-                    className="repositories-panel__search-value"
-                  >
-                    sourcegraph
-                  </span>
+                    <span
+                      className="text-monospace search-query-link"
+                    >
+                      <span
+                        className="search-filter-keyword"
+                      >
+                        repo
+                        :
+                      </span>
+                      sourcegraph
+                    </span>
+                  </SyntaxHighlightedSearchQuery>
                 </a>
               </AnchorLink>
             </small>
@@ -792,16 +732,21 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
                   href="/search?q=repo:test-two"
                   onClick={[Function]}
                 >
-                  <span
-                    className="search-keyword"
+                  <SyntaxHighlightedSearchQuery
+                    query="repo:test-two"
                   >
-                    repo:
-                  </span>
-                  <span
-                    className="repositories-panel__search-value"
-                  >
-                    test-two
-                  </span>
+                    <span
+                      className="text-monospace search-query-link"
+                    >
+                      <span
+                        className="search-filter-keyword"
+                      >
+                        repo
+                        :
+                      </span>
+                      test-two
+                    </span>
+                  </SyntaxHighlightedSearchQuery>
                 </a>
               </AnchorLink>
             </small>
@@ -819,16 +764,21 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
                   href="/search?q=repo:test-three"
                   onClick={[Function]}
                 >
-                  <span
-                    className="search-keyword"
+                  <SyntaxHighlightedSearchQuery
+                    query="repo:test-three"
                   >
-                    repo:
-                  </span>
-                  <span
-                    className="repositories-panel__search-value"
-                  >
-                    test-three
-                  </span>
+                    <span
+                      className="text-monospace search-query-link"
+                    >
+                      <span
+                        className="search-filter-keyword"
+                      >
+                        repo
+                        :
+                      </span>
+                      test-three
+                    </span>
+                  </SyntaxHighlightedSearchQuery>
                 </a>
               </AnchorLink>
             </small>
@@ -846,16 +796,21 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
                   href="/search?q=repo:r:test-four"
                   onClick={[Function]}
                 >
-                  <span
-                    className="search-keyword"
+                  <SyntaxHighlightedSearchQuery
+                    query="repo:r:test-four"
                   >
-                    repo:
-                  </span>
-                  <span
-                    className="repositories-panel__search-value"
-                  >
-                    r:test-four
-                  </span>
+                    <span
+                      className="text-monospace search-query-link"
+                    >
+                      <span
+                        className="search-filter-keyword"
+                      >
+                        repo
+                        :
+                      </span>
+                      r:test-four
+                    </span>
+                  </SyntaxHighlightedSearchQuery>
                 </a>
               </AnchorLink>
             </small>
@@ -873,16 +828,21 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
                   href="/search?q=repo:test-five"
                   onClick={[Function]}
                 >
-                  <span
-                    className="search-keyword"
+                  <SyntaxHighlightedSearchQuery
+                    query="repo:test-five"
                   >
-                    repo:
-                  </span>
-                  <span
-                    className="repositories-panel__search-value"
-                  >
-                    test-five
-                  </span>
+                    <span
+                      className="text-monospace search-query-link"
+                    >
+                      <span
+                        className="search-filter-keyword"
+                      >
+                        repo
+                        :
+                      </span>
+                      test-five
+                    </span>
+                  </SyntaxHighlightedSearchQuery>
                 </a>
               </AnchorLink>
             </small>
@@ -929,14 +889,11 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
              filter:
           </p>
           <p
-            className="mb-1 text-monospace"
+            className="mb-1"
           >
-            <span
-              className="search-keyword"
-            >
-              repo:
-            </span>
-            sourcegraph/sourcegraph
+            <SyntaxHighlightedSearchQuery
+              query="repo:sourcegraph/sourcegraph"
+            />
           </p>
           <p
             className="mb-1"
@@ -944,14 +901,11 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
             Add the code host to scope to a single repository:
           </p>
           <p
-            className="mb-1 text-monospace"
+            className="mb-1"
           >
-            <span
-              className="search-keyword"
-            >
-              repo:
-            </span>
-            ^git\\.local/my/repo$
+            <SyntaxHighlightedSearchQuery
+              query="repo:^git\\\\.local/my/repo$"
+            />
           </p>
         </small>
       </div>
@@ -980,16 +934,9 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
               onClick={[Function]}
               to="/search?q=repo:test"
             >
-              <span
-                className="search-keyword"
-              >
-                repo:
-              </span>
-              <span
-                className="repositories-panel__search-value"
-              >
-                test
-              </span>
+              <SyntaxHighlightedSearchQuery
+                query="repo:test"
+              />
             </AnchorLink>
           </small>
         </dd>
@@ -1001,16 +948,9 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
               onClick={[Function]}
               to="/search?q=repo:sourcegraph"
             >
-              <span
-                className="search-keyword"
-              >
-                repo:
-              </span>
-              <span
-                className="repositories-panel__search-value"
-              >
-                sourcegraph
-              </span>
+              <SyntaxHighlightedSearchQuery
+                query="repo:sourcegraph"
+              />
             </AnchorLink>
           </small>
         </dd>
@@ -1057,16 +997,21 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
                   href="/search?q=repo:test"
                   onClick={[Function]}
                 >
-                  <span
-                    className="search-keyword"
+                  <SyntaxHighlightedSearchQuery
+                    query="repo:test"
                   >
-                    repo:
-                  </span>
-                  <span
-                    className="repositories-panel__search-value"
-                  >
-                    test
-                  </span>
+                    <span
+                      className="text-monospace search-query-link"
+                    >
+                      <span
+                        className="search-filter-keyword"
+                      >
+                        repo
+                        :
+                      </span>
+                      test
+                    </span>
+                  </SyntaxHighlightedSearchQuery>
                 </a>
               </AnchorLink>
             </small>
@@ -1084,16 +1029,21 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
                   href="/search?q=repo:sourcegraph"
                   onClick={[Function]}
                 >
-                  <span
-                    className="search-keyword"
+                  <SyntaxHighlightedSearchQuery
+                    query="repo:sourcegraph"
                   >
-                    repo:
-                  </span>
-                  <span
-                    className="repositories-panel__search-value"
-                  >
-                    sourcegraph
-                  </span>
+                    <span
+                      className="text-monospace search-query-link"
+                    >
+                      <span
+                        className="search-filter-keyword"
+                      >
+                        repo
+                        :
+                      </span>
+                      sourcegraph
+                    </span>
+                  </SyntaxHighlightedSearchQuery>
                 </a>
               </AnchorLink>
             </small>

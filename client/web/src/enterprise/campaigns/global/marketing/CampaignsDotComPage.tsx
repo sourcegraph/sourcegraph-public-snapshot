@@ -1,6 +1,6 @@
 import React from 'react'
 import { PrivateCodeCta } from '../../../../search/input/PrivateCodeCta'
-import { CampaignsFlushEdgesIcon } from '../../icons'
+import { CampaignsIconFlushLeft } from '../../icons'
 import { PageHeader } from '../../../../components/PageHeader'
 
 export interface CampaignsDotComPageProps {
@@ -10,17 +10,7 @@ export interface CampaignsDotComPageProps {
 export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPageProps> = () => (
     <div className="container web-content mt-3">
         <section className="mt-3 mb-5">
-            <PageHeader
-                icon={CampaignsFlushEdgesIcon}
-                title={
-                    <>
-                        Campaigns{' '}
-                        <sup>
-                            <span className="badge badge-merged text-uppercase">Beta</span>
-                        </sup>
-                    </>
-                }
-            />
+            <PageHeader icon={CampaignsIconFlushLeft} title="Campaigns" />
             <h2 className="mb-5">Make and track large-scale changes across all code</h2>
 
             <div className="text-center">
@@ -56,16 +46,16 @@ export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPagePro
                     </li>
                     <li>
                         Follow the{' '}
-                        <a href="https://docs.sourcegraph.com/user/campaigns/getting_started" rel="noopener">
-                            Getting started with campaigns
+                        <a href="https://docs.sourcegraph.com/campaigns/quickstart" rel="noopener">
+                            quickstart guide for campaigns
                         </a>{' '}
-                        guide to enable campaigns on your instance and start using them.
+                        to enable campaigns on your instance and start using them.
                     </li>
                 </ol>
 
                 <p>
                     Learn more about campaigns{' '}
-                    <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener">
+                    <a href="https://docs.sourcegraph.com/campaigns" rel="noopener">
                         in the documentation
                     </a>
                     .

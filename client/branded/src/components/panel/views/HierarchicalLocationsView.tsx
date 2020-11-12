@@ -21,10 +21,7 @@ import { VersionContextProps } from '../../../../../shared/src/search/util'
 /** The maximum number of results we'll receive from a provider before we truncate and display a banner. */
 const MAXIMUM_LOCATION_RESULTS = 500
 
-export interface HierarchicalLocationsViewProps
-    extends ExtensionsControllerProps<'services'>,
-        SettingsCascadeProps,
-        VersionContextProps {
+export interface HierarchicalLocationsViewProps extends SettingsCascadeProps, VersionContextProps {
     location: H.Location
     /**
      * The observable that emits the locations.
@@ -49,6 +46,15 @@ export interface HierarchicalLocationsViewProps
     isLightTheme: boolean
 
     fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+
+    extensionsController: {
+        services: Pick<ExtensionsControllerProps['extensionsController']['services'], 'context'> & {
+            contribution: Pick<
+                ExtensionsControllerProps['extensionsController']['services']['contribution'],
+                'registerContributions'
+            >
+        }
+    }
 }
 
 interface State {
@@ -125,7 +131,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                 )
         )
 
-        this.subscriptions.add(registerPanelToolbarContributions(this.props))
+        this.subscriptions.add(registerPanelToolbarContributions(this.props.extensionsController.services.contribution))
 
         this.componentUpdates.next(this.props)
     }

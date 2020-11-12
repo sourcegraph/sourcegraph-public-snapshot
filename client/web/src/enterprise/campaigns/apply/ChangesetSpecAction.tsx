@@ -20,8 +20,11 @@ export const ChangesetSpecAction: React.FunctionComponent<ChangesetSpecActionPro
     if (spec.description.__typename === 'ExistingChangesetReference') {
         return <ChangesetSpecActionImport className={className} />
     }
-    if (spec.description.published) {
+    if (spec.description.published === true) {
         return <ChangesetSpecActionPublish className={className} />
+    }
+    if (spec.description.published === 'draft') {
+        return <ChangesetSpecActionPublishDraft className={className} />
     }
     return <ChangesetSpecActionNoPublish className={className} />
 }
@@ -32,6 +35,12 @@ export const ChangesetSpecActionPublish: React.FunctionComponent<{ className?: s
     <div className={classNames(className, iconClassNames)}>
         <UploadIcon data-tooltip="This changeset will be published to its code host" />
         <span>Publish</span>
+    </div>
+)
+export const ChangesetSpecActionPublishDraft: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+    <div className={classNames(className, iconClassNames)}>
+        <UploadIcon className="text-muted" data-tooltip="This changeset will be published as draft to its code host" />
+        <span>Publish draft</span>
     </div>
 )
 export const ChangesetSpecActionNoPublish: React.FunctionComponent<{ className?: string }> = ({ className }) => (

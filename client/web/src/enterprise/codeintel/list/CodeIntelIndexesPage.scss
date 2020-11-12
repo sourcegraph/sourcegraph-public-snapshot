@@ -1,0 +1,32 @@
+.codeintel-indexes {
+    &__grid {
+        display: grid;
+        grid-template-columns: [info] minmax(auto, 1fr) [state] min-content [caret] min-content [end];
+        row-gap: 1rem;
+        column-gap: 1rem;
+        align-items: center;
+        @include media-breakpoint-down(sm) {
+            row-gap: 0.5rem;
+            column-gap: 0.5rem;
+        }
+    }
+}
+
+.codeintel-index-node {
+    &__separator {
+        // Make it full width in the current row.
+        grid-column: 1 / -1;
+        border-top: 1px solid var(--border-color-2);
+        @include media-breakpoint-down(xs) {
+            margin-top: 1rem;
+            padding-bottom: 1rem;
+        }
+    }
+
+    &__state,
+    &__information {
+        @include media-breakpoint-down(xs) {
+            grid-column: 1 / -1;
+        }
+    }
+}

@@ -13,6 +13,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -157,7 +158,7 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 	}
 }
 
-func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
+func TestBitbucketServerSource_LoadChangeset(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
 		// The test fixtures and golden files were generated with
@@ -174,29 +175,28 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 
 	changesets := []*Changeset{
 		{Repo: repo, Changeset: &campaigns.Changeset{ExternalID: "2"}},
-		{Repo: repo, Changeset: &campaigns.Changeset{ExternalID: "4"}},
 		{Repo: repo, Changeset: &campaigns.Changeset{ExternalID: "999"}},
 	}
 
 	testCases := []struct {
 		name string
-		cs   []*Changeset
+		cs   *Changeset
 		err  string
 	}{
 		{
 			name: "found",
-			cs:   []*Changeset{changesets[0], changesets[1]},
+			cs:   changesets[0],
 		},
 		{
-			name: "subset-not-found",
-			cs:   []*Changeset{changesets[0], changesets[2]},
-			err:  `Changeset with external ID "999" not found`,
+			name: "not-found",
+			cs:   changesets[1],
+			err:  `Changeset with external ID 999 not found`,
 		},
 	}
 
 	for _, tc := range testCases {
 		tc := tc
-		tc.name = "BitbucketServerSource_LoadChangesets_" + tc.name
+		tc.name = "BitbucketServerSource_LoadChangeset_" + tc.name
 
 		t.Run(tc.name, func(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
@@ -225,7 +225,7 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 
 			tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", instanceURL)
 
-			err = bbsSrc.LoadChangesets(ctx, tc.cs...)
+			err = bbsSrc.LoadChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -234,12 +234,12 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 				return
 			}
 
-			meta := make([]*bitbucketserver.PullRequest, 0, len(tc.cs))
-			for _, cs := range tc.cs {
-				meta = append(meta, cs.Changeset.Metadata.(*bitbucketserver.PullRequest))
-			}
-
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), meta)
+			testutil.AssertGolden(
+				t,
+				"testdata/golden/"+tc.name,
+				update(tc.name),
+				tc.cs.Changeset.Metadata.(*bitbucketserver.PullRequest),
+			)
 		})
 	}
 }
@@ -564,4 +564,59 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
 		})
 	}
+}
+
+func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
+	svc := &ExternalService{
+		Kind: extsvc.KindBitbucketServer,
+		Config: marshalJSON(t, &schema.BitbucketServerConnection{
+			Url:   "https://bitbucket.sgdev.org",
+			Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
+		}),
+	}
+
+	bbsSrc, err := NewBitbucketServerSource(svc, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("supported", func(t *testing.T) {
+		for name, tc := range map[string]auth.Authenticator{
+			"BasicAuth":           &auth.BasicAuth{},
+			"OAuthBearerToken":    &auth.OAuthBearerToken{},
+			"SudoableOAuthClient": &bitbucketserver.SudoableOAuthClient{},
+		} {
+			t.Run(name, func(t *testing.T) {
+				src, err := bbsSrc.WithAuthenticator(tc)
+				if err != nil {
+					t.Errorf("unexpected non-nil error: %v", err)
+				}
+
+				if gs, ok := src.(*BitbucketServerSource); !ok {
+					t.Error("cannot coerce Source into bbsSource")
+				} else if gs == nil {
+					t.Error("unexpected nil Source")
+				}
+			})
+		}
+	})
+
+	t.Run("unsupported", func(t *testing.T) {
+		for name, tc := range map[string]auth.Authenticator{
+			"nil":         nil,
+			"OAuthClient": &auth.OAuthClient{},
+		} {
+			t.Run(name, func(t *testing.T) {
+				src, err := bbsSrc.WithAuthenticator(tc)
+				if err == nil {
+					t.Error("unexpected nil error")
+				} else if _, ok := err.(UnsupportedAuthenticatorError); !ok {
+					t.Errorf("unexpected error of type %T: %v", err, err)
+				}
+				if src != nil {
+					t.Errorf("expected non-nil Source: %v", src)
+				}
+			})
+		}
+	})
 }

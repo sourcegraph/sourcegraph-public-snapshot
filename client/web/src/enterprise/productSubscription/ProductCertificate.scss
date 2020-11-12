@@ -12,36 +12,16 @@
         background-color: var(--body-bg);
         background-repeat: none;
         background-size: cover;
+        opacity: 0.08;
     }
 
     &__logo {
+        flex: 0;
         height: 5rem;
         z-index: 9;
     }
-    .btn {
-        z-index: 9;
-    }
     .card-footer {
+        flex: 0;
         z-index: 0;
-    }
-}
-
-.theme-light {
-    .product-certificate {
-        &__bg {
-            opacity: 0.125;
-        }
-    }
-}
-
-.theme-dark {
-    .product-certificate {
-        &__bg {
-            opacity: 0.35;
-            background-blend-mode: overlay;
-        }
-        .card-footer {
-            background-color: rgba(43, 55, 80, 0.85);
-        }
     }
 }

@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { PageTitle } from '../../../components/PageTitle'
 import {
@@ -15,10 +15,10 @@ import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { HeroPage } from '../../../components/HeroPage'
 import { CampaignDescription } from '../detail/CampaignDescription'
-import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { CampaignSpecInfoByline } from './CampaignSpecInfoByline'
+import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 
-export interface CampaignApplyPageProps extends ThemeProps, BreadcrumbSetters {
+export interface CampaignApplyPageProps extends ThemeProps, TelemetryProps {
     specID: string
     history: H.History
     location: H.Location
@@ -38,7 +38,7 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
     history,
     location,
     isLightTheme,
-    useBreadcrumb,
+    telemetryService,
     fetchCampaignSpecById = _fetchCampaignSpecById,
     queryChangesetSpecs,
     queryChangesetSpecFileDiffs,
@@ -46,15 +46,9 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
 }) => {
     const spec = useObservable(useMemo(() => fetchCampaignSpecById(specID), [specID, fetchCampaignSpecById]))
 
-    useBreadcrumb(
-        useMemo(
-            () => ({
-                element: <>Preview</>,
-                key: 'ApplySpecPage',
-            }),
-            []
-        )
-    )
+    useEffect(() => {
+        telemetryService.logViewEvent('CampaignApplyPage')
+    }, [telemetryService])
 
     if (spec === undefined) {
         return (
@@ -81,6 +75,7 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 specID={spec.id}
                 campaign={spec.appliesToCampaign}
                 viewerCanAdminister={spec.viewerCanAdminister}
+                telemetryService={telemetryService}
             />
             <CampaignDescription history={history} description={spec.description.description} />
             <ChangesetSpecList

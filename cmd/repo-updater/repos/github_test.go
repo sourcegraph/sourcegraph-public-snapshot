@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -283,7 +284,7 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 				BaseRef: "refs/heads/master",
 				Changeset: &campaigns.Changeset{
 					Metadata: &github.PullRequest{
-						ID: "MDExOlB1bGxSZXF1ZXN0MzYwNTI5NzI0",
+						ID: "MDExOlB1bGxSZXF1ZXN0NTA0NDU4Njg1",
 					},
 				},
 			},
@@ -339,34 +340,32 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 	}
 }
 
-func TestGithubSource_LoadChangesets(t *testing.T) {
+func TestGithubSource_LoadChangeset(t *testing.T) {
 	testCases := []struct {
 		name string
-		cs   []*Changeset
+		cs   *Changeset
 		err  string
 	}{
 		{
 			name: "found",
-			cs: []*Changeset{
-				{
-					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
-					Changeset: &campaigns.Changeset{ExternalID: "5550"},
-				},
-				{
-					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "tsenart/vegeta"}},
-					Changeset: &campaigns.Changeset{ExternalID: "50"},
-				},
-				{
-					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
-					Changeset: &campaigns.Changeset{ExternalID: "5834"},
-				},
+			cs: &Changeset{
+				Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
+				Changeset: &campaigns.Changeset{ExternalID: "5550"},
 			},
+		},
+		{
+			name: "not-found",
+			cs: &Changeset{
+				Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
+				Changeset: &campaigns.Changeset{ExternalID: "100000"},
+			},
+			err: "Changeset with external ID 100000 not found",
 		},
 	}
 
 	for _, tc := range testCases {
 		tc := tc
-		tc.name = "GithubSource_LoadChangesets_" + tc.name
+		tc.name = "GithubSource_LoadChangeset_" + tc.name
 
 		t.Run(tc.name, func(t *testing.T) {
 			// The GithubSource uses the github.Client under the hood, which
@@ -398,7 +397,7 @@ func TestGithubSource_LoadChangesets(t *testing.T) {
 				tc.err = "<nil>"
 			}
 
-			err = githubSrc.LoadChangesets(ctx, tc.cs...)
+			err = githubSrc.LoadChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -407,11 +406,7 @@ func TestGithubSource_LoadChangesets(t *testing.T) {
 				return
 			}
 
-			meta := make([]*github.PullRequest, 0, len(tc.cs))
-			for _, cs := range tc.cs {
-				meta = append(meta, cs.Changeset.Metadata.(*github.PullRequest))
-			}
-
+			meta := tc.cs.Changeset.Metadata.(*github.PullRequest)
 			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), meta)
 		})
 	}
@@ -776,5 +771,53 @@ func githubGraphQLFailureMiddleware(cli httpcli.Doer) httpcli.Doer {
 			return nil, errors.New("graphql request failed")
 		}
 		return cli.Do(req)
+	})
+}
+
+func TestGithubSource_WithAuthenticator(t *testing.T) {
+	svc := &ExternalService{
+		Kind: extsvc.KindGitHub,
+		Config: marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://github.com",
+			Token: os.Getenv("GITHUB_TOKEN"),
+		}),
+	}
+
+	githubSrc, err := NewGithubSource(svc, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("supported", func(t *testing.T) {
+		src, err := githubSrc.WithAuthenticator(&auth.OAuthBearerToken{})
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+
+		if gs, ok := src.(*GithubSource); !ok {
+			t.Error("cannot coerce Source into GithubSource")
+		} else if gs == nil {
+			t.Error("unexpected nil Source")
+		}
+	})
+
+	t.Run("unsupported", func(t *testing.T) {
+		for name, tc := range map[string]auth.Authenticator{
+			"nil":         nil,
+			"BasicAuth":   &auth.BasicAuth{},
+			"OAuthClient": &auth.OAuthClient{},
+		} {
+			t.Run(name, func(t *testing.T) {
+				src, err := githubSrc.WithAuthenticator(tc)
+				if err == nil {
+					t.Error("unexpected nil error")
+				} else if _, ok := err.(UnsupportedAuthenticatorError); !ok {
+					t.Errorf("unexpected error of type %T: %v", err, err)
+				}
+				if src != nil {
+					t.Errorf("expected non-nil Source: %v", src)
+				}
+			})
+		}
 	})
 }

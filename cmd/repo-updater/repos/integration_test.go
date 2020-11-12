@@ -49,7 +49,6 @@ func TestIntegration(t *testing.T) {
 		name string
 		test func(*testing.T, repos.Store) func(*testing.T)
 	}{
-		{"DBStore/Transact", func(*testing.T, repos.Store) func(*testing.T) { return testDBStoreTransact(dbstore) }},
 		{"DBStore/ListExternalServices", testStoreListExternalServices(userID)},
 		{"DBStore/SyncRateLimiters", testSyncRateLimiters},
 		{"DBStore/ListExternalServices/ByRepo", testStoreListExternalServicesByRepos},

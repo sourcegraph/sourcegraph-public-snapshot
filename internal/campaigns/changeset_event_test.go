@@ -10,14 +10,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
-func TestChangesetEvents(t *testing.T) {
+func TestChangesetEvent(t *testing.T) {
 	type testCase struct {
 		name      string
 		changeset Changeset
 		events    []*ChangesetEvent
 	}
 
-	var cases []testCase
+	bbsActivity := &bitbucketserver.Activity{
+		ID:     1,
+		Action: bitbucketserver.OpenedActivityAction,
+	}
+
+	cases := []testCase{{
+		name: "removes duplicates",
+		changeset: Changeset{
+			Metadata: &bitbucketserver.PullRequest{
+				Activities: []*bitbucketserver.Activity{
+					bbsActivity,
+					bbsActivity,
+				},
+			},
+		},
+		events: []*ChangesetEvent{
+			{
+				Kind:     ChangesetEventKindBitbucketServerOpened,
+				Key:      "1",
+				Metadata: bbsActivity,
+			},
+		},
+	}}
 
 	{ // Github
 
@@ -218,6 +240,8 @@ func TestChangesetEvents(t *testing.T) {
 			{ID: 11, System: false, Body: "this is a user note"},
 			{ID: 12, System: true, Body: "approved this merge request"},
 			{ID: 13, System: true, Body: "unapproved this merge request"},
+			{ID: 14, System: true, Body: "marked as a **Work In Progress**"},
+			{ID: 15, System: true, Body: "unmarked as a **Work In Progress**"},
 		}
 
 		pipelines := []*gitlab.Pipeline{
@@ -241,13 +265,25 @@ func TestChangesetEvents(t *testing.T) {
 					ChangesetID: 1234,
 					Kind:        ChangesetEventKindGitLabApproved,
 					Key:         notes[1].Key(),
-					Metadata:    notes[1].ToReview(),
+					Metadata:    notes[1].ToEvent(),
 				},
 				{
 					ChangesetID: 1234,
 					Kind:        ChangesetEventKindGitLabUnapproved,
 					Key:         notes[2].Key(),
-					Metadata:    notes[2].ToReview(),
+					Metadata:    notes[2].ToEvent(),
+				},
+				{
+					ChangesetID: 1234,
+					Kind:        ChangesetEventKindGitLabMarkWorkInProgress,
+					Key:         notes[3].Key(),
+					Metadata:    notes[3].ToEvent(),
+				},
+				{
+					ChangesetID: 1234,
+					Kind:        ChangesetEventKindGitLabUnmarkWorkInProgress,
+					Key:         notes[4].Key(),
+					Metadata:    notes[4].ToEvent(),
 				},
 				{
 					ChangesetID: 1234,

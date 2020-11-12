@@ -86,11 +86,9 @@ export function validCategories(categories: ExtensionManifest['categories']): Ex
         return undefined
     }
     const validCategories = uniq(
-        categories
-            .filter((category): category is ExtensionCategory =>
-                EXTENSION_CATEGORIES.includes(category as ExtensionCategory)
-            )
-            .sort()
+        categories.filter((category): category is ExtensionCategory =>
+            EXTENSION_CATEGORIES.includes(category as ExtensionCategory)
+        )
     )
     return validCategories.length === 0 ? undefined : validCategories
 }

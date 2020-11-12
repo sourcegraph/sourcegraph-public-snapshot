@@ -8,6 +8,31 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+func TestWIP(t *testing.T) {
+	t.Run("SetWIP", func(t *testing.T) {
+		tests := []struct{ title, want string }{
+			{title: "My perfect changeset", want: "WIP: My perfect changeset"},
+			{title: "WIP: My perfect changeset", want: "WIP: My perfect changeset"},
+		}
+		for _, tc := range tests {
+			if have, want := SetWIP(tc.title), tc.want; have != want {
+				t.Errorf("incorrect title generated from SetWIP: have=%q want=%q", have, want)
+			}
+		}
+	})
+	t.Run("UnsetWIP", func(t *testing.T) {
+		tests := []struct{ title, want string }{
+			{title: "WIP: My perfect changeset", want: "My perfect changeset"},
+			{title: "My perfect changeset", want: "My perfect changeset"},
+		}
+		for _, tc := range tests {
+			if have, want := UnsetWIP(tc.title), tc.want; have != want {
+				t.Errorf("incorrect title generated from UnsetWIP: have=%q want=%q", have, want)
+			}
+		}
+	})
+}
+
 func TestCreateMergeRequest(t *testing.T) {
 	ctx := context.Background()
 	project := &Project{}

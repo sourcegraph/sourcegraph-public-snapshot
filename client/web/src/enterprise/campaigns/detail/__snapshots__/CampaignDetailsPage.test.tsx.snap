@@ -11,14 +11,12 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
   namespaceID="namespace123"
   queryChangesetCountsOverTime={[Function]}
   queryChangesets={[Function]}
-  setBreadcrumb={[Function]}
   telemetryService={
     Object {
       "log": [Function],
       "logViewEvent": [Function],
     }
   }
-  useBreadcrumb={[Function]}
 >
   <PageTitle
     title="n"
@@ -72,21 +70,14 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
         <h1
           className="flex-grow-1"
         >
-          <CampaignsIconWithBetaBadge
+          <CampaignsIconFlushLeft
             className="icon-inline page-header__icon"
           >
-            <Memo(CampaignsFlushEdgesIcon)
+            <Memo(BaseCampaignsIcon)
               className="icon-inline page-header__icon"
+              viewBox="2 0 20 20"
             />
-             
-            <sup>
-              <span
-                className="badge badge-merged text-uppercase"
-              >
-                Beta
-              </span>
-            </sup>
-          </CampaignsIconWithBetaBadge>
+          </CampaignsIconFlushLeft>
            
           <AnchorLink
             to="/users/alice/campaigns"
@@ -171,36 +162,9 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
   </CampaignInfoByline>
   <UnpublishedNotice
     className="mb-3"
+    total={10}
     unpublished={2}
-  >
-    <div
-      className="alert alert-secondary mb-3"
-    >
-      <Memo(SourceBranchIcon)
-        className="icon-inline"
-      />
-       
-      2
-       unpublished
-       
-      changesets
-      . Set
-       
-      <code
-        className="badge badge-secondary"
-      >
-        published: true
-      </code>
-       in the campaign spec and re-run
-       
-      <code
-        className="badge badge-secondary"
-      >
-        src campaign apply -f $CAMPAIGN_SPEC_FILE
-      </code>
-       to publish to your code host.
-    </div>
-  </UnpublishedNotice>
+  />
   <CampaignStatsCard
     className="mb-3"
     closedAt={null}
@@ -208,6 +172,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
       Object {
         "closed": 0,
         "deleted": 1,
+        "draft": 0,
         "merged": 0,
         "open": 8,
         "total": 10,
@@ -304,29 +269,29 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
                   </span>
                 </div>
               </ChangesetStatusUnpublished>
-              <ChangesetStatusDeleted
+              <ChangesetStatusDraft
                 className="d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
                 label={
                   <span
                     className="text-muted"
                   >
-                    1
-                     deleted
+                    0
+                     draft
                   </span>
                 }
               >
                 <div
                   className="m-0 text-nowrap flex-column align-items-center justify-content-center text-muted d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
                 >
-                  <Memo(DeleteIcon) />
+                  <Memo(SourcePullIcon) />
                   <span
                     className="text-muted"
                   >
-                    1
-                     deleted
+                    0
+                     draft
                   </span>
                 </div>
-              </ChangesetStatusDeleted>
+              </ChangesetStatusDraft>
               <ChangesetStatusOpen
                 className="d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
                 label={
@@ -432,16 +397,14 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
       Object {
         "__typename": "Campaign",
         "branch": "awesome-branch",
-        "changesets": Object {
-          "stats": Object {
-            "closed": 0,
-            "deleted": 1,
-            "merged": 0,
-            "open": 8,
-            "total": 10,
-            "unpublished": 2,
-          },
-          "totalCount": 0,
+        "changesetsStats": Object {
+          "closed": 0,
+          "deleted": 1,
+          "draft": 0,
+          "merged": 0,
+          "open": 8,
+          "total": 10,
+          "unpublished": 2,
         },
         "closedAt": null,
         "createdAt": "2020-01-01",
@@ -571,6 +534,7 @@ description: somestring",
                   "ERRORED",
                   "PROCESSING",
                   "OPEN",
+                  "DRAFT",
                   "CLOSED",
                   "MERGED",
                   "DELETED",
@@ -622,6 +586,14 @@ description: somestring",
                 </button>
                 <button
                   className="btn btn-outline-secondary"
+                  key="DRAFT"
+                  onClick={[Function]}
+                  type="button"
+                >
+                  Draft
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="CLOSED"
                   onClick={[Function]}
                   type="button"
@@ -655,6 +627,7 @@ description: somestring",
                     "ERRORED",
                     "PROCESSING",
                     "OPEN",
+                    "DRAFT",
                     "CLOSED",
                     "MERGED",
                     "DELETED",
@@ -693,6 +666,12 @@ description: somestring",
                     value="OPEN"
                   >
                     Open
+                  </option>
+                  <option
+                    key="DRAFT"
+                    value="DRAFT"
+                  >
+                    Draft
                   </option>
                   <option
                     key="CLOSED"
@@ -983,14 +962,12 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
   namespaceID="namespace123"
   queryChangesetCountsOverTime={[Function]}
   queryChangesets={[Function]}
-  setBreadcrumb={[Function]}
   telemetryService={
     Object {
       "log": [Function],
       "logViewEvent": [Function],
     }
   }
-  useBreadcrumb={[Function]}
 >
   <PageTitle
     title="n"
@@ -1044,21 +1021,14 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
         <h1
           className="flex-grow-1"
         >
-          <CampaignsIconWithBetaBadge
+          <CampaignsIconFlushLeft
             className="icon-inline page-header__icon"
           >
-            <Memo(CampaignsFlushEdgesIcon)
+            <Memo(BaseCampaignsIcon)
               className="icon-inline page-header__icon"
+              viewBox="2 0 20 20"
             />
-             
-            <sup>
-              <span
-                className="badge badge-merged text-uppercase"
-              >
-                Beta
-              </span>
-            </sup>
-          </CampaignsIconWithBetaBadge>
+          </CampaignsIconFlushLeft>
            
           <AnchorLink
             to="/users/alice/campaigns"
@@ -1143,36 +1113,9 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
   </CampaignInfoByline>
   <UnpublishedNotice
     className="mb-3"
+    total={10}
     unpublished={2}
-  >
-    <div
-      className="alert alert-secondary mb-3"
-    >
-      <Memo(SourceBranchIcon)
-        className="icon-inline"
-      />
-       
-      2
-       unpublished
-       
-      changesets
-      . Set
-       
-      <code
-        className="badge badge-secondary"
-      >
-        published: true
-      </code>
-       in the campaign spec and re-run
-       
-      <code
-        className="badge badge-secondary"
-      >
-        src campaign apply -f $CAMPAIGN_SPEC_FILE
-      </code>
-       to publish to your code host.
-    </div>
-  </UnpublishedNotice>
+  />
   <CampaignStatsCard
     className="mb-3"
     closedAt={null}
@@ -1180,6 +1123,7 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
       Object {
         "closed": 0,
         "deleted": 1,
+        "draft": 0,
         "merged": 0,
         "open": 8,
         "total": 10,
@@ -1276,29 +1220,29 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
                   </span>
                 </div>
               </ChangesetStatusUnpublished>
-              <ChangesetStatusDeleted
+              <ChangesetStatusDraft
                 className="d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
                 label={
                   <span
                     className="text-muted"
                   >
-                    1
-                     deleted
+                    0
+                     draft
                   </span>
                 }
               >
                 <div
                   className="m-0 text-nowrap flex-column align-items-center justify-content-center text-muted d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
                 >
-                  <Memo(DeleteIcon) />
+                  <Memo(SourcePullIcon) />
                   <span
                     className="text-muted"
                   >
-                    1
-                     deleted
+                    0
+                     draft
                   </span>
                 </div>
-              </ChangesetStatusDeleted>
+              </ChangesetStatusDraft>
               <ChangesetStatusOpen
                 className="d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
                 label={
@@ -1404,16 +1348,14 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
       Object {
         "__typename": "Campaign",
         "branch": "awesome-branch",
-        "changesets": Object {
-          "stats": Object {
-            "closed": 0,
-            "deleted": 1,
-            "merged": 0,
-            "open": 8,
-            "total": 10,
-            "unpublished": 2,
-          },
-          "totalCount": 0,
+        "changesetsStats": Object {
+          "closed": 0,
+          "deleted": 1,
+          "draft": 0,
+          "merged": 0,
+          "open": 8,
+          "total": 10,
+          "unpublished": 2,
         },
         "closedAt": null,
         "createdAt": "2020-01-01",
@@ -1543,6 +1485,7 @@ description: somestring",
                   "ERRORED",
                   "PROCESSING",
                   "OPEN",
+                  "DRAFT",
                   "CLOSED",
                   "MERGED",
                   "DELETED",
@@ -1594,6 +1537,14 @@ description: somestring",
                 </button>
                 <button
                   className="btn btn-outline-secondary"
+                  key="DRAFT"
+                  onClick={[Function]}
+                  type="button"
+                >
+                  Draft
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
                   key="CLOSED"
                   onClick={[Function]}
                   type="button"
@@ -1627,6 +1578,7 @@ description: somestring",
                     "ERRORED",
                     "PROCESSING",
                     "OPEN",
+                    "DRAFT",
                     "CLOSED",
                     "MERGED",
                     "DELETED",
@@ -1665,6 +1617,12 @@ description: somestring",
                     value="OPEN"
                   >
                     Open
+                  </option>
+                  <option
+                    key="DRAFT"
+                    value="DRAFT"
+                  >
+                    Draft
                   </option>
                   <option
                     key="CLOSED"

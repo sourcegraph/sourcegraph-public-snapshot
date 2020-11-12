@@ -128,7 +128,7 @@ func AllowAnonymousRequest(req *http.Request) bool {
 	}
 
 	// Permission is checked by a shared token
-	if strings.HasPrefix(req.URL.Path, "/.internal-code-intel") {
+	if strings.HasPrefix(req.URL.Path, "/.executors") {
 		return true
 	}
 

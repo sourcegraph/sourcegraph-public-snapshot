@@ -28,10 +28,11 @@
 @import './enterprise/campaigns/detail/CampaignStatsCard';
 @import './enterprise/campaigns/list/CampaignListPage';
 @import './enterprise/campaigns/list/CampaignNode';
-@import './enterprise/campaigns/list/CampaignsListBetaNotice';
 @import './enterprise/extensions/registry/RegistryArea';
 @import './enterprise/extensions/registry/RegistryNewExtensionPage';
 @import './enterprise/extensions/extension/RegistryExtensionManagePage';
 @import './enterprise/productSubscription/ProductCertificate';
 @import './enterprise/productSubscription/TrueUpStatusSummary';
 @import './enterprise/user/productSubscriptions/PaymentTokenFormControl';
+@import './enterprise/codeintel/index';
+@import './enterprise/code-monitoring/index';

@@ -75,38 +75,13 @@
         [data-reach-listbox-option][data-current] {
             /* styles for the option matching the current value of the input */
             font-weight: normal;
-            background-color: $color-bg-3;
+            background-color: var(--color-bg-3);
         }
 
         [data-reach-listbox-option][aria-selected='true'] {
             /* styles for the option matching the user's navigation selection */
             color: inherit;
-            background-color: $color-bg-2;
-        }
-    }
-}
-
-.theme-light {
-    .version-context-dropdown {
-        &__info {
-            background-color: $color-light-bg-2;
-        }
-
-        &:not(:first-child) .version-context-dropdown__button {
-            border-left: 1px solid $gray-07 !important;
-        }
-
-        &__list {
-            [data-reach-listbox-option][data-current] {
-                /* styles for the option matching the current value of the input */
-                font-weight: normal;
-                background-color: $color-light-bg-4;
-            }
-            [data-reach-listbox-option][aria-selected='true'] {
-                /* styles for the option matching the user's navigation selection */
-                color: inherit;
-                background-color: $color-light-bg-2;
-            }
+            background-color: var(--color-bg-2);
         }
     }
 }

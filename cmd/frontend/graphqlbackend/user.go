@@ -185,7 +185,7 @@ type updateUserArgs struct {
 	AvatarURL   *string
 }
 
-func (*schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (*EmptyResponse, error) {
+func (*schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (*UserResolver, error) {
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
@@ -215,7 +215,7 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (*E
 	if err := db.Users.Update(ctx, userID, update); err != nil {
 		return nil, err
 	}
-	return &EmptyResponse{}, nil
+	return UserByIDInt32(ctx, userID)
 }
 
 // CurrentUser returns the authenticated user if any. If there is no authenticated user, it returns
@@ -330,6 +330,11 @@ func (r *UserResolver) Campaigns(ctx context.Context, args *ListCampaignsArgs) (
 	return EnterpriseResolvers.campaignsResolver.Campaigns(ctx, args)
 }
 
+func (r *UserResolver) CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error) {
+	args.UserID = r.user.ID
+	return EnterpriseResolvers.campaignsResolver.CampaignsCodeHosts(ctx, args)
+}
+
 func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		return false
@@ -339,4 +344,11 @@ func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 	}
 	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.enableUsernameChanges == false.
 	return backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
+}
+
+func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (MonitorConnectionResolver, error) {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+		return nil, err
+	}
+	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.user.ID, args)
 }

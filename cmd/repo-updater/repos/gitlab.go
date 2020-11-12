@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -28,8 +29,14 @@ type GitLabSource struct {
 	exclude             excludeFunc
 	baseURL             *url.URL // URL with path /api/v4 (no trailing slash)
 	nameTransformations reposource.NameTransformations
+	provider            *gitlab.ClientProvider
 	client              *gitlab.Client
 }
+
+var _ Source = &GitLabSource{}
+var _ UserSource = &GitLabSource{}
+var _ DraftChangesetSource = &GitLabSource{}
+var _ ChangesetSource = &GitLabSource{}
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
 func NewGitLabSource(svc *ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
@@ -77,14 +84,32 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpc
 		return nil, err
 	}
 
+	provider := gitlab.NewClientProvider(baseURL, cli)
+
 	return &GitLabSource{
 		svc:                 svc,
 		config:              c,
 		exclude:             exclude,
 		baseURL:             baseURL,
 		nameTransformations: nts,
-		client:              gitlab.NewClientProvider(baseURL, cli).GetPATClient(c.Token, ""),
+		provider:            provider,
+		client:              provider.GetPATClient(c.Token, ""),
 	}, nil
+}
+
+func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
+	switch a.(type) {
+	case *auth.OAuthBearerToken:
+		break
+
+	default:
+		return nil, newUnsupportedAuthenticatorError("GitLabSource", a)
+	}
+
+	sc := s
+	sc.client = sc.client.WithAuthenticator(a)
+
+	return &sc, nil
 }
 
 // ListRepos returns all GitLab repositories accessible to all connections configured
@@ -148,7 +173,7 @@ func (s *GitLabSource) authenticatedRemoteURL(proj *gitlab.Project) string {
 	if s.config.GitURLType == "ssh" {
 		return proj.SSHURLToRepo // SSH authentication must be provided out-of-band
 	}
-	if s.config.Token == "" || !proj.RequiresAuthentication() {
+	if s.config.Token == "" {
 		return proj.HTTPURLToRepo
 	}
 	u, err := url.Parse(proj.HTTPURLToRepo)
@@ -199,7 +224,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 					ch <- batch{projs: []*gitlab.Project{proj}}
 				}
 
-				time.Sleep(s.client.RateLimitMonitor.RecommendedWaitForBackgroundOp(1))
+				time.Sleep(s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))
 			}
 		}()
 	}
@@ -252,7 +277,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 				url = *nextPageURL
 
 				// 0-duration sleep unless nearing rate limit exhaustion
-				time.Sleep(s.client.RateLimitMonitor.RecommendedWaitForBackgroundOp(1))
+				time.Sleep(s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))
 			}
 		}(projectQuery)
 	}
@@ -302,8 +327,6 @@ func projectQueryToURL(projectQuery string, perPage int) (string, error) {
 	return u.String(), nil
 }
 
-var _ ChangesetSource = &GitLabSource{}
-
 // CreateChangeset creates a GitLab merge request. If it already exists,
 // *Changeset will be populated and the return value will be true.
 func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
@@ -337,6 +360,30 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 	return exists, nil
 }
 
+// CreateDraftChangeset creates a GitLab merge request. If it already exists,
+// *Changeset will be populated and the return value will be true.
+func (s *GitLabSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
+	c.Title = gitlab.SetWIP(c.Title)
+
+	exists, err := s.CreateChangeset(ctx, c)
+	if err != nil {
+		return exists, err
+	}
+
+	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+	if !ok {
+		return false, errors.New("Changeset is not a GitLab merge request")
+	}
+
+	// If it already exists, but is not a WIP, we need to update the title.
+	if exists && !mr.WorkInProgress {
+		if err := s.UpdateChangeset(ctx, c); err != nil {
+			return exists, err
+		}
+	}
+	return exists, nil
+}
+
 // CloseChangeset closes the merge request on GitLab, leaving it unlocked.
 func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
@@ -361,34 +408,30 @@ func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 	return nil
 }
 
-// LoadChangesets loads the given merge requests from GitLab and updates them.
-// Note that this is an O(n) operation due to limitations in the GitLab REST
-// API.
-func (s *GitLabSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
-	// When we require GitLab 12.0+, we should migrate to the GraphQL API, which
-	// will allow us to query multiple MRs at once.
-	for _, c := range cs {
-		project := c.Repo.Metadata.(*gitlab.Project)
+// LoadChangeset loads the given merge request from GitLab and updates it.
+func (s *GitLabSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
+	project := cs.Repo.Metadata.(*gitlab.Project)
 
-		iid, err := strconv.ParseInt(c.ExternalID, 10, 64)
-		if err != nil {
-			return errors.Wrapf(err, "parsing changeset external ID %s", c.ExternalID)
-		}
+	iid, err := strconv.ParseInt(cs.ExternalID, 10, 64)
+	if err != nil {
+		return errors.Wrapf(err, "parsing changeset external ID %s", cs.ExternalID)
+	}
 
-		mr, err := s.client.GetMergeRequest(ctx, project, gitlab.ID(iid))
-		if err != nil {
-			return errors.Wrapf(err, "retrieving merge request %d", iid)
+	mr, err := s.client.GetMergeRequest(ctx, project, gitlab.ID(iid))
+	if err != nil {
+		if gitlab.IsNotFound(err) {
+			return ChangesetNotFoundError{Changeset: cs}
 		}
+		return errors.Wrapf(err, "retrieving merge request %d", iid)
+	}
 
-		// As above, these additional API calls can go away once we can use
-		// GraphQL.
-		if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
-			return errors.Wrapf(err, "retrieving additional data for merge request %d", iid)
-		}
+	// These additional API calls can go away once we can use the GraphQL API.
+	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
+		return errors.Wrapf(err, "retrieving additional data for merge request %d", iid)
+	}
 
-		if err := c.SetMetadata(mr); err != nil {
-			return errors.Wrapf(err, "setting changeset metadata for merge request %d", iid)
-		}
+	if err := cs.SetMetadata(mr); err != nil {
+		return errors.Wrapf(err, "setting changeset metadata for merge request %d", iid)
 	}
 
 	return nil
@@ -525,6 +568,11 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 		return errors.Wrap(err, "updating GitLab merge request")
 	}
 
-	c.Changeset.Metadata = updated
-	return nil
+	return c.Changeset.SetMetadata(updated)
+}
+
+// UndraftChangeset marks the changeset as *not* work in progress anymore.
+func (s *GitLabSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
+	c.Title = gitlab.UnsetWIP(c.Title)
+	return s.UpdateChangeset(ctx, c)
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -84,12 +85,31 @@ type Source interface {
 	ExternalServices() ExternalServices
 }
 
+// A UserSource is a source that can use a custom authenticator (such as one
+// contained in a user credential) to interact with the code host, rather than
+// global credentials.
+type UserSource interface {
+	// WithAuthenticator returns a copy of the original Source configured to use
+	// the given authenticator, provided that authenticator type is supported by
+	// the code host.
+	WithAuthenticator(auth.Authenticator) (Source, error)
+}
+
+// A DraftChangesetSource can create draft changesets and undraft them.
+type DraftChangesetSource interface {
+	// CreateDraftChangeset will create the Changeset on the source. If it already
+	// exists, *Changeset will be populated and the return value will be
+	// true.
+	CreateDraftChangeset(context.Context, *Changeset) (bool, error)
+	// UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
+	UndraftChangeset(context.Context, *Changeset) error
+}
+
 // A ChangesetSource can load the latest state of a list of Changesets.
 type ChangesetSource interface {
-	// LoadChangesets loads the given Changesets from the sources and updates
-	// them. If a Changeset could not be found on the source, it's included in
-	// the returned slice.
-	LoadChangesets(context.Context, ...*Changeset) error
+	// LoadChangeset loads the given Changeset from the source and updates it.
+	// If the Changeset could not be found on the source, a ChangesetNotFoundError is returned.
+	LoadChangeset(context.Context, *Changeset) error
 	// CreateChangeset will create the Changeset on the source. If it already
 	// exists, *Changeset will be populated and the return value will be
 	// true.
@@ -105,27 +125,35 @@ type ChangesetSource interface {
 	ReopenChangeset(context.Context, *Changeset) error
 }
 
-// ChangesetsNotFoundError is returned by LoadChangesets if any of the passed
-// Changesets could not be found on the codehost.
-type ChangesetsNotFoundError struct {
-	Changesets []*Changeset
+// UnsupportedAuthenticatorError is returned by WithAuthenticator if the
+// authenticator isn't supported on that code host.
+type UnsupportedAuthenticatorError struct {
+	have   string
+	source string
 }
 
-func (e ChangesetsNotFoundError) Error() string {
-	if len(e.Changesets) == 1 {
-		return fmt.Sprintf("Changeset with external ID %q not found", e.Changesets[0].Changeset.ExternalID)
-	}
-
-	items := make([]string, len(e.Changesets))
-	for i := range e.Changesets {
-		items[i] = fmt.Sprintf("* %q", e.Changesets[i].Changeset.ExternalID)
-	}
-
-	return fmt.Sprintf(
-		"Changesets with the following external IDs could not be found:\n\t%s\n\n",
-		strings.Join(items, "\n\t"),
-	)
+func (e UnsupportedAuthenticatorError) Error() string {
+	return fmt.Sprintf("authenticator type unsupported for %s sources: %s", e.source, e.have)
 }
+
+func newUnsupportedAuthenticatorError(source string, a auth.Authenticator) UnsupportedAuthenticatorError {
+	return UnsupportedAuthenticatorError{
+		have:   fmt.Sprintf("%T", a),
+		source: source,
+	}
+}
+
+// ChangesetNotFoundError is returned by LoadChangeset if the changeset
+// could not be found on the codehost.
+type ChangesetNotFoundError struct {
+	Changeset *Changeset
+}
+
+func (e ChangesetNotFoundError) Error() string {
+	return fmt.Sprintf("Changeset with external ID %s not found", e.Changeset.Changeset.ExternalID)
+}
+
+func (e ChangesetNotFoundError) Terminal() bool { return true }
 
 // A SourceResult is sent by a Source over a channel for each repository it
 // yields when listing repositories

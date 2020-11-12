@@ -64,9 +64,8 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 		MaxNumRetries:     0,
 	})
 
-	worker := dbworker.NewWorker(ctx, store, dbworker.WorkerOptions{
+	worker := dbworker.NewWorker(ctx, store, handler, workerutil.WorkerOptions{
 		Name:        "repo_sync_worker",
-		Handler:     handler,
 		NumHandlers: opts.NumHandlers,
 		Interval:    opts.WorkerInterval,
 		Metrics: workerutil.WorkerMetrics{

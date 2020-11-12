@@ -19,7 +19,7 @@
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
-            color: $color-text-2;
+            color: var(--body-color);
         }
         &-toggle {
             flex: none;
@@ -105,15 +105,5 @@
     }
     &--compact &__oid {
         flex: 0 0 auto;
-    }
-}
-
-.theme-light {
-    .git-commit-node {
-        &__message {
-            &-subject {
-                color: $color-light-text-1;
-            }
-        }
     }
 }

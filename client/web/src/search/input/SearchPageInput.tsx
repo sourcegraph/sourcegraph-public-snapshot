@@ -66,6 +66,8 @@ interface Props
     availableVersionContexts: VersionContext[] | undefined
     /** Whether globbing is enabled for filters. */
     globbing: boolean
+    // Whether to additionally highlight or provide hovers for tokens, e.g., regexp character sets.
+    enableSmartQuery: boolean
     /** Show the query builder link. */
     showQueryBuilder: boolean
     /** A query fragment to appear at the beginning of the input. */
@@ -211,7 +213,6 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     useEffect(() => {
         if (showOnboardingTour) {
             setTourWasActive(true)
-            tour.start()
             eventLogger.log('ViewOnboardingTour')
         }
         return
@@ -288,7 +289,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                                 queryState={userQueryState}
                                 onChange={setUserQueryState}
                                 onSubmit={onSubmit}
-                                autoFocus={props.autoFocus !== false}
+                                autoFocus={showOnboardingTour ? tour.isActive() : props.autoFocus !== false}
                                 tour={showOnboardingTour ? tour : undefined}
                             />
                             <SearchButton />

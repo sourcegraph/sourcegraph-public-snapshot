@@ -5,7 +5,7 @@ import { GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
 import { Driver } from '../../../shared/src/testing/driver'
 import { getConfig } from '../../../shared/src/testing/config'
 import { getTestTools } from './util/init'
-import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
+import { editSiteConfig, ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
 import { setUserEmailVerified } from './util/api'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
@@ -30,6 +30,7 @@ describe('Core functionality regression test suite', () => {
         'headless',
         'keepBrowser'
     )
+    const formattingOptions = { eol: '\n', insertSpaces: true, tabSize: 2 }
 
     let driver: Driver
     let gqlClient: GraphQLClient
@@ -125,13 +126,9 @@ describe('Core functionality regression test suite', () => {
             )
         }
 
-        // When you type (or paste) "{" into the empty user settings editor it adds a "}". That's why
-        // we cannot type all the previous text, because then we would have two "}" at the end.
-        const textToTypeFromPrevious = previousSettings.replace(/}$/, '')
-        // Restore old settings
         await driver.replaceText({
             selector: '.test-settings-file .monaco-editor',
-            newText: textToTypeFromPrevious,
+            newText: previousSettings,
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
         })
@@ -152,22 +149,52 @@ describe('Core functionality regression test suite', () => {
         }
     })
 
-    test('2.2.2 User profile page', async () => {
+    test('2.2.2.1 User profile page with enableuserchanges=false', async () => {
         const aviURL =
             'https://media2.giphy.com/media/26tPplGWjN0xLybiU/giphy.gif?cid=790b761127d52fa005ed23fdcb09d11a074671ac90146787&rid=giphy.gif'
         const displayName = 'Test Display Name'
 
         await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/profile`)
         await driver.replaceText({
-            selector: '.test-user-settings-profile-page__display-name',
+            selector: '.test-UserProfileFormFields__displayName',
             newText: displayName,
         })
         await driver.replaceText({
-            selector: '.test-user-settings-profile-page__avatar_url',
+            selector: '.test-UserProfileFormFields__avatarURL',
             newText: aviURL,
             enterTextMethod: 'paste',
         })
-        await driver.findElementWithText('Update profile', { action: 'click' })
+        await driver.page.click('#test-EditUserProfileForm__save')
+        await delay(5000)
+        await driver.findElementWithText(
+            'Error: unable to change username because auth.enableUsernameChanges is false in site configuration'
+        )
+    })
+
+    test('2.2.2.2 User profile page with enableuserchanges=true', async () => {
+        const aviURL =
+            'https://media2.giphy.com/media/26tPplGWjN0xLybiU/giphy.gif?cid=790b761127d52fa005ed23fdcb09d11a074671ac90146787&rid=giphy.gif'
+        const displayName = 'Test Display Name'
+
+        await editSiteConfig(gqlClient, contents =>
+            setProperty(contents, ['auth.enableUsernameChanges'], true, formattingOptions)
+        )
+        alwaysCleanupManager.add('Global setting', 'usernamechanges', async () => {
+            await editSiteConfig(gqlClient, contents =>
+                setProperty(contents, ['auth.enableUsernameChanges'], false, formattingOptions)
+            )
+        })
+        await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/profile`)
+        await driver.replaceText({
+            selector: '.test-UserProfileFormFields__displayName',
+            newText: displayName,
+        })
+        await driver.replaceText({
+            selector: '.test-UserProfileFormFields__avatarURL',
+            newText: aviURL,
+            enterTextMethod: 'paste',
+        })
+        await driver.page.click('#test-EditUserProfileForm__save')
         await driver.page.reload()
         await driver.page.waitForFunction(
             displayName => {
@@ -177,15 +204,9 @@ describe('Core functionality regression test suite', () => {
             undefined,
             displayName
         )
-
-        await screenshots.verifySelector(
-            'navbar-toggle-is-bart-simpson.png',
-            'Navbar toggle avatar is Bart Simpson',
-            '.test-user-nav-item-toggle'
-        )
     })
 
-    test('2.2.3. User emails page', async () => {
+    test('2.2.3 User emails page', async () => {
         const testEmail = 'sg-test-account@protonmail.com'
         await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/emails`)
         await driver.replaceText({ selector: '.test-user-email-add-input', newText: 'sg-test-account@protonmail.com' })

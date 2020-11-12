@@ -1,16 +1,22 @@
 package git
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -58,10 +64,32 @@ type CommitsOptions struct {
 // -sne` command.
 var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
 
+var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
+
 // getCommit returns the commit with the given id.
-func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID, opt ResolveRevisionOptions) (*Commit, error) {
+func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID, opt ResolveRevisionOptions) (_ *Commit, err error) {
 	if Mocks.GetCommit != nil {
 		return Mocks.GetCommit(id)
+	}
+
+	if honey.Enabled() && recordGetCommitQueries {
+		defer func() {
+			ev := honey.Event("getCommit")
+			ev.SampleRate = 10 // 1 in 10
+			ev.AddField("repo", repo.Name)
+			ev.AddField("commit", id)
+			ev.AddField("no_ensure_revision", opt.NoEnsureRevision)
+			ev.AddField("actor", actor.FromContext(ctx).UIDString())
+
+			q, _ := ctx.Value("graphql-query").(string)
+			ev.AddField("query", q)
+
+			if err != nil {
+				ev.AddField("error", err.Error())
+			}
+
+			_ = ev.Send()
+		}()
 	}
 
 	if err := checkSpecArgSafety(string(id)); err != nil {
@@ -334,30 +362,166 @@ type onelineCommit struct {
 	sourceRef string // `git log --source` source ref
 }
 
-// parseCommitsFromOnelineLog parses the commits from the output of:
+// errLogOnelineBatchScannerClosed is returned if a read is attempted on a
+// closed logOnelineBatchScanner.
+var errLogOnelineBatchScannerClosed = errors.New("logOnelineBatchScanner closed")
+
+// logOnelineBatchScanner wraps logOnelineScanner to batch up reads.
+//
+// next will return at least 1 commit and at most maxBatchSize entries. After
+// debounce time it will return what has been batched so far (or wait until an
+// entry is available). The last response from next will return a non-nil
+// error.
+//
+// cleanup must be called when done. This function creates a goroutine to
+// batch up calls to scan.
+func logOnelineBatchScanner(scan func() (*onelineCommit, error), maxBatchSize int, debounce time.Duration) (next func() ([]*onelineCommit, error), cleanup func()) {
+	// done is closed to indicate cleaning up
+	done := make(chan struct{})
+	cleanup = func() {
+		close(done)
+	}
+
+	// We can't call scan with a timeout. So we start a goroutine which sends
+	// the output of scan down a channel. When done is closed, this goroutine
+	// will stop running.
+	type result struct {
+		commit *onelineCommit
+		err    error
+	}
+	// have a cap of maxBatchSize so we potentially have maxBatchSize ready to
+	// send.
+	resultC := make(chan result, maxBatchSize)
+	go func() {
+		defer close(resultC)
+		for {
+			commit, err := scan()
+			select {
+			case resultC <- result{commit: commit, err: err}:
+			case <-done:
+				return
+			}
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	var err error
+	next = func() ([]*onelineCommit, error) {
+		// The previous call may have had an error but also had commits to
+		// return. In that case we didn't return the error, so need to return
+		// it now.
+		if err != nil {
+			return nil, err
+		}
+
+		// Stop scanning if we haven't found maxBatchSize by deadline.
+		deadline := time.NewTimer(debounce)
+		defer deadline.Stop()
+
+		// We always want 1 result. Ignore deadline for the first result.
+		r, ok := <-resultC
+		if !ok {
+			return nil, errLogOnelineBatchScannerClosed
+		} else if r.err != nil {
+			err = r.err
+			return nil, r.err
+		}
+
+		// Add to commits until we hit maxBatchSize or we are passed
+		// deadline. If we encounter an error set err.
+		commits := []*onelineCommit{r.commit}
+		timedout := false
+		for err == nil && len(commits) < maxBatchSize && !timedout {
+			select {
+			case r, ok := <-resultC:
+				if !ok {
+					err = errLogOnelineBatchScannerClosed
+				} else if r.err != nil {
+					err = r.err
+				} else {
+					commits = append(commits, r.commit)
+				}
+			case <-deadline.C:
+				timedout = true
+			}
+		}
+
+		// Note: err can be non-nil here. The next call to this
+		// function will return err.
+		return commits, nil
+	}
+
+	return next, cleanup
+}
+
+// logOnelineScanner parses the commits from the reader of:
 //
 //   git log --oneline -z --source --no-patch
-func parseCommitsFromOnelineLog(data []byte) (commits []*onelineCommit, err error) {
-	entries := bytes.Split(data, []byte{'\x00'})
-	for _, e := range entries {
-		if len(e) == 0 {
-			continue
+//
+// Once it returns an error the scanner should be disregarded. io.EOF is
+// returned when there is no more data to read.
+func logOnelineScanner(r io.Reader) func() (*onelineCommit, error) {
+	// Each "log line" contains a source ref. I could not find a bound on the
+	// size of a git ref, so each line can get arbitrarily large. So we use a
+	// bufio.Scanner instead of a bufio.Reader since a Scanner allows growing
+	// the buffer to accomodate the "token" size. This makes the
+	// implementation slightly more complicated (needs a split function
+	// instead of just using ReadBytes).
+	//
+	// Note: Not all source refs correspond to direct arguments, eg if you use
+	// --glob=refs/* any possible ref can be a source ref.
+	//
+	// Note: I check the git source for ref limits, there are none I
+	// found. Linux does have PATH_MAX (4096), but its quite easy to work
+	// around that.
+	//
+	// Note: Scanner does have a max size it will grow to (64kb). If a repo
+	// contains a ref this big, we treat it as an error. This shouldn't happen
+	// in practice, but that is likely famous last words.
+	scanNull := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		if atEOF && len(data) == 0 {
+			return 0, nil, nil
 		}
+		if i := bytes.IndexByte(data, '\x00'); i >= 0 {
+			return i + 1, data[:i], nil
+		}
+		if atEOF {
+			return len(data), data, nil
+		}
+		// Request more data.
+		return 0, nil, nil
+	}
+	scanner := bufio.NewScanner(r)
+	scanner.Split(scanNull)
+	return func() (*onelineCommit, error) {
+		if !scanner.Scan() {
+			err := scanner.Err()
+			if err == nil {
+				return nil, io.EOF
+			} else if strings.Contains(err.Error(), "does not have any commits yet") {
+				// Treat empty repositories as having no commits without failing
+				return nil, io.EOF
+			}
+			return nil, err
+		}
+
+		e := scanner.Bytes()
 
 		// Format: (40-char SHA) \t (source ref)? 'log size '
 		if len(e) <= 40 {
-			return commits, fmt.Errorf("parsing git oneline commit: short entry: %q", e)
+			return nil, fmt.Errorf("parsing git oneline commit: short entry: %q", e)
 		}
 		sha1 := e[:40]
 		i := bytes.Index(e, []byte{' '})
 		if i == -1 {
-			return commits, fmt.Errorf("parsing git oneline commit: no ' ': %q", e)
+			return nil, fmt.Errorf("parsing git oneline commit: no ' ': %q", e)
 		}
 		sourceRef := e[41:i]
-		commits = append(commits, &onelineCommit{
+		return &onelineCommit{
 			sha1:      string(sha1),
 			sourceRef: string(sourceRef),
-		})
+		}, nil
 	}
-	return commits, nil
 }

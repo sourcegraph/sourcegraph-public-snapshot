@@ -175,7 +175,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		AuthProviders: authProviders,
 
-		Branding: conf.Branding(),
+		Branding: globals.Branding(),
 
 		CampaignsEnabled: conf.CampaignsEnabled(),
 

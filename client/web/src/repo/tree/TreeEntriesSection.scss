@@ -33,14 +33,6 @@
     margin-left: -0.25rem;
     padding: 0.125rem 0.25rem;
     &:hover {
-        background-color: $color-bg-1;
-    }
-}
-
-.theme-light {
-    .tree-entry {
-        &:hover {
-            background-color: $color-light-bg-2;
-        }
+        background-color: var(--color-bg-1);
     }
 }

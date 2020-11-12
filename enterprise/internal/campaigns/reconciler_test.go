@@ -2,13 +2,16 @@ package campaigns
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -17,7 +20,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -37,7 +42,7 @@ func TestReconcilerProcess(t *testing.T) {
 		t.Fatalf("admin is not site admin")
 	}
 
-	rs, extSvc := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: api.RepoName(rs[0].Name),
@@ -48,8 +53,17 @@ func TestReconcilerProcess(t *testing.T) {
 	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
 	defer func() { internalClient = api.InternalClient }()
 
-	githubPR := buildGithubPR(clock(), "OPEN")
-	closedGitHubPR := buildGithubPR(clock(), "CLOSED")
+	githubPR := buildGithubPR(clock(), campaigns.ChangesetExternalStateOpen)
+	githubHeadRef := git.EnsureRefPrefix(githubPR.HeadRefName)
+	draftGithubPR := buildGithubPR(clock(), campaigns.ChangesetExternalStateDraft)
+	closedGitHubPR := buildGithubPR(clock(), campaigns.ChangesetExternalStateClosed)
+
+	notFoundErr := repos.ChangesetNotFoundError{
+		Changeset: &repos.Changeset{
+			Changeset: &campaigns.Changeset{ExternalID: "100000"},
+		},
+	}
+	notFoundErrMsg := notFoundErr.Error()
 
 	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
 	campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
@@ -60,14 +74,17 @@ func TestReconcilerProcess(t *testing.T) {
 		previousSpec *testSpecOpts
 
 		sourcerMetadata interface{}
+		sourcerErr      error
 		// Whether or not the source responds to CreateChangeset with "already exists"
 		alreadyExists bool
 
-		wantCreateOnHostCode bool
-		wantUpdateOnCodeHost bool
-		wantCloseOnCodeHost  bool
-		wantLoadFromCodeHost bool
-		wantReopenOnCodeHost bool
+		wantCreateOnCodeHost      bool
+		wantCreateDraftOnCodeHost bool
+		wantUndraftOnCodeHost     bool
+		wantUpdateOnCodeHost      bool
+		wantCloseOnCodeHost       bool
+		wantLoadFromCodeHost      bool
+		wantReopenOnCodeHost      bool
 
 		wantGitserverCommit bool
 
@@ -88,7 +105,7 @@ func TestReconcilerProcess(t *testing.T) {
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				unsynced:         false,
 				title:            githubPR.Title,
@@ -124,13 +141,13 @@ func TestReconcilerProcess(t *testing.T) {
 			},
 			sourcerMetadata: githubPR,
 
-			wantCreateOnHostCode: true,
+			wantCreateOnCodeHost: true,
 			wantGitserverCommit:  true,
 
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				title:            githubPR.Title,
 				body:             githubPR.Body,
@@ -155,14 +172,14 @@ func TestReconcilerProcess(t *testing.T) {
 
 			// We first do a create and since that fails with "already exists"
 			// we update.
-			wantCreateOnHostCode: true,
+			wantCreateOnCodeHost: true,
 			wantUpdateOnCodeHost: true,
 			wantGitserverCommit:  true,
 
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				title:            githubPR.Title,
 				body:             githubPR.Body,
@@ -188,7 +205,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
-				externalBranch:   "head-ref-on-github",
+				externalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
 				ownedByCampaign:  campaign.ID,
 			},
 			sourcerMetadata: githubPR,
@@ -199,7 +216,7 @@ func TestReconcilerProcess(t *testing.T) {
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				diffStat:         state.DiffStat,
 				ownedByCampaign:  campaign.ID,
@@ -226,7 +243,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				ownedByCampaign:  campaign.ID,
 				// Previous update failed:
@@ -239,7 +256,7 @@ func TestReconcilerProcess(t *testing.T) {
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				title:            githubPR.Title,
 				body:             githubPR.Body,
@@ -267,7 +284,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
-				externalBranch:   "head-ref-on-github",
+				externalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				ownedByCampaign:  campaign.ID,
 			},
@@ -282,7 +299,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				diffStat:         state.DiffStat,
 				ownedByCampaign:  campaign.ID,
 			},
@@ -304,7 +321,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
-				externalBranch:   "head-ref-on-github",
+				externalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				ownedByCampaign:  campaign.ID,
 
@@ -320,7 +337,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				diffStat:         state.DiffStat,
 				ownedByCampaign:  campaign.ID,
 				// failureMessage should be nil
@@ -346,7 +363,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       "12345",
-				externalBranch:   "head-ref-on-github",
+				externalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				ownedByCampaign:  campaign.ID,
 			},
@@ -361,7 +378,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				diffStat:         state.DiffStat,
 				ownedByCampaign:  campaign.ID,
 			},
@@ -379,7 +396,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 			},
 			sourcerMetadata: githubPR,
@@ -387,7 +404,7 @@ func TestReconcilerProcess(t *testing.T) {
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 			},
 		},
@@ -402,7 +419,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateOpen,
 				closing:          true,
 				ownedByCampaign:  campaign.ID,
@@ -411,15 +428,13 @@ func TestReconcilerProcess(t *testing.T) {
 			sourcerMetadata: closedGitHubPR,
 
 			wantCloseOnCodeHost: true,
-			// We want to also sync the changeset after closing it
-			wantLoadFromCodeHost: true,
 
 			wantChangeset: changesetAssertions{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				closing:          false,
 
 				externalID:     closedGitHubPR.ID,
-				externalBranch: closedGitHubPR.HeadRefName,
+				externalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
 				externalState:  campaigns.ChangesetExternalStateClosed,
 
 				title:    closedGitHubPR.Title,
@@ -440,9 +455,10 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateClosed,
 				closing:          true,
+				ownedByCampaign:  campaign.ID,
 			},
 			// We return a closed GitHub PR here, but since it's a noop, we
 			// don't sync and thus don't set its attributes on the changeset.
@@ -456,7 +472,7 @@ func TestReconcilerProcess(t *testing.T) {
 				closing:          false,
 
 				externalID:     closedGitHubPR.ID,
-				externalBranch: closedGitHubPR.HeadRefName,
+				externalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
 				externalState:  campaigns.ChangesetExternalStateClosed,
 			},
 		},
@@ -478,7 +494,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateClosed,
 				ownedByCampaign:  campaign.ID,
 				closing:          false,
@@ -492,7 +508,7 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 
 				externalID:     githubPR.ID,
-				externalBranch: githubPR.HeadRefName,
+				externalBranch: githubHeadRef,
 				externalState:  campaigns.ChangesetExternalStateOpen,
 
 				title:    githubPR.Title,
@@ -522,7 +538,7 @@ func TestReconcilerProcess(t *testing.T) {
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalID:       githubPR.ID,
-				externalBranch:   githubPR.HeadRefName,
+				externalBranch:   githubHeadRef,
 				externalState:    campaigns.ChangesetExternalStateClosed,
 				ownedByCampaign:  campaign.ID,
 				closing:          false,
@@ -542,12 +558,123 @@ func TestReconcilerProcess(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 
 				externalID:     githubPR.ID,
-				externalBranch: githubPR.HeadRefName,
+				externalBranch: githubHeadRef,
 				externalState:  campaigns.ChangesetExternalStateOpen,
 
 				title:    githubPR.Title,
 				body:     githubPR.Body,
 				diffStat: state.DiffStat,
+			},
+		},
+
+		"publish as draft mode for supported codehost": {
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: "draft",
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				ownedByCampaign:  campaign.ID,
+			},
+			sourcerMetadata: draftGithubPR,
+
+			// Update the commit
+			wantGitserverCommit:       true,
+			wantCreateDraftOnCodeHost: true,
+
+			wantLoadFromCodeHost: false,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+
+				externalID:     draftGithubPR.ID,
+				externalBranch: git.EnsureRefPrefix(draftGithubPR.HeadRefName),
+				externalState:  campaigns.ChangesetExternalStateDraft,
+
+				title:    draftGithubPR.Title,
+				body:     draftGithubPR.Body,
+				diffStat: state.DiffStat,
+			},
+		},
+
+		"published false to published draft": {
+			previousSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: false,
+			},
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: "draft",
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				ownedByCampaign:  campaign.ID,
+			},
+			sourcerMetadata: draftGithubPR,
+
+			// Update the commit
+			wantGitserverCommit:       true,
+			wantCreateDraftOnCodeHost: true,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+
+				externalID:     draftGithubPR.ID,
+				externalBranch: git.EnsureRefPrefix(draftGithubPR.HeadRefName),
+				externalState:  campaigns.ChangesetExternalStateDraft,
+
+				title:    draftGithubPR.Title,
+				body:     draftGithubPR.Body,
+				diffStat: state.DiffStat,
+			},
+		},
+
+		"undraft a changeset": {
+			currentSpec: &testSpecOpts{
+				headRef:   "refs/heads/head-ref-on-github",
+				published: true,
+			},
+			previousSpec: &testSpecOpts{
+				published: "draft",
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalState:    campaigns.ChangesetExternalStateDraft,
+				ownedByCampaign:  campaign.ID,
+			},
+			sourcerMetadata: githubPR,
+
+			wantUndraftOnCodeHost: true,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+
+				externalID:     githubPR.ID,
+				externalBranch: githubHeadRef,
+				externalState:  campaigns.ChangesetExternalStateOpen,
+
+				title:    githubPR.Title,
+				body:     githubPR.Body,
+				diffStat: state.DiffStat,
+			},
+		},
+		"syncing not found changeset": {
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalID:       "100000",
+				unsynced:         true,
+			},
+			sourcerErr: notFoundErr,
+
+			wantLoadFromCodeHost: true,
+
+			wantChangeset: changesetAssertions{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				failureMessage:   &notFoundErrMsg,
+				externalID:       "100000",
+				reconcilerState:  campaigns.ReconcilerStateErrored,
+				numFailures:      ReconcilerMaxNumRetries + 999,
+				unsynced:         true,
 			},
 		},
 	}
@@ -604,7 +731,7 @@ func TestReconcilerProcess(t *testing.T) {
 			// to create/update a changeset.
 			fakeSource := &ct.FakeChangesetSource{
 				Svc:             extSvc,
-				Err:             nil,
+				Err:             tc.sourcerErr,
 				ChangesetExists: tc.alreadyExists,
 				FakeMetadata:    tc.sourcerMetadata,
 			}
@@ -616,11 +743,11 @@ func TestReconcilerProcess(t *testing.T) {
 			sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
 			// Run the reconciler
-			rec := reconciler{
+			rec := Reconciler{
 				noSleepBeforeSync: true,
-				gitserverClient:   gitClient,
-				sourcer:           sourcer,
-				store:             store,
+				GitserverClient:   gitClient,
+				Sourcer:           sourcer,
+				Store:             store,
 			}
 			if err := rec.process(ctx, store, changeset); err != nil {
 				t.Fatalf("reconciler process failed: %s", err)
@@ -631,7 +758,15 @@ func TestReconcilerProcess(t *testing.T) {
 				t.Fatalf("wrong CreateCommitFromPatch call. wantCalled=%t, wasCalled=%t", want, have)
 			}
 
-			if have, want := fakeSource.CreateChangesetCalled, tc.wantCreateOnHostCode; have != want {
+			if have, want := fakeSource.CreateDraftChangesetCalled, tc.wantCreateDraftOnCodeHost; have != want {
+				t.Fatalf("wrong CreateDraftChangeset call. wantCalled=%t, wasCalled=%t", want, have)
+			}
+
+			if have, want := fakeSource.UndraftedChangesetsCalled, tc.wantUndraftOnCodeHost; have != want {
+				t.Fatalf("wrong UndraftChangeset call. wantCalled=%t, wasCalled=%t", want, have)
+			}
+
+			if have, want := fakeSource.CreateChangesetCalled, tc.wantCreateOnCodeHost; have != want {
 				t.Fatalf("wrong CreateChangeset call. wantCalled=%t, wasCalled=%t", want, have)
 			}
 
@@ -643,8 +778,8 @@ func TestReconcilerProcess(t *testing.T) {
 				t.Fatalf("wrong ReopenChangeset call. wantCalled=%t, wasCalled=%t", want, have)
 			}
 
-			if have, want := fakeSource.LoadChangesetsCalled, tc.wantLoadFromCodeHost; have != want {
-				t.Fatalf("wrong LoadChangesets call. wantCalled=%t, wasCalled=%t", want, have)
+			if have, want := fakeSource.LoadChangesetCalled, tc.wantLoadFromCodeHost; have != want {
+				t.Fatalf("wrong LoadChangeset call. wantCalled=%t, wasCalled=%t", want, have)
 			}
 
 			if have, want := fakeSource.CloseChangesetCalled, tc.wantCloseOnCodeHost; have != want {
@@ -668,7 +803,7 @@ func TestReconcilerProcess(t *testing.T) {
 			// we're just looking for a basic marker here that _something_
 			// happened.
 			var rcs *repos.Changeset
-			if tc.wantCreateOnHostCode && fakeSource.CreateChangesetCalled {
+			if tc.wantCreateOnCodeHost && fakeSource.CreateChangesetCalled {
 				rcs = fakeSource.CreatedChangesets[0]
 			} else if tc.wantUpdateOnCodeHost && fakeSource.UpdateChangesetCalled {
 				rcs = fakeSource.UpdatedChangesets[0]
@@ -678,6 +813,179 @@ func TestReconcilerProcess(t *testing.T) {
 				if !strings.Contains(rcs.Body, "Created by Sourcegraph campaign") {
 					t.Errorf("did not find backlink in body: %q", rcs.Body)
 				}
+			}
+		})
+	}
+}
+
+func TestDeterminePlan(t *testing.T) {
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+
+	store := NewStore(dbconn.Global)
+
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
+	githubRepo := rs[0]
+
+	rs, _ = ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
+	bbsRepo := rs[0]
+
+	admin := createTestUser(ctx, t)
+	if !admin.SiteAdmin {
+		t.Fatalf("admin is not site admin")
+	}
+
+	campaignSpec := createCampaignSpec(t, ctx, store, "test-plan", admin.ID)
+	createCampaign(t, ctx, store, "test-plan", admin.ID, campaignSpec.ID)
+
+	tcs := []struct {
+		name           string
+		previousSpec   testSpecOpts
+		currentSpec    testSpecOpts
+		changeset      testChangesetOpts
+		wantOperations operations
+	}{
+		{
+			name: "GitHub publish",
+			currentSpec: testSpecOpts{
+				published: true,
+				repo:      githubRepo.ID,
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				repo:             githubRepo.ID,
+			},
+			wantOperations: operations{operationPush, operationPublish},
+		},
+		{
+			name: "GitHub publish as draft",
+			currentSpec: testSpecOpts{
+				published: "draft",
+				repo:      githubRepo.ID,
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				repo:             githubRepo.ID,
+			},
+			wantOperations: operations{operationPush, operationPublishDraft},
+		},
+		{
+			name: "GitHub publish false",
+			currentSpec: testSpecOpts{
+				published: false,
+				repo:      githubRepo.ID,
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				repo:             githubRepo.ID,
+			},
+			wantOperations: operations{},
+		},
+		{
+			name: "set to draft but unsupported",
+			currentSpec: testSpecOpts{
+				published: "draft",
+				repo:      bbsRepo.ID,
+			},
+			changeset: testChangesetOpts{
+				externalServiceType: extsvc.TypeBitbucketServer,
+				publicationState:    campaigns.ChangesetPublicationStateUnpublished,
+				repo:                bbsRepo.ID,
+			},
+			wantOperations: operations{},
+		},
+		{
+			name: "set from draft to publish true",
+			previousSpec: testSpecOpts{
+				published: "draft",
+				repo:      githubRepo.ID,
+			},
+			currentSpec: testSpecOpts{
+				published: true,
+				repo:      githubRepo.ID,
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				repo:             githubRepo.ID,
+			},
+			wantOperations: operations{operationUndraft},
+		},
+		{
+			name: "set from draft to publish true on unpublished",
+			previousSpec: testSpecOpts{
+				published: "draft",
+				repo:      githubRepo.ID,
+			},
+			currentSpec: testSpecOpts{
+				published: true,
+				repo:      githubRepo.ID,
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				repo:             githubRepo.ID,
+			},
+			wantOperations: operations{operationPush, operationPublish},
+		},
+		{
+			name: "changeset spec changed attribute, needs update",
+			previousSpec: testSpecOpts{
+				published: true,
+				repo:      githubRepo.ID,
+				title:     "Before",
+			},
+			currentSpec: testSpecOpts{
+				published: true,
+				repo:      githubRepo.ID,
+				title:     "After",
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				repo:             githubRepo.ID,
+			},
+			wantOperations: operations{operationUpdate},
+		},
+		{
+			name: "changeset spec changed, needs new commit but no update",
+			previousSpec: testSpecOpts{
+				published:  true,
+				repo:       githubRepo.ID,
+				commitDiff: "testDiff",
+			},
+			currentSpec: testSpecOpts{
+				published:  true,
+				repo:       githubRepo.ID,
+				commitDiff: "newTestDiff",
+			},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				repo:             githubRepo.ID,
+			},
+			wantOperations: operations{operationPush, operationSleep, operationSync},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			tx, err := store.Transact(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer tx.Done(errors.New("fail tx purposefully"))
+			tc.currentSpec.campaignSpec = campaignSpec.ID
+			var previousSpec *campaigns.ChangesetSpec
+			if tc.previousSpec != (testSpecOpts{}) {
+				previousSpec = createChangesetSpec(t, ctx, tx, tc.previousSpec)
+				tc.changeset.previousSpec = previousSpec.ID
+			}
+			currentSpec := createChangesetSpec(t, ctx, tx, tc.currentSpec)
+			tc.changeset.currentSpec = currentSpec.ID
+			cs := createChangeset(t, ctx, tx, tc.changeset)
+			plan, err := determinePlan(previousSpec, currentSpec, cs)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := plan.ops, tc.wantOperations; !have.Equal(want) {
+				t.Fatalf("incorrect plan determined, want=%v have=%v", want, have)
 			}
 		})
 	}
@@ -694,7 +1002,7 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 		t.Fatalf("admin is not site admin")
 	}
 
-	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: api.RepoName(rs[0].Name),
@@ -719,7 +1027,7 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 		campaign:         campaign.ID,
 		ownedByCampaign:  campaign.ID,
 		currentSpec:      changesetSpec.ID,
-		externalBranch:   git.AbbreviateRef(commonHeadRef),
+		externalBranch:   commonHeadRef,
 		externalID:       "123",
 	})
 
@@ -742,21 +1050,42 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 
 	// Run the reconciler
-	rec := reconciler{store: store}
-	haveErr := rec.process(ctx, store, otherChangeset)
-	if !errors.Is(haveErr, ErrPublishSameBranch) {
-		t.Fatalf("reconciler process failed with wrong error: %s", haveErr)
+	rec := Reconciler{
+		noSleepBeforeSync: true,
+		Sourcer:           repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{}),
+		Store:             store,
 	}
+
+	err := rec.process(ctx, store, otherChangeset)
+	if err != nil {
+		t.Fatalf("reconciler process failed: %s", err)
+	}
+
+	// We expect the changeset to be errored, but without any retries left, so
+	// we don't retry.
+	wantMsg := ErrPublishSameBranch{}.Error()
+	reloadAndAssertChangeset(t, ctx, store, otherChangeset, changesetAssertions{
+		repo:            otherChangeset.RepoID,
+		currentSpec:     otherChangesetSpec.ID,
+		ownedByCampaign: otherCampaign.ID,
+
+		failureMessage:   &wantMsg,
+		reconcilerState:  campaigns.ReconcilerStateErrored,
+		publicationState: campaigns.ChangesetPublicationStateUnpublished,
+		numFailures:      ReconcilerMaxNumRetries + 999,
+	})
 }
 
-func buildGithubPR(now time.Time, state string) *github.PullRequest {
+func buildGithubPR(now time.Time, externalState campaigns.ChangesetExternalState) *github.PullRequest {
+	state := string(externalState)
+
 	pr := &github.PullRequest{
 		ID:          "12345",
 		Number:      12345,
 		Title:       state + " GitHub PR",
 		Body:        state + " GitHub PR",
-		HeadRefName: git.AbbreviateRef("head-ref-on-github"),
 		State:       state,
+		HeadRefName: git.AbbreviateRef("head-ref-on-github"),
 		TimelineItems: []github.TimelineItem{
 			{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
 				Commit: github.Commit{
@@ -770,8 +1099,12 @@ func buildGithubPR(now time.Time, state string) *github.PullRequest {
 		UpdatedAt: now,
 	}
 
-	if strings.ToLower(state) == "closed" {
-		pr.State = "CLOSED"
+	if externalState == campaigns.ChangesetExternalStateDraft {
+		pr.State = "OPEN"
+		pr.IsDraft = true
+	}
+
+	if externalState == campaigns.ChangesetExternalStateClosed {
 		// We add a "ClosedEvent" so that the SyncChangesets call that happens after closing
 		// the PR has the "correct" state to set the ExternalState
 		pr.TimelineItems = append(pr.TimelineItems, github.TimelineItem{
@@ -870,7 +1203,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 		t.Fatal("admin is not site admin")
 	}
 
-	rs, _ := createTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: api.RepoName(rs[0].Name),
@@ -891,7 +1224,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 
 	body := "body"
 	rcs := &repos.Changeset{Body: body, Changeset: cs, Repo: rs[0]}
-	if err := decorateChangesetBody(ctx, store, rcs, campaign); err != nil {
+	if err := decorateChangesetBody(ctx, store, rcs); err != nil {
 		t.Errorf("unexpected non-nil error: %v", err)
 	}
 	if want := body + "\n\n[_Created by Sourcegraph campaign `" + admin.Username + "/reconciler-test-campaign`._](https://sourcegraph.test/users/" + admin.Username + "/campaigns/reconciler-test-campaign)"; rcs.Body != want {
@@ -957,6 +1290,303 @@ func TestNamespaceURL(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			if have := namespaceURL(tc.ns); have != tc.want {
 				t.Errorf("unexpected URL: have=%q want=%q", have, tc.want)
+			}
+		})
+	}
+}
+
+func TestExecutor_LoadAuthenticator(t *testing.T) {
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+
+	store := NewStore(dbconn.Global)
+
+	admin := createTestUser(ctx, t)
+	if !admin.SiteAdmin {
+		t.Fatal("admin is not site admin")
+	}
+
+	user := createTestUser(ctx, t)
+	if user.SiteAdmin {
+		t.Fatal("user cannot be a site admin")
+	}
+
+	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
+	repo := rs[0]
+
+	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
+	adminCampaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
+	userCampaign := createCampaign(t, ctx, store, "reconciler-test-campaign", user.ID, campaignSpec.ID)
+
+	t.Run("imported changeset uses global token", func(t *testing.T) {
+		a, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: 0,
+			},
+		}).loadAuthenticator(ctx)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if a != nil {
+			t.Errorf("unexpected non-nil authenticator: %v", a)
+		}
+	})
+
+	t.Run("owned by missing campaign", func(t *testing.T) {
+		_, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: 1234,
+			},
+			tx: store,
+		}).loadAuthenticator(ctx)
+		if err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("owned by admin user without credential", func(t *testing.T) {
+		a, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: adminCampaign.ID,
+			},
+			repo: repo,
+			tx:   store,
+		}).loadAuthenticator(ctx)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if a != nil {
+			t.Errorf("unexpected non-nil authenticator: %v", a)
+		}
+	})
+
+	t.Run("owned by normal user without credential", func(t *testing.T) {
+		_, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: userCampaign.ID,
+			},
+			repo: repo,
+			tx:   store,
+		}).loadAuthenticator(ctx)
+		if err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("owned by admin user with credential", func(t *testing.T) {
+		token := &auth.OAuthBearerToken{Token: "abcdef"}
+		if _, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+			Domain:              db.UserCredentialDomainCampaigns,
+			UserID:              admin.ID,
+			ExternalServiceType: repo.ExternalRepo.ServiceType,
+			ExternalServiceID:   repo.ExternalRepo.ServiceID,
+		}, token); err != nil {
+			t.Fatal(err)
+		}
+
+		a, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: adminCampaign.ID,
+			},
+			repo: repo,
+			tx:   store,
+		}).loadAuthenticator(ctx)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if diff := cmp.Diff(token, a); diff != "" {
+			t.Errorf("unexpected authenticator:\n%s", diff)
+		}
+	})
+
+	t.Run("owned by normal user with credential", func(t *testing.T) {
+		token := &auth.OAuthBearerToken{Token: "abcdef"}
+		if _, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+			Domain:              db.UserCredentialDomainCampaigns,
+			UserID:              user.ID,
+			ExternalServiceType: repo.ExternalRepo.ServiceType,
+			ExternalServiceID:   repo.ExternalRepo.ServiceID,
+		}, token); err != nil {
+			t.Fatal(err)
+		}
+
+		a, err := (&executor{
+			ch: &campaigns.Changeset{
+				OwnedByCampaignID: userCampaign.ID,
+			},
+			repo: repo,
+			tx:   store,
+		}).loadAuthenticator(ctx)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if diff := cmp.Diff(token, a); diff != "" {
+			t.Errorf("unexpected authenticator:\n%s", diff)
+		}
+	})
+}
+
+func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+
+	store := NewStore(dbconn.Global)
+
+	admin := createTestUser(ctx, t)
+	if !admin.SiteAdmin {
+		t.Fatal("admin is not site admin")
+	}
+
+	user := createTestUser(ctx, t)
+	if user.SiteAdmin {
+		t.Fatal("user is site admin")
+	}
+
+	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
+	gitHubRepo := rs[0]
+	gitHubRepoCloneURL := gitHubRepo.Sources[extSvc.URN()].CloneURL
+
+	gitLabRepos, gitLabExtSvc := ct.CreateGitlabTestRepos(t, ctx, dbconn.Global, 1)
+	gitLabRepo := gitLabRepos[0]
+	gitLabRepoCloneURL := gitLabRepo.Sources[gitLabExtSvc.URN()].CloneURL
+
+	bbsRepos, bbsExtSvc := ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
+	bbsRepo := bbsRepos[0]
+	bbsRepoCloneURL := bbsRepo.Sources[bbsExtSvc.URN()].CloneURL
+
+	gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
+	fakeSource := &ct.FakeChangesetSource{Svc: extSvc}
+	sourcer := repos.NewFakeSourcer(nil, fakeSource)
+
+	plan := &plan{}
+	plan.AddOp(operationPush)
+
+	tests := []struct {
+		name           string
+		user           *types.User
+		repo           *repos.Repo
+		credentials    auth.Authenticator
+		wantErr        bool
+		wantPushConfig *gitprotocol.PushConfig
+	}{
+		{
+			name:        "github OAuthBearerToken",
+			user:        user,
+			repo:        gitHubRepo,
+			credentials: &auth.OAuthBearerToken{Token: "my-secret-github-token"},
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: "https://my-secret-github-token@github.com/" + gitHubRepo.Name,
+			},
+		},
+		{
+			name:    "github no credentials",
+			user:    user,
+			repo:    gitHubRepo,
+			wantErr: true,
+		},
+		{
+			name: "github site-admin and no credentials",
+			repo: gitHubRepo,
+			user: admin,
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: gitHubRepoCloneURL,
+			},
+		},
+		{
+			name:        "gitlab OAuthBearerToken",
+			user:        user,
+			repo:        gitLabRepo,
+			credentials: &auth.OAuthBearerToken{Token: "my-secret-gitlab-token"},
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: "https://git:my-secret-gitlab-token@gitlab.com/" + gitLabRepo.Name,
+			},
+		},
+		{
+			name:    "gitlab no credentials",
+			user:    user,
+			repo:    gitLabRepo,
+			wantErr: true,
+		},
+		{
+			name: "gitlab site-admin and no credentials",
+			user: admin,
+			repo: gitLabRepo,
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: gitLabRepoCloneURL,
+			},
+		},
+		{
+			name:        "bitbucketServer BasicAuth",
+			user:        user,
+			repo:        bbsRepo,
+			credentials: &auth.BasicAuth{Username: "fredwoard johnssen", Password: "my-secret-bbs-token"},
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: "https://fredwoard%20johnssen:my-secret-bbs-token@bitbucket.sourcegraph.com/scm/" + bbsRepo.Name,
+			},
+		},
+		{
+			name:    "bitbucketServer no credentials",
+			user:    user,
+			repo:    bbsRepo,
+			wantErr: true,
+		},
+		{
+			name: "bitbucketServer site-admin and no credentials",
+			user: admin,
+			repo: bbsRepo,
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: bbsRepoCloneURL,
+			},
+		},
+	}
+
+	for i, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.credentials != nil {
+				cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
+					Domain:              db.UserCredentialDomainCampaigns,
+					UserID:              tt.user.ID,
+					ExternalServiceType: tt.repo.ExternalRepo.ServiceType,
+					ExternalServiceID:   tt.repo.ExternalRepo.ServiceID,
+				}, tt.credentials)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer func() { db.UserCredentials.Delete(ctx, cred.ID) }()
+			}
+
+			campaignSpec := createCampaignSpec(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
+			campaign := createCampaign(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, campaignSpec.ID)
+
+			ex := &executor{
+				ch: &campaigns.Changeset{
+					OwnedByCampaignID: campaign.ID,
+					RepoID:            tt.repo.ID,
+				},
+				spec: buildChangesetSpec(t, testSpecOpts{
+					headRef:    "refs/heads/my-branch",
+					published:  true,
+					commitDiff: "testdiff",
+				}),
+				sourcer:         sourcer,
+				gitserverClient: gitClient,
+				tx:              store,
+			}
+
+			err := ex.ExecutePlan(context.Background(), plan)
+			if !tt.wantErr && err != nil {
+				t.Fatalf("executing plan failed: %s", err)
+			}
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("expected error but got none")
+				} else {
+					return
+				}
+			}
+
+			if diff := cmp.Diff(tt.wantPushConfig, gitClient.CreateCommitFromPatchReq.Push); diff != "" {
+				t.Errorf("unexpected push options:\n%s", diff)
 			}
 		})
 	}

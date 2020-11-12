@@ -6,7 +6,7 @@ import * as React from 'react'
 import { hot } from 'react-hot-loader/root'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
-import { combineLatest, from, fromEventPattern, Subscription, fromEvent, of } from 'rxjs'
+import { combineLatest, from, Subscription, fromEvent, of } from 'rxjs'
 import { startWith, switchMap } from 'rxjs/operators'
 import { setLinkComponent } from '../../shared/src/components/Link'
 import {
@@ -190,6 +190,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether we show the mulitiline editor at /search/query-builder
      */
     showQueryBuilder: boolean
+
+    /**
+     * Wether to enable enable contextual syntax highlighting and hovers for search queries
+     */
+    enableSmartQuery: boolean
 }
 
 const notificationClassNames = {
@@ -275,6 +280,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             globbing: false,
             showMultilineSearchConsole: false,
             showQueryBuilder: false,
+            enableSmartQuery: false,
         }
     }
 
@@ -288,7 +294,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
     public componentDidMount(): void {
         updateUserSessionStores()
 
-        document.body.classList.add('theme')
+        document.documentElement.classList.add('theme')
 
         this.subscriptions.add(
             combineLatest([from(this.platformContext.settings), authenticatedUser.pipe(startWith(null))]).subscribe(
@@ -308,11 +314,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
         // React to OS theme change
         this.subscriptions.add(
-            fromEventPattern<MediaQueryListEvent>(
-                // Need to use addListener() because addEventListener() is not supported yet in Safari
-                handler => this.darkThemeMediaList.addListener(handler),
-                handler => this.darkThemeMediaList.removeListener(handler)
-            ).subscribe(event => {
+            fromEvent<MediaQueryListEvent>(this.darkThemeMediaList, 'change').subscribe(event => {
                 this.setState({ systemIsLightTheme: !event.matches })
             })
         )
@@ -343,15 +345,13 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
-        document.body.classList.remove('theme')
-        document.body.classList.remove('theme-light')
-        document.body.classList.remove('theme-dark')
+        document.documentElement.classList.remove('theme', 'theme-light', 'theme-dark')
     }
 
     public componentDidUpdate(): void {
         localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.themePreference)
-        document.body.classList.toggle('theme-light', this.isLightTheme())
-        document.body.classList.toggle('theme-dark', !this.isLightTheme())
+        document.documentElement.classList.toggle('theme-light', this.isLightTheme())
+        document.documentElement.classList.toggle('theme-dark', !this.isLightTheme())
     }
 
     private toggleSearchMode = (event: React.MouseEvent<HTMLAnchorElement>): void => {
@@ -432,6 +432,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     onNavbarQueryChange={this.onNavbarQueryChange}
                                     fetchHighlightedFileLines={fetchHighlightedFileLines}
                                     searchRequest={this.state.searchStreaming ? searchStream : search}
+                                    searchStreaming={this.state.searchStreaming}
                                     // Extensions
                                     platformContext={this.platformContext}
                                     extensionsController={this.extensionsController}
@@ -457,6 +458,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     globbing={this.state.globbing}
                                     showMultilineSearchConsole={this.state.showMultilineSearchConsole}
                                     showQueryBuilder={this.state.showQueryBuilder}
+                                    enableSmartQuery={this.state.enableSmartQuery}
                                     fetchSavedSearches={fetchSavedSearches}
                                     fetchRecentSearches={fetchRecentSearches}
                                     fetchRecentFileViews={fetchRecentFileViews}

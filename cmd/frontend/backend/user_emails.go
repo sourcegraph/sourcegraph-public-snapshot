@@ -125,8 +125,13 @@ func (userEmails) Add(ctx context.Context, userID int32, email string) error {
 	}
 
 	if conf.EmailVerificationRequired() && !emailAlreadyExistsAndIsVerified {
+		usr, err := db.Users.GetByID(ctx, userID)
+		if err != nil {
+			return err
+		}
+
 		// Send email verification email.
-		if err := SendUserEmailVerificationEmail(ctx, email, *code); err != nil {
+		if err := SendUserEmailVerificationEmail(ctx, usr.Username, email, *code); err != nil {
 			return errors.Wrap(err, "SendUserEmailVerificationEmail")
 		} else if err = db.UserEmails.SetLastVerificationSentAt(ctx, userID, email); err != nil {
 			return errors.Wrap(err, "SetLastVerificationSentAt")
@@ -147,7 +152,7 @@ func MakeEmailVerificationCode() (string, error) {
 
 // SendUserEmailVerificationEmail sends an email to the user to verify the email address. The code
 // is the verification code that the user must provide to verify their access to the email address.
-func SendUserEmailVerificationEmail(ctx context.Context, email, code string) error {
+func SendUserEmailVerificationEmail(ctx context.Context, username, email, code string) error {
 	q := make(url.Values)
 	q.Set("code", code)
 	q.Set("email", email)
@@ -156,27 +161,31 @@ func SendUserEmailVerificationEmail(ctx context.Context, email, code string) err
 		To:       []string{email},
 		Template: verifyEmailTemplates,
 		Data: struct {
-			Email string
-			URL   string
+			Username string
+			URL      string
+			Host     string
 		}{
-			Email: email,
+			Username: username,
 			URL: globals.ExternalURL().ResolveReference(&url.URL{
 				Path:     verifyEmailPath.Path,
 				RawQuery: q.Encode(),
 			}).String(),
+			Host: globals.ExternalURL().Host,
 		},
 	})
 }
 
 var verifyEmailTemplates = txemail.MustValidate(txtypes.Templates{
-	Subject: `Verify your email on Sourcegraph`,
-	Text: `
-Verify your email address {{printf "%q" .Email}} on Sourcegraph by following this link:
+	Subject: `Verify your email on Sourcegraph ({{.Host}})`,
+	Text: `Hi {{.Username}},
 
-  {{.URL}}
+Please verify your email address on Sourcegraph ({{.Host}}) by clicking this link:
+
+{{.URL}}
 `,
-	HTML: `
-<p>Verify your email address {{printf "%q" .Email}} on Sourcegraph by following this link:</p>
+	HTML: `<p>Hi {{.Username}},</p>
+
+<p>Please verify your email address on Sourcegraph ({{.Host}}) by clicking this link:</p>
 
 <p><strong><a href="{{.URL}}">Verify email address</a></p>
 `,
@@ -203,24 +212,26 @@ func (userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, id int32, chan
 			Email    string
 			Change   string
 			Username string
+			Host     string
 		}{
 			Email:    email,
 			Change:   change,
 			Username: usr.Username,
+			Host:     globals.ExternalURL().Host,
 		},
 	})
 }
 
 var updateAccountEmailTemplate = txemail.MustValidate(txtypes.Templates{
-	Subject: `Update to your Sourcegraph account`,
+	Subject: `Update to your Sourcegraph account ({{.Host}})`,
 	Text: `
-Somebody (likely you) {{.Change}} for the user {{.Username}} on Sourcegraph.
+Somebody (likely you) {{.Change}} for the user {{.Username}} on Sourcegraph ({{.Host}}).
 
 If this was not you please change your password immediately.
 `,
 	HTML: `
 <p>
-Somebody (likely you) <strong>{{.Change}}</strong> for the user <strong>{{.Username}}</strong> on Sourcegraph.
+Somebody (likely you) <strong>{{.Change}}</strong> for the user <strong>{{.Username}}</strong> on Sourcegraph ({{.Host}}).
 </p>
 
 <p><strong>If this was not you please change your password immediately.</strong></p>

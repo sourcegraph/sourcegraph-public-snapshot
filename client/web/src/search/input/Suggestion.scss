@@ -10,14 +10,18 @@
     line-height: 2.5rem;
     white-space: nowrap;
 
-    background-color: #1c2736;
-    border-top: 1px solid #2a3a51;
+    background-color: var(--color-bg-1);
+    border-top: 1px solid var(--border-color);
+
+    &:first-child {
+        border-top: none;
+    }
 
     cursor: pointer;
 
     &--selected,
     &:hover {
-        background-color: #2a3a51;
+        background-color: var(--color-bg-2);
     }
 
     &__icon {
@@ -47,20 +51,5 @@
     &__action {
         flex: 0 0 auto;
         margin-right: 0.5rem;
-    }
-}
-
-.theme-light {
-    .suggestion {
-        background-color: $color-light-bg-1;
-
-        &:first-child {
-            border-top: none;
-        }
-
-        &--selected,
-        &:hover {
-            background-color: $color-light-bg-2;
-        }
     }
 }

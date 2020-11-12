@@ -80,7 +80,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	githubExtSvc := &repos.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
-		Config: marshalJSON(t, &schema.GitHubConnection{
+		Config: ct.MarshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
 			Token: os.Getenv("GITHUB_TOKEN"),
 			Repos: []string{"sourcegraph/sourcegraph"},
@@ -106,6 +106,12 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	mockState := ct.MockChangesetSyncState(&protocol.RepoInfo{
+		Name: api.RepoName(githubRepo.Name),
+		VCS:  protocol.VCSInfo{URL: githubRepo.URI},
+	})
+	defer mockState.Unmock()
 
 	store := ee.NewStore(dbconn.Global)
 
@@ -155,18 +161,10 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}
 
 		campaign.ChangesetIDs = append(campaign.ChangesetIDs, c.ID)
-	}
 
-	mockState := ct.MockChangesetSyncState(&protocol.RepoInfo{
-		Name: api.RepoName(githubRepo.Name),
-		VCS:  protocol.VCSInfo{URL: githubRepo.URI},
-	})
-	defer mockState.Unmock()
-
-	sourcer := repos.NewSourcer(cf)
-	err = ee.SyncChangesets(ctx, repoStore, store, sourcer, changesets...)
-	if err != nil {
-		t.Fatal(err)
+		if err := ee.SyncChangeset(ctx, repoStore, store, githubSrc, githubRepo, c); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	err = store.UpdateCampaign(ctx, campaign)
@@ -174,7 +172,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -201,8 +199,8 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryChangesetCountsConnection)
 
 	wantCounts := []apitest.ChangesetCounts{
-		{Date: marshalDateTime(t, daysBeforeEnd(5)), Total: 0, Open: 0},
-		{Date: marshalDateTime(t, daysBeforeEnd(4)), Total: 1, Open: 1, OpenPending: 1},
+		{Date: marshalDateTime(t, daysBeforeEnd(5)), Total: 0, Open: 0, OpenPending: 0},
+		{Date: marshalDateTime(t, daysBeforeEnd(4)), Total: 1, Draft: 1},
 		{Date: marshalDateTime(t, daysBeforeEnd(3)), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
 		{Date: marshalDateTime(t, daysBeforeEnd(2)), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
 		{Date: marshalDateTime(t, daysBeforeEnd(1)), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
@@ -222,6 +220,7 @@ query($campaign: ID!, $from: DateTime!, $to: DateTime!) {
         date
         total
         merged
+        draft
         closed
         open
         openApproved

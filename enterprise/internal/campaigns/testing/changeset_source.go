@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
@@ -14,13 +15,18 @@ import (
 type FakeChangesetSource struct {
 	Svc *repos.ExternalService
 
-	CreateChangesetCalled  bool
-	UpdateChangesetCalled  bool
-	ListReposCalled        bool
-	ExternalServicesCalled bool
-	LoadChangesetsCalled   bool
-	CloseChangesetCalled   bool
-	ReopenChangesetCalled  bool
+	authenticator auth.Authenticator
+
+	CreateDraftChangesetCalled  bool
+	UndraftedChangesetsCalled   bool
+	CreateChangesetCalled       bool
+	UpdateChangesetCalled       bool
+	ListReposCalled             bool
+	ExternalServicesCalled      bool
+	LoadChangesetCalled         bool
+	CloseChangesetCalled        bool
+	ReopenChangesetCalled       bool
+	AuthenticatedUsernameCalled bool
 
 	// The Changeset.HeadRef to be expected in CreateChangeset/UpdateChangeset calls.
 	WantHeadRef string
@@ -45,7 +51,7 @@ type FakeChangesetSource struct {
 	// CreateChangeset
 	CreatedChangesets []*repos.Changeset
 
-	// LoadedChangesets contains the changesets that were passed to LoadChangesets
+	// LoadedChangesets contains the changesets that were passed to LoadChangeset
 	LoadedChangesets []*repos.Changeset
 
 	// UpdateChangesets contains the changesets that were passed to
@@ -54,6 +60,59 @@ type FakeChangesetSource struct {
 
 	// ReopenedChangesets contains the changesets that were passed to ReopenedChangeset
 	ReopenedChangesets []*repos.Changeset
+
+	// UndraftedChangesets contains the changesets that were passed to UndraftChangeset
+	UndraftedChangesets []*repos.Changeset
+
+	// Username is the username returned by AuthenticatedUsername
+	Username string
+}
+
+var _ repos.ChangesetSource = &FakeChangesetSource{}
+var _ repos.DraftChangesetSource = &FakeChangesetSource{}
+var _ repos.UserSource = &FakeChangesetSource{}
+
+func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *repos.Changeset) (bool, error) {
+	s.CreateDraftChangesetCalled = true
+
+	if s.Err != nil {
+		return s.ChangesetExists, s.Err
+	}
+
+	if c.Repo == nil {
+		return false, NoReposErr
+	}
+
+	if c.HeadRef != s.WantHeadRef {
+		return s.ChangesetExists, fmt.Errorf("wrong HeadRef. want=%s, have=%s", s.WantHeadRef, c.HeadRef)
+	}
+
+	if c.BaseRef != s.WantBaseRef {
+		return s.ChangesetExists, fmt.Errorf("wrong BaseRef. want=%s, have=%s", s.WantBaseRef, c.BaseRef)
+	}
+
+	if err := c.SetMetadata(s.FakeMetadata); err != nil {
+		return s.ChangesetExists, err
+	}
+
+	s.CreatedChangesets = append(s.CreatedChangesets, c)
+	return s.ChangesetExists, s.Err
+}
+
+func (s *FakeChangesetSource) UndraftChangeset(ctx context.Context, c *repos.Changeset) error {
+	s.UndraftedChangesetsCalled = true
+
+	if s.Err != nil {
+		return s.Err
+	}
+
+	if c.Repo == nil {
+		return NoReposErr
+	}
+
+	s.UndraftedChangesets = append(s.UndraftedChangesets, c)
+
+	return c.SetMetadata(s.FakeMetadata)
 }
 
 func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Changeset) (bool, error) {
@@ -114,24 +173,22 @@ func (s *FakeChangesetSource) ExternalServices() repos.ExternalServices {
 
 	return repos.ExternalServices{s.Svc}
 }
-func (s *FakeChangesetSource) LoadChangesets(ctx context.Context, cs ...*repos.Changeset) error {
-	s.LoadChangesetsCalled = true
+func (s *FakeChangesetSource) LoadChangeset(ctx context.Context, c *repos.Changeset) error {
+	s.LoadChangesetCalled = true
 
 	if s.Err != nil {
 		return s.Err
 	}
 
-	for _, c := range cs {
-		if c.Repo == nil {
-			return NoReposErr
-		}
-
-		if err := c.SetMetadata(s.FakeMetadata); err != nil {
-			return err
-		}
+	if c.Repo == nil {
+		return NoReposErr
 	}
 
-	s.LoadedChangesets = append(s.LoadedChangesets, cs...)
+	if err := c.SetMetadata(s.FakeMetadata); err != nil {
+		return err
+	}
+
+	s.LoadedChangesets = append(s.LoadedChangesets, c)
 	return nil
 }
 
@@ -169,6 +226,16 @@ func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *repos.Chan
 	return c.SetMetadata(s.FakeMetadata)
 }
 
+func (s *FakeChangesetSource) WithAuthenticator(a auth.Authenticator) (repos.Source, error) {
+	s.authenticator = a
+	return s, nil
+}
+
+func (s *FakeChangesetSource) AuthenticatedUsername(ctx context.Context) (string, error) {
+	s.AuthenticatedUsernameCalled = true
+	return s.Username, nil
+}
+
 // FakeGitserverClient is a test implementation of the GitserverClient
 // interface required by ExecChangesetJob.
 type FakeGitserverClient struct {
@@ -176,9 +243,11 @@ type FakeGitserverClient struct {
 	ResponseErr error
 
 	CreateCommitFromPatchCalled bool
+	CreateCommitFromPatchReq    *protocol.CreateCommitFromPatchRequest
 }
 
 func (f *FakeGitserverClient) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
 	f.CreateCommitFromPatchCalled = true
+	f.CreateCommitFromPatchReq = &req
 	return f.Response, f.ResponseErr
 }

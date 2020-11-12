@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -78,6 +79,7 @@ type ChangesetExternalState string
 
 // ChangesetExternalState constants.
 const (
+	ChangesetExternalStateDraft   ChangesetExternalState = "DRAFT"
 	ChangesetExternalStateOpen    ChangesetExternalState = "OPEN"
 	ChangesetExternalStateClosed  ChangesetExternalState = "CLOSED"
 	ChangesetExternalStateMerged  ChangesetExternalState = "MERGED"
@@ -88,6 +90,7 @@ const (
 func (s ChangesetExternalState) Valid() bool {
 	switch s {
 	case ChangesetExternalStateOpen,
+		ChangesetExternalStateDraft,
 		ChangesetExternalStateClosed,
 		ChangesetExternalStateMerged,
 		ChangesetExternalStateDeleted:
@@ -164,6 +167,7 @@ type Changeset struct {
 	CampaignIDs         []int64
 	ExternalID          string
 	ExternalServiceType string
+	// ExternalBranch should always be prefixed with refs/heads/. Call git.EnsureRefPrefix before setting this value.
 	ExternalBranch      string
 	ExternalDeletedAt   time.Time
 	ExternalUpdatedAt   time.Time
@@ -265,19 +269,19 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(pr.Number, 10)
 		c.ExternalServiceType = extsvc.TypeGitHub
-		c.ExternalBranch = pr.HeadRefName
+		c.ExternalBranch = git.EnsureRefPrefix(pr.HeadRefName)
 		c.ExternalUpdatedAt = pr.UpdatedAt
 	case *bitbucketserver.PullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
 		c.ExternalServiceType = extsvc.TypeBitbucketServer
-		c.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
+		c.ExternalBranch = git.EnsureRefPrefix(pr.FromRef.ID)
 		c.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
 	case *gitlab.MergeRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(int64(pr.IID), 10)
 		c.ExternalServiceType = extsvc.TypeGitLab
-		c.ExternalBranch = pr.SourceBranch
+		c.ExternalBranch = git.EnsureRefPrefix(pr.SourceBranch)
 		c.ExternalUpdatedAt = pr.UpdatedAt.Time
 	default:
 		return errors.New("unknown changeset type")
@@ -351,42 +355,11 @@ func (c *Changeset) IsDeleted() bool {
 	return !c.ExternalDeletedAt.IsZero()
 }
 
-// externalState of a Changeset based on the metadata.
-// It does NOT reflect the final calculated externalState, use `ExternalState` instead.
-func (c *Changeset) externalState() (s ChangesetExternalState, err error) {
-	if !c.ExternalDeletedAt.IsZero() {
-		return ChangesetExternalStateDeleted, nil
-	}
-
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
-		s = ChangesetExternalState(m.State)
-	case *bitbucketserver.PullRequest:
-		if m.State == "DECLINED" {
-			s = ChangesetExternalStateClosed
-		} else {
-			s = ChangesetExternalState(m.State)
-		}
-	case *gitlab.MergeRequest:
-		switch m.State {
-		case gitlab.MergeRequestStateOpened:
-			s = ChangesetExternalStateOpen
-		case gitlab.MergeRequestStateClosed, gitlab.MergeRequestStateLocked:
-			s = ChangesetExternalStateClosed
-		case gitlab.MergeRequestStateMerged:
-			s = ChangesetExternalStateMerged
-		default:
-			return "", errors.Errorf("unknown merge request state: %s", m.State)
-		}
-	default:
-		return "", errors.New("unknown changeset type")
-	}
-
-	if !s.Valid() {
-		return "", errors.Errorf("changeset state %q invalid", s)
-	}
-
-	return s, nil
+// HasDiff returns true when the changeset is in an open state. That is because
+// currently we do not support diff rendering for historic branches, because we
+// can't guarantee that we have the refs on gitserver.
+func (c *Changeset) HasDiff() bool {
+	return c.ExternalState == ChangesetExternalStateDraft || c.ExternalState == ChangesetExternalStateOpen
 }
 
 // URL of a Changeset.
@@ -407,8 +380,20 @@ func (c *Changeset) URL() (s string, err error) {
 	}
 }
 
-// Events returns the list of ChangesetEvents from the Changeset's metadata.
+// Events returns the deduplicated list of ChangesetEvents from the Changeset's metadata.
 func (c *Changeset) Events() (events []*ChangesetEvent) {
+	uniqueEvents := make(map[string]struct{}, 0)
+
+	appendEvent := func(e *ChangesetEvent) {
+		k := string(e.Kind) + e.Key
+		if _, ok := uniqueEvents[k]; ok {
+			log15.Info("dropping duplicate changeset event", "changeset_id", e.ChangesetID, "kind", e.Kind, "key", e.Key)
+			return
+		}
+		uniqueEvents[k] = struct{}{}
+		events = append(events, e)
+	}
+
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		events = make([]*ChangesetEvent, 0, len(m.TimelineItems))
@@ -422,7 +407,7 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 					ev.Key = c.Key()
 					ev.Kind = ChangesetEventKindFor(c)
 					ev.Metadata = c
-					events = append(events, &ev)
+					appendEvent(&ev)
 				}
 
 			case *github.ReviewRequestedEvent:
@@ -435,20 +420,20 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 				ev.Key = e.Key()
 				ev.Kind = ChangesetEventKindFor(e)
 				ev.Metadata = e
-				events = append(events, &ev)
+				appendEvent(&ev)
 
 			default:
 				ev.Key = ti.Item.(Keyer).Key()
 				ev.Kind = ChangesetEventKindFor(ti.Item)
 				ev.Metadata = ti.Item
-				events = append(events, &ev)
+				appendEvent(&ev)
 			}
 		}
 
 	case *bitbucketserver.PullRequest:
 		events = make([]*ChangesetEvent, 0, len(m.Activities)+len(m.CommitStatus))
 		addEvent := func(e Keyer) {
-			events = append(events, &ChangesetEvent{
+			appendEvent(&ChangesetEvent{
 				ChangesetID: c.ID,
 				Key:         e.Key(),
 				Kind:        ChangesetEventKindFor(e),
@@ -466,18 +451,18 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 		events = make([]*ChangesetEvent, 0, len(m.Notes)+len(m.Pipelines))
 
 		for _, note := range m.Notes {
-			if review := note.ToReview(); review != nil {
-				events = append(events, &ChangesetEvent{
+			if event := note.ToEvent(); event != nil {
+				appendEvent(&ChangesetEvent{
 					ChangesetID: c.ID,
-					Key:         review.(Keyer).Key(),
-					Kind:        ChangesetEventKindFor(review),
-					Metadata:    review,
+					Key:         event.(Keyer).Key(),
+					Kind:        ChangesetEventKindFor(event),
+					Metadata:    event,
 				})
 			}
 		}
 
 		for _, pipeline := range m.Pipelines {
-			events = append(events, &ChangesetEvent{
+			appendEvent(&ChangesetEvent{
 				ChangesetID: c.ID,
 				Key:         pipeline.Key(),
 				Kind:        ChangesetEventKindFor(pipeline),
@@ -554,12 +539,13 @@ func (c *Changeset) BaseRef() (string, error) {
 // hosted supports labels and whether it's safe to call the
 // (*Changeset).Labels() method.
 func (c *Changeset) SupportsLabels() bool {
-	switch c.Metadata.(type) {
-	case *github.PullRequest, *gitlab.MergeRequest:
-		return true
-	default:
-		return false
-	}
+	return ExternalServiceSupports(c.ExternalServiceType, CodehostCapabilityLabels)
+}
+
+// SupportsDraft returns whether the code host on which the changeset is
+// hosted supports draft changesets.
+func (c *Changeset) SupportsDraft() bool {
+	return ExternalServiceSupports(c.ExternalServiceType, CodehostCapabilityDraftChangesets)
 }
 
 func (c *Changeset) Labels() []ChangesetLabel {
@@ -662,6 +648,11 @@ func WithExternalID(id string) func(*Changeset) bool {
 	return func(c *Changeset) bool { return c.ExternalID == id }
 }
 
+// ChangesetsStats holds stats information on a list of changesets.
+type ChangesetsStats struct {
+	Unpublished, Draft, Open, Merged, Closed, Deleted, Total int32
+}
+
 // ChangesetEventKindFor returns the ChangesetEventKind for the given
 // specific code host event.
 func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
@@ -688,6 +679,10 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindGitHubReviewRequestRemoved
 	case *github.ReviewRequestedEvent:
 		return ChangesetEventKindGitHubReviewRequested
+	case *github.ReadyForReviewEvent:
+		return ChangesetEventKindGitHubReadyForReview
+	case *github.ConvertToDraftEvent:
+		return ChangesetEventKindGitHubConvertToDraft
 	case *github.UnassignedEvent:
 		return ChangesetEventKindGitHubUnassigned
 	case *github.PullRequestCommit:
@@ -711,10 +706,14 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindBitbucketServerCommitStatus
 	case *gitlab.Pipeline:
 		return ChangesetEventKindGitLabPipeline
-	case *gitlab.ReviewApproved:
+	case *gitlab.ReviewApprovedEvent:
 		return ChangesetEventKindGitLabApproved
-	case *gitlab.ReviewUnapproved:
+	case *gitlab.ReviewUnapprovedEvent:
 		return ChangesetEventKindGitLabUnapproved
+	case *gitlab.MarkWorkInProgressEvent:
+		return ChangesetEventKindGitLabMarkWorkInProgress
+	case *gitlab.UnmarkWorkInProgressEvent:
+		return ChangesetEventKindGitLabUnmarkWorkInProgress
 	case *gitlabwebhooks.MergeRequestCloseEvent:
 		return ChangesetEventKindGitLabClosed
 	case *gitlabwebhooks.MergeRequestMergeEvent:
@@ -763,6 +762,10 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 			return new(github.ReviewRequestRemovedEvent), nil
 		case ChangesetEventKindGitHubReviewRequested:
 			return new(github.ReviewRequestedEvent), nil
+		case ChangesetEventKindGitHubReadyForReview:
+			return new(github.ReadyForReviewEvent), nil
+		case ChangesetEventKindGitHubConvertToDraft:
+			return new(github.ConvertToDraftEvent), nil
 		case ChangesetEventKindGitHubUnassigned:
 			return new(github.UnassignedEvent), nil
 		case ChangesetEventKindGitHubCommit:
@@ -781,11 +784,15 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 	case strings.HasPrefix(string(k), "gitlab"):
 		switch k {
 		case ChangesetEventKindGitLabApproved:
-			return new(gitlab.ReviewApproved), nil
+			return new(gitlab.ReviewApprovedEvent), nil
 		case ChangesetEventKindGitLabPipeline:
 			return new(gitlab.Pipeline), nil
 		case ChangesetEventKindGitLabUnapproved:
-			return new(gitlab.ReviewUnapproved), nil
+			return new(gitlab.ReviewUnapprovedEvent), nil
+		case ChangesetEventKindGitLabMarkWorkInProgress:
+			return new(gitlab.MarkWorkInProgressEvent), nil
+		case ChangesetEventKindGitLabUnmarkWorkInProgress:
+			return new(gitlab.UnmarkWorkInProgressEvent), nil
 		case ChangesetEventKindGitLabClosed:
 			return new(gitlabwebhooks.MergeRequestCloseEvent), nil
 		case ChangesetEventKindGitLabMerged:

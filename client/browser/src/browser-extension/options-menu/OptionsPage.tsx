@@ -179,8 +179,8 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                         Sourcegraph Cloud
                     </a>
                 </div>
-                <div className="options-page__split-section-part" {...linkProps}>
-                    <a href="https://docs.sourcegraph.com">
+                <div className="options-page__split-section-part">
+                    <a href="https://docs.sourcegraph.com" {...linkProps}>
                         <BookOpenPageVariantIcon className="icon-inline mr-2" />
                         Documentation
                     </a>
@@ -252,10 +252,10 @@ const CodeHostsSection: React.FunctionComponent<{ currentHost?: string }> = ({ c
                     key={host}
                     className={classNames('code-hosts-section__icon', {
                         // Use `endsWith` in order to match subdomains.
-                        'bg-4': currentHost?.endsWith(host),
+                        'bg-3': currentHost?.endsWith(host),
                     })}
                 >
-                    {Icon && <Icon className="icon-inline" />}
+                    {Icon && <Icon />}
                 </span>
             ))}
         </div>

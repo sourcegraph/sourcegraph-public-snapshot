@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -23,21 +25,22 @@ const (
 )
 
 type MergeRequest struct {
-	ID           ID                `json:"id"`
-	IID          ID                `json:"iid"`
-	ProjectID    ID                `json:"project_id"`
-	Title        string            `json:"title"`
-	Description  string            `json:"description"`
-	State        MergeRequestState `json:"state"`
-	CreatedAt    Time              `json:"created_at"`
-	UpdatedAt    Time              `json:"updated_at"`
-	MergedAt     *Time             `json:"merged_at"`
-	ClosedAt     *Time             `json:"closed_at"`
-	HeadPipeline *Pipeline         `json:"head_pipeline"`
-	Labels       []string          `json:"labels"`
-	SourceBranch string            `json:"source_branch"`
-	TargetBranch string            `json:"target_branch"`
-	WebURL       string            `json:"web_url"`
+	ID             ID                `json:"id"`
+	IID            ID                `json:"iid"`
+	ProjectID      ID                `json:"project_id"`
+	Title          string            `json:"title"`
+	Description    string            `json:"description"`
+	State          MergeRequestState `json:"state"`
+	CreatedAt      Time              `json:"created_at"`
+	UpdatedAt      Time              `json:"updated_at"`
+	MergedAt       *Time             `json:"merged_at"`
+	ClosedAt       *Time             `json:"closed_at"`
+	HeadPipeline   *Pipeline         `json:"head_pipeline"`
+	Labels         []string          `json:"labels"`
+	SourceBranch   string            `json:"source_branch"`
+	TargetBranch   string            `json:"target_branch"`
+	WebURL         string            `json:"web_url"`
+	WorkInProgress bool              `json:"work_in_progress"`
 
 	DiffRefs DiffRefs `json:"diff_refs"`
 
@@ -47,6 +50,20 @@ type MergeRequest struct {
 	// to do it the old fashioned way with lots of REST requests.
 	Notes     []*Note
 	Pipelines []*Pipeline
+}
+
+func SetWIP(title string) string {
+	if !strings.HasPrefix(title, "WIP:") {
+		return "WIP: " + title
+	}
+	return title
+}
+
+func UnsetWIP(title string) string {
+	if strings.HasPrefix(title, "WIP: ") {
+		return strings.TrimPrefix(title, "WIP: ")
+	}
+	return title
 }
 
 type DiffRefs struct {
@@ -80,6 +97,8 @@ func (c *Client) CreateMergeRequest(ctx context.Context, project *Project, opts 
 		return nil, errors.Wrap(err, "marshalling options")
 	}
 
+	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
+
 	req, err := http.NewRequest("POST", fmt.Sprintf("projects/%d/merge_requests", project.ID), bytes.NewBuffer(data))
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request to create a merge request")
@@ -101,6 +120,8 @@ func (c *Client) GetMergeRequest(ctx context.Context, project *Project, iid ID) 
 	if MockGetMergeRequest != nil {
 		return MockGetMergeRequest(c, ctx, project, iid)
 	}
+
+	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
 
 	req, err := http.NewRequest("GET", fmt.Sprintf("projects/%d/merge_requests/%d", project.ID, iid), nil)
 	if err != nil {
@@ -137,6 +158,8 @@ func (c *Client) GetOpenMergeRequestByRefs(ctx context.Context, project *Project
 	u := &url.URL{
 		Path: fmt.Sprintf("projects/%d/merge_requests", project.ID), RawQuery: values.Encode(),
 	}
+
+	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
 
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
@@ -188,6 +211,8 @@ func (c *Client) UpdateMergeRequest(ctx context.Context, project *Project, mr *M
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling options")
 	}
+
+	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
 
 	req, err := http.NewRequest("PUT", fmt.Sprintf("projects/%d/merge_requests/%d", project.ID, mr.IID), bytes.NewBuffer(data))
 	if err != nil {

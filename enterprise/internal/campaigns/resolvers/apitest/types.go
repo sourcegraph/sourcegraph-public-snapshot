@@ -51,7 +51,8 @@ type User struct {
 	DatabaseID int32
 	SiteAdmin  bool
 
-	Campaigns CampaignConnection
+	Campaigns          CampaignConnection
+	CampaignsCodeHosts CampaignsCodeHostsConnection
 }
 
 type Org struct {
@@ -82,6 +83,7 @@ type Campaign struct {
 	UpdatedAt               string
 	ClosedAt                string
 	URL                     string
+	ChangesetsStats         ChangesetsStats
 	Changesets              ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
 	DiffStat                DiffStat
@@ -157,11 +159,11 @@ type ChangesetConnection struct {
 	Nodes      []Changeset
 	TotalCount int
 	PageInfo   PageInfo
-	Stats      ChangesetConnectionStats
 }
 
-type ChangesetConnectionStats struct {
+type ChangesetsStats struct {
 	Unpublished int
+	Draft       int
 	Open        int
 	Merged      int
 	Closed      int
@@ -175,6 +177,7 @@ type ChangesetCounts struct {
 	Merged               int32
 	Closed               int32
 	Open                 int32
+	Draft                int32
 	OpenApproved         int32
 	OpenChangesRequested int32
 	OpenPending          int32
@@ -259,4 +262,27 @@ type Person struct {
 	Name  string
 	Email string
 	User  *User
+}
+
+type CampaignsCredential struct {
+	ID                  string
+	ExternalServiceKind string
+	ExternalServiceURL  string
+	CreatedAt           string
+}
+
+type EmptyResponse struct {
+	AlwaysNil string
+}
+
+type CampaignsCodeHostsConnection struct {
+	PageInfo   PageInfo
+	Nodes      []CampaignsCodeHost
+	TotalCount int
+}
+
+type CampaignsCodeHost struct {
+	ExternalServiceKind string
+	ExternalServiceURL  string
+	Credential          CampaignsCredential
 }

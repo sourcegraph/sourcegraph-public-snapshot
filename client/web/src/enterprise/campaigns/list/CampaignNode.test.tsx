@@ -17,7 +17,7 @@ describe('CampaignNode', () => {
 
 - and renders in markdown
         `,
-        changesets: { stats: { merged: 0, open: 1, closed: 3 } },
+        changesetsStats: { merged: 0, open: 1, closed: 3 },
         createdAt: '2019-12-04T23:15:01Z',
         closedAt: null,
         namespace: {
@@ -28,12 +28,12 @@ describe('CampaignNode', () => {
 
     test('open campaign', () => {
         expect(
-            mount(<CampaignNode displayNamespace={true} node={node} now={now} history={createMemoryHistory()} />)
+            mount(<CampaignNode displayNamespace={true} node={node} now={() => now} history={createMemoryHistory()} />)
         ).toMatchSnapshot()
     })
     test('open campaign on user page', () => {
         expect(
-            mount(<CampaignNode displayNamespace={false} node={node} now={now} history={createMemoryHistory()} />)
+            mount(<CampaignNode displayNamespace={false} node={node} now={() => now} history={createMemoryHistory()} />)
         ).toMatchSnapshot()
     })
     test('closed campaign', () => {
@@ -42,7 +42,7 @@ describe('CampaignNode', () => {
                 <CampaignNode
                     node={{ ...node, closedAt: '2019-12-04T23:19:01Z' }}
                     displayNamespace={true}
-                    now={now}
+                    now={() => now}
                     history={createMemoryHistory()}
                 />
             )
@@ -57,7 +57,7 @@ describe('CampaignNode', () => {
                         description: null,
                     }}
                     displayNamespace={true}
-                    now={now}
+                    now={() => now}
                     history={createMemoryHistory()}
                 />
             )

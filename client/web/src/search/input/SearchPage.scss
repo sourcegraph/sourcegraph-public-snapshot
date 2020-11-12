@@ -23,11 +23,6 @@
         min-height: 54px;
     }
 
-    &__cloud-tag-line {
-        margin-top: 1rem;
-        color: $gray-07;
-    }
-
     &__search-container {
         flex: 1 1 auto;
         margin-top: 1.5rem;
@@ -100,21 +95,5 @@
 
     &__footer {
         margin-top: 2rem;
-    }
-}
-
-.theme-light {
-    .search-page {
-        &__cloud-tag-line {
-            color: $gray-11;
-        }
-    }
-}
-
-.theme-dark {
-    .search-page {
-        &__web-link {
-            color: #1c7cd6;
-        }
     }
 }

@@ -1,5 +1,5 @@
 import { count } from '../../../shared/src/util/strings'
-import { parseSearchQuery, ParserResult, Sequence } from '../../../shared/src/search/parser/parser'
+import { scanSearchQuery, ScanResult, Token } from '../../../shared/src/search/parser/scanner'
 import { resolveFilter } from '../../../shared/src/search/parser/filters'
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -11,12 +11,12 @@ export function queryTelemetryData(query: string, caseSensitive: boolean) {
         empty: !query,
     }
 }
-function filterExistsInQuery(parsedQuery: ParserResult<Sequence>, filterToMatch: string): boolean {
+function filterExistsInQuery(parsedQuery: ScanResult<Token[]>, filterToMatch: string): boolean {
     if (parsedQuery.type === 'success') {
-        const members = parsedQuery.token.members
-        for (const member of members) {
-            if (member.token.type === 'filter') {
-                const resolvedFilter = resolveFilter(member.token.filterType.token.value)
+        const tokens = parsedQuery.term
+        for (const token of tokens) {
+            if (token.type === 'filter') {
+                const resolvedFilter = resolveFilter(token.filterType.value)
                 if (resolvedFilter !== undefined && resolvedFilter.type === filterToMatch) {
                     return true
                 }
@@ -29,7 +29,7 @@ function filterExistsInQuery(parsedQuery: ParserResult<Sequence>, filterToMatch:
 function queryStringTelemetryData(query: string, caseSensitive: boolean) {
     // 🚨 PRIVACY: never provide any private data in this function's return value.
     // This only takes ~1.7ms per call, so it does not need to be optimized.
-    const parsedQuery = parseSearchQuery(query)
+    const parsedQuery = scanSearchQuery(query)
     return {
         field_archived: filterExistsInQuery(parsedQuery, 'archived')
             ? {

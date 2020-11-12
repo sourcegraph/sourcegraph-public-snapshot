@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
@@ -109,7 +110,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		AssetURL: assetsutil.URL("").String(),
 		Title:    title,
 		Metadata: &Metadata{
-			Title:       conf.BrandName(),
+			Title:       globals.Branding().BrandName,
 			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
 			ShowPreview: r.URL.Path == "/sign-in" && r.URL.RawQuery == "returnTo=%2F",
 		},
@@ -228,7 +229,7 @@ func serveBasicPage(title func(c *Common, r *http.Request) string, description *
 }
 
 func serveHome(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, conf.BrandName(), serveError)
+	common, err := newCommon(w, r, globals.Branding().BrandName, serveError)
 	if err != nil {
 		return err
 	}

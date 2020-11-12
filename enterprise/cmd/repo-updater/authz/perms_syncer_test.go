@@ -19,6 +19,9 @@ import (
 )
 
 func TestPermsSyncer_ScheduleUsers(t *testing.T) {
+	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
+	defer authz.SetProviders(true, nil)
+
 	s := NewPermsSyncer(nil, nil, nil, nil)
 	s.ScheduleUsers(context.Background(), 1)
 
@@ -35,6 +38,9 @@ func TestPermsSyncer_ScheduleUsers(t *testing.T) {
 }
 
 func TestPermsSyncer_ScheduleRepos(t *testing.T) {
+	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
+	defer authz.SetProviders(true, nil)
+
 	s := NewPermsSyncer(nil, nil, nil, nil)
 	s.ScheduleRepos(context.Background(), 1)
 
@@ -78,54 +84,11 @@ func (p *mockProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Reposito
 
 type mockReposStore struct {
 	listRepos func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error)
-}
-
-func (s *mockReposStore) ListExternalServices(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
-	return nil, nil
-}
-
-func (s *mockReposStore) UpsertExternalServices(context.Context, ...*repos.ExternalService) error {
-	return nil
+	repos.Store
 }
 
 func (s *mockReposStore) ListRepos(ctx context.Context, args repos.StoreListReposArgs) ([]*repos.Repo, error) {
 	return s.listRepos(ctx, args)
-}
-
-func (s *mockReposStore) ListExternalRepoSpecs(ctx context.Context) (map[api.ExternalRepoSpec]struct{}, error) {
-	return nil, nil
-}
-
-func (s *mockReposStore) InsertRepos(context.Context, ...*repos.Repo) error {
-	return nil
-}
-
-func (s *mockReposStore) DeleteRepos(context.Context, ...api.RepoID) error {
-	return nil
-}
-
-func (s *mockReposStore) UpsertRepos(context.Context, ...*repos.Repo) error {
-	return nil
-}
-
-func (s *mockReposStore) UpsertSources(ctx context.Context, added, modified, deleted map[api.RepoID][]repos.SourceInfo) error {
-	return nil
-}
-
-func (s *mockReposStore) SetClonedRepos(ctx context.Context, repoNames ...string) error {
-	return nil
-}
-
-func (s *mockReposStore) CountNotClonedRepos(ctx context.Context) (uint64, error) {
-	return 0, nil
-}
-
-func (s *mockReposStore) CountUserAddedRepos(ctx context.Context) (uint64, error) {
-	return 0, nil
-}
-
-func (s *mockReposStore) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) error {
-	return nil
 }
 
 func TestPermsSyncer_syncUserPerms(t *testing.T) {

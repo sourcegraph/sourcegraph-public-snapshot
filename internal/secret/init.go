@@ -1,27 +1,45 @@
 package secret
 
 import (
-	"bytes"
 	"crypto/rand"
+	"encoding/base64"
 	"io/ioutil"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 // gatherKeys splits the comma-separated encryption data into its potential two components:
 // primary and secondary keys, where the first key is assumed to be the primary key.
+// Each key is expected to be base64-encoded separately.
 func gatherKeys(data []byte) (primaryKey, secondaryKey []byte, err error) {
-	parts := bytes.Split(data, []byte(","))
+	parts := strings.Split(string(data), ",")
 	if len(parts) > 2 {
 		return nil, nil, errors.Errorf("expect at most two encryption keys but got %d", len(parts))
 	}
-	if len(parts) == 1 {
-		return parts[0], nil, nil
+
+	primaryKey, err = base64.StdEncoding.DecodeString(parts[0])
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "decode primary key")
+	} else if len(primaryKey) < requiredKeyLength {
+		return nil, nil, errors.Errorf("primary key length of %d bytes is required", requiredKeyLength)
 	}
-	return parts[0], parts[1], nil
+
+	if len(parts) == 2 {
+		secondaryKey, err = base64.StdEncoding.DecodeString(parts[1])
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "decode secondary key")
+		} else if len(primaryKey) < requiredKeyLength {
+			return nil, nil, errors.Errorf("secondary key length of %d bytes is required", requiredKeyLength)
+		}
+	}
+
+	return primaryKey, secondaryKey, nil
 }
 
 var initErr error
@@ -46,20 +64,27 @@ func MockDefaultEncryptor() {
 	defaultEncryptor = newAESGCMEncodedEncryptor(mustGenerateRandomAESKey(), nil)
 }
 
-const sourcegraphsSecretFile = "SOURCEGRAPH_SECRET_FILE"
+const sourcegraphSecretFile = "SOURCEGRAPH_SECRET_FILE"
 
 func initDefaultEncryptor() error {
-	// Set the default location if none exists
-	secretFile := os.Getenv(sourcegraphsSecretFile)
+	// NOTE: Previously in 3.20, we auto-generated this file for single-image instances.
+	// Now we clean this up and it is OK to do this on every start as we haven't advertised
+	// the secrets encryption feature to any customer.
+	// TODO(jchen): Delete this once 3.22 is released.
+	if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
+		_ = os.Remove("/var/lib/sourcegraph/token")
+	}
+
+	secretFile := os.Getenv(sourcegraphSecretFile)
 	if secretFile == "" {
-		secretFile = "/etc/sourcegraph/token"
+		defaultEncryptor = noOpEncryptor{}
+		log15.Warn("No encryption initialized")
+		return nil
 	}
 
 	fileInfo, err := os.Stat(secretFile)
 	if err != nil {
-		defaultEncryptor = noOpEncryptor{}
-		log15.Warn("No encryption initialized")
-		return nil
+		return errors.Wrapf(err, "stat file %q", secretFile)
 	}
 
 	perm := fileInfo.Mode().Perm()
@@ -67,15 +92,12 @@ func initDefaultEncryptor() error {
 		return errors.New("key file permissions are not 0400")
 	}
 
-	encryptionKey, err := ioutil.ReadFile(secretFile)
+	encryptionKeys, err := ioutil.ReadFile(secretFile)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't read file %s", sourcegraphsSecretFile)
-	}
-	if len(encryptionKey) < requiredKeyLength {
-		return errors.Errorf("key length of %d characters is required", requiredKeyLength)
+		return errors.Wrapf(err, "read file %q", secretFile)
 	}
 
-	primaryKey, secondaryKey, err := gatherKeys(encryptionKey)
+	primaryKey, secondaryKey, err := gatherKeys(encryptionKeys)
 	if err != nil {
 		return errors.Wrap(err, "gather keys")
 	}

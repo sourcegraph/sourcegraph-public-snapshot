@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -395,27 +396,27 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 		})
 	})
 
-	t.Run("LoadChangesets", func(t *testing.T) {
+	t.Run("LoadChangeset", func(t *testing.T) {
 		t.Run("invalid metadata", func(t *testing.T) {
 			defer func() { _ = recover() }()
 
 			p := newGitLabChangesetSourceTestProvider(t)
 
-			_ = p.source.LoadChangesets(p.ctx, []*Changeset{{
+			_ = p.source.LoadChangeset(p.ctx, &Changeset{
 				Repo: &Repo{Metadata: struct{}{}},
-			}}...)
+			})
 			t.Error("invalid metadata did not panic")
 		})
 
 		t.Run("error from ParseInt", func(t *testing.T) {
 			p := newGitLabChangesetSourceTestProvider(t)
-			if err := p.source.LoadChangesets(p.ctx, []*Changeset{{
+			if err := p.source.LoadChangeset(p.ctx, &Changeset{
 				Changeset: &campaigns.Changeset{
 					ExternalID: "foo",
 					Metadata:   &gitlab.MergeRequest{},
 				},
 				Repo: &Repo{Metadata: &gitlab.Project{}},
-			}}...); err == nil {
+			}); err == nil {
 				t.Error("invalid ExternalID did not result in an error")
 			}
 		})
@@ -430,7 +431,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.mockGetMergeRequestNotes(42, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(42, nil, 20, nil)
 
-			if have := p.source.LoadChangesets(p.ctx, p.changeset); !errors.Is(have, inner) {
+			if have := p.source.LoadChangeset(p.ctx, p.changeset); !errors.Is(have, inner) {
 				t.Errorf("error does not include inner error: have %+v; want %+v", have, inner)
 			}
 		})
@@ -447,7 +448,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.mockGetMergeRequestNotes(43, nil, 20, inner)
 			p.mockGetMergeRequestPipelines(43, nil, 20, nil)
 
-			if err := p.source.LoadChangesets(p.ctx, p.changeset); !errors.Is(err, inner) {
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); !errors.Is(err, inner) {
 				t.Errorf("unexpected error: %+v", err)
 			}
 			if p.changeset.Changeset.Metadata != p.mr {
@@ -467,7 +468,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.mockGetMergeRequestNotes(43, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(43, nil, 20, inner)
 
-			if err := p.source.LoadChangesets(p.ctx, p.changeset); !errors.Is(err, inner) {
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); !errors.Is(err, inner) {
 				t.Errorf("unexpected error: %+v", err)
 			}
 			if p.changeset.Changeset.Metadata != p.mr {
@@ -486,11 +487,24 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.mockGetMergeRequestNotes(43, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(43, nil, 20, nil)
 
-			if err := p.source.LoadChangesets(p.ctx, p.changeset); err != nil {
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 			if have := p.changeset.Changeset.Metadata.(*gitlab.MergeRequest); have != mr {
 				t.Errorf("merge request metadata not updated: have %p; want %p", have, mr)
+			}
+		})
+
+		t.Run("not found", func(t *testing.T) {
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.changeset.Changeset.ExternalID = "43"
+			p.changeset.Changeset.Metadata = p.mr
+			p.mockGetMergeRequest(43, nil, gitlab.HTTPError(404))
+
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); err == nil {
+				t.Fatal("unexpectedly no error for not found changeset")
+			} else if err.Error() != (ChangesetNotFoundError{Changeset: &Changeset{Changeset: &campaigns.Changeset{ExternalID: "43"}}}).Error() {
+				t.Fatalf("unexpected error: %+v", err)
 			}
 		})
 
@@ -514,7 +528,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.mockGetMergeRequestNotes(43, notes, 20, nil)
 			p.mockGetMergeRequestPipelines(43, nil, 20, nil)
 
-			if err := p.source.LoadChangesets(p.ctx, p.changeset); err != nil {
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 			if diff := cmp.Diff(mr.Notes, notes[0:2]); diff != "" {
@@ -525,7 +539,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			// changed the IID in the merge request, we do need to change the
 			// getMergeRequest mock.
 			p.mockGetMergeRequest(43, mr, nil)
-			if err := p.source.LoadChangesets(p.ctx, p.changeset); err != nil {
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 			if diff := cmp.Diff(mr.Notes, notes[0:2]); diff != "" {
@@ -549,7 +563,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.mockGetMergeRequestNotes(43, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(43, pipelines, 20, nil)
 
-			if err := p.source.LoadChangesets(p.ctx, p.changeset); err != nil {
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 			if diff := cmp.Diff(mr.Pipelines, pipelines); diff != "" {
@@ -560,7 +574,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			// changed the IID in the merge request, we do need to change the
 			// getMergeRequest mock.
 			p.mockGetMergeRequest(43, mr, nil)
-			if err := p.source.LoadChangesets(p.ctx, p.changeset); err != nil {
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 			if diff := cmp.Diff(mr.Pipelines, pipelines); diff != "" {
@@ -715,6 +729,43 @@ func TestReadPipelinesUntilSeen(t *testing.T) {
 	})
 }
 
+func TestGitLabSource_WithAuthenticator(t *testing.T) {
+	p := newGitLabChangesetSourceTestProvider(t)
+
+	t.Run("supported", func(t *testing.T) {
+		src, err := p.source.WithAuthenticator(&auth.OAuthBearerToken{})
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+
+		if gs, ok := src.(*GitLabSource); !ok {
+			t.Error("cannot coerce Source into GitLabSource")
+		} else if gs == nil {
+			t.Error("unexpected nil Source")
+		}
+	})
+
+	t.Run("unsupported", func(t *testing.T) {
+		for name, tc := range map[string]auth.Authenticator{
+			"nil":         nil,
+			"BasicAuth":   &auth.BasicAuth{},
+			"OAuthClient": &auth.OAuthClient{},
+		} {
+			t.Run(name, func(t *testing.T) {
+				src, err := p.source.WithAuthenticator(tc)
+				if err == nil {
+					t.Error("unexpected nil error")
+				} else if _, ok := err.(UnsupportedAuthenticatorError); !ok {
+					t.Errorf("unexpected error of type %T: %v", err, err)
+				}
+				if src != nil {
+					t.Errorf("expected non-nil Source: %v", src)
+				}
+			})
+		}
+	})
+}
+
 // panicDoer provides a httpcli.Doer implementation that panics if any attempt
 // is made to issue a HTTP request; thereby ensuring that our unit tests don't
 // actually try to talk to GitLab.
@@ -736,6 +787,7 @@ type gitLabChangesetSourceTestProvider struct {
 // objects, along with a handful of methods to mock underlying
 // internal/extsvc/gitlab functions.
 func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTestProvider {
+	prov := gitlab.NewClientProvider(&url.URL{}, &panicDoer{})
 	p := &gitLabChangesetSourceTestProvider{
 		changeset: &Changeset{
 			Changeset: &campaigns.Changeset{},
@@ -756,7 +808,8 @@ func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTe
 			TargetBranch: "base",
 		},
 		source: &GitLabSource{
-			client: gitlab.NewClientProvider(&url.URL{}, &panicDoer{}).GetClient(),
+			client:   prov.GetClient(),
+			provider: prov,
 		},
 		t: t,
 	}

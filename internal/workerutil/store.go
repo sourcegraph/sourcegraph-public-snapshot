@@ -10,11 +10,18 @@ type Record interface {
 
 // Store is the persistence layer for the workerutil package that handles worker-side operations.
 type Store interface {
+	// QueuedCount returns the number of records in the queued state. Any extra arguments supplied will be used in
+	// accordance with the concrete persistence layer (e.g. additional SQL conditions for a database layer).
+	QueuedCount(ctx context.Context, extraArguments interface{}) (int, error)
+
 	// Dequeue selects the a record for processing. Any extra arguments supplied will be used in accordance with the
 	// concrete persistence layer (e.g. additional SQL conditions for a database layer). This method returns a boolean
 	// flag indicating the existence of a processable record along with a refined store instance which should be used
 	// for all additional operations (MarkComplete, MarkErrored, and Done) while processing the given record.
 	Dequeue(ctx context.Context, extraArguments interface{}) (Record, Store, bool, error)
+
+	// SetLogContents updates the log contents of the record.
+	SetLogContents(ctx context.Context, id int, logContents string) error
 
 	// MarkComplete attempts to update the state of the record to complete. This method returns a boolean flag indicating
 	// if the record was updated.

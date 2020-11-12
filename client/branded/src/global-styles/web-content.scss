@@ -50,32 +50,16 @@
         }
     }
 
-    .search-keyword {
-        color: #329af0;
+    .search-filter-keyword {
+        color: var(--search-filter-keyword-color);
+    }
 
-        .theme-light & {
-            color: #1c7cd6;
-        }
+    .search-keyword {
+        color: var(--search-keyword-color);
     }
 
     // Search examples that link to the results page should use this class.
     .search-query-link {
-        color: $white;
-
-        .theme-light & {
-            color: $body-color-light;
-        }
-    }
-
-    .extension-area-link {
-        color: $gray-07;
-
-        .theme-light & {
-            color: $gray-13;
-        }
-
-        &.active {
-            color: var(--body-color);
-        }
+        color: var(--body-color);
     }
 }

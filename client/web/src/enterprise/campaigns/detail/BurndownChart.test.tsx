@@ -21,6 +21,7 @@ describe('CampaignBurndownChart', () => {
                                 openChangesRequested: 1,
                                 openPending: 1,
                                 total: 10,
+                                draft: 0,
                             },
                             {
                                 closed: 1,
@@ -30,6 +31,7 @@ describe('CampaignBurndownChart', () => {
                                 openChangesRequested: 1,
                                 openPending: 1,
                                 total: 10,
+                                draft: 0,
                             },
                         ])
                     }
@@ -55,6 +57,7 @@ describe('CampaignBurndownChart', () => {
                                 openChangesRequested: 1,
                                 openPending: 1,
                                 total: 10,
+                                draft: 0,
                             },
                         ])
                     }
@@ -80,6 +83,7 @@ describe('CampaignBurndownChart', () => {
                                 openChangesRequested: 0,
                                 openPending: 0,
                                 total: 0,
+                                draft: 0,
                             },
                             {
                                 closed: 0,
@@ -89,6 +93,7 @@ describe('CampaignBurndownChart', () => {
                                 openChangesRequested: 0,
                                 openPending: 0,
                                 total: 0,
+                                draft: 0,
                             },
                         ])
                     }

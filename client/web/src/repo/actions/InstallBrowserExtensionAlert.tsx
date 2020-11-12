@@ -14,23 +14,24 @@ interface Props {
 // TODO(tj): Add Firefox once the Firefox extension is back
 const CHROME_EXTENSION_STORE_LINK = 'https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack'
 
+/** Code hosts the browser extension supports */
+const supportedServiceTypes = new Set<string>(['github', 'gitlab', 'phabricator', 'bitbucketServer'])
+
 export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
     onAlertDismissed,
     externalURLs,
     isChrome,
     codeHostIntegrationMessaging,
 }) => {
-    const { serviceType } = externalURLs[0]
+    const externalLink = externalURLs.find(link => link.serviceType && supportedServiceTypes.has(link.serviceType))
+    if (!externalLink) {
+        return null
+    }
+
+    const { serviceType } = externalLink
     const { displayName, icon } = serviceTypeDisplayNameAndIcon(serviceType)
 
     const Icon = icon || ExportIcon
-
-    const copyCore =
-        serviceType === 'phabricator'
-            ? 'while browsing and reviewing code'
-            : isChrome
-            ? `to ${serviceType === 'gitlab' ? 'MR' : 'PR'}s and file views`
-            : `while browsing files and reading ${serviceType === 'gitlab' ? 'MR' : 'PR'}s`
 
     return (
         <div className="alert alert-info m-2 d-flex justify-content-between install-browser-extension-alert">
@@ -53,7 +54,7 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
                                 Learn more
                             </a>{' '}
                             or{' '}
-                            <a className="alert-link" href={externalURLs[0].url} target="_blank" rel="noopener">
+                            <a className="alert-link" href={externalLink.url} target="_blank" rel="noopener">
                                 try it out
                             </a>
                         </>
@@ -67,11 +68,30 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
                             >
                                 Install the Sourcegraph browser extension
                             </a>{' '}
-                            to add code intelligence {copyCore} on {displayName} or any other connected code host.
+                            to add code intelligence{' '}
+                            {serviceType === 'github' ||
+                            serviceType === 'bitbucketServer' ||
+                            serviceType === 'gitlab' ? (
+                                <>to {serviceType === 'gitlab' ? 'merge requests' : 'pull requests'} and file views</>
+                            ) : (
+                                <>while browsing and reviewing code</>
+                            )}{' '}
+                            on {displayName}.
                         </>
                     ) : (
                         <>
-                            Get code intelligence {copyCore} on {displayName} or any other connected code host.{' '}
+                            Get code intelligence{' '}
+                            {serviceType === 'github' ||
+                            serviceType === 'bitbucketServer' ||
+                            serviceType === 'gitlab' ? (
+                                <>
+                                    while browsing files and reviewing{' '}
+                                    {serviceType === 'gitlab' ? 'merge requests' : 'pull requests'}
+                                </>
+                            ) : (
+                                <>while browsing and reviewing code</>
+                            )}{' '}
+                            on {displayName}.{' '}
                             <a
                                 href="/help/integration/browser_extension"
                                 target="_blank"

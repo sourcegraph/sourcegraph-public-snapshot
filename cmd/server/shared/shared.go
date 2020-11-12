@@ -150,6 +150,10 @@ func Main() {
 		procfile = append(procfile, monitoringLines...)
 	}
 
+	if minioLines := maybeMinio(); len(minioLines) != 0 {
+		procfile = append(procfile, minioLines...)
+	}
+
 	redisStoreLine, err := maybeRedisStoreProcFile()
 	if err != nil {
 		log.Fatal(err)

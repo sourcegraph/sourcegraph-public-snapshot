@@ -14,14 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // ErrApplyClosedCampaign is returned by ApplyCampaign when the campaign
 // matched by the campaign spec is already closed.
 var ErrApplyClosedCampaign = errors.New("existing campaign matched by campaign spec is closed")
 
-// ErrMatchingCampaign is returned by ApplyCampaign if a campaign matching the
+// ErrMatchingCampaignExists is returned by ApplyCampaign if a campaign matching the
 // campaign spec already exists and FailIfExists was set.
 var ErrMatchingCampaignExists = errors.New("a campaign matching the given campaign spec already exists")
 
@@ -90,6 +89,8 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	// have.
 	// We do this so we don't continue to possibly create changesets on the
 	// codehost while we're applying a new campaign spec.
+	// This is blocking, because the changeset rows currently being processed by the
+	// reconciler are locked.
 	if err := s.store.CancelQueuedCampaignChangesets(ctx, campaign.ID); err != nil {
 		return campaign, nil
 	}
@@ -100,20 +101,17 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	}
 	defer func() { err = tx.Done(err) }()
 
-	rstore := repos.NewDBStore(tx.DB(), sql.TxOptions{})
-
+	// Populate the campaign with the values from the campaign spec.
 	campaign.CampaignSpecID = campaignSpec.ID
 	campaign.NamespaceOrgID = campaignSpec.NamespaceOrgID
 	campaign.NamespaceUserID = campaignSpec.NamespaceUserID
 	campaign.Name = campaignSpec.Spec.Name
-
 	actor := actor.FromContext(ctx)
 	if campaign.InitialApplierID == 0 {
 		campaign.InitialApplierID = actor.UID
 	}
 	campaign.LastApplierID = actor.UID
 	campaign.LastAppliedAt = s.clock()
-
 	campaign.Description = campaignSpec.Spec.Description
 
 	if campaign.ID == 0 {
@@ -123,17 +121,17 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		}
 	}
 
+	rstore := repos.NewDBStore(tx.DB(), sql.TxOptions{})
 	// Now we need to wire up the ChangesetSpecs of the new CampaignSpec
 	// correctly with the Changesets so that the reconciler can create/update
 	// them.
 	rewirer := &changesetRewirer{
-		ctx:      ctx,
 		tx:       tx,
 		rstore:   rstore,
 		campaign: campaign,
 	}
 
-	if err := rewirer.Rewire(); err != nil {
+	if err := rewirer.Rewire(ctx); err != nil {
 		return nil, err
 	}
 
@@ -151,7 +149,6 @@ type repoExternalID struct {
 }
 
 type changesetRewirer struct {
-	ctx      context.Context
 	campaign *campaigns.Campaign
 	tx       *Store
 	rstore   repos.Store
@@ -173,14 +170,14 @@ type changesetRewirer struct {
 // campaign.
 //
 // It also updates the ChangesetIDs on the campaign.
-func (r *changesetRewirer) Rewire() (err error) {
+func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 	// First we need to load the associations
-	if err := r.loadAssociations(); err != nil {
+	if err := r.loadAssociations(ctx); err != nil {
 		return err
 	}
 
 	// Now we put them into buckets so we can match easily
-	if err := r.indexAssociations(); err != nil {
+	if err := r.indexAssociations(ctx); err != nil {
 		return err
 	}
 
@@ -256,13 +253,13 @@ func (r *changesetRewirer) Rewire() (err error) {
 			if ok {
 				// If it's already attached to the campaign and errored, we re-enqueue it.
 				if c.ReconcilerState == campaigns.ReconcilerStateErrored {
-					if err := r.updateAndReenqueue(c); err != nil {
+					if err := r.updateAndReenqueue(ctx, c); err != nil {
 						return err
 					}
 				}
 			} else {
 				// If we don't have a changeset attached to the campaign, we need to find or create one with the externalID in that repository.
-				c, err = r.updateOrCreateTrackingChangeset(repo, k.externalID)
+				c, err = r.updateOrCreateTrackingChangeset(ctx, repo, k.externalID)
 				if err != nil {
 					return err
 				}
@@ -284,14 +281,14 @@ func (r *changesetRewirer) Rewire() (err error) {
 		//
 		// So, let's check:
 		// Do we already have a changeset on this branch in this repo?
-		k := repoHeadRef{repo: spec.RepoID, headRef: git.EnsureRefPrefix(spec.Spec.HeadRef)}
+		k := repoHeadRef{repo: spec.RepoID, headRef: spec.Spec.HeadRef}
 		c, ok := r.changesetsByRepoHeadRef[k]
 		if !ok {
 			// No, we don't have a changeset on that branch in this repo.
 			// We're going to create one so the changeset reconciler picks it up,
 			// creates a commit and pushes it to the branch.
 			// Except, of course, if spec.Spec.Published is false, then it doesn't do anything.
-			c, err = r.createChangesetForSpec(repo, spec)
+			c, err = r.createChangesetForSpec(ctx, repo, spec)
 			if err != nil {
 				return err
 			}
@@ -299,7 +296,7 @@ func (r *changesetRewirer) Rewire() (err error) {
 			// But if we already have a changeset in the given repository with
 			// the given branch, we need to update it to have the new spec
 			// and possibly re-attach it to the campaign:
-			if err = r.updateChangesetToNewSpec(c, spec); err != nil {
+			if err = r.updateChangesetToNewSpec(ctx, c, spec); err != nil {
 				return err
 			}
 		}
@@ -339,7 +336,7 @@ func (r *changesetRewirer) Rewire() (err error) {
 				c.ReconcilerState = campaigns.ReconcilerStateQueued
 			} else {
 				// otherwise we simply delete it.
-				if err = r.tx.DeleteChangeset(r.ctx, c.ID); err != nil {
+				if err = r.tx.DeleteChangeset(ctx, c.ID); err != nil {
 					return err
 				}
 				continue
@@ -347,15 +344,15 @@ func (r *changesetRewirer) Rewire() (err error) {
 		}
 
 		c.RemoveCampaignID(r.campaign.ID)
-		if err = r.tx.UpdateChangeset(r.ctx, c); err != nil {
+		if err = r.tx.UpdateChangeset(ctx, c); err != nil {
 			return err
 		}
 	}
 
-	return r.tx.UpdateCampaign(r.ctx, r.campaign)
+	return r.tx.UpdateCampaign(ctx, r.campaign)
 }
 
-func (r *changesetRewirer) createChangesetForSpec(repo *types.Repo, spec *campaigns.ChangesetSpec) (*campaigns.Changeset, error) {
+func (r *changesetRewirer) createChangesetForSpec(ctx context.Context, repo *types.Repo, spec *campaigns.ChangesetSpec) (*campaigns.Changeset, error) {
 	newChangeset := &campaigns.Changeset{
 		RepoID:              spec.RepoID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
@@ -372,10 +369,10 @@ func (r *changesetRewirer) createChangesetForSpec(repo *types.Repo, spec *campai
 	diffStat := spec.DiffStat()
 	newChangeset.SetDiffStat(&diffStat)
 
-	return newChangeset, r.tx.CreateChangeset(r.ctx, newChangeset)
+	return newChangeset, r.tx.CreateChangeset(ctx, newChangeset)
 }
 
-func (r *changesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec *campaigns.ChangesetSpec) error {
+func (r *changesetRewirer) updateChangesetToNewSpec(ctx context.Context, c *campaigns.Changeset, spec *campaigns.ChangesetSpec) error {
 	c.PreviousSpecID = c.CurrentSpecID
 	c.CurrentSpecID = spec.ID
 
@@ -389,14 +386,14 @@ func (r *changesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec
 	// We need to enqueue it for the changeset reconciler, so the
 	// reconciler wakes up, compares old and new spec and, if
 	// necessary, updates the changesets accordingly.
-	return r.updateAndReenqueue(c)
+	return r.updateAndReenqueue(ctx, c)
 }
 
 // loadAssociations populates the chagnesets, newChangesetSpecs and
 // accessibleReposByID on changesetRewirer.
-func (r *changesetRewirer) loadAssociations() (err error) {
+func (r *changesetRewirer) loadAssociations(ctx context.Context) (err error) {
 	// Load all of the new ChangesetSpecs
-	r.newChangesetSpecs, _, err = r.tx.ListChangesetSpecs(r.ctx, ListChangesetSpecsOpts{
+	r.newChangesetSpecs, _, err = r.tx.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{
 		CampaignSpecID: r.campaign.CampaignSpecID,
 	})
 	if err != nil {
@@ -404,7 +401,7 @@ func (r *changesetRewirer) loadAssociations() (err error) {
 	}
 
 	// Load all Changesets attached to this campaign, or owned by this campaign but detached.
-	r.changesets, err = r.tx.ListChangesetsAttachedOrOwnedByCampaign(r.ctx, r.campaign.ID)
+	r.changesets, err = r.tx.ListChangesetsAttachedOrOwnedByCampaign(ctx, r.campaign.ID)
 	if err != nil {
 		return err
 	}
@@ -412,18 +409,18 @@ func (r *changesetRewirer) loadAssociations() (err error) {
 	repoIDs := append(r.newChangesetSpecs.RepoIDs(), r.changesets.RepoIDs()...)
 	// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
-	r.accessibleReposByID, err = db.Repos.GetReposSetByIDs(r.ctx, repoIDs...)
+	r.accessibleReposByID, err = db.Repos.GetReposSetByIDs(ctx, repoIDs...)
 	return err
 }
 
-func (r *changesetRewirer) indexAssociations() (err error) {
+func (r *changesetRewirer) indexAssociations(ctx context.Context) (err error) {
 	r.changesetsByRepoHeadRef = map[repoHeadRef]*campaigns.Changeset{}
 	r.changesetsByRepoExternalID = map[repoExternalID]*campaigns.Changeset{}
 	r.currentSpecsByChangeset = map[int64]*campaigns.ChangesetSpec{}
 
 	for _, c := range r.changesets {
 		// This is an n+1
-		s, err := r.tx.GetChangesetSpecByID(r.ctx, c.CurrentSpecID)
+		s, err := r.tx.GetChangesetSpecByID(ctx, c.CurrentSpecID)
 		if err != nil {
 			return err
 		}
@@ -442,7 +439,7 @@ func (r *changesetRewirer) indexAssociations() (err error) {
 
 		k := repoHeadRef{repo: c.RepoID}
 		if c.ExternalBranch != "" {
-			k.headRef = git.EnsureRefPrefix(c.ExternalBranch)
+			k.headRef = c.ExternalBranch
 			r.changesetsByRepoHeadRef[k] = c
 			continue
 		}
@@ -455,7 +452,7 @@ func (r *changesetRewirer) indexAssociations() (err error) {
 			// So we load the spec to get the branch where we _would_ push
 			// the commit.
 
-			k.headRef = git.EnsureRefPrefix(s.Spec.HeadRef)
+			k.headRef = s.Spec.HeadRef
 			r.changesetsByRepoHeadRef[k] = c
 		}
 	}
@@ -463,8 +460,8 @@ func (r *changesetRewirer) indexAssociations() (err error) {
 	return nil
 }
 
-func (r *changesetRewirer) updateOrCreateTrackingChangeset(repo *types.Repo, externalID string) (*campaigns.Changeset, error) {
-	existing, err := r.tx.GetChangeset(r.ctx, GetChangesetOpts{
+func (r *changesetRewirer) updateOrCreateTrackingChangeset(ctx context.Context, repo *types.Repo, externalID string) (*campaigns.Changeset, error) {
+	existing, err := r.tx.GetChangeset(ctx, GetChangesetOpts{
 		RepoID:              repo.ID,
 		ExternalID:          externalID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
@@ -481,10 +478,10 @@ func (r *changesetRewirer) updateOrCreateTrackingChangeset(repo *types.Repo, ext
 
 		// If it errored, we re-enqueue it.
 		if existing.ReconcilerState == campaigns.ReconcilerStateErrored {
-			return existing, r.updateAndReenqueue(existing)
+			return existing, r.updateAndReenqueue(ctx, existing)
 		}
 
-		return existing, r.tx.UpdateChangeset(r.ctx, existing)
+		return existing, r.tx.UpdateChangeset(ctx, existing)
 	}
 
 	newChangeset := &campaigns.Changeset{
@@ -503,10 +500,10 @@ func (r *changesetRewirer) updateOrCreateTrackingChangeset(repo *types.Repo, ext
 		Unsynced:        true,
 	}
 
-	return newChangeset, r.tx.CreateChangeset(r.ctx, newChangeset)
+	return newChangeset, r.tx.CreateChangeset(ctx, newChangeset)
 }
 
-func (r *changesetRewirer) updateAndReenqueue(ch *campaigns.Changeset) error {
+func (r *changesetRewirer) updateAndReenqueue(ctx context.Context, ch *campaigns.Changeset) error {
 	ch.ResetQueued()
-	return r.tx.UpdateChangeset(r.ctx, ch)
+	return r.tx.UpdateChangeset(ctx, ch)
 }

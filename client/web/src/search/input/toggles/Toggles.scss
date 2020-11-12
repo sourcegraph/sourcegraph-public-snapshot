@@ -9,14 +9,9 @@
         }
         border: 1px solid transparent;
         &--active {
-            border: 1px solid $color-border-active;
+            border: 1px solid var(--primary);
             border-radius: 2px;
-            .theme-dark & {
-                background: $color-bg-5;
-            }
-            .theme-light & {
-                background: $color-light-bg-3;
-            }
+            background-color: var(--color-bg-3);
         }
     }
 

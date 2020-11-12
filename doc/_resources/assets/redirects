@@ -130,11 +130,6 @@
 /dev/documentation	/dev/how-to/documentation_implementation 308
 /dev/zoekt	/dev/how-to/zoekt_local_dev 308
 
-/user/automation    /user/campaigns 308
-/user/campaigns/examples    /user/campaigns/tutorials 308
-/user/campaigns/managing_access /user/campaigns/explanations/permissions_in_campaigns 308
-/dev/automation_development /dev/campaigns_development 308
-
 /user/search/examples   /user/search/tutorials/examples 308
 /user/search/queries    /user/search/reference/queries 308
 /user/search/language   /user/search/reference/language 308
@@ -145,12 +140,22 @@
 
 /user/code_intelligence/basic_code_intelligence /user/code_intelligence/explanations/basic_code_intelligence 308
 /user/code_intelligence/features    /user/code_intelligence/explanations/features 308
+/user/code_intelligence/lsif   /user/code_intelligence/explanations/precise_code_intelligence 308
 /user/code_intelligence/precise_code_intelligence   /user/code_intelligence/explanations/precise_code_intelligence 308
 /user/code_intelligence/writing_an_indexer  /user/code_intelligence/explanations/writing_an_indexer 308
 /user/code_intelligence/adding_lsif_to_many_repos   /user/code_intelligence/how-to/adding_lsif_to_many_repos 308
 /user/code_intelligence/adding_lsif_to_workflows    /user/code_intelligence/how-to/adding_lsif_to_workflows 308
 /user/code_intelligence/languages/go    /user/code_intelligence/how-to/index_a_go_repository 308
 /user/code_intelligence/languages/typescript_and_javascript /user/code_intelligence/how-to/index_a_typescript_and_javascript_repository 308
+
+/user/code_intelligence/explanations/basic_code_intelligence /code_intelligence/explanations/basic_code_intelligence 308
+/user/code_intelligence/explanations/features /code_intelligence/explanations/features 308
+/user/code_intelligence/explanations/precise_code_intelligence /code_intelligence/explanations/precise_code_intelligence 308
+/user/code_intelligence/explanations/writing_an_indexer /code_intelligence/explanations/writing_an_indexer 308
+/user/code_intelligence/how-to/adding_lsif_to_many_repos /code_intelligence/how-to/adding_lsif_to_many_repos 308
+/user/code_intelligence/how-to/adding_lsif_to_workflows /code_intelligence/how-to/adding_lsif_to_workflows 308
+/user/code_intelligence/how-to/index_a_go_repository /code_intelligence/how-to/index_a_go_repository 308
+/user/code_intelligence/how-to/index_a_typescript_and_javascript_repository /code_intelligence/how-to/index_a_typescript_and_javascript_repository 308
 
 /user/markdown  /admin/markdown 308
 /user/organizations/index   /admin/organizations 308
@@ -159,3 +164,14 @@
 /user/repository/badges /user/personalization/badges 308
 /user/quick_links   /user/personalization/quick_links 308
 /user/themes    /user/personalization/themes 308
+
+/user/automation    /user/campaigns 308
+/user/campaigns/examples    /campaigns/tutorials 308
+/user/campaigns/managing_access /campaigns/explanations/permissions_in_campaigns 308
+/dev/automation_development /dev/background-information/campaigns/index 308
+/campaigns/campaign_spec_yaml_reference /campaigns/references/campaign_spec_yaml_reference 308
+
+/user/search /code_search 308
+/user/campaigns /campaigns 308
+/user/code_intelligence /code_intelligence 308
+/user /getting-started 308

@@ -2,19 +2,19 @@ import React from 'react'
 import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import classNames from 'classnames'
-import { CampaignFields, ChangesetStatsFields } from '../../../graphql-operations'
+import { CampaignFields, ChangesetsStatsFields } from '../../../graphql-operations'
 import { CampaignStateBadge } from './CampaignStateBadge'
 import {
     ChangesetStatusUnpublished,
     ChangesetStatusOpen,
     ChangesetStatusClosed,
     ChangesetStatusMerged,
-    ChangesetStatusDeleted,
+    ChangesetStatusDraft,
 } from './changesets/ChangesetStatusCell'
 import { pluralize } from '../../../../../shared/src/util/strings'
 
 interface CampaignStatsCardProps {
-    stats: ChangesetStatsFields
+    stats: ChangesetsStatsFields
     closedAt: CampaignFields['closedAt']
     className?: string
 }
@@ -53,8 +53,8 @@ export const CampaignStatsCard: React.FunctionComponent<CampaignStatsCardProps> 
                                 label={<span className="text-muted">{stats.unpublished} unpublished</span>}
                                 className="d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
                             />
-                            <ChangesetStatusDeleted
-                                label={<span className="text-muted">{stats.deleted} deleted</span>}
+                            <ChangesetStatusDraft
+                                label={<span className="text-muted">{stats.draft} draft</span>}
                                 className="d-flex flex-grow-0 px-2 text-truncate campaign-stats-card__stat"
                             />
                             <ChangesetStatusOpen

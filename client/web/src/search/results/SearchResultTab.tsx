@@ -6,7 +6,7 @@ import { toggleSearchType } from '../helpers'
 import { buildSearchURLQuery, generateFiltersQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
 import { PatternTypeProps, CaseSensitivityProps, parseSearchURLQuery, InteractiveSearchProps } from '..'
-import { parseSearchQuery } from '../../../../shared/src/search/parser/parser'
+import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 
 interface Props
@@ -41,22 +41,18 @@ export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
     const builtURLQuery = buildSearchURLQuery(caseToggledQuery, patternType, caseSensitive, versionContext)
 
     const currentQuery = parseSearchURLQuery(location.search) || ''
-    const parsedQuery = parseSearchQuery(currentQuery)
+    const scannedQuery = scanSearchQuery(currentQuery)
     let typeInQuery: SearchType = null
 
-    if (parsedQuery.type === 'success') {
+    if (scannedQuery.type === 'success') {
         // Parse any `type:` filter that exists in a query so
         // we can check whether this tab should be active.
-        for (const member of parsedQuery.token.members) {
-            if (
-                member.token.type === 'filter' &&
-                member.token.filterType.token.value === 'type' &&
-                member.token.filterValue
-            ) {
+        for (const token of scannedQuery.term) {
+            if (token.type === 'filter' && token.filterType.value === 'type' && token.filterValue) {
                 typeInQuery =
-                    member.token.filterValue.token.type === 'literal'
-                        ? (member.token.filterValue.token.value as SearchType)
-                        : (member.token.filterValue.token.quotedValue as SearchType)
+                    token.filterValue.type === 'literal'
+                        ? (token.filterValue.value as SearchType)
+                        : (token.filterValue.quotedValue as SearchType)
             }
         }
     }

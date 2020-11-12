@@ -580,7 +580,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			isSlowFetch := fetchDuration > 10*time.Second
 			if honey.Enabled() || traceLogs || isSlow || isSlowFetch {
 				ev := honey.Event("gitserver-exec")
-				ev.SampleRate = honeySampleRate
+				ev.SampleRate = honeySampleRate(cmd)
 				ev.AddField("repo", req.Repo)
 				ev.AddField("remote_url", req.URL)
 				ev.AddField("cmd", cmd)
@@ -746,6 +746,10 @@ func setGitAttributes(dir GitDir) error {
 	return nil
 }
 
+// testRepoCorrupter is used by tests to disrupt a cloned repository (e.g. deleting
+// HEAD, zeroing it out, etc.)
+var testRepoCorrupter func(ctx context.Context, tmpDir GitDir)
+
 // cloneOptions specify optional behaviour for the cloneRepo function.
 type cloneOptions struct {
 	// Block will wait for the clone to finish before returning. If the clone
@@ -860,7 +864,12 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 			return errors.Wrapf(err, "clone failed. Output: %s", string(output))
 		}
 
+		if testRepoCorrupter != nil {
+			testRepoCorrupter(ctx, tmp)
+		}
+
 		removeBadRefs(ctx, tmp)
+		ensureHead(tmp)
 
 		// Update the last-changed stamp.
 		if err := setLastChanged(tmp); err != nil {
@@ -1079,7 +1088,22 @@ func init() {
 // scaling up of the indexed search cluster. Will require more investigation,
 // but we should probably segment user request path traffic vs internal batch
 // traffic.
-const honeySampleRate = 16
+//
+// 2020-11-02 Dynamically sample. Again hitting very high usage. Same root
+// cause as before, scaling out indexed search cluster. We update our sampling
+// to isntead be dynamic, since "rev-parse" is 12 times more likely than the
+// next most common command.
+func honeySampleRate(cmd string) uint {
+	switch cmd {
+	case "rev-parse":
+		// 1 in 128. In practice 12 times more likely than our next most
+		// common command.
+		return 128
+	default:
+		// 1 in 16
+		return 16
+	}
+}
 
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
@@ -1168,6 +1192,16 @@ func removeBadRefs(ctx context.Context, dir GitDir) {
 	cmd = exec.CommandContext(ctx, "git", args...)
 	dir.Set(cmd)
 	_ = cmd.Run()
+}
+
+// ensureHead verifies that there is a HEAD file within the repo, and that
+// it is of non-zero length. If either condition is met, we configure a
+// best-effort default.
+func ensureHead(dir GitDir) {
+	head, err := os.Stat(dir.Path("HEAD"))
+	if os.IsNotExist(err) || head.Size() == 0 {
+		ioutil.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0600)
+	}
 }
 
 // setLastChanged discerns an approximate last-changed timestamp for a
@@ -1372,6 +1406,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	}
 
 	removeBadRefs(ctx, dir)
+	ensureHead(dir)
 
 	// Update the last-changed stamp.
 	if err := setLastChanged(dir); err != nil {
