@@ -228,6 +228,7 @@ func (*userExternalAccounts) Delete(ctx context.Context, id int32) error {
 type ExternalAccountsListOptions struct {
 	UserID                           int32
 	ServiceType, ServiceID, ClientID string
+	AccountID                        int64
 	*LimitOffset
 }
 
@@ -360,6 +361,9 @@ func (*userExternalAccounts) listSQL(opt ExternalAccountsListOptions) (conds []*
 	}
 	if opt.ServiceType != "" || opt.ServiceID != "" || opt.ClientID != "" {
 		conds = append(conds, sqlf.Sprintf("(service_type=%s AND service_id=%s AND client_id=%s)", opt.ServiceType, opt.ServiceID, opt.ClientID))
+	}
+	if opt.AccountID != 0 {
+		conds = append(conds, sqlf.Sprintf("account_id=%d", opt.AccountID))
 	}
 	return conds
 }
