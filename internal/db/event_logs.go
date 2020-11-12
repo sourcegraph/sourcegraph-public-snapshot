@@ -790,8 +790,8 @@ SELECT
 FROM events GROUP BY name, current_month, current_week, current_day
 `
 
-// userIDQueryFragment is a query fragment that can be used to return the anonymous user id.
-// If no anonymous user id is set then the user id is returned.
+// userIDQueryFragment is a query fragment that can be used to return the anonymous user ID
+// when the user ID is not set (i.e. 0).
 const userIDQueryFragment = `
 CASE WHEN user_id = 0
   THEN anonymous_user_id
