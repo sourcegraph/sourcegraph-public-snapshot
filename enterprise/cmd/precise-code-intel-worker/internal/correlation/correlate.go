@@ -11,31 +11,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/lsif"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/existence"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // Correlate reads LSIF data from the given reader and returns a correlation state object with
 // the same data canonicalized and pruned for storage.
-func Correlate(ctx context.Context, r io.Reader, dumpID int, root string, getChildren existence.GetChildrenFunc, metrics metrics.WorkerMetrics) (*GroupedBundleData, error) {
+func Correlate(ctx context.Context, r io.Reader, dumpID int, root string, getChildren existence.GetChildrenFunc) (*GroupedBundleData, error) {
 	// Read raw upload stream and return a correlation state
-	state, err := correlateFromReaderWrapped(ctx, r, root, metrics)
+	state, err := correlateFromReaderWrapped(ctx, r, root)
 	if err != nil {
 		return nil, err
 	}
 
 	// Remove duplicate elements, collapse linked elements
-	if err := canonicalizeWrapped(ctx, state, metrics); err != nil {
+	if err := canonicalizeWrapped(ctx, state); err != nil {
 		return nil, err
 	}
 
 	// Remove elements we don't need to store
-	if err := pruneWrapped(ctx, state, root, getChildren, metrics); err != nil {
+	if err := pruneWrapped(ctx, state, root, getChildren); err != nil {
 		return nil, err
 	}
 
 	// Convert data to the format we send to the writer
-	groupedBundleData, err := groupBundleDataWrapped(ctx, state, dumpID, metrics)
+	groupedBundleData, err := groupBundleDataWrapped(ctx, state, dumpID)
 	if err != nil {
 		return nil, err
 	}
@@ -43,28 +41,20 @@ func Correlate(ctx context.Context, r io.Reader, dumpID int, root string, getChi
 	return groupedBundleData, nil
 }
 
-func correlateFromReaderWrapped(ctx context.Context, r io.Reader, root string, metrics metrics.WorkerMetrics) (_ *State, err error) {
-	_, endOperation := metrics.CorrelateOperation.With(ctx, &err, observation.Args{})
-	defer endOperation(1, observation.Args{})
+func correlateFromReaderWrapped(ctx context.Context, r io.Reader, root string) (_ *State, err error) {
 	return correlateFromReader(ctx, r, root)
 }
 
-func canonicalizeWrapped(ctx context.Context, state *State, metrics metrics.WorkerMetrics) (err error) {
-	_, endOperation := metrics.CanonicalizeOperation.With(ctx, nil, observation.Args{})
-	defer endOperation(1, observation.Args{})
+func canonicalizeWrapped(ctx context.Context, state *State) (err error) {
 	canonicalize(state)
 	return nil
 }
 
-func pruneWrapped(ctx context.Context, state *State, root string, getChildren existence.GetChildrenFunc, metrics metrics.WorkerMetrics) (err error) {
-	ctx, endOperation := metrics.PruneOperation.With(ctx, &err, observation.Args{})
-	defer endOperation(1, observation.Args{})
+func pruneWrapped(ctx context.Context, state *State, root string, getChildren existence.GetChildrenFunc) (err error) {
 	return prune(ctx, state, root, getChildren)
 }
 
-func groupBundleDataWrapped(ctx context.Context, state *State, dumpID int, metrics metrics.WorkerMetrics) (_ *GroupedBundleData, err error) {
-	_, endOperation := metrics.GroupBundleDataOperation.With(ctx, &err, observation.Args{})
-	defer endOperation(1, observation.Args{})
+func groupBundleDataWrapped(ctx context.Context, state *State, dumpID int) (_ *GroupedBundleData, err error) {
 	return groupBundleData(ctx, state, dumpID)
 }
 

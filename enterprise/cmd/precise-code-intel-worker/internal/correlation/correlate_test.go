@@ -2,6 +2,7 @@ package correlation
 
 import (
 	"bytes"
+	"context"
 	"io/ioutil"
 	"testing"
 
@@ -16,7 +17,7 @@ func TestCorrelate(t *testing.T) {
 		t.Fatalf("unexpected error reading test file: %s", err)
 	}
 
-	state, err := correlateFromReader(bytes.NewReader(input), "root")
+	state, err := correlateFromReader(context.Background(), bytes.NewReader(input), "root")
 	if err != nil {
 		t.Fatalf("unexpected error correlating input: %s", err)
 	}
@@ -171,7 +172,7 @@ func TestCorrelateMetaDataRoot(t *testing.T) {
 		t.Fatalf("unexpected error reading test file: %s", err)
 	}
 
-	state, err := correlateFromReader(bytes.NewReader(input), "root/")
+	state, err := correlateFromReader(context.Background(), bytes.NewReader(input), "root/")
 	if err != nil {
 		t.Fatalf("unexpected error correlating input: %s", err)
 	}
@@ -211,7 +212,7 @@ func TestCorrelateMetaDataRootX(t *testing.T) {
 		t.Fatalf("unexpected error reading test file: %s", err)
 	}
 
-	state, err := correlateFromReader(bytes.NewReader(input), "")
+	state, err := correlateFromReader(context.Background(), bytes.NewReader(input), "")
 	if err != nil {
 		t.Fatalf("unexpected error correlating input: %s", err)
 	}

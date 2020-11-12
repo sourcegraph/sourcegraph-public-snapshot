@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -126,7 +125,7 @@ func (h *handler) handle(ctx context.Context, dbStore DBStore, upload store.Uplo
 		return directoryChildren, nil
 	}
 
-	groupedBundleData, err := correlation.Correlate(ctx, rc, upload.ID, upload.Root, getChildren, h.metrics)
+	groupedBundleData, err := correlation.Correlate(ctx, rc, upload.ID, upload.Root, getChildren)
 	if err != nil {
 		return false, errors.Wrap(err, "correlation.Correlate")
 	}
@@ -162,9 +161,6 @@ func (h *handler) handle(ctx context.Context, dbStore DBStore, upload store.Uplo
 // isRepoCurrentlyCloning determines if the target repository is currently being cloned.
 // This function returns an error if the repo or commit cannot be resolved.
 func (h *handler) isRepoCurrentlyCloning(ctx context.Context, repoID int, commit string) (_ bool, err error) {
-	ctx, endOperation := h.metrics.RepoStateOperation.With(ctx, &err, observation.Args{})
-	defer endOperation(1, observation.Args{})
-
 	repo, err := backend.Repos.Get(ctx, api.RepoID(repoID))
 	if err != nil {
 		return false, errors.Wrap(err, "Repos.Get")
@@ -183,9 +179,6 @@ func (h *handler) isRepoCurrentlyCloning(ctx context.Context, repoID int, commit
 
 // write commits the correlated data to the database.
 func (h *handler) write(ctx context.Context, id int, groupedBundleData *correlation.GroupedBundleData) (err error) {
-	ctx, endOperation := h.metrics.WriteOperation.With(ctx, &err, observation.Args{})
-	defer endOperation(1, observation.Args{})
-
 	store, err := h.lsifStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -215,9 +208,6 @@ func (h *handler) write(ctx context.Context, id int, groupedBundleData *correlat
 
 // TODO(efritz) - refactor/simplify this after last change
 func (h *handler) updateXrepoData(ctx context.Context, dbStore DBStore, upload store.Upload, packages []lsifstore.Package, packageReferences []lsifstore.PackageReference) (err error) {
-	ctx, endOperation := h.metrics.UpdateXrepoDatabaseOperation.With(ctx, &err, observation.Args{})
-	defer endOperation(1, observation.Args{})
-
 	// Update package and package reference data to support cross-repo queries.
 	if err := dbStore.UpdatePackages(ctx, packages); err != nil {
 		return errors.Wrap(err, "store.UpdatePackages")
