@@ -207,7 +207,7 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (*U
 		AvatarURL:   args.AvatarURL,
 	}
 	if args.Username != nil {
-		if viewerIsChangingUsername(ctx, *args.Username) && !viewerCanChangeUsername(ctx, userID) {
+		if viewerIsChangingOwnUsername(ctx, *args.Username) && !viewerCanChangeUsername(ctx, userID) {
 			return nil, fmt.Errorf("unable to change username because auth.enableUsernameChanges is false in site configuration")
 		}
 		update.Username = *args.Username
@@ -346,14 +346,14 @@ func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 	return backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
 }
 
-func viewerIsChangingUsername(ctx context.Context, username string) bool {
+func viewerIsChangingOwnUsername(ctx context.Context, username string) bool {
 	// If the user is updating themselves, we need to determine if they're trying to change
 	// the username. That may be prohibited based on site config.
 	user, err := backend.CurrentUser(ctx)
-	if err != nil || user == nil {
+	if err != nil {
 		return true
 	}
-	return user.Username != username
+	return user.GetUsername() != username
 }
 
 func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (MonitorConnectionResolver, error) {
