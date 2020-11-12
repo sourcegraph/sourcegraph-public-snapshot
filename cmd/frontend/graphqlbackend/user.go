@@ -350,7 +350,7 @@ func viewerIsChangingUsername(ctx context.Context, username string) bool {
 	// If the user is updating themselves, we need to determine if they're trying to change
 	// the username. That may be prohibited based on site config.
 	user, err := backend.CurrentUser(ctx)
-	if err != nil {
+	if err != nil || user == nil {
 		return true
 	}
 	return user.Username != username
