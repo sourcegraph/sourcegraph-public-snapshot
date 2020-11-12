@@ -1,51 +1,33 @@
 package uploadstore
 
-import (
-	"runtime"
-	"sync"
+import "github.com/sourcegraph/sourcegraph/internal/goroutine"
 
-	"github.com/hashicorp/go-multierror"
-)
+// TODO - move to goroutine package
+
+func invokeParallel(values []string, f func(index int, value string) error) error {
+	ch := loadIndexedStringChannel(values)
+
+	return goroutine.RunWorkers(func(errs chan<- error) {
+		for value := range ch {
+			if err := f(value.Index, value.Value); err != nil {
+				errs <- err
+			}
+		}
+	})
+}
 
 type indexedString struct {
 	Index int
 	Value string
 }
 
-func invokeParallel(values []string, f func(index int, value string) error) (err error) {
+func loadIndexedStringChannel(values []string) <-chan indexedString {
 	ch := make(chan indexedString, len(values))
+	defer close(ch)
+
 	for i, value := range values {
 		ch <- indexedString{Index: i, Value: value}
 	}
-	close(ch)
 
-	var wg sync.WaitGroup
-	errs := make(chan error, len(values))
-
-	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
-		wg.Add(1)
-
-		go func() {
-			defer wg.Done()
-
-			for value := range ch {
-				if err := f(value.Index, value.Value); err != nil {
-					errs <- err
-				}
-			}
-		}()
-	}
-
-	wg.Wait()
-	close(errs)
-
-	for e := range errs {
-		if err == nil {
-			err = e
-		} else {
-			err = multierror.Append(err, e)
-		}
-	}
-
-	return err
+	return ch
 }
