@@ -347,12 +347,19 @@ func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 }
 
 // Users may be trying to change their own username, or someone else's.
-func viewerIsChangingUsername(ctx context.Context, userID int32, username string) bool {
-	user, err := db.Users.GetByID(ctx, userID)
+//
+// The subjectUserID value represents the decoded user ID from the incoming
+// request, and the proposedUsername is the value that would be applied to
+// the subjectUserID's record.
+//
+// If the subject's username is different from the proposed one, then a
+// change is being attempted and may be rejected.
+func viewerIsChangingUsername(ctx context.Context, subjectUserID int32, proposedUsername string) bool {
+	subject, err := db.Users.GetByID(ctx, subjectUserID)
 	if err != nil {
 		return true
 	}
-	return user.Username != username
+	return subject.Username != proposedUsername
 }
 
 func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (MonitorConnectionResolver, error) {
