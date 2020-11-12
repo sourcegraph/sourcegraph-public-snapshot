@@ -313,8 +313,8 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 
 	var provider authz.Provider
 
-	// No need to check authz provider for a non-private repository
-	// because we don't fetch nor store its permissions from code hosts.
+	// Only check authz provider for private repositories because we only need to
+	// fetch permissions for private repositories.
 	if repo.Private {
 		// Loop over repository's sources and see if matching any authz provider's URN.
 		providers := s.providersByURNs()
