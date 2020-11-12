@@ -2,16 +2,21 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func Benchmark_authzFilter(b *testing.B) {
@@ -140,6 +145,111 @@ func (p *fakeProvider) FetchUserPerms(context.Context, *extsvc.Account) ([]extsv
 
 func (p *fakeProvider) FetchRepoPerms(context.Context, *extsvc.Repository) ([]extsvc.AccountID, error) {
 	return nil, nil
+}
+
+// 🚨 SECURITY: Tests are necessary to ensure security.
+func TestAuthzQueryConds(t *testing.T) {
+	cmpOpts := cmp.AllowUnexported(sqlf.Query{})
+
+	t.Run("Conflict with permissions user mapping", func(t *testing.T) {
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
+		defer authz.SetProviders(true, nil)
+
+		_, err := authzQueryConds(context.Background())
+		gotErr := fmt.Sprintf("%v", err)
+		if diff := cmp.Diff(errPermissionsUserMappingConflict.Error(), gotErr); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("When permissions user mapping is enabled", func(t *testing.T) {
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		got, err := authzQueryConds(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := sqlf.Sprintf(authzQueryCondsFmtstr, false, true, int32(0), authz.Read.String())
+		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	defer func() {
+		Mocks.Users.GetByCurrentAuthUser = nil
+	}()
+	tests := []struct {
+		name                string
+		setup               func() context.Context
+		authzAllowByDefault bool
+		wantQuery           *sqlf.Query
+	}{
+		{
+			name: "internal actor bypass checks",
+			setup: func() context.Context {
+				return actor.WithInternalActor(context.Background())
+			},
+			wantQuery: sqlf.Sprintf(authzQueryCondsFmtstr, true, false, int32(0), authz.Read.String()),
+		},
+
+		{
+			name: "no authz provider and not allow by default",
+			setup: func() context.Context {
+				return context.Background()
+			},
+			wantQuery: sqlf.Sprintf(authzQueryCondsFmtstr, false, false, int32(0), authz.Read.String()),
+		},
+		{
+			name: "no authz provider but allow by default",
+			setup: func() context.Context {
+				return context.Background()
+			},
+			authzAllowByDefault: true,
+			wantQuery:           sqlf.Sprintf(authzQueryCondsFmtstr, true, false, int32(0), authz.Read.String()),
+		},
+
+		{
+			name: "authenticated user is a site admin",
+			setup: func() context.Context {
+				Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+					return &types.User{ID: 1, SiteAdmin: true}, nil
+				}
+				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			},
+			wantQuery: sqlf.Sprintf(authzQueryCondsFmtstr, true, false, int32(1), authz.Read.String()),
+		},
+		{
+			name: "authenticated user is not a site admin",
+			setup: func() context.Context {
+				Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+					return &types.User{ID: 1}, nil
+				}
+				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			},
+			wantQuery: sqlf.Sprintf(authzQueryCondsFmtstr, false, false, int32(1), authz.Read.String()),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			authz.SetProviders(test.authzAllowByDefault, nil)
+			defer authz.SetProviders(true, nil)
+
+			q, err := authzQueryConds(test.setup())
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(test.wantQuery, q, cmpOpts); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
 }
 
 // 🚨 SECURITY: test necessary to ensure security
