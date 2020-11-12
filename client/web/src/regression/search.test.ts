@@ -14,6 +14,7 @@ import { Key } from 'ts-key-enum'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { editUserSettings } from './util/settings'
 import assert from 'assert'
+import delay from 'delay'
 
 /**
  * Reads the number of results from the text at the top of the results page
@@ -85,7 +86,7 @@ describe('Search regression test suite', () => {
         'stephens2424/php',
         'ericchiang/k8s',
         'jonmorehouse/terraform-provisioner-ansible',
-        'solo-io/service-mesh-hub',
+        'solo-io/gloo-mesh',
         'xtaci/smux',
         'MatchbookLab/local-persist',
         'ossrs/go-oryx',
@@ -176,7 +177,7 @@ describe('Search regression test suite', () => {
                         },
                         waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
                     },
-                    { ...config, timeout: 3 * 60 * 1000, indexed: true }
+                    { ...config, timeout: 6 * 60 * 1000, indexed: true }
                 )
             )
         })
@@ -528,6 +529,7 @@ describe('Search regression test suite', () => {
             await driver.page.waitForSelector('#monaco-query-input')
             await driver.page.focus('#monaco-query-input')
             await driver.page.keyboard.type('jwtmi')
+            await delay(2000)
             await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
             await driver.findElementWithText('jwtmiddleware.go', {
                 selector: '.monaco-query-input-container .suggest-widget.visible span',
@@ -582,7 +584,7 @@ describe('Search regression test suite', () => {
         let gqlClient: GraphQLClient
         let resourceManager: TestResourceManager
         before(async function () {
-            this.timeout(3 * 60 * 1000 + 30 * 1000)
+            this.timeout(10 * 60 * 1000 + 30 * 1000)
             ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
             resourceManager.add(
                 'User',
@@ -878,6 +880,7 @@ describe('Search regression test suite', () => {
         })
 
         test('Editing text filters', async () => {
+            await delay(1000)
             await driver.page.waitForSelector('.filter-input')
             await driver.page.click('.filter-input')
             await driver.page.waitForSelector('.filter-input__input-field')
