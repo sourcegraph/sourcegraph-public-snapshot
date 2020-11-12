@@ -1475,7 +1475,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			repo:        gitHubRepo,
 			credentials: &auth.OAuthBearerToken{Token: "my-secret-github-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://my-secret-github-token@github.com/" + gitHubRepo.Name,
+				RemoteURL: "https://my-secret-github-token@github.com/" + string(gitHubRepo.Name),
 			},
 		},
 		{
@@ -1498,7 +1498,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			repo:        gitLabRepo,
 			credentials: &auth.OAuthBearerToken{Token: "my-secret-gitlab-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://git:my-secret-gitlab-token@gitlab.com/" + gitLabRepo.Name,
+				RemoteURL: "https://git:my-secret-gitlab-token@gitlab.com/" + string(gitLabRepo.Name),
 			},
 		},
 		{
@@ -1521,7 +1521,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			repo:        bbsRepo,
 			credentials: &auth.BasicAuth{Username: "fredwoard johnssen", Password: "my-secret-bbs-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://fredwoard%20johnssen:my-secret-bbs-token@bitbucket.sourcegraph.com/scm/" + bbsRepo.Name,
+				RemoteURL: "https://fredwoard%20johnssen:my-secret-bbs-token@bitbucket.sourcegraph.com/scm/" + string(bbsRepo.Name),
 			},
 		},
 		{
