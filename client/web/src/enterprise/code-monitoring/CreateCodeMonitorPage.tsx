@@ -12,12 +12,11 @@ import classnames from 'classnames'
 import { Link } from '../../../../shared/src/components/Link'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
-import { PatternTypeProps } from '../../search'
 import { useInputValidation } from '../../../../shared/src/util/useInputValidation'
 import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
 import { FilterType } from '../../../../shared/src/search/interactive/util'
 
-export interface CreateCodeMonitorPageProps extends BreadcrumbsProps, BreadcrumbSetters, PatternTypeProps {
+export interface CreateCodeMonitorPageProps extends BreadcrumbsProps, BreadcrumbSetters {
     location: H.Location
     authenticatedUser: AuthenticatedUser
 }
@@ -264,10 +263,10 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     )
 
     useEffect(() => {
-        if (queryState.kind === 'VALID') {
-            console.log('valid')
-            onQueryChange(queryState.value)
-        }
+        // if (queryState.kind === 'VALID' || queryState.kind === 'NOT_VALIDATED') {
+        // console.log('valid')
+        onQueryChange(queryState.value)
+        // }
     }, [onQueryChange, queryState])
 
     return (
@@ -303,7 +302,7 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 required={true}
                                 ref={queryInputReference}
                             />
-                            {queryState.kind === 'VALID' || (
+                            {queryState.kind === 'VALID' && (
                                 <Link
                                     to={buildSearchURLQuery(query, SearchPatternType.literal, false)}
                                     target="_blank"
@@ -316,15 +315,14 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             {queryState.kind === 'INVALID' && (
                                 <small className="invalid-feedback mb-4">{queryState.reason}</small>
                             )}
-                            {queryState.kind === 'NOT_VALIDATED' ||
-                                (queryState.kind === 'VALID' && (
-                                    <div className="d-flex mb-4 flex-column">
-                                        <small className="text-muted">
-                                            Code monitors only support <code className="bg-code">type:diff</code> and{' '}
-                                            <code className="bg-code">type:commit</code> search queries.
-                                        </small>
-                                    </div>
-                                ))}
+                            {(queryState.kind === 'NOT_VALIDATED' || queryState.kind === 'VALID') && (
+                                <div className="d-flex mb-4 flex-column">
+                                    <small className="text-muted">
+                                        Code monitors only support <code className="bg-code">type:diff</code> and{' '}
+                                        <code className="bg-code">type:commit</code> search queries.
+                                    </small>
+                                </div>
+                            )}
                         </div>
                         <div>
                             <button
