@@ -18,6 +18,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -167,7 +168,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 	var m sync.Mutex
 	etags := map[int]*string{}
 
-	if err := invokeParallel(sources, func(index int, source string) error {
+	if err := goroutine.RunWorkersOverStrings(sources, func(index int, source string) error {
 		partNumber := index + 1
 
 		copyResult, err := s.client.UploadPartCopy(ctx, &s3.UploadPartCopyInput{
@@ -285,7 +286,7 @@ func (s *s3Store) lifecycle() *s3.BucketLifecycleConfiguration {
 }
 
 func (s *s3Store) deleteSources(ctx context.Context, bucket string, sources []string) error {
-	return invokeParallel(sources, func(index int, source string) error {
+	return goroutine.RunWorkersOverStrings(sources, func(index int, source string) error {
 		if _, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 			Bucket: aws.String(bucket),
 			Key:    aws.String(source),
