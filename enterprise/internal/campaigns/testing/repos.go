@@ -74,7 +74,10 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
 		r := TestRepo(t, esStore, extsvc.KindGitHub)
-		r.Sources = map[string]*types.SourceInfo{ext.URN(): {ID: ext.URN()}}
+		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {
+			ID:       ext.URN(),
+			CloneURL: "https://secrettoken@github.com/" + r.Name,
+		}}
 
 		rs = append(rs, r)
 	}
@@ -108,7 +111,10 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
 		r := TestRepo(t, esStore, extsvc.KindGitLab)
-		r.Sources = map[string]*types.SourceInfo{ext.URN(): {ID: ext.URN()}}
+		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {
+			ID:       ext.URN(),
+			CloneURL: "https://git:gitlab-token@gitlab.com/" + r.Name,
+		}}
 
 		rs = append(rs, r)
 	}
@@ -142,7 +148,12 @@ func CreateBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
 		r := TestRepo(t, esStore, extsvc.KindBitbucketServer)
-		r.Sources = map[string]*types.SourceInfo{ext.URN(): {ID: ext.URN()}}
+		r.Sources = map[string]*repos.SourceInfo{
+			ext.URN(): {
+				ID:       ext.URN(),
+				CloneURL: "https://bbs-user:bbs-token@bitbucket.sourcegraph.com/scm/" + r.Name,
+			},
+		}
 
 		rs = append(rs, r)
 	}

@@ -77,30 +77,12 @@ func (s *s3Store) Init(ctx context.Context) error {
 		return nil
 	}
 
-	//
-	// TODO - rewrite, test
-
-	tryCreate := func() error {
-		if err := s.create(ctx); err != nil {
-			return errors.Wrap(err, "failed to create bucket")
-		}
-
-		if err := s.update(ctx); err != nil {
-			return errors.Wrap(err, "failed to update bucket attributes")
-		}
-
-		return nil
+	if err := s.create(ctx); err != nil {
+		return errors.Wrap(err, "failed to create bucket")
 	}
 
-	var err error
-	for i := 0; i < 20; i++ {
-		if i > 0 {
-			<-time.After(time.Second)
-		}
-
-		if err = tryCreate(); err == nil {
-			break
-		}
+	if err := s.update(ctx); err != nil {
+		return errors.Wrap(err, "failed to update bucket attributes")
 	}
 
 	return nil

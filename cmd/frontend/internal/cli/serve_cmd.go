@@ -9,10 +9,12 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -34,7 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
-	"github.com/sourcegraph/sourcegraph/internal/processrestart"
 	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -260,12 +261,11 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	}
 
 	go func() {
-		<-processrestart.WillRestart
-		// Block forever so we don't return from main func and exit this process. Package processrestart takes care
-		// of killing and restarting this process externally.
-		srv.wg.Add(1)
+		// TODO(efritz) - replace with internal/httpserver package
+		signals := make(chan os.Signal, 1)
+		signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT)
+		<-signals
 
-		log15.Debug("Stopping HTTP server due to imminent restart")
 		srv.Close()
 	}()
 
