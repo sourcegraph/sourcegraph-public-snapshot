@@ -39,10 +39,7 @@ var _ workerutil.WithPreDequeue = &handler{}
 var _ workerutil.WithHooks = &handler{}
 
 func (h *handler) Handle(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
-	upload := record.(store.Upload)
-	store := h.dbStore.With(tx)
-
-	_, err := h.handle(ctx, store, upload)
+	_, err := h.handle(ctx, h.dbStore.With(tx), record.(store.Upload))
 	return err
 }
 
