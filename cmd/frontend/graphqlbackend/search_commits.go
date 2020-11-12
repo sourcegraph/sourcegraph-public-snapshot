@@ -495,14 +495,8 @@ func commitDiffSearcher(ctx context.Context, repoRev *search.RepositoryRevisions
 	return searchCommitsInRepo(ctx, commitParams)
 }
 
-var mockSearchCommitDiffsInRepos func(args *search.TextParametersForCommitParameters) ([]SearchResultResolver, *searchResultsCommon, error)
-
 // searchCommitDiffsInRepos searches a set of repos for matching commit diffs.
 func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
-	if mockSearchCommitDiffsInRepos != nil {
-		return mockSearchCommitDiffsInRepos(args)
-	}
-
 	return searchCommitsInRepos(ctx, args, searchCommitsInReposParameters{
 		TraceName: "searchCommitDiffsInRepos",
 		ErrorName: "diffs",
@@ -514,14 +508,8 @@ func commitLogSearcher(ctx context.Context, repoRev *search.RepositoryRevisions,
 	return searchCommitLogInRepo(ctx, repoRev, args.PatternInfo, args.Query)
 }
 
-var mockSearchCommitLogInRepos func(args *search.TextParametersForCommitParameters) ([]SearchResultResolver, *searchResultsCommon, error)
-
 // searchCommitLogInRepos searches a set of repos for matching commits.
 func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForCommitParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
-	if mockSearchCommitLogInRepos != nil {
-		return mockSearchCommitLogInRepos(args)
-	}
-
 	return searchCommitsInRepos(ctx, args, searchCommitsInReposParameters{
 		TraceName: "searchCommitLogsInRepos",
 		ErrorName: "commits",
