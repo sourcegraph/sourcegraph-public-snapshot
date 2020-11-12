@@ -122,10 +122,10 @@
 // 1528395743_add_table_cm_emails.up.sql (1.396kB)
 // 1528395744_add_table_cm_recipients.down.sql (447B)
 // 1528395744_add_table_cm_recipients.up.sql (1.014kB)
-// 1528395745_add_is_primary_to_user_emails.down.sql (75B)
-// 1528395745_add_is_primary_to_user_emails.up.sql (540B)
 // 1528395745_ref_prefix_external_branch.down.sql (643B)
 // 1528395745_ref_prefix_external_branch.up.sql (731B)
+// 1528395746_add_is_primary_to_user_emails.down.sql (75B)
+// 1528395746_add_is_primary_to_user_emails.up.sql (540B)
 
 package migrations
 
@@ -2634,46 +2634,6 @@ func _1528395744_add_table_cm_recipientsUpSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395745_add_is_primary_to_user_emailsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x8a\x4f\xcd\x4d\xcc\xcc\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\xc8\x2c\x8e\x2f\x28\xca\xcc\x4d\x2c\xaa\xb4\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x0f\x46\xa8\xe9\x4b\x00\x00\x00")
-
-func _1528395745_add_is_primary_to_user_emailsDownSqlBytes() ([]byte, error) {
-	return bindataRead(
-		__1528395745_add_is_primary_to_user_emailsDownSql,
-		"1528395745_add_is_primary_to_user_emails.down.sql",
-	)
-}
-
-func _1528395745_add_is_primary_to_user_emailsDownSql() (*asset, error) {
-	bytes, err := _1528395745_add_is_primary_to_user_emailsDownSqlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "1528395745_add_is_primary_to_user_emails.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4d, 0x61, 0x35, 0x92, 0x1b, 0x53, 0x20, 0x54, 0x2f, 0x6d, 0xdb, 0xf7, 0xe3, 0xfb, 0x50, 0x27, 0xb4, 0x8b, 0xca, 0x78, 0xf6, 0x96, 0xef, 0x16, 0x3f, 0x4a, 0x4b, 0xd7, 0xbf, 0xa8, 0x6c, 0xcf}}
-	return a, nil
-}
-
-var __1528395745_add_is_primary_to_user_emailsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x64\x90\xc1\x8e\xd3\x30\x14\x45\xf7\xfe\x8a\xbb\x6c\xa4\x99\xf9\x81\x8a\x85\x1b\xbb\x60\x29\x71\x20\xb1\x05\xac\x2a\x4f\xf2\x4a\x2d\xa5\x71\x65\xbb\x03\xf3\xf7\x28\x09\x4c\xa7\xb0\xb4\x7c\xdf\x79\xf7\x9d\x9d\xfc\xa8\xf4\x96\x31\x5e\x19\xd9\xc2\xf0\x5d\x25\x71\x4d\x14\x0f\x74\x76\x7e\x4c\xe0\x42\xa0\x6c\x2a\x5b\x6b\xf8\x74\xb8\x44\x7f\x76\xf1\x15\xcf\x21\x8c\x10\x72\xcf\x6d\x65\x70\x74\x63\x22\xe8\xc6\x40\xdb\xaa\xda\x32\xf6\xf8\x08\x9b\x08\xe1\x1a\x11\xc6\x01\x63\xf8\xe1\x7b\xe4\x80\x44\x19\xf9\x44\xf0\x93\xcf\xde\x8d\xf8\x4b\x73\xc3\x10\x29\xa5\xa7\x79\x70\x1f\xc3\x19\xf9\xe4\x13\x2e\xc1\x4f\x19\x3f\x09\xf4\xeb\x42\x7d\x86\xcf\x33\xe3\x99\x16\xcc\x71\x8d\x11\xac\x7a\x62\xcc\x7e\x16\xdc\xdc\xf7\xee\xa4\x79\x5f\xf8\x03\x72\xbc\x12\xfb\xfa\x49\xb6\x12\x9b\x25\xe8\x87\x07\x2c\xe1\x02\x4a\xb3\x4d\x27\x2b\x59\x1a\x08\xd5\x19\xa5\x4b\x83\x46\xbf\xe5\x0a\xdc\x0f\x60\xdf\x36\xf5\xdd\xb6\xa6\x15\xb2\xc5\xee\xfb\x2d\xb8\x79\xa1\xe8\x8f\x9e\x86\x83\xcb\x50\xdd\x9b\x9e\x02\x42\x76\xe5\x03\xfa\x48\x2e\xaf\xbf\x7c\x7e\xaf\x60\xde\x95\xc5\x2a\x90\x2f\x28\xf4\x6e\x42\x98\xc6\x57\x9c\xdc\x0b\x21\x4c\xf4\xaf\x34\x56\xb6\x72\xbe\xdd\x6a\xf5\xc5\x4a\x28\x2d\xe4\xb7\xb9\xfb\xfb\x76\xb7\x7b\x6f\x46\x8a\x3f\x2e\xfe\x73\xb4\x65\xac\x6c\xea\x5a\x99\x2d\xfb\x1d\x00\x00\xff\xff\x83\x1c\x07\x19\x1c\x02\x00\x00")
-
-func _1528395745_add_is_primary_to_user_emailsUpSqlBytes() ([]byte, error) {
-	return bindataRead(
-		__1528395745_add_is_primary_to_user_emailsUpSql,
-		"1528395745_add_is_primary_to_user_emails.up.sql",
-	)
-}
-
-func _1528395745_add_is_primary_to_user_emailsUpSql() (*asset, error) {
-	bytes, err := _1528395745_add_is_primary_to_user_emailsUpSqlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "1528395745_add_is_primary_to_user_emails.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x50, 0xcd, 0x63, 0x95, 0xb1, 0xe2, 0x49, 0x29, 0xfe, 0xe7, 0x85, 0x1a, 0x7e, 0xb7, 0xac, 0x2a, 0x6f, 0x74, 0x8f, 0xad, 0x33, 0x4d, 0xdd, 0x12, 0x75, 0xa8, 0x11, 0x3f, 0x3a, 0xe0, 0x58, 0xe3}}
-	return a, nil
-}
-
 var __1528395745_ref_prefix_external_branchDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x8f\xdd\x4a\xf3\x40\x10\x86\xcf\xf7\x2a\xe6\x3b\xf8\xd8\x14\x22\xbd\x80\x90\x42\xda\xac\xba\xb8\xd9\x94\xcd\x14\x3d\x5b\x92\x38\x31\x8a\xa4\x25\x9b\x83\x82\x78\xef\x12\xfb\x83\x4d\xa2\x82\x67\xcb\xcc\x33\xfb\xbe\xcf\x52\xdc\x48\x1d\x30\x16\x29\x14\x06\x30\x5a\x2a\x01\x65\x9d\x37\x4f\xe4\xa8\x73\x10\x9b\x74\x0d\xab\x54\x67\x68\x22\xa9\x11\xe4\x35\x88\x07\x99\x61\x06\xb4\xef\xa8\x6d\xf2\x57\x5b\xb4\x79\x53\xd6\xb6\xa5\xca\xee\x5a\xaa\x9e\xf7\x01\x63\x9b\x75\x1c\xe1\xc5\x47\x99\xc0\xe1\x09\x84\xa0\xd0\xc8\xc4\x1b\xcc\x7d\xe0\x2d\x55\x6e\x5e\x53\xfe\xe8\xe6\x7c\x06\xf7\xb7\xc2\x88\xd1\xb5\xcc\x40\xa7\x08\x7a\xa3\xd4\x44\xa2\x75\x3b\x2a\x0f\xb1\xfd\x0b\x42\x78\x71\xdb\xa6\xb0\x8e\x3a\xaf\x1f\xf8\xc0\xdf\xfa\x00\x43\xd5\x3b\xf7\xa1\xdb\xda\xcf\xbd\x77\x68\xd4\x13\x57\x8b\x05\x3f\x12\x7c\x58\x69\x76\x2a\x35\x04\xbf\xb6\x82\x48\xc7\x63\xe0\x5f\x08\x9c\x4f\xaf\x94\xbc\x13\x17\x41\xff\x79\xf0\x27\xb1\x22\x77\xf4\xb3\xd8\x91\xf8\x5d\xec\x04\x7e\x2b\x76\x06\xc6\x62\xe7\xd5\xa4\x18\x5b\xa5\x49\x22\x31\x60\x1f\x01\x00\x00\xff\xff\x97\x74\xd2\x29\x83\x02\x00\x00")
 
 func _1528395745_ref_prefix_external_branchDownSqlBytes() ([]byte, error) {
@@ -2711,6 +2671,46 @@ func _1528395745_ref_prefix_external_branchUpSql() (*asset, error) {
 
 	info := bindataFileInfo{name: "1528395745_ref_prefix_external_branch.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd, 0xd3, 0xfb, 0x4f, 0x6a, 0x56, 0xb7, 0x8, 0x4a, 0x24, 0x6b, 0xff, 0x73, 0x92, 0xd9, 0xf8, 0xa0, 0xa6, 0x22, 0x20, 0x9c, 0x19, 0xdf, 0x1b, 0x6e, 0xb6, 0xda, 0x7, 0xbd, 0xf5, 0xd7, 0xc8}}
+	return a, nil
+}
+
+var __1528395746_add_is_primary_to_user_emailsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x8a\x4f\xcd\x4d\xcc\xcc\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\xc8\x2c\x8e\x2f\x28\xca\xcc\x4d\x2c\xaa\xb4\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x0f\x46\xa8\xe9\x4b\x00\x00\x00")
+
+func _1528395746_add_is_primary_to_user_emailsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395746_add_is_primary_to_user_emailsDownSql,
+		"1528395746_add_is_primary_to_user_emails.down.sql",
+	)
+}
+
+func _1528395746_add_is_primary_to_user_emailsDownSql() (*asset, error) {
+	bytes, err := _1528395746_add_is_primary_to_user_emailsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395746_add_is_primary_to_user_emails.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4d, 0x61, 0x35, 0x92, 0x1b, 0x53, 0x20, 0x54, 0x2f, 0x6d, 0xdb, 0xf7, 0xe3, 0xfb, 0x50, 0x27, 0xb4, 0x8b, 0xca, 0x78, 0xf6, 0x96, 0xef, 0x16, 0x3f, 0x4a, 0x4b, 0xd7, 0xbf, 0xa8, 0x6c, 0xcf}}
+	return a, nil
+}
+
+var __1528395746_add_is_primary_to_user_emailsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x64\x90\xc1\x8e\xd3\x30\x14\x45\xf7\xfe\x8a\xbb\x6c\xa4\x99\xf9\x81\x8a\x85\x1b\xbb\x60\x29\x71\x20\xb1\x05\xac\x2a\x4f\xf2\x4a\x2d\xa5\x71\x65\xbb\x03\xf3\xf7\x28\x09\x4c\xa7\xb0\xb4\x7c\xdf\x79\xf7\x9d\x9d\xfc\xa8\xf4\x96\x31\x5e\x19\xd9\xc2\xf0\x5d\x25\x71\x4d\x14\x0f\x74\x76\x7e\x4c\xe0\x42\xa0\x6c\x2a\x5b\x6b\xf8\x74\xb8\x44\x7f\x76\xf1\x15\xcf\x21\x8c\x10\x72\xcf\x6d\x65\x70\x74\x63\x22\xe8\xc6\x40\xdb\xaa\xda\x32\xf6\xf8\x08\x9b\x08\xe1\x1a\x11\xc6\x01\x63\xf8\xe1\x7b\xe4\x80\x44\x19\xf9\x44\xf0\x93\xcf\xde\x8d\xf8\x4b\x73\xc3\x10\x29\xa5\xa7\x79\x70\x1f\xc3\x19\xf9\xe4\x13\x2e\xc1\x4f\x19\x3f\x09\xf4\xeb\x42\x7d\x86\xcf\x33\xe3\x99\x16\xcc\x71\x8d\x11\xac\x7a\x62\xcc\x7e\x16\xdc\xdc\xf7\xee\xa4\x79\x5f\xf8\x03\x72\xbc\x12\xfb\xfa\x49\xb6\x12\x9b\x25\xe8\x87\x07\x2c\xe1\x02\x4a\xb3\x4d\x27\x2b\x59\x1a\x08\xd5\x19\xa5\x4b\x83\x46\xbf\xe5\x0a\xdc\x0f\x60\xdf\x36\xf5\xdd\xb6\xa6\x15\xb2\xc5\xee\xfb\x2d\xb8\x79\xa1\xe8\x8f\x9e\x86\x83\xcb\x50\xdd\x9b\x9e\x02\x42\x76\xe5\x03\xfa\x48\x2e\xaf\xbf\x7c\x7e\xaf\x60\xde\x95\xc5\x2a\x90\x2f\x28\xf4\x6e\x42\x98\xc6\x57\x9c\xdc\x0b\x21\x4c\xf4\xaf\x34\x56\xb6\x72\xbe\xdd\x6a\xf5\xc5\x4a\x28\x2d\xe4\xb7\xb9\xfb\xfb\x76\xb7\x7b\x6f\x46\x8a\x3f\x2e\xfe\x73\xb4\x65\xac\x6c\xea\x5a\x99\x2d\xfb\x1d\x00\x00\xff\xff\x83\x1c\x07\x19\x1c\x02\x00\x00")
+
+func _1528395746_add_is_primary_to_user_emailsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395746_add_is_primary_to_user_emailsUpSql,
+		"1528395746_add_is_primary_to_user_emails.up.sql",
+	)
+}
+
+func _1528395746_add_is_primary_to_user_emailsUpSql() (*asset, error) {
+	bytes, err := _1528395746_add_is_primary_to_user_emailsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395746_add_is_primary_to_user_emails.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x50, 0xcd, 0x63, 0x95, 0xb1, 0xe2, 0x49, 0x29, 0xfe, 0xe7, 0x85, 0x1a, 0x7e, 0xb7, 0xac, 0x2a, 0x6f, 0x74, 0x8f, 0xad, 0x33, 0x4d, 0xdd, 0x12, 0x75, 0xa8, 0x11, 0x3f, 0x3a, 0xe0, 0x58, 0xe3}}
 	return a, nil
 }
 
@@ -2927,10 +2927,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395743_add_table_cm_emails.up.sql":                                        _1528395743_add_table_cm_emailsUpSql,
 	"1528395744_add_table_cm_recipients.down.sql":                                  _1528395744_add_table_cm_recipientsDownSql,
 	"1528395744_add_table_cm_recipients.up.sql":                                    _1528395744_add_table_cm_recipientsUpSql,
-	"1528395745_add_is_primary_to_user_emails.down.sql":                            _1528395745_add_is_primary_to_user_emailsDownSql,
-	"1528395745_add_is_primary_to_user_emails.up.sql":                              _1528395745_add_is_primary_to_user_emailsUpSql,
 	"1528395745_ref_prefix_external_branch.down.sql":                               _1528395745_ref_prefix_external_branchDownSql,
 	"1528395745_ref_prefix_external_branch.up.sql":                                 _1528395745_ref_prefix_external_branchUpSql,
+	"1528395746_add_is_primary_to_user_emails.down.sql":                            _1528395746_add_is_primary_to_user_emailsDownSql,
+	"1528395746_add_is_primary_to_user_emails.up.sql":                              _1528395746_add_is_primary_to_user_emailsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3099,10 +3099,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395743_add_table_cm_emails.up.sql":                                        {_1528395743_add_table_cm_emailsUpSql, map[string]*bintree{}},
 	"1528395744_add_table_cm_recipients.down.sql":                                  {_1528395744_add_table_cm_recipientsDownSql, map[string]*bintree{}},
 	"1528395744_add_table_cm_recipients.up.sql":                                    {_1528395744_add_table_cm_recipientsUpSql, map[string]*bintree{}},
-	"1528395745_add_is_primary_to_user_emails.down.sql":                            {_1528395745_add_is_primary_to_user_emailsDownSql, map[string]*bintree{}},
-	"1528395745_add_is_primary_to_user_emails.up.sql":                              {_1528395745_add_is_primary_to_user_emailsUpSql, map[string]*bintree{}},
 	"1528395745_ref_prefix_external_branch.down.sql":                               {_1528395745_ref_prefix_external_branchDownSql, map[string]*bintree{}},
 	"1528395745_ref_prefix_external_branch.up.sql":                                 {_1528395745_ref_prefix_external_branchUpSql, map[string]*bintree{}},
+	"1528395746_add_is_primary_to_user_emails.down.sql":                            {_1528395746_add_is_primary_to_user_emailsDownSql, map[string]*bintree{}},
+	"1528395746_add_is_primary_to_user_emails.up.sql":                              {_1528395746_add_is_primary_to_user_emailsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
