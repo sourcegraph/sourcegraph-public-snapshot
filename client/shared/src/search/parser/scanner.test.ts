@@ -1,4 +1,5 @@
-import { scanSearchQuery, scanBalancedPattern, PatternKind } from './scanner'
+import { scanSearchQuery, scanBalancedPattern } from './scanner'
+import { SearchPatternType } from '../../graphql-operations'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value),
@@ -157,7 +158,7 @@ describe('scanSearchQuery() for literal search', () => {
 describe('scanSearchQuery() for regexp', () => {
     test('interpret regexp pattern with match groups', () => {
         expect(
-            scanSearchQuery('((sauce|graph)(\\s)?)is best(g*r*a*p*h*)', false, PatternKind.Regexp)
+            scanSearchQuery('((sauce|graph)(\\s)?)is best(g*r*a*p*h*)', false, SearchPatternType.regexp)
         ).toMatchInlineSnapshot(
             '{"type":"success","term":[{"type":"pattern","range":{"start":0,"end":22},"kind":2,"value":"((sauce|graph)(\\\\s)?)is"},{"type":"whitespace","range":{"start":22,"end":23}},{"type":"pattern","range":{"start":23,"end":39},"kind":2,"value":"best(g*r*a*p*h*)"}]}'
         )
@@ -165,14 +166,14 @@ describe('scanSearchQuery() for regexp', () => {
 
     test('interpret regexp pattern with match groups between keywords', () => {
         expect(
-            scanSearchQuery('(((sauce|graph)\\s?) or (best)) and (gr|aph)', false, PatternKind.Regexp)
+            scanSearchQuery('(((sauce|graph)\\s?) or (best)) and (gr|aph)', false, SearchPatternType.regexp)
         ).toMatchInlineSnapshot(
             '{"type":"success","term":[{"type":"openingParen","range":{"start":0,"end":1}},{"type":"pattern","range":{"start":1,"end":19},"kind":2,"value":"((sauce|graph)\\\\s?)"},{"type":"whitespace","range":{"start":19,"end":20}},{"type":"keyword","value":"or","range":{"start":20,"end":22},"kind":"or"},{"type":"whitespace","range":{"start":22,"end":23}},{"type":"pattern","range":{"start":23,"end":29},"kind":2,"value":"(best)"},{"type":"closingParen","range":{"start":29,"end":30}},{"type":"whitespace","range":{"start":30,"end":31}},{"type":"keyword","value":"and","range":{"start":31,"end":34},"kind":"and"},{"type":"whitespace","range":{"start":34,"end":35}},{"type":"pattern","range":{"start":35,"end":43},"kind":2,"value":"(gr|aph)"}]}'
         )
     })
 
     test('interpret regexp slash quotes', () => {
-        expect(scanSearchQuery('r:a /a regexp \\ pattern/', false, PatternKind.Regexp)).toMatchInlineSnapshot(
+        expect(scanSearchQuery('r:a /a regexp \\ pattern/', false, SearchPatternType.regexp)).toMatchInlineSnapshot(
             '{"type":"success","term":[{"type":"filter","range":{"start":0,"end":3},"filterType":{"type":"literal","value":"r","range":{"start":0,"end":1}},"filterValue":{"type":"literal","value":"a","range":{"start":2,"end":3}},"negated":false},{"type":"whitespace","range":{"start":3,"end":4}},{"type":"quoted","quotedValue":"a regexp \\\\ pattern","range":{"start":4,"end":24}}]}'
         )
     })

@@ -287,7 +287,7 @@ func createChangeset(
 
 		ExternalServiceType: opts.externalServiceType,
 		ExternalID:          opts.externalID,
-		ExternalBranch:      opts.externalBranch,
+		ExternalBranch:      git.EnsureRefPrefix(opts.externalBranch),
 		ExternalReviewState: opts.externalReviewState,
 		ExternalCheckState:  opts.externalCheckState,
 
