@@ -50,7 +50,7 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<StreamingPr
                             target="streaming-progress__skipped"
                             hideArrow={true}
                         >
-                            <PopoverBody className="streaming-progress__skipped__popover">
+                            <PopoverBody className="streaming-progress__skipped-popover">
                                 <StreamingProgressSkippedPopover progress={progress} />
                             </PopoverBody>
                         </Popover>

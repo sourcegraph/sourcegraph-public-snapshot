@@ -21,7 +21,7 @@ describe('StreamingProgressSkippedButton', () => {
 
         const element = mount(<StreamingProgressSkippedButton progress={progress} />, { attachTo: div })
         expect(element.find('.streaming-progress__skipped')).toHaveLength(0)
-        expect(element.find('.streaming-progress__skipped__popover')).toHaveLength(0)
+        expect(element.find('.streaming-progress__skipped-popover')).toHaveLength(0)
     })
 
     it('should be in info state with only info items', () => {
