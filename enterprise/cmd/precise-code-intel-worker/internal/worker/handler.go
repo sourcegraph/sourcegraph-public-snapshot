@@ -115,7 +115,7 @@ func (h *handler) handle(ctx context.Context, dbStore DBStore, upload store.Uplo
 		return false, errors.Wrap(err, "correlation.Correlate")
 	}
 
-	if err := h.write(ctx, upload.ID, groupedBundleData); err != nil {
+	if err := writeData(ctx, h.lsifStore, upload.ID, groupedBundleData); err != nil {
 		return false, err
 	}
 
@@ -171,9 +171,8 @@ func (h *handler) requeueIfCloning(ctx context.Context, dbStore DBStore, upload 
 	return false, nil
 }
 
-// write commits the correlated data to the database.
-func (h *handler) write(ctx context.Context, id int, groupedBundleData *correlation.GroupedBundleData) (err error) {
-	store, err := h.lsifStore.Transact(ctx)
+func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleData *correlation.GroupedBundleData) (err error) {
+	store, err := lsifStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
