@@ -249,4 +249,108 @@ describe('getMonacoTokens()', () => {
             ]
         `)
     })
+
+    test('decorate character classes', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('([a-z])', false, SearchPatternType.regexp)), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 1,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "regexpMetaDelimited"
+              }
+            ]
+        `)
+    })
+
+    test('decorate character classes', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('[a-z][--z][--z]', false, SearchPatternType.regexp)), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 1,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 11,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "regexpMetaCharacterClass"
+              }
+            ]
+        `)
+    })
 })

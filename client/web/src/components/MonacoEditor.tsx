@@ -41,6 +41,7 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
         { token: 'regexpMetaDelimited', foreground: '#ff6b6b' },
         { token: 'regexpMetaAssertion', foreground: '#ff6b6b' },
         { token: 'regexpMetaCharacterSet', foreground: '#3bc9db' },
+        { token: 'regexpMetaCharacterClass', foreground: '#3bc9db' },
         { token: 'regexpMetaQuantifier', foreground: '#3bc9db' },
     ],
 })
@@ -74,6 +75,7 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
         { token: 'regexpMetaDelimited', foreground: '#c92a2a' },
         { token: 'regexpMetaAssertion', foreground: '#c92a2a' },
         { token: 'regexpMetaCharacterSet', foreground: '#1098ad' },
+        { token: 'regexpMetaCharacterClass', foreground: '#1098ad' },
         { token: 'regexpMetaQuantifier', foreground: '#1098ad' },
     ],
 })
