@@ -74,6 +74,7 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
                                 {'Set as primary'}
                             </button>
                         )}
+                        {' '}
                         {this.props.node.viewerCanManuallyVerify && (
                               <button
                                 type="button"
