@@ -256,7 +256,6 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         return 'Failed to parse query'
                     },
                 ],
-                asynchronousValidators: [],
             }),
             [query]
         )
