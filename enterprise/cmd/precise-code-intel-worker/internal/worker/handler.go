@@ -198,27 +198,27 @@ func (h *handler) requeueIfCloning(ctx context.Context, dbStore DBStore, upload 
 }
 
 func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleData *correlation.GroupedBundleData) (err error) {
-	store, err := lsifStore.Transact(ctx)
+	tx, err := lsifStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		err = store.Done(err)
+		err = tx.Done(err)
 	}()
 
-	if err := store.WriteMeta(ctx, id, groupedBundleData.Meta); err != nil {
+	if err := tx.WriteMeta(ctx, id, groupedBundleData.Meta); err != nil {
 		return errors.Wrap(err, "store.WriteMeta")
 	}
-	if err := store.WriteDocuments(ctx, id, groupedBundleData.Documents); err != nil {
+	if err := tx.WriteDocuments(ctx, id, groupedBundleData.Documents); err != nil {
 		return errors.Wrap(err, "store.WriteDocuments")
 	}
-	if err := store.WriteResultChunks(ctx, id, groupedBundleData.ResultChunks); err != nil {
+	if err := tx.WriteResultChunks(ctx, id, groupedBundleData.ResultChunks); err != nil {
 		return errors.Wrap(err, "writer.WriteResultChunks")
 	}
-	if err := store.WriteDefinitions(ctx, id, groupedBundleData.Definitions); err != nil {
+	if err := tx.WriteDefinitions(ctx, id, groupedBundleData.Definitions); err != nil {
 		return errors.Wrap(err, "store.WriteDefinitions")
 	}
-	if err := store.WriteReferences(ctx, id, groupedBundleData.References); err != nil {
+	if err := tx.WriteReferences(ctx, id, groupedBundleData.References); err != nil {
 		return errors.Wrap(err, "store.WriteReferences")
 	}
 
