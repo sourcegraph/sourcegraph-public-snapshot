@@ -21,4 +21,4 @@ To update a campaign, you need [admin access to the campaign](../explanations/pe
 All of the changesets on your code host will be updated to the desired state that was shown in the preview.
 
 > NOTE: If you are sure about the changes you want to make and don't need to preview them, you can run `src campaign apply` to apply the campaign spec directly:
-> <pre><code>src campaign apply -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
+> <pre><code>src campaign <em>apply</em> -f YOUR_CAMPAIGN_SPEC.campaign.yaml</code></pre>
