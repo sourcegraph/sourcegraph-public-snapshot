@@ -134,6 +134,15 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 		return Mocks.RawLogDiffSearch(opt)
 	}
 
+	defer func() {
+		// We do best-effort in case of timeout. So we clear out the error and
+		// indicate the results are incomplete.
+		if err != nil && errors.Is(err, context.DeadlineExceeded) {
+			complete = false
+			err = nil
+		}
+	}()
+
 	deadline, ok := ctx.Deadline()
 	var timeoutLabel string
 	if ok {
@@ -171,24 +180,53 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 	}
 
 	// We do a search with git log returning just the commits (and source sha).
-	onelineCommits, complete, err := rawLogSearch(ctx, repo, opt)
+	onelineCmd, err := rawLogSearchCmd(ctx, repo, opt)
 	if err != nil {
-		return nil, complete, err
+		return nil, false, err
+	}
+	onelineReader, err := gitserver.StdoutReader(ctx, onelineCmd)
+	if err != nil {
+		return nil, false, err
+	}
+	defer onelineReader.Close()
+
+	// We batch up the commits from onelineReader to amortize the cost of
+	// running rawShowSearch
+	const (
+		maxBatchSize = 100
+		debounce     = 10 * time.Millisecond
+	)
+	nextCommits, nextCommitsClose := logOnelineBatchScanner(logOnelineScanner(onelineReader), maxBatchSize, debounce)
+	defer nextCommitsClose()
+
+	// We then search each commit in batches to further filter the results.
+	complete = true
+	var cache refResolveCache
+	for {
+		commits, err := nextCommits()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return results, complete, err
+		}
+
+		results2, complete2, err := rawShowSearch(ctx, repo, opt, &cache, commits)
+		results = append(results, results2...)
+		complete = complete && complete2
+
+		if err != nil {
+			return results, complete, err
+		}
 	}
 
-	// We then search each commit to further filter the results.
-	results, showComplete, err := rawShowSearch(ctx, repo, opt, onelineCommits)
-	complete = complete && showComplete
-	return results, complete, err
+	return results, complete, nil
 }
 
-// rawLogSearch runs git log to find matching commits. complete is true if we
-// parsed all the output from git without encountering a timeout.
-func rawLogSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions) (_ []*onelineCommit, complete bool, _ error) {
+func rawLogSearchCmd(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions) (*gitserver.Cmd, error) {
 	args := []string{"log"}
 	args = append(args, opt.Args...)
 	if !isAllowedGitCmd(args) {
-		return nil, false, fmt.Errorf("command failed: %q is not a allowed git command", args)
+		return nil, fmt.Errorf("command failed: %q is not a allowed git command", args)
 	}
 
 	// We need to get `git log --source` (the ref by which we reached each commit), but
@@ -208,51 +246,14 @@ func rawLogSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearch
 	)
 	onelineArgs = append(onelineArgs, logDiffCommonArgs(opt)...)
 
-	// Time out the first `git log` operation prior to the parent context timeout, so we still have time to `git
-	// show` the results it returns. These proportions are untuned guesses.
-	//
-	// TODO(sqs): this can be made much more efficient in many ways
-
-	// Run `git log` oneline command and read list of matching commits.
-	onelineCmd := gitserver.DefaultClient.Command("git", onelineArgs...)
-	onelineCmd.Repo = repo
-	ctxLog, cancel := withDeadlinePercentage(ctx, 0.5)
-	defer cancel()
-	onelineReader, err := gitserver.StdoutReader(ctxLog, onelineCmd)
-	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
-			// the gitserver call exceeded our deadline before the command
-			// produced any output.
-			return nil, false, nil
-		}
-		return nil, false, err
-	}
-
-	scan := logOnelineScanner(onelineReader)
-	var onelineCommits []*onelineCommit
-	for {
-		var commit *onelineCommit
-		commit, err = scan()
-		if err != nil {
-			break
-		}
-		onelineCommits = append(onelineCommits, commit)
-	}
-
-	if err == io.EOF {
-		return onelineCommits, true, nil
-	} else if errors.Is(err, context.DeadlineExceeded) {
-		return onelineCommits, false, nil
-	} else if strings.Contains(err.Error(), "does not have any commits yet") {
-		// Don't fail if the repository is empty.
-		return nil, true, nil
-	}
-	return nil, false, err
+	cmd := gitserver.DefaultClient.Command("git", onelineArgs...)
+	cmd.Repo = repo
+	return cmd, nil
 }
 
 // rawShowSearch runs git show on each commit in onelineCommits. We need to do
 // this to further filter hunks.
-func rawShowSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions, onelineCommits []*onelineCommit) (results []*LogCommitSearchResult, complete bool, err error) {
+func rawShowSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearchOptions, cache *refResolveCache, onelineCommits []*onelineCommit) (results []*LogCommitSearchResult, complete bool, err error) {
 	if len(onelineCommits) == 0 {
 		return nil, true, nil
 	}
@@ -315,7 +316,6 @@ func rawShowSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearc
 	if err != nil {
 		return nil, complete, err
 	}
-	var cache refResolveCache
 	for len(data) > 0 {
 		var commit *Commit
 		var refs []string
@@ -336,9 +336,9 @@ func rawShowSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSearc
 			Refs:       refs,
 			SourceRefs: []string{commitSourceRefs[string(commit.ID)]},
 		}
-		result.Refs, err = filterAndResolveRefs(ctx, repo, result.Refs, &cache)
+		result.Refs, err = filterAndResolveRefs(ctx, repo, result.Refs, cache)
 		if err == nil {
-			result.SourceRefs, err = filterAndResolveRefs(ctx, repo, result.SourceRefs, &cache)
+			result.SourceRefs, err = filterAndResolveRefs(ctx, repo, result.SourceRefs, cache)
 		}
 		sort.Strings(result.Refs)
 		sort.Strings(result.SourceRefs)
