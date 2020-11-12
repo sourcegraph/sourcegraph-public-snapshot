@@ -217,12 +217,66 @@ func commitParametersToDiffParameters(ctx context.Context, op *search.CommitPara
 	}, nil
 }
 
+type searchCommitsInRepoEvent struct {
+	// Results are new commit results found.
+	Results []*CommitSearchResultResolver
+
+	// LimitHit is true if we stopped searching since we found FileMatchLimit
+	// results.
+	LimitHit bool
+
+	// TimedOut is true when the results may have been parsed from only
+	// partial output from the underlying git command (because, e.g., it timed
+	// out during execution and only returned partial output).
+	TimedOut bool
+
+	// Error is non-nil if an error occurred. It will be the last event if
+	// set.
+	Error error
+}
+
+// searchCommitsInRepo is a blocking version of searchCommitsInRepoStream.
 func searchCommitsInRepo(ctx context.Context, op search.CommitParameters) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
+	for event := range searchCommitsInRepoStream(ctx, op) {
+		results = append(results, event.Results...)
+		limitHit = event.LimitHit
+		timedOut = event.TimedOut
+		err = event.Error
+	}
+	return results, limitHit, timedOut, err
+}
+
+// searchCommitsInRepoStream searchs for commits based on op.
+//
+// The returned channel must be read until closed, otherwise you may leak
+// resources.
+func searchCommitsInRepoStream(ctx context.Context, op search.CommitParameters) chan searchCommitsInRepoEvent {
+	c := make(chan searchCommitsInRepoEvent)
+	go func() {
+		defer close(c)
+		_, _, _, _ = doSearchCommitsInRepoStream(ctx, op, c)
+	}()
+
+	return c
+}
+
+func doSearchCommitsInRepoStream(ctx context.Context, op search.CommitParameters, c chan searchCommitsInRepoEvent) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
 	tr, ctx := trace.New(ctx, "searchCommitsInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v", op.RepoRevs, op.PatternInfo))
 	defer func() {
 		tr.LazyPrintf("%d results, limitHit=%v, timedOut=%v", len(results), limitHit, timedOut)
 		tr.SetError(err)
 		tr.Finish()
+	}()
+
+	// This defer will read the named return values. This is a convenient way
+	// to send errors down the channel, since we only want to do this once.
+	defer func() {
+		c <- searchCommitsInRepoEvent{
+			Results:  results,
+			LimitHit: limitHit,
+			TimedOut: timedOut,
+			Error:    err,
+		}
 	}()
 
 	diffParameters, err := commitParametersToDiffParameters(ctx, &op)
