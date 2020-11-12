@@ -10,7 +10,7 @@ WHERE (user_id, email) IN
 (SELECT DISTINCT ON (user_id) user_id, email FROM user_emails ORDER BY user_id, (verified_at IS NOT NULL) DESC, created_at ASC, email ASC);
 
 -- A user can only have one primary address
-CREATE UNIQUE INDEX ON user_emails (user_id, is_primary)
+CREATE UNIQUE INDEX user_emails_user_id_is_primary_idx ON user_emails (user_id, is_primary)
 WHERE is_primary = true;
 
 COMMIT;
