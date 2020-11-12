@@ -76,10 +76,17 @@ const CloneInProgressDelay = time.Minute
 // if the repo has finished cloning and the revision does not exist, then the upload will fail to process.
 // If the repo is currently cloning, then we'll requeue the upload to be tried again later. This will not
 // increase the reset count of the record (so this doesn't count against the upload as a legitimate attempt).
-func (h *handler) requeueIfCloning(ctx context.Context, dbStore DBStore, upload store.Upload) (requeued bool, err error) {
-	if cloneInProgress, err := h.isRepoCurrentlyCloning(ctx, upload.RepositoryID, upload.Commit); err != nil {
-		return false, err
-	} else if cloneInProgress {
+func (h *handler) requeueIfCloning(ctx context.Context, dbStore DBStore, upload store.Upload) (requeued bool, _ error) {
+	repo, err := backend.Repos.Get(ctx, api.RepoID(upload.RepositoryID))
+	if err != nil {
+		return false, errors.Wrap(err, "Repos.Get")
+	}
+
+	if _, err := backend.Repos.ResolveRev(ctx, repo, upload.Commit); err != nil {
+		if !vcs.IsCloneInProgress(err) {
+			return false, errors.Wrap(err, "Repos.ResolveRev")
+		}
+
 		if err := dbStore.Requeue(ctx, upload.ID, time.Now().UTC().Add(CloneInProgressDelay)); err != nil {
 			return false, errors.Wrap(err, "store.Requeue")
 		}
@@ -159,25 +166,6 @@ func (h *handler) handle(ctx context.Context, dbStore DBStore, upload store.Uplo
 
 	if err := h.updateXrepoData(ctx, tx, upload, groupedBundleData.Packages, groupedBundleData.PackageReferences); err != nil {
 		return false, err
-	}
-
-	return false, nil
-}
-
-// isRepoCurrentlyCloning determines if the target repository is currently being cloned.
-// This function returns an error if the repo or commit cannot be resolved.
-func (h *handler) isRepoCurrentlyCloning(ctx context.Context, repoID int, commit string) (_ bool, err error) {
-	repo, err := backend.Repos.Get(ctx, api.RepoID(repoID))
-	if err != nil {
-		return false, errors.Wrap(err, "Repos.Get")
-	}
-
-	if _, err := backend.Repos.ResolveRev(ctx, repo, commit); err != nil {
-		if vcs.IsCloneInProgress(err) {
-			return true, nil
-		}
-
-		return false, errors.Wrap(err, "Repos.ResolveRev")
 	}
 
 	return false, nil
