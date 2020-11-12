@@ -3,7 +3,9 @@ import React, { FunctionComponent } from 'react'
 import { Link } from '../../../../../shared/src/components/Link'
 import { LsifIndexFields } from '../../../graphql-operations'
 import { CodeIntelUploadOrIndexCommit } from '../shared/CodeIntelUploadOrIndexCommit'
+import { CodeIntelUploadOrIndexIndexer } from '../shared/CodeIntelUploadOrIndexIndexer'
 import { CodeIntelUploadOrIndexLastActivity } from '../shared/CodeIntelUploadOrIndexLastActivity'
+import { CodeIntelUploadOrIndexRoot } from '../shared/CodeIntelUploadOrIndexRoot'
 import { CodeIntelUploadOrIndexRepository } from '../shared/CodeInteUploadOrIndexerRepository'
 import { CodeIntelState } from './CodeIntelState'
 
@@ -25,7 +27,8 @@ export const CodeIntelIndexNode: FunctionComponent<CodeIntelIndexNodeProps> = ({
 
             <div>
                 <span className="mr-2 d-block d-mdinline-block">
-                    Indexed at commit <CodeIntelUploadOrIndexCommit node={node} />
+                    Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
+                    <CodeIntelUploadOrIndexCommit node={node} /> by <CodeIntelUploadOrIndexIndexer node={node} />
                 </span>
 
                 <small className="text-mute">

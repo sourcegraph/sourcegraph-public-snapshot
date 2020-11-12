@@ -6,7 +6,7 @@ import { LsifUploadFields } from '../../../graphql-operations'
 import { CodeIntelOptionalTimestamp } from '../shared/CodeIntelOptionalTimestamp'
 import { CodeIntelUploadOrIndexCommit } from '../shared/CodeIntelUploadOrIndexCommit'
 import { CodeIntelUploadOrIndexIndexer } from '../shared/CodeIntelUploadOrIndexIndexer'
-import { CodeIntelUploadRoot } from '../shared/CodeIntelUploadRoot'
+import { CodeIntelUploadOrIndexRoot } from '../shared/CodeIntelUploadOrIndexRoot'
 import { CodeIntelUploadOrIndexRepository } from '../shared/CodeInteUploadOrIndexerRepository'
 
 export interface CodeIntelUploadInfoProps {
@@ -34,7 +34,7 @@ export const CodeIntelUploadInfo: FunctionComponent<CodeIntelUploadInfoProps> = 
             <tr>
                 <td>Root</td>
                 <td>
-                    <CodeIntelUploadRoot node={upload} />
+                    <CodeIntelUploadOrIndexRoot node={upload} />
                 </td>
             </tr>
 
