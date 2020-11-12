@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -136,8 +135,35 @@ func (h *handler) handle(ctx context.Context, dbStore DBStore, upload store.Uplo
 		err = tx.Done(err)
 	}()
 
-	if err := h.updateXrepoData(ctx, tx, upload, groupedBundleData.Packages, groupedBundleData.PackageReferences); err != nil {
-		return false, err
+	// Update package and package reference data to support cross-repo queries.
+	if err := tx.UpdatePackages(ctx, groupedBundleData.Packages); err != nil {
+		return false, errors.Wrap(err, "store.UpdatePackages")
+	}
+	if err := tx.UpdatePackageReferences(ctx, groupedBundleData.PackageReferences); err != nil {
+		return false, errors.Wrap(err, "store.UpdatePackageReferences")
+	}
+
+	// Before we mark the upload as complete, we need to delete any existing completed uploads
+	// that have the same repository_id, commit, root, and indexer values. Otherwise the transaction
+	// will fail as these values form a unique constraint.
+	if err := tx.DeleteOverlappingDumps(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
+		return false, errors.Wrap(err, "store.DeleteOverlappingDumps")
+	}
+
+	// Almost-success: we need to mark this upload as complete at this point as the next step changes	// the visibility of the dumps for this repository. This requires that the new dump be available in
+	// the lsif_dumps view, which requires a change of state. In the event of a future failure we can
+	// still roll back to the save point and mark the upload as errored.
+	if err := tx.MarkComplete(ctx, upload.ID); err != nil {
+		return false, errors.Wrap(err, "store.MarkComplete")
+	}
+
+	// Mark this repository so that the commit updater process will pull the full commit graph from gitserver
+	// and recalculate the nearest upload for each commit as well as which uploads are visible from the tip of
+	// the default branch. We don't do this inside of the transaction as we re-calcalute the entire set of data
+	// from scratch and we want to be able to coalesce requests for the same repository rather than having a set
+	// of uploads for the same repo re-calculate nearly identical data multiple times.
+	if err := tx.MarkRepositoryAsDirty(ctx, upload.RepositoryID); err != nil {
+		return false, errors.Wrap(err, "store.MarkRepositoryDirty")
 	}
 
 	return false, nil
@@ -194,42 +220,6 @@ func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleDa
 	}
 	if err := store.WriteReferences(ctx, id, groupedBundleData.References); err != nil {
 		return errors.Wrap(err, "store.WriteReferences")
-	}
-
-	return nil
-}
-
-// TODO(efritz) - refactor/simplify this after last change
-func (h *handler) updateXrepoData(ctx context.Context, dbStore DBStore, upload store.Upload, packages []lsifstore.Package, packageReferences []lsifstore.PackageReference) (err error) {
-	// Update package and package reference data to support cross-repo queries.
-	if err := dbStore.UpdatePackages(ctx, packages); err != nil {
-		return errors.Wrap(err, "store.UpdatePackages")
-	}
-	if err := dbStore.UpdatePackageReferences(ctx, packageReferences); err != nil {
-		return errors.Wrap(err, "store.UpdatePackageReferences")
-	}
-
-	// Before we mark the upload as complete, we need to delete any existing completed uploads
-	// that have the same repository_id, commit, root, and indexer values. Otherwise the transaction
-	// will fail as these values form a unique constraint.
-	if err := dbStore.DeleteOverlappingDumps(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
-		return errors.Wrap(err, "store.DeleteOverlappingDumps")
-	}
-
-	// Almost-success: we need to mark this upload as complete at this point as the next step changes	// the visibility of the dumps for this repository. This requires that the new dump be available in
-	// the lsif_dumps view, which requires a change of state. In the event of a future failure we can
-	// still roll back to the save point and mark the upload as errored.
-	if err := dbStore.MarkComplete(ctx, upload.ID); err != nil {
-		return errors.Wrap(err, "store.MarkComplete")
-	}
-
-	// Mark this repository so that the commit updater process will pull the full commit graph from gitserver
-	// and recalculate the nearest upload for each commit as well as which uploads are visible from the tip of
-	// the default branch. We don't do this inside of the transaction as we re-calcalute the entire set of data
-	// from scratch and we want to be able to coalesce requests for the same repository rather than having a set
-	// of uploads for the same repo re-calculate nearly identical data multiple times.
-	if err := dbStore.MarkRepositoryAsDirty(ctx, upload.RepositoryID); err != nil {
-		return errors.Wrap(err, "store.MarkRepositoryDirty")
 	}
 
 	return nil
