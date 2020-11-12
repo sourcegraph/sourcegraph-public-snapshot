@@ -353,4 +353,49 @@ describe('getMonacoTokens()', () => {
             ]
         `)
     })
+
+    test('decorate regexp field values', () => {
+        expect(
+            getMonacoTokens(toSuccess(scanSearchQuery('repo:^foo$ count:.*', false, SearchPatternType.regexp)), true)
+        ).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "filterKeyword"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "regexpMetaAssertion"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "regexpMetaAssertion"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 11,
+                "scopes": "filterKeyword"
+              },
+              {
+                "startIndex": 17,
+                "scopes": "identifier"
+              }
+            ]
+        `)
+    })
 })
