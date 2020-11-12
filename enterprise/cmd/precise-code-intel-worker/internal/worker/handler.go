@@ -122,7 +122,7 @@ func (h *handler) handle(ctx context.Context, dbStore DBStore, upload store.Uplo
 	}()
 
 	getChildren := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
-		directoryChildren, err := h.gitserverClient.DirectoryChildren(ctx, dbStore, upload.RepositoryID, upload.Commit, dirnames)
+		directoryChildren, err := h.gitserverClient.DirectoryChildren(ctx, upload.RepositoryID, upload.Commit, dirnames)
 		if err != nil {
 			return nil, errors.Wrap(err, "gitserverClient.DirectoryChildren")
 		}

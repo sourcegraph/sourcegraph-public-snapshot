@@ -23,10 +23,10 @@ func TestIndexabilityUpdater(t *testing.T) {
 	}, nil)
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, dbStore DBStore, repositoryID int) (string, error) {
+	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, error) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})
-	mockGitserverClient.ListFilesFunc.SetDefaultHook(func(ctx context.Context, dbStore DBStore, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
+	mockGitserverClient.ListFilesFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
 		if repositoryID%2 == 0 {
 			return []string{"go.mod"}, nil
 		}
@@ -50,11 +50,11 @@ func TestIndexabilityUpdater(t *testing.T) {
 	} else {
 		var repositoryIDs []int
 		for _, call := range mockGitserverClient.ListFilesFunc.History() {
-			repositoryIDs = append(repositoryIDs, call.Arg2)
-			expectedCommit := fmt.Sprintf("c%d", call.Arg2)
+			repositoryIDs = append(repositoryIDs, call.Arg1)
+			expectedCommit := fmt.Sprintf("c%d", call.Arg1)
 
-			if call.Arg3 != expectedCommit {
-				t.Errorf("unexpected commit argument. want=%q have=%q", expectedCommit, call.Arg3)
+			if call.Arg2 != expectedCommit {
+				t.Errorf("unexpected commit argument. want=%q have=%q", expectedCommit, call.Arg2)
 			}
 		}
 		sort.Ints(repositoryIDs)

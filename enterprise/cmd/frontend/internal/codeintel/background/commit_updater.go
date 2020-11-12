@@ -70,12 +70,12 @@ func (u *CommitUpdater) tryUpdate(ctx context.Context, repositoryID, dirtyToken 
 		err = unlock(err)
 	}()
 
-	graph, err := u.gitserverClient.CommitGraph(ctx, u.dbStore, repositoryID, gitserver.CommitGraphOptions{})
+	graph, err := u.gitserverClient.CommitGraph(ctx, repositoryID, gitserver.CommitGraphOptions{})
 	if err != nil {
 		return errors.Wrap(err, "gitserver.CommitGraph")
 	}
 
-	tipCommit, err := u.gitserverClient.Head(ctx, u.dbStore, repositoryID)
+	tipCommit, err := u.gitserverClient.Head(ctx, repositoryID)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.Head")
 	}
