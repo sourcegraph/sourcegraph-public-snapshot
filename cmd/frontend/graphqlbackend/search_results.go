@@ -1717,29 +1717,14 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 	defer func() {
 		tr.Finish()
 	}()
-	old := tp.PatternInfo
-	patternInfo := &search.CommitPatternInfo{
-		Pattern:                      old.Pattern,
-		IsRegExp:                     old.IsRegExp,
-		IsCaseSensitive:              old.IsCaseSensitive,
-		FileMatchLimit:               old.FileMatchLimit,
-		IncludePatterns:              old.IncludePatterns,
-		ExcludePattern:               old.ExcludePattern,
-		PathPatternsAreRegExps:       true,
-		PathPatternsAreCaseSensitive: tp.PatternInfo.PathPatternsAreCaseSensitive,
-	}
-	repos, err := getRepos(ctx, tp.RepoPromise)
+
+	args, err := resolveCommitParameters(ctx, tp)
 	if err != nil {
-		log15.Warn("doDiffSearch: error while getting repos from promise:", err.Error())
+		log15.Warn("doDiffSearch: error while resolving commit parameters", "error", err)
 		return
 	}
 
-	args := search.TextParametersForCommitParameters{
-		PatternInfo: patternInfo,
-		Repos:       repos,
-		Query:       tp.Query,
-	}
-	diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args)
+	diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, args)
 	a.report(ctx, diffResults, diffCommon, errors.Wrap(err, "diff search failed"))
 }
 
@@ -1748,29 +1733,14 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 	defer func() {
 		tr.Finish()
 	}()
-	old := tp.PatternInfo
-	patternInfo := &search.CommitPatternInfo{
-		Pattern:                      old.Pattern,
-		IsRegExp:                     old.IsRegExp,
-		IsCaseSensitive:              old.IsCaseSensitive,
-		FileMatchLimit:               old.FileMatchLimit,
-		IncludePatterns:              old.IncludePatterns,
-		ExcludePattern:               old.ExcludePattern,
-		PathPatternsAreRegExps:       true,
-		PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
-	}
-	repos, err := getRepos(ctx, tp.RepoPromise)
+
+	args, err := resolveCommitParameters(ctx, tp)
 	if err != nil {
-		log15.Warn("doCommitSearch: error while getting repos from promise:", err.Error())
+		log15.Warn("doCommitSearch: error while resolving commit parameters", "error", err)
 		return
 	}
 
-	args := search.TextParametersForCommitParameters{
-		PatternInfo: patternInfo,
-		Repos:       repos,
-		Query:       tp.Query,
-	}
-	commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args)
+	commitResults, commitCommon, err := searchCommitLogInRepos(ctx, args)
 	a.report(ctx, commitResults, commitCommon, errors.Wrap(err, "commit search failed"))
 }
 
