@@ -9,15 +9,11 @@
 
 All notable changes to `src-cli` are documented in this file.
 
-## Unreleased changes
+## 3.21.9
 
 ### Added
 
 - Commands for campaigns no longer require the `-namespace` parameter. If omitted, campaigns will use the currently authenticated user as the namespace. [#372](https://github.com/sourcegraph/src-cli/pull/372)
-
-### Changed
-
-### Fixed
 
 - `src campaign [apply|preview]` now caches the result of running steps in a repository even if they didn't produce changes.
 
@@ -26,8 +22,6 @@ All notable changes to `src-cli` are documented in this file.
 ### Fixed
 
 - `src campaign [apply|preview]` could fail to parse the produced diff in a repository when `git` was configured to use a custom `diff` program. The fix is to ignore any local `git` configuration when running `git` commands. [#373](https://github.com/sourcegraph/src-cli/pull/373)
-
-### Removed
 
 ## 3.21.7
 
@@ -49,15 +43,7 @@ All notable changes to `src-cli` are documented in this file.
 
 - EXPERIMENTAL: Templated campaign specs and file mounting. The campaign specs evaluated by `src campaign [preview|apply]` can now include template variables in `steps.run`, `steps.env`, and the new `steps.files` property, which allows users to create files inside the container in which the step is executed. The feature is marked as EXPERIMENTAL because it might change in the near future until we deem it non-experimental. See [#361](https://github.com/sourcegraph/src-cli/pull/361) for details.
 
-### Changed
-
-### Fixed
-
 ## 3.21.4
-
-### Added
-
-### Changed
 
 ### Fixed
 
@@ -65,14 +51,10 @@ All notable changes to `src-cli` are documented in this file.
 
 ## 3.21.3
 
-### Added
-
 ### Changed
 
 - The progress bar in `src campaign [preview|apply]` now shows when executing a step failed in a repository by styling the line red and displaying standard error output. [#355](https://github.com/sourcegraph/src-cli/pull/355)
 - The `src lsif upload` command will give more informative output when an unexpected payload (non-JSON or non-unmarshallable) is received from the target endpoint. [#359](https://github.com/sourcegraph/src-cli/pull/359)
-
-### Fixed
 
 ## 3.21.2
 
@@ -159,10 +141,6 @@ All notable changes to `src-cli` are documented in this file.
 - New command `src serve-git` which can serve local repositories for Sourcegraph to clone. This was previously in a command called `src-expose`. See [serving local repositories](https://docs.sourcegraph.com/admin/external_service/src_serve_git) in our documentation to find out more. [#12363](https://github.com/sourcegraph/sourcegraph/issues/12363)
 - When used with Sourcegraph 3.18 or later, campaigns can now be created on GitLab. [#231](https://github.com/sourcegraph/src-cli/pull/231)
 
-### Changed
-
-### Fixed
-
 ## 3.16.1
 
 ### Fixed
@@ -186,7 +164,3 @@ All notable changes to `src-cli` are documented in this file.
 
 - The terminal UI has been replaced by the logger-based UI that was previously only visible in verbose-mode (`-v`). [#228](https://github.com/sourcegraph/src-cli/pull/228)
 - Deprecated the `-endpoint` flag. Instead, use the `SRC_ENDPOINT` environment variable. [#235](https://github.com/sourcegraph/src-cli/pull/235)
-
-### Fixed
-
-### Removed
