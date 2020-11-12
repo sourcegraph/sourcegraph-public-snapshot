@@ -70,8 +70,7 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
                                 className="btn btn-sm btn-secondary"
                                 onClick={this.setAsPrimary}
                                 disabled={this.state.loading}
-                            >
-                                {'Set as primary'}
+                            >Set as primary
                             </button>
                         )}
                         {' '}
