@@ -286,6 +286,8 @@ OR  (
 )
 `
 
+var errPermissionsUserMappingConflict = errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
+
 // authzQueryConds returns a query clause for enforcing repository permissions.
 // It uses `repo` as the table name to filter out repository IDs and should be
 // used as an AND condition in a complete SQL query.
@@ -297,7 +299,7 @@ func authzQueryConds(ctx context.Context) (*sqlf.Query, error) {
 	// are configured.
 	if usePermissionsUserMapping {
 		if len(authzProviders) > 0 {
-			return nil, errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
+			return nil, errPermissionsUserMappingConflict
 		}
 		authzAllowByDefault = false
 	}

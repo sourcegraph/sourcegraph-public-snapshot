@@ -160,9 +160,8 @@ func TestAuthzQueryConds(t *testing.T) {
 		defer authz.SetProviders(true, nil)
 
 		_, err := authzQueryConds(context.Background())
-		wantErr := "The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it."
 		gotErr := fmt.Sprintf("%v", err)
-		if diff := cmp.Diff(wantErr, gotErr); diff != "" {
+		if diff := cmp.Diff(errPermissionsUserMappingConflict.Error(), gotErr); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
 	})
