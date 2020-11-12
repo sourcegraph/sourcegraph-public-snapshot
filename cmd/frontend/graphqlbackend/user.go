@@ -349,11 +349,11 @@ func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 // Users may be trying to change their own username, or someone else's.
 //
 // The subjectUserID value represents the decoded user ID from the incoming
-// request, and the proposedUsername is the value that would be applied to
-// the subjectUserID's record.
+// update request, and the proposedUsername is the value that would be applied
+// to that subject's record if all security checks pass.
 //
-// If the subject's username is different from the proposed one, then a
-// change is being attempted and may be rejected.
+// If that subject's username is different from the proposed one, then a
+// change is being attempted and may be rejected by viewerCanChangeUsername.
 func viewerIsChangingUsername(ctx context.Context, subjectUserID int32, proposedUsername string) bool {
 	subject, err := db.Users.GetByID(ctx, subjectUserID)
 	if err != nil {
