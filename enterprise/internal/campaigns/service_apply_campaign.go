@@ -139,16 +139,6 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	return campaign, nil
 }
 
-type repoHeadRef struct {
-	repo    api.RepoID
-	headRef string
-}
-
-type repoExternalID struct {
-	repo       api.RepoID
-	externalID string
-}
-
 type changesetRewirer struct {
 	campaign *campaigns.Campaign
 	tx       *Store
@@ -160,9 +150,8 @@ type changesetRewirer struct {
 	accessibleReposByID map[api.RepoID]*types.Repo
 
 	// These are populated by indexAssociations
-	changesetsByRepoHeadRef    map[repoHeadRef]*campaigns.Changeset
-	changesetsByRepoExternalID map[repoExternalID]*campaigns.Changeset
-	currentSpecsByChangeset    map[int64]*campaigns.ChangesetSpec
+	changesetsByID     map[int64]*campaigns.Changeset
+	changesetSpecsByID map[int64]*campaigns.ChangesetSpec
 }
 
 // Rewire loads the current changesets of the given campaign, the changeset
@@ -179,6 +168,11 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 
 	// Now we put them into buckets so we can match easily
 	if err := r.indexAssociations(ctx); err != nil {
+		return err
+	}
+
+	mappings, err := r.tx.GetChangesetSpecRewireData(ctx, r.campaign.CampaignSpecID, r.campaign.ID)
+	if err != nil {
 		return err
 	}
 
@@ -232,77 +226,64 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 	// Changeset 3 doesn't have a matching spec and should be detached from the campaign (and closed).
 
 	attachedChangesets := map[int64]bool{}
-	for _, spec := range r.newChangesetSpecs {
-		// If we don't have access to a repository, we return an error. Why not
-		// simply skip the repository? If we skip it, the user can't reapply
-		// the same campaign spec, since it's already applied and re-applying
-		// would require a new spec.
-		repo, ok := r.accessibleReposByID[spec.RepoID]
-		if !ok {
-			return &db.RepoNotFoundErr{ID: spec.RepoID}
+	for _, m := range mappings {
+		spec, specFound := r.changesetSpecsByID[m.ChangesetSpecID]
+		if !specFound {
+			return errors.New("spec not found")
+		}
+		changeset, changesetFound := r.changesetsByID[m.ChangesetID]
+		repo, repoFound := r.accessibleReposByID[m.RepoID]
+		if !repoFound {
+			return &db.RepoNotFoundErr{ID: m.RepoID}
 		}
 
 		if err := checkRepoSupported(repo); err != nil {
 			return err
 		}
 
-		// If we need to track a changeset, we need to find it.
 		if spec.Spec.IsImportingExisting() {
-			k := repoExternalID{repo: spec.RepoID, externalID: spec.Spec.ExternalID}
-
-			c, ok := r.changesetsByRepoExternalID[k]
-			if ok {
-				// If it's already attached to the campaign and errored, we re-enqueue it.
-				if c.ReconcilerState == campaigns.ReconcilerStateErrored {
-					if err := r.updateAndReenqueue(ctx, c); err != nil {
-						return err
-					}
-				}
-			} else {
-				// If we don't have a changeset attached to the campaign, we need to find or create one with the externalID in that repository.
-				c, err = r.updateOrCreateTrackingChangeset(ctx, repo, k.externalID)
+			if m.ChangesetID != 0 {
+				// TODO: We don't fetch imported changesets.
+				changeset, err := r.tx.GetChangeset(ctx, GetChangesetOpts{ID: m.ChangesetID})
 				if err != nil {
 					return err
 				}
-			}
-			// If it's already attached to the campaign, we need to keep it
-			// there. And if it's new, we want to attach it:
-			attachedChangesets[c.ID] = true
 
-			// We handled both cases for "track existing changeset" spec:
-			// 1. Add existing changeset to campaign
-			// 2. Create new changeset and sync it
-			continue
-		}
-
-		// What we're now looking at is a spec that says:
-		//   1. Create a PR on this branch in this repo with this title/body/diff
-		// or, if the a PR on this branch with this repo already exists:
-		//   2. Update the PR on this branch in this repo to have this new title/body/diff
-		//
-		// So, let's check:
-		// Do we already have a changeset on this branch in this repo?
-		k := repoHeadRef{repo: spec.RepoID, headRef: spec.Spec.HeadRef}
-		c, ok := r.changesetsByRepoHeadRef[k]
-		if !ok {
-			// No, we don't have a changeset on that branch in this repo.
-			// We're going to create one so the changeset reconciler picks it up,
-			// creates a commit and pushes it to the branch.
-			// Except, of course, if spec.Spec.Published is false, then it doesn't do anything.
-			c, err = r.createChangesetForSpec(ctx, repo, spec)
-			if err != nil {
-				return err
+				// If it's already attached to the campaign and errored, we re-enqueue it.
+				if changeset.ReconcilerState == campaigns.ReconcilerStateErrored {
+					if err := r.updateAndReenqueue(ctx, changeset); err != nil {
+						return err
+					}
+				}
+				changeset.CampaignIDs = append(changeset.CampaignIDs, r.campaign.ID)
+				if err := r.tx.UpdateChangeset(ctx, changeset); err != nil {
+					return err
+				}
+				attachedChangesets[changeset.ID] = true
+			} else {
+				c, err := r.updateOrCreateTrackingChangeset(ctx, repo, spec.Spec.ExternalID)
+				if err != nil {
+					return err
+				}
+				attachedChangesets[c.ID] = true
 			}
-		} else {
-			// But if we already have a changeset in the given repository with
-			// the given branch, we need to update it to have the new spec
-			// and possibly re-attach it to the campaign:
-			if err = r.updateChangesetToNewSpec(ctx, c, spec); err != nil {
-				return err
+		} else if spec.Spec.IsBranch() {
+			if m.ChangesetID == 0 {
+				c, err := r.createChangesetForSpec(ctx, repo, spec)
+				if err != nil {
+					return err
+				}
+				attachedChangesets[c.ID] = true
+			} else {
+				if !changesetFound {
+					return errors.New("changeset not found")
+				}
+				if err = r.updateChangesetToNewSpec(ctx, changeset, spec); err != nil {
+					return err
+				}
+				attachedChangesets[changeset.ID] = true
 			}
 		}
-		// In both cases we want to attach it to the campaign
-		attachedChangesets[c.ID] = true
 	}
 
 	// We went through all the new changeset specs and either created or
@@ -415,47 +396,14 @@ func (r *changesetRewirer) loadAssociations(ctx context.Context) (err error) {
 }
 
 func (r *changesetRewirer) indexAssociations(ctx context.Context) (err error) {
-	r.changesetsByRepoHeadRef = map[repoHeadRef]*campaigns.Changeset{}
-	r.changesetsByRepoExternalID = map[repoExternalID]*campaigns.Changeset{}
-	r.currentSpecsByChangeset = map[int64]*campaigns.ChangesetSpec{}
+	r.changesetsByID = map[int64]*campaigns.Changeset{}
+	r.changesetSpecsByID = map[int64]*campaigns.ChangesetSpec{}
 
 	for _, c := range r.changesets {
-		// This is an n+1
-		s, err := r.tx.GetChangesetSpecByID(ctx, c.CurrentSpecID)
-		if err != nil {
-			return err
-		}
-		r.currentSpecsByChangeset[c.ID] = s
-
-		if c.ExternalID != "" {
-			k := repoExternalID{repo: c.RepoID, externalID: c.ExternalID}
-			r.changesetsByRepoExternalID[k] = c
-
-			// If it has an externalID but no CurrentSpecID, it is a tracked
-			// changeset, and we're done and don't need to match it by HeadRef
-			if c.CurrentSpecID == 0 {
-				continue
-			}
-		}
-
-		k := repoHeadRef{repo: c.RepoID}
-		if c.ExternalBranch != "" {
-			k.headRef = c.ExternalBranch
-			r.changesetsByRepoHeadRef[k] = c
-			continue
-		}
-
-		// If we don't have an ExternalBranch, the changeset hasn't been
-		// published yet (or hasn't been synced yet).
-		if c.CurrentSpecID != 0 {
-			// If we're here, the changeset doesn't have an external branch
-			//
-			// So we load the spec to get the branch where we _would_ push
-			// the commit.
-
-			k.headRef = s.Spec.HeadRef
-			r.changesetsByRepoHeadRef[k] = c
-		}
+		r.changesetsByID[c.ID] = c
+	}
+	for _, c := range r.newChangesetSpecs {
+		r.changesetSpecsByID[c.ID] = c
 	}
 
 	return nil

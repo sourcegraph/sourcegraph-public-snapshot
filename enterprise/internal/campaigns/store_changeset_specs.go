@@ -380,3 +380,45 @@ func scanChangesetSpec(c *campaigns.ChangesetSpec, s scanner) error {
 
 	return nil
 }
+
+// GetChangesetSpecRewireData returns ChangesetSpecRewire mappings from changeset specs to changesets.
+func (s *Store) GetChangesetSpecRewireData(ctx context.Context, campaignSpecID, campaignID int64) (csrd []*campaigns.ChangesetSpecRewire, err error) {
+	q := sqlf.Sprintf(getChangesetSpecRewireDataQueryFmtstr, campaignSpecID, campaignID, campaignID, campaignSpecID)
+
+	err = s.query(ctx, q, func(sc scanner) error {
+		var c campaigns.ChangesetSpecRewire
+		if err := sc.Scan(&c.ChangesetSpecID, &dbutil.NullInt64{N: &c.ChangesetID}, &c.RepoID); err != nil {
+			return err
+		}
+		csrd = append(csrd, &c)
+		return nil
+	})
+	return csrd, err
+}
+
+var getChangesetSpecRewireDataQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store_changeset_specs.go:GetChangesetSpecRewireData
+SELECT changeset_specs.id AS changeset_spec_id, changesets.id AS changeset_id, changeset_specs.repo_id
+FROM changeset_specs
+LEFT JOIN changesets ON changesets.repo_id = changeset_specs.repo_id AND changesets.external_id = changeset_specs.spec->>'externalID'
+WHERE
+	changeset_specs.campaign_spec_id = %s AND
+	changeset_specs.spec->>'externalID' IS NOT NULL AND changeset_specs.spec->>'externalID' != ''
+UNION ALL
+SELECT changeset_specs.id AS changeset_spec_id, changesets.id AS changeset_id, changeset_specs.repo_id
+FROM changeset_specs
+LEFT JOIN changesets
+	ON
+		changesets.repo_id = changeset_specs.repo_id AND
+		changesets.current_spec_id IS NOT NULL AND
+		((changesets.campaign_ids ? %s) OR changesets.owned_by_campaign_id = %s) AND
+		(
+			(changesets.external_branch IS NOT NULL AND changesets.external_branch = changeset_specs.spec->>'headRef')
+			OR
+			(changesets.external_branch IS NULL AND (SELECT spec FROM changeset_specs WHERE changeset_specs.id = changesets.current_spec_id)->>'headRef' = changeset_specs.spec->>'headRef')
+		)
+WHERE
+	changeset_specs.campaign_spec_id = %s AND
+	--- We look at a 'branch' changeset.
+	(changeset_specs.spec->>'externalID' IS NULL OR changeset_specs.spec->>'externalID' = '')
+`

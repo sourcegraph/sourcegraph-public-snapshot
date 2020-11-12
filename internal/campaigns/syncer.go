@@ -1,6 +1,10 @@
 package campaigns
 
-import "time"
+import (
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
+)
 
 type ChangesetSyncState struct {
 	BaseRefOid string
@@ -28,4 +32,10 @@ type ChangesetSyncData struct {
 	// RepoExternalServiceID is the external_service_id in the repo table, usually
 	// represented by the code host URL
 	RepoExternalServiceID string
+}
+
+type ChangesetSpecRewire struct {
+	ChangesetSpecID int64
+	ChangesetID     int64
+	RepoID          api.RepoID
 }
