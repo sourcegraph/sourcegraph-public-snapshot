@@ -154,6 +154,29 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
 
 const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => [pattern]
 
+/**
+ * Returns true for filter values that have regexp values, e.g., repo, file.
+ * Excludes FilterType.content because that depends on the pattern kind.
+ */
+export const hasRegexpValue = (field: string): boolean => {
+    const fieldName = field.startsWith('-') ? field.slice(1) : field
+    switch (fieldName.toLocaleLowerCase()) {
+        case 'repo':
+        case 'r':
+        case 'file':
+        case 'f':
+        case 'repohasfile':
+        case 'message':
+        case 'msg':
+        case 'm':
+        case 'commiter':
+        case 'author':
+            return true
+        default:
+            return false
+    }
+}
+
 const decorateTokens = (tokens: Token[]): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     for (const token of tokens) {
@@ -185,7 +208,23 @@ const fromDecoratedTokens = (tokens: DecoratedToken[]): Monaco.languages.IToken[
                         startIndex: token.filterType.range.start,
                         scopes: 'filterKeyword',
                     })
-                    if (token.filterValue) {
+
+                    if (
+                        hasRegexpValue(token.filterType.value) &&
+                        token.filterValue &&
+                        token.filterValue.type === 'literal'
+                    ) {
+                        // Highlight fields with regexp values.
+                        const decoratedValue = decorateTokens([
+                            {
+                                type: 'pattern',
+                                kind: PatternKind.Regexp,
+                                value: token.filterValue.value,
+                                range: token.filterValue.range,
+                            },
+                        ])
+                        monacoTokens.push(...fromDecoratedTokens(decoratedValue))
+                    } else if (token.filterValue) {
                         monacoTokens.push({
                             startIndex: token.filterValue.range.start,
                             scopes: 'identifier',
