@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
@@ -28,7 +27,6 @@ type handler struct {
 	lsifStore       LSIFStore
 	uploadStore     uploadstore.Store
 	gitserverClient GitserverClient
-	metrics         metrics.WorkerMetrics
 	enableBudget    bool
 	budgetRemaining int64
 }
