@@ -177,7 +177,7 @@ func requeueIfCloning(ctx context.Context, dbStore DBStore, upload store.Upload)
 // withUploadData will invoke the given function with a reader of the upload's raw data. The
 // consumer should expect raw newline-delimited JSON content. If the function returns without
 // an error, the upload file will be deleted.
-func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, fn func(r io.Reader) error) (err error) {
+func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, fn func(r io.Reader) error) error {
 	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", id)
 
 	// Pull raw uploaded data from bucket
@@ -193,15 +193,15 @@ func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, 
 	}
 	defer rc.Close()
 
-	defer func() {
-		if err == nil {
-			if deleteErr := uploadStore.Delete(ctx, uploadFilename); deleteErr != nil {
-				log15.Warn("Failed to delete upload file", "err", err, "filename", uploadFilename)
-			}
-		}
-	}()
+	if err := fn(rc); err != nil {
+		return err
+	}
 
-	return fn(rc)
+	if err := uploadStore.Delete(ctx, uploadFilename); err != nil {
+		log15.Warn("Failed to delete upload file", "err", err, "filename", uploadFilename)
+	}
+
+	return nil
 }
 
 // writeData transactionally writes the given grouped bundle data into the given LSIF store.
