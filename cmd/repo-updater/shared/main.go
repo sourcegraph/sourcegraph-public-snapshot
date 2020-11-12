@@ -112,6 +112,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	scheduler := repos.NewUpdateScheduler()
 	server := &repoupdater.Server{
 		Store:           store,
+		RepoLister:      store.RepoStore(),
 		Scheduler:       scheduler,
 		GitserverClient: gitserver.DefaultClient,
 	}

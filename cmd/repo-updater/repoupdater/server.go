@@ -298,7 +298,7 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 		tr.Finish()
 	}()
 
-	rs, err := s.Store.RepoStore().List(ctx, db.ReposListOptions{Names: []string{string(req.Repo)}})
+	rs, err := s.RepoLister.List(ctx, db.ReposListOptions{Names: []string{string(req.Repo)}})
 	if err != nil {
 		return nil, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos")
 	}

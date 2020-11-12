@@ -27,7 +27,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -305,7 +307,6 @@ func testServerSetRepoEnabled(t *testing.T, store *repos.Store) func(t *testing.
 				}
 
 				if have, want := res, tc.res; !reflect.DeepEqual(have, want) {
-					// t.Logf("have: %s\nwant: %s\n", pp.Sprint(have), pp.Sprint(want))
 					t.Errorf("response:\n%s", cmp.Diff(have, want))
 				}
 
@@ -350,7 +351,9 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *repos.Store) func(t *testi
 			t.Fatal(err)
 		}
 
-		repo := types.MakeGithubRepo(&svc)
+		repo := types.MakeGithubRepo(&svc).With(func(r *types.Repo) {
+			r.Sources[svc.URN()].CloneURL = "https://secret-token@github.com/foo/bar"
+		})
 
 		repoWithMissingCloneURL := types.Repo{
 			Name: "github.com/foo/baz",
@@ -510,6 +513,7 @@ func testServerRepoExternalServices(t *testing.T, store *repos.Store) func(t *te
 				ServiceType: extsvc.TypeGitolite,
 				ServiceID:   "http://gitolite.my.corp",
 			},
+			RepoFields: new(types.RepoFields),
 		}
 
 		repoSources := (&types.Repo{
@@ -550,7 +554,7 @@ func testServerRepoExternalServices(t *testing.T, store *repos.Store) func(t *te
 			err:    "repository with ID 42 does not exist",
 		}}
 
-		s := &Server{Store: store}
+		s := &Server{Store: store, RepoLister: store.RepoStore()}
 		srv := httptest.NewServer(s.Handler())
 		defer srv.Close()
 		cli := repoupdater.Client{URL: srv.URL}
@@ -705,7 +709,11 @@ func testServerStatusMessages(t *testing.T, store *repos.Store) func(t *testing.
 			t.Run(tc.name, func(t *testing.T) {
 				gitserverClient := &fakeGitserverClient{listClonedResponse: tc.gitserverCloned}
 
-				stored := tc.stored.Clone()
+				stored := tc.stored.With(func(r *types.Repo) {
+					if r.RepoFields == nil {
+						r.RepoFields = new(types.RepoFields)
+					}
+				})
 				var cloned []string
 				for _, r := range stored {
 					r.ExternalRepo = api.ExternalRepoSpec{
@@ -813,6 +821,7 @@ func testRepoLookup(sqlDB *sql.DB) func(t *testing.T, repoStore *repos.Store) fu
 		return func(t *testing.T) {
 			ctx := context.Background()
 			clock := dbtesting.NewFakeClock(time.Now(), 0)
+			now := clock.Now()
 
 			githubSource := types.ExternalService{
 				Kind:   extsvc.KindGitHub,
@@ -831,9 +840,97 @@ func testRepoLookup(sqlDB *sql.DB) func(t *testing.T, repoStore *repos.Store) fu
 				t.Fatal(err)
 			}
 
-			githubRepository := types.MakeGithubRepo(&githubSource)
-			awsCodeCommitRepository := types.MakeAWSCodeCommitRepo(&awsSource)
-			gitlabRepository := types.MakeGitlabRepo(&gitlabSource)
+			githubRepository := &types.Repo{
+				Name: "github.com/foo/bar",
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+					ServiceType: extsvc.TypeGitHub,
+					ServiceID:   "https://github.com/",
+				},
+				RepoFields: &types.RepoFields{
+					Description: "The description",
+					Archived:    false,
+					Fork:        false,
+					CreatedAt:   now,
+					UpdatedAt:   now,
+					Sources: map[string]*types.SourceInfo{
+						githubSource.URN(): {
+							ID:       githubSource.URN(),
+							CloneURL: "git@github.com:foo/bar.git",
+						},
+					},
+					Metadata: &github.Repository{
+						ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+						URL:           "github.com/foo/bar",
+						DatabaseID:    1234,
+						Description:   "The description",
+						NameWithOwner: "foo/bar",
+					},
+				},
+			}
+
+			awsCodeCommitRepository := &types.Repo{
+				Name: "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+					ServiceType: extsvc.TypeAWSCodeCommit,
+					ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
+				},
+				RepoFields: &types.RepoFields{
+					Description: "The stripe-go lib",
+					Archived:    false,
+					Fork:        false,
+					CreatedAt:   now,
+					Sources: map[string]*types.SourceInfo{
+						awsSource.URN(): {
+							ID:       awsSource.URN(),
+							CloneURL: "git@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
+						},
+					},
+					Metadata: &awscodecommit.Repository{
+						ARN:          "arn:aws:codecommit:us-west-1:999999999999:stripe-go",
+						AccountID:    "999999999999",
+						ID:           "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+						Name:         "stripe-go",
+						Description:  "The stripe-go lib",
+						HTTPCloneURL: "https://git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
+						LastModified: &now,
+					},
+				},
+			}
+
+			gitlabRepository := &types.Repo{
+				Name: "gitlab.com/gitlab-org/gitaly",
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "2009901",
+					ServiceType: extsvc.TypeGitLab,
+					ServiceID:   "https://gitlab.com/",
+				},
+				RepoFields: &types.RepoFields{
+					Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+					URI:         "gitlab.com/gitlab-org/gitaly",
+					CreatedAt:   now,
+					UpdatedAt:   now,
+					Sources: map[string]*types.SourceInfo{
+						gitlabSource.URN(): {
+							ID:       gitlabSource.URN(),
+							CloneURL: "https://gitlab.com/gitlab-org/gitaly.git",
+						},
+					},
+					Metadata: &gitlab.Project{
+						ProjectCommon: gitlab.ProjectCommon{
+							ID:                2009901,
+							PathWithNamespace: "gitlab-org/gitaly",
+							Description:       "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+							WebURL:            "https://gitlab.com/gitlab-org/gitaly",
+							HTTPURLToRepo:     "https://gitlab.com/gitlab-org/gitaly.git",
+							SSHURLToRepo:      "git@gitlab.com:gitlab-org/gitaly.git",
+						},
+						Visibility: "",
+						Archived:   false,
+					},
+				},
+			}
 
 			testCases := []struct {
 				name               string
