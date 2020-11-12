@@ -71,12 +71,18 @@ type MonitorEmailResolver interface {
 	Enabled() bool
 	Priority() string
 	Header() string
-	Recipient(ctx context.Context) (MonitorEmailRecipient, error)
+	Recipients(ctx context.Context, args *ListRecipientsArgs) (MonitorActionEmailRecipientsConnectionResolver, error)
 	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
 }
 
 type MonitorEmailRecipient interface {
 	ToUser() (*UserResolver, bool)
+}
+
+type MonitorActionEmailRecipientsConnectionResolver interface {
+	Nodes(ctx context.Context) ([]NamespaceResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
 type MonitorActionEventConnectionResolver interface {
@@ -103,6 +109,11 @@ type ListMonitorsArgs struct {
 }
 
 type ListActionArgs struct {
+	First int32
+	After *string
+}
+
+type ListRecipientsArgs struct {
 	First int32
 	After *string
 }

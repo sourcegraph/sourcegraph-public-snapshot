@@ -751,11 +751,16 @@ type monitorEmail struct {
 	triggerEventID *graphql.ID
 }
 
-func (m *monitorEmail) Recipient(ctx context.Context) (graphqlbackend.MonitorEmailRecipient, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, actor.FromContext(ctx).UID)
-	return &monitorEmailRecipient{
-		user: user,
-	}, err
+func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.ListRecipientsArgs) (c graphqlbackend.MonitorActionEmailRecipientsConnectionResolver, err error) {
+	n := graphqlbackend.NamespaceResolver{}
+	// dummy data
+	n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, actor.FromContext(ctx).UID)
+	if err != nil {
+		return nil, err
+	}
+	return &monitorActionEmailRecipientConnection{
+		recipients: []graphqlbackend.NamespaceResolver{n},
+	}, nil
 }
 
 func (m *monitorEmail) Enabled() bool {
@@ -779,18 +784,22 @@ func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEven
 }
 
 //
-// MonitorEmailRecipient <<UNION>>
+// MonitorActionEmailRecipientConnection
 //
-type MonitorEmailRecipient interface {
-	ToUser() (*graphqlbackend.UserResolver, bool)
+type monitorActionEmailRecipientConnection struct {
+	recipients []graphqlbackend.NamespaceResolver
 }
 
-type monitorEmailRecipient struct {
-	user *graphqlbackend.UserResolver
+func (a *monitorActionEmailRecipientConnection) Nodes(ctx context.Context) ([]graphqlbackend.NamespaceResolver, error) {
+	return a.recipients, nil
 }
 
-func (o *monitorEmailRecipient) ToUser() (*graphqlbackend.UserResolver, bool) {
-	return o.user, o.user != nil
+func (a *monitorActionEmailRecipientConnection) TotalCount(ctx context.Context) (int32, error) {
+	return 1, nil
+}
+
+func (a *monitorActionEmailRecipientConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	return graphqlutil.HasNextPage(false), nil
 }
 
 //
