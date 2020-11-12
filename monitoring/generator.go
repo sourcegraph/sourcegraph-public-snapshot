@@ -825,6 +825,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 							fmt.Sprintf("  \"%s\"", prometheusAlertName(string(alert.Level), c.Name, o.Name)))
 
 					}
+					fmt.Fprint(&b, "\n")
 
 					// Render solutions for dealing with this alert
 					fmt.Fprintf(&b, "**Possible solutions:**\n\n")
@@ -832,7 +833,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 						possibleSolutions, _ := goMarkdown(o.PossibleSolutions)
 						fmt.Fprintf(&b, "%s\n", possibleSolutions)
 					}
-					fmt.Fprint(&b, "\n")
 
 					// add silencing configuration as another solution
 					fmt.Fprintf(&b, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:\n\n")
