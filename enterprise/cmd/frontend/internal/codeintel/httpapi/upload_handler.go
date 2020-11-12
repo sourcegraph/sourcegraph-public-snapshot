@@ -8,7 +8,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"regexp"
 	"strconv"
 
 	"github.com/inconshreveable/log15"
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
@@ -40,7 +40,7 @@ func NewUploadHandler(dbStore DBStore, uploadStore uploadstore.Store, internal b
 	return http.HandlerFunc(handler.handleEnqueue)
 }
 
-var revhashPattern = regexp.MustCompile(`^[a-z0-9]{40}$`)
+var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
 
 // POST /upload
 func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
