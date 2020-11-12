@@ -262,10 +262,9 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     )
 
     useEffect(() => {
-        // if (queryState.kind === 'VALID' || queryState.kind === 'NOT_VALIDATED') {
-        // console.log('valid')
-        onQueryChange(queryState.value)
-        // }
+        if (queryState.kind === 'VALID') {
+            onQueryChange(queryState.value)
+        }
     }, [onQueryChange, queryState])
 
     return (
