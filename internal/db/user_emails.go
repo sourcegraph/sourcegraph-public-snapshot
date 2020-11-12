@@ -108,8 +108,16 @@ func (*userEmails) SetPrimaryEmail(ctx context.Context, userID int32, email stri
 		return errors.New("primary email must be verified")
 	}
 
-	// Set it as primary and all others as not
-	if _, err := tx.ExecContext(ctx, "UPDATE user_emails SET is_primary = (email = $2) WHERE user_id=$1", userID, email); err != nil {
+	// We need to set all as non primary and then set the correct one as primary in two steps
+	// so that we don't violate our index.
+
+	// Set all as not primary
+	if _, err := tx.ExecContext(ctx, "UPDATE user_emails SET is_primary = false WHERE user_id=$1", userID); err != nil {
+		return err
+	}
+
+	// Set selected as primary
+	if _, err := tx.ExecContext(ctx, "UPDATE user_emails SET is_primary = true WHERE user_id=$1 AND email=$2", userID, email); err != nil {
 		return err
 	}
 
