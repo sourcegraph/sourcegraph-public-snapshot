@@ -600,13 +600,13 @@ FROM (
 GROUP BY current_month, current_week, current_day
 `
 
-// AggregatedEvents calculates AggregatedEvent for each every unique event type.
-func (l *eventLogs) AggregatedEvents(ctx context.Context) ([]types.AggregatedEvent, error) {
-	return l.aggregatedEvents(ctx, time.Now().UTC())
+// AggregatedCodeIntelEvents calculates AggregatedEvent for each every unique event type related to code intel.
+func (l *eventLogs) AggregatedCodeIntelEvents(ctx context.Context) ([]types.AggregatedEvent, error) {
+	return l.aggregatedCodeIntelEvents(ctx, time.Now().UTC())
 }
 
-func (l *eventLogs) aggregatedEvents(ctx context.Context, now time.Time) (events []types.AggregatedEvent, err error) {
-	query := sqlf.Sprintf(aggregatedEventsQuery, now, now, now, now)
+func (l *eventLogs) aggregatedCodeIntelEvents(ctx context.Context, now time.Time) (events []types.AggregatedEvent, err error) {
+	query := sqlf.Sprintf(aggregatedCodeIntelEventsQuery, now, now, now, now)
 
 	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
@@ -654,43 +654,9 @@ var codeIntelEventNames = []string{
 	"'codeintel.searchReferences'",
 }
 
-var searchEventNames = []string{
-	"'search.latencies.literal'",
-	"'search.latencies.regexp'",
-	"'search.latencies.structural'",
-	"'search.latencies.file'",
-	"'search.latencies.repo'",
-	"'search.latencies.diff'",
-	"'search.latencies.commit'",
-	"'search.latencies.symbol'",
-}
-
-var aggregatedEventsQuery = `
--- This query does multiple aggregations over the current day, week and month in one
--- pass over the event_logs table. These are: unique number of users, total
--- number of events and 50th, 90th and 99th percentile latency (when there's latency captured).
-SELECT
-  name,
-  current_month,
-  current_week,
-  current_day,
-  COUNT(*) FILTER (WHERE month = current_month) AS total_month,
-  COUNT(*) FILTER (WHERE week = current_week) AS total_week,
-  COUNT(*) FILTER (WHERE day = current_day) AS total_day,
-  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
-  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
-  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
-  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99])
-    WITHIN GROUP (ORDER BY latency) FILTER (WHERE month = current_month)
-  AS latencies_month,
-  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99])
-    WITHIN GROUP (ORDER BY latency) FILTER (WHERE week = current_week)
-  AS latencies_week,
-  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99])
-    WITHIN GROUP (ORDER BY latency) FILTER (WHERE day = current_day)
-  AS latencies_day
-FROM (
-  -- This sub-query is here to avoid re-doing this work above on each aggregation.
+var aggregatedCodeIntelEventsQuery = `
+-- source: internal/db/event_logs.go:aggregatedCodeIntelEvents
+WITH events AS (
   SELECT
     name,
     -- Postgres 9.6 needs to go from text to integer (i.e. can't go directly to integer)
@@ -705,13 +671,119 @@ FROM (
   FROM event_logs
   WHERE
     timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
-	AND name IN (` + strings.Join(append(append([]string(nil), codeIntelEventNames...), searchEventNames...), ", ") + `)
-) events
-GROUP BY name, current_month, current_week, current_day
+	AND name IN (` + strings.Join(codeIntelEventNames, ", ") + `)
+)
+SELECT
+  name,
+  current_month,
+  current_week,
+  current_day,
+  COUNT(*) FILTER (WHERE month = current_month) AS total_month,
+  COUNT(*) FILTER (WHERE week = current_week) AS total_week,
+  COUNT(*) FILTER (WHERE day = current_day) AS total_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
+  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE month = current_month) AS latencies_month,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE week = current_week) AS latencies_week,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE day = current_day) AS latencies_day
+FROM events GROUP BY name, current_month, current_week, current_day
 `
 
-// userIDQueryFragment is a query fragment that can be used to return the anonymous user ID
-// when the user ID is not set (i.e. 0).
+// AggregatedSearchEvents calculates AggregatedEvent for each every unique event type related to search.
+func (l *eventLogs) AggregatedSearchEvents(ctx context.Context) ([]types.AggregatedEvent, error) {
+	return l.aggregatedSearchEvents(ctx, time.Now().UTC())
+}
+
+func (l *eventLogs) aggregatedSearchEvents(ctx context.Context, now time.Time) (events []types.AggregatedEvent, err error) {
+	query := sqlf.Sprintf(aggregatedSearchEventsQuery, now, now, now, now)
+
+	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var event types.AggregatedEvent
+		err := rows.Scan(
+			&event.Name,
+			&event.Month,
+			&event.Week,
+			&event.Day,
+			&event.TotalMonth,
+			&event.TotalWeek,
+			&event.TotalDay,
+			&event.UniquesMonth,
+			&event.UniquesWeek,
+			&event.UniquesDay,
+			pq.Array(&event.LatenciesMonth),
+			pq.Array(&event.LatenciesWeek),
+			pq.Array(&event.LatenciesDay),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		events = append(events, event)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return events, nil
+}
+
+var searchEventNames = []string{
+	"'search.latencies.literal'",
+	"'search.latencies.regexp'",
+	"'search.latencies.structural'",
+	"'search.latencies.file'",
+	"'search.latencies.repo'",
+	"'search.latencies.diff'",
+	"'search.latencies.commit'",
+	"'search.latencies.symbol'",
+}
+
+var aggregatedSearchEventsQuery = `
+-- source: internal/db/event_logs.go:aggregatedSearchEvents
+WITH events AS (
+  SELECT
+    name,
+    -- Postgres 9.6 needs to go from text to integer (i.e. can't go directly to integer)
+    (argument->'durationMs')::text::integer as latency,
+    ` + aggregatedUserIDQueryFragment + ` AS user_id,
+    ` + makeDateTruncExpression("month", "timestamp") + ` as month,
+    ` + makeDateTruncExpression("week", "timestamp") + ` as week,
+    ` + makeDateTruncExpression("day", "timestamp") + ` as day,
+    ` + makeDateTruncExpression("month", "%s::timestamp") + ` as current_month,
+    ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week,
+    ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
+  FROM event_logs
+  WHERE
+    timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
+    AND name IN (` + strings.Join(searchEventNames, ", ") + `)
+)
+SELECT
+  name,
+  current_month,
+  current_week,
+  current_day,
+  COUNT(*) FILTER (WHERE month = current_month) AS total_month,
+  COUNT(*) FILTER (WHERE week = current_week) AS total_week,
+  COUNT(*) FILTER (WHERE day = current_day) AS total_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
+  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE month = current_month) AS latencies_month,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE week = current_week) AS latencies_week,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE day = current_day) AS latencies_day
+FROM events GROUP BY name, current_month, current_week, current_day
+`
+
+// userIDQueryFragment is a query fragment that can be used to return the anonymous user id.
+// If no anonymous user id is set then the user id is returned.
 const userIDQueryFragment = `
 CASE WHEN user_id = 0
   THEN anonymous_user_id
@@ -720,7 +792,7 @@ END
 `
 
 // aggregatedUserIDQueryFragment is a query fragment that can be used to canonicalize the
-// values of the user_id and anonymous_user_id fields (assumed in scope) int a unified value.
+// values of the  user_id and anonymous_user_id fields (assumed in scope) int a unified value.
 const aggregatedUserIDQueryFragment = `
 CASE WHEN user_id = 0
   -- It's faster to group by an int rather than text, so we convert
