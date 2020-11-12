@@ -36,7 +36,7 @@ var once sync.Once
 func initServices(ctx context.Context) error {
 	once.Do(func() {
 		if err := config.UploadStoreConfig.Validate(); err != nil {
-			services.err = fmt.Errorf("Failed to load config: %s", err)
+			services.err = fmt.Errorf("failed to load config: %s", err)
 			return
 		}
 
@@ -54,7 +54,7 @@ func initServices(ctx context.Context) error {
 		dbStore := store.NewWithDB(dbconn.Global, observationContext)
 		lsifStore := lsifstore.NewStore(codeIntelDB, observationContext)
 
-		uploadStore, err := uploadstore.Create(context.Background(), config.UploadStoreConfig, observationContext)
+		uploadStore, err := uploadstore.CreateLazy(context.Background(), config.UploadStoreConfig, observationContext)
 		if err != nil {
 			log.Fatalf("Failed to initialize upload store: %s", err)
 		}
