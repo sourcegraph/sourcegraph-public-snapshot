@@ -1,6 +1,7 @@
 import expect from 'expect'
 import { Driver } from '../../../shared/src/testing/driver'
 import { retry } from '../../../shared/src/testing/utils'
+import puppeteer from 'puppeteer'
 import assert from 'assert'
 
 /**
@@ -36,7 +37,7 @@ export function testSingleFilePage({
             await getDriver().page.goto(url)
 
             // Make sure the tab is active, because it might not be active if the install page has opened.
-            await getDriver().page.bringToFront()
+            await closeInstallPageTab(getDriver().page.browser())
 
             await getDriver().page.waitForSelector('.code-view-toolbar .open-on-sourcegraph', { timeout: 10000 })
             expect(await getDriver().page.$$('.code-view-toolbar .open-on-sourcegraph')).toHaveLength(1)
@@ -79,4 +80,20 @@ export function testSingleFilePage({
             })
         })
     })
+}
+
+/**
+ * Find a tab that contains the browser extension's after-install page (url
+ * ending in `/after_install.html`) and, if found, close it.
+ *
+ * The after-install page is opened automatically when the browser extension is
+ * installed. In tests, this means that it's opened automatically every time we
+ * start the browser (with the browser extension loaded).
+ */
+export async function closeInstallPageTab(browser: puppeteer.Browser): Promise<void> {
+    const pages = await browser.pages()
+    const installPage = pages.find(page => page.url().endsWith('/after_install.html'))
+    if (installPage) {
+        await installPage.close()
+    }
 }
