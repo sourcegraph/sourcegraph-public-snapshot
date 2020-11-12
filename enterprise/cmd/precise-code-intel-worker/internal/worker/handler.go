@@ -84,7 +84,7 @@ func (h *handler) handle(ctx context.Context, dbStore DBStore, upload store.Uplo
 		return directoryChildren, nil
 	}
 
-	return false, withData(ctx, h.uploadStore, upload.ID, func(r io.Reader) (err error) {
+	return false, withUploadData(ctx, h.uploadStore, upload.ID, func(r io.Reader) (err error) {
 		groupedBundleData, err := correlation.Correlate(ctx, r, upload.ID, upload.Root, getChildren)
 		if err != nil {
 			return errors.Wrap(err, "correlation.Correlate")
@@ -174,10 +174,10 @@ func requeueIfCloning(ctx context.Context, dbStore DBStore, upload store.Upload)
 	return false, nil
 }
 
-// withData will invoke the given function with a reader of the upload's raw data. The consumer
-// should expect raw newline-delimited JSON content. If the function returns without an error,
-// the upload file will be deleted.
-func withData(ctx context.Context, uploadStore uploadstore.Store, id int, fn func(r io.Reader) error) (err error) {
+// withUploadData will invoke the given function with a reader of the upload's raw data. The
+// consumer should expect raw newline-delimited JSON content. If the function returns without
+// an error, the upload file will be deleted.
+func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, fn func(r io.Reader) error) (err error) {
 	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", id)
 
 	// Pull raw uploaded data from bucket
