@@ -1348,6 +1348,7 @@ func testConflictingSyncers(sqlDB *sql.DB) func(t *testing.T, store *repos.Store
 			}
 
 			githubRepo := types.MakeGithubRepo()
+			githubRepo.Description = ""
 
 			// Add two services, both pointing at the same repo
 
