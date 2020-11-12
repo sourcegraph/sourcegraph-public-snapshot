@@ -144,7 +144,7 @@ interface ScanError {
     expected: string
 
     /**
-     * The index in the search query string where parsing failed.
+     * The index in the search query string where scanning failed.
      */
     at: number
 }
