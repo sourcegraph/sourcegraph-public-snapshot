@@ -1,27 +1,21 @@
 [
   {
    "ID": 0,
-   "Name": "github.com/tsenart/vegeta",
-   "URI": "github.com/tsenart/vegeta",
-   "Description": "HTTP load testing tool and library. It''s over 9000!",
-   "Fork": false,
-   "Archived": false,
-   "Private": false,
-   "Cloned": false,
-   "CreatedAt": "0001-01-01T00:00:00Z",
-   "UpdatedAt": "0001-01-01T00:00:00Z",
-   "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
     "ID": "MDEwOlJlcG9zaXRvcnkxMjA4MDU1MQ==",
     "ServiceType": "github",
     "ServiceID": "https://github.com/"
    },
-   "Sources": {
-    "extsvc:github:1": {
-     "ID": "extsvc:github:1",
-     "CloneURL": "git@github.com:tsenart/vegeta.git"
-    }
-   },
+   "Name": "github.com/tsenart/vegeta",
+   "Private": false,
+   "URI": "github.com/tsenart/vegeta",
+   "Description": "HTTP load testing tool and library. It''s over 9000!",
+   "Fork": false,
+   "Archived": false,
+   "Cloned": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
    "Metadata": {
     "ID": "MDEwOlJlcG9zaXRvcnkxMjA4MDU1MQ==",
     "DatabaseID": 12080551,
@@ -32,31 +26,31 @@
     "IsFork": false,
     "IsArchived": false,
     "ViewerPermission": "READ"
+   },
+   "Sources": {
+    "extsvc:github:1": {
+     "ID": "extsvc:github:1",
+     "CloneURL": "git@github.com:tsenart/vegeta.git"
+    }
    }
   },
   {
    "ID": 0,
-   "Name": "github.com/sourcegraph/secret-vegeta",
-   "URI": "github.com/sourcegraph/secret-vegeta",
-   "Description": "This vegeta is made with secret sauce from Sourcegraph.",
-   "Fork": false,
-   "Archived": false,
-   "Private": true,
-   "Cloned": false,
-   "CreatedAt": "0001-01-01T00:00:00Z",
-   "UpdatedAt": "0001-01-01T00:00:00Z",
-   "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
     "ID": "MDEwOlJlcG9zaXRvcnkxMjA4MDU1Mg==",
     "ServiceType": "github",
     "ServiceID": "https://github.com/"
    },
-   "Sources": {
-    "extsvc:github:1": {
-     "ID": "extsvc:github:1",
-     "CloneURL": "git@github.com:sourcegraph/secret-vegeta.git"
-    }
-   },
+   "Name": "github.com/sourcegraph/secret-vegeta",
+   "Private": true,
+   "URI": "github.com/sourcegraph/secret-vegeta",
+   "Description": "This vegeta is made with secret sauce from Sourcegraph.",
+   "Fork": false,
+   "Archived": false,
+   "Cloned": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
    "Metadata": {
     "ID": "MDEwOlJlcG9zaXRvcnkxMjA4MDU1Mg==",
     "DatabaseID": 12080552,
@@ -67,6 +61,12 @@
     "IsFork": false,
     "IsArchived": false,
     "ViewerPermission": "ADMIN"
+   },
+   "Sources": {
+    "extsvc:github:1": {
+     "ID": "extsvc:github:1",
+     "CloneURL": "git@github.com:sourcegraph/secret-vegeta.git"
+    }
    }
   }
  ]
