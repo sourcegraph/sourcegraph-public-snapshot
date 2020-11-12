@@ -119,7 +119,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                     })
                 } else {
                     // regexpp provides no easy way to tell whether the quantifier is a range '{number, number}'.
-                    // At this point we know it is none of +, *, or ?, so it is a ranged quantifer.
+                    // At this point we know it is none of +, *, or ?, so it is a ranged quantifier.
                     // We skip highlighting for now; it's trickier.
                     tokens.push({
                         type: 'pattern',
@@ -245,7 +245,7 @@ const fromDecoratedTokens = (tokens: DecoratedToken[]): Monaco.languages.IToken[
             case 'regexpMeta':
             case 'structuralMeta':
                 /** The scopes value is derived from the token type and its kind.
-                 * E.g., regexpMetaDelimited dervies from {@link RegexpMeta} and {@link RegexpMetaKind}.
+                 * E.g., regexpMetaDelimited derives from {@link RegexpMeta} and {@link RegexpMetaKind}.
                  */
                 monacoTokens.push({
                     startIndex: token.range.start,
