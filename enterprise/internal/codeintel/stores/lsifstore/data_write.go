@@ -2,8 +2,6 @@ package lsifstore
 
 import (
 	"context"
-	"runtime"
-	"sync"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
