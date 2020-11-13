@@ -61,7 +61,7 @@ func scanFirstChangesetRecord(rows *sql.Rows, err error) (workerutil.Record, boo
 }
 
 func createDBWorkerStore(s *campaigns.Store) dbworkerstore.Store {
-	return dbworkerstore.NewStore(s.Handle(), dbworkerstore.StoreOptions{
+	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		TableName:            "changesets",
 		AlternateColumnNames: map[string]string{"state": "reconciler_state"},
 		ColumnExpressions:    campaigns.ChangesetColumns,
