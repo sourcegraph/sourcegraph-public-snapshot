@@ -164,8 +164,9 @@ describe('Core functionality regression test suite', () => {
             newText: aviURL,
             enterTextMethod: 'paste',
         })
+        await delay(1000)
         await driver.page.click('#test-EditUserProfileForm__save')
-        await delay(5000)
+        await delay(1000)
         await driver.findElementWithText(
             'Error: unable to change username because auth.enableUsernameChanges is false in site configuration'
         )
@@ -194,7 +195,9 @@ describe('Core functionality regression test suite', () => {
             newText: aviURL,
             enterTextMethod: 'paste',
         })
+        await delay(1000)
         await driver.page.click('#test-EditUserProfileForm__save')
+        await delay(1000)
         await driver.page.reload()
         await driver.page.waitForFunction(
             displayName => {

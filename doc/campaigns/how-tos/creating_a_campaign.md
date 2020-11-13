@@ -29,11 +29,9 @@ changesetTemplate:
 
 1. Get started by running the following [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) command:
 
-    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em> -namespace <em>USERNAME_OR_ORG</em></code></pre>
+    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
 
     > **Don't worry!** Before any branches are pushed or changesets (e.g., GitHub pull requests) are created, you will see a preview of all changes and can confirm each one before proceeding.
-
-    The `namespace` can be your Sourcegraph username or the name of a Sourcegraph organization under which you want to create the campaign.
 
 1. Wait for it to run and compute the changes for each repository (using the repositories and commands in the campaign spec).
 1. Open the preview URL that the command printed out.
@@ -47,3 +45,11 @@ You can share the link to your campaign with other people if you want their help
 If a person viewing the campaign lacks read access to a repository in the campaign, they can only see [limited information about the changes to that repository](../explanations/permissions_in_campaigns.md#repository-permissions-for-campaigns) (and not the repository name, file paths, or diff).
 
 You can update a campaign's changes at any time, even after you've published changesets. For more information, see [Updating a campaign](updating_a_campaign.md).
+
+## Creating a campaign in a different namespace
+
+Campaigns are uniquely identified by their name and namespace. The namespace can be any Sourcegraph username or the name of a Sourcegraph organization.
+
+By default, campaigns will use your username on Sourcegraph as your namespace. To create campaigns in a different namespace use the `-namespace` flag when previewing or applying a campaign spec:
+
+<pre><code>src campaign preview -f YOUR_CAMPAIGN_SPEC.campaign.yaml -namespace <em>USERNAME_OR_ORG</em></code></pre>

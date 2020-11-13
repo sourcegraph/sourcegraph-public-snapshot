@@ -7,8 +7,4 @@ const { add } = storiesOf('web/campaigns/CreateCampaignPage', module).addDecorat
     <div className="p-3 container web-content">{story()}</div>
 ))
 
-add('Page', () => (
-    <EnterpriseWebStory>
-        {props => <CreateCampaignPage {...props} authenticatedUser={{ username: 'alice' }} />}
-    </EnterpriseWebStory>
-))
+add('Page', () => <EnterpriseWebStory>{props => <CreateCampaignPage {...props} />}</EnterpriseWebStory>)

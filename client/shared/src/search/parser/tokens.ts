@@ -1,13 +1,22 @@
 import * as Monaco from 'monaco-editor'
 import { Token, Pattern, CharacterRange, PatternKind } from './scanner'
 import { RegExpParser, visitRegExpAST } from 'regexpp'
-import { Character, CharacterSet, CapturingGroup, Assertion, Quantifier } from 'regexpp/ast'
+import {
+    Character,
+    CharacterClass,
+    CharacterClassRange,
+    CharacterSet,
+    CapturingGroup,
+    Assertion,
+    Quantifier,
+} from 'regexpp/ast'
 
 export enum RegexpMetaKind {
-    Delimited = 'Delimited',
-    CharacterSet = 'CharacterSet',
-    Quantifier = 'Quantifier',
-    Assertion = 'Assertion',
+    Delimited = 'Delimited', // like ( or )
+    CharacterSet = 'CharacterSet', // like \s
+    CharacterClass = 'CharacterClass', // like [a-z]
+    Quantifier = 'Quantifier', // like +
+    Assertion = 'Assertion', // like ^ or \b
 }
 
 export interface RegexpMeta {
@@ -70,6 +79,33 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                     kind: RegexpMetaKind.CharacterSet,
                 })
             },
+            onCharacterClassEnter(node: CharacterClass) {
+                // Push the leading '['
+                tokens.push({
+                    type: 'regexpMeta',
+                    range: { start: offset + node.start, end: offset + node.start + 1 },
+                    value: '[',
+                    kind: RegexpMetaKind.CharacterClass,
+                })
+                // Push the trailing ']'
+                tokens.push({
+                    type: 'regexpMeta',
+                    range: { start: offset + node.end - 1, end: offset + node.end },
+                    value: ']',
+                    kind: RegexpMetaKind.CharacterClass,
+                })
+            },
+            onCharacterClassRangeEnter(node: CharacterClassRange) {
+                // highlight the '-' in [a-z]. Take care to use node.min.end, because we
+                // don't want to highlight the first '-' in [--z], nor an escaped '-' with a
+                // two-character offset as in [\--z].
+                tokens.push({
+                    type: 'regexpMeta',
+                    range: { start: offset + node.min.end, end: offset + node.min.end + 1 },
+                    value: '-',
+                    kind: RegexpMetaKind.CharacterClass,
+                })
+            },
             onQuantifierEnter(node: Quantifier) {
                 // the lazy quantifier ? adds one
                 const lazyQuantifierOffset = node.greedy ? 0 : 1
@@ -83,7 +119,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                     })
                 } else {
                     // regexpp provides no easy way to tell whether the quantifier is a range '{number, number}'.
-                    // At this point we know it is none of +, *, or ?, so it is a ranged quantifer.
+                    // At this point we know it is none of +, *, or ?, so it is a ranged quantifier.
                     // We skip highlighting for now; it's trickier.
                     tokens.push({
                         type: 'pattern',
@@ -118,6 +154,29 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
 
 const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => [pattern]
 
+/**
+ * Returns true for filter values that have regexp values, e.g., repo, file.
+ * Excludes FilterType.content because that depends on the pattern kind.
+ */
+export const hasRegexpValue = (field: string): boolean => {
+    const fieldName = field.startsWith('-') ? field.slice(1) : field
+    switch (fieldName.toLocaleLowerCase()) {
+        case 'repo':
+        case 'r':
+        case 'file':
+        case 'f':
+        case 'repohasfile':
+        case 'message':
+        case 'msg':
+        case 'm':
+        case 'commiter':
+        case 'author':
+            return true
+        default:
+            return false
+    }
+}
+
 const decorateTokens = (tokens: Token[]): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     for (const token of tokens) {
@@ -149,7 +208,23 @@ const fromDecoratedTokens = (tokens: DecoratedToken[]): Monaco.languages.IToken[
                         startIndex: token.filterType.range.start,
                         scopes: 'filterKeyword',
                     })
-                    if (token.filterValue) {
+
+                    if (
+                        hasRegexpValue(token.filterType.value) &&
+                        token.filterValue &&
+                        token.filterValue.type === 'literal'
+                    ) {
+                        // Highlight fields with regexp values.
+                        const decoratedValue = decorateTokens([
+                            {
+                                type: 'pattern',
+                                kind: PatternKind.Regexp,
+                                value: token.filterValue.value,
+                                range: token.filterValue.range,
+                            },
+                        ])
+                        monacoTokens.push(...fromDecoratedTokens(decoratedValue))
+                    } else if (token.filterValue) {
                         monacoTokens.push({
                             startIndex: token.filterValue.range.start,
                             scopes: 'identifier',
@@ -170,7 +245,7 @@ const fromDecoratedTokens = (tokens: DecoratedToken[]): Monaco.languages.IToken[
             case 'regexpMeta':
             case 'structuralMeta':
                 /** The scopes value is derived from the token type and its kind.
-                 * E.g., regexpMetaDelimited dervies from {@link RegexpMeta} and {@link RegexpMetaKind}.
+                 * E.g., regexpMetaDelimited derives from {@link RegexpMeta} and {@link RegexpMetaKind}.
                  */
                 monacoTokens.push({
                     startIndex: token.range.start,

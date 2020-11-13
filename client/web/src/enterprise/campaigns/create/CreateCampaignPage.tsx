@@ -2,7 +2,6 @@ import React, { useCallback, useState } from 'react'
 import { PageTitle } from '../../../components/PageTitle'
 import { PageHeader } from '../../../components/PageHeader'
 import { CampaignsIconFlushLeft } from '../icons'
-import { AuthenticatedUser } from '../../../auth'
 import helloWorldSample from './samples/empty.campaign.yaml'
 import combySample from './samples/comby.campaign.yaml'
 import goImportsSample from './samples/go-imports.campaign.yaml'
@@ -46,10 +45,10 @@ const samples: Sample[] = [
 ]
 
 export interface CreateCampaignPageProps {
-    authenticatedUser: Pick<AuthenticatedUser, 'username'>
+    // Nothing for now.
 }
 
-export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps> = ({ authenticatedUser }) => {
+export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps> = () => {
     const [selectedSample, setSelectedSample] = useState<Sample>(samples[0])
     return (
         <>
@@ -90,7 +89,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                     to preview the commits and changesets that your campaign will make:
                 </p>
                 <CodeSnippet
-                    code={`src campaign preview -namespace ${authenticatedUser.username} -f ${selectedSample.name}`}
+                    code={`src campaign preview -f ${selectedSample.name}`}
                     language="shell"
                     className="mb-3"
                 />

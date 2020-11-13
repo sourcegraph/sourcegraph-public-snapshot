@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log"
+	"time"
 
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -64,10 +67,13 @@ func main() {
 	// Initialize stores
 	dbStore := store.NewWithDB(db, observationContext)
 	lsifStore := lsifstore.NewStore(codeIntelDB, observationContext)
-	gitserverClient := gitserver.New(observationContext)
+	gitserverClient := gitserver.New(dbStore, observationContext)
 
-	uploadStore, err := uploadstore.Create(context.Background(), config.UploadStoreConfig, observationContext)
+	uploadStore, err := uploadstore.CreateLazy(context.Background(), config.UploadStoreConfig, observationContext)
 	if err != nil {
+		log.Fatalf("Failed to create upload store: %s", err)
+	}
+	if err := initializeUploadStore(context.Background(), uploadStore); err != nil {
 		log.Fatalf("Failed to initialize upload store: %s", err)
 	}
 
@@ -158,4 +164,32 @@ func makeWorkerMetrics(observationContext *observation.Context) workerutil.Worke
 			Metrics:      metrics,
 		}),
 	}
+}
+
+func initializeUploadStore(ctx context.Context, uploadStore uploadstore.Store) error {
+	for {
+		if err := uploadStore.Init(ctx); err == nil || !isRequestError(err) {
+			return err
+		}
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(250 * time.Millisecond):
+		}
+	}
+}
+
+func isRequestError(err error) bool {
+	for err != nil {
+		if e, ok := err.(awserr.Error); ok {
+			if e.Code() == "RequestError" {
+				return true
+			}
+		}
+
+		err = errors.Unwrap(err)
+	}
+
+	return false
 }
