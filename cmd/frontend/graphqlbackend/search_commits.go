@@ -251,7 +251,7 @@ func logCommitSearchResultsToResolvers(ctx context.Context, op *search.CommitPar
 	results := make([]*CommitSearchResultResolver, len(rawResults))
 	for i, rawResult := range rawResults {
 		commit := rawResult.Commit
-		commitResolver := toGitCommitResolver(repoResolver, &commit)
+		commitResolver := toGitCommitResolver(repoResolver, commit.ID, &commit)
 		results[i] = &CommitSearchResultResolver{commit: commitResolver}
 
 		addRefs := func(dst *[]*GitRefResolver, src []string) {
@@ -546,7 +546,7 @@ func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForC
 func commitSearchResultsToSearchResults(results []*CommitSearchResultResolver) []SearchResultResolver {
 	// Show most recent commits first.
 	sort.Slice(results, func(i, j int) bool {
-		return results[i].commit.author.Date() > results[j].commit.author.Date()
+		return results[i].commit.commit.Author.Date.After(results[j].commit.commit.Author.Date)
 	})
 
 	results2 := make([]SearchResultResolver, len(results))
