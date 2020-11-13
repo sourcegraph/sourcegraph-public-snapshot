@@ -294,7 +294,10 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         <div className="create-monitor-page__query-input">
                             <input
                                 type="text"
-                                className="create-monitor-page__query-input-field form-control my-2"
+                                className={classnames(
+                                    'create-monitor-page__query-input-field form-control my-2',
+                                    deriveInputClassName(queryState)
+                                )}
                                 onChange={nextQueryFieldChange}
                                 value={queryState.value}
                                 required={true}
