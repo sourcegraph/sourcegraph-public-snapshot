@@ -238,7 +238,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	}
 
 	// User added external services should only sync public code
-	if isUserOwned && conf.ExternalServiceUserMode() != "all" {
+	if isUserOwned && conf.ExternalServiceUserMode() != conf.ExternalServiceModeAll {
 		sourced = sourced.Filter(func(r *Repo) bool { return !r.Private })
 	}
 
