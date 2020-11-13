@@ -11,7 +11,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -24,9 +23,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 const addr = ":3188"
@@ -85,8 +86,7 @@ func main() {
 		config.WorkerPollInterval,
 		config.WorkerConcurrency,
 		config.WorkerBudget,
-		metrics.NewWorkerMetrics(observationContext),
-		observationContext,
+		makeWorkerMetrics(observationContext),
 	)
 
 	// Initialize health server
@@ -147,6 +147,23 @@ func mustRegisterQueueMetric(observationContext *observation.Context, dbStore *s
 
 		return float64(count)
 	}))
+}
+
+func makeWorkerMetrics(observationContext *observation.Context) workerutil.WorkerMetrics {
+	metrics := metrics.NewOperationMetrics(
+		observationContext.Registerer,
+		"upload_queue_processor",
+		metrics.WithLabels("op"),
+		metrics.WithCountHelp("Total number of records processed"),
+	)
+
+	return workerutil.WorkerMetrics{
+		HandleOperation: observationContext.Operation(observation.Op{
+			Name:         "Processor.Process",
+			MetricLabels: []string{"process"},
+			Metrics:      metrics,
+		}),
+	}
 }
 
 func initializeUploadStore(ctx context.Context, uploadStore uploadstore.Store) error {
