@@ -30,6 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Campaigns now have a fancy new icon. [#14740](https://github.com/sourcegraph/sourcegraph/pull/14740)
 - Search queries with an unbalanced closing paren `)` are now invalid, since this likely indicates an error. Previously, patterns with dangling `)` were valid in some cases. Note that patterns with dangling `)` can still be searched, but should be quoted via `content:"foo)"`. [#15042](https://github.com/sourcegraph/sourcegraph/pull/15042)
 - Extension providers can now return AsyncIterables, enabling dynamic provider results without dependencies. [#15042](https://github.com/sourcegraph/sourcegraph/issues/15061)
+- Deprecated the disableTLS email.smtp config option, this field has been replaced by noVerifyTLS [#15682](https://github.com/sourcegraph/sourcegraph/pull/15682)
 
 ### Fixed
 
@@ -42,6 +43,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where submodules configured with a relative URL resulted in non-functional hyperlinks in the file tree UI. [#15286](https://github.com/sourcegraph/sourcegraph/issues/15286)
 - Pushing commits to public GitLab repositories with campaigns now works, since we use the configured token even if the repository is public. [#15536](https://github.com/sourcegraph/sourcegraph/pull/15536)
 - `.kts` is now highlighted properly as Kotlin code, fixed various other issues in Kotlin syntax highlighting.
+- Fixed an issue where the value of `content:` was treated literally when the regular expression toggle is active. [#15639](https://github.com/sourcegraph/sourcegraph/pull/15639)
 
 ### Removed
 

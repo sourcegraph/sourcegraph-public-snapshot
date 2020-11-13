@@ -61,6 +61,9 @@ export interface RepogroupPageProps
 
     /** Whether globbing is enabled for filters. */
     globbing: boolean
+
+    // Whether to additionally highlight or provide hovers for tokens, e.g., regexp character sets.
+    enableSmartQuery: boolean
 }
 
 export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props: RepogroupPageProps) => {

@@ -54,6 +54,8 @@ func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, oper
 		ctx, finish = trace.OpenTracingTracer{}.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 	}
 
+	ctx = context.WithValue(ctx, "graphql-query", queryString)
+
 	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
 
 	// Note: We don't care about the error here, we just extract the username if

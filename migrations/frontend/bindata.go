@@ -122,6 +122,8 @@
 // 1528395743_add_table_cm_emails.up.sql (1.396kB)
 // 1528395744_add_table_cm_recipients.down.sql (447B)
 // 1528395744_add_table_cm_recipients.up.sql (1.014kB)
+// 1528395745_ref_prefix_external_branch.down.sql (643B)
+// 1528395745_ref_prefix_external_branch.up.sql (731B)
 
 package migrations
 
@@ -2630,6 +2632,46 @@ func _1528395744_add_table_cm_recipientsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395745_ref_prefix_external_branchDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x8f\xdd\x4a\xf3\x40\x10\x86\xcf\xf7\x2a\xe6\x3b\xf8\xd8\x14\x22\xbd\x80\x90\x42\xda\xac\xba\xb8\xd9\x94\xcd\x14\x3d\x5b\x92\x38\x31\x8a\xa4\x25\x9b\x83\x82\x78\xef\x12\xfb\x83\x4d\xa2\x82\x67\xcb\xcc\x33\xfb\xbe\xcf\x52\xdc\x48\x1d\x30\x16\x29\x14\x06\x30\x5a\x2a\x01\x65\x9d\x37\x4f\xe4\xa8\x73\x10\x9b\x74\x0d\xab\x54\x67\x68\x22\xa9\x11\xe4\x35\x88\x07\x99\x61\x06\xb4\xef\xa8\x6d\xf2\x57\x5b\xb4\x79\x53\xd6\xb6\xa5\xca\xee\x5a\xaa\x9e\xf7\x01\x63\x9b\x75\x1c\xe1\xc5\x47\x99\xc0\xe1\x09\x84\xa0\xd0\xc8\xc4\x1b\xcc\x7d\xe0\x2d\x55\x6e\x5e\x53\xfe\xe8\xe6\x7c\x06\xf7\xb7\xc2\x88\xd1\xb5\xcc\x40\xa7\x08\x7a\xa3\xd4\x44\xa2\x75\x3b\x2a\x0f\xb1\xfd\x0b\x42\x78\x71\xdb\xa6\xb0\x8e\x3a\xaf\x1f\xf8\xc0\xdf\xfa\x00\x43\xd5\x3b\xf7\xa1\xdb\xda\xcf\xbd\x77\x68\xd4\x13\x57\x8b\x05\x3f\x12\x7c\x58\x69\x76\x2a\x35\x04\xbf\xb6\x82\x48\xc7\x63\xe0\x5f\x08\x9c\x4f\xaf\x94\xbc\x13\x17\x41\xff\x79\xf0\x27\xb1\x22\x77\xf4\xb3\xd8\x91\xf8\x5d\xec\x04\x7e\x2b\x76\x06\xc6\x62\xe7\xd5\xa4\x18\x5b\xa5\x49\x22\x31\x60\x1f\x01\x00\x00\xff\xff\x97\x74\xd2\x29\x83\x02\x00\x00")
+
+func _1528395745_ref_prefix_external_branchDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395745_ref_prefix_external_branchDownSql,
+		"1528395745_ref_prefix_external_branch.down.sql",
+	)
+}
+
+func _1528395745_ref_prefix_external_branchDownSql() (*asset, error) {
+	bytes, err := _1528395745_ref_prefix_external_branchDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395745_ref_prefix_external_branch.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xbe, 0x30, 0x6a, 0x5, 0x50, 0x77, 0x68, 0xc3, 0x4a, 0x45, 0xc9, 0x8, 0x90, 0x3b, 0x4e, 0xb8, 0xd5, 0xec, 0x7, 0x8, 0x4f, 0xd3, 0xd5, 0xa3, 0x11, 0xaa, 0xb9, 0xb5, 0x6c, 0x89, 0x2, 0x4d}}
+	return a, nil
+}
+
+var __1528395745_ref_prefix_external_branchUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x92\xd1\x6a\x83\x30\x14\x86\xef\x7d\x8a\xb3\x8b\x11\x85\x8e\x3e\x80\x58\x48\x35\xac\x52\x1b\x87\xa6\xec\x32\x44\x77\x9c\x1b\xc3\x96\xc4\x8b\xc2\xd8\xbb\x8f\x6c\x6d\xd9\x4c\xbc\xd8\xee\xc4\xef\xfc\xc9\xf9\xc8\xbf\x66\xf7\x39\x8f\x83\x60\xff\x90\x51\xc1\xa0\xed\xd5\xf0\x8c\x06\x47\x03\x35\x13\x80\xa7\x11\xf5\xa0\xde\x64\xa3\xd5\xd0\xf6\x90\x40\x5a\xf2\x94\x8a\x90\x68\xec\xcc\xb2\x47\xf5\x64\x96\x64\x31\x9d\x8b\xe0\x71\xc3\x2a\xe6\xc4\xf3\x1a\x78\x29\x80\xef\x8b\x02\x28\xcf\x1c\x6e\x61\x91\x6f\x19\xfc\x3c\xfe\x96\x78\xd6\x93\xe6\x88\xed\xf7\x8e\xf6\x0b\x12\x78\x35\x87\xa1\x91\x06\xc7\xd0\xfe\x58\x00\x79\xb7\xf1\x0a\xbb\x0f\xb2\x80\xf1\x20\xbf\x78\xe8\x5f\xdf\x26\xee\x56\x2b\x72\x4e\x90\x28\xba\x18\x4c\x89\xa3\xe0\x0c\xdc\x24\x40\x88\x1f\xcd\xea\xfd\xc7\xae\x51\x06\xff\x66\x77\x4e\x78\xec\x2e\x64\xd6\xee\x3a\xe0\xda\x5d\xd1\xfc\xe3\xd1\x42\xb0\x0a\x04\x5d\x17\xbf\x0a\x46\xb3\xcc\xd6\xa9\x16\x15\xcd\xb9\xd3\x35\xa9\xb1\x93\x47\x8d\xdd\xcb\x09\xd2\x0d\x4b\xb7\x10\x4e\xeb\xe2\xb9\x2d\x8a\x83\x20\x2d\x77\xbb\x5c\xc4\xc1\x67\x00\x00\x00\xff\xff\xa2\xbd\x54\x59\xdb\x02\x00\x00")
+
+func _1528395745_ref_prefix_external_branchUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395745_ref_prefix_external_branchUpSql,
+		"1528395745_ref_prefix_external_branch.up.sql",
+	)
+}
+
+func _1528395745_ref_prefix_external_branchUpSql() (*asset, error) {
+	bytes, err := _1528395745_ref_prefix_external_branchUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395745_ref_prefix_external_branch.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd, 0xd3, 0xfb, 0x4f, 0x6a, 0x56, 0xb7, 0x8, 0x4a, 0x24, 0x6b, 0xff, 0x73, 0x92, 0xd9, 0xf8, 0xa0, 0xa6, 0x22, 0x20, 0x9c, 0x19, 0xdf, 0x1b, 0x6e, 0xb6, 0xda, 0x7, 0xbd, 0xf5, 0xd7, 0xc8}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2843,6 +2885,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395743_add_table_cm_emails.up.sql":                                        _1528395743_add_table_cm_emailsUpSql,
 	"1528395744_add_table_cm_recipients.down.sql":                                  _1528395744_add_table_cm_recipientsDownSql,
 	"1528395744_add_table_cm_recipients.up.sql":                                    _1528395744_add_table_cm_recipientsUpSql,
+	"1528395745_ref_prefix_external_branch.down.sql":                               _1528395745_ref_prefix_external_branchDownSql,
+	"1528395745_ref_prefix_external_branch.up.sql":                                 _1528395745_ref_prefix_external_branchUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3011,6 +3055,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395743_add_table_cm_emails.up.sql":                                        {_1528395743_add_table_cm_emailsUpSql, map[string]*bintree{}},
 	"1528395744_add_table_cm_recipients.down.sql":                                  {_1528395744_add_table_cm_recipientsDownSql, map[string]*bintree{}},
 	"1528395744_add_table_cm_recipients.up.sql":                                    {_1528395744_add_table_cm_recipientsUpSql, map[string]*bintree{}},
+	"1528395745_ref_prefix_external_branch.down.sql":                               {_1528395745_ref_prefix_external_branchDownSql, map[string]*bintree{}},
+	"1528395745_ref_prefix_external_branch.up.sql":                                 {_1528395745_ref_prefix_external_branchUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

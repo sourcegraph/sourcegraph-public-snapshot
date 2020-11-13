@@ -139,6 +139,7 @@ type StoreMetrics struct {
 	UpsertSources          *metrics.OperationMetrics
 	ListRepos              *metrics.OperationMetrics
 	ListExternalRepoSpecs  *metrics.OperationMetrics
+	GetExternalService     *metrics.OperationMetrics
 	UpsertExternalServices *metrics.OperationMetrics
 	ListExternalServices   *metrics.OperationMetrics
 	SetClonedRepos         *metrics.OperationMetrics
@@ -159,6 +160,7 @@ func (sm StoreMetrics) MustRegister(r prometheus.Registerer) {
 		sm.DeleteRepos,
 		sm.UpsertRepos,
 		sm.UpsertSources,
+		sm.GetExternalService,
 		sm.ListExternalServices,
 		sm.UpsertExternalServices,
 		sm.SetClonedRepos,
@@ -283,6 +285,20 @@ func NewStoreMetrics() StoreMetrics {
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Name: "src_repoupdater_store_list_external_repo_specs_errors_total",
 				Help: "Total number of errors when listing external repo specs",
+			}, []string{}),
+		},
+		GetExternalService: &metrics.OperationMetrics{
+			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+				Name: "src_external_serviceupdater_store_get_external_service_duration_seconds",
+				Help: "Time spent getting external_services",
+			}, []string{}),
+			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_external_serviceupdater_store_get_external_service_total",
+				Help: "Total number of get external_service calls",
+			}, []string{}),
+			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_external_serviceupdater_store_get_external_service_errors_total",
+				Help: "Total number of errors when getting external_services",
 			}, []string{}),
 		},
 		UpsertExternalServices: &metrics.OperationMetrics{
@@ -424,6 +440,34 @@ func (o *ObservedStore) Done(err error) error {
 	}(time.Now())
 
 	return o.store.(TxStore).Done(err)
+}
+
+// GetExternalService calls into the inner Store and registers the observed results.
+func (o *ObservedStore) GetExternalService(ctx context.Context, id int64) (es *ExternalService, err error) {
+	tr, ctx := o.trace(ctx, "Store.GetExternalService")
+	tr.LogFields(
+		otlog.Object("id", id),
+	)
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+
+		o.metrics.ListExternalServices.Observe(secs, 1, &err)
+		logging.Log(o.log, "store.get-external-service", &err,
+			"id", fmt.Sprintf("%+v", id),
+			"count", 1,
+		)
+
+		tr.LogFields(
+			otlog.Int("count", 1),
+			otlog.Object("names", es.DisplayName),
+			otlog.Object("urns", es.URN()),
+		)
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	return o.store.GetExternalService(ctx, id)
 }
 
 // ListExternalServices calls into the inner Store and registers the observed results.

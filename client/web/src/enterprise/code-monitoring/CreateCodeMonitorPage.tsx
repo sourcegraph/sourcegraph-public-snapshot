@@ -101,6 +101,7 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                             onChange={event => {
                                 onNameChange(event.target.value)
                             }}
+                            autoFocus={true}
                         />
                     </div>
                     <small className="text-muted">
@@ -162,7 +163,7 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                     <div className="flex my-4">
                         <button
                             type="submit"
-                            className="btn btn-primary mr-2"
+                            className="btn btn-primary mr-2 test-submit-monitor"
                             disabled={!formCompletion.actionCompleted}
                         >
                             Create code monitor
@@ -276,7 +277,7 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         <button
                             type="button"
                             onClick={toggleQueryForm}
-                            className="btn btn-link font-weight-bold p-0 text-left"
+                            className="btn btn-link font-weight-bold p-0 text-left test-trigger-button"
                         >
                             When there are new search results
                         </button>
@@ -295,12 +296,13 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             <input
                                 type="text"
                                 className={classnames(
-                                    'create-monitor-page__query-input-field form-control my-2',
+                                    'create-monitor-page__query-input-field form-control my-2 test-trigger-input',
                                     deriveInputClassName(queryState)
                                 )}
                                 onChange={nextQueryFieldChange}
                                 value={queryState.value}
                                 required={true}
+                                autoFocus={true}
                                 ref={queryInputReference}
                             />
                             {queryState.kind === 'VALID' && (
@@ -327,7 +329,7 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         </div>
                         <div>
                             <button
-                                className="btn btn-outline-secondary mr-1"
+                                className="btn btn-outline-secondary mr-1 test-submit-trigger"
                                 onClick={editOrCompleteForm}
                                 onSubmit={editOrCompleteForm}
                                 type="submit"
@@ -417,7 +419,7 @@ const ActionArea: React.FunctionComponent<ActionAreaProps> = ({
                         <button
                             type="button"
                             onClick={toggleEmailNotificationForm}
-                            className="btn btn-link font-weight-bold p-0 text-left"
+                            className="btn btn-link font-weight-bold p-0 text-left test-action-button"
                             disabled={disabled}
                         >
                             Send email notifications
@@ -436,6 +438,7 @@ const ActionArea: React.FunctionComponent<ActionAreaProps> = ({
                                 className="form-control my-2"
                                 value={`${authenticatedUser.email || ''} (you)`}
                                 disabled={true}
+                                autoFocus={true}
                             />
                             <small className="text-muted">
                                 Code monitors are currently limited to sending emails to your primary email address.
@@ -453,7 +456,7 @@ const ActionArea: React.FunctionComponent<ActionAreaProps> = ({
                         <div>
                             <button
                                 type="submit"
-                                className="btn btn-outline-secondary mr-1"
+                                className="btn btn-outline-secondary mr-1 test-submit-action"
                                 onClick={editOrCompleteForm}
                                 onSubmit={editOrCompleteForm}
                             >
