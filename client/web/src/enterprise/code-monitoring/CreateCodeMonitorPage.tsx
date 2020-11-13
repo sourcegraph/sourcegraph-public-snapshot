@@ -1,7 +1,7 @@
 import * as H from 'history'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import VideoInputAntennaIcon from 'mdi-react/VideoInputAntennaIcon'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Form } from '../../../../branded/src/components/Form'
 import { Toggle } from '../../../../branded/src/components/Toggle'
 import { AuthenticatedUser } from '../../auth'
@@ -15,6 +15,12 @@ import { MonitorEmailPriority } from '../../../../shared/src/graphql/schema'
 import { Observable } from 'rxjs'
 import { catchError, mergeMap, startWith, tap } from 'rxjs/operators'
 import { asError, isErrorLike } from '../../../../shared/src/util/errors'
+import { Link } from '../../../../shared/src/components/Link'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
+import { SearchPatternType } from '../../../../shared/src/graphql-operations'
+import { deriveInputClassName, useInputValidation } from '../../../../shared/src/util/useInputValidation'
+import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
+import { FilterType } from '../../../../shared/src/search/interactive/util'
 
 export interface CreateCodeMonitorPageProps extends BreadcrumbsProps, BreadcrumbSetters {
     location: H.Location
@@ -197,12 +203,12 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                     <div className="flex my-4">
                         <button
                             type="submit"
-                            className="btn btn-primary mr-2"
                             disabled={
                                 !formCompletion.actionCompleted ||
                                 isErrorLike(codeMonitorOrError) ||
                                 codeMonitorOrError === LOADING
                             }
+                            className="btn btn-primary mr-2 test-submit-monitor"
                         >
                             Create code monitor
                         </button>
@@ -233,6 +239,10 @@ interface TriggerAreaProps {
     setTriggerCompleted: () => void
 }
 
+const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
+const isValidPatternType = (value: string): boolean =>
+    value === SearchPatternType.literal || value === SearchPatternType.regexp || value === SearchPatternType.structural
+
 const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     query,
     onQueryChange,
@@ -254,6 +264,63 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
         [setTriggerCompleted, toggleQueryForm]
     )
 
+    const [queryState, nextQueryFieldChange, queryInputReference] = useInputValidation(
+        useMemo(
+            () => ({
+                initialValue: query,
+                synchronousValidators: [
+                    (value: string) => {
+                        const tokens = scanSearchQuery(value)
+                        if (tokens.type === 'success') {
+                            const filters = tokens.term.filter(token => token.type === 'filter')
+                            const typeFilters = filters.filter(
+                                filter =>
+                                    filter.type === 'filter' &&
+                                    filter.filterType.value === FilterType.type &&
+                                    ((filter.filterValue?.type === 'literal' &&
+                                        filter.filterValue &&
+                                        isDiffOrCommit(filter.filterValue.value)) ||
+                                        (filter.filterValue?.type === 'quoted' &&
+                                            filter.filterValue &&
+                                            isDiffOrCommit(filter.filterValue.quotedValue)))
+                            )
+                            const patternTypeFilters = filters.filter(
+                                filter =>
+                                    (filter.type === 'filter' &&
+                                        filter.filterType.value === FilterType.patterntype &&
+                                        filter.filterValue?.type === 'literal' &&
+                                        filter.filterValue &&
+                                        isValidPatternType(filter.filterValue.value)) ||
+                                    (filter.type === 'filter' &&
+                                        filter.filterType.value === FilterType.patterntype &&
+                                        filter.filterValue?.type === 'quoted' &&
+                                        filter.filterValue &&
+                                        isValidPatternType(filter.filterValue.quotedValue))
+                            )
+                            if (typeFilters.length > 0 && patternTypeFilters.length > 0) {
+                                return undefined
+                            }
+                            if (typeFilters.length === 0) {
+                                return 'Code monitors require queries to specify either `type:commit` or `type:diff`.'
+                            }
+                            if (patternTypeFilters.length === 0) {
+                                return 'Code monitors require queries to specify a `patternType:` of literal, regexp, or structural.'
+                            }
+                        }
+                        return 'Failed to parse query'
+                    },
+                ],
+            }),
+            [query]
+        )
+    )
+
+    useEffect(() => {
+        if (queryState.kind === 'VALID') {
+            onQueryChange(queryState.value)
+        }
+    }, [onQueryChange, queryState])
+
     return (
         <>
             <h3>Trigger</h3>
@@ -263,7 +330,7 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         <button
                             type="button"
                             onClick={toggleQueryForm}
-                            className="btn btn-link font-weight-bold p-0 text-left"
+                            className="btn btn-link font-weight-bold p-0 text-left test-trigger-button"
                         >
                             When there are new search results
                         </button>
@@ -281,34 +348,45 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         <div className="create-monitor-page__query-input">
                             <input
                                 type="text"
-                                className="form-control my-2"
-                                onChange={event => {
-                                    onQueryChange(event.target.value)
-                                }}
-                                value={query}
+                                className={classnames(
+                                    'create-monitor-page__query-input-field form-control my-2 test-trigger-input',
+                                    deriveInputClassName(queryState)
+                                )}
+                                onChange={nextQueryFieldChange}
+                                value={queryState.value}
                                 required={true}
                                 autoFocus={true}
+                                ref={queryInputReference}
                             />
-                            <a
-                                href=""
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="create-monitor-page__query-input-preview-link"
-                            >
-                                {/* TODO: populate link */}
-                                Preview results <OpenInNewIcon />
-                            </a>
+                            {queryState.kind === 'VALID' && (
+                                <Link
+                                    to={buildSearchURLQuery(query, SearchPatternType.literal, false)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="create-monitor-page__query-input-preview-link"
+                                >
+                                    Preview results <OpenInNewIcon />
+                                </Link>
+                            )}
+                            {queryState.kind === 'INVALID' && (
+                                <small className="invalid-feedback mb-4">{queryState.reason}</small>
+                            )}
+                            {(queryState.kind === 'NOT_VALIDATED' || queryState.kind === 'VALID') && (
+                                <div className="d-flex mb-4 flex-column">
+                                    <small className="text-muted">
+                                        Code monitors only support <code className="bg-code">type:diff</code> and{' '}
+                                        <code className="bg-code">type:commit</code> search queries.
+                                    </small>
+                                </div>
+                            )}
                         </div>
-                        <small className="text-muted mb-4">
-                            Code monitors only support <code className="bg-code">type:diff</code> and{' '}
-                            <code className="bg-code">type:commit</code> search queries.
-                        </small>
                         <div>
                             <button
-                                className="btn btn-outline-secondary mr-1"
+                                className="btn btn-outline-secondary mr-1 test-submit-trigger"
                                 onClick={editOrCompleteForm}
                                 onSubmit={editOrCompleteForm}
                                 type="submit"
+                                disabled={queryState.kind !== 'VALID'}
                             >
                                 Continue
                             </button>
@@ -394,7 +472,7 @@ const ActionArea: React.FunctionComponent<ActionAreaProps> = ({
                         <button
                             type="button"
                             onClick={toggleEmailNotificationForm}
-                            className="btn btn-link font-weight-bold p-0 text-left"
+                            className="btn btn-link font-weight-bold p-0 text-left test-action-button"
                             disabled={disabled}
                         >
                             Send email notifications
@@ -431,7 +509,7 @@ const ActionArea: React.FunctionComponent<ActionAreaProps> = ({
                         <div>
                             <button
                                 type="submit"
-                                className="btn btn-outline-secondary mr-1"
+                                className="btn btn-outline-secondary mr-1 test-submit-action"
                                 onClick={editOrCompleteForm}
                                 onSubmit={editOrCompleteForm}
                             >
