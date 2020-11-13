@@ -54,5 +54,6 @@ func CheckActorHasTag(ctx context.Context, tag string) error {
 }
 
 const (
-	TagAllowUserExternalServicePublic = "AllowUserExternalServicePublic"
+	TagAllowUserExternalServicePublic  = "AllowUserExternalServicePublic"
+	TagAllowUserExternalServicePrivate = "AllowUserExternalServicePrivate"
 )

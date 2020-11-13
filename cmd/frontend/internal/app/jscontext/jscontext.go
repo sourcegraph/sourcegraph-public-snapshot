@@ -169,7 +169,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
 
-		ExternalServicesUserModeEnabled: conf.ExternalServiceUserMode(),
+		ExternalServicesUserModeEnabled: conf.ExternalServiceUserMode() != conf.ExternalServiceModeDisabled,
 
 		AllowSignup: conf.AuthAllowSignup(),
 
