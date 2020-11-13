@@ -5,7 +5,7 @@
   "captainGitHubUsername": "pecigonzalo",
 
   "previousRelease": "3.21.2",
-  "upcomingRelease": "3.22.0",
+  "upcomingRelease": "3.21.3",
 
   "releaseDateTime": "20 November 2020 10:00 PST",
   "oneWorkingDayBeforeRelease": "19 November 2020 10:00 PST",
@@ -15,6 +15,7 @@
   "slackAnnounceChannel": "dev-announce",
 
   "dryRun": {
+    "tags": false,
     "changesets": false,
     "trackingIssues": false
   }
