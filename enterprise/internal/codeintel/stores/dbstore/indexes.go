@@ -478,7 +478,7 @@ func (s *Store) makeIndexWorkQueueStore() dbworkerstore.Store {
 }
 
 func WorkerutilIndexStore(s basestore.ShareableStore) dbworkerstore.Store {
-	return dbworkerstore.NewStore(s.Handle(), dbworkerstore.StoreOptions{
+	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		TableName:         "lsif_indexes",
 		ViewName:          "lsif_indexes_with_repository_name u",
 		ColumnExpressions: indexColumnsWithNullRank,
