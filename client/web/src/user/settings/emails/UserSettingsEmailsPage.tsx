@@ -64,6 +64,16 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
                         >
                             <DeleteIcon className="icon-inline" />
                         </button>{' '}
+                        {this.props.node.verified && !this.props.node.isPrimary && (
+                            <button
+                                type="button"
+                                className="btn btn-sm btn-secondary"
+                                onClick={this.setAsPrimary}
+                                disabled={this.state.loading}
+                            >
+                                Set as primary
+                            </button>
+                        )}{' '}
                         {this.props.node.viewerCanManuallyVerify && (
                             <button
                                 type="button"
@@ -81,6 +91,40 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
                 )}
             </li>
         )
+    }
+
+    private setAsPrimary = (): void => {
+        this.setState({
+            errorDescription: undefined,
+            loading: true,
+        })
+        mutateGraphQL(
+            gql`
+                mutation SetUserEmailPrimary($user: ID!, $email: String!) {
+                    setUserEmailPrimary(user: $user, email: $email) {
+                        alwaysNil
+                    }
+                }
+            `,
+            { user: this.props.user.id, email: this.props.node.email }
+        )
+            .pipe(
+                map(({ data, errors }) => {
+                    if (!data || (errors && errors.length > 0)) {
+                        throw createAggregateError(errors)
+                    }
+                })
+            )
+            .subscribe(
+                () => {
+                    this.setState({ loading: false })
+                    eventLogger.log('UserEmailAddressSetAsPrimary')
+                    if (this.props.onDidUpdate) {
+                        this.props.onDidUpdate()
+                    }
+                },
+                error => this.setState({ loading: false, errorDescription: asError(error).message })
+            )
     }
 
     private remove = (): void => {

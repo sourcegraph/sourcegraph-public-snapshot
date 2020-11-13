@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
@@ -21,6 +22,7 @@ type UserEmail struct {
 	VerificationCode       *string
 	VerifiedAt             *time.Time
 	LastVerificationSentAt *time.Time
+	Primary                bool
 }
 
 // NeedsVerificationCoolDown returns true if the verification cooled down time is behind current time.
@@ -68,12 +70,58 @@ func (*userEmails) GetPrimaryEmail(ctx context.Context, id int32) (email string,
 		return Mocks.UserEmails.GetPrimaryEmail(ctx, id)
 	}
 
-	if err := dbconn.Global.QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 ORDER BY (verified_at IS NOT NULL) DESC, created_at ASC, email ASC LIMIT 1",
+	if err := dbconn.Global.QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND is_primary",
 		id,
 	).Scan(&email, &verified); err != nil {
 		return "", false, userEmailNotFoundError{[]interface{}{fmt.Sprintf("id %d", id)}}
 	}
 	return email, verified, nil
+}
+
+// SetPrimaryEmail sets the primary email for a user.
+// The address must be verified.
+// All other addresses for the user will be set as not primary.
+func (*userEmails) SetPrimaryEmail(ctx context.Context, userID int32, email string) error {
+	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	// Get the email. It needs to exist and be verified.
+	var verified bool
+	if err := tx.QueryRowContext(ctx, "SELECT verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND email=$2",
+		userID, email,
+	).Scan(&verified); err != nil {
+		return err
+	}
+	if !verified {
+		return errors.New("primary email must be verified")
+	}
+
+	// We need to set all as non primary and then set the correct one as primary in two steps
+	// so that we don't violate our index.
+
+	// Set all as not primary
+	if _, err := tx.ExecContext(ctx, "UPDATE user_emails SET is_primary = false WHERE user_id=$1", userID); err != nil {
+		return err
+	}
+
+	// Set selected as primary
+	if _, err := tx.ExecContext(ctx, "UPDATE user_emails SET is_primary = true WHERE user_id=$1 AND email=$2", userID, email); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Get gets information about the user's associated email address.
@@ -96,18 +144,38 @@ func (*userEmails) Add(ctx context.Context, userID int32, email string, verifica
 	return err
 }
 
-// Remove removes a user email. It returns an error if there is no such email associated with the user.
+// Remove removes a user email. It returns an error if there is no such email associated with the user or the email
+// is the user's primary address
 func (*userEmails) Remove(ctx context.Context, userID int32, email string) error {
-	res, err := dbconn.Global.ExecContext(ctx, "DELETE FROM user_emails WHERE user_id=$1 AND email=$2", userID, email)
+	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
-	nrows, err := res.RowsAffected()
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	// Get the email. It needs to exist and be verified.
+	var isPrimary bool
+	if err := tx.QueryRowContext(ctx, "SELECT is_primary FROM user_emails WHERE user_id=$1 AND email=$2",
+		userID, email,
+	).Scan(&isPrimary); err != nil {
+		return fmt.Errorf("fetching email address: %w", err)
+	}
+	if isPrimary {
+		return errors.New("can't delete primary email address")
+	}
+
+	_, err = tx.ExecContext(ctx, "DELETE FROM user_emails WHERE user_id=$1 AND email=$2", userID, email)
 	if err != nil {
 		return err
-	}
-	if nrows == 0 {
-		return errors.New("user email not found")
 	}
 	return nil
 }
@@ -223,7 +291,7 @@ func (*userEmails) GetVerifiedEmails(ctx context.Context, emails ...string) ([]*
 func (*userEmails) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*UserEmail, error) {
 	rows, err := dbconn.Global.QueryContext(ctx,
 		`SELECT user_emails.user_id, user_emails.email, user_emails.created_at, user_emails.verification_code,
-				user_emails.verified_at, user_emails.last_verification_sent_at FROM user_emails `+query, args...)
+				user_emails.verified_at, user_emails.last_verification_sent_at, user_emails.is_primary FROM user_emails `+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +300,7 @@ func (*userEmails) getBySQL(ctx context.Context, query string, args ...interface
 	defer rows.Close()
 	for rows.Next() {
 		var v UserEmail
-		err := rows.Scan(&v.UserID, &v.Email, &v.CreatedAt, &v.VerificationCode, &v.VerifiedAt, &v.LastVerificationSentAt)
+		err := rows.Scan(&v.UserID, &v.Email, &v.CreatedAt, &v.VerificationCode, &v.VerifiedAt, &v.LastVerificationSentAt, &v.Primary)
 		if err != nil {
 			return nil, err
 		}
