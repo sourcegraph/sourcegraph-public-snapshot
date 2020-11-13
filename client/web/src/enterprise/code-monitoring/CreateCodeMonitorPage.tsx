@@ -9,6 +9,12 @@ import { BreadcrumbSetters, BreadcrumbsProps } from '../../components/Breadcrumb
 import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
 import classnames from 'classnames'
+import { useEventObservable } from '../../../../shared/src/util/useObservable'
+import { createCodeMonitor } from './backend'
+import { MonitorEmailPriority } from '../../../../shared/src/graphql/schema'
+import { Observable } from 'rxjs'
+import { catchError, mergeMap, startWith, tap } from 'rxjs/operators'
+import { asError, isErrorLike } from '../../../../shared/src/util/errors'
 import { Link } from '../../../../shared/src/components/Link'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
@@ -47,6 +53,9 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
             []
         )
     )
+
+    const LOADING = 'loading' as const
+
     const [codeMonitor, setCodeMonitor] = useState<CodeMonitorFields>({
         description: '',
         query: '',
@@ -81,6 +90,37 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
         setFormCompletion(previousState => ({ ...previousState, actionCompleted: !previousState.actionCompleted }))
     }, [])
 
+    const [createRequest, codeMonitorOrError] = useEventObservable(
+        useCallback(
+            (submit: Observable<React.FormEvent<HTMLFormElement>>) =>
+                submit.pipe(
+                    tap(event => event.preventDefault()),
+                    mergeMap(() =>
+                        createCodeMonitor({
+                            namespace: props.authenticatedUser.id,
+                            description: codeMonitor.description,
+                            enabled: codeMonitor.enabled,
+                            trigger: { query: codeMonitor.query },
+                            actions: [
+                                {
+                                    email: {
+                                        enabled: codeMonitor.action.enabled,
+                                        priority: MonitorEmailPriority.NORMAL,
+                                        recipients: [props.authenticatedUser.id],
+                                        header: '',
+                                    },
+                                },
+                            ],
+                        }).pipe(
+                            startWith(LOADING),
+                            catchError(error => [asError(error)])
+                        )
+                    )
+                ),
+            [props.authenticatedUser, codeMonitor]
+        )
+    )
+
     return (
         <div className="container mt-3 web-content">
             <PageTitle title="Create new code monitor" />
@@ -90,7 +130,7 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                 {/* TODO: populate link */}
                 Learn more
             </a>
-            <Form className="my-4">
+            <Form className="my-4" onSubmit={createRequest}>
                 <div className="flex mb-4">
                     Name
                     <div>
@@ -163,8 +203,12 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                     <div className="flex my-4">
                         <button
                             type="submit"
+                            disabled={
+                                !formCompletion.actionCompleted ||
+                                isErrorLike(codeMonitorOrError) ||
+                                codeMonitorOrError === LOADING
+                            }
                             className="btn btn-primary mr-2 test-submit-monitor"
-                            disabled={!formCompletion.actionCompleted}
                         >
                             Create code monitor
                         </button>
@@ -173,6 +217,15 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                             Cancel
                         </button>
                     </div>
+                    {/** TODO: Error and success states. We will probably redirect the user to another page, so we could remove the success state. */}
+                    {!isErrorLike(codeMonitorOrError) && !!codeMonitorOrError && codeMonitorOrError !== LOADING && (
+                        <div className="alert alert-success">
+                            Successfully created monitor {codeMonitorOrError.description}
+                        </div>
+                    )}
+                    {isErrorLike(codeMonitorOrError) && (
+                        <div className="alert alert-danger">Failed to create monitor: {codeMonitorOrError.message}</div>
+                    )}
                 </div>
             </Form>
         </div>
