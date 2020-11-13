@@ -2400,24 +2400,6 @@ with your code hosts connections or networking issues affecting communication wi
 ```
 
 <br />
-## repo-updater: sched_manual_fetch
-
-<p class="subtitle">cloud: repositories scheduled due to user traffic</p>**Descriptions:**
-
-- _repo-updater: less than 0 repositories scheduled due to user traffic for 9h0m0s_
-
-**Possible solutions:**
-
-- Check repo-updater logs. This is expected to fire if there are no user added code hosts
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_sched_manual_fetch"
-]
-```
-
-<br />
 ## repo-updater: sched_known_repos
 
 <p class="subtitle">cloud: repositories managed by the scheduler</p>**Descriptions:**
