@@ -91,12 +91,12 @@ func (u *IndexabilityUpdater) queueRepository(ctx context.Context, repoUsageStat
 		return err
 	}
 
-	commit, err := u.gitserverClient.Head(ctx, u.dbStore, repoUsageStatistics.RepositoryID)
+	commit, err := u.gitserverClient.Head(ctx, repoUsageStatistics.RepositoryID)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.Head")
 	}
 
-	paths, err := u.gitserverClient.ListFiles(ctx, u.dbStore, repoUsageStatistics.RepositoryID, commit, inference.Patterns)
+	paths, err := u.gitserverClient.ListFiles(ctx, repoUsageStatistics.RepositoryID, commit, inference.Patterns)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.ListFiles")
 	}

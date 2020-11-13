@@ -66,7 +66,7 @@ func main() {
 	// Initialize stores
 	dbStore := store.NewWithDB(db, observationContext)
 	lsifStore := lsifstore.NewStore(codeIntelDB, observationContext)
-	gitserverClient := gitserver.New(observationContext)
+	gitserverClient := gitserver.New(dbStore, observationContext)
 
 	uploadStore, err := uploadstore.CreateLazy(context.Background(), config.UploadStoreConfig, observationContext)
 	if err != nil {

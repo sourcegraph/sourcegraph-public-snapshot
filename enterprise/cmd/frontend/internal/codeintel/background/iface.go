@@ -55,33 +55,9 @@ type LSIFStore interface {
 }
 
 type GitserverClient interface {
-	Head(ctx context.Context, dbStore DBStore, repositoryID int) (string, error)
-	ListFiles(ctx context.Context, dbStore DBStore, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
-	FileExists(ctx context.Context, dbStore DBStore, repositoryID int, commit, file string) (bool, error)
-	RawContents(ctx context.Context, dbStore DBStore, repositoryID int, commit, file string) ([]byte, error)
-	CommitGraph(ctx context.Context, dbStore DBStore, repositoryID int, options gitserver.CommitGraphOptions) (map[string][]string, error)
-}
-
-type GitserverClientShim struct {
-	*gitserver.Client
-}
-
-func (c *GitserverClientShim) Head(ctx context.Context, dbStore DBStore, repositoryID int) (string, error) {
-	return c.Client.Head(ctx, dbStore, repositoryID)
-}
-
-func (c *GitserverClientShim) ListFiles(ctx context.Context, dbStore DBStore, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
-	return c.Client.ListFiles(ctx, dbStore, repositoryID, commit, pattern)
-}
-
-func (c *GitserverClientShim) FileExists(ctx context.Context, dbStore DBStore, repositoryID int, commit, file string) (bool, error) {
-	return c.Client.FileExists(ctx, dbStore, repositoryID, commit, file)
-}
-
-func (c *GitserverClientShim) RawContents(ctx context.Context, dbStore DBStore, repositoryID int, commit, file string) ([]byte, error) {
-	return c.Client.RawContents(ctx, dbStore, repositoryID, commit, file)
-}
-
-func (c *GitserverClientShim) CommitGraph(ctx context.Context, dbStore DBStore, repositoryID int, options gitserver.CommitGraphOptions) (map[string][]string, error) {
-	return c.Client.CommitGraph(ctx, dbStore, repositoryID, options)
+	Head(ctx context.Context, repositoryID int) (string, error)
+	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
+	FileExists(ctx context.Context, repositoryID int, commit, file string) (bool, error)
+	RawContents(ctx context.Context, repositoryID int, commit, file string) ([]byte, error)
+	CommitGraph(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (map[string][]string, error)
 }
