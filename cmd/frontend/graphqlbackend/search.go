@@ -288,6 +288,10 @@ type searchResolver struct {
 	userSettings        *schema.Settings
 	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
+	// resultChannel if non-nil will send all results we receive down it. See
+	// searchResolver.SetResultChannel
+	resultChannel chan<- []SearchResultResolver
+
 	// Cached resolveRepositories results.
 	reposMu  sync.Mutex
 	resolved resolvedRepositories
@@ -295,6 +299,19 @@ type searchResolver struct {
 
 	zoekt        *searchbackend.Zoekt
 	searcherURLs *endpoint.Map
+}
+
+// SetResultChannel will send all results down c.
+//
+// This is how our streaming and our batch interface co-exist. When this is
+// set, it exposes a way to stream out results as we collect them.
+//
+// TODO(keegan) This is not our final design. For example this doesn't allow
+// us to stream out things like dynamic filters or take into account
+// AND/OR. However, streaming is behind a feature flag for now, so this is to
+// make it visible in the browser.
+func (r *searchResolver) SetResultChannel(c chan<- []SearchResultResolver) {
+	r.resultChannel = c
 }
 
 // rawQuery returns the original query string input.

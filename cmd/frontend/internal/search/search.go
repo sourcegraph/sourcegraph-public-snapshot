@@ -42,11 +42,7 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resultsResolver, err := search.Results(ctx)
-	if err != nil {
-		eventWriter.Event("error", err.Error())
-		return
-	}
+	resultsStream, resultsStreamDone := newResultsStream(ctx, search)
 
 	const filematchesChunk = 1000
 	filematchesBuf := make([]eventFileMatch, 0, filematchesChunk)
@@ -96,45 +92,47 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	for _, result := range resultsResolver.Results() {
-		if fm, ok := result.ToFileMatch(); ok {
-			if syms := fm.Symbols(); len(syms) > 0 {
-				// Inlining to avoid exporting a bunch of stuff from
-				// graphqlbackend
-				symbols := make([]symbol, 0, len(syms))
-				for _, sym := range syms {
-					u, err := sym.URL(ctx)
-					if err != nil {
-						continue
+	for results := range resultsStream {
+		for _, result := range results {
+			if fm, ok := result.ToFileMatch(); ok {
+				if syms := fm.Symbols(); len(syms) > 0 {
+					// Inlining to avoid exporting a bunch of stuff from
+					// graphqlbackend
+					symbols := make([]symbol, 0, len(syms))
+					for _, sym := range syms {
+						u, err := sym.URL(ctx)
+						if err != nil {
+							continue
+						}
+						symbols = append(symbols, symbol{
+							URL:           u,
+							Name:          sym.Name(),
+							ContainerName: fromStrPtr(sym.ContainerName()),
+							Kind:          sym.Kind(),
+						})
 					}
-					symbols = append(symbols, symbol{
-						URL:           u,
-						Name:          sym.Name(),
-						ContainerName: fromStrPtr(sym.ContainerName()),
-						Kind:          sym.Kind(),
-					})
-				}
-				symbolmatchesBuf = append(symbolmatchesBuf, fromSymbolMatch(fm, symbols))
-				if len(symbolmatchesBuf) == cap(symbolmatchesBuf) {
-					flushSymbolMatchesBuf()
-				}
-			} else {
-				filematchesBuf = append(filematchesBuf, fromFileMatch(fm))
-				if len(filematchesBuf) == cap(filematchesBuf) {
-					flushFileMatchesBuf()
+					symbolmatchesBuf = append(symbolmatchesBuf, fromSymbolMatch(fm, symbols))
+					if len(symbolmatchesBuf) == cap(symbolmatchesBuf) {
+						flushSymbolMatchesBuf()
+					}
+				} else {
+					filematchesBuf = append(filematchesBuf, fromFileMatch(fm))
+					if len(filematchesBuf) == cap(filematchesBuf) {
+						flushFileMatchesBuf()
+					}
 				}
 			}
-		}
-		if repo, ok := result.ToRepository(); ok {
-			repomatchesBuf = append(repomatchesBuf, fromRepository(repo))
-			if len(repomatchesBuf) == cap(repomatchesBuf) {
-				flushRepoMatchesBuf()
+			if repo, ok := result.ToRepository(); ok {
+				repomatchesBuf = append(repomatchesBuf, fromRepository(repo))
+				if len(repomatchesBuf) == cap(repomatchesBuf) {
+					flushRepoMatchesBuf()
+				}
 			}
-		}
-		if commit, ok := result.ToCommitSearchResult(); ok {
-			commitmatchesBuf = append(commitmatchesBuf, fromCommit(commit))
-			if len(commitmatchesBuf) == cap(commitmatchesBuf) {
-				flushCommitMatchesBuf()
+			if commit, ok := result.ToCommitSearchResult(); ok {
+				commitmatchesBuf = append(commitmatchesBuf, fromCommit(commit))
+				if len(commitmatchesBuf) == cap(commitmatchesBuf) {
+					flushCommitMatchesBuf()
+				}
 			}
 		}
 	}
@@ -143,6 +141,13 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 	flushSymbolMatchesBuf()
 	flushRepoMatchesBuf()
 	flushCommitMatchesBuf()
+
+	final := <-resultsStreamDone
+	resultsResolver, err := final.resultsResolver, final.err
+	if err != nil {
+		eventWriter.Event("error", err.Error())
+		return
+	}
 
 	// Send dynamic filters once. When this is true streaming we may want to
 	// send updated filters as we find more results.
@@ -227,6 +232,40 @@ func fromStrPtr(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+type finalResult struct {
+	resultsResolver *graphqlbackend.SearchResultsResolver
+	err             error
+}
+
+// newResultsStream will return a channel which streams out the results found
+// by search.Results. Once done it will send the return value of
+// search.Results. Both channels need to be read until closed, otherwise
+// goroutines will be leaked.
+//
+//   - results is written to 0 or more times before closing.
+//   - final is written to once.
+func newResultsStream(ctx context.Context, search graphqlbackend.SearchImplementer) (results <-chan []graphqlbackend.SearchResultResolver, final <-chan finalResult) {
+	resultsC := make(chan []graphqlbackend.SearchResultResolver)
+	finalC := make(chan finalResult, 1)
+	go func() {
+		defer close(finalC)
+		defer close(resultsC)
+
+		if setter, ok := search.(interface {
+			SetResultChannel(c chan<- []graphqlbackend.SearchResultResolver)
+		}); !ok {
+			finalC <- finalResult{err: errors.New("SearchImplementer does not support streaming")}
+			return
+		} else {
+			setter.SetResultChannel(resultsC)
+		}
+
+		r, err := search.Results(ctx)
+		finalC <- finalResult{resultsResolver: r, err: err}
+	}()
+	return resultsC, finalC
 }
 
 func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
