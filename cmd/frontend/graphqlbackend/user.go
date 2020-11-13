@@ -357,6 +357,7 @@ func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 func viewerIsChangingUsername(ctx context.Context, subjectUserID int32, proposedUsername string) bool {
 	subject, err := db.Users.GetByID(ctx, subjectUserID)
 	if err != nil {
+		log15.Warn("viewerIsChangingUsername", "error", err)
 		return true
 	}
 	return subject.Username != proposedUsername
