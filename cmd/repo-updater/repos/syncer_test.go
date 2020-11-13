@@ -1583,18 +1583,18 @@ func testUserAddedRepos(sqlDB *sql.DB, userID int32) func(t *testing.T, store *r
 			})
 
 			syncer = &repos.Syncer{
-				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+				Sourcer: func(services ...*types.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(userService, nil, publicRepo, privateRepo)
 					return repos.Sources{s}, nil
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), store.ExternalServiceStore(), userService.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
 			// Confirm that there are two relationships
-			assertSourceCount(ctx, t, db, 2)
+			assertSourceCount(ctx, t, sqlDB, 2)
 			conf.Mock(nil)
 
 			// Attempt to add some repos with a per user limit set
