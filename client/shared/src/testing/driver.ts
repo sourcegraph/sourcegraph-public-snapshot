@@ -176,7 +176,9 @@ export class Driver {
                                         message.location().url !== 'chrome-extension://invalid/'
                                 ),
                                 // Immediately format remote handles to strings, but maintain order.
-                                map(message => formatPuppeteerConsoleMessage(page, message)),
+                                map(message =>
+                                    formatPuppeteerConsoleMessage(page, message, this.browserType === 'firefox')
+                                ),
                                 concatAll(),
                                 takeUntil(fromEvent(page, 'close'))
                             )
