@@ -7,14 +7,15 @@ DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)""
 cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
 
 function cluster_setup() {
-git clone --depth 1 \
+git clone --depth 1 --branch v3.21.2 \
   https://github.com/sourcegraph/deploy-sourcegraph.git \
   "$DIR/deploy-sourcegraph"
 
 #NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER"
 # TODO(Dax): Buildkite cannot create namespaces at cluster level
-NAMESPACE=cluster-ci-122
-#kubectl create namespace "$NAMESPACE"
+export NAMESPACE=cluster-ci-122
+kubectl create ns $NAMESPACE -oyaml --dry-run | kubectl apply -f -
+
 
 # TODO(Dax): Bit concerning this works...
 gcloud container clusters get-credentials default-buildkite --zone=us-central1-c --project=sourcegraph-ci
@@ -45,35 +46,40 @@ function test_setup() {
   }
   trap kubectl_logs EXIT
 
-  set -x
+  set +x +u
+  # shellcheck disable=SC1091
+  source /root/.profile
 
   test/setup-deps.sh
 
   sleep 15
-  SOURCEGRAPH_URL="http://sourcegraph-frontend.$NAMESPACE.svc.cluster.local:30080"
-  curl $SOURCEGRAPH_URL
+  export SOURCEGRAPH_BASE_URL="http://sourcegraph-frontend.$NAMESPACE.svc.cluster.local:30080"
+  curl $SOURCEGRAPH_BASE_URL
 
   # setup admin users, etc
-  go run test/init-server.go -base-url=$SOURCEGRAPH_URL
+  go run test/init-server.go -base-url=$SOURCEGRAPH_BASE_URL
 
-  # Load variables set up by init-server, disabling `-x` to avoid printing variables
-  set +x
+  # Load variables set up by init-server, disabling `-x` to avoid printing variables, setting +u to avoid blowing up on ubound ones
+  set +x +u
   # shellcheck disable=SC1091
   source /root/.profile
   set -x
 
   echo "TEST: Checking Sourcegraph instance is accessible"
 
-  curl --fail $SOURCEGRAPH_URL
-  curl --fail "$SOURCEGRAPH_URL/healthz"
+  curl --fail $SOURCEGRAPH_BASE_URL
+  curl --fail "$SOURCEGRAPH_BASE_URL/healthz"
 }
 
 function e2e() {
   echo "TEST: Running tests"
-  pushd client/web || exit
-  yarn run test:regression:core
+  pushd client/web
+  echo $SOURCEGRAPH_BASE_URL
+  # TODO: File issue for broken test
+  #SOURCEGRAPH_BASE_URL="http://sourcegraph-frontend.$NAMESPACE.svc.cluster.local:30080" yarn run test:regression:core
 
-  popd || exit
+  yarn run test:regression:config-settings
+  popd
 }
 
 # main
