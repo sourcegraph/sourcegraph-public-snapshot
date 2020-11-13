@@ -28,7 +28,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "changeset-connection-resolver", true)
+	userID := insertTestUser(t, dbconn.Global, "changeset-connection-resolver", false)
 
 	store := ee.NewStore(dbconn.Global)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
@@ -38,7 +38,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	if err := rstore.InsertRepos(ctx, repo, inaccessibleRepo); err != nil {
 		t.Fatal(err)
 	}
-	ct.AuthzFilterRepos(t, inaccessibleRepo.ID)
+	ct.MockRepoPermissions(t, userID, repo.ID)
 
 	spec := &campaigns.CampaignSpec{
 		NamespaceUserID: userID,

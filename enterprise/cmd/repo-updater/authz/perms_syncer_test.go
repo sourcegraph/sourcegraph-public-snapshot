@@ -14,6 +14,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
@@ -106,6 +107,9 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		},
 	}
 
+	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: id}, nil
+	}
 	edb.Mocks.Perms.ListExternalAccounts = func(context.Context, int32) ([]*extsvc.Account, error) {
 		return []*extsvc.Account{&extAccount}, nil
 	}
@@ -121,6 +125,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		return nil
 	}
 	defer func() {
+		db.Mocks.Users = db.MockUsers{}
 		edb.Mocks.Perms = edb.MockPerms{}
 	}()
 
@@ -175,10 +180,10 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		return NewPermsSyncer(reposStore, edb.NewPermsStore(nil, clock), clock, nil)
 	}
 
-	t.Run("SetRepoPermissions is called when no authz provider", func(t *testing.T) {
-		calledSetRepoPermissions := false
-		edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
-			calledSetRepoPermissions = true
+	t.Run("TouchRepoPermissions is called when no authz provider", func(t *testing.T) {
+		calledTouchRepoPermissions := false
+		edb.Mocks.Perms.TouchRepoPermissions = func(ctx context.Context, repoID int32) error {
+			calledTouchRepoPermissions = true
 			return nil
 		}
 		defer func() {
@@ -208,8 +213,8 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !calledSetRepoPermissions {
-			t.Fatal("!calledSetRepoPermissions")
+		if !calledTouchRepoPermissions {
+			t.Fatal("!calledTouchRepoPermissions")
 		}
 	})
 
