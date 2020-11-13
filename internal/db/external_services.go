@@ -700,7 +700,7 @@ func (e *ExternalServiceStore) list(ctx context.Context, conds []*sqlf.Query, li
 		SELECT id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted
 		FROM external_services
 		WHERE (%s)
-		ORDER BY id ASC
+		ORDER BY id DESC
 		%s`,
 		sqlf.Join(conds, ") AND ("),
 		limitOffset.SQL(),

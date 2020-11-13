@@ -245,11 +245,11 @@ func testServerSetRepoEnabled(t *testing.T, store *repos.Store) func(t *testing.
 			{gitlabService, gitlabRepo},
 		} {
 			svcs := types.ExternalServices{
-				k.svc,
 				k.svc.With(func(e *types.ExternalService) {
 					e.ID++
 					e.DisplayName += " - Duplicate"
 				}),
+				k.svc,
 			}
 
 			testCases = append(testCases, testCase{
@@ -545,7 +545,7 @@ func testServerRepoExternalServices(t *testing.T, store *repos.Store) func(t *te
 		}, {
 			name:   "repo sources",
 			repoID: repoSources.ID,
-			svcs:   apiExternalServices(service1, service2),
+			svcs:   apiExternalServices(service2, service1),
 			err:    "<nil>",
 		}, {
 			name:   "repo not in store",
