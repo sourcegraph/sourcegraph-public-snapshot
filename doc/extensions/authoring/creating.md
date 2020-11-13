@@ -68,4 +68,5 @@ See [Debugging an extension](debugging.md).
 
 ## Next steps
 
-- [Publishing an extension](publishing.md)
+- [Publishing an extension](publishing.md) to the Sourcegraph.com registry
+- [Local development](local_development.md) to test your extension locally

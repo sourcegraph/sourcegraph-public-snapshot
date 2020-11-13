@@ -14,4 +14,4 @@ We designed Sourcegraph extensions with security and privacy in mind:
 
 ## Additional Admin security features
 
-We offer admins the option to only allow pre-approved extensions, disallow all Sourcegraph.com extensions, or host a private extensions registry: <a href="/admin/extensions">Administration of Sourcegraph extensions and the extension registry</a>.
+We offer admins the option to only allow pre-approved extensions, disallow all Sourcegraph.com extensions, or host a private extensions registry: [Administration of Sourcegraph extensions and the extension registry](../admin/extensions/index.md).
