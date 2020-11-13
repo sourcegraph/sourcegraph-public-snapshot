@@ -13,6 +13,7 @@ type CodeMonitorsResolver interface {
 	CreateCodeMonitor(ctx context.Context, args *CreateCodeMonitorArgs) (MonitorResolver, error)
 	ToggleCodeMonitor(ctx context.Context, args *ToggleCodeMonitorArgs) (MonitorResolver, error)
 	DeleteCodeMonitor(ctx context.Context, args *DeleteCodeMonitorArgs) (*EmptyResponse, error)
+	UpdateCodeMonitor(ctx context.Context, args *UpdateCodeMonitorArgs) (MonitorResolver, error)
 }
 
 type MonitorConnectionResolver interface {
@@ -150,6 +151,38 @@ type DeleteCodeMonitorArgs struct {
 	Id graphql.ID
 }
 
+type MonitorArgs struct {
+	Namespace   graphql.ID
+	Description string
+	Enabled     bool
+}
+
+type EditActionEmailArgs struct {
+	Id     graphql.ID
+	Update *CreateActionEmailArgs
+}
+
+type EditActionArgs struct {
+	Email *EditActionEmailArgs
+}
+
+type EditTriggerArgs struct {
+	Id     graphql.ID
+	Update *CreateTriggerArgs
+}
+
+type EditMonitorArgs struct {
+	Id     graphql.ID
+	Update *MonitorArgs
+}
+
+type UpdateCodeMonitorArgs struct {
+	Id      graphql.ID
+	Monitor *EditMonitorArgs
+	Trigger *EditTriggerArgs
+	Actions []*EditActionArgs
+}
+
 var DefaultCodeMonitorsResolver = &defaultCodeMonitorsResolver{}
 
 var codeMonitorsOnlyInEnterprise = errors.New("code monitors are only available in enterprise")
@@ -170,5 +203,9 @@ func (d defaultCodeMonitorsResolver) ToggleCodeMonitor(ctx context.Context, args
 }
 
 func (d defaultCodeMonitorsResolver) DeleteCodeMonitor(ctx context.Context, args *DeleteCodeMonitorArgs) (*EmptyResponse, error) {
+	return nil, codeMonitorsOnlyInEnterprise
+}
+
+func (d defaultCodeMonitorsResolver) UpdateCodeMonitor(ctx context.Context, args *UpdateCodeMonitorArgs) (MonitorResolver, error) {
 	return nil, codeMonitorsOnlyInEnterprise
 }

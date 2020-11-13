@@ -147,6 +147,10 @@ func (r *Resolver) DeleteCodeMonitor(ctx context.Context, args *graphqlbackend.D
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
 func (r *Resolver) runMonitorQuery(ctx context.Context, q *sqlf.Query) (graphqlbackend.MonitorResolver, error) {
 	rows, err := r.db.Query(ctx, q)
 	if err != nil {
