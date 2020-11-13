@@ -3,7 +3,6 @@ import { CreateCodeMonitorPage } from './CreateCodeMonitorPage'
 import { storiesOf } from '@storybook/react'
 import { WebStory } from '../../components/WebStory'
 import { AuthenticatedUser } from '../../auth'
-import { boolean } from '@storybook/addon-knobs'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/CreateCodeMonitorPage', module)
 
@@ -15,7 +14,7 @@ add(
                 <CreateCodeMonitorPage
                     {...props}
                     authenticatedUser={
-                        boolean('isAuthenticated', false) ? ({ username: 'alice' } as AuthenticatedUser) : null
+                        { id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser
                     }
                 />
             )}

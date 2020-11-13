@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
@@ -856,9 +857,10 @@ func TestRepositoryPermissions(t *testing.T) {
 			testChangesetResponse(t, s, userCtx, c.ID, "ExternalChangeset")
 		}
 
-		// Now we add the authzFilter and filter out the repository of one changeset
+		// Now we set permissions and filter out the repository of one changeset
 		filteredRepo := changesets[0].RepoID
-		ct.AuthzFilterRepos(t, filteredRepo)
+		accessibleRepo := changesets[1].RepoID
+		ct.MockRepoPermissions(t, userID, accessibleRepo)
 
 		// Send query again and check that for each filtered repository we get a
 		// HiddenChangeset
@@ -951,9 +953,10 @@ func TestRepositoryPermissions(t *testing.T) {
 			testChangesetSpecResponse(t, s, userCtx, c.RandID, "VisibleChangesetSpec")
 		}
 
-		// Now we add the authzFilter and filter out the repository of one changeset
+		// Now we set permissions and filter out the repository of one changeset
 		filteredRepo := changesetSpecs[0].RepoID
-		ct.AuthzFilterRepos(t, filteredRepo)
+		accessibleRepo := changesetSpecs[1].RepoID
+		ct.MockRepoPermissions(t, userID, accessibleRepo)
 
 		// Send query again and check that for each filtered repository we get a
 		// HiddenChangesetSpec.

@@ -1,0 +1,38 @@
+@keyframes gradient {
+    0% {
+        background-position-x: 100%;
+    }
+    100% {
+        background-position-x: -50%;
+    }
+}
+
+.streaming-progress {
+    &__count {
+        color: var(--link-color);
+
+        &--in-progress {
+            background-color: var(--color-bg-2);
+            color: $oc-blue-6;
+            background-image: linear-gradient(90deg, transparent 25%, $oc-blue-6 25%, $oc-blue-6 40%, transparent 40%);
+            background-size: 200% 1px;
+            background-repeat: no-repeat;
+            background-position-y: bottom;
+            background-position-x: 100%;
+            animation: gradient 3s linear infinite;
+        }
+    }
+
+    &__skipped {
+        border: none;
+        &.btn.btn-secondary {
+            color: var(--link-color);
+            background-color: transparent;
+            box-shadow: none;
+        }
+
+        &-popover {
+            max-width: 350px;
+        }
+    }
+}

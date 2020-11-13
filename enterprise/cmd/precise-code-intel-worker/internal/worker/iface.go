@@ -68,5 +68,5 @@ func (s *LSIFStoreShim) Transact(ctx context.Context) (LSIFStore, error) {
 }
 
 type GitserverClient interface {
-	DirectoryChildren(ctx context.Context, store gitserver.DBStore, repositoryID int, commit string, dirnames []string) (map[string][]string, error)
+	DirectoryChildren(ctx context.Context, repositoryID int, commit string, dirnames []string) (map[string][]string, error)
 }

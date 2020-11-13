@@ -56,15 +56,44 @@ func groupSiteUsageStats(summary types.SiteUsageSummary, monthsOnly bool) *types
 	return stats
 }
 
-// GetAggregatedStats returns aggregates statistics for code intel and search usage.
-func GetAggregatedStats(ctx context.Context) (*types.CodeIntelUsageStatistics, *types.SearchUsageStatistics, error) {
-	events, err := db.EventLogs.AggregatedEvents(ctx)
+// GetAggregatedCodeIntelStats returns aggregates statistics for code intel usage.
+func GetAggregatedCodeIntelStats(ctx context.Context) (*types.CodeIntelUsageStatistics, error) {
+	events, err := db.EventLogs.AggregatedCodeIntelEvents(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	codeIntelStats, searchStats := groupAggreatedStats(events)
-	return codeIntelStats, searchStats, nil
+	codeIntelUsageStats := &types.CodeIntelUsageStatistics{
+		Daily:   []*types.CodeIntelUsagePeriod{newCodeIntelUsagePeriod()},
+		Weekly:  []*types.CodeIntelUsagePeriod{newCodeIntelUsagePeriod()},
+		Monthly: []*types.CodeIntelUsagePeriod{newCodeIntelUsagePeriod()},
+	}
+
+	for _, event := range events {
+		insertCodeIntelEventStatistics(event, codeIntelUsageStats)
+	}
+
+	return codeIntelUsageStats, nil
+}
+
+// GetAggregatedSearchStats returns aggregates statistics for search usage.
+func GetAggregatedSearchStats(ctx context.Context) (*types.SearchUsageStatistics, error) {
+	events, err := db.EventLogs.AggregatedSearchEvents(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	searchUsageStats := &types.SearchUsageStatistics{
+		Daily:   []*types.SearchUsagePeriod{newSearchUsagePeriod()},
+		Weekly:  []*types.SearchUsagePeriod{newSearchUsagePeriod()},
+		Monthly: []*types.SearchUsagePeriod{newSearchUsagePeriod()},
+	}
+
+	for _, event := range events {
+		insertSearchEventStatistics(event, searchUsageStats)
+	}
+
+	return searchUsageStats, nil
 }
 
 func groupAggreatedStats(events []types.AggregatedEvent) (*types.CodeIntelUsageStatistics, *types.SearchUsageStatistics) {

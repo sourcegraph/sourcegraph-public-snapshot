@@ -159,7 +159,8 @@ func newGitHubExternalService(t *testing.T, store *db.ExternalServiceStore) *typ
 
 func newGitHubTestRepo(name string, externalService *types.ExternalService) *types.Repo {
 	return &types.Repo{
-		Name: api.RepoName(name),
+		Name:    api.RepoName(name),
+		Private: true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", externalService.ID),
 			ServiceType: "github",

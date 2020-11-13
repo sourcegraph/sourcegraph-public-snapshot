@@ -104,7 +104,7 @@ func newBackgroundRoutines() ([]goroutine.BackgroundRoutine, error) {
 
 	dbStoreShim := &background.DBStoreShim{services.dbStore}
 	lsifStoreShim := services.lsifStore
-	gitserverClient := &background.GitserverClientShim{services.gitserverClient}
+	gitserverClient := services.gitserverClient
 	metrics := background.NewMetrics(observationContext.Registerer)
 
 	routines := []goroutine.BackgroundRoutine{

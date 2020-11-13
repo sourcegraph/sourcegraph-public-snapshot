@@ -35,7 +35,8 @@ func TestRepo(t *testing.T, esStore *edb.ExternalServiceStore, serviceKind strin
 	}
 
 	return &types.Repo{
-		Name: api.RepoName(fmt.Sprintf("repo-%d", svc.ID)),
+		Name:    api.RepoName(fmt.Sprintf("repo-%d", svc.ID)),
+		Private: true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", svc.ID),
 			ServiceType: extsvc.KindToType(serviceKind),

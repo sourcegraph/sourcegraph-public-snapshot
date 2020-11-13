@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/datastructures"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/lsif"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/datastructures"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/lsif"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
@@ -28,6 +28,9 @@ type GroupedBundleData struct {
 
 const MaxNumResultChunks = 1000
 const ResultsPerResultChunk = 500
+
+func getDefinitionResultID(r lsif.Range) int { return r.DefinitionResultID }
+func getReferenceResultID(r lsif.Range) int  { return r.ReferenceResultID }
 
 // groupBundleData converts a raw (but canonicalized) correlation State into a GroupedBundleData.
 func groupBundleData(ctx context.Context, state *State, dumpID int) (*GroupedBundleData, error) {
@@ -223,11 +226,6 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 
 	return ch
 }
-
-var (
-	getDefinitionResultID = func(r lsif.Range) int { return r.DefinitionResultID }
-	getReferenceResultID  = func(r lsif.Range) int { return r.ReferenceResultID }
-)
 
 func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*datastructures.DefaultIDSetMap, getResultID func(r lsif.Range) int) chan lsifstore.MonikerLocations {
 	monikers := datastructures.NewDefaultIDSetMap()

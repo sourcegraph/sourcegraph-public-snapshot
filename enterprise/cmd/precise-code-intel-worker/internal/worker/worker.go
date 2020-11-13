@@ -4,11 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 )
@@ -21,8 +19,7 @@ func NewWorker(
 	pollInterval time.Duration,
 	numProcessorRoutines int,
 	budgetMax int64,
-	metrics metrics.WorkerMetrics,
-	observationContext *observation.Context,
+	workerMetrics workerutil.WorkerMetrics,
 ) *workerutil.Worker {
 	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
 
@@ -31,7 +28,6 @@ func NewWorker(
 		lsifStore:       lsifStore,
 		uploadStore:     uploadStore,
 		gitserverClient: gitserverClient,
-		metrics:         metrics,
 		enableBudget:    budgetMax > 0,
 		budgetRemaining: budgetMax,
 	}
@@ -39,8 +35,6 @@ func NewWorker(
 	return dbworker.NewWorker(rootContext, store.WorkerutilUploadStore(dbStore), handler, workerutil.WorkerOptions{
 		NumHandlers: numProcessorRoutines,
 		Interval:    pollInterval,
-		Metrics: workerutil.WorkerMetrics{
-			HandleOperation: metrics.ProcessOperation,
-		},
+		Metrics:     workerMetrics,
 	})
 }
