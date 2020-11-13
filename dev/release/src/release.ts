@@ -12,84 +12,15 @@ import {
 } from './github'
 import * as changelog from './changelog'
 import * as campaigns from './campaigns'
-import { formatDate, timezoneLink, readLine, getWeekNumber } from './util'
-import * as persistedConfig from './config.json'
+import { Config, releaseVersions, loadConfig } from './config'
+import { formatDate, timezoneLink } from './util'
 import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
-import * as semver from 'semver'
 import execa from 'execa'
 import { readFileSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import commandExists from 'command-exists'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
-interface Config {
-    teamEmail: string
-
-    captainSlackUsername: string
-    captainGitHubUsername: string
-
-    previousRelease: string
-    upcomingRelease: string
-
-    releaseDateTime: string
-    oneWorkingDayBeforeRelease: string
-    fourWorkingDaysBeforeRelease: string
-    fiveWorkingDaysBeforeRelease: string
-
-    slackAnnounceChannel: string
-
-    dryRun: {
-        changesets?: boolean
-        trackingIssues?: boolean
-    }
-}
-
-/**
- * Convenience function for getting relevant configured releases as semver.SemVer
- *
- * It prompts for a confirmation of the `upcomingRelease` that is cached for a week.
- */
-async function releaseVersions(
-    config: Config
-): Promise<{
-    previous: semver.SemVer
-    upcoming: semver.SemVer
-}> {
-    const parseOptions: semver.Options = { loose: false }
-    const parsedPrevious = semver.parse(config.previousRelease, parseOptions)
-    if (!parsedPrevious) {
-        throw new Error(`config.previousRelease '${config.previousRelease}' is not valid semver`)
-    }
-    const parsedUpcoming = semver.parse(config.upcomingRelease, parseOptions)
-    if (!parsedUpcoming) {
-        throw new Error(`config.upcomingRelease '${config.upcomingRelease}' is not valid semver`)
-    }
-
-    // Verify the configured upcoming release. The response is cached and expires in a
-    // week, after which the captain is required to confirm again.
-    const now = new Date()
-    const cachedVersion = `.secrets/current_release_${now.getUTCFullYear()}_${getWeekNumber(now)}.txt`
-    const confirmVersion = await readLine(
-        `Please confirm the upcoming release version (configured: '${config.upcomingRelease}'): `,
-        cachedVersion
-    )
-    const parsedConfirmed = semver.parse(confirmVersion, parseOptions)
-    if (!parsedConfirmed) {
-        throw new Error(`Provided version '${confirmVersion}' is not valid semver (in ${cachedVersion})`)
-    }
-    if (semver.neq(parsedConfirmed, parsedUpcoming)) {
-        throw new Error(
-            `Provided version '${confirmVersion}' and config.upcomingRelease '${config.upcomingRelease}' to not match - please update the release configuration`
-        )
-    }
-
-    const versions = {
-        previous: parsedPrevious,
-        upcoming: parsedUpcoming,
-    }
-    console.log(`Using versions: { upcoming: ${versions.upcoming.format()}, previous: ${versions.previous.format()} }`)
-    return versions
-}
 
 type StepID =
     | 'help'
@@ -109,9 +40,11 @@ type StepID =
     | '_test:google-calendar'
     | '_test:slack'
     | '_test:campaign-create-from-changes'
+    | '_test:config'
 
 interface Step {
     id: StepID
+    description: string
     run?: ((config: Config, ...args: string[]) => Promise<void>) | ((config: Config, ...args: string[]) => void)
     argNames?: string[]
 }
@@ -119,25 +52,33 @@ interface Step {
 const steps: Step[] = [
     {
         id: 'help',
-        run: () => {
-            console.error('Steps are:')
+        description: 'Output help text about this tool',
+        argNames: ['all'],
+        run: (_config, all) => {
+            console.error('Sourcegraph release tool - https://about.sourcegraph.com/handbook/engineering/releases')
+            console.error('\nUSAGE\n')
+            console.error('\tyarn run release <step>')
+            console.error('\nAVAILABLE STEPS\n')
             console.error(
                 steps
-                    .filter(({ id }) => !id.startsWith('_'))
+                    .filter(({ id }) => all || !id.startsWith('_'))
                     .map(
-                        ({ id, argNames }) =>
+                        ({ id, argNames, description }) =>
                             '\t' +
                             id +
                             (argNames && argNames.length > 0
                                 ? ' ' + argNames.map(argumentName => `<${argumentName}>`).join(' ')
-                                : '')
+                                : '') +
+                            '\n\t\t' +
+                            description
                     )
-                    .join('\n')
+                    .join('\n') + '\n'
             )
         },
     },
     {
         id: 'tracking:release-timeline',
+        description: 'Generate a set of Google Calendar events for a MAJOR.MINOR release',
         run: async config => {
             const googleCalendar = await getClient()
             const { upcoming: release } = await releaseVersions(config)
@@ -197,6 +138,7 @@ const steps: Step[] = [
     },
     {
         id: 'tracking:release-issue',
+        description: 'Generate a GitHub tracking issue for a MAJOR.MINOR release',
         run: async (config: Config) => {
             const {
                 releaseDateTime,
@@ -253,6 +195,7 @@ const steps: Step[] = [
     },
     {
         id: 'tracking:patch-issue',
+        description: 'Generate a GitHub tracking issue for a MAJOR.MINOR.PATCH release',
         run: async config => {
             const { captainGitHubUsername, captainSlackUsername, slackAnnounceChannel, dryRun } = config
             const { upcoming: release } = await releaseVersions(config)
@@ -285,6 +228,7 @@ If you have changes that should go into this patch release, <${patchRequestTempl
     },
     {
         id: 'changelog:cut',
+        description: 'Generate pull requests to perform a changelog cut for branch cut',
         argNames: ['changelogFile'],
         run: async (config, changelogFile = 'CHANGELOG.md') => {
             const { upcoming: release } = await releaseVersions(config)
@@ -328,6 +272,7 @@ If you have changes that should go into this patch release, <${patchRequestTempl
     },
     {
         id: 'release:status',
+        description: 'Post a message in Slack summarizing the progress of a release',
         run: async config => {
             const githubClient = await getAuthenticatedGitHubClient()
             const { upcoming: release } = await releaseVersions(config)
@@ -370,6 +315,7 @@ ${issueCategories
     },
     {
         id: 'release:create-candidate',
+        description: 'Generate the Nth release candidate. Set <candidate> to "final" to generate a final release',
         argNames: ['candidate'],
         run: async (config, candidate) => {
             if (!candidate) {
@@ -393,6 +339,7 @@ ${issueCategories
     },
     {
         id: 'release:stage',
+        description: 'Open pull requests and a campaign staging a release',
         run: async config => {
             const { slackAnnounceChannel, dryRun } = config
             const { upcoming: release, previous } = await releaseVersions(config)
@@ -561,8 +508,9 @@ Campaign: ${campaignURL}`,
     },
     {
         id: 'release:add-to-campaign',
-        // Example: yarn run release release:add-to-campaign sourcegraph/about 1797
+        description: 'Manually add a change to a release campaign',
         argNames: ['changeRepo', 'changeID'],
+        // Example: yarn run release release:add-to-campaign sourcegraph/about 1797
         run: async (config, changeRepo, changeID) => {
             const { upcoming: release } = await releaseVersions(config)
             if (!changeRepo || !changeID) {
@@ -584,6 +532,7 @@ Campaign: ${campaignURL}`,
     },
     {
         id: 'release:close',
+        description: 'Mark a release as closed',
         run: async config => {
             const { slackAnnounceChannel } = config
             const { upcoming: release } = await releaseVersions(config)
@@ -604,6 +553,7 @@ Campaign: ${campaignURL}`,
     },
     {
         id: '_test:google-calendar',
+        description: 'Test Google Calendar integration',
         run: async config => {
             const googleCalendar = await getClient()
             await ensureEvent(
@@ -618,13 +568,17 @@ Campaign: ${campaignURL}`,
     },
     {
         id: '_test:slack',
-        run: async (_config, message) => {
-            await postMessage(message, '_test-channel')
+        description: 'Test Slack integration',
+        argNames: ['channel', 'message'],
+        run: async (_config, channel, message) => {
+            await postMessage(message, channel)
         },
     },
     {
-        // Example: yarn run release _test:campaign-create-from-changes "$(cat ./.secrets/import.json)"
         id: '_test:campaign-create-from-changes',
+        description: 'Test campaigns integration',
+        argNames: ['campaignConfigJSON'],
+        // Example: yarn run release _test:campaign-create-from-changes "$(cat ./.secrets/import.json)"
         run: async (_config, campaignConfigJSON) => {
             const campaignConfig = JSON.parse(campaignConfigJSON) as {
                 changes: CreatedChangeset[]
@@ -645,6 +599,13 @@ Campaign: ${campaignURL}`,
             console.log(`Created campaign ${campaigns.campaignURL(campaign)}`)
         },
     },
+    {
+        id: '_test:config',
+        description: 'Test release configuration loading',
+        run: config => {
+            console.log(JSON.stringify(config, null, '  '))
+        },
+    },
 ]
 
 async function run(config: Config, stepIDToRun: StepID, ...stepArguments: string[]): Promise<void> {
@@ -663,7 +624,7 @@ async function run(config: Config, stepIDToRun: StepID, ...stepArguments: string
  * Release captain automation
  */
 async function main(): Promise<void> {
-    const config = persistedConfig
+    const config = loadConfig()
     const args = process.argv.slice(2)
     if (args.length === 0) {
         console.error('This command expects at least 1 argument')
