@@ -340,6 +340,7 @@ func TestService(t *testing.T) {
 			t.Fatal("MockEnqueueChangesetSync not called")
 		}
 
+		// rs[0] is filtered out
 		ct.MockRepoPermissions(t, user.ID, rs[1].ID, rs[2].ID, rs[3].ID)
 
 		// should result in a not found error
@@ -361,6 +362,7 @@ func TestService(t *testing.T) {
 		}
 
 		adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
+		userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
 		t.Run("success", func(t *testing.T) {
 			opts := CreateCampaignSpecOpts{
@@ -429,19 +431,15 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("missing repository permissions", func(t *testing.T) {
-			// Skip because non-site admins cannot create campaigns but
-			// site admins bypass repository permissions check.
-			t.Skip()
-
 			ct.MockRepoPermissions(t, user.ID)
 
 			opts := CreateCampaignSpecOpts{
-				NamespaceUserID:      admin.ID,
+				NamespaceUserID:      user.ID,
 				RawSpec:              ct.TestRawCampaignSpec,
 				ChangesetSpecRandIDs: changesetSpecRandIDs,
 			}
 
-			if _, err := svc.CreateCampaignSpec(adminCtx, opts); !errcode.IsNotFound(err) {
+			if _, err := svc.CreateCampaignSpec(userCtx, opts); !errcode.IsNotFound(err) {
 				t.Fatalf("expected not-found error but got %s", err)
 			}
 		})
