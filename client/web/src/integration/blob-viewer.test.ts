@@ -225,6 +225,153 @@ describe('Blob viewer', () => {
             // TODO
         })
 
+        it('properly displays reference panel for URIs with spaces', async () => {
+            const files = ['test.ts', 'test spaces.ts']
+            const commitID = '1234'
+            const userSettings: Settings = {
+                extensions: {
+                    'test/references': true,
+                },
+            }
+            const extensionManifest: ExtensionManifest = {
+                url: new URL(
+                    '/-/static/extension/0001-test-references.js?hash--test-references',
+                    driver.sourcegraphBaseUrl
+                ).href,
+                activationEvents: ['*'],
+            }
+            testContext.overrideGraphQL({
+                ...commonBlobGraphQlResults,
+                ViewerSettings: () => ({
+                    viewerSettings: {
+                        final: JSON.stringify(userSettings),
+                        subjects: [
+                            {
+                                __typename: 'User',
+                                displayName: 'Test User',
+                                id: 'TestUserSettingsID',
+                                latestSettings: {
+                                    id: 123,
+                                    contents: JSON.stringify(userSettings),
+                                },
+                                username: 'test',
+                                viewerCanAdminister: true,
+                                settingsURL: '/users/test/settings',
+                            },
+                        ],
+                    },
+                }),
+                Extensions: () => ({
+                    extensionRegistry: {
+                        extensions: {
+                            nodes: [
+                                {
+                                    id: 'TestExtensionID',
+                                    extensionID: 'test/references',
+                                    manifest: {
+                                        raw: JSON.stringify(extensionManifest),
+                                    },
+                                    url: '/extensions/test/references',
+                                    viewerCanAdminister: false,
+                                },
+                            ],
+                        },
+                    },
+                }),
+                Blob: ({ filePath }) => ({
+                    repository: {
+                        commit: {
+                            file: {
+                                content: '// Log to console\nconsole.log("Hello world")',
+                                richHTML: '',
+                                highlight: {
+                                    aborted: false,
+                                    html:
+                                        // Note: whitespace in this string is significant.
+                                        `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color: gray">&sol;&sol; file path: ${filePath}</span></div></td></tr>\n` +
+                                        '<tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: gray">&sol;&sol; line 2</span></div></td></tr>\n' +
+                                        '<tr><td class="line" data-line="3"></td><td class="code"><div><span style="color: gray">&sol;&sol; line 3</span></div></td></tr></tbody></table>',
+                                },
+                            },
+                        },
+                    },
+                }),
+                TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, files),
+                ResolveRev: () => createResolveRevisionResult(repositorySourcegraphUrl, commitID),
+                HighlightedFile: ({ filePath }) => ({
+                    repository: {
+                        commit: {
+                            file: {
+                                isDirectory: false,
+                                richHTML: '',
+                                highlight: {
+                                    aborted: false,
+                                    html:
+                                        `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color: gray">&sol;&sol; file path: ${filePath}</span></div></td></tr>\n` +
+                                        '<tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: gray">&sol;&sol; line 2</span></div></td></tr>\n' +
+                                        '<tr><td class="line" data-line="3"></td><td class="code"><div><span style="color: gray">&sol;&sol; line 3</span></div></td></tr></tbody></table>',
+                                },
+                            },
+                        },
+                    },
+                }),
+                FetchCommits: () => ({
+                    node: { __typename: 'GitCommit' },
+                }),
+            })
+
+            // Serve a mock extension bundle with a simple reference provider
+            testContext.server
+                .get(new URL(extensionManifest.url, driver.sourcegraphBaseUrl).href)
+                .intercept((request, response) => {
+                    function extensionBundle(): void {
+                        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+                        const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
+
+                        function activate(context: sourcegraph.ExtensionContext): void {
+                            context.subscriptions.add(
+                                sourcegraph.languages.registerReferenceProvider(['*'], {
+                                    provideReferences: () => [
+                                        new sourcegraph.Location(
+                                            new URL('git://github.com/sourcegraph/test?1234#test spaces.ts'),
+                                            new sourcegraph.Range(
+                                                new sourcegraph.Position(0, 0),
+                                                new sourcegraph.Position(1, 0)
+                                            )
+                                        ),
+                                    ],
+                                })
+                            )
+                        }
+
+                        exports.activate = activate
+                    }
+                    // Create an immediately-invoked function expression for the extensionBundle function
+                    const extensionBundleString = `(${extensionBundle.toString()})()`
+                    response.type('application/javascript; charset=utf-8').send(extensionBundleString)
+                })
+
+            await driver.page.goto(
+                `${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts#L1:1&tab=references`
+            )
+
+            await driver.page.waitForSelector('.test-file-match-children-item')
+            await driver.page.click('.test-file-match-children-item')
+
+            // assert that the first line of code has text content which contains: 'file path: test spaces.ts'
+            try {
+                await driver.page.waitForFunction(
+                    () =>
+                        document
+                            .querySelector('[data-line="1"]')
+                            ?.nextElementSibling?.textContent?.includes('file path: test spaces.ts'),
+                    { timeout: 5000 }
+                )
+            } catch {
+                throw new Error('Expected to navigate to file after clicking on link in references panel')
+            }
+        })
+
         describe('browser extension discoverability', () => {
             const HOVER_THRESHOLD = 5
             const HOVER_COUNT_KEY = 'hover-count'
