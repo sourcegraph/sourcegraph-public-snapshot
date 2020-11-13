@@ -41,9 +41,10 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Search filters used (e.g. "type:", "repo:", "file:", "lang:", etc.)
 - Aggregate daily, weekly, and monthly latencies (in ms) of search queries
 - Aggregate daily, weekly, and monthly counts of:
-  - Code intelligence events (e.g., hover tooltips) 
   - Searches using each search mode (interactive search, plain-text search)
   - Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)
+- Total number of code intelligence queries (e.g., hover tooltips) per week grouped by language
+- Number of users performing code intelligence queries (e.g., hover tooltips) per week grouped by language
 <!-- depends-on-source: ~/internal/usagestats/campaigns.go -->
 - Campaign usage data
   - Total count of page views on the campaign apply page

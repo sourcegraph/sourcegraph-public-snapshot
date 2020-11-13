@@ -134,6 +134,11 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         <li>Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)</li>
                     </ul>
                 </li>
+                <li>Total number of code intelligence queries (e.g., hover tooltips) per week grouped by language</li>
+                <li>
+                    Number of users performing code intelligence queries (e.g., hover tooltips) per week grouped by
+                    language
+                </li>
                 <li>
                     Campaign usage data
                     <ul>

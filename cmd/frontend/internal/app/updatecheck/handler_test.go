@@ -171,6 +171,7 @@ func TestSerializeBasic(t *testing.T) {
 		"site_activity": {"foo":"bar"},
 		"automation_usage": null,
 		"code_intel_usage": null,
+		"new_code_intel_usage": null,
 		"dependency_versions": null,
 		"search_usage": null,
 		"growth_statistics": null,
@@ -229,6 +230,7 @@ func TestSerializeFromQuery(t *testing.T) {
 		"site_activity": {"foo":"bar"},
 		"automation_usage": null,
 		"code_intel_usage": null,
+		"new_code_intel_usage": null,
 		"dependency_versions": null,
 		"search_usage": null,
 		"growth_statistics": null,
@@ -263,6 +265,7 @@ func TestSerializeAutomationUsage(t *testing.T) {
 		Activity:             json.RawMessage([]byte(`{"foo":"bar"}`)),
 		CampaignsUsage:       json.RawMessage([]byte(`{"baz":"bonk"}`)),
 		CodeIntelUsage:       nil,
+		NewCodeIntelUsage:    nil,
 		SearchUsage:          nil,
 		GrowthStatistics:     nil,
 		SavedSearches:        nil,
@@ -291,6 +294,7 @@ func TestSerializeAutomationUsage(t *testing.T) {
 		"site_activity": {"foo":"bar"},
 		"automation_usage": {"baz":"bonk"},
 		"code_intel_usage": null,
+		"new_code_intel_usage": null,
 		"dependency_versions": null,
 		"search_usage": null,
 		"growth_statistics": null,
@@ -313,14 +317,201 @@ func TestSerializeAutomationUsage(t *testing.T) {
 }
 
 func TestSerializeCodeIntelUsage(t *testing.T) {
-	eventsCount := int32(2)
-	testPeriod, err := json.Marshal(&types.CodeIntelUsagePeriod{
-		StartTime: time.Now(),
-		Hover: &types.CodeIntelEventCategoryStatistics{
-			LSIF: &types.CodeIntelEventStatistics{
-				UsersCount:  1,
-				EventsCount: &eventsCount,
+	now := time.Unix(1587396557, 0).UTC()
+
+	testUsage, err := json.Marshal(types.NewCodeIntelUsageStatistics{
+		StartOfWeek: now,
+		WAUs:        25,
+		EventSummaries: []types.CodeIntelEventSummary{
+			{
+				Action:          types.HoverAction,
+				Source:          types.PreciseSource,
+				LanguageID:      "go",
+				CrossRepository: false,
+				WAUs:            1,
+				TotalActions:    1,
 			},
+			{
+				Action:          types.HoverAction,
+				Source:          types.SearchSource,
+				LanguageID:      "",
+				CrossRepository: true,
+				WAUs:            2,
+				TotalActions:    2,
+			},
+			{
+				Action:          types.DefinitionsAction,
+				Source:          types.PreciseSource,
+				LanguageID:      "go",
+				CrossRepository: true,
+				WAUs:            3,
+				TotalActions:    3,
+			},
+			{
+				Action:          types.DefinitionsAction,
+				Source:          types.SearchSource,
+				LanguageID:      "go",
+				CrossRepository: false,
+				WAUs:            4,
+				TotalActions:    4,
+			},
+			{
+				Action:          types.ReferencesAction,
+				Source:          types.PreciseSource,
+				LanguageID:      "",
+				CrossRepository: false,
+				WAUs:            5,
+				TotalActions:    1,
+			},
+			{
+				Action:          types.ReferencesAction,
+				Source:          types.SearchSource,
+				LanguageID:      "typescript",
+				CrossRepository: false,
+				WAUs:            6,
+				TotalActions:    3,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+
+	pr := &pingRequest{
+		ClientSiteID:         "0101-0101",
+		DeployType:           "server",
+		ClientVersionString:  "3.12.6",
+		AuthProviders:        []string{"foo", "bar"},
+		ExternalServices:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
+		BuiltinSignupAllowed: true,
+		HasExtURL:            false,
+		UniqueUsers:          123,
+		Activity:             json.RawMessage([]byte(`{"foo":"bar"}`)),
+		CampaignsUsage:       nil,
+		CodeIntelUsage:       nil,
+		NewCodeIntelUsage:    testUsage,
+		SearchUsage:          nil,
+		GrowthStatistics:     nil,
+		SavedSearches:        nil,
+		HomepagePanels:       nil,
+		SearchOnboarding:     nil,
+		InitialAdminEmail:    "test@sourcegraph.com",
+		TotalUsers:           234,
+		HasRepos:             true,
+		EverSearched:         false,
+		EverFindRefs:         true,
+	}
+
+	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	if err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+
+	compareJSON(t, payload, `{
+		"remote_ip": "127.0.0.1",
+		"remote_site_version": "3.12.6",
+		"remote_site_id": "0101-0101",
+		"license_key": "",
+		"has_update": "true",
+		"unique_users_today": "123",
+		"site_activity": {"foo":"bar"},
+		"automation_usage": null,
+		"code_intel_usage": null,
+		"new_code_intel_usage": {
+			"start_time": "2020-04-20T15:29:17Z",
+			"waus": 25,
+			"event_summaries": [
+				{
+					"action": "hover",
+					"source": "precise",
+					"language_id": "go",
+					"cross_repository": false,
+					"waus": 1,
+					"total_actions": 1
+				},
+				{
+					"action": "hover",
+					"source": "search",
+					"language_id": "",
+					"cross_repository": true,
+					"waus": 2,
+					"total_actions": 2
+				},
+				{
+					"action": "definitions",
+					"source": "precise",
+					"language_id": "go",
+					"cross_repository": true,
+					"waus": 3,
+					"total_actions": 3
+				},
+				{
+					"action": "definitions",
+					"source": "search",
+					"language_id": "go",
+					"cross_repository": false,
+					"waus": 4,
+					"total_actions": 4
+				},
+				{
+					"action": "references",
+					"source": "precise",
+					"language_id": "",
+					"cross_repository": false,
+					"waus": 5,
+					"total_actions": 1
+				},
+				{
+					"action": "references",
+					"source": "search",
+					"language_id": "typescript",
+					"cross_repository": false,
+					"waus": 6,
+					"total_actions": 3
+				}
+			]
+		},
+		"dependency_versions": null,
+		"search_usage": null,
+		"growth_statistics": null,
+		"saved_searches": null,
+		"homepage_panels": null,
+		"search_onboarding": null,
+		"repositories": null,
+		"installer_email": "test@sourcegraph.com",
+		"auth_providers": "foo,bar",
+		"ext_services": "GITHUB,GITLAB",
+		"builtin_signup_allowed": "true",
+		"deploy_type": "server",
+		"total_user_accounts": "234",
+		"has_external_url": "false",
+		"has_repos": "true",
+		"ever_searched": "false",
+		"ever_find_refs": "true",
+		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+	}`)
+}
+
+func TestSerializeOldCodeIntelUsage(t *testing.T) {
+	v1 := int32(1)
+	v2 := int32(2)
+	v3 := int32(3)
+	v4 := int32(4)
+	now := time.Unix(1587396557, 0).UTC()
+
+	testPeriod, err := json.Marshal(&types.OldCodeIntelUsagePeriod{
+		StartTime: now,
+		Hover: &types.OldCodeIntelEventCategoryStatistics{
+			LSIF:   &types.OldCodeIntelEventStatistics{UsersCount: 1, EventsCount: &v1},
+			Search: &types.OldCodeIntelEventStatistics{UsersCount: 2, EventsCount: &v2},
+		},
+		Definitions: &types.OldCodeIntelEventCategoryStatistics{
+			LSIF:   &types.OldCodeIntelEventStatistics{UsersCount: 3, EventsCount: &v3},
+			Search: &types.OldCodeIntelEventStatistics{UsersCount: 4, EventsCount: &v4},
+		},
+		References: &types.OldCodeIntelEventCategoryStatistics{
+			LSIF:   &types.OldCodeIntelEventStatistics{UsersCount: 5, EventsCount: &v1},
+			Search: &types.OldCodeIntelEventStatistics{UsersCount: 6, EventsCount: &v3},
 		},
 	})
 	if err != nil {
@@ -339,24 +530,20 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		UniqueUsers:          123,
 		Activity:             json.RawMessage([]byte(`{"foo":"bar"}`)),
 		CampaignsUsage:       nil,
-		CodeIntelUsage: json.RawMessage([]byte(`{
-			"Daily": [` + period + `, ` + period + `],
-			"Weekly": [` + period + `, ` + period + `],
-			"Monthly": [` + period + `, ` + period + `]
-		}`)),
-		SearchUsage:       nil,
-		GrowthStatistics:  nil,
-		SavedSearches:     nil,
-		HomepagePanels:    nil,
-		SearchOnboarding:  nil,
-		InitialAdminEmail: "test@sourcegraph.com",
-		TotalUsers:        234,
-		HasRepos:          true,
-		EverSearched:      false,
-		EverFindRefs:      true,
+		CodeIntelUsage:       json.RawMessage([]byte(`{"Weekly": [` + period + `]}`)),
+		NewCodeIntelUsage:    nil,
+		SearchUsage:          nil,
+		GrowthStatistics:     nil,
+		SavedSearches:        nil,
+		HomepagePanels:       nil,
+		SearchOnboarding:     nil,
+		InitialAdminEmail:    "test@sourcegraph.com",
+		TotalUsers:           234,
+		HasRepos:             true,
+		EverSearched:         false,
+		EverFindRefs:         true,
 	}
 
-	now := time.Now()
 	payload, err := marshalPing(pr, true, "127.0.0.1", now)
 	if err != nil {
 		t.Fatalf("unexpected error %s", err)
@@ -371,7 +558,61 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"unique_users_today": "123",
 		"site_activity": {"foo":"bar"},
 		"automation_usage": null,
-		"code_intel_usage": {"Daily":`+period+`,"Weekly":`+period+`,"Monthly":`+period+`},
+		"code_intel_usage": null,
+		"new_code_intel_usage": {
+			"start_time": "2020-04-20T15:29:17Z",
+			"waus": null,
+			"event_summaries": [
+				{
+					"action": "hover",
+					"source": "precise",
+					"language_id": "",
+					"cross_repository": false,
+					"waus": 1,
+					"total_actions": 1
+				},
+				{
+					"action": "hover",
+					"source": "search",
+					"language_id": "",
+					"cross_repository": false,
+					"waus": 2,
+					"total_actions": 2
+				},
+				{
+					"action": "definitions",
+					"source": "precise",
+					"language_id": "",
+					"cross_repository": false,
+					"waus": 3,
+					"total_actions": 3
+				},
+				{
+					"action": "definitions",
+					"source": "search",
+					"language_id": "",
+					"cross_repository": false,
+					"waus": 4,
+					"total_actions": 4
+				},
+				{
+					"action": "references",
+					"source": "precise",
+					"language_id": "",
+					"cross_repository": false,
+					"waus": 5,
+					"total_actions": 1
+				},
+				{
+					"action": "references",
+					"source": "search",
+					"language_id": "",
+					"cross_repository": false,
+					"waus": 6,
+					"total_actions": 3
+				}
+			]
+		},
 		"dependency_versions": null,
 		"search_usage": null,
 		"growth_statistics": null,

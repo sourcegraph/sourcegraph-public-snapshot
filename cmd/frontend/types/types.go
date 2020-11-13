@@ -1071,42 +1071,6 @@ type CampaignsUsageStatistics struct {
 // NOTE: DO NOT alter this struct without making a symmetric change
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
-type CodeIntelUsageStatistics struct {
-	Daily   []*CodeIntelUsagePeriod
-	Weekly  []*CodeIntelUsagePeriod
-	Monthly []*CodeIntelUsagePeriod
-}
-
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type CodeIntelUsagePeriod struct {
-	StartTime   time.Time
-	Hover       *CodeIntelEventCategoryStatistics
-	Definitions *CodeIntelEventCategoryStatistics
-	References  *CodeIntelEventCategoryStatistics
-}
-
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type CodeIntelEventCategoryStatistics struct {
-	LSIF   *CodeIntelEventStatistics
-	LSP    *CodeIntelEventStatistics
-	Search *CodeIntelEventStatistics
-}
-
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type CodeIntelEventStatistics struct {
-	UsersCount  int32
-	EventsCount *int32
-}
-
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
 type SearchUsageStatistics struct {
 	Daily   []*SearchUsagePeriod
 	Weekly  []*SearchUsagePeriod
