@@ -19,10 +19,11 @@ export interface ToggleProps extends PatternTypeProps, CaseSensitivityProps {
     isActive: boolean
     /** Callback on toggle.  */
     onToggle: () => void
-    /** Condition to disable the toggle, if any.  */
-    disabledCondition?: boolean
-    /** Message to display in tooltip when disabled. */
-    disabledMessage?: string
+    /**
+     * A list of conditions to disable the toggle, displaying an associated tooltip when the condition is true.
+     * For multiple true conditions, use the first rule that evalutes to true.
+     */
+    disabledRules?: { condition: boolean; reason: string }[]
     /** Filters in the query in interactive mode. */
     filtersInQuery?: FiltersToTypeAndValue
     hasGlobalQueryBehavior?: boolean
@@ -60,9 +61,18 @@ export class QueryInputToggle extends React.Component<ToggleProps> {
 
     public render(): JSX.Element | null {
         const Icon = this.props.icon
-        const tooltipValue = this.props.disabledCondition
-            ? this.props.disabledMessage ?? null
-            : `${this.props.isActive ? 'Disable' : 'Enable'} ${this.props.title.toLowerCase()}`
+
+        let disabled = false
+        let tooltipValue = `${this.props.isActive ? 'Disable' : 'Enable'} ${this.props.title.toLowerCase()}`
+        if (this.props.disabledRules) {
+            for (const rule of this.props.disabledRules) {
+                if (rule.condition) {
+                    disabled = true
+                    tooltipValue = rule.reason
+                    break
+                }
+            }
+        }
 
         return (
             <div
@@ -71,12 +81,12 @@ export class QueryInputToggle extends React.Component<ToggleProps> {
                 className={classNames(
                     'btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle',
                     this.props.className,
-                    { disabled: this.props.disabledCondition },
+                    { disabled },
                     { 'toggle-container__toggle--active': this.props.isActive },
                     this.props.activeClassName
                 )}
                 role="checkbox"
-                aria-disabled={this.props.disabledCondition}
+                aria-disabled={disabled}
                 aria-checked={this.props.isActive}
                 aria-label={`${this.props.title} toggle`}
                 tabIndex={0}

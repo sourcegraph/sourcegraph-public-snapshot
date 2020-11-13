@@ -134,8 +134,12 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                 icon={FormatLetterCaseIcon}
                 className="test-case-sensitivity-toggle"
                 activeClassName="test-case-sensitivity-toggle--active"
-                disabledCondition={patternType === SearchPatternType.structural}
-                disabledMessage="Structural search is always case sensitive"
+                disabledRules={[
+                    {
+                        condition: patternType === SearchPatternType.structural,
+                        reason: 'Structural search is always case sensitive',
+                    },
+                ]}
             />
             <QueryInputToggle
                 {...props}
