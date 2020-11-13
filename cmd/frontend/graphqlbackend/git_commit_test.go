@@ -72,7 +72,8 @@ func TestGitCommitResolver(t *testing.T) {
 			name: "body",
 			want: "Body of changes",
 			have: func(r *GitCommitResolver) (interface{}, error) {
-				return r.Body(ctx)
+				s, err := r.Body(ctx)
+				return *s, err
 			},
 		}, {
 			name: "url",
