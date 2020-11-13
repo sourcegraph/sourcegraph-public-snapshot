@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
@@ -92,7 +93,30 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	for results := range resultsStream {
+	flushAll := func() {
+		flushFileMatchesBuf()
+		flushSymbolMatchesBuf()
+		flushRepoMatchesBuf()
+		flushCommitMatchesBuf()
+	}
+
+	flushTicker := time.NewTicker(100 * time.Millisecond)
+	defer flushTicker.Stop()
+
+	for {
+		var results []graphqlbackend.SearchResultResolver
+		var ok bool
+		select {
+		case results, ok = <-resultsStream:
+		case <-flushTicker.C:
+			ok = true
+			flushAll()
+		}
+
+		if !ok {
+			break
+		}
+
 		for _, result := range results {
 			if fm, ok := result.ToFileMatch(); ok {
 				if syms := fm.Symbols(); len(syms) > 0 {
@@ -137,10 +161,7 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	flushFileMatchesBuf()
-	flushSymbolMatchesBuf()
-	flushRepoMatchesBuf()
-	flushCommitMatchesBuf()
+	flushAll()
 
 	final := <-resultsStreamDone
 	resultsResolver, err := final.resultsResolver, final.err
