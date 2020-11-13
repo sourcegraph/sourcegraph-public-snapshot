@@ -5,6 +5,10 @@ type Response struct {
 	User User
 }
 
+type UpdateCodeMonitorResponse struct {
+	UpdateCodeMonitor Monitor
+}
+
 type User struct {
 	Monitors MonitorConnection
 }
