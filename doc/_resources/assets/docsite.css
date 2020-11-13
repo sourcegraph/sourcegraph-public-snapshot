@@ -109,6 +109,12 @@ nav.links a {
     border: 0;
 }
 
+/* Use to provide different videos for dark and light theme */
+.theme-light .theme-dark-only,
+.theme-dark .theme-light-only {
+    display: none !important;
+}
+
 /* FONTS */
 body {
     font-family: var(--base-font-family);
@@ -142,7 +148,6 @@ body > div#page {
     flex-direction: column;
     min-height: 100vh;
     justify-content: space-between;
-    overflow: hidden;
 }
 /* Responsive */
 @media (max-width: 800px /* == var(--sidebar-breakpoint-width) */) {
@@ -337,6 +342,7 @@ body > #sidebar .external a, body > #page > footer .external a {
         margin-top: calc(4.25*var(--spacing));
         margin-left: calc(2*var(--spacing));
         width: 30%;
+        /* Note: all ancestors up to <html> (the scrolling element) must be overflow: visible (default) for this to work. */
 		position: sticky;
 		top: calc(2*var(--spacing));
 		max-height: 100vh;

@@ -23,14 +23,14 @@ import {
     ListCampaign,
     CampaignByNamespaceResult,
 } from '../graphql-operations'
-import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
+import { ExternalServiceKind, SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
 
 const campaignListNode: ListCampaign = {
     id: 'campaign123',
     url: '/users/alice/campaigns/test-campaign',
     name: 'test-campaign',
     createdAt: subDays(new Date(), 5).toISOString(),
-    changesets: { stats: { closed: 4, merged: 10, open: 5 } },
+    changesetsStats: { closed: 4, merged: 10, open: 5 },
     closedAt: null,
     description: null,
     namespace: {
@@ -250,9 +250,7 @@ function mockCommonGraphQLResponses(
             campaign: {
                 __typename: 'Campaign',
                 id: 'campaign123',
-                changesets: {
-                    stats: { closed: 2, deleted: 1, merged: 3, open: 8, total: 19, unpublished: 3, draft: 2 },
-                },
+                changesetsStats: { closed: 2, deleted: 1, merged: 3, open: 8, total: 19, unpublished: 3, draft: 2 },
                 closedAt: null,
                 createdAt: subDays(new Date(), 5).toISOString(),
                 updatedAt: subDays(new Date(), 5).toISOString(),
@@ -267,11 +265,6 @@ function mockCommonGraphQLResponses(
                     url: namespaceURL,
                 },
                 url: `${namespaceURL}/campaigns/test-campaign`,
-                diffStat: {
-                    added: 1000,
-                    changed: 29,
-                    deleted: 817,
-                },
                 viewerCanAdminister: true,
                 lastAppliedAt: subDays(new Date(), 5).toISOString(),
                 lastApplier: {
@@ -284,41 +277,49 @@ function mockCommonGraphQLResponses(
                 ...campaignOverrides,
             },
         }),
-        CampaignsByUser: () => ({
-            node: {
-                __typename: 'User',
-                campaigns: {
-                    nodes: [campaignListNode],
-                    pageInfo: {
-                        endCursor: null,
-                        hasNextPage: false,
-                    },
-                    totalCount: 1,
-                },
-            },
-        }),
-        CampaignsByOrg: () => ({
-            node: {
-                __typename: 'Org',
-                campaigns: {
-                    nodes: [
-                        {
-                            ...campaignListNode,
-                            url: '/organizations/test-org/campaigns/test-campaign',
-                            namespace: {
-                                namespaceName: 'test-org',
-                                url: '/organizations/test-org',
-                            },
-                        },
-                    ],
-                    pageInfo: {
-                        endCursor: null,
-                        hasNextPage: false,
-                    },
-                    totalCount: 1,
-                },
-            },
-        }),
+        CampaignsByNamespace: () =>
+            entityType === 'user'
+                ? {
+                      node: {
+                          __typename: 'User',
+                          campaigns: {
+                              nodes: [campaignListNode],
+                              pageInfo: {
+                                  endCursor: null,
+                                  hasNextPage: false,
+                              },
+                              totalCount: 1,
+                          },
+                          allCampaigns: {
+                              totalCount: 1,
+                          },
+                      },
+                  }
+                : {
+                      node: {
+                          __typename: 'Org',
+                          campaigns: {
+                              nodes: [
+                                  {
+                                      ...campaignListNode,
+                                      url: '/organizations/test-org/campaigns/test-campaign',
+                                      namespace: {
+                                          namespaceName: 'test-org',
+                                          url: '/organizations/test-org',
+                                      },
+                                  },
+                              ],
+                              pageInfo: {
+                                  endCursor: null,
+                                  hasNextPage: false,
+                              },
+                              totalCount: 1,
+                          },
+                          allCampaigns: {
+                              totalCount: 1,
+                          },
+                      },
+                  },
     }
 }
 
@@ -350,6 +351,9 @@ describe('Campaigns', () => {
                             endCursor: null,
                             hasNextPage: false,
                         },
+                        totalCount: 1,
+                    },
+                    allCampaigns: {
                         totalCount: 1,
                     },
                 }),
@@ -530,6 +534,10 @@ describe('Campaigns', () => {
                                           url: '/organizations/test-org',
                                       },
                             viewerCanAdminister: true,
+                            viewerCampaignsCodeHosts: {
+                                totalCount: 0,
+                                nodes: [],
+                            },
                         },
                     }),
                     CampaignSpecChangesetSpecs: () => ({
@@ -668,5 +676,80 @@ describe('Campaigns', () => {
                 )
             })
         }
+    })
+
+    describe('Campaigns code host token', () => {
+        it('allows to add a token for a code host', async () => {
+            let isCreated = false
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                ...mockCommonGraphQLResponses('user'),
+                UserCampaignsCodeHosts: () => ({
+                    currentUser: {
+                        campaignsCodeHosts: {
+                            totalCount: 1,
+                            pageInfo: {
+                                endCursor: null,
+                                hasNextPage: false,
+                            },
+                            nodes: [
+                                {
+                                    externalServiceKind: ExternalServiceKind.GITHUB,
+                                    externalServiceURL: 'https://github.com/',
+                                    credential: isCreated ? { id: '123', createdAt: new Date().toISOString() } : null,
+                                },
+                            ],
+                        },
+                    },
+                }),
+                CreateCampaignsCredential: () => {
+                    isCreated = true
+                    return {
+                        createCampaignsCredential: {
+                            id: '123',
+                            createdAt: new Date().toISOString(),
+                        },
+                    }
+                },
+                DeleteCampaignsCredential: () => {
+                    isCreated = false
+                    return {
+                        deleteCampaignsCredential: {
+                            alwaysNil: null,
+                        },
+                    }
+                },
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/users/alice/settings/campaigns')
+            // View settings page.
+            await driver.page.waitForSelector('.test-campaigns-settings-page')
+            // Wait for list to load.
+            await driver.page.waitForSelector('.test-code-host-connection-node')
+            // Check no credential is configured.
+            assert.strictEqual(await driver.page.$('.test-code-host-connection-node-enabled'), null)
+            // Click "Add token".
+            await driver.page.click('.test-code-host-connection-node-btn-add')
+            // Wait for modal to appear.
+            await driver.page.waitForSelector('.test-add-credential-modal')
+            // Enter token.
+            await driver.page.type('.test-add-credential-modal-input', 'SUPER SECRET')
+            // Click add.
+            await driver.page.click('.test-add-credential-modal-submit')
+            // Await list reload and expect to be enabled.
+            await driver.page.waitForSelector('.test-code-host-connection-node-enabled')
+            // No modal open.
+            assert.strictEqual(await driver.page.$('.test-add-credential-modal'), null)
+            // Click "Remove" to remove the token.
+            await driver.page.click('.test-code-host-connection-node-btn-remove')
+            // Wait for modal to appear.
+            await driver.page.waitForSelector('.test-remove-credential-modal')
+            // Click confirmation.
+            await driver.page.click('.test-remove-credential-modal-submit')
+            // Await list reload and expect to be disabled again.
+            await driver.page.waitForSelector('.test-code-host-connection-node-disabled')
+            // No modal open.
+            assert.strictEqual(await driver.page.$('.test-remove-credential-modal'), null)
+        })
     })
 })

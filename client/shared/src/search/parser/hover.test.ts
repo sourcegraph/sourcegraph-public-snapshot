@@ -1,11 +1,12 @@
 import { getHoverResult } from './hover'
-import { parseSearchQuery, ParseSuccess, Sequence } from './parser'
+import { scanSearchQuery, ScanSuccess, Token, ScanResult } from './scanner'
+
+const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSuccess<Token[]>).term
 
 describe('getHoverResult()', () => {
     test('returns hover contents for filters', () => {
-        const parsedQuery = (parseSearchQuery('repo:sourcegraph file:code_intelligence') as ParseSuccess<Sequence>)
-            .token
-        expect(getHoverResult(parsedQuery, { column: 4 })).toStrictEqual({
+        const scannedQuery = toSuccess(scanSearchQuery('repo:sourcegraph file:code_intelligence'))
+        expect(getHoverResult(scannedQuery, { column: 4 })).toStrictEqual({
             contents: [
                 {
                     value: 'Include only results from repositories matching the given search pattern.',
@@ -18,7 +19,20 @@ describe('getHoverResult()', () => {
                 startLineNumber: 1,
             },
         })
-        expect(getHoverResult(parsedQuery, { column: 30 })).toStrictEqual({
+        expect(getHoverResult(scannedQuery, { column: 18 })).toStrictEqual({
+            contents: [
+                {
+                    value: 'Include only results from files matching the given search pattern.',
+                },
+            ],
+            range: {
+                endColumn: 40,
+                endLineNumber: 1,
+                startColumn: 18,
+                startLineNumber: 1,
+            },
+        })
+        expect(getHoverResult(scannedQuery, { column: 30 })).toStrictEqual({
             contents: [
                 {
                     value: 'Include only results from files matching the given search pattern.',

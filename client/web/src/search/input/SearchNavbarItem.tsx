@@ -27,6 +27,7 @@ interface Props
     navbarSearchState: QueryState
     onChange: (newValue: QueryState) => void
     globbing: boolean
+    enableSmartQuery: boolean
 }
 
 /**

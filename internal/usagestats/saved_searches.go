@@ -15,7 +15,7 @@ func GetSavedSearches(ctx context.Context) (*types.SavedSearches, error) {
 	(SELECT COUNT(*) FROM event_logs WHERE event_logs.name = 'SavedSearchEmailNotificationSent') AS notificationsSent,
 	(SELECT COUNT(*) FROM event_logs WHERE event_logs.name = 'SavedSearchEmailClicked') AS notificationsClicked,
 	(SELECT COUNT(DISTINCT user_id) FROM event_logs WHERE event_logs.name = 'ViewSavedSearchListPage') AS uniqueUserPageViews,
-	(SELECT COUNT(*) FROM saved_searches WHERE org_id IS NOT NULL) AS orgSavedSearches	
+	(SELECT COUNT(*) FROM saved_searches WHERE org_id IS NOT NULL) AS orgSavedSearches
 	`
 	var (
 		totalSavedSearches   int

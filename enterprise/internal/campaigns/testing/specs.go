@@ -3,6 +3,7 @@ package testing
 import (
 	"encoding/json"
 	"fmt"
+	"testing"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/go-diff/diff"
@@ -133,4 +134,15 @@ func NewRawChangesetSpecExisting(repo graphql.ID, externalID string) string {
 	}`
 
 	return fmt.Sprintf(tmpl, repo, externalID)
+}
+
+func MarshalJSON(t testing.TB, v interface{}) string {
+	t.Helper()
+
+	bs, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return string(bs)
 }

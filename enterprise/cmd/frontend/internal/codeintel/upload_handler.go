@@ -4,7 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	codeintelhttpapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/httpapi"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
+	codeintelhttpapi "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
 )
 
 // NewCodeIntelUploadHandler creates a new code intel LSIF upload HTTP handler. This is used
@@ -15,5 +16,11 @@ func NewCodeIntelUploadHandler(ctx context.Context, internal bool) (http.Handler
 		return nil, err
 	}
 
-	return codeintelhttpapi.NewUploadHandler(services.store, services.uploadStore, internal), nil
+	handler := codeintelhttpapi.NewUploadHandler(
+		&httpapi.DBStoreShim{services.dbStore},
+		services.uploadStore,
+		internal,
+	)
+
+	return handler, nil
 }

@@ -21,6 +21,7 @@ exports[`GlobalNavbar default 1`] = `
       authenticatedUser={null}
       caseSensitive={false}
       copyQueryButton={false}
+      enableSmartQuery={false}
       extensionsController={Object {}}
       filtersInQuery={Object {}}
       globbing={false}

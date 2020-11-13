@@ -24,7 +24,11 @@ import (
 func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 	// Enforce the license's max user count by preventing the creation of new users when the max is
 	// reached.
-	db.Users.PreCreateUser = enforcement.NewPreCreateUserHook(&usersStore{})
+	db.Users.BeforeCreateUser = enforcement.NewBeforeCreateUserHook(&usersStore{})
+
+	// Enforce non-site admin roles in Free tier.
+	db.Users.AfterCreateUser = enforcement.NewAfterCreateUserHook()
+	db.Users.BeforeSetUserIsSiteAdmin = enforcement.NewBeforeSetUserIsSiteAdmin()
 
 	// Enforce the license's max external service count by preventing the creation of new external
 	// services when the max is reached.

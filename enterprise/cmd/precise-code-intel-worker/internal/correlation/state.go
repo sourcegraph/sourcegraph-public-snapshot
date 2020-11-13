@@ -1,8 +1,8 @@
 package correlation
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/datastructures"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation/lsif"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/datastructures"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/lsif"
 )
 
 // State is an in-memory representation of an uploaded LSIF index.

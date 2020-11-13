@@ -67,8 +67,6 @@ type ClientProvider struct {
 
 	gitlabClients   map[string]*Client
 	gitlabClientsMu sync.Mutex
-
-	rateLimitMonitor *ratelimit.Monitor // the API rate limit monitor
 }
 
 type CommonOp struct {
@@ -91,11 +89,16 @@ func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 	})
 
 	return &ClientProvider{
-		baseURL:          baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
-		httpClient:       cli,
-		gitlabClients:    make(map[string]*Client),
-		rateLimitMonitor: &ratelimit.Monitor{},
+		baseURL:       baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
+		httpClient:    cli,
+		gitlabClients: make(map[string]*Client),
 	}
+}
+
+// GetAuthenticatorClient returns a client authenticated by the given
+// authenticator.
+func (p *ClientProvider) GetAuthenticatorClient(a auth.Authenticator) *Client {
+	return p.getClient(a)
 }
 
 // GetPATClient returns a client authenticated by the personal access token.
@@ -131,7 +134,7 @@ func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
 		return c
 	}
 
-	c := p.newClient(p.baseURL, a, p.httpClient, p.rateLimitMonitor)
+	c := p.newClient(p.baseURL, a, p.httpClient)
 	p.gitlabClients[key] = c
 	return c
 }
@@ -154,8 +157,8 @@ type Client struct {
 	httpClient       httpcli.Doer
 	projCache        *rcache.Cache
 	Auth             auth.Authenticator
-	RateLimitMonitor *ratelimit.Monitor
-	RateLimiter      *rate.Limiter // Our internal rate limiter
+	rateLimitMonitor *ratelimit.Monitor
+	rateLimiter      *rate.Limiter // Our internal rate limiter
 }
 
 // newClient creates a new GitLab API client with an optional personal access token to authenticate requests.
@@ -164,7 +167,7 @@ type Client struct {
 // http[s]://[gitlab-hostname] for self-hosted GitLab instances.
 //
 // See the docstring of Client for the meaning of the parameters.
-func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpClient httpcli.Doer, rateLimit *ratelimit.Monitor) *Client {
+func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpClient httpcli.Doer) *Client {
 	// Cache for GitLab project metadata.
 	var cacheTTL time.Duration
 	if isGitLabDotComURL(baseURL) && a == nil {
@@ -173,20 +176,23 @@ func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpC
 		cacheTTL = 30 * time.Second
 	}
 	key := "gl_proj:"
+	var tokenHash string
 	if a != nil {
-		key = key + a.Hash()
+		tokenHash = a.Hash()
+		key += tokenHash
 	}
 	projCache := rcache.NewWithTTL(key, int(cacheTTL/time.Second))
 
 	rl := ratelimit.DefaultRegistry.Get(baseURL.String())
+	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL.String(), tokenHash, &ratelimit.Monitor{})
 
 	return &Client{
 		baseURL:          baseURL,
 		httpClient:       httpClient,
 		projCache:        projCache,
 		Auth:             a,
-		RateLimitMonitor: rateLimit,
-		RateLimiter:      rl,
+		rateLimiter:      rl,
+		rateLimitMonitor: rlm,
 	}
 }
 
@@ -217,8 +223,8 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		span.Finish()
 	}()
 
-	if c.RateLimiter != nil {
-		err = c.RateLimiter.Wait(ctx)
+	if c.rateLimiter != nil {
+		err = c.rateLimiter.Wait(ctx)
 		if err != nil {
 			return nil, 0, errors.Wrap(err, "rate limit")
 		}
@@ -232,12 +238,28 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	defer resp.Body.Close()
 	trace("GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", resp.StatusCode)
 
-	c.RateLimitMonitor.Update(resp.Header)
+	c.rateLimitMonitor.Update(resp.Header)
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		return nil, resp.StatusCode, errors.Wrap(HTTPError(resp.StatusCode), fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
 	}
 
 	return resp.Header, resp.StatusCode, json.NewDecoder(resp.Body).Decode(result)
+}
+
+// RateLimitMonitor exposes the rate limit monitor.
+func (c *Client) RateLimitMonitor() *ratelimit.Monitor {
+	return c.rateLimitMonitor
+}
+
+func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
+	tokenHash := a.Hash()
+
+	cc := *c
+	cc.rateLimiter = ratelimit.DefaultRegistry.Get(cc.baseURL.String())
+	cc.rateLimitMonitor = ratelimit.DefaultMonitorRegistry.GetOrSet(cc.baseURL.String(), tokenHash, &ratelimit.Monitor{})
+	cc.Auth = a
+
+	return &cc
 }
 
 type HTTPError int

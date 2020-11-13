@@ -10,12 +10,12 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
-	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
+	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
-	uploadstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store"
+	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -23,60 +23,62 @@ import (
 )
 
 var services struct {
-	store               store.Store
-	lsifStore           lsifstore.Store
-	uploadStore         uploadstore.Store
-	gitserverClient     *gitserver.Client
-	bundleManagerClient bundles.BundleManagerClient
-	api                 codeintelapi.CodeIntelAPI
-	err                 error
+	dbStore         *store.Store
+	lsifStore       *lsifstore.Store
+	uploadStore     uploadstore.Store
+	gitserverClient *gitserver.Client
+	api             *codeintelapi.CodeIntelAPI
+	err             error
 }
 
 var once sync.Once
 
 func initServices(ctx context.Context) error {
 	once.Do(func() {
-		if config.BundleManagerURL == "" {
-			services.err = fmt.Errorf("invalid value for PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL: no value supplied")
-			return
-		}
-
 		if err := config.UploadStoreConfig.Validate(); err != nil {
 			services.err = fmt.Errorf("failed to load config: %s", err)
 			return
 		}
 
+		// Initialize tracing/metrics
 		observationContext := &observation.Context{
 			Logger:     log15.Root(),
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
-		codeIntelDB := mustInitializeCodeIntelDatabase()
-		uploadStore, err := uploadstore.Create(context.Background(), config.UploadStoreConfig)
-		if err != nil {
-			log.Fatalf("failed to initialize upload store: %s", err)
-		}
-		store := store.NewObserved(store.NewWithDB(dbconn.Global), observationContext)
-		bundleManagerClient := bundles.New(codeIntelDB, observationContext, config.BundleManagerURL, uploadStore)
-		api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, gitserver.DefaultClient), observationContext)
-		lsifStore := lsifstore.New(codeIntelDB)
+		// Connect to database
+		codeIntelDB := mustInitializeCodeIntelDB()
 
-		services.store = store
-		services.uploadStore = uploadStore
-		services.bundleManagerClient = bundleManagerClient
-		services.api = api
+		// Initialize stores
+		dbStore := store.NewWithDB(dbconn.Global, observationContext)
+		lsifStore := lsifstore.NewStore(codeIntelDB, observationContext)
+		uploadStore, err := uploadstore.CreateLazy(context.Background(), config.UploadStoreConfig, observationContext)
+		if err != nil {
+			log.Fatalf("Failed to initialize upload store: %s", err)
+		}
+
+		// Initialize gitserver client
+		gitserverClient := gitserver.New(dbStore, observationContext)
+
+		// Initialize internal codeintel API
+		api := codeintelapi.New(&api.DBStoreShim{dbStore}, lsifStore, gitserverClient, observationContext)
+
+		services.dbStore = dbStore
 		services.lsifStore = lsifStore
+		services.uploadStore = uploadStore
+		services.gitserverClient = gitserverClient
+		services.api = api
 	})
 
 	return services.err
 }
 
-func mustInitializeCodeIntelDatabase() *sql.DB {
+func mustInitializeCodeIntelDB() *sql.DB {
 	postgresDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN
 	conf.Watch(func() {
 		if newDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("detected database DSN change, restarting to take effect: %s", newDSN)
+			log.Fatalf("Detected database DSN change, restarting to take effect: %s", newDSN)
 		}
 	})
 

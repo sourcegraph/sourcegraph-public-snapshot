@@ -512,7 +512,7 @@ type CreatePullRequestInput struct {
 }
 
 // CreatePullRequest creates a PullRequest on Github.
-func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInput) (*PullRequest, error) {
+func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInput) (*PullRequest, error) {
 	var q strings.Builder
 	q.WriteString(pullRequestFragments)
 	q.WriteString(`mutation	CreatePullRequest($input:CreatePullRequestInput!) {
@@ -572,7 +572,7 @@ type UpdatePullRequestInput struct {
 }
 
 // UpdatePullRequest creates a PullRequest on Github.
-func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error) {
+func (c *V4Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error) {
 	var q strings.Builder
 	q.WriteString(pullRequestFragments)
 	q.WriteString(`mutation	UpdatePullRequest($input:UpdatePullRequestInput!) {
@@ -620,7 +620,7 @@ func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInp
 }
 
 // MarkPullRequestReadyForReview marks the PullRequest on Github as ready for review.
-func (c *Client) MarkPullRequestReadyForReview(ctx context.Context, pr *PullRequest) error {
+func (c *V4Client) MarkPullRequestReadyForReview(ctx context.Context, pr *PullRequest) error {
 	var q strings.Builder
 	q.WriteString(pullRequestFragments)
 	q.WriteString(`mutation	MarkPullRequestReadyForReview($input:MarkPullRequestReadyForReviewInput!) {
@@ -664,7 +664,7 @@ func (c *Client) MarkPullRequestReadyForReview(ctx context.Context, pr *PullRequ
 }
 
 // ClosePullRequest closes the PullRequest on Github.
-func (c *Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
+func (c *V4Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
 	var q strings.Builder
 	q.WriteString(pullRequestFragments)
 	q.WriteString(`mutation	ClosePullRequest($input:ClosePullRequestInput!) {
@@ -708,7 +708,7 @@ func (c *Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
 }
 
 // ReopenPullRequest reopens the PullRequest on Github.
-func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
+func (c *V4Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 	var q strings.Builder
 	q.WriteString(pullRequestFragments)
 	q.WriteString(`mutation	ReopenPullRequest($input:ReopenPullRequestInput!) {
@@ -752,7 +752,7 @@ func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 }
 
 // LoadPullRequest loads a PullRequest from Github.
-func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
+func (c *V4Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 	owner, repo, err := SplitRepositoryNameWithOwner(pr.RepoWithOwner)
 	if err != nil {
 		return err
@@ -813,7 +813,7 @@ query($owner: String!, $name: String!, $number: Int!) {
 // GetOpenPullRequestByRefs fetches the the pull request associated with the supplied
 // refs. GitHub only allows one open PR by ref at a time.
 // If nothing is found an error is returned.
-func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, baseRef, headRef string) (*PullRequest, error) {
+func (c *V4Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, baseRef, headRef string) (*PullRequest, error) {
 	var q strings.Builder
 	q.WriteString(pullRequestFragments)
 	q.WriteString("query {\n")
@@ -858,7 +858,7 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 	return &pr, nil
 }
 
-func (c *Client) loadRemainingTimelineItems(ctx context.Context, prID string, pageInfo PageInfo) (items []TimelineItem, err error) {
+func (c *V4Client) loadRemainingTimelineItems(ctx context.Context, prID string, pageInfo PageInfo) (items []TimelineItem, err error) {
 	pi := pageInfo
 	for pi.HasNextPage {
 		var q strings.Builder

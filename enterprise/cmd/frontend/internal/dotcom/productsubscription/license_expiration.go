@@ -84,48 +84,52 @@ func checkForUpcomingLicenseExpirations(clock glock.Clock, client slackClient) {
 	}
 
 	for _, dbSubscription := range allDBSubscriptions {
-		// Get the active (i.e., latest created) license.
-		licenses, err := dbLicenses{}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: dbSubscription.ID, LimitOffset: &db.LimitOffset{Limit: 1}})
+		checkLastSubscriptionLicense(ctx, dbSubscription, clock, client)
+	}
+}
+
+func checkLastSubscriptionLicense(ctx context.Context, s *dbSubscription, clock glock.Clock, client slackClient) {
+	// Get the active (i.e., latest created) license.
+	licenses, err := dbLicenses{}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: s.ID, LimitOffset: &db.LimitOffset{Limit: 1}})
+	if err != nil {
+		log15.Error("startCheckForUpcomingLicenseExpirations: error listing licenses", "error", err)
+		return
+	}
+	// Skip if subscription has no licenses.
+	if len(licenses) < 1 {
+		return
+	}
+
+	user, err := db.Users.GetByID(ctx, s.UserID)
+	if err != nil {
+		log15.Error("startCheckForUpcomingLicenseExpirations: error looking up user", "error", err)
+		return
+	}
+
+	info, _, err := licensing.ParseProductLicenseKeyWithBuiltinOrGenerationKey(licenses[0].LicenseKey)
+	if err != nil {
+		log15.Error("startCheckForUpcomingLicenseExpirations: error parsing license key", "error", err)
+		return
+	}
+
+	weekAway := clock.Now().Add(7 * 24 * time.Hour)
+	dayAway := clock.Now().Add(24 * time.Hour)
+
+	if info.ExpiresAt.After(weekAway) && info.ExpiresAt.Before(weekAway.Add(24*time.Hour)) {
+		err = client.Post(context.Background(), &slack.Payload{
+			Text: fmt.Sprintf("The license for user `%s` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|will expire *in 7 days*>", user.Username, s.ID),
+		})
 		if err != nil {
-			log15.Error("startCheckForUpcomingLicenseExpirations: error listing licenses", "error", err)
+			log15.Error("startCheckForUpcomingLicenseExpirations: error sending Slack message", "error", err)
 			return
 		}
-		// Skip if subscription has no licenses.
-		if len(licenses) < 1 {
-			return
-		}
-
-		user, err := db.Users.GetByID(ctx, dbSubscription.UserID)
+	} else if info.ExpiresAt.After(dayAway) && info.ExpiresAt.Before(dayAway.Add(24*time.Hour)) {
+		err = client.Post(context.Background(), &slack.Payload{
+			Text: fmt.Sprintf("The license for user `%s` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|will expire *in the next 24 hours*> :rotating_light:", user.Username, s.ID),
+		})
 		if err != nil {
-			log15.Error("startCheckForUpcomingLicenseExpirations: error looking up user", "error", err)
+			log15.Error("startCheckForUpcomingLicenseExpirations: error sending Slack message", "error", err)
 			return
-		}
-
-		info, _, err := licensing.ParseProductLicenseKeyWithBuiltinOrGenerationKey(licenses[0].LicenseKey)
-		if err != nil {
-			log15.Error("startCheckForUpcomingLicenseExpirations: error parsing license key", "error", err)
-			return
-		}
-
-		weekAway := clock.Now().Add(7 * 24 * time.Hour)
-		dayAway := clock.Now().Add(24 * time.Hour)
-
-		if info.ExpiresAt.After(weekAway) && info.ExpiresAt.Before(weekAway.Add(24*time.Hour)) {
-			err = client.Post(context.Background(), &slack.Payload{
-				Text: fmt.Sprintf("The license for user `%s` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|will expire *in 7 days*>", user.Username, dbSubscription.ID),
-			})
-			if err != nil {
-				log15.Error("startCheckForUpcomingLicenseExpirations: error sending Slack message", "error", err)
-				return
-			}
-		} else if info.ExpiresAt.After(dayAway) && info.ExpiresAt.Before(dayAway.Add(24*time.Hour)) {
-			err = client.Post(context.Background(), &slack.Payload{
-				Text: fmt.Sprintf("The license for user `%s` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|will expire *in the next 24 hours*> :rotating_light:", user.Username, dbSubscription.ID),
-			})
-			if err != nil {
-				log15.Error("startCheckForUpcomingLicenseExpirations: error sending Slack message", "error", err)
-				return
-			}
 		}
 	}
 }

@@ -76,7 +76,7 @@ func TestCampaignConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +190,7 @@ func TestCampaignsListing(t *testing.T) {
 	store := ee.NewStore(dbconn.Global)
 
 	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(r, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

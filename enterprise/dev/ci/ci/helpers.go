@@ -162,3 +162,7 @@ func (c Config) isGoOnly() bool {
 	}
 	return true
 }
+
+func (c Config) shouldRunE2EandQA() bool {
+	return c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "main"
+}

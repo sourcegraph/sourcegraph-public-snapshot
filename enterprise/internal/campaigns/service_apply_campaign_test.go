@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
@@ -37,8 +38,9 @@ func TestServiceApplyCampaign(t *testing.T) {
 	if user.SiteAdmin {
 		t.Fatal("user is admin, want non-admin")
 	}
+	userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
-	repos, _ := createTestRepos(t, ctx, dbconn.Global, 4)
+	repos, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 4)
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time {
@@ -491,26 +493,26 @@ func TestServiceApplyCampaign(t *testing.T) {
 		})
 
 		t.Run("missing repository permissions", func(t *testing.T) {
-			// Single repository filtered out by authzFilter
-			ct.AuthzFilterRepos(t, repos[1].ID)
+			ct.MockRepoPermissions(t, user.ID, repos[0].ID, repos[2].ID, repos[3].ID)
 
-			campaignSpec := createCampaignSpec(t, ctx, store, "missing-permissions", admin.ID)
+			// NOTE: We cannot use a context that has authz bypassed.
+			campaignSpec := createCampaignSpec(t, userCtx, store, "missing-permissions", user.ID)
 
-			createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
+			createChangesetSpec(t, userCtx, store, testSpecOpts{
+				user:         user.ID,
 				repo:         repos[0].ID,
 				campaignSpec: campaignSpec.ID,
 				externalID:   "1234",
 			})
 
-			createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[1].ID, // Filtered out by authzFilter
+			createChangesetSpec(t, userCtx, store, testSpecOpts{
+				user:         user.ID,
+				repo:         repos[1].ID, // Not authorized to access this repository
 				campaignSpec: campaignSpec.ID,
 				headRef:      "refs/heads/my-branch",
 			})
 
-			_, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
+			_, err := svc.ApplyCampaign(userCtx, ApplyCampaignOpts{
 				CampaignSpecRandID: campaignSpec.RandID,
 			})
 			if err == nil {
@@ -967,12 +969,7 @@ type testSpecOpts struct {
 
 var testChangsetSpecDiffStat = &diff.Stat{Added: 10, Changed: 5, Deleted: 2}
 
-func createChangesetSpec(
-	t *testing.T,
-	ctx context.Context,
-	store *Store,
-	opts testSpecOpts,
-) *campaigns.ChangesetSpec {
+func buildChangesetSpec(t *testing.T, opts testSpecOpts) *campaigns.ChangesetSpec {
 	t.Helper()
 
 	published := campaigns.PublishedValue{Val: opts.published}
@@ -1011,6 +1008,19 @@ func createChangesetSpec(
 		DiffStatChanged: testChangsetSpecDiffStat.Changed,
 		DiffStatDeleted: testChangsetSpecDiffStat.Deleted,
 	}
+
+	return spec
+}
+
+func createChangesetSpec(
+	t *testing.T,
+	ctx context.Context,
+	store *Store,
+	opts testSpecOpts,
+) *campaigns.ChangesetSpec {
+	t.Helper()
+
+	spec := buildChangesetSpec(t, opts)
 
 	if err := store.CreateChangesetSpec(ctx, spec); err != nil {
 		t.Fatal(err)

@@ -13,6 +13,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -165,11 +166,18 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			wantErr:      `users are only allowed to add external service for https://github.com/, https://gitlab.com/ and https://bitbucket.org/`,
 		},
 		{
-			name:         "prevent disallowed fields",
+			name:         "prevent disallowed repositoryPathPattern field",
 			kind:         extsvc.KindGitHub,
 			config:       `{"url": "https://github.com", "repositoryPathPattern": "github/{nameWithOwner}" // comments}`,
 			hasNamespace: true,
 			wantErr:      `field "repositoryPathPattern" is not allowed in a user-added external service`,
+		},
+		{
+			name:         "prevent disallowed nameTransformations field",
+			kind:         extsvc.KindGitHub,
+			config:       `{"url": "https://github.com", "nameTransformations": [{"regex": "\\.d/","replacement": "/"},{"regex": "-git$","replacement": ""}] // comments}`,
+			hasNamespace: true,
+			wantErr:      `field "nameTransformations" is not allowed in a user-added external service`,
 		},
 	}
 	for _, test := range tests {
@@ -202,24 +210,52 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	es := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-	}
-	err := (&ExternalServiceStore{}).Create(ctx, confGet, es)
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	// Should get back the same one
-	got, err := (&ExternalServiceStore{}).GetByID(ctx, es.ID)
-	if err != nil {
-		t.Fatal(err)
+	tests := []struct {
+		name             string
+		externalService  *types.ExternalService
+		wantUnrestricted bool
+	}{
+		{
+			name: "without authorization",
+			externalService: &types.ExternalService{
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "GITHUB #1",
+				Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			},
+			wantUnrestricted: true,
+		},
+		{
+			name: "with authorization",
+			externalService: &types.ExternalService{
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "GITHUB #2",
+				Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+			},
+			wantUnrestricted: false,
+		},
 	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := ExternalServices.Create(ctx, confGet, test.externalService)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	if diff := cmp.Diff(es, got); diff != "" {
-		t.Fatalf("(-want +got):\n%s", diff)
+			// Should get back the same one
+			got, err := ExternalServices.GetByID(ctx, test.externalService.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(test.externalService, got); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			}
+
+			if test.wantUnrestricted != got.Unrestricted {
+				t.Fatalf("Want unrestricted = %v, but got %v", test.wantUnrestricted, got.Unrestricted)
+			}
+		})
 	}
 }
 
@@ -267,28 +303,54 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Update its name and config
-	esUpdate := &ExternalServiceUpdate{
-		DisplayName: strptr("GITHUB (updated) #1"),
-		Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+	// NOTE: The order of tests matters
+	tests := []struct {
+		name             string
+		update           *ExternalServiceUpdate
+		wantUnrestricted bool
+	}{
+		{
+			name: "update with authorization",
+			update: &ExternalServiceUpdate{
+				DisplayName: strptr("GITHUB (updated) #1"),
+				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}}`),
+			},
+			wantUnrestricted: false,
+		},
+		{
+			name: "update without authorization",
+			update: &ExternalServiceUpdate{
+				DisplayName: strptr("GITHUB (updated) #2"),
+				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+			},
+			wantUnrestricted: true,
+		},
 	}
-	err = (&ExternalServiceStore{}).Update(ctx, nil, es.ID, esUpdate)
-	if err != nil {
-		t.Fatal(err)
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err = ExternalServices.Update(ctx, nil, es.ID, test.update)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	// Get and verify update
-	got, err := (&ExternalServiceStore{}).GetByID(ctx, es.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
+			// Get and verify update
+			got, err := ExternalServices.GetByID(ctx, es.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	if diff := cmp.Diff(*esUpdate.DisplayName, got.DisplayName); diff != "" {
-		t.Fatalf("DisplayName mismatch (-want +got):\n%s", diff)
-	} else if diff = cmp.Diff(*esUpdate.Config, got.Config); diff != "" {
-		t.Fatalf("Config mismatch (-want +got):\n%s", diff)
-	} else if got.UpdatedAt.Equal(es.UpdatedAt) {
-		t.Fatalf("UpdateAt: want to be updated but not")
+			if diff := cmp.Diff(*test.update.DisplayName, got.DisplayName); diff != "" {
+				t.Fatalf("DisplayName mismatch (-want +got):\n%s", diff)
+			} else if diff = cmp.Diff(*test.update.Config, got.Config); diff != "" {
+				t.Fatalf("Config mismatch (-want +got):\n%s", diff)
+			} else if got.UpdatedAt.Equal(es.UpdatedAt) {
+				t.Fatalf("UpdateAt: want to be updated but not")
+			}
+
+			if test.wantUnrestricted != got.Unrestricted {
+				t.Fatalf("Want unrestricted = %v, but got %v", test.wantUnrestricted, got.Unrestricted)
+			}
+		})
 	}
 }
 
@@ -297,7 +359,7 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 
 	// Create a new external service
 	confGet := func() *conf.Unified {
@@ -625,7 +687,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 	clock := dbtesting.NewFakeClock(time.Now(), 0)
 
-	svcs := MakeExternalServices()
+	svcs := types.MakeExternalServices()
 
 	t.Run("no external services", func(t *testing.T) {
 		if err := ExternalServices.Upsert(ctx); err != nil {
@@ -645,7 +707,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			}
 		}()
 
-		want := GenerateExternalServices(7, svcs...)
+		want := types.GenerateExternalServices(7, svcs...)
 
 		if err := tx.Upsert(ctx, want...); err != nil {
 			t.Fatalf("Upsert error: %s", err)
@@ -714,6 +776,61 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 		if diff := cmp.Diff(have, []*types.ExternalService(nil), cmpopts.EquateEmpty()); diff != "" {
 			t.Errorf("List:\n%s", diff)
+		}
+	})
+}
+
+func TestExternalServicesStore_ValidateSingleGlobalConnection(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	now := time.Now()
+
+	makeService := func(global bool) *types.ExternalService {
+		cfg := `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`
+		if global {
+			cfg = `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"], "cloudGlobal": true}`
+		}
+		svc := &types.ExternalService{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "Github - Test",
+			Config:      cfg,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		}
+		return svc
+	}
+
+	t.Run("non global", func(t *testing.T) {
+		gh := makeService(false)
+		if err := ExternalServices.Upsert(ctx, gh); err != nil {
+			t.Fatalf("Upsert error: %s", err)
+		}
+		if err := ExternalServices.validateSingleGlobalConnection(ctx, gh.ID, extsvc.KindGitHub); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("first global", func(t *testing.T) {
+		gh := makeService(true)
+		if err := ExternalServices.Upsert(ctx, gh); err != nil {
+			t.Fatalf("Upsert error: %s", err)
+		}
+		if err := ExternalServices.validateSingleGlobalConnection(ctx, gh.ID, extsvc.KindGitHub); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("second global", func(t *testing.T) {
+		gh := makeService(true)
+		if err := ExternalServices.Upsert(ctx, gh); err != nil {
+			t.Fatalf("Upsert error: %s", err)
+		}
+		if err := ExternalServices.validateSingleGlobalConnection(ctx, gh.ID, extsvc.KindGitHub); err == nil {
+			t.Fatal("Expected validation error")
 		}
 	})
 }

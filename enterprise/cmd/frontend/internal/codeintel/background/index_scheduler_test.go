@@ -8,8 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
-	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
+	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
@@ -49,18 +48,18 @@ func TestIndexSchedulerUpdateIndexConfigurationInDatabase(t *testing.T) {
 		}`),
 	}
 
-	mockStore := storemocks.NewMockStore()
-	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
-	mockStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{42}, nil)
-	mockStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(indexConfiguration, true, nil)
+	mockDBStore := NewMockDBStore()
+	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{42}, nil)
+	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(indexConfiguration, true, nil)
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, store store.Store, repositoryID int) (string, error) {
+	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, error) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})
 
 	scheduler := &IndexScheduler{
-		store:           mockStore,
+		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
 		metrics:         NewMetrics(metrics.TestRegisterer),
 	}
@@ -69,11 +68,11 @@ func TestIndexSchedulerUpdateIndexConfigurationInDatabase(t *testing.T) {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
-	if len(mockStore.GetIndexConfigurationByRepositoryIDFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to GetIndexConfigurationByRepositoryID. want=%d have=%d", 1, len(mockStore.GetIndexConfigurationByRepositoryIDFunc.History()))
+	if len(mockDBStore.GetIndexConfigurationByRepositoryIDFunc.History()) != 1 {
+		t.Errorf("unexpected number of calls to GetIndexConfigurationByRepositoryID. want=%d have=%d", 1, len(mockDBStore.GetIndexConfigurationByRepositoryIDFunc.History()))
 	} else {
 		var repositoryIDs []int
-		for _, call := range mockStore.GetIndexConfigurationByRepositoryIDFunc.History() {
+		for _, call := range mockDBStore.GetIndexConfigurationByRepositoryIDFunc.History() {
 			repositoryIDs = append(repositoryIDs, call.Arg1)
 		}
 		sort.Ints(repositoryIDs)
@@ -83,11 +82,11 @@ func TestIndexSchedulerUpdateIndexConfigurationInDatabase(t *testing.T) {
 		}
 	}
 
-	if len(mockStore.IsQueuedFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 1, len(mockStore.IsQueuedFunc.History()))
+	if len(mockDBStore.IsQueuedFunc.History()) != 1 {
+		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 1, len(mockDBStore.IsQueuedFunc.History()))
 	} else {
 		var commits []string
-		for _, call := range mockStore.IsQueuedFunc.History() {
+		for _, call := range mockDBStore.IsQueuedFunc.History() {
 			commits = append(commits, call.Arg2)
 		}
 		sort.Strings(commits)
@@ -97,11 +96,11 @@ func TestIndexSchedulerUpdateIndexConfigurationInDatabase(t *testing.T) {
 		}
 	}
 
-	if len(mockStore.InsertIndexFunc.History()) != 2 {
-		t.Errorf("unexpected number of calls to InsertIndex. want=%d have=%d", 2, len(mockStore.InsertIndexFunc.History()))
+	if len(mockDBStore.InsertIndexFunc.History()) != 2 {
+		t.Errorf("unexpected number of calls to InsertIndex. want=%d have=%d", 2, len(mockDBStore.InsertIndexFunc.History()))
 	} else {
 		var indexes []store.Index
-		for _, call := range mockStore.InsertIndexFunc.History() {
+		for _, call := range mockDBStore.InsertIndexFunc.History() {
 			indexes = append(indexes, call.Arg1)
 		}
 
@@ -171,21 +170,21 @@ index_jobs:
 `)
 
 func TestIndexSchedulerUpdateIndexConfigurationInRepository(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
-	mockStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{42}, nil)
+	mockDBStore := NewMockDBStore()
+	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{42}, nil)
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, store store.Store, repositoryID int) (string, error) {
+	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, error) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})
-	mockGitserverClient.FileExistsFunc.SetDefaultHook(func(ctx context.Context, store store.Store, repositoryID int, commit, file string) (bool, error) {
+	mockGitserverClient.FileExistsFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file string) (bool, error) {
 		return file == "sourcegraph.yaml", nil
 	})
 	mockGitserverClient.RawContentsFunc.SetDefaultReturn(yamlIndexConfiguration, nil)
 
 	scheduler := &IndexScheduler{
-		store:           mockStore,
+		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
 		metrics:         NewMetrics(metrics.TestRegisterer),
 	}
@@ -194,11 +193,11 @@ func TestIndexSchedulerUpdateIndexConfigurationInRepository(t *testing.T) {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
-	if len(mockStore.IsQueuedFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 1, len(mockStore.IsQueuedFunc.History()))
+	if len(mockDBStore.IsQueuedFunc.History()) != 1 {
+		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 1, len(mockDBStore.IsQueuedFunc.History()))
 	} else {
 		var commits []string
-		for _, call := range mockStore.IsQueuedFunc.History() {
+		for _, call := range mockDBStore.IsQueuedFunc.History() {
 			commits = append(commits, call.Arg2)
 		}
 		sort.Strings(commits)
@@ -208,11 +207,11 @@ func TestIndexSchedulerUpdateIndexConfigurationInRepository(t *testing.T) {
 		}
 	}
 
-	if len(mockStore.InsertIndexFunc.History()) != 2 {
-		t.Errorf("unexpected number of calls to InsertIndex. want=%d have=%d", 2, len(mockStore.InsertIndexFunc.History()))
+	if len(mockDBStore.InsertIndexFunc.History()) != 2 {
+		t.Errorf("unexpected number of calls to InsertIndex. want=%d have=%d", 2, len(mockDBStore.InsertIndexFunc.History()))
 	} else {
 		var indexes []store.Index
-		for _, call := range mockStore.InsertIndexFunc.History() {
+		for _, call := range mockDBStore.InsertIndexFunc.History() {
 			indexes = append(indexes, call.Arg1)
 		}
 
@@ -259,23 +258,23 @@ func TestIndexSchedulerUpdateIndexConfigurationInRepository(t *testing.T) {
 }
 
 func TestIndexSchedulerUpdateIndexConfigurationInferred(t *testing.T) {
-	mockStore := storemocks.NewMockStore()
-	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
-	mockStore.IndexableRepositoriesFunc.SetDefaultReturn([]store.IndexableRepository{
+	mockDBStore := NewMockDBStore()
+	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.IndexableRepositoriesFunc.SetDefaultReturn([]store.IndexableRepository{
 		{RepositoryID: 41},
 		{RepositoryID: 42},
 		{RepositoryID: 43},
 		{RepositoryID: 44},
 	}, nil)
-	mockStore.IsQueuedFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (bool, error) {
+	mockDBStore.IsQueuedFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (bool, error) {
 		return repositoryID%2 != 0, nil
 	})
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, store store.Store, repositoryID int) (string, error) {
+	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, error) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})
-	mockGitserverClient.ListFilesFunc.SetDefaultHook(func(ctx context.Context, store store.Store, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
+	mockGitserverClient.ListFilesFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
 		switch repositoryID {
 		case 42:
 			return []string{"go.mod"}, nil
@@ -287,7 +286,7 @@ func TestIndexSchedulerUpdateIndexConfigurationInferred(t *testing.T) {
 	})
 
 	scheduler := &IndexScheduler{
-		store:           mockStore,
+		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
 		metrics:         NewMetrics(metrics.TestRegisterer),
 	}
@@ -296,11 +295,11 @@ func TestIndexSchedulerUpdateIndexConfigurationInferred(t *testing.T) {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
-	if len(mockStore.IsQueuedFunc.History()) != 4 {
-		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 4, len(mockStore.IsQueuedFunc.History()))
+	if len(mockDBStore.IsQueuedFunc.History()) != 4 {
+		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 4, len(mockDBStore.IsQueuedFunc.History()))
 	} else {
 		var commits []string
-		for _, call := range mockStore.IsQueuedFunc.History() {
+		for _, call := range mockDBStore.IsQueuedFunc.History() {
 			commits = append(commits, call.Arg2)
 		}
 		sort.Strings(commits)
@@ -310,11 +309,11 @@ func TestIndexSchedulerUpdateIndexConfigurationInferred(t *testing.T) {
 		}
 	}
 
-	if len(mockStore.InsertIndexFunc.History()) != 3 {
-		t.Errorf("unexpected number of calls to InsertIndex. want=%d have=%d", 3, len(mockStore.InsertIndexFunc.History()))
+	if len(mockDBStore.InsertIndexFunc.History()) != 3 {
+		t.Errorf("unexpected number of calls to InsertIndex. want=%d have=%d", 3, len(mockDBStore.InsertIndexFunc.History()))
 	} else {
 		indexRoots := map[int][]string{}
-		for _, call := range mockStore.InsertIndexFunc.History() {
+		for _, call := range mockDBStore.InsertIndexFunc.History() {
 			indexRoots[call.Arg1.RepositoryID] = append(indexRoots[call.Arg1.RepositoryID], call.Arg1.Root)
 		}
 
@@ -327,7 +326,7 @@ func TestIndexSchedulerUpdateIndexConfigurationInferred(t *testing.T) {
 		}
 	}
 
-	if len(mockStore.UpdateIndexableRepositoryFunc.History()) != 2 {
-		t.Errorf("unexpected number of calls to UpdateIndexableRepository. want=%d have=%d", 2, len(mockStore.UpdateIndexableRepositoryFunc.History()))
+	if len(mockDBStore.UpdateIndexableRepositoryFunc.History()) != 2 {
+		t.Errorf("unexpected number of calls to UpdateIndexableRepository. want=%d have=%d", 2, len(mockDBStore.UpdateIndexableRepositoryFunc.History()))
 	}
 }

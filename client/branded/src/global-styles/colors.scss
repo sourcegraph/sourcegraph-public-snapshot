@@ -94,8 +94,8 @@ $text-muted: var(--text-muted);
     --border-color: #{$gray-04};
     --border-color-2: #{$gray-02};
     --sourcegraph-logo-text-color: #242427;
-    --search-keyword-color: #1c7cd6;
-    --search-operator-color: #{$oc-grape-7};
+    --search-filter-keyword-color: #1c7cd6;
+    --search-keyword-color: #{$oc-grape-7};
 }
 .theme-dark {
     // Affects default browser styles
@@ -118,6 +118,6 @@ $text-muted: var(--text-muted);
     --link-active-color: #{$gray-02};
     --link-hover-color: #ffffff;
     --sourcegraph-logo-text-color: #ffffff;
-    --search-keyword-color: #329af0;
-    --search-operator-color: #{$oc-grape-4};
+    --search-filter-keyword-color: #329af0;
+    --search-keyword-color: #{$oc-grape-4};
 }

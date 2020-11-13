@@ -5,7 +5,7 @@ import (
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 )
 
 const defaultOutfile = "dump.lsif"

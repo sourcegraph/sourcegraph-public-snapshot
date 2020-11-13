@@ -36,7 +36,7 @@ interface TabBarProps<ID extends string, T extends Tab<ID>> {
     endFragment?: React.ReactFragment
 
     /** The component used to render the tab (in the tab bar, not the active tab's content area). */
-    tabComponent: React.ComponentType<{ tab: T; className: string }>
+    tabComponent: React.ComponentType<{ tab: T; className: string; role: string }>
 
     tabClassName?: string
 }
@@ -50,7 +50,7 @@ interface TabBarProps<ID extends string, T extends Tab<ID>> {
 class TabBar<ID extends string, T extends Tab<ID>> extends React.PureComponent<TabBarProps<ID, T>> {
     public render(): JSX.Element | null {
         return (
-            <div className={`tab-bar ${this.props.tabs.length === 0 ? 'tab-bar--empty' : ''}`}>
+            <div className={`tab-bar ${this.props.tabs.length === 0 ? 'tab-bar--empty' : ''}`} role="tablist">
                 {this.props.tabs
                     .filter(({ hidden }) => !hidden)
                     .map(tab => (
@@ -69,6 +69,7 @@ class TabBar<ID extends string, T extends Tab<ID>> extends React.PureComponent<T
                                         : 'inactive'),
                                 this.props.tabClassName
                             )}
+                            role="tab"
                         />
                     ))}
                 {this.props.endFragment}
@@ -131,7 +132,7 @@ class Tabs<ID extends string, T extends Tab<ID>> extends React.PureComponent<
         activeTab: ID | undefined
 
         /** The component used to render the tab (in the tab bar, not the active tab's content area). */
-        tabComponent: React.ComponentType<{ tab: T; className: string }>
+        tabComponent: React.ComponentType<{ tab: T; className: string; role: string }>
     }
 > {
     public render(): JSX.Element | null {
@@ -218,8 +219,14 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
         )
     }
 
-    private renderTab = ({ tab, className }: { tab: T; className: string }): JSX.Element => (
-        <button type="button" className={className} data-test-tab={tab.id} onClick={() => this.onSelectTab(tab.id)}>
+    private renderTab = ({ tab, className, role }: { tab: T; className: string; role: string }): JSX.Element => (
+        <button
+            type="button"
+            className={className}
+            role={role}
+            data-test-tab={tab.id}
+            onClick={() => this.onSelectTab(tab.id)}
+        >
             {tab.label}
         </button>
     )

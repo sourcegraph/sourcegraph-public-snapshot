@@ -9,3 +9,4 @@
 
 - [Index a Go repository](index_a_go_repository.md)
 - [Index a TypeScript or JavaScript repository](index_a_typescript_and_javascript_repository.md)
+- [Index a C++ repository](index_a_cpp_repository.md)

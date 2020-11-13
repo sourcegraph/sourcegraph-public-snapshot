@@ -3,7 +3,7 @@ package codeintel
 import (
 	"time"
 
-	uploadstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/upload_store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
@@ -12,7 +12,6 @@ type Config struct {
 
 	UploadStoreConfig *uploadstore.Config
 
-	BundleManagerURL            string
 	HunkCacheSize               int
 	BackgroundTaskInterval      time.Duration
 	IndexBatchSize              int
@@ -31,7 +30,6 @@ func init() {
 	uploadStoreConfig.Load()
 	config.UploadStoreConfig = uploadStoreConfig
 
-	config.BundleManagerURL = config.Get("PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL", "", "The URL of the bundle manager service.")
 	config.HunkCacheSize = config.GetInt("PRECISE_CODE_INTEL_HUNK_CACHE_SIZE", "1000", "The capacity of the git diff hunk cache.")
 	config.BackgroundTaskInterval = config.GetInterval("PRECISE_CODE_INTEL_BACKGROUND_TASK_INTERVAL", "1m", "The frequency with which to run periodic codeintel background tasks.")
 	config.IndexBatchSize = config.GetInt("PRECISE_CODE_INTEL_INDEX_BATCH_SIZE", "100", "The number of indexable repositories to schedule at a time.")

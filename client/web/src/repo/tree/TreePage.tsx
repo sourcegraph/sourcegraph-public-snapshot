@@ -36,7 +36,7 @@ import { ErrorAlert } from '../../components/alerts'
 import { subYears, formatISO } from 'date-fns'
 import { pluralize } from '../../../../shared/src/util/strings'
 import { useObservable } from '../../../../shared/src/util/useObservable'
-import { toPrettyBlobURL, toURIWithPath } from '../../../../shared/src/util/url'
+import { encodeURIComponentExceptSlashes, toPrettyBlobURL, toURIWithPath } from '../../../../shared/src/util/url'
 import { getViewsForContainer } from '../../../../shared/src/api/client/services/viewService'
 import { Settings } from '../../schema/settings.schema'
 import { ViewGrid } from './ViewGrid'
@@ -311,23 +311,34 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                     <Link className="btn btn-secondary" to={`${treeOrError.url}/-/commits`}>
                                         <SourceCommitIcon className="icon-inline" /> Commits
                                     </Link>
-                                    <Link className="btn btn-secondary" to={`/${repoName}/-/branches`}>
+                                    <Link
+                                        className="btn btn-secondary"
+                                        to={`/${encodeURIComponentExceptSlashes(repoName)}/-/branches`}
+                                    >
                                         <SourceBranchIcon className="icon-inline" /> Branches
                                     </Link>
-                                    <Link className="btn btn-secondary" to={`/${repoName}/-/tags`}>
+                                    <Link
+                                        className="btn btn-secondary"
+                                        to={`/${encodeURIComponentExceptSlashes(repoName)}/-/tags`}
+                                    >
                                         <TagIcon className="icon-inline" /> Tags
                                     </Link>
                                     <Link
                                         className="btn btn-secondary"
                                         to={
                                             revision
-                                                ? `/${repoName}/-/compare/...${encodeURIComponent(revision)}`
-                                                : `/${repoName}/-/compare`
+                                                ? `/${encodeURIComponentExceptSlashes(
+                                                      repoName
+                                                  )}/-/compare/...${encodeURIComponent(revision)}`
+                                                : `/${encodeURIComponentExceptSlashes(repoName)}/-/compare`
                                         }
                                     >
                                         <HistoryIcon className="icon-inline" /> Compare
                                     </Link>
-                                    <Link className="btn btn-secondary" to={`/${repoName}/-/stats/contributors`}>
+                                    <Link
+                                        className="btn btn-secondary"
+                                        to={`/${encodeURIComponentExceptSlashes(repoName)}/-/stats/contributors`}
+                                    >
                                         <UserIcon className="icon-inline" /> Contributors
                                     </Link>
                                 </div>

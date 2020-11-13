@@ -29,6 +29,9 @@ export interface FlatExtensionHostAPI {
     // Languages
     getHover: (parameters: TextDocumentPositionParameters) => ProxySubscribable<MaybeLoadingResult<HoverMerged | null>>
     getDocumentHighlights: (parameters: TextDocumentPositionParameters) => ProxySubscribable<DocumentHighlight[]>
+    getDefinition: (
+        parameters: TextDocumentPositionParameters
+    ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
 }
 
 /**

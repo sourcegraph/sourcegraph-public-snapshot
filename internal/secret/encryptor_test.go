@@ -2,6 +2,7 @@ package secret
 
 import (
 	"bytes"
+	"encoding/base64"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -189,6 +190,14 @@ func TestAESGCMEncodedEncrytor_BadKeysFailToDecrypt(t *testing.T) {
 }
 
 func TestGatherKeys(t *testing.T) {
+	primaryKey := mustGenerateRandomAESKey()
+	secondaryKey := mustGenerateRandomAESKey()
+	primaryKeyStr := base64.StdEncoding.EncodeToString(primaryKey)
+	secondaryKeyStr := base64.StdEncoding.EncodeToString(secondaryKey)
+
+	tooShortKey := primaryKey[:5]
+	tooShortKeyStr := base64.StdEncoding.EncodeToString(tooShortKey)
+
 	tests := []struct {
 		name             string
 		data             []byte
@@ -197,22 +206,37 @@ func TestGatherKeys(t *testing.T) {
 		wantErr          bool
 	}{
 		{
-			name:             "base-case",
-			data:             []byte("key123,key345"),
-			wantPrimaryKey:   []byte("key123"),
-			wantSecondaryKey: []byte("key345"),
+			name:             "has both primary and secondary keys",
+			data:             []byte(primaryKeyStr + "," + secondaryKeyStr),
+			wantPrimaryKey:   primaryKey,
+			wantSecondaryKey: secondaryKey,
 			wantErr:          false,
 		},
 		{
-			name:             "no key set",
-			data:             []byte("key123"),
-			wantPrimaryKey:   []byte("key123"),
+			name:             "only has primary key",
+			data:             []byte(primaryKeyStr),
+			wantPrimaryKey:   primaryKey,
 			wantSecondaryKey: nil,
 			wantErr:          false,
 		},
+
 		{
-			name:             "3 key err case",
+			name:             "has more than two keys",
 			data:             []byte("look mom, I am a key, me too"),
+			wantPrimaryKey:   nil,
+			wantSecondaryKey: nil,
+			wantErr:          true,
+		},
+		{
+			name:             "has bad encoded keys",
+			data:             []byte("look mom, I am a key"),
+			wantPrimaryKey:   nil,
+			wantSecondaryKey: nil,
+			wantErr:          true,
+		},
+		{
+			name:             "key length is below requirement",
+			data:             []byte(tooShortKeyStr),
 			wantPrimaryKey:   nil,
 			wantSecondaryKey: nil,
 			wantErr:          true,
@@ -222,14 +246,14 @@ func TestGatherKeys(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotPrimaryKey, gotSecondaryKey, err := gatherKeys(tt.data)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("gatherKeys() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if !bytes.Equal(gotPrimaryKey, tt.wantPrimaryKey) {
-				t.Errorf("gatherKeys() oOldKey = %s, want %s", gotSecondaryKey, tt.wantPrimaryKey)
+				t.Errorf("gotPrimaryKey = %v, want %v", gotPrimaryKey, tt.wantPrimaryKey)
 			}
 			if !bytes.Equal(gotSecondaryKey, tt.wantSecondaryKey) {
-				t.Errorf("gathrKeys() gotPrimaryKey = %s, want %s", gotPrimaryKey, tt.wantSecondaryKey)
+				t.Errorf("gotSecondaryKey = %v, want %v", gotSecondaryKey, tt.wantSecondaryKey)
 			}
 		})
 	}

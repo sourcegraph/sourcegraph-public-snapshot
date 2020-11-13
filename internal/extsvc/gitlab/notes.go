@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -26,6 +27,8 @@ func (c *Client) GetMergeRequestNotes(ctx context.Context, project *Project, iid
 		if url == "" {
 			return page, nil
 		}
+
+		time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
 
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {

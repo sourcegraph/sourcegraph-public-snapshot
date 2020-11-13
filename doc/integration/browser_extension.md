@@ -18,7 +18,16 @@ Enterprise, GitLab, Phabricator, and Bitbucket Server.
 
 >NOTE: The Firefox extension may need to be manually enabled from `about:addons`, you can find more information in [Firefox add-on security](firefox_security.md).
 
-![Sourcegraph browser extension](https://sourcegraphstatic.com/BrowserExtension.gif)
+<video class="theme-dark-only" width="1760" height="1060" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostDark.webm" type="video/webm">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostDark.mp4" type="video/mp4">
+  <p>Sourcegraph browser extension adds code intelligence to your code host</p>
+</video>
+<video class="theme-light-only" width="1760" height="1060" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostLight.webm" type="video/webm">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostLight.mp4" type="video/mp4">
+  <p>Sourcegraph browser extension adds code intelligence to your code host</p>
+</video>
 
 ## Features
 
@@ -32,7 +41,16 @@ When you hover your mouse over code in files, diffs, pull requests, etc., the So
 
 ### Search shortcut in URL location bar
 
-![Sourcegraph search shortcut](https://sourcegraphstatic.com/SearchShortcut2.gif)
+<video class="theme-dark-only" width="1196" height="720" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/BrowserShortcutDark.webm" type="video/webm">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/BrowserShortcutDark.mp4" type="video/mp4">
+  <p>Sourcegraph search shortcut</p>
+</video>
+<video class="theme-light-only" width="1196" height="720" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/BrowserShortcutLight.webm" type="video/webm">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/BrowserShortcutLight.mp4" type="video/mp4">
+  <p>Sourcegraph search shortcut</p>
+</video>
 
 The Sourcegraph extension adds a search engine shortcut to your web browser that performs a search on your Sourcegraph instance. After you've installed it (see above), use the search shortcut it provides to perform a search:
 
@@ -42,21 +60,21 @@ The Sourcegraph extension adds a search engine shortcut to your web browser that
 
 To install this search engine shortcut manually, and for more information, see "[Browser search engine shortcuts](browser_search_engine.md)".
 
-## Configuring the browser extension to use a private Sourcegraph instance
+## Make it work on your code host
 
-![Sourcegraph search shortcut](https://sourcegraphstatic.com/ConfigureSourcegraphInstanceUse.gif)
+<video class="theme-dark-only" width="1762" height="1384" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/GrantPermissionsDark.webm" type="video/webm">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/GrantPermissionsDark.mp4" type="video/mp4">
+  <p>Grant permissions</p>
+</video>
+<video class="theme-light-only" width="1762" height="1384" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/GrantPermissionsLight.webm" type="video/webm">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/GrantPermissionsLight.mp4" type="video/mp4">
+  <p>Grant permissions</p>
+</video>
 
-By default, the browser extension communicates with [Sourcegraph.com](https://sourcegraph.com), which has only public code.
-
-To use the browser extension with a different Sourcegraph instance:
-
-1. Click the Sourcegraph extension icon in the browser toolbar to open the settings page.
-1. Enter the URL (including the protocol) of your Sourcegraph instance (such as `https://sourcegraph.example.com`).
-1. Hit return/enter and the extension will indicate its connection status.
-
-## Enabling the browser extension on your code host
-
-By default, the Sourcegraph browser extension will only provide code intelligence on [github.com](https://github.com/). It needs additional permissions in order to run on other code hosts.
+- [GitHub.com](https://github.com/) - no action required.
+- GitHub Enterprise, GitLab, Bitbucket Server and Phabricator - you need to grant the extension permissions first.
 
 To grant these permissions:
 
@@ -64,6 +82,30 @@ To grant these permissions:
 1. Right-click the Sourcegraph icon in the browser extension toolbar.
 1. Click "Enable Sourcegraph on this domain".
 1. Click "Allow" in the permissions request popup.
+
+## Make it work for private code
+
+<video class="theme-dark-only" width="1764" height="1390" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/PrivateInstanceDark.webm" type="video/webm">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/PrivateInstanceDark.mp4" type="video/mp4">
+  <p>Configure browser extension for your private Sourcegraph instance</p>
+</video>
+<video class="theme-light-only" width="1764" height="1390" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/PrivateInstanceLight.webm" type="video/webm">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/PrivateInstanceLight.mp4" type="video/mp4">
+  <p>Configure browser extension for your private Sourcegraph instance</p>
+</video>
+
+By default, the browser extension communicates with [sourcegraph.com](https://sourcegraph.com), which has only public code.
+
+To use the browser extension with your private repositories, you need to set up a private Sourcegraph instance and connect the extension to it.
+
+Follow these instructions:
+
+1. [Install Sourcegraph](https://docs.sourcegraph.com/admin/install). Skip this step if you already have a private Sourcegraph instance.
+2. Click the Sourcegraph extension icon in the browser toolbar to open the settings page.
+3. Enter the URL (including the protocol) of your Sourcegraph instance (such as `https://sourcegraph.example.com`)
+4. Make sure the connection status shows "Looks good!"
 
 ## Troubleshooting
 

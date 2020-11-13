@@ -125,6 +125,9 @@ describe('SearchResultsList', () => {
         onFiltersInQueryChange: sinon.fake(),
         splitSearchModes: false,
         versionContext: undefined,
+
+        navbarSearchQueryState: { query: '', cursorPosition: 0 },
+        searchStreaming: false,
     }
 
     it('displays loading text when results is undefined', () => {

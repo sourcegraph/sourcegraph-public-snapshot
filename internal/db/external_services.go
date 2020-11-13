@@ -17,6 +17,7 @@ import (
 	"github.com/tidwall/gjson"
 	"github.com/xeipuuv/gojsonschema"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
@@ -168,7 +169,7 @@ func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 			return errors.New("users are only allowed to add external service for https://github.com/, https://gitlab.com/ and https://bitbucket.org/")
 		}
 
-		disallowedFields := []string{"repositoryPathPattern"}
+		disallowedFields := []string{"repositoryPathPattern", "nameTransformations"}
 		results := gjson.GetMany(opt.Config, disallowedFields...)
 		for i, r := range results {
 			if r.Exists() {
@@ -293,6 +294,11 @@ func (e *ExternalServiceStore) validateGitHubConnection(ctx context.Context, id 
 
 	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindGitHub, c))
 
+	if envvar.SourcegraphDotComMode() && c.CloudGlobal {
+		// We're setting this one to global, make sure it's the only one
+		err = multierror.Append(err, e.validateSingleGlobalConnection(ctx, id, extsvc.KindGitHub))
+	}
+
 	return err.ErrorOrNil()
 }
 
@@ -303,6 +309,11 @@ func (e *ExternalServiceStore) validateGitLabConnection(ctx context.Context, id 
 	}
 
 	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindGitLab, c))
+
+	if envvar.SourcegraphDotComMode() && c.CloudGlobal {
+		// We're setting this one to global, make sure it's the only one
+		err = multierror.Append(err, e.validateSingleGlobalConnection(ctx, id, extsvc.KindGitLab))
+	}
 
 	return err.ErrorOrNil()
 }
@@ -324,6 +335,52 @@ func (e *ExternalServiceStore) validateBitbucketServerConnection(ctx context.Con
 
 func (e *ExternalServiceStore) validateBitbucketCloudConnection(ctx context.Context, id int64, c *schema.BitbucketCloudConnection) error {
 	return e.validateDuplicateRateLimits(ctx, id, extsvc.KindBitbucketCloud, c)
+}
+
+// validateSingleGlobalConnection returns an error if more than one external service for the given kind has its
+// CloudGlobal flag set.
+func (e *ExternalServiceStore) validateSingleGlobalConnection(ctx context.Context, id int64, kind string) error {
+	opt := ExternalServicesListOptions{
+		Kinds: []string{kind},
+		// We only care about site admin external services
+		NoNamespace: true,
+		LimitOffset: &LimitOffset{
+			Limit: 500, // The number is randomly chosen
+		},
+	}
+	for {
+		svcs, err := e.List(ctx, opt)
+		if err != nil {
+			return errors.Wrap(err, "list")
+		}
+		if len(svcs) == 0 {
+			// No more results, exiting
+			return nil
+		}
+		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
+
+		for _, svc := range svcs {
+			c, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+			if err != nil {
+				return errors.Wrap(err, "parsing config")
+			}
+			var storedIsGlobal bool
+			switch x := c.(type) {
+			case *schema.GitHubConnection:
+				storedIsGlobal = x.CloudGlobal
+			case *schema.GitLabConnection:
+				storedIsGlobal = x.CloudGlobal
+			}
+			if svc.ID != id && storedIsGlobal {
+				return fmt.Errorf("existing external service, %q, already set as global", svc.DisplayName)
+			}
+		}
+
+		if len(svcs) < opt.Limit {
+			break // Less results than limit means we've reached end
+		}
+	}
+	return nil
 }
 
 // validateDuplicateRateLimits returns an error if given config has duplicated non-default rate limit
@@ -385,6 +442,9 @@ func (e *ExternalServiceStore) validateDuplicateRateLimits(ctx context.Context, 
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 // Otherwise, `es.NamespaceUserID` must be specified (i.e. non-nil) for
 // a user-added external service.
+//
+// 🚨 SECURITY: The value of `es.Unrestricted` is disregarded and will always
+// be recalculated based on whether `"authorization"` is presented in `es.Config`.
 func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error {
 	if Mocks.ExternalServices.Create != nil {
 		return Mocks.ExternalServices.Create(ctx, confGet, es)
@@ -411,19 +471,28 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		}
 	}
 
+	es.Unrestricted = !gjson.Get(es.Config, "authorization").Exists()
+
 	return e.Store.Handle().DB().QueryRowContext(
 		ctx,
-		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
-		es.Kind, es.DisplayName, secret.StringValue{S: &es.Config}, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID),
+		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id, unrestricted) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+		es.Kind, es.DisplayName, secret.StringValue{S: &es.Config}, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), es.Unrestricted,
 	).Scan(&es.ID)
 }
 
 // Upsert updates or inserts the given ExternalServices.
+//
+// 🚨 SECURITY: The value of `Unrestricted` field is disregarded and will always
+// be recalculated based on whether `"authorization"` is presented in `Config`.
 func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.ExternalService) error {
 	if len(svcs) == 0 {
 		return nil
 	}
 	e.ensureStore()
+
+	for _, s := range svcs {
+		s.Unrestricted = !gjson.Get(s.Config, "authorization").Exists()
+	}
 
 	q := upsertExternalServicesQuery(svcs)
 	rows, err := e.Query(ctx, q)
@@ -445,6 +514,7 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&dbutil.NullTime{Time: &svcs[i].LastSyncAt},
 			&dbutil.NullTime{Time: &svcs[i].NextSyncAt},
 			&dbutil.NullInt32{N: &svcs[i].NamespaceUserID},
+			&svcs[i].Unrestricted,
 		)
 		if err != nil {
 			return err
@@ -471,6 +541,7 @@ func upsertExternalServicesQuery(svcs []*types.ExternalService) *sqlf.Query {
 			nullTimeColumn(s.LastSyncAt),
 			nullTimeColumn(s.NextSyncAt),
 			nullInt32Column(s.NamespaceUserID),
+			s.Unrestricted,
 		))
 	}
 
@@ -481,7 +552,7 @@ func upsertExternalServicesQuery(svcs []*types.ExternalService) *sqlf.Query {
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -496,7 +567,8 @@ INSERT INTO external_services (
   deleted_at,
   last_sync_at,
   next_sync_at,
-  namespace_user_id
+  namespace_user_id,
+  unrestricted
 )
 VALUES %s
 ON CONFLICT(id) DO UPDATE
@@ -509,7 +581,8 @@ SET
   deleted_at   = excluded.deleted_at,
   last_sync_at = excluded.last_sync_at,
   next_sync_at = excluded.next_sync_at,
-  namespace_user_id = excluded.namespace_user_id
+  namespace_user_id = excluded.namespace_user_id,
+  unrestricted = excluded.unrestricted
 RETURNING *
 `
 
@@ -573,8 +646,11 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			return err
 		}
 	}
+
 	if update.Config != nil {
-		if err := execUpdate(ctx, tx.DB(), sqlf.Sprintf("config=%s, next_sync_at=now()", secret.StringValue{S: update.Config})); err != nil {
+		unrestricted := !gjson.Get(*update.Config, "authorization").Exists()
+		q := sqlf.Sprintf(`config = %s, next_sync_at = NOW(), unrestricted = %s`, secret.StringValue{S: update.Config}, unrestricted)
+		if err := execUpdate(ctx, tx.DB(), q); err != nil {
 			return err
 		}
 	}
@@ -678,7 +754,7 @@ WHERE deleted_at IS NULL
 
 func (e *ExternalServiceStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
 	q := sqlf.Sprintf(`
-		SELECT id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id
+		SELECT id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted
 		FROM external_services
 		WHERE (%s)
 		ORDER BY id DESC
@@ -696,13 +772,13 @@ func (e *ExternalServiceStore) list(ctx context.Context, conds []*sqlf.Query, li
 	var results []*types.ExternalService
 	for rows.Next() {
 		var (
-			h              types.ExternalService
-			deletedAt      sql.NullTime
-			lastSyncAt     sql.NullTime
-			nextSyncAt     sql.NullTime
-			namepaceUserID sql.NullInt32
+			h               types.ExternalService
+			deletedAt       sql.NullTime
+			lastSyncAt      sql.NullTime
+			nextSyncAt      sql.NullTime
+			namespaceUserID sql.NullInt32
 		)
-		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &secret.StringValue{S: &h.Config}, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namepaceUserID); err != nil {
+		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &secret.StringValue{S: &h.Config}, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted); err != nil {
 			return nil, err
 		}
 
@@ -715,8 +791,8 @@ func (e *ExternalServiceStore) list(ctx context.Context, conds []*sqlf.Query, li
 		if nextSyncAt.Valid {
 			h.NextSyncAt = nextSyncAt.Time
 		}
-		if namepaceUserID.Valid {
-			h.NamespaceUserID = namepaceUserID.Int32
+		if namespaceUserID.Valid {
+			h.NamespaceUserID = namespaceUserID.Int32
 		}
 		results = append(results, &h)
 	}

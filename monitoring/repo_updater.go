@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -36,14 +37,22 @@ func RepoUpdater() *Container {
 							PossibleSolutions: "Make sure there are external services added with valid tokens",
 						},
 						Observable{
-							Name:              "src_repoupdater_max_sync_backoff",
-							Description:       "time since oldest sync",
-							Query:             `max(src_repoupdater_max_sync_backoff)`,
-							DataMayNotExist:   true,
-							Critical:          Alert().GreaterOrEqual(syncDurationThreshold.Seconds()).For(10 * time.Minute),
-							PanelOptions:      PanelOptions().Unit(Seconds),
-							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "Make sure there are external services added with valid tokens",
+							Name:            "src_repoupdater_max_sync_backoff",
+							Description:     "time since oldest sync",
+							Query:           `max(src_repoupdater_max_sync_backoff)`,
+							DataMayNotExist: true,
+							Critical:        Alert().GreaterOrEqual(syncDurationThreshold.Seconds()).For(10 * time.Minute),
+							PanelOptions:    PanelOptions().Unit(Seconds),
+							Owner:           ObservableOwnerCloud,
+							PossibleSolutions: fmt.Sprintf(`
+								An alert here indicates that no code host connections have synced in at least %v. This indicates that there could be a configuration issue
+								with your code hosts connections or networking issues affecting communication with your code hosts.
+								- Check the code host status indicator (cloud icon in top right of Sourcegraph homepage) for errors.
+								- Make sure external services do not have invalid tokens by navigating to them in the web UI and clicking save. If there are no errors, they are valid.
+								- Check the repo-updater logs for errors about syncing.
+								- Confirm that outbound network connections are allowed where repo-updater is deployed.
+								- Check back in an hour to see if the issue has resolved itself.
+							`, syncDurationThreshold),
 						},
 					},
 					{
@@ -139,7 +148,6 @@ func RepoUpdater() *Container {
 							Description:       "repositories scheduled due to user traffic",
 							Query:             `sum(rate(src_repoupdater_sched_manual_fetch[1m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().LessOrEqual(0).For(syncDurationThreshold),
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Check repo-updater logs. This is expected to fire if there are no user added code hosts",

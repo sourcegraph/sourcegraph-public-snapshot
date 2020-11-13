@@ -43,7 +43,7 @@ func mustParseGraphQLSchema(t *testing.T, db *sql.DB) *graphql.Schema {
 	t.Helper()
 
 	parseSchemaOnce.Do(func() {
-		parsedSchema, parseSchemaErr = graphqlbackend.NewSchema(nil, nil, NewResolver(db, clock))
+		parsedSchema, parseSchemaErr = graphqlbackend.NewSchema(nil, nil, NewResolver(db, clock), nil)
 	})
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)

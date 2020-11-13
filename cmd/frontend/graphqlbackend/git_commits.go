@@ -80,7 +80,7 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*GitCommitRe
 
 	resolvers := make([]*GitCommitResolver, len(commits))
 	for i, commit := range commits {
-		resolvers[i] = toGitCommitResolver(r.repo, commit)
+		resolvers[i] = toGitCommitResolver(r.repo, commit.ID, commit)
 	}
 
 	return resolvers, nil

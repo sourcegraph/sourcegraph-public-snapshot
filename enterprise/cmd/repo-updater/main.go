@@ -6,9 +6,11 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -17,13 +19,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/authz"
 	frontendAuthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	campaignsBackground "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	ossDB "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
@@ -43,42 +47,24 @@ func enterpriseInit(
 	server *repoupdater.Server,
 ) (debugDumpers []debugserver.Dumper) {
 	ctx := context.Background()
-	campaignsStore := campaigns.NewStore(db)
+	clock := func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}
+
+	campaignsStore := campaigns.NewStoreWithClock(db, clock)
 
 	syncRegistry := campaigns.NewSyncRegistry(ctx, campaignsStore, repoStore, cf)
 	if server != nil {
 		server.ChangesetSyncRegistry = syncRegistry
 	}
 
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
-
-	sourcer := repos.NewSourcer(cf)
-	go campaigns.RunWorkers(ctx, campaignsStore, gitserver.DefaultClient, sourcer)
-
-	// Set up expired spec deletion
-	go func() {
-		for {
-			// We first need to delete expired ChangesetSpecs...
-			if err := campaignsStore.DeleteExpiredChangesetSpecs(ctx); err != nil {
-				log15.Error("DeleteExpiredChangesetSpecs", "error", err)
-			}
-			// ... and then the CampaignSpecs, due to the campaign_spec_id
-			// foreign key on changeset_specs.
-			if err := campaignsStore.DeleteExpiredCampaignSpecs(ctx); err != nil {
-				log15.Error("DeleteExpiredCampaignSpecs", "error", err)
-			}
-
-			time.Sleep(2 * time.Minute)
-		}
-	}()
+	campaignsBackground.StartBackgroundJobs(ctx, db, campaignsStore, repoStore, cf)
 
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db
 	permsStore := edb.NewPermsStore(db, clock)
 	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, clock, ratelimit.DefaultRegistry)
-	go startBackgroundPermsSync(ctx, permsSyncer)
+	go startBackgroundPermsSync(ctx, permsSyncer, db)
 	debugDumpers = append(debugDumpers, permsSyncer)
 	if server != nil {
 		server.PermsSyncer = permsSyncer
@@ -88,14 +74,42 @@ func enterpriseInit(
 }
 
 // startBackgroundPermsSync sets up background permissions syncing.
-func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer) {
+func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db dbutil.DB) {
 	globals.WatchPermissionsUserMapping()
 	go func() {
+		// TODO(jchen): Delete this migration in 3.23
+		// We only need to do this once at start because the write paths have taken
+		// care of updating this value.
+		var migrateExternalServiceUnrestricted sync.Once
+
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
 				frontendAuthz.ProvidersFromConfig(ctx, conf.Get(), ossDB.ExternalServices)
 			ossAuthz.SetProviders(allowAccessByDefault, authzProviders)
+
+			migrateExternalServiceUnrestricted.Do(func() {
+				// Collect IDs of external services which enforce repository permissions
+				// and set others' `external_services.unrestricted` to `true`.
+				esIDs := make([]*sqlf.Query, len(authzProviders))
+				for i, p := range authzProviders {
+					_, id := extsvc.DecodeURN(p.URN())
+					esIDs[i] = sqlf.Sprintf("%s", id)
+				}
+
+				q := sqlf.Sprintf(`
+UPDATE external_services
+SET unrestricted = TRUE
+WHERE
+	id NOT IN (%s)
+AND NOT unrestricted
+`, sqlf.Join(esIDs, ","))
+				_, err := db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+				if err != nil {
+					log15.Error("Failed to update 'external_services.unrestricted'", "error", err)
+					return
+				}
+			})
 		}
 	}()
 

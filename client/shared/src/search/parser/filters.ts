@@ -1,4 +1,4 @@
-import { Filter } from './parser'
+import { Filter } from './scanner'
 import { SearchSuggestion } from '../suggestions'
 import {
     FilterType,

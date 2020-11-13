@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
-# We want to build multiple go binaries, so we use a custom build step on CI.
-set -ex
-cd "$(dirname "${BASH_SOURCE[0]}")"/../../..
+# This script builds the frontend docker image.
+
+cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
+set -eu
 
 OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
 cleanup() {
@@ -10,10 +11,15 @@ cleanup() {
 }
 trap cleanup EXIT
 
-cp -a ./dev/libsqlite3-pcre/install-alpine.sh "$OUTPUT/libsqlite3-pcre-install-alpine.sh"
+# Environment for building linux binaries
+export GO111MODULE=on
+export GOARCH=amd64
+export GOOS=linux
+export CGO_ENABLED=0
 
-# Build go binary into $OUTPUT
-./enterprise/cmd/frontend/go-build.sh "$OUTPUT"
+echo "--- go build"
+pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend"
+go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
 
 echo "--- docker build"
 docker build -f enterprise/cmd/frontend/Dockerfile -t "$IMAGE" "$OUTPUT" \

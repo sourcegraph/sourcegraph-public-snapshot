@@ -8,12 +8,11 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
 type DeletedRepositoryJanitor struct {
-	store   store.Store
+	dbStore DBStore
 	metrics Metrics
 }
 
@@ -21,15 +20,15 @@ var _ goroutine.Handler = &DeletedRepositoryJanitor{}
 
 // NewDeletedRepositoryJanitor returns a background routine that periodically
 // deletes upload and index records for repositories that have been soft-deleted.
-func NewDeletedRepositoryJanitor(store store.Store, interval time.Duration, metrics Metrics) goroutine.BackgroundRoutine {
+func NewDeletedRepositoryJanitor(dbStore DBStore, interval time.Duration, metrics Metrics) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &DeletedRepositoryJanitor{
-		store:   store,
+		dbStore: dbStore,
 		metrics: metrics,
 	})
 }
 
 func (j *DeletedRepositoryJanitor) Handle(ctx context.Context) (err error) {
-	tx, err := j.store.Transact(ctx)
+	tx, err := j.dbStore.Transact(ctx)
 	if err != nil {
 		return err
 	}

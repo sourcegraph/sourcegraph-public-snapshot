@@ -2,6 +2,7 @@ package campaigns
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -427,3 +429,69 @@ func checkRepoSupported(repo *types.Repo) error {
 		repo.Name,
 	)
 }
+
+// FetchUsernameForBitbucketServerToken fetches the username associated with a
+// Bitbucket server token.
+//
+// We need the username in order to use the token as the password in a HTTP
+// BasicAuth username/password pair used by gitserver to push commits.
+//
+// In order to not require from users to type in their BitbucketServer username
+// we only ask for a token and then use that token to talk to the
+// BitbucketServer API and get their username.
+//
+// Since Bitbucket sends the username as a header in REST responses, we can
+// take it from there and complete the UserCredential.
+func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, externalServiceID, externalServiceType, token string) (string, error) {
+	extSvcID, err := s.store.GetExternalServiceID(ctx, GetExternalServiceIDOpts{
+		ExternalServiceID:   externalServiceID,
+		ExternalServiceType: externalServiceType,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	rstore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
+	es, err := rstore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{IDs: []int64{extSvcID}})
+	if err != nil {
+		return "", err
+	}
+	if len(es) == 0 {
+		return "", errors.New("no external service found for repo")
+	}
+	externalService := es[0]
+
+	sources, err := s.sourcer(externalService)
+	if err != nil {
+		return "", err
+	}
+
+	userSource, ok := sources[0].(repos.UserSource)
+	if !ok {
+		return "", errors.New("external service source cannot use other authenticator")
+	}
+
+	source, err := userSource.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
+	if err != nil {
+		return "", err
+	}
+
+	usernameSource, ok := source.(usernameSource)
+	if !ok {
+		return "", errors.New("external service source doesn't implement AuthenticatedUsername")
+	}
+
+	return usernameSource.AuthenticatedUsername(ctx)
+}
+
+// A usernameSource can fetch the username associated with the credentials used
+// by the Source.
+// It's only used by FetchUsernameForBitbucketServerToken.
+type usernameSource interface {
+	// AuthenticatedUsername makes a request to the code host to fetch the
+	// username associated with the credentials.
+	// If no username could be determined an error is returned.
+	AuthenticatedUsername(ctx context.Context) (string, error)
+}
+
+var _ usernameSource = &repos.BitbucketServerSource{}

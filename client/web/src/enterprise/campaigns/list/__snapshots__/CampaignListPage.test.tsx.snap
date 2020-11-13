@@ -18,6 +18,11 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
     icon={[Function]}
     title="Campaigns"
   />
+  <p
+    className="text-muted"
+  >
+    Run custom code over hundreds of repositories and manage the resulting changesets
+  </p>
   <FilteredConnection
     className="mb-3"
     cursorPaging={true}
@@ -64,14 +69,12 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
-    setBreadcrumb={[Function]}
     telemetryService={
       Object {
         "log": [Function],
         "logViewEvent": [Function],
       }
     }
-    useBreadcrumb={[Function]}
     useURLQuery={true}
   />
 </Fragment>
@@ -95,6 +98,11 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
     icon={[Function]}
     title="Campaigns"
   />
+  <p
+    className="text-muted"
+  >
+    Run custom code over hundreds of repositories and manage the resulting changesets
+  </p>
   <FilteredConnection
     className="mb-3"
     cursorPaging={true}
@@ -141,14 +149,12 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
-    setBreadcrumb={[Function]}
     telemetryService={
       Object {
         "log": [Function],
         "logViewEvent": [Function],
       }
     }
-    useBreadcrumb={[Function]}
     useURLQuery={true}
   />
 </Fragment>
@@ -172,6 +178,11 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
     icon={[Function]}
     title="Campaigns"
   />
+  <p
+    className="text-muted"
+  >
+    Run custom code over hundreds of repositories and manage the resulting changesets
+  </p>
   <FilteredConnection
     className="mb-3"
     cursorPaging={true}
@@ -218,14 +229,12 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
-    setBreadcrumb={[Function]}
     telemetryService={
       Object {
         "log": [Function],
         "logViewEvent": [Function],
       }
     }
-    useBreadcrumb={[Function]}
     useURLQuery={true}
   />
 </Fragment>
@@ -249,6 +258,11 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
     icon={[Function]}
     title="Campaigns"
   />
+  <p
+    className="text-muted"
+  >
+    Run custom code over hundreds of repositories and manage the resulting changesets
+  </p>
   <FilteredConnection
     className="mb-3"
     cursorPaging={true}
@@ -295,14 +309,12 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
     noun="campaign"
     pluralNoun="campaigns"
     queryConnection={[Function]}
-    setBreadcrumb={[Function]}
     telemetryService={
       Object {
         "log": [Function],
         "logViewEvent": [Function],
       }
     }
-    useBreadcrumb={[Function]}
     useURLQuery={true}
   />
 </Fragment>

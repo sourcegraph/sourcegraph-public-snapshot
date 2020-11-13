@@ -17,7 +17,7 @@ describe('CampaignNode', () => {
 
 - and renders in markdown
         `,
-        changesets: { stats: { merged: 0, open: 1, closed: 3 } },
+        changesetsStats: { merged: 0, open: 1, closed: 3 },
         createdAt: '2019-12-04T23:15:01Z',
         closedAt: null,
         namespace: {

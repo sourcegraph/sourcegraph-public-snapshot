@@ -59,11 +59,15 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		remoteURL string
 		err       error
 	)
-	remoteURL, err = repoRemoteURL(ctx, GitDir(repoGitDir))
-	if err != nil {
-		log15.Error("Failed to get remote URL", "ref", ref, "err", err)
-		resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteURL"))
-		return http.StatusInternalServerError, resp
+	if req.Push != nil && req.Push.RemoteURL != "" {
+		remoteURL = req.Push.RemoteURL
+	} else {
+		remoteURL, err = repoRemoteURL(ctx, GitDir(repoGitDir))
+		if err != nil {
+			log15.Error("Failed to get remote URL", "ref", ref, "err", err)
+			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteURL"))
+			return http.StatusInternalServerError, resp
+		}
 	}
 
 	redactor := newURLRedactor(remoteURL)
@@ -123,7 +127,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		ref = tmp
 	}
 
-	if req.Push {
+	if req.Push != nil {
 		ref = ensureRefPrefix(ref)
 	}
 
@@ -241,7 +245,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return http.StatusInternalServerError, resp
 	}
 
-	if req.Push {
+	if req.Push != nil {
 		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL, fmt.Sprintf("%s:%s", cmtHash, ref))
 		cmd.Dir = repoGitDir
 
