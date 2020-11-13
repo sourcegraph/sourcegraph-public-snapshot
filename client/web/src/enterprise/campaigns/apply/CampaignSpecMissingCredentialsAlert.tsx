@@ -19,17 +19,19 @@ export const CampaignSpecMissingCredentialsAlert: React.FunctionComponent<Campai
     }
     return (
         <div className="alert alert-warning">
-            <h4 className="alert-heading">
-                You don't have credentials configured for{' '}
-                {pluralize('this code host', viewerCampaignsCodeHosts.totalCount, 'these code hosts')}
-            </h4>
+            <p>
+                <strong>
+                    You don't have credentials configured for{' '}
+                    {pluralize('this code host', viewerCampaignsCodeHosts.totalCount, 'these code hosts')}
+                </strong>
+            </p>
             <ul>
                 {viewerCampaignsCodeHosts.nodes.map(node => (
                     <MissingCodeHost {...node} key={node.externalServiceKind + node.externalServiceURL} />
                 ))}
             </ul>
             <p className="mb-0">
-                Configure {pluralize('it', viewerCampaignsCodeHosts.totalCount, 'them')} in your{' '}
+                Credentials are required to publish changesets on code hosts. Configure them in your{' '}
                 <Link to={`${authenticatedUser.url}/settings/campaigns`} target="_blank" rel="noopener">
                     campaigns user settings
                 </Link>{' '}

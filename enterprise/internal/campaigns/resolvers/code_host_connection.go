@@ -19,7 +19,6 @@ type campaignsCodeHostConnectionResolver struct {
 	opts                  ee.ListCodeHostsOpts
 	limitOffset           db.LimitOffset
 	store                 *ee.Store
-	customCompute         func(ctx context.Context) (all, page []*campaigns.CodeHost, credsByIDType map[idType]*db.UserCredential, err error)
 
 	once          sync.Once
 	chs           []*campaigns.CodeHost
@@ -72,13 +71,6 @@ func (c *campaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]grap
 }
 
 func (c *campaignsCodeHostConnectionResolver) compute(ctx context.Context) (all, page []*campaigns.CodeHost, credsByIDType map[idType]*db.UserCredential, err error) {
-	if c.customCompute != nil {
-		return c.customCompute(ctx)
-	}
-	return c.defaultCompute(ctx)
-}
-
-func (c *campaignsCodeHostConnectionResolver) defaultCompute(ctx context.Context) (all, page []*campaigns.CodeHost, credsByIDType map[idType]*db.UserCredential, err error) {
 	c.once.Do(func() {
 		// Don't pass c.limitOffset here, as we want all code hosts for the totalCount anyways.
 		c.chs, c.chsErr = c.store.ListCodeHosts(ctx, c.opts)
@@ -142,4 +134,20 @@ func (c *campaignsCodeHostConnectionResolver) defaultCompute(ctx context.Context
 type idType struct {
 	externalServiceID   string
 	externalServiceType string
+}
+
+type emptyCampaignsCodeHostConnectionResolver struct{}
+
+var _ graphqlbackend.CampaignsCodeHostConnectionResolver = &emptyCampaignsCodeHostConnectionResolver{}
+
+func (c *emptyCampaignsCodeHostConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	return int32(0), nil
+}
+
+func (c *emptyCampaignsCodeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	return graphqlutil.HasNextPage(false), nil
+}
+
+func (c emptyCampaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CampaignsCodeHostResolver, error) {
+	return []graphqlbackend.CampaignsCodeHostResolver{}, nil
 }
