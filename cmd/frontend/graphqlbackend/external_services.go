@@ -39,14 +39,22 @@ type addExternalServiceInput struct {
 
 func currentUserAllowedExternalServices(ctx context.Context) string {
 	mode := conf.ExternalServiceUserMode()
-	if mode == "disabled" {
-		// The user may have a tag that opts them in
-		err := backend.CheckActorHasTag(ctx, backend.TagAllowUserExternalServicePublic)
-		if err == nil {
-			mode = "all"
-		}
+	if mode != "disabled" {
+		return mode
 	}
-	return mode
+
+	// The user may have a tag that opts them in
+	err := backend.CheckActorHasTag(ctx, backend.TagAllowUserExternalServicePrivate)
+	if err == nil {
+		return "all"
+	}
+
+	err = backend.CheckActorHasTag(ctx, backend.TagAllowUserExternalServicePublic)
+	if err == nil {
+		return "public"
+	}
+
+	return "disabled"
 }
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
