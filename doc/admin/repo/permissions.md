@@ -204,7 +204,9 @@ Please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) if you 
 ## Webhook permissions syncing
 
 Sourcegraph {{VERSION GOES HERE}} can speed up permissions syncing by receiving webhooks from your code hosts for events related to user and repo permissions. These events include...
-#### Github:
+
+#### GitHub:
+
 * [public](https://developer.github.com/webhooks/event-payloads/#public)
 * [repository](https://developer.github.com/webhooks/event-payloads/#repository)
 * [member](https://developer.github.com/webhooks/event-payloads/#member)

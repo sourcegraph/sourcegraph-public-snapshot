@@ -3,12 +3,12 @@ package webhookhandlers
 import "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 
 func Init(w *webhooks.GithubWebhook) {
-	w.Register(handleGithubRepoAuthzEvent, "public")
-	w.Register(handleGithubRepoAuthzEvent, "repository")
-	w.Register(handleGithubRepoAuthzEvent, "member") // member has both users and repos
+	w.Register(handleGitHubRepoAuthzEvent, "public")
+	w.Register(handleGitHubRepoAuthzEvent, "repository")
+	w.Register(handleGitHubRepoAuthzEvent, "member") // member has both users and repos
+	w.Register(handleGitHubRepoAuthzEvent, "team_add")
 
-	w.Register(handleGithubUserAuthzEvent, "team_add")
-	w.Register(handleGithubUserAuthzEvent, "organisation")
-	w.Register(handleGithubUserAuthzEvent, "member") // member has both users and repos
-	w.Register(handleGithubUserAuthzEvent, "membership")
+	w.Register(handleGitHubUserAuthzEvent, "organisation")
+	w.Register(handleGitHubUserAuthzEvent, "member") // member has both users and repos
+	w.Register(handleGitHubUserAuthzEvent, "membership")
 }

@@ -57,7 +57,6 @@ func (h *GithubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log15.Warn(eventType)
 	// match event handlers
 	err = h.Dispatch(r.Context(), eventType, extSvc, e)
 	if err != nil {
