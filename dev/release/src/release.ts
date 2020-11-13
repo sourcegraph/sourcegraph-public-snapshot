@@ -4,8 +4,6 @@ import {
     getAuthenticatedGitHubClient,
     listIssues,
     getTrackingIssue,
-    releaseMilestoneName,
-    getReleaseMilestone,
     ensureReleaseTrackingIssue,
     ensurePatchReleaseIssue,
     createChangesets,
@@ -342,28 +340,19 @@ If you have changes that should go into this patch release, <${patchRequestTempl
             const blockingQuery = 'is:open org:sourcegraph label:release-blocker'
             const blockingIssues = await listIssues(githubClient, blockingQuery)
             const blockingIssuesURL = `https://github.com/issues?q=${encodeURIComponent(blockingQuery)}`
-
-            const openQuery = `is:open org:sourcegraph is:issue milestone:${releaseMilestoneName(release)}`
-            const openIssues = await listIssues(githubClient, openQuery)
-            const openIssuesURL = `https://github.com/issues?q=${encodeURIComponent(openQuery)}`
-
-            const issueCategories = [
-                { name: 'release-blocking', issues: blockingIssues, issuesURL: blockingIssuesURL },
-                { name: 'open', issues: openIssues, issuesURL: openIssuesURL },
-            ]
+            const blockingMessage =
+                blockingIssues.length === 0
+                    ? 'There are no release-blocking issues'
+                    : `There ${
+                          blockingIssues.length === 1
+                              ? 'is 1 release-blocking issue'
+                              : `are ${blockingIssues.length} release-blocking issues`
+                      }`
 
             const message = `:mega: *${release.version} Release Status Update*
 
 * Tracking issue: ${trackingIssue.url}
-${issueCategories
-    .map(
-        category =>
-            '* ' +
-            (category.issues.length === 1
-                ? `There is 1 ${category.name} issue: ${category.issuesURL}`
-                : `There are ${category.issues.length} ${category.name} issues: ${category.issuesURL}`)
-    )
-    .join('\n')}`
+* ${blockingMessage}: ${blockingIssuesURL}`
             await postMessage(message, config.slackAnnounceChannel)
         },
     },
@@ -620,7 +609,6 @@ Campaign: ${campaignURL}`,
 
             // GitHub
             const trackingIssue = await getTrackingIssue(githubClient, release)
-            const milestone = await getReleaseMilestone(githubClient, release)
             if (!trackingIssue) {
                 console.warn(`Could not find tracking issue for release ${release.version} - skipping`)
             } else {
@@ -631,16 +619,6 @@ Campaign: ${campaignURL}`,
                     body: `${releaseMessage}
 
 @${config.captainGitHubUsername}: Please complete the post-release steps before closing this issue.`,
-                })
-            }
-            if (!milestone) {
-                console.warn(`Could not find milestone for release ${release.version} - skipping`)
-            } else {
-                await githubClient.issues.updateMilestone({
-                    owner: milestone.owner,
-                    repo: milestone.repo,
-                    milestone_number: milestone.number,
-                    state: 'closed',
                 })
             }
         },

@@ -79,13 +79,18 @@ export async function ensureReleaseTrackingIssue({
             dateMarkdown(oneWorkingDayBeforeRelease, `One working day before ${majorMinor} release`)
         )
 
+    // Release milestones are not as emphasised now as they used to be, since most teams
+    // use sprints shorter than releases to track their work. For reference, if one is
+    // available we apply it to this tracking issue, otherwise just leave it without a
+    // milestone.
+    let milestoneNumber: number | undefined
     const milestone = await getReleaseMilestone(octokit, version)
     if (!milestone) {
         console.log(
-            `Milestone ${JSON.stringify(
-                releaseMilestoneName(version)
-            )} is closed or not found — you'll need to manually create it and add this issue to it.`
+            `Milestone ${JSON.stringify(releaseMilestoneName(version))} is closed or not found — omitting from issue.`
         )
+    } else {
+        milestoneNumber = milestone ? milestone.number : undefined
     }
 
     return ensureIssue(
@@ -96,7 +101,7 @@ export async function ensureReleaseTrackingIssue({
             repo: 'sourcegraph',
             assignees,
             body: releaseIssueBody,
-            milestone: milestone ? milestone.number : undefined,
+            milestone: milestoneNumber,
             labels: ['release-tracking'],
         },
         dryRun
@@ -214,11 +219,11 @@ export async function getTrackingIssue(client: Octokit, release: semver.SemVer):
     return getIssueByTitle(client, trackingIssueTitle(release))
 }
 
-export function releaseMilestoneName(release: semver.SemVer): string {
+function releaseMilestoneName(release: semver.SemVer): string {
     return `${release.major}.${release.minor}${release.patch !== 0 ? `.${release.patch}` : ''}`
 }
 
-export interface Milestone {
+interface Milestone {
     number: number
     url: string
 
@@ -227,7 +232,7 @@ export interface Milestone {
     repo: string
 }
 
-export async function getReleaseMilestone(client: Octokit, release: semver.SemVer): Promise<Milestone | null> {
+async function getReleaseMilestone(client: Octokit, release: semver.SemVer): Promise<Milestone | null> {
     const owner = 'sourcegraph'
     const repo = 'sourcegraph'
     const milestoneTitle = releaseMilestoneName(release)
