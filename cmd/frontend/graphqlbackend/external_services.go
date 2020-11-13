@@ -37,14 +37,16 @@ type addExternalServiceInput struct {
 	Namespace   *graphql.ID
 }
 
-func currentUserAllowedExternalServices(ctx context.Context) bool {
-	allowUserExternalServices := conf.ExternalServiceUserMode()
-	if !allowUserExternalServices {
+func currentUserAllowedExternalServices(ctx context.Context) string {
+	mode := conf.ExternalServiceUserMode()
+	if mode == "disabled" {
 		// The user may have a tag that opts them in
 		err := backend.CheckActorHasTag(ctx, backend.TagAllowUserExternalServicePublic)
-		allowUserExternalServices = err == nil
+		if err == nil {
+			mode = "all"
+		}
 	}
-	return allowUserExternalServices
+	return mode
 }
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
@@ -57,7 +59,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
 	allowUserExternalServices := currentUserAllowedExternalServices(ctx)
 	if args.Input.Namespace != nil {
-		if !allowUserExternalServices {
+		if allowUserExternalServices == "disabled" {
 			return nil, errors.New("allow users to add external services is not enabled")
 		}
 

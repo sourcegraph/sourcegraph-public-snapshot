@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -237,7 +238,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	}
 
 	// User added external services should only sync public code
-	if isUserOwned {
+	if isUserOwned && conf.ExternalServiceUserMode() != "all" {
 		sourced = sourced.Filter(func(r *Repo) bool { return !r.Private })
 	}
 

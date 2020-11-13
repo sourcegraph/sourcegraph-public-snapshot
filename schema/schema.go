@@ -1185,7 +1185,7 @@ type SiteConfiguration struct {
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: Configures Sourcegraph extensions.
 	Extensions *Extensions `json:"extensions,omitempty"`
-	// ExternalServiceUserMode description: Enable to allow users to add external services for public repositories to the Sourcegraph instance.
+	// ExternalServiceUserMode description: Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.
 	ExternalServiceUserMode string `json:"externalService.userMode,omitempty"`
 	// ExternalURL description: The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called `appURL`. Only root URLs are allowed.
 	ExternalURL string `json:"externalURL,omitempty"`
