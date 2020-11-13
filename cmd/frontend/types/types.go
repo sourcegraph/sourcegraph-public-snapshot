@@ -1044,9 +1044,26 @@ type SiteActivityPeriod struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type CampaignsUsageStatistics struct {
-	CampaignsCount              int32
-	ActionChangesetsCount       int32
-	ActionChangesetsMergedCount int32
+	ViewCampaignApplyPageCount              int32
+	ViewCampaignDetailsPageAfterCreateCount int32
+	ViewCampaignDetailsPageAfterUpdateCount int32
+
+	CampaignsCount       int32
+	CampaignsClosedCount int32
+
+	CampaignSpecsCreatedCount  int32
+	ChangesetSpecsCreatedCount int32
+
+	ActionChangesetsCount              int32
+	ActionChangesetsDiffStatAddedSum   int32
+	ActionChangesetsDiffStatChangedSum int32
+	ActionChangesetsDiffStatDeletedSum int32
+
+	ActionChangesetsMergedCount              int32
+	ActionChangesetsMergedDiffStatAddedSum   int32
+	ActionChangesetsMergedDiffStatChangedSum int32
+	ActionChangesetsMergedDiffStatDeletedSum int32
+
 	ManualChangesetsCount       int32
 	ManualChangesetsMergedCount int32
 }
