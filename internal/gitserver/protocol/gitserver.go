@@ -197,15 +197,10 @@ type PatchCommitInfo struct {
 // PushConfig provides the configuration required to push one or more commits to
 // a code host.
 type PushConfig struct {
-	// Username and Password, if set, provide the basic auth credentials to
-	// push the commit to the code host.
-	//
-	// It's possible to set only the Username field (which is how GitHub
-	// requires its access tokens to be used).
-	//
-	// If both fields are blank, the credentials stored in the remote URL of
-	// the origin in the git repository will be used.
-	Username, Password string
+	// RemoteURL is the git remote URL to which to push the commits.
+	// The URL needs to include HTTP basic auth credentials if no
+	// unauthenticated requests are allowed by the remote host.
+	RemoteURL string
 }
 
 // CreateCommitFromPatchResponse is the response type returned after creating

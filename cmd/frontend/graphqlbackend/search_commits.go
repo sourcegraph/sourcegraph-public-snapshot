@@ -217,41 +217,140 @@ func commitParametersToDiffParameters(ctx context.Context, op *search.CommitPara
 	}, nil
 }
 
+type searchCommitsInRepoEvent struct {
+	// Results are new commit results found.
+	Results []*CommitSearchResultResolver
+
+	// LimitHit is true if we stopped searching since we found FileMatchLimit
+	// results.
+	LimitHit bool
+
+	// TimedOut is true when the results may have been parsed from only
+	// partial output from the underlying git command (because, e.g., it timed
+	// out during execution and only returned partial output).
+	TimedOut bool
+
+	// Error is non-nil if an error occurred. It will be the last event if
+	// set.
+	//
+	// Note: Results will be empty if Error is set.
+	Error error
+}
+
+// searchCommitsInRepo is a blocking version of searchCommitsInRepoStream.
 func searchCommitsInRepo(ctx context.Context, op search.CommitParameters) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
+	for event := range searchCommitsInRepoStream(ctx, op) {
+		results = append(results, event.Results...)
+		limitHit = event.LimitHit
+		timedOut = event.TimedOut
+		err = event.Error
+	}
+	return results, limitHit, timedOut, err
+}
+
+// searchCommitsInRepoStream searchs for commits based on op.
+//
+// The returned channel must be read until closed, otherwise you may leak
+// resources.
+func searchCommitsInRepoStream(ctx context.Context, op search.CommitParameters) chan searchCommitsInRepoEvent {
+	c := make(chan searchCommitsInRepoEvent)
+	go func() {
+		defer close(c)
+		_, _, _ = doSearchCommitsInRepoStream(ctx, op, c)
+	}()
+
+	return c
+}
+
+func doSearchCommitsInRepoStream(ctx context.Context, op search.CommitParameters, c chan searchCommitsInRepoEvent) (limitHit, timedOut bool, err error) {
+	resultCount := 0
 	tr, ctx := trace.New(ctx, "searchCommitsInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v", op.RepoRevs, op.PatternInfo))
 	defer func() {
-		tr.LazyPrintf("%d results, limitHit=%v, timedOut=%v", len(results), limitHit, timedOut)
+		tr.LazyPrintf("%d results, limitHit=%v, timedOut=%v", resultCount, limitHit, timedOut)
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
+	// This defer will read the named return values. This is a convenient way
+	// to send errors down the channel, since we only want to do this once.
+	empty := true
+	defer func() {
+		// Send a final event if we had an error or if we hadn't sent down the
+		// channel.
+		if err != nil || empty {
+			c <- searchCommitsInRepoEvent{
+				LimitHit: limitHit,
+				TimedOut: timedOut,
+				Error:    err,
+			}
+		}
+	}()
+
 	diffParameters, err := commitParametersToDiffParameters(ctx, &op)
 	if err != nil {
-		return nil, false, false, err
+		return false, false, err
 	}
 
-	rawResults, complete, err := git.RawLogDiffSearch(ctx, diffParameters.Repo, diffParameters.Options)
-	if err != nil {
-		return nil, false, false, err
-	}
+	// Cancel context so we can stop RawLogDiffSearchOptions if we return
+	// early.
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
-	// if the result is incomplete, git log timed out and the client should be notified of that
-	timedOut = !complete
-	if len(rawResults) > int(op.PatternInfo.FileMatchLimit) {
-		limitHit = true
-		rawResults = rawResults[:op.PatternInfo.FileMatchLimit]
-	}
+	// Start the commit search stream.
+	events := git.RawLogDiffSearchStream(ctx, diffParameters.Repo, diffParameters.Options)
+
+	// Ensure we drain events if we return early (limitHit or error).
+	defer func() {
+		cancel()
+		for range events {
+		}
+	}()
 
 	repoResolver := &RepositoryResolver{repo: op.RepoRevs.Repo}
-	results, err = logCommitSearchResultsToResolvers(ctx, &op, repoResolver, rawResults)
-	return results, limitHit, timedOut, err
+	for event := range events {
+		// if the result is incomplete, git log timed out and the client
+		// should be notified of that.
+		timedOut = !event.Complete
+
+		// Convert the results into resolvers and send them.
+		results, err := logCommitSearchResultsToResolvers(ctx, &op, repoResolver, event.Results)
+		if len(results) > 0 {
+			empty = false
+			resultCount += len(event.Results)
+			limitHit = resultCount > int(op.PatternInfo.FileMatchLimit)
+			c <- searchCommitsInRepoEvent{
+				Results:  results,
+				LimitHit: limitHit,
+				TimedOut: timedOut,
+			}
+		}
+		if err != nil {
+			return limitHit, timedOut, err
+		}
+
+		// If we have hit the limit we stop (after we sent the above results).
+		if limitHit {
+			break
+		}
+
+		// If we have an error, stop and report it.
+		if event.Error != nil {
+			return limitHit, timedOut, event.Error
+		}
+	}
+
+	return limitHit, timedOut, nil
 }
 
 func logCommitSearchResultsToResolvers(ctx context.Context, op *search.CommitParameters, repoResolver *RepositoryResolver, rawResults []*git.LogCommitSearchResult) ([]*CommitSearchResultResolver, error) {
+	if len(rawResults) == 0 {
+		return nil, nil
+	}
+
 	results := make([]*CommitSearchResultResolver, len(rawResults))
 	for i, rawResult := range rawResults {
 		commit := rawResult.Commit
-		commitResolver := toGitCommitResolver(repoResolver, &commit)
+		commitResolver := toGitCommitResolver(repoResolver, commit.ID, &commit)
 		results[i] = &CommitSearchResultResolver{commit: commitResolver}
 
 		addRefs := func(dst *[]*GitRefResolver, src []string) {
@@ -418,87 +517,44 @@ func highlightMatches(pattern *regexp.Regexp, data []byte) *highlightedString {
 	return hls
 }
 
-var mockSearchCommitDiffsInRepos func(args *search.TextParametersForCommitParameters) ([]SearchResultResolver, *searchResultsCommon, error)
-
-// searchCommitDiffsInRepos searches a set of repos for matching commit diffs.
-func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
-	if mockSearchCommitDiffsInRepos != nil {
-		return mockSearchCommitDiffsInRepos(args)
+// resolveCommitParameters creates parameters for commit search from tp. It
+// will wait for the list of repos to be resolved.
+func resolveCommitParameters(ctx context.Context, tp *search.TextParameters) (*search.TextParametersForCommitParameters, error) {
+	old := tp.PatternInfo
+	patternInfo := &search.CommitPatternInfo{
+		Pattern:                      old.Pattern,
+		IsRegExp:                     old.IsRegExp,
+		IsCaseSensitive:              old.IsCaseSensitive,
+		FileMatchLimit:               old.FileMatchLimit,
+		IncludePatterns:              old.IncludePatterns,
+		ExcludePattern:               old.ExcludePattern,
+		PathPatternsAreRegExps:       true,
+		PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
 	}
-
-	var err error
-	tr, ctx := trace.New(ctx, "searchCommitDiffsInRepos", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	var (
-		wg          sync.WaitGroup
-		mu          sync.Mutex
-		unflattened [][]*CommitSearchResultResolver
-		common      = &searchResultsCommon{}
-	)
-	common.repos = make([]*types.Repo, len(args.Repos))
-	for i, repo := range args.Repos {
-		common.repos[i] = repo.Repo
-	}
-	for _, repoRev := range args.Repos {
-		wg.Add(1)
-		go func(repoRev *search.RepositoryRevisions) {
-			defer wg.Done()
-			commitParams := search.CommitParameters{
-				RepoRevs:    repoRev,
-				PatternInfo: args.PatternInfo,
-				Query:       args.Query,
-				Diff:        true,
-			}
-			results, repoLimitHit, repoTimedOut, searchErr := searchCommitsInRepo(ctx, commitParams)
-			if ctx.Err() == context.Canceled {
-				// Our request has been canceled (either because another one of args.repos had a
-				// fatal error, or otherwise), so we can just ignore these results.
-				return
-			}
-			repoTimedOut = repoTimedOut || ctx.Err() == context.DeadlineExceeded
-			if searchErr != nil {
-				tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
-			}
-			mu.Lock()
-			defer mu.Unlock()
-			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, repoTimedOut, searchErr); fatalErr != nil {
-				err = errors.Wrapf(searchErr, "failed to search commit diffs %s", repoRev.String())
-				cancel()
-			}
-			if len(results) > 0 {
-				unflattened = append(unflattened, results)
-			}
-		}(repoRev)
-	}
-	wg.Wait()
+	repos, err := getRepos(ctx, tp.RepoPromise)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	var flattened []*CommitSearchResultResolver
-	for _, results := range unflattened {
-		flattened = append(flattened, results...)
-	}
-	return commitSearchResultsToSearchResults(flattened), common, nil
+	return &search.TextParametersForCommitParameters{
+		PatternInfo: patternInfo,
+		Repos:       repos,
+		Query:       tp.Query,
+	}, nil
 }
 
-var mockSearchCommitLogInRepos func(args *search.TextParametersForCommitParameters) ([]SearchResultResolver, *searchResultsCommon, error)
+type searchCommitsInReposParameters struct {
+	TraceName string
 
-// searchCommitLogInRepos searches a set of repos for matching commits.
-func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForCommitParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
-	if mockSearchCommitLogInRepos != nil {
-		return mockSearchCommitLogInRepos(args)
-	}
+	ErrorName string
 
+	// Search does a commit search for repoRev.
+	Search func(ctx context.Context, repoRev *search.RepositoryRevisions, args *search.TextParametersForCommitParameters) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error)
+}
+
+func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, params searchCommitsInReposParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "searchCommitLogInRepos", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
+	tr, ctx := trace.New(ctx, params.TraceName, fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -521,7 +577,7 @@ func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForC
 		wg.Add(1)
 		go func(repoRev *search.RepositoryRevisions) {
 			defer wg.Done()
-			results, repoLimitHit, repoTimedOut, searchErr := searchCommitLogInRepo(ctx, repoRev, args.PatternInfo, args.Query)
+			results, repoLimitHit, repoTimedOut, searchErr := params.Search(ctx, repoRev, args)
 			if ctx.Err() == context.Canceled {
 				// Our request has been canceled (either because another one of args.repos had a
 				// fatal error, or otherwise), so we can just ignore these results.
@@ -534,7 +590,7 @@ func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForC
 			mu.Lock()
 			defer mu.Unlock()
 			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, repoTimedOut, searchErr); fatalErr != nil {
-				err = errors.Wrapf(searchErr, "failed to search commit log %s", repoRev.String())
+				err = errors.Wrapf(searchErr, "failed to search commit %s %s", params.ErrorName, repoRev.String())
 				cancel()
 			}
 			if len(results) > 0 {
@@ -554,10 +610,42 @@ func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForC
 	return commitSearchResultsToSearchResults(flattened), common, nil
 }
 
+func commitDiffSearcher(ctx context.Context, repoRev *search.RepositoryRevisions, args *search.TextParametersForCommitParameters) ([]*CommitSearchResultResolver, bool, bool, error) {
+	commitParams := search.CommitParameters{
+		RepoRevs:    repoRev,
+		PatternInfo: args.PatternInfo,
+		Query:       args.Query,
+		Diff:        true,
+	}
+	return searchCommitsInRepo(ctx, commitParams)
+}
+
+// searchCommitDiffsInRepos searches a set of repos for matching commit diffs.
+func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
+	return searchCommitsInRepos(ctx, args, searchCommitsInReposParameters{
+		TraceName: "searchCommitDiffsInRepos",
+		ErrorName: "diffs",
+		Search:    commitDiffSearcher,
+	})
+}
+
+func commitLogSearcher(ctx context.Context, repoRev *search.RepositoryRevisions, args *search.TextParametersForCommitParameters) ([]*CommitSearchResultResolver, bool, bool, error) {
+	return searchCommitLogInRepo(ctx, repoRev, args.PatternInfo, args.Query)
+}
+
+// searchCommitLogInRepos searches a set of repos for matching commits.
+func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForCommitParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
+	return searchCommitsInRepos(ctx, args, searchCommitsInReposParameters{
+		TraceName: "searchCommitLogsInRepos",
+		ErrorName: "commits",
+		Search:    commitLogSearcher,
+	})
+}
+
 func commitSearchResultsToSearchResults(results []*CommitSearchResultResolver) []SearchResultResolver {
 	// Show most recent commits first.
 	sort.Slice(results, func(i, j int) bool {
-		return results[i].commit.author.Date() > results[j].commit.author.Date()
+		return results[i].commit.commit.Author.Date.After(results[j].commit.commit.Author.Date)
 	})
 
 	results2 := make([]SearchResultResolver, len(results))

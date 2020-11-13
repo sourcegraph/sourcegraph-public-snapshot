@@ -19,7 +19,7 @@ import (
 
 func TestS3Init(t *testing.T) {
 	s3Client := NewMockS3API()
-	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, true, makeOperations(&observation.TestContext))
+	client := testS3Client(s3Client, nil)
 	if err := client.Init(context.Background()); err != nil {
 		t.Fatalf("unexpected error initializing client: %s", err.Error())
 	}
@@ -42,7 +42,7 @@ func TestS3InitBucketExists(t *testing.T) {
 		s3Client := NewMockS3API()
 		s3Client.CreateBucketFunc.SetDefaultReturn(nil, awserr.New(code, "", nil))
 
-		client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, true, makeOperations(&observation.TestContext))
+		client := testS3Client(s3Client, nil)
 		if err := client.Init(context.Background()); err != nil {
 			t.Fatalf("unexpected error initializing client: %s", err.Error())
 		}
@@ -161,7 +161,7 @@ func TestS3Upload(t *testing.T) {
 		return nil
 	})
 
-	client := newS3WithClients(s3Client, uploaderClient, "test-bucket", time.Hour*24, false, makeOperations(&observation.TestContext))
+	client := testS3Client(s3Client, uploaderClient)
 
 	size, err := client.Upload(context.Background(), "test-key", bytes.NewReader([]byte("TEST PAYLOAD")))
 	if err != nil {
@@ -197,7 +197,7 @@ func TestS3Combine(t *testing.T) {
 
 	s3Client.HeadObjectFunc.SetDefaultReturn(&s3.HeadObjectOutput{ContentLength: aws.Int64(42)}, nil)
 
-	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false, makeOperations(&observation.TestContext))
+	client := testS3Client(s3Client, nil)
 
 	size, err := client.Compose(context.Background(), "test-key", "test-src1", "test-src2", "test-src3")
 	if err != nil {
@@ -299,7 +299,7 @@ func TestS3Delete(t *testing.T) {
 		Body: ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))),
 	}, nil)
 
-	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false, makeOperations(&observation.TestContext))
+	client := testS3Client(s3Client, nil)
 	if err := client.Delete(context.Background(), "test-key"); err != nil {
 		t.Fatalf("unexpected error getting key: %s", err.Error())
 	}
@@ -315,7 +315,7 @@ func TestS3Delete(t *testing.T) {
 
 func TestS3Lifecycle(t *testing.T) {
 	s3Client := NewMockS3API()
-	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24*3, true, makeOperations(&observation.TestContext))
+	client := rawS3Client(s3Client, nil)
 
 	if lifecycle := client.lifecycle(); lifecycle == nil || len(lifecycle.Rules) != 2 {
 		t.Fatalf("unexpected lifecycle rules")
@@ -348,4 +348,12 @@ func TestS3Lifecycle(t *testing.T) {
 			t.Errorf("unexpected ttl for multipart upload expiration. want=%d have=%d", 3, *multipartExpiration)
 		}
 	}
+}
+
+func testS3Client(client s3API, uploader s3Uploader) Store {
+	return newLazyStore(rawS3Client(client, uploader))
+}
+
+func rawS3Client(client s3API, uploader s3Uploader) *s3Store {
+	return newS3WithClients(client, uploader, "test-bucket", time.Hour*24*3, true, makeOperations(&observation.TestContext))
 }

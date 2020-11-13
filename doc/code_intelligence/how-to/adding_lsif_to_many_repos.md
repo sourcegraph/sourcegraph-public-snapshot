@@ -43,8 +43,7 @@ Watch the video or follow the written directions below:
 1. Run the campaign to generate a list of all pull requests that will be created:
    ```
    # Use the values you set in your GitHub secrets for SRC_ENDPOINT and SRC_ACCESS_TOKEN.
-   # Pass your Sourcegraph username to the -namespace flag.
-   SRC_ENDPOINT= SRC_ACCESS_TOKEN= src campaigns preview -f lsif-go.campaign.yaml -namespace=$USERNAME
+   SRC_ENDPOINT= SRC_ACCESS_TOKEN= src campaigns preview -f lsif-go.campaign.yaml
    ```
    This will create a campaign preview in Sourcegraph. Navigate to the URL printed in the
      terminal to preview all the pull requests that will be created.
@@ -52,8 +51,7 @@ Watch the video or follow the written directions below:
 1. Once you've verified the preview looks correct, change `published: false` to `published: true` in `lsif-go.campaign.yaml` and run the following:
   ```
    # Use the values you set in your GitHub secrets for SRC_ENDPOINT and SRC_ACCESS_TOKEN.
-   # Pass your Sourcegraph username to the -namespace flag.
-  SRC_ENDPOINT= SRC_ACCESS_TOKEN= src campaigns apply -f lsif-go.campaign.yaml -namespace=$USERNAME
+  SRC_ENDPOINT= SRC_ACCESS_TOKEN= src campaigns apply -f lsif-go.campaign.yaml
   ```
   Now, go back to the campaign page and verify the pull requests have been
   created.

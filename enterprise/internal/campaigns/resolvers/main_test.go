@@ -160,7 +160,8 @@ func newGitHubExternalService(t *testing.T, store repos.Store) *repos.ExternalSe
 
 func newGitHubTestRepo(name string, externalService *repos.ExternalService) *repos.Repo {
 	return &repos.Repo{
-		Name: name,
+		Name:    name,
+		Private: true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", externalService.ID),
 			ServiceType: "github",
@@ -287,7 +288,7 @@ func createChangeset(
 
 		ExternalServiceType: opts.externalServiceType,
 		ExternalID:          opts.externalID,
-		ExternalBranch:      opts.externalBranch,
+		ExternalBranch:      git.EnsureRefPrefix(opts.externalBranch),
 		ExternalReviewState: opts.externalReviewState,
 		ExternalCheckState:  opts.externalCheckState,
 

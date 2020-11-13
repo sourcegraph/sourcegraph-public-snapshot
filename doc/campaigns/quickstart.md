@@ -99,9 +99,7 @@ Let's see the changes that will be made. Don't worry---no commits, branches, or 
 
 1. In your terminal, run this command:
 
-    <pre>src campaign preview -f hello-world.campaign.yaml -namespace <em>USERNAME_OR_ORG</em></pre>
-
-    > The `namespace` is either your Sourcegraph username or the name of a Sourcegraph organisation under which you want to create the campaign. If you're not sure what to choose, use your username.
+    <pre>src campaign preview -f hello-world.campaign.yaml</pre>
 1. Wait for it to run and compute the changes for each repository.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/src_campaign_preview_waiting.png" class="screenshot">
 1. When it's done, click the displayed link to see all of the changes that will be made.

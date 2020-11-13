@@ -18,7 +18,7 @@ func TestGCSInit(t *testing.T) {
 	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
 	bucketHandle.AttrsFunc.SetDefaultReturn(nil, storage.ErrBucketNotExist)
 
-	client := newGCSWithClient(gcsClient, "test-bucket", time.Hour*24, true, GCSConfig{ProjectID: "pid"}, makeOperations(&observation.TestContext))
+	client := testGCSClient(gcsClient, true)
 	if err := client.Init(context.Background()); err != nil {
 		t.Fatalf("unexpected error initializing client: %s", err.Error())
 	}
@@ -44,7 +44,7 @@ func TestGCSInitBucketExists(t *testing.T) {
 	bucketHandle := NewMockGcsBucketHandle()
 	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
 
-	client := newGCSWithClient(gcsClient, "test-bucket", time.Hour*24, true, GCSConfig{ProjectID: "pid"}, makeOperations(&observation.TestContext))
+	client := testGCSClient(gcsClient, true)
 	if err := client.Init(context.Background()); err != nil {
 		t.Fatalf("unexpected error initializing client: %s", err.Error())
 	}
@@ -69,7 +69,7 @@ func TestGCSUnmanagedInit(t *testing.T) {
 	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
 	bucketHandle.AttrsFunc.SetDefaultReturn(nil, storage.ErrBucketNotExist)
 
-	client := newGCSWithClient(gcsClient, "test-bucket", time.Hour*24, false, GCSConfig{ProjectID: "pid"}, makeOperations(&observation.TestContext))
+	client := testGCSClient(gcsClient, false)
 	if err := client.Init(context.Background()); err != nil {
 		t.Fatalf("unexpected error initializing client: %s", err.Error())
 	}
@@ -93,7 +93,7 @@ func TestGCSGet(t *testing.T) {
 	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
 	objectHandle.NewRangeReaderFunc.SetDefaultReturn(ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))), nil)
 
-	client := newGCSWithClient(gcsClient, "test-bucket", time.Hour*24, false, GCSConfig{ProjectID: "pid"}, makeOperations(&observation.TestContext))
+	client := testGCSClient(gcsClient, false)
 	rc, err := client.Get(context.Background(), "test-key", 0)
 	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err.Error())
@@ -132,7 +132,7 @@ func TestGCSGetSkipBytes(t *testing.T) {
 	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
 	objectHandle.NewRangeReaderFunc.SetDefaultReturn(ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))), nil)
 
-	client := newGCSWithClient(gcsClient, "test-bucket", time.Hour*24, false, GCSConfig{ProjectID: "pid"}, makeOperations(&observation.TestContext))
+	client := testGCSClient(gcsClient, false)
 	rc, err := client.Get(context.Background(), "test-key", 20)
 	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err.Error())
@@ -174,7 +174,7 @@ func TestGCSUpload(t *testing.T) {
 	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
 	objectHandle.NewWriterFunc.SetDefaultReturn(nopCloser{buf})
 
-	client := newGCSWithClient(gcsClient, "test-bucket", time.Hour*24, false, GCSConfig{ProjectID: "pid"}, makeOperations(&observation.TestContext))
+	client := testGCSClient(gcsClient, false)
 
 	size, err := client.Upload(context.Background(), "test-key", bytes.NewReader([]byte("TEST PAYLOAD")))
 	if err != nil {
@@ -219,7 +219,7 @@ func TestGCSCombine(t *testing.T) {
 		}[name]
 	})
 
-	client := newGCSWithClient(gcsClient, "test-bucket", time.Hour*24, false, GCSConfig{ProjectID: "pid"}, makeOperations(&observation.TestContext))
+	client := testGCSClient(gcsClient, false)
 
 	size, err := client.Compose(context.Background(), "test-key", "test-src1", "test-src2", "test-src3")
 	if err != nil {
@@ -274,7 +274,7 @@ func TestGCSDelete(t *testing.T) {
 	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
 	objectHandle.NewRangeReaderFunc.SetDefaultReturn(ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))), nil)
 
-	client := newGCSWithClient(gcsClient, "test-bucket", time.Hour*24, false, GCSConfig{ProjectID: "pid"}, makeOperations(&observation.TestContext))
+	client := testGCSClient(gcsClient, false)
 	if err := client.Delete(context.Background(), "test-key"); err != nil {
 		t.Fatalf("unexpected error getting key: %s", err.Error())
 	}
@@ -291,7 +291,7 @@ func TestGCSDelete(t *testing.T) {
 }
 
 func TestGCSLifecycle(t *testing.T) {
-	client := newGCSWithClient(nil, "test-bucket", time.Hour*24*3, true, GCSConfig{ProjectID: "pid"}, makeOperations(&observation.TestContext))
+	client := rawGCSClient(nil, true)
 
 	if lifecycle := client.lifecycle(); len(lifecycle.Rules) != 1 {
 		t.Fatalf("unexpected lifecycle rules")
@@ -300,8 +300,13 @@ func TestGCSLifecycle(t *testing.T) {
 	}
 }
 
-//
-//
+func testGCSClient(client gcsAPI, manageBucket bool) Store {
+	return newLazyStore(rawGCSClient(client, manageBucket))
+}
+
+func rawGCSClient(client gcsAPI, manageBucket bool) *gcsStore {
+	return newGCSWithClient(client, "test-bucket", time.Hour*24*3, manageBucket, GCSConfig{ProjectID: "pid"}, makeOperations(&observation.TestContext))
+}
 
 type nopCloser struct {
 	io.Writer

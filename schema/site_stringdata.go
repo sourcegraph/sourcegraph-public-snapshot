@@ -426,9 +426,9 @@ const SiteSchemaJSON = `{
       "group": "Security"
     },
     "externalService.userMode": {
-      "description": "Enable to allow users to add external services for public repositories to the Sourcegraph instance.",
+      "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
       "type": "string",
-      "enum": ["public", "disabled"],
+      "enum": ["public", "disabled", "all"],
       "default": "disabled"
     },
     "permissions.userMapping": {
@@ -530,6 +530,10 @@ const SiteSchemaJSON = `{
           "type": "string"
         },
         "disableTLS": {
+          "description": "DEPRECATED: use noVerifyTLS instead, this field will be removed in a future release",
+          "type": "boolean"
+        },
+        "noVerifyTLS": {
           "description": "Disable TLS verification",
           "type": "boolean"
         }

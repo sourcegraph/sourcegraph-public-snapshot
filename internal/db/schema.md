@@ -203,6 +203,7 @@ Check constraints:
     "changesets_external_id_check" CHECK (external_id <> ''::text)
     "changesets_external_service_type_not_blank" CHECK (external_service_type <> ''::text)
     "changesets_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
+    "external_branch_ref_prefix" CHECK (external_branch ~~ 'refs/heads/%'::text)
 Foreign-key constraints:
     "changesets_changeset_spec_id_fkey" FOREIGN KEY (current_spec_id) REFERENCES changeset_specs(id) DEFERRABLE
     "changesets_owned_by_campaign_id_fkey" FOREIGN KEY (owned_by_campaign_id) REFERENCES campaigns(id) ON DELETE SET NULL DEFERRABLE
@@ -1242,8 +1243,10 @@ Foreign-key constraints:
  verification_code         | text                     | 
  verified_at               | timestamp with time zone | 
  last_verification_sent_at | timestamp with time zone | 
+ is_primary                | boolean                  | not null default false
 Indexes:
     "user_emails_no_duplicates_per_user" UNIQUE CONSTRAINT, btree (user_id, email)
+    "user_emails_user_id_is_primary_idx" UNIQUE, btree (user_id, is_primary) WHERE is_primary = true
     "user_emails_unique_verified_email" EXCLUDE USING btree (email WITH =) WHERE (verified_at IS NOT NULL)
 Foreign-key constraints:
     "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)

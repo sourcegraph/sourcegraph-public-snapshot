@@ -779,3 +779,58 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		}
 	})
 }
+
+func TestExternalServicesStore_ValidateSingleGlobalConnection(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	now := time.Now()
+
+	makeService := func(global bool) *types.ExternalService {
+		cfg := `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`
+		if global {
+			cfg = `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"], "cloudGlobal": true}`
+		}
+		svc := &types.ExternalService{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "Github - Test",
+			Config:      cfg,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		}
+		return svc
+	}
+
+	t.Run("non global", func(t *testing.T) {
+		gh := makeService(false)
+		if err := ExternalServices.Upsert(ctx, gh); err != nil {
+			t.Fatalf("Upsert error: %s", err)
+		}
+		if err := ExternalServices.validateSingleGlobalConnection(ctx, gh.ID, extsvc.KindGitHub); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("first global", func(t *testing.T) {
+		gh := makeService(true)
+		if err := ExternalServices.Upsert(ctx, gh); err != nil {
+			t.Fatalf("Upsert error: %s", err)
+		}
+		if err := ExternalServices.validateSingleGlobalConnection(ctx, gh.ID, extsvc.KindGitHub); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("second global", func(t *testing.T) {
+		gh := makeService(true)
+		if err := ExternalServices.Upsert(ctx, gh); err != nil {
+			t.Fatalf("Upsert error: %s", err)
+		}
+		if err := ExternalServices.validateSingleGlobalConnection(ctx, gh.ID, extsvc.KindGitHub); err == nil {
+			t.Fatal("Expected validation error")
+		}
+	})
+}

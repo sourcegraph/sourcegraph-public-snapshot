@@ -197,6 +197,12 @@ type Mutation {
     """
     removeUserEmail(user: ID!, email: String!): EmptyResponse!
     """
+    Set an email address as the user's primary.
+
+    Only the user and site admins may perform this mutation.
+    """
+    setUserEmailPrimary(user: ID!, email: String!): EmptyResponse!
+    """
     Manually set the verification status of a user's email, without going through the normal verification process
     (of clicking on a link in the email with a verification code).
 
@@ -765,6 +771,28 @@ type Mutation {
         """
         actions: [MonitorActionInput!]!
     ): Monitor!
+    """
+    Set a code monitor to active/inactive.
+    """
+    toggleCodeMonitor(
+        """
+        The id of a code monitor.
+        """
+        id: ID!
+        """
+        Whether the code monitor should be enabled or not.
+        """
+        enabled: Boolean!
+    ): Monitor!
+    """
+    Delete a code monitor.
+    """
+    deleteCodeMonitor(
+        """
+        The id of a code monitor.
+        """
+        id: ID!
+    ): EmptyResponse!
 }
 
 """
@@ -1185,6 +1213,24 @@ type CampaignSpec implements Node {
     campaign doesn't yet exist.
     """
     appliesToCampaign: Campaign
+
+    """
+    The code host connections required for applying this spec. Includes the credentials of the current user.
+    """
+    viewerCampaignsCodeHosts(
+        """
+        Returns the first n code hosts from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only returns the code hosts for which the viewer doesn't have credentials.
+        """
+        onlyWithoutCredential: Boolean = false
+    ): CampaignsCodeHostConnection!
 }
 
 """
@@ -3156,9 +3202,18 @@ type MonitorEmail implements Node {
     """
     header: String!
     """
-    The recipients of the email.
+    A list of recipients of the email.
     """
-    recipient: MonitorEmailRecipient!
+    recipients(
+        """
+        Returns the first n recipients from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionEmailRecipientsConnection!
     """
     A list of events.
     """
@@ -3183,9 +3238,22 @@ enum MonitorEmailPriority {
 }
 
 """
-Supported types of recipients for email actions.
+A list of events.
 """
-union MonitorEmailRecipient = User
+type MonitorActionEmailRecipientsConnection {
+    """
+    A list of recipients.
+    """
+    nodes: [Namespace!]!
+    """
+    The total number of recipients in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
 
 """
 A list of events.

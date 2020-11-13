@@ -4,7 +4,26 @@
         &-preview-link {
             position: absolute;
             right: 0.375rem;
-            top: 1rem;
+            top: 0.8rem;
+            padding-right: 1.5rem;
+        }
+
+        &-field {
+            padding-right: 8rem;
+        }
+    }
+
+    &__actions {
+        &--disabled {
+            color: $gray-17 !important;
+            opacity: 0.5;
+        }
+    }
+
+    &__triggers {
+        &--disabled {
+            color: $gray-17 !important;
+            opacity: 0.5;
         }
     }
 }

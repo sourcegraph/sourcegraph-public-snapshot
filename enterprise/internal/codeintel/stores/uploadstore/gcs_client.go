@@ -12,6 +12,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"google.golang.org/api/option"
 )
@@ -197,7 +198,7 @@ func (s *gcsStore) lifecycle() storage.Lifecycle {
 }
 
 func (s *gcsStore) deleteSources(ctx context.Context, bucket gcsBucketHandle, sources []string) error {
-	return invokeParallel(sources, func(index int, source string) error {
+	return goroutine.RunWorkersOverStrings(sources, func(index int, source string) error {
 		if err := bucket.Object(source).Delete(ctx); err != nil {
 			return errors.Wrap(err, "failed to delete source object")
 		}

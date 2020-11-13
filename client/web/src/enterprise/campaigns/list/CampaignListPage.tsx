@@ -1,14 +1,24 @@
-import React, { useEffect, useCallback } from 'react'
+import React, { useEffect, useCallback, useState } from 'react'
 import { queryCampaigns as _queryCampaigns, queryCampaignsByNamespace } from './backend'
 import { RouteComponentProps } from 'react-router'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
 import { CampaignNode, CampaignNodeProps } from './CampaignNode'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { ListCampaign, CampaignState, Scalars, CampaignsByNamespaceVariables } from '../../../graphql-operations'
+import {
+    ListCampaign,
+    CampaignState,
+    Scalars,
+    CampaignsByNamespaceVariables,
+    CampaignsResult,
+    CampaignsVariables,
+} from '../../../graphql-operations'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from '../../../../../shared/src/components/Link'
 import { PageHeader } from '../../../components/PageHeader'
 import { CampaignsIconFlushLeft } from '../icons'
+import { CampaignsListEmpty } from './CampaignsListEmpty'
+import { filter, map, tap } from 'rxjs/operators'
+import { Observable } from 'rxjs'
 
 export interface CampaignListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
     displayNamespace?: boolean
@@ -46,6 +56,18 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
     ...props
 }) => {
     useEffect(() => props.telemetryService.logViewEvent('CampaignsListPage'), [props.telemetryService])
+    const [totalCampaignsCount, setTotalCampaignsCount] = useState<number>()
+    const query = useCallback<(args: Partial<CampaignsVariables>) => Observable<CampaignsResult['campaigns']>>(
+        args =>
+            queryCampaigns(args).pipe(
+                tap(response => {
+                    setTotalCampaignsCount(response.totalCount)
+                }),
+                filter(response => response.totalCount > 0),
+                map(response => response.campaigns)
+            ),
+        [queryCampaigns]
+    )
     return (
         <>
             <PageHeader
@@ -58,23 +80,29 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
                     </Link>
                 }
             />
-            <FilteredConnection<ListCampaign, Omit<CampaignNodeProps, 'node'>>
-                {...props}
-                location={location}
-                nodeComponent={CampaignNode}
-                nodeComponentProps={{ history: props.history, displayNamespace }}
-                queryConnection={queryCampaigns}
-                hideSearch={true}
-                defaultFirst={15}
-                filters={FILTERS}
-                noun="campaign"
-                pluralNoun="campaigns"
-                listComponent="div"
-                listClassName="campaign-list-page__grid mb-3"
-                className="mb-3"
-                cursorPaging={true}
-                noSummaryIfAllNodesVisible={true}
-            />
+            <p className="text-muted">
+                Run custom code over hundreds of repositories and manage the resulting changesets
+            </p>
+            {totalCampaignsCount === 0 && <CampaignsListEmpty />}
+            {totalCampaignsCount !== 0 && (
+                <FilteredConnection<ListCampaign, Omit<CampaignNodeProps, 'node'>>
+                    {...props}
+                    location={location}
+                    nodeComponent={CampaignNode}
+                    nodeComponentProps={{ history: props.history, displayNamespace }}
+                    queryConnection={query}
+                    hideSearch={true}
+                    defaultFirst={15}
+                    filters={FILTERS}
+                    noun="campaign"
+                    pluralNoun="campaigns"
+                    listComponent="div"
+                    listClassName="campaign-list-page__grid mb-3"
+                    className="mb-3"
+                    cursorPaging={true}
+                    noSummaryIfAllNodesVisible={true}
+                />
+            )}
         </>
     )
 }
