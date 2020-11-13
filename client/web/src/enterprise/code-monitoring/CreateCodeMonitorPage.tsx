@@ -12,7 +12,7 @@ import classnames from 'classnames'
 import { Link } from '../../../../shared/src/components/Link'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
-import { useInputValidation } from '../../../../shared/src/util/useInputValidation'
+import { deriveInputClassName, useInputValidation } from '../../../../shared/src/util/useInputValidation'
 import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
 import { FilterType } from '../../../../shared/src/search/interactive/util'
 
