@@ -9,7 +9,13 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
-import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps, CaseSensitivityProps } from '..'
+import {
+    parseSearchURLQuery,
+    PatternTypeProps,
+    InteractiveSearchProps,
+    CaseSensitivityProps,
+    SearchStreamingProps,
+} from '..'
 import { FetchFileParameters } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
 import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
@@ -32,6 +38,8 @@ import { ErrorAlert } from '../../components/alerts'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { DeployType } from '../../jscontext'
 import { AuthenticatedUser } from '../../auth'
+import { SearchResultTypeTabs } from './SearchResultTypeTabs'
+import { QueryState } from '../helpers'
 
 const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     typeof value === 'object' &&
@@ -48,7 +56,8 @@ export interface SearchResultsListProps
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
-        VersionContextProps {
+        VersionContextProps,
+        SearchStreamingProps {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null
@@ -58,6 +67,7 @@ export interface SearchResultsListProps
     // Result list
     resultsOrError?: GQL.ISearchResults | ErrorLike
     onShowMoreResultsClick?: () => void
+    navbarSearchQueryState: QueryState
 
     // Expand all feature
     allExpanded: boolean
@@ -355,14 +365,23 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
                             return (
                                 <>
-                                    {/* Info Bar */}
-                                    <SearchResultsInfoBar
-                                        {...this.props}
-                                        query={parsedQuery}
-                                        results={results}
-                                        showDotComMarketing={this.props.isSourcegraphDotCom}
-                                        displayPerformanceWarning={this.state.displayPerformanceWarning}
-                                    />
+                                    <div className="d-lg-flex mb-2 align-items-end">
+                                        <SearchResultTypeTabs
+                                            {...this.props}
+                                            query={this.props.navbarSearchQueryState.query}
+                                            filtersInQuery={this.props.filtersInQuery}
+                                            className="flex-grow-1"
+                                        />
+
+                                        <SearchResultsInfoBar
+                                            {...this.props}
+                                            query={parsedQuery}
+                                            results={results}
+                                            showDotComMarketing={this.props.isSourcegraphDotCom}
+                                            displayPerformanceWarning={this.state.displayPerformanceWarning}
+                                            className="border-bottom"
+                                        />
+                                    </div>
 
                                     {/* Server-provided help message */}
                                     {results.alert && (

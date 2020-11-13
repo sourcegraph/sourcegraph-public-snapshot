@@ -1,7 +1,9 @@
 package git
 
 import (
+	"context"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -12,6 +14,10 @@ import (
 
 func TestRepository_RawLogDiffSearch(t *testing.T) {
 	t.Parallel()
+
+	expiredCtx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Minute))
+	defer cancel()
+	<-expiredCtx.Done()
 
 	repo := MakeGitRepository(t,
 		"echo root > f",
@@ -30,9 +36,12 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m branch2 --author='a <a@a.com>' --date 2006-01-02T15:04:07Z",
 	)
 	tests := []struct {
-		name string
-		opt  RawLogDiffSearchOptions
-		want []*LogCommitSearchResult
+		name       string
+		ctx        context.Context
+		opt        RawLogDiffSearchOptions
+		want       []*LogCommitSearchResult
+		incomplete bool
+		errorS     string
 	}{{
 		name: "query",
 		opt: RawLogDiffSearchOptions{
@@ -59,6 +68,24 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 			},
 			Refs:       []string{"refs/heads/master", "refs/tags/mytag"},
 			SourceRefs: []string{"refs/heads/branch2"},
+			Diff:       &RawDiff{Raw: "diff --git a/f b/f\nnew file mode 100644\nindex 0000000..d8649da\n--- /dev/null\n+++ b/f\n@@ -0,0 +1,1 @@\n+root\n"},
+		}},
+	}, {
+		name: "refglob",
+		opt: RawLogDiffSearchOptions{
+			Query: TextSearchOptions{Pattern: "root"},
+			Diff:  true,
+			Args:  []string{"--glob=refs/tags/*"},
+		},
+		want: []*LogCommitSearchResult{{
+			Commit: Commit{
+				ID:        "ce72ece27fd5c8180cfbc1c412021d32fd1cda0d",
+				Author:    Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Committer: &Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Message:   "root",
+			},
+			Refs:       []string{"refs/heads/master", "refs/tags/mytag"},
+			SourceRefs: []string{"refs/tags/mytag"},
 			Diff:       &RawDiff{Raw: "diff --git a/f b/f\nnew file mode 100644\nindex 0000000..d8649da\n--- /dev/null\n+++ b/f\n@@ -0,0 +1,1 @@\n+root\n"},
 		}},
 	}, {
@@ -97,16 +124,45 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 			},
 		},
 		want: nil, // empty
+	}, {
+		name: "deadline",
+		ctx:  expiredCtx,
+		opt: RawLogDiffSearchOptions{
+			Query: TextSearchOptions{Pattern: "root"},
+			Diff:  true,
+		},
+		incomplete: true,
+	}, {
+		name: "not found",
+		opt: RawLogDiffSearchOptions{
+			Query: TextSearchOptions{Pattern: "root"},
+			Diff:  true,
+			Args:  []string{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+		},
+		errorS: "fatal: bad object aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 	}}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			ctx := test.ctx
+			if ctx == nil {
+				ctx = context.Background()
+			}
+
 			results, complete, err := RawLogDiffSearch(ctx, repo, test.opt)
 			if err != nil {
-				t.Fatal(err)
+				if test.errorS == "" {
+					t.Fatal(err)
+				} else if !strings.Contains(err.Error(), test.errorS) {
+					t.Fatalf("error should contain %q: %v", test.errorS, err)
+				}
+				return
+			} else if test.errorS != "" {
+				t.Fatal("expected error")
 			}
-			if !complete {
-				t.Fatal("!complete")
+
+			if complete == test.incomplete {
+				t.Fatalf("complete is %v", complete)
 			}
 			for _, r := range results {
 				r.DiffHighlights = nil // Highlights is tested separately
@@ -118,7 +174,7 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 	}
 }
 
-func TestRepository_RawLogDiffSearch_emptyCommit(t *testing.T) {
+func TestRepository_RawLogDiffSearch_empty(t *testing.T) {
 	t.Parallel()
 
 	gitCommands := []string{
@@ -129,8 +185,16 @@ func TestRepository_RawLogDiffSearch_emptyCommit(t *testing.T) {
 		repo gitserver.Repo
 		want map[*RawLogDiffSearchOptions][]*LogCommitSearchResult
 	}{
-		"git cmd": {
+		"commit": {
 			repo: MakeGitRepository(t, gitCommands...),
+			want: map[*RawLogDiffSearchOptions][]*LogCommitSearchResult{
+				{
+					Paths: PathOptions{IncludePatterns: []string{"/xyz.txt"}, IsRegExp: true},
+				}: nil, // want no matches
+			},
+		},
+		"repo": {
+			repo: MakeGitRepository(t),
 			want: map[*RawLogDiffSearchOptions][]*LogCommitSearchResult{
 				{
 					Paths: PathOptions{IncludePatterns: []string{"/xyz.txt"}, IsRegExp: true},
@@ -141,7 +205,7 @@ func TestRepository_RawLogDiffSearch_emptyCommit(t *testing.T) {
 
 	for label, test := range tests {
 		for opt, want := range test.want {
-			results, complete, err := RawLogDiffSearch(ctx, test.repo, *opt)
+			results, complete, err := RawLogDiffSearch(context.Background(), test.repo, *opt)
 			if err != nil {
 				t.Errorf("%s: %+v: %s", label, *opt, err)
 				continue

@@ -28,3 +28,5 @@ jobs:
           MERGE_LABELS: automerge
           MERGE_METHOD: squash
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        with:
+          args: "--trace"

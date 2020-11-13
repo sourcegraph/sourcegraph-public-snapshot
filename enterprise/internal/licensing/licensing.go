@@ -118,6 +118,11 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 			if err != nil {
 				return nil, "", err
 			}
+
+			if err = info.hasUnknownPlan(); EnforceTiers && err != nil {
+				return nil, "", err
+			}
+
 			lastKeyText = keyText
 			lastInfo = info
 			lastSignature = signature

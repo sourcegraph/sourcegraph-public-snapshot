@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 )
 
@@ -38,7 +39,7 @@ func TestProvider_Validate(t *testing.T) {
 		},
 		{
 			name:   "problems-when-authenticated-as-non-admin",
-			client: func(c *bitbucketserver.Client) { c.Oauth = nil },
+			client: func(c *bitbucketserver.Client) { c.Auth = &auth.BasicAuth{} },
 			problems: []string{
 				`Bitbucket API HTTP error: code=401 url="${INSTANCEURL}/rest/api/1.0/admin/permissions/users?filter=" body="{\"errors\":[{\"context\":null,\"message\":\"You are not permitted to access this resource\",\"exceptionName\":\"com.atlassian.bitbucket.AuthorisationException\"}]}"`,
 			},

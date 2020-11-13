@@ -59,3 +59,13 @@ func (e ErrMatchingCampaignExists) Error() string {
 func (e ErrMatchingCampaignExists) Extensions() map[string]interface{} {
 	return map[string]interface{}{"code": "ErrMatchingCampaignExists"}
 }
+
+type ErrDuplicateCredential struct{}
+
+func (e ErrDuplicateCredential) Error() string {
+	return "a credential for this code host already exists"
+}
+
+func (e ErrDuplicateCredential) Extensions() map[string]interface{} {
+	return map[string]interface{}{"code": "ErrDuplicateCredential"}
+}

@@ -1,10 +1,9 @@
 /* eslint rxjs/no-ignored-subscription: warn */
 import * as Sentry from '@sentry/browser'
 import { once } from 'lodash'
-import { observeStorageKey } from '../../browser-extension/web-extension-api/storage'
-import { featureFlagDefaults } from '../../browser-extension/web-extension-api/types'
 import { isInPage } from '../context'
 import { DEFAULT_SOURCEGRAPH_URL, getExtensionVersion, observeSourcegraphURL } from '../util/context'
+import { observeOptionFlag } from '../util/optionFlags'
 
 const IS_EXTENSION = true
 
@@ -36,9 +35,7 @@ export function initSentry(script: 'content' | 'options' | 'background', codeHos
         return
     }
 
-    observeStorageKey('sync', 'featureFlags').subscribe((flags = featureFlagDefaults) => {
-        const allowed = flags.allowErrorReporting
-
+    observeOptionFlag('allowErrorReporting').subscribe(allowed => {
         // Don't initialize if user hasn't allowed us to report errors or in Phabricator.
         if (!allowed || isInPage) {
             const client = Sentry.getCurrentHub().getClient()

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -202,9 +203,9 @@ var intervalByPeriodType = map[PeriodType]*sqlf.Query{
 // periodByPeriodType is a map of SQL fragments that produce a timestamp bucket by period
 // type. This assumes the existence of a  field named `timestamp` in the enclosing query.
 var periodByPeriodType = map[PeriodType]*sqlf.Query{
-	Daily:   sqlf.Sprintf("DATE_TRUNC('day', timestamp)"),
-	Weekly:  sqlf.Sprintf("DATE_TRUNC('week', timestamp + '1 day'::interval) - '1 day'::interval"),
-	Monthly: sqlf.Sprintf("DATE_TRUNC('month', timestamp)"),
+	Daily:   sqlf.Sprintf(makeDateTruncExpression("day", "timestamp")),
+	Weekly:  sqlf.Sprintf(makeDateTruncExpression("week", "timestamp")),
+	Monthly: sqlf.Sprintf(makeDateTruncExpression("month", "timestamp")),
 }
 
 // calcStartDate calculates the the starting date of a number of periods given the period type.
@@ -327,7 +328,7 @@ func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType Pe
 }
 
 func (l *eventLogs) countUniqueUsersPerPeriodBySQL(ctx context.Context, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
-	return l.countPerPeriodBySQL(ctx, sqlf.Sprintf("DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END"), interval, period, startDate, endDate, conds)
+	return l.countPerPeriodBySQL(ctx, sqlf.Sprintf("DISTINCT "+userIDQueryFragment), interval, period, startDate, endDate, conds)
 }
 
 func (l *eventLogs) countPerPeriodBySQL(ctx context.Context, countExpr, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
@@ -391,7 +392,7 @@ func (*eventLogs) countUniqueUsersBySQL(ctx context.Context, startDate, endDate 
 	if querySuffix == nil {
 		querySuffix = sqlf.Sprintf("")
 	}
-	q := sqlf.Sprintf(`SELECT COUNT(DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END)
+	q := sqlf.Sprintf(`SELECT COUNT(DISTINCT `+userIDQueryFragment+`)
 		FROM event_logs
 		WHERE (DATE(TIMEZONE('UTC'::text, timestamp)) >= %s) AND (DATE(TIMEZONE('UTC'::text, timestamp)) <= %s) %s`, startDate, endDate, querySuffix)
 	r := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
@@ -506,7 +507,7 @@ func (l *eventLogs) siteUsage(ctx context.Context, now time.Time) (summary types
 	return summary, err
 }
 
-const siteUsageQuery = `
+var siteUsageQuery = `
 SELECT
   current_month,
   current_week,
@@ -584,33 +585,28 @@ FROM (
   SELECT
     name,
     user_id != 0 as registered,
-    CASE WHEN user_id = 0
-      -- It's faster to group by an int rather than text, so we convert
-      -- the anonymous_user_id to an int, rather than the user_id to text.
-      THEN ('x'||substr(md5(anonymous_user_id), 1, 8))::bit(32)::int
-      ELSE user_id
-    END AS user_id,
+    ` + aggregatedUserIDQueryFragment + ` AS user_id,
     source,
-    DATE_TRUNC('month', TIMEZONE('UTC', timestamp)) as month,
-    DATE_TRUNC('week', TIMEZONE('UTC', timestamp) + '1 day'::interval) - '1 day'::interval as week,
-    DATE_TRUNC('day', TIMEZONE('UTC', timestamp)) as day,
-    DATE_TRUNC('month', TIMEZONE('UTC', %s::timestamp)) as current_month,
-    DATE_TRUNC('week', TIMEZONE('UTC', %s::timestamp) + '1 day'::interval) - '1 day'::interval as current_week,
-    DATE_TRUNC('day', TIMEZONE('UTC', %s::timestamp)) as current_day
+    ` + makeDateTruncExpression("month", "timestamp") + ` as month,
+    ` + makeDateTruncExpression("week", "timestamp") + ` as week,
+    ` + makeDateTruncExpression("day", "timestamp") + ` as day,
+    ` + makeDateTruncExpression("month", "%s::timestamp") + ` as current_month,
+    ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week,
+    ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
-  WHERE timestamp >= DATE_TRUNC('month', TIMEZONE('UTC', %s::timestamp))
+  WHERE timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
 ) events
 
 GROUP BY current_month, current_week, current_day
 `
 
-// AggregatedEvents calculates AggregatedEvent for each every unique event type.
-func (l *eventLogs) AggregatedEvents(ctx context.Context) ([]types.AggregatedEvent, error) {
-	return l.aggregatedEvents(ctx, time.Now().UTC())
+// AggregatedCodeIntelEvents calculates AggregatedEvent for each every unique event type related to code intel.
+func (l *eventLogs) AggregatedCodeIntelEvents(ctx context.Context) ([]types.AggregatedEvent, error) {
+	return l.aggregatedCodeIntelEvents(ctx, time.Now().UTC())
 }
 
-func (l *eventLogs) aggregatedEvents(ctx context.Context, now time.Time) (events []types.AggregatedEvent, err error) {
-	query := sqlf.Sprintf(aggregatedEventsQuery, now, now, now, now)
+func (l *eventLogs) aggregatedCodeIntelEvents(ctx context.Context, now time.Time) (events []types.AggregatedEvent, err error) {
+	query := sqlf.Sprintf(aggregatedCodeIntelEventsQuery, now, now, now, now)
 
 	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
@@ -649,10 +645,34 @@ func (l *eventLogs) aggregatedEvents(ctx context.Context, now time.Time) (events
 	return events, nil
 }
 
-const aggregatedEventsQuery = `
--- This query does multiple aggregations over the current day, week and month in one
--- pass over the event_logs table. These are: unique number of users, total
--- number of events and 50th, 90th and 99th percentile latency (when there's latency captured).
+var codeIntelEventNames = []string{
+	"'codeintel.lsifHover'",
+	"'codeintel.searchHover'",
+	"'codeintel.lsifDefinitions'",
+	"'codeintel.searchDefinitions'",
+	"'codeintel.lsifReferences'",
+	"'codeintel.searchReferences'",
+}
+
+var aggregatedCodeIntelEventsQuery = `
+-- source: internal/db/event_logs.go:aggregatedCodeIntelEvents
+WITH events AS (
+  SELECT
+    name,
+    -- Postgres 9.6 needs to go from text to integer (i.e. can't go directly to integer)
+    (argument->'durationMs')::text::integer as latency,
+    ` + aggregatedUserIDQueryFragment + ` AS user_id,
+    ` + makeDateTruncExpression("month", "timestamp") + ` as month,
+    ` + makeDateTruncExpression("week", "timestamp") + ` as week,
+    ` + makeDateTruncExpression("day", "timestamp") + ` as day,
+    ` + makeDateTruncExpression("month", "%s::timestamp") + ` as current_month,
+    ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week,
+    ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
+  FROM event_logs
+  WHERE
+    timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
+	AND name IN (` + strings.Join(codeIntelEventNames, ", ") + `)
+)
 SELECT
   name,
   current_month,
@@ -664,50 +684,131 @@ SELECT
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
   COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
-  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99])
-    WITHIN GROUP (ORDER BY latency) FILTER (WHERE month = current_month)
-  AS latencies_month,
-  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99])
-    WITHIN GROUP (ORDER BY latency) FILTER (WHERE week = current_week)
-  AS latencies_week,
-  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99])
-    WITHIN GROUP (ORDER BY latency) FILTER (WHERE day = current_day)
-  AS latencies_day
-FROM (
-  -- This sub-query is here to avoid re-doing this work above on each aggregation.
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE month = current_month) AS latencies_month,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE week = current_week) AS latencies_week,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE day = current_day) AS latencies_day
+FROM events GROUP BY name, current_month, current_week, current_day
+`
+
+// AggregatedSearchEvents calculates AggregatedEvent for each every unique event type related to search.
+func (l *eventLogs) AggregatedSearchEvents(ctx context.Context) ([]types.AggregatedEvent, error) {
+	return l.aggregatedSearchEvents(ctx, time.Now().UTC())
+}
+
+func (l *eventLogs) aggregatedSearchEvents(ctx context.Context, now time.Time) (events []types.AggregatedEvent, err error) {
+	query := sqlf.Sprintf(aggregatedSearchEventsQuery, now, now, now, now)
+
+	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var event types.AggregatedEvent
+		err := rows.Scan(
+			&event.Name,
+			&event.Month,
+			&event.Week,
+			&event.Day,
+			&event.TotalMonth,
+			&event.TotalWeek,
+			&event.TotalDay,
+			&event.UniquesMonth,
+			&event.UniquesWeek,
+			&event.UniquesDay,
+			pq.Array(&event.LatenciesMonth),
+			pq.Array(&event.LatenciesWeek),
+			pq.Array(&event.LatenciesDay),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		events = append(events, event)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return events, nil
+}
+
+var searchEventNames = []string{
+	"'search.latencies.literal'",
+	"'search.latencies.regexp'",
+	"'search.latencies.structural'",
+	"'search.latencies.file'",
+	"'search.latencies.repo'",
+	"'search.latencies.diff'",
+	"'search.latencies.commit'",
+	"'search.latencies.symbol'",
+}
+
+var aggregatedSearchEventsQuery = `
+-- source: internal/db/event_logs.go:aggregatedSearchEvents
+WITH events AS (
   SELECT
     name,
     -- Postgres 9.6 needs to go from text to integer (i.e. can't go directly to integer)
     (argument->'durationMs')::text::integer as latency,
-    CASE WHEN user_id = 0
-      -- It's faster to group by an int rather than text, so we convert
-      -- the anonymous_user_id to an int, rather than the user_id to text.
-      THEN ('x'||substr(md5(anonymous_user_id), 1, 8))::bit(32)::int
-      ELSE user_id
-    END AS user_id,
-    DATE_TRUNC('month', TIMEZONE('UTC', timestamp)) as month,
-    DATE_TRUNC('week', TIMEZONE('UTC', timestamp) + '1 day'::interval) - '1 day'::interval as week,
-    DATE_TRUNC('day', TIMEZONE('UTC', timestamp)) as day,
-    DATE_TRUNC('month', TIMEZONE('UTC', %s::timestamp)) as current_month,
-    DATE_TRUNC('week', TIMEZONE('UTC', %s::timestamp) + '1 day'::interval) - '1 day'::interval as current_week,
-    DATE_TRUNC('day', TIMEZONE('UTC', %s::timestamp)) as current_day
+    ` + aggregatedUserIDQueryFragment + ` AS user_id,
+    ` + makeDateTruncExpression("month", "timestamp") + ` as month,
+    ` + makeDateTruncExpression("week", "timestamp") + ` as week,
+    ` + makeDateTruncExpression("day", "timestamp") + ` as day,
+    ` + makeDateTruncExpression("month", "%s::timestamp") + ` as current_month,
+    ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week,
+    ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
-  WHERE timestamp >= DATE_TRUNC('month', TIMEZONE('UTC', %s::timestamp)) AND name IN (
-    'codeintel.lsifHover',
-    'codeintel.searchHover',
-    'codeintel.lsifDefinitions',
-    'codeintel.searchDefinitions',
-    'codeintel.lsifReferences',
-    'codeintel.searchReferences',
-    'search.latencies.literal',
-    'search.latencies.regexp',
-    'search.latencies.structural',
-    'search.latencies.file',
-    'search.latencies.repo',
-    'search.latencies.diff',
-    'search.latencies.commit',
-    'search.latencies.symbol'
-  )
-) events
-GROUP BY name, current_month, current_week, current_day
+  WHERE
+    timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
+    AND name IN (` + strings.Join(searchEventNames, ", ") + `)
+)
+SELECT
+  name,
+  current_month,
+  current_week,
+  current_day,
+  COUNT(*) FILTER (WHERE month = current_month) AS total_month,
+  COUNT(*) FILTER (WHERE week = current_week) AS total_week,
+  COUNT(*) FILTER (WHERE day = current_day) AS total_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
+  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE month = current_month) AS latencies_month,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE week = current_week) AS latencies_week,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE day = current_day) AS latencies_day
+FROM events GROUP BY name, current_month, current_week, current_day
 `
+
+// userIDQueryFragment is a query fragment that can be used to return the anonymous user id.
+// If no anonymous user id is set then the user id is returned.
+const userIDQueryFragment = `
+CASE WHEN user_id = 0
+  THEN anonymous_user_id
+  ELSE CAST(user_id AS TEXT)
+END
+`
+
+// aggregatedUserIDQueryFragment is a query fragment that can be used to canonicalize the
+// values of the  user_id and anonymous_user_id fields (assumed in scope) int a unified value.
+const aggregatedUserIDQueryFragment = `
+CASE WHEN user_id = 0
+  -- It's faster to group by an int rather than text, so we convert
+  -- the anonymous_user_id to an int, rather than the user_id to text.
+  THEN ('x' || substr(md5(anonymous_user_id), 1, 8))::bit(32)::int
+  ELSE user_id
+END
+`
+
+// makeDateTruncExpression returns an expresson that converts the given
+// SQL expression into the start of the containing date container specified
+// by the unit parameter (e.g. day, week, month, or).
+func makeDateTruncExpression(unit, expr string) string {
+	if unit == "week" {
+		return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s) + '1 day'::interval) - '1 day'::interval`, unit, expr)
+	}
+
+	return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s))`, unit, expr)
+}

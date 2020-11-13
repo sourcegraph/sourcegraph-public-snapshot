@@ -169,6 +169,7 @@
 /user/campaigns/examples    /campaigns/tutorials 308
 /user/campaigns/managing_access /campaigns/explanations/permissions_in_campaigns 308
 /dev/automation_development /dev/background-information/campaigns/index 308
+/campaigns/campaign_spec_yaml_reference /campaigns/references/campaign_spec_yaml_reference 308
 
 /user/search /code_search 308
 /user/campaigns /campaigns 308

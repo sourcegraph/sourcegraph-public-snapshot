@@ -35,25 +35,11 @@
     # zoekt-indexserver
     - 127.0.0.1:6072
 - labels:
-    job: precise-code-intel-bundle-manager
-  targets:
-    # precise-code-intel-bundle-manager
-    - 127.0.0.1:6087
-- labels:
     job: precise-code-intel-worker
   targets:
     # precise-code-intel-worker
     - 127.0.0.1:6088
 - labels:
-    job: precise-code-intel-indexer
-  targets:
-    # precise-code-intel-indexer
-    - 127.0.0.1:6089
-- labels:
-    job: precise-code-intel-indexer-vm
-  targets:
-    # precise-code-intel-indexer-vm
-    - 127.0.0.1:6090
 - labels:
     job: executor-queue
   targets:

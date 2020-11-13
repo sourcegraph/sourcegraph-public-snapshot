@@ -52,7 +52,7 @@ digraph architecture {
     }
 
     subgraph cluster_services {
-        label="Kubernetes cluster + managed services"
+        label="K8s"
         graph [style="dotted"]
 
         frontend [
@@ -65,25 +65,25 @@ digraph architecture {
             URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/frontend"
         ]
 
-        subgraph cluster_internal_services {
-            label="Internal (non-exposed) services"
-            graph [style="dotted"]
+        executor_queue [
+            label="executor-queue"
+            fillcolor="#22ffff"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/executor-queue"
+        ]
 
-            syntect_server [
-                label="syntect\nserver"
-                fillcolor="#cc0085"
-                URL="https://github.com/sourcegraph/syntect_server"
-            ]
+        subgraph cluster_internal_services {
+            label="Internal services"
+            graph [style="dotted"]
 
             subgraph cluster_search {
                 label="Search"
                 graph [style="dotted"]
                 node [fillcolor="#ccaaff"]
 
-
                 subgraph cluster_zoekt {
                     label="Indexed search"
                     graph [style="dotted"]
+                    node [shape="box3d"]
 
                     zoekt_webserver [
                         label="zoekt webserver"
@@ -92,7 +92,6 @@ digraph architecture {
                     ]
                     zoekt_indexserver [
                         label="zoekt indexserver"
-                        shape="box3d"
                         fillcolor="#aaccff"
                         URL="https://github.com/sourcegraph/zoekt/tree/master/cmd/zoekt-sourcegraph-indexserver"
                     ]
@@ -115,27 +114,12 @@ digraph architecture {
                 label="Code intelligence"
                 graph [style="dotted"]
 
-                subgraph cluster_precise_code_intel {
-                    label="Precise code intelligence"
-                    graph [style="dotted"]
-
-                    bundle_manager [
-                        label="bundle\nmanager"
-                        fillcolor="#11ff77"
-                        URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/precise-code-intel-bundle-manager"
-                    ]
-                    indexer [
-                        label="indexer"
-                        fillcolor="#22ffff"
-                        URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/precise-code-intel-indexer"
-                    ]
-                    worker [
-                        label="worker"
-                        shape="box3d"
-                        fillcolor="#eac1c1"
-                        URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/precise-code-intel-worker"
-                    ]
-                }
+                codeintel_worker [
+                    label="precise-code-intel-worker"
+                    shape="box3d"
+                    fillcolor="#eac1c1"
+                    URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/precise-code-intel-worker"
+                ]
 
                 symbols [
                     label="symbols"
@@ -145,51 +129,47 @@ digraph architecture {
                 ]
             }
 
-            subgraph cluster_core_services {
-                label="Core services"
-                graph [style="dotted"]
+            gitserver [
+                label="gitserver"
+                fillcolor="#cd5c5c"
+                shape="box3d"
+                URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/gitserver"
+            ]
 
-                gitserver [
-                    label="gitserver"
-                    fillcolor="#cd5c5c"
-                    shape="box3d"
-                    URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/gitserver"
-                ]
+            repo_updater [
+                label="repo updater"
+                fillcolor="#05a167"
+                URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/repo-updater"
+            ]
 
-                repo_updater [
-                    label="repo updater"
-                    fillcolor="#05a167"
-                    URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/repo-updater"
-                ]
+            github_proxy [
+                label="github proxy"
+                fillcolor="#aaaaff"
+                URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/github-proxy"
+            ]
 
-                github_proxy [
-                    label="github proxy"
-                    fillcolor="#aaaaff"
-                    URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/github-proxy"
-                ]
-            }
+            syntect_server [
+                label="syntect\nserver"
+                fillcolor="#cc0085"
+                URL="https://github.com/sourcegraph/syntect_server"
+            ]
         }
+    }
 
-        subgraph cluster_third_party {
-            label="Third-party services"
+    subgraph cluster_third_party {
+        label="Managed services"
+        graph [style="dotted"]
+
+        redis [label="redis", shape="octagon"]
+        blob_store [label="blob store", shape="folder"]
+
+        subgraph cluster_databases {
+            label="Postgres"
             graph [style="dotted"]
+            node [shape="cylinder"]
 
-            subgraph cluster_redis {
-                label="Redis"
-                graph [style="dotted"]
-                node [shape="cylinder"]
-
-                redis_cache [label="redis cache"]
-                redis_store [label="redis store"]
-            }
-
-            subgraph cluster_databases {
-                label="Postgres"
-                graph [style="dotted"]
-
-                postgres [label="frontend db"]
-                codeintel_db [label="codeintel db"]
-            }
+            postgres [label="frontend db"]
+            codeintel_db [label="codeintel db"]
         }
     }
 
@@ -197,11 +177,11 @@ digraph architecture {
         label="External services (on raw compute nodes)"
         graph [style="dotted"]
 
-        indexer_vm [
-            label="precise-code-intel-indexer-vm"
+        executor [
+            label="executor"
             shape="box3d"
             fillcolor="#0dc9b6"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/precise-code-intel-indexer-vm"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/enterprise/cmd/executor"
         ]
     }
 
@@ -224,34 +204,28 @@ digraph architecture {
 
     /* To/from external services */
     web_app -> frontend[ltail=cluster_clients, fillcolor="#fff0d0"]
-    gitserver -> {bitbucket_server} [lhead=cluster_codehosts, fillcolor="#fff0d0"]
-    repo_updater -> {bitbucket_server} [lhead=cluster_codehosts, fillcolor="#fff0d0"]
+    gitserver -> {bitbucket_server} [lhead=cluster_codehosts, fillcolor="#cd5c5c"]
+    repo_updater -> {bitbucket_server} [lhead=cluster_codehosts, fillcolor="#05a167"]
+    github_proxy -> github_dot_com [fillcolor="#aaaaff"]
 
     /* To databases */
-    frontend -> {postgres} [lhead=cluster_databases, fillcolor="#7e78dc"]
-    frontend -> {redis_cache} [lhead=cluster_redis, fillcolor="#7e78dc"]
-    bundle_manager -> {postgres} [lhead=cluster_databases, fillcolor="#11ff77"]
-    worker -> {postgres} [lhead=cluster_databases, fillcolor="#eac1c1"]
+    frontend -> {postgres, codeintel_db} [fillcolor="#7e78dc"]
+    frontend -> {redis} [fillcolor="#7e78dc"]
+    codeintel_worker -> {postgres, codeintel_db} [ fillcolor="#eac1c1"]
 
     /* Internal routes */
-    frontend -> {searcher, symbols, query_runner, bundle_manager, indexer, gitserver, repo_updater, zoekt_webserver, syntect_server} [fillcolor="#7e78dc"]
+    frontend -> {searcher, symbols, query_runner, executor_queue, blob_store, gitserver, repo_updater, zoekt_webserver, syntect_server} [fillcolor="#7e78dc"]
     searcher -> gitserver [fillcolor="#e2a8fd"]
     symbols -> gitserver [fillcolor="#c1eaea"]
     zoekt_indexserver -> {frontend, gitserver} [fillcolor="#aaccff"]
-    worker -> {gitserver} [fillcolor="#eac1c1"]
-    indexer -> {postgres, gitserver} [fillcolor="#22ffff"]
-    indexer_vm -> frontend [fillcolor="#0dc9b6"]
+    codeintel_worker -> {gitserver} [fillcolor="#eac1c1"]
+    executor_queue -> {postgres, gitserver} [fillcolor="#22ffff"]
+    executor -> frontend [fillcolor="#0dc9b6"]
 
-    github_proxy -> github_dot_com [fillcolor="#aaaaff"]
 
     /* Unconstrained internal routes */
-    worker -> {bundle_manager} [fillcolor="#eac1c1", constraint=false]
+    codeintel_worker -> {blob_store} [fillcolor="#eac1c1", constraint=false]
     gitserver -> {github_proxy} [fillcolor="#cd5c5c", constraint=false]
     repo_updater -> {github_proxy} [fillcolor="#05a167"]
     repo_updater -> {postgres} [fillcolor="#05a167", constraint=false]
-
-    /* Manual layout adjustments */
-    codeintel_db -> bitbucket_cloud [style="invis"]
-    redis_cache -> redis_store [style="invis"]
-    postgres -> codeintel_db [style="invis"]
 }

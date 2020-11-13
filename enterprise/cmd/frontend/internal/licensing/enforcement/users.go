@@ -6,13 +6,16 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
-// NewPreCreateUserHook returns a PreCreateUserHook closure with
-// the given UsersStore.
-func NewPreCreateUserHook(s licensing.UsersStore) func(context.Context) error {
+// NewBeforeCreateUserHook returns a BeforeCreateUserHook closure with the given UsersStore
+// that determines whether new user is allowed to be created.
+func NewBeforeCreateUserHook(s licensing.UsersStore) func(context.Context) error {
 	return func(ctx context.Context) error {
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {
@@ -20,6 +23,12 @@ func NewPreCreateUserHook(s licensing.UsersStore) func(context.Context) error {
 		}
 		var licensedUserCount int32
 		if info != nil {
+			// We prevent creating new users when the license is expired because we do not want
+			// all new users to be promoted as site admins automatically until the customer
+			// decides to downgrade to Free tier.
+			if licensing.EnforceTiers && info.IsExpired() {
+				return errcode.NewPresentationError("Unable to create user account: Sourcegraph license expired! No new users can be created. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Free features.")
+			}
 			licensedUserCount = int32(info.UserCount)
 		} else {
 			licensedUserCount = licensing.NoLicenseMaximumAllowedUserCount
@@ -48,5 +57,59 @@ func NewPreCreateUserHook(s licensing.UsersStore) func(context.Context) error {
 		}
 
 		return nil
+	}
+}
+
+// NewAfterCreateUserHook returns a AfterCreateUserHook closure that determines whether
+// a new user should be promoted to site admin based on the product license.
+func NewAfterCreateUserHook() func(context.Context, dbutil.DB, *types.User) error {
+	// 🚨 SECURITY: To be extra safe that we never promote any new user to be site admin on Sourcegraph Cloud.
+	if !licensing.EnforceTiers || envvar.SourcegraphDotComMode() {
+		return nil
+	}
+
+	return func(ctx context.Context, tx dbutil.DB, user *types.User) error {
+		info, err := licensing.GetConfiguredProductLicenseInfo()
+		if err != nil {
+			return err
+		}
+
+		// Nil info indicates no license, thus Free tier
+		if info == nil {
+			user.SiteAdmin = true
+			// TODO: Use db.Users.SetIsSiteAdmin when it migrated to have `*basestore.Store`
+			//  and support `With` method.
+			_, err := tx.ExecContext(ctx, "UPDATE users SET site_admin=$1 WHERE id=$2", user.SiteAdmin, user.ID)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+}
+
+// NewBeforeSetUserIsSiteAdmin returns a BeforeSetUserIsSiteAdmin closure that determines whether
+// non-site admin roles are allowed (i.e. revoke site admins) based on the product license.
+func NewBeforeSetUserIsSiteAdmin() func(isSiteAdmin bool) error {
+	if !licensing.EnforceTiers {
+		return nil
+	}
+
+	return func(isSiteAdmin bool) error {
+		if isSiteAdmin {
+			return nil
+		}
+
+		info, err := licensing.GetConfiguredProductLicenseInfo()
+		if err != nil {
+			return err
+		}
+
+		if info != nil {
+			return nil
+		}
+
+		return licensing.NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", "non-site admin roles"))
 	}
 }

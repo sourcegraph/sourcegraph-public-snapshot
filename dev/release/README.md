@@ -1,28 +1,19 @@
-This directory contains scripts and code to automate our releases. Run `yarn run release` to see a
-list of automated steps.
+# Sourcegraph release tool
 
-Run `yarn run build` to build, `yarn run watch` to build on any changes to files.
+This directory contains scripts and code to automate our releases. Refer to
+[the handbook](https://about.sourcegraph.com/handbook/engineering/releases) for details
+on our release process and how this tool is used.
 
-## Cutting a release
-
-First, ensure you are on `main` and have the latest version of this code built:
-
-```sh
-git checkout main
-git pull
-cd dev/release
-yarn install
-yarn run build
-```
-
-To cut a patch release:
+To see all available steps:
 
 ```sh
-yarn run release patch:issue <version>
+yarn build
+yarn run release help # add 'all' to see test commands as well
 ```
 
-Or to cut a major release:
+Run `yarn run build` to build the tool (_required_ alongside `yarn run release` to make
+sure you are using the latest version of the tool), and `yarn run watch` to build on any
+changes to files.
 
-```sh
-yarn run release tracking-issue:create <version>
-```
+Before using this tool, please also verify that the [release configuration](./release-config.jsonc)
+is set up correctly.

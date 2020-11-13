@@ -86,6 +86,7 @@ type ExternalService struct {
 	LastSyncAt      time.Time
 	NextSyncAt      time.Time
 	NamespaceUserID int32
+	Unrestricted    bool
 }
 
 // URN returns a unique resource identifier of this external service,

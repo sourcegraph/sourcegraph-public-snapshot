@@ -169,6 +169,7 @@ type pingRequest struct {
 	LicenseKey           string
 	DeployType           string          `json:"deployType"`
 	ClientVersionString  string          `json:"version"`
+	DependencyVersions   json.RawMessage `json:"dependencyVersions"`
 	AuthProviders        []string        `json:"auth"`
 	ExternalServices     []string        `json:"extsvcs"`
 	BuiltinSignupAllowed bool            `json:"signup"`
@@ -179,6 +180,7 @@ type pingRequest struct {
 	GrowthStatistics     json.RawMessage `json:"growthStatistics"`
 	SavedSearches        json.RawMessage `json:"savedSearches"`
 	HomepagePanels       json.RawMessage `json:"homepagePanels"`
+	SearchOnboarding     json.RawMessage `json:"searchOnboarding"`
 	Repositories         json.RawMessage `json:"repositories"`
 	CodeIntelUsage       json.RawMessage `json:"codeIntelUsage"`
 	SearchUsage          json.RawMessage `json:"searchUsage"`
@@ -187,6 +189,12 @@ type pingRequest struct {
 	HasRepos             bool            `json:"repos"`
 	EverSearched         bool            `json:"searched"`
 	EverFindRefs         bool            `json:"refs"`
+}
+
+type dependencyVersions struct {
+	PostgresVersion   string `json:"postgresVersion"`
+	RedisCacheVersion string `json:"redisCacheVersion"`
+	RedisStoreVersion string `json:"redisStoreVersion"`
 }
 
 // readPingRequest reads the ping request payload from the request. If the
@@ -273,6 +281,8 @@ type pingPayload struct {
 	SavedSearches        json.RawMessage `json:"saved_searches"`
 	HomepagePanels       json.RawMessage `json:"homepage_panels"`
 	Repositories         json.RawMessage `json:"repositories"`
+	SearchOnboarding     json.RawMessage `json:"search_onboarding"`
+	DependencyVersions   json.RawMessage `json:"dependency_versions"`
 	InstallerEmail       string          `json:"installer_email"`
 	AuthProviders        string          `json:"auth_providers"`
 	ExtServices          string          `json:"ext_services"`
@@ -351,7 +361,9 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		SavedSearches:        pr.SavedSearches,
 		HomepagePanels:       pr.HomepagePanels,
 		Repositories:         pr.Repositories,
+		SearchOnboarding:     pr.SearchOnboarding,
 		InstallerEmail:       pr.InitialAdminEmail,
+		DependencyVersions:   pr.DependencyVersions,
 		AuthProviders:        strings.Join(pr.AuthProviders, ","),
 		ExtServices:          strings.Join(pr.ExternalServices, ","),
 		BuiltinSignupAllowed: strconv.FormatBool(pr.BuiltinSignupAllowed),

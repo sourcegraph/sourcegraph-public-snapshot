@@ -25,6 +25,7 @@ import { UserAreaUserFields } from '../../graphql-operations'
 export interface UserSettingsSidebarItemConditionContext {
     user: UserAreaUserFields
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'siteAdmin' | 'tags'>
+    isSourcegraphDotCom: boolean
 }
 
 export type UserSettingsSidebarItems = Record<
@@ -34,6 +35,7 @@ export type UserSettingsSidebarItems = Record<
 
 export interface UserSettingsSidebarProps extends UserAreaRouteContext, OnboardingTourProps, RouteComponentProps<{}> {
     items: UserSettingsSidebarItems
+    isSourcegraphDotCom: boolean
     className?: string
 }
 
@@ -53,6 +55,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
     const context = {
         user: props.user,
         authenticatedUser: props.authenticatedUser,
+        isSourcegraphDotCom: props.isSourcegraphDotCom,
     }
 
     return (

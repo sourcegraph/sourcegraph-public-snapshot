@@ -9,11 +9,13 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
+<!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
+
 ## 3.20 -> 3.21
 
 Follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
 
-This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database  as described in the [external database documentation](../external_database.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
+This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database as described in the [external database documentation](../external_services/postgres.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
 
 ### If you wish to keep existing LSIF data
 

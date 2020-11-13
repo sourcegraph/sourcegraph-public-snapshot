@@ -22,6 +22,7 @@ import {
 import { isErrorLike } from '../../../shared/src/util/errors'
 import { Settings } from '../schema/settings.schema'
 import { InsightsNavItem } from '../insights/InsightsNavLink'
+import { CodeMonitoringNavItem } from '../enterprise/code-monitoring/CodeMonitoringNavItem'
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { ExtensionsNavItem } from '../extensions/ExtensionsNavItem'
@@ -74,6 +75,13 @@ export class NavLinks extends React.PureComponent<Props> {
                     !this.props.minimalNavLinks && (
                         <li className="nav-item">
                             <InsightsNavItem />
+                        </li>
+                    )}
+                {!isErrorLike(this.props.settingsCascade.final) &&
+                    this.props.settingsCascade.final?.experimentalFeatures?.codeMonitoring &&
+                    !this.props.minimalNavLinks && (
+                        <li className="nav-item">
+                            <CodeMonitoringNavItem />
                         </li>
                     )}
                 {!this.props.minimalNavLinks && (

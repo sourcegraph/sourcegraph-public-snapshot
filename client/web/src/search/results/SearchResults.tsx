@@ -11,6 +11,7 @@ import {
     CaseSensitivityProps,
     parseSearchURL,
     resolveVersionContext,
+    SearchStreamingProps,
 } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileParameters } from '../../../../shared/src/components/CodeExcerpt'
@@ -28,7 +29,6 @@ import { isSearchResults, submitSearch, toggleSearchFilter, getSearchTypeFromQue
 import { queryTelemetryData } from '../queryTelemetry'
 import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchResultsFilterBars'
 import { SearchResultsList } from './SearchResultsList'
-import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
@@ -49,7 +49,8 @@ export interface SearchResultsProps
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
-        VersionContextProps {
+        VersionContextProps,
+        SearchStreamingProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -324,11 +325,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         </div>
                     </div>
                 )}
-                <SearchResultTypeTabs
-                    {...this.props}
-                    query={this.props.navbarSearchQueryState.query}
-                    filtersInQuery={this.props.filtersInQuery}
-                />
                 <SearchResultsList
                     {...this.props}
                     resultsOrError={this.state.resultsOrError}

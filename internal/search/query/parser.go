@@ -66,13 +66,10 @@ type Operator struct {
 }
 
 func (node Pattern) String() string {
-	var v string
 	if node.Negated {
-		v = fmt.Sprintf("NOT %s", node.Value)
-	} else {
-		v = node.Value
+		return fmt.Sprintf("(not %s)", strconv.Quote(node.Value))
 	}
-	return strconv.Quote(v)
+	return strconv.Quote(node.Value)
 }
 
 func (node Parameter) String() string {
@@ -237,7 +234,8 @@ func (p *parser) matchKeyword(keyword keyword) bool {
 
 // matchUnaryKeyword is like match but expects the keyword to be followed by whitespace.
 func (p *parser) matchUnaryKeyword(keyword keyword) bool {
-	if p.pos != 0 && !isSpace(p.buf[p.pos-1:p.pos]) {
+	if p.pos != 0 && !(isSpace(p.buf[p.pos-1:p.pos]) || p.buf[p.pos-1] == '(') {
+		// "not" must be preceded by a space or ( anywhere except the beginning of the string
 		return false
 	}
 	v, err := p.peek(len(string(keyword)))
@@ -291,17 +289,25 @@ func ScanAnyPattern(buf []byte) (scanned string, count int) {
 	return scanned, count
 }
 
-// isField returns whether the prefix of the buf matches a recognized field.
-func isField(buf []byte) bool {
-	field, _, _ := ScanField(buf)
-	return field != ""
-}
-
-// ScanBalancedPattern attempts to scan parentheses as literal patterns.
-// It returns the scanned string, how much to advance, and whether it succeeded.
-// Basically it scans any literal string, including whitespace, but ensures that
-// a resulting string does not contain 'and' or 'or keywords, nor parameters, and
-// is balanced.
+// ScanBalancedPattern attempts to scan parentheses as literal patterns. This
+// ensures that we interpret patterns containing parentheses _as patterns_ and not
+// groups. For example, it accepts these patterns:
+//
+// ((a|b)|c)              - a regular expression with balanced parentheses for grouping
+// myFunction(arg1, arg2) - a literal string with parens that should be literally interpreted
+// foo(...)               - a structural search pattern
+//
+// If it weren't for this scanner, the above parentheses would have to be
+// interpreted as part of the query language group syntax, like these:
+//
+// (foo or (bar and baz))
+//
+// So, this scanner detects parentheses as patterns without needing the user to
+// explicitly escape them. As such, there are cases where this scanner should
+// not succeed:
+//
+// (foo or (bar and baz)) - a valid query with and/or expression groups in the query langugae
+// (repo:foo bar baz)     - a valid query containing a recognized repo: field. Here parentheses are interpreted as a group, not a pattern.
 func ScanBalancedPattern(buf []byte) (scanned string, count int, ok bool) {
 	var advance, balanced int
 	var r rune
@@ -314,7 +320,31 @@ func ScanBalancedPattern(buf []byte) (scanned string, count int, ok bool) {
 		return r
 	}
 
-	var token []byte
+	// looks ahead to see if there are any recognized fields or operators.
+	keepScanning := func() bool {
+		if field, _, _ := ScanField(buf); field != "" {
+			// This "pattern" contains a recognized field, reject it.
+			return false
+		}
+		lookahead := func(v string) bool {
+			if len(buf) < len(v) {
+				return false
+			}
+			lookaheadStr := string(buf[:len(v)])
+			return strings.EqualFold(lookaheadStr, v)
+		}
+		if lookahead("and ") ||
+			lookahead("or ") ||
+			lookahead("not ") {
+			// This "pattern" contains a recognized keyword, reject it.
+			return false
+		}
+		return true
+	}
+
+	if !keepScanning() {
+		return "", 0, false
+	}
 
 loop:
 	for len(buf) > 0 {
@@ -327,6 +357,9 @@ loop:
 			count = start
 			break loop
 		case r == '(':
+			if !keepScanning() {
+				return "", 0, false
+			}
 			balanced++
 			result = append(result, r)
 		case r == ')':
@@ -341,11 +374,9 @@ loop:
 			}
 			result = append(result, r)
 		case unicode.IsSpace(r):
-			if isField(token) {
-				// This is not a pattern, one of the tokens match a field.
+			if !keepScanning() {
 				return "", 0, false
 			}
-			token = []byte{}
 
 			// We see a space and the pattern is unbalanced, so assume this
 			// this space is still part of the pattern.
@@ -363,23 +394,11 @@ loop:
 			}
 			result = append(result, r)
 		default:
-			token = append(token, []byte(string(r))...)
 			result = append(result, r)
 		}
 	}
 
-	if isField(token) {
-		// This is not a pattern, one of the tokens match a field.
-		return "", 0, false
-	}
-
-	scanned = string(result)
-	if ContainsAndOrKeyword(scanned) {
-		// Reject if we scanned 'and' or 'or'. Preceding parentheses
-		// likely refer to a group, not a pattern.
-		return "", 0, false
-	}
-	return scanned, count, balanced == 0
+	return string(result), count, balanced == 0
 }
 
 // ScanDelimited takes a delimited (e.g., quoted) value for some arbitrary
@@ -1042,7 +1061,7 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	query = Map(query, LowercaseFieldNames, SubstituteAliases)
+	query = Map(query, LowercaseFieldNames, SubstituteAliases(options.SearchType))
 
 	switch options.SearchType {
 	case SearchTypeLiteral:

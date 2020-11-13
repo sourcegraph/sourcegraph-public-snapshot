@@ -22,8 +22,8 @@ import {
 } from '../../../graphql-operations'
 import { requestGraphQL } from '../../../backend/graphql'
 
-const changesetStatsFragment = gql`
-    fragment ChangesetStatsFields on ChangesetConnectionStats {
+const changesetsStatsFragment = gql`
+    fragment ChangesetsStatsFields on ChangesetsStats {
         total
         closed
         deleted
@@ -62,14 +62,8 @@ const campaignFragment = gql`
         closedAt
         viewerCanAdminister
 
-        changesets {
-            stats {
-                ...ChangesetStatsFields
-            }
-        }
-
-        diffStat {
-            ...DiffStatFields
+        changesetsStats {
+            ...ChangesetsStatsFields
         }
 
         currentSpec {
@@ -77,9 +71,7 @@ const campaignFragment = gql`
         }
     }
 
-    ${diffStatFields}
-
-    ${changesetStatsFragment}
+    ${changesetsStatsFragment}
 `
 
 const changesetLabelFragment = gql`

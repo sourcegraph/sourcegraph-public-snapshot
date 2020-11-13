@@ -90,9 +90,7 @@ changesetTemplate:
 
 1. In your terminal, run this command:
 
-    <pre>src campaign preview -f update-dart-base-images-2-10.campaign.yaml -namespace <em>USERNAME_OR_ORG</em></pre>
-
-    > The `namespace` is either your Sourcegraph username or the name of a Sourcegraph organisation under which you want to create the campaign. If you're not sure what to choose, use your username.
+    <pre>src campaign preview -f update-dart-base-images-2-10.campaign.yaml</pre>
 1. Wait for it to run and compute the changes for each repository.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_wait_run.png" class="screenshot">
 1. Open the preview URL that the command printed out.
@@ -100,7 +98,7 @@ changesetTemplate:
 1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_preview.png" class="screenshot">
 1. Click the **Apply spec** button to create the campaign.
-1. Feel free to then publish the changesets (i.e. create pull requests and merge requests) by [modifying the `published` attribute in the campaign spec](../campaign_spec_yaml_reference.md#changesettemplate-published) and re-running the `src campaign preview` command.
+1. Feel free to then publish the changesets (i.e. create pull requests and merge requests) by [modifying the `published` attribute in the campaign spec](../references/campaign_spec_yaml_reference.md#changesettemplate-published) and re-running the `src campaign preview` command.
 
 ### Updating other base images
 

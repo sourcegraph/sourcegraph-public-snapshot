@@ -60,5 +60,5 @@ Code intelligence provides advanced code navigation features that let developers
 
 ## [References](references/index.md)
 
+- [Sourcegraph recommended indexers](references/indexers.md)
 - [LSIF.dev](https://lsif.dev/)
-- TODO: Supported languages/indexer status

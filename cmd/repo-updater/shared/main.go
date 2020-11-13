@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
 	"net"
@@ -12,15 +13,18 @@ import (
 	"time"
 
 	"github.com/golang/gddo/httputil"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared/assets"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -236,6 +240,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		)(server.Handler())
 	}
 
+	globals.WatchExternalURL(nil)
 	go debugserver.Start(debugserver.Endpoint{
 		Name: "Repo Updater State",
 		Path: "/repo-updater-state",
@@ -292,7 +297,40 @@ func Main(enterpriseInit EnterpriseInit) {
 				}
 			}
 		}),
-	})
+	}, debugserver.Endpoint{
+		Name: "List Authz Providers",
+		Path: "/list-authz-providers",
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			type providerInfo struct {
+				ServiceType        string `json:"service_type"`
+				ServiceID          string `json:"service_id"`
+				ExternalServiceURL string `json:"external_service_url"`
+			}
+
+			_, providers := authz.GetProviders()
+			infos := make([]providerInfo, len(providers))
+			for i, p := range providers {
+				_, id := extsvc.DecodeURN(p.URN())
+
+				// Note that the ID marshalling below replicates code found in `graphqlbackend`.
+				// We cannot import that package's code into this one (see /dev/check/go-dbconn-import.sh).
+				infos[i] = providerInfo{
+					ServiceType:        p.ServiceType(),
+					ServiceID:          p.ServiceID(),
+					ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", globals.ExternalURL(), relay.MarshalID("ExternalService", id)),
+				}
+			}
+
+			resp, err := json.MarshalIndent(infos, "", "  ")
+			if err != nil {
+				http.Error(w, "failed to marshal infos: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(resp)
+		}),
+	},
+	)
 
 	srv := &http.Server{Addr: addr, Handler: handler}
 	log.Fatal(srv.ListenAndServe())

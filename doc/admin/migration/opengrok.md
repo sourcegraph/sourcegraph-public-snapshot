@@ -23,8 +23,6 @@ Sourcegraph is a self-hosted code search and intelligence tool that helps develo
 
 Both Sourcegraph and OpenGrok are self-hosted, and your code never touches Sourcegraph's (or Oracle's) servers.
 
-One key feature of OpenGrok that Sourcegraph lacks is support for Subversion, Mercurial, CVS, and Perforce repositories. Sourcegraph only supports Git repositories.
-
 Oracle releases OpenGrok under the open-source CDDL license and does not (currently) have any monetization plans for it. Sourcegraph is a commercial product, with a free tier and [paid premium features](https://about.sourcegraph.com/pricing) available.
 
 Every organization's needs are different. [Install and use Sourcegraph for free](../install/index.md) to see if it's right for your organization.

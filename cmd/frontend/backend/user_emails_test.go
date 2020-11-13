@@ -134,7 +134,7 @@ func TestSendUserEmailVerificationEmail(t *testing.T) {
 	}
 	defer func() { txemail.MockSend = nil }()
 
-	if err := SendUserEmailVerificationEmail(context.Background(), "a@example.com", "c"); err != nil {
+	if err := SendUserEmailVerificationEmail(context.Background(), "Alan Johnson", "a@example.com", "c"); err != nil {
 		t.Fatal(err)
 	}
 	if sent == nil {
@@ -145,11 +145,13 @@ func TestSendUserEmailVerificationEmail(t *testing.T) {
 		To:       []string{"a@example.com"},
 		Template: verifyEmailTemplates,
 		Data: struct {
-			Email string
-			URL   string
+			Username string
+			URL      string
+			Host     string
 		}{
-			Email: "a@example.com",
-			URL:   "http://example.com/-/verify-email?code=c&email=a%40example.com",
+			Username: "Alan Johnson",
+			URL:      "http://example.com/-/verify-email?code=c&email=a%40example.com",
+			Host:     "example.com",
 		},
 	}); !reflect.DeepEqual(*sent, want) {
 		t.Errorf("got %+v, want %+v", *sent, want)
@@ -188,10 +190,12 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 			Email    string
 			Change   string
 			Username string
+			Host     string
 		}{
 			Email:    "a@example.com",
 			Change:   "updated password",
 			Username: "Foo",
+			Host:     "example.com",
 		},
 	}); !reflect.DeepEqual(*sent, want) {
 		t.Errorf("got %+v, want %+v", *sent, want)

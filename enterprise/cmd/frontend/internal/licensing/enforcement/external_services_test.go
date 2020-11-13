@@ -2,42 +2,65 @@ package enforcement
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 )
 
 func TestNewPreCreateExternalServiceHook(t *testing.T) {
-	ctx := context.Background()
 	if !licensing.EnforceTiers {
 		licensing.EnforceTiers = true
 		defer func() { licensing.EnforceTiers = false }()
 	}
 
-	t.Run("when external services can be added", func(t *testing.T) {
-		mockGetExternalServicesLimit = func(_ context.Context) int {
-			return 20
-		}
-		defer func() { mockGetExternalServicesLimit = nil }()
+	tests := []struct {
+		desc                 string
+		license              *license.Info
+		externalServiceCount int
+		wantErr              bool
+	}{
+		{
+			desc:                 "An older starter plan with unlimited external services",
+			license:              &license.Info{Tags: []string{"plan:old-starter-0"}},
+			externalServiceCount: 1000,
+			wantErr:              false,
+		},
+		{
+			desc:                 "An older enterprise plan with unlimited external services",
+			license:              &license.Info{Tags: []string{"plan:old-enterprise-0"}},
+			externalServiceCount: 1000,
+			wantErr:              false,
+		},
+		{
+			desc:                 "An enterprise plan with unlimited external services",
+			license:              &license.Info{Tags: []string{"plan:enterprise-0"}},
+			externalServiceCount: 1000,
+			wantErr:              false,
+		},
+		{
+			desc:                 "A team plan with limited external services",
+			license:              &license.Info{Tags: []string{"plan:team-0"}},
+			externalServiceCount: 1,
+			wantErr:              true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("license %s with %d external services", test.license, test.externalServiceCount), func(t *testing.T) {
+			licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
+				return test.license, "test-signature", nil
+			}
+			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
-		hook := NewPreCreateExternalServiceHook(&mockExternalServicesStore{extSvcCount: 10})
-		if got := hook(ctx); got != nil {
-			t.Fatalf("got %v, want nil", got)
-		}
-	})
-
-	t.Run("when the external service limit has been reached", func(t *testing.T) {
-		mockGetExternalServicesLimit = func(_ context.Context) int {
-			return 5
-		}
-		defer func() { mockGetExternalServicesLimit = nil }()
-
-		hook := NewPreCreateExternalServiceHook(&mockExternalServicesStore{extSvcCount: 10})
-		if hook(ctx) == nil {
-			t.Fatalf("got nil, want error")
-		}
-	})
+			store := mockExternalServicesStore{extSvcCount: test.externalServiceCount}
+			err := NewPreCreateExternalServiceHook(&store)(context.Background())
+			if gotErr := err != nil; gotErr != test.wantErr {
+				t.Errorf("got error %v, want %v", gotErr, test.wantErr)
+			}
+		})
+	}
 }
 
 // A mockExternalServicesStore implements the ExternalServicesStore interface for test purposes.

@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
@@ -129,10 +130,10 @@ func newMockGitLab(op mockGitLabOp) mockGitLab {
 }
 
 func (m *mockGitLab) GetProject(c *gitlab.Client, ctx context.Context, op gitlab.GetProjectOp) (*gitlab.Project, error) {
-	if _, ok := m.madeGetProject[c.OAuthToken]; !ok {
-		m.madeGetProject[c.OAuthToken] = map[gitlab.GetProjectOp]int{}
+	if _, ok := m.madeGetProject[c.Auth.Hash()]; !ok {
+		m.madeGetProject[c.Auth.Hash()] = map[gitlab.GetProjectOp]int{}
 	}
-	m.madeGetProject[c.OAuthToken][op]++
+	m.madeGetProject[c.Auth.Hash()][op]++
 
 	proj, ok := m.projs[op.ID]
 	if !ok {
@@ -156,10 +157,10 @@ func (m *mockGitLab) GetProject(c *gitlab.Client, ctx context.Context, op gitlab
 }
 
 func (m *mockGitLab) ListProjects(c *gitlab.Client, ctx context.Context, urlStr string) (projs []*gitlab.Project, nextPageURL *string, err error) {
-	if _, ok := m.madeListProjects[c.OAuthToken]; !ok {
-		m.madeListProjects[c.OAuthToken] = map[string]int{}
+	if _, ok := m.madeListProjects[c.Auth.Hash()]; !ok {
+		m.madeListProjects[c.Auth.Hash()] = map[string]int{}
 	}
-	m.madeListProjects[c.OAuthToken][urlStr]++
+	m.madeListProjects[c.Auth.Hash()][urlStr]++
 
 	u, err := url.Parse(urlStr)
 	if err != nil {
@@ -209,10 +210,10 @@ func (m *mockGitLab) ListProjects(c *gitlab.Client, ctx context.Context, urlStr 
 	return projs[(page-1)*perPage:], nil, nil
 }
 func (m *mockGitLab) ListTree(c *gitlab.Client, ctx context.Context, op gitlab.ListTreeOp) ([]*gitlab.Tree, error) {
-	if _, ok := m.madeListTree[c.OAuthToken]; !ok {
-		m.madeListTree[c.OAuthToken] = map[gitlab.ListTreeOp]int{}
+	if _, ok := m.madeListTree[c.Auth.Hash()]; !ok {
+		m.madeListTree[c.Auth.Hash()] = map[gitlab.ListTreeOp]int{}
 	}
-	m.madeListTree[c.OAuthToken][op]++
+	m.madeListTree[c.Auth.Hash()][op]++
 
 	ret := []*gitlab.Tree{
 		{
@@ -250,15 +251,17 @@ func (m *mockGitLab) ListTree(c *gitlab.Client, ctx context.Context, op gitlab.L
 // personal access token is non-empty (note: this mock impl requires that the PAT be equivalent to
 // the mock GitLab sudo token).
 func (m *mockGitLab) isClientAuthenticated(c *gitlab.Client) bool {
-	return c.OAuthToken != "" || (m.sudoTok != "" && c.PersonalAccessToken == m.sudoTok)
+	return c.Auth.Hash() != "" || (m.sudoTok != "" && c.Auth.(*gitlab.SudoableToken).Token == m.sudoTok)
 }
 
 func (m *mockGitLab) getAcctID(c *gitlab.Client) int32 {
-	if c.OAuthToken != "" {
-		return m.oauthToks[c.OAuthToken]
+	if a, ok := c.Auth.(*auth.OAuthBearerToken); ok {
+		return m.oauthToks[a.Hash()]
 	}
-	if m.sudoTok != "" && m.sudoTok == c.PersonalAccessToken && c.Sudo != "" {
-		sudo, err := strconv.Atoi(c.Sudo)
+
+	pat := c.Auth.(*gitlab.SudoableToken)
+	if m.sudoTok != "" && m.sudoTok == pat.Token && pat.Sudo != "" {
+		sudo, err := strconv.Atoi(pat.Sudo)
 		if err != nil {
 			m.t.Fatalf("mockGitLab requires all Sudo params to be numerical: %s", err)
 		}
@@ -268,10 +271,15 @@ func (m *mockGitLab) getAcctID(c *gitlab.Client) int32 {
 }
 
 func (m *mockGitLab) ListUsers(c *gitlab.Client, ctx context.Context, urlStr string) (users []*gitlab.User, nextPageURL *string, err error) {
-	if _, ok := m.madeUsers[c.OAuthToken]; !ok {
-		m.madeUsers[c.OAuthToken] = map[string]int{}
+	key := ""
+	if c.Auth != nil {
+		key = c.Auth.Hash()
 	}
-	m.madeUsers[c.OAuthToken][urlStr]++
+
+	if _, ok := m.madeUsers[key]; !ok {
+		m.madeUsers[key] = map[string]int{}
+	}
+	m.madeUsers[key][urlStr]++
 
 	u, err := url.Parse(urlStr)
 	if err != nil {

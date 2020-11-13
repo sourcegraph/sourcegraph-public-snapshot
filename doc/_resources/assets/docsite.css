@@ -25,6 +25,8 @@ The document content can set class names and IDs on elements (for example, Markd
 
     --note-color: #bce8f1;
     --warning-color: #faebcc;
+    --experimental-color: #b200f8;
+
     --table-row-bg-1: var(--body-bg);
 }
 
@@ -107,6 +109,12 @@ nav.links a {
     border: 0;
 }
 
+/* Use to provide different videos for dark and light theme */
+.theme-light .theme-dark-only,
+.theme-dark .theme-light-only {
+    display: none !important;
+}
+
 /* FONTS */
 body {
     font-family: var(--base-font-family);
@@ -140,7 +148,6 @@ body > div#page {
     flex-direction: column;
     min-height: 100vh;
     justify-content: space-between;
-    overflow: hidden;
 }
 /* Responsive */
 @media (max-width: 800px /* == var(--sidebar-breakpoint-width) */) {
@@ -335,6 +342,7 @@ body > #sidebar .external a, body > #page > footer .external a {
         margin-top: calc(4.25*var(--spacing));
         margin-left: calc(2*var(--spacing));
         width: 30%;
+        /* Note: all ancestors up to <html> (the scrolling element) must be overflow: visible (default) for this to work. */
 		position: sticky;
 		top: calc(2*var(--spacing));
 		max-height: 100vh;
@@ -402,6 +410,24 @@ body > #page > main > #content {
 	display: inline-block;
 	font-size: 90%;
 	color: inherit;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.3em;
+    border-radius: 4px;
+    font-size: 85%;
+    font-weight: bold;
+    color: inherit;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+}
+
+.badge-experimental {
+    color: #ffffff;
+    background-color: var(--experimental-color);
 }
 
 /* MARKDOWN */
@@ -522,6 +548,9 @@ body > #page > main > #content {
 }
 .markdown-body aside.warning {
     border-color: var(--warning-color);
+}
+.markdown-body aside.experimental {
+    border-color: var(--experimental-color);
 }
 .markdown-body table {
     display: block;

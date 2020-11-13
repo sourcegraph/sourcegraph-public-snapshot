@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -797,7 +798,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 					t.Fatal(err)
 				}
 
-				clock := repos.NewFakeClock(time.Now(), 0)
+				clock := dbtesting.NewFakeClock(time.Now(), 0)
 				syncer := &repos.Syncer{
 					Now: clock.Now,
 				}
@@ -857,7 +858,7 @@ func apiExternalServices(es ...*repos.ExternalService) []api.ExternalService {
 		}
 
 		if e.IsDeleted() {
-			svc.DeletedAt = &e.DeletedAt
+			svc.DeletedAt = e.DeletedAt
 		}
 
 		svcs = append(svcs, svc)
@@ -870,7 +871,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 	return func(t *testing.T, store repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx := context.Background()
-			clock := repos.NewFakeClock(time.Now(), 0)
+			clock := dbtesting.NewFakeClock(time.Now(), 0)
 			now := clock.Now()
 
 			githubSource := repos.ExternalService{

@@ -13,9 +13,26 @@ function dateMarkdown(date: Date, name: string): string {
     return `[${formatDate(date)}](${timezoneLink(date, name)})`
 }
 
+// Ensure these templates are up to date with the state of the tooling and release processes.
+const templates = {
+    releaseIssue: {
+        owner: 'sourcegraph',
+        repo: 'about',
+        path: 'handbook/engineering/releases/release_issue_template.md',
+    },
+    patchReleaseIssue: {
+        owner: 'sourcegraph',
+        repo: 'about',
+        path: 'handbook/engineering/releases/patch_release_issue_template.md',
+    },
+}
+
+/**
+ * Ensures a release ($MAJOR.$MINOR) tracking issue has been created with the given
+ * parameters using `templates.releaseIssue`.
+ */
 export async function ensureTrackingIssue({
-    majorVersion,
-    minorVersion,
+    version,
     assignees,
     releaseDateTime,
     oneWorkingDayBeforeRelease,
@@ -23,8 +40,7 @@ export async function ensureTrackingIssue({
     fiveWorkingDaysBeforeRelease,
     dryRun,
 }: {
-    majorVersion: string
-    minorVersion: string
+    version: semver.SemVer
     assignees: string[]
     releaseDateTime: Date
     oneWorkingDayBeforeRelease: Date
@@ -33,15 +49,13 @@ export async function ensureTrackingIssue({
     dryRun: boolean
 }): Promise<{ url: string; created: boolean }> {
     const octokit = await getAuthenticatedGitHubClient()
-    const releaseIssueTemplate = await getContent(octokit, {
-        owner: 'sourcegraph',
-        repo: 'about',
-        path: 'handbook/engineering/releases/release_issue_template.md',
-    })
-    const majorMinor = `${majorVersion}.${minorVersion}`
+    console.log(`Preparing issue from ${JSON.stringify(templates.releaseIssue)}`)
+    const releaseIssueTemplate = await getContent(octokit, templates.releaseIssue)
+    const majorMinor = `${version.major}.${version.minor}`
     const releaseIssueBody = releaseIssueTemplate
-        .replace(/\$MAJOR/g, majorVersion)
-        .replace(/\$MINOR/g, minorVersion)
+        .replace(/\$MAJOR/g, version.major.toString())
+        .replace(/\$MINOR/g, version.minor.toString())
+        .replace(/\$PATCH/g, version.patch.toString())
         .replace(/\$RELEASE_DATE/g, dateMarkdown(releaseDateTime, `${majorMinor} release date`))
         .replace(
             /\$FIVE_WORKING_DAYS_BEFORE_RELEASE/g,
@@ -56,7 +70,7 @@ export async function ensureTrackingIssue({
             dateMarkdown(oneWorkingDayBeforeRelease, `One working day before ${majorMinor} release`)
         )
 
-    const milestoneTitle = `${majorVersion}.${minorVersion}`
+    const milestoneTitle = `${version.major}.${version.minor}`
     const milestones = await octokit.issues.listMilestonesForRepo({
         owner: 'sourcegraph',
         repo: 'sourcegraph',
@@ -75,7 +89,7 @@ export async function ensureTrackingIssue({
     return ensureIssue(
         octokit,
         {
-            title: trackingIssueTitle(majorVersion, minorVersion),
+            title: trackingIssueTitle(version),
             owner: 'sourcegraph',
             repo: 'sourcegraph',
             assignees,
@@ -87,6 +101,10 @@ export async function ensureTrackingIssue({
     )
 }
 
+/**
+ * Ensures a patch release ($MAJOR.$MINOR.PATCH) tracking issue has been created with the
+ * given parameters using `templates.releaseIssue`.
+ */
 export async function ensurePatchReleaseIssue({
     version,
     assignees,
@@ -97,11 +115,8 @@ export async function ensurePatchReleaseIssue({
     dryRun: boolean
 }): Promise<{ url: string; created: boolean }> {
     const octokit = await getAuthenticatedGitHubClient()
-    const issueTemplate = await getContent(octokit, {
-        owner: 'sourcegraph',
-        repo: 'about',
-        path: 'handbook/engineering/releases/patch_release_issue_template.md',
-    })
+    console.log(`Preparing issue from ${JSON.stringify(templates.patchReleaseIssue)}`)
+    const issueTemplate = await getContent(octokit, templates.patchReleaseIssue)
     const issueBody = issueTemplate
         .replace(/\$MAJOR/g, version.major.toString())
         .replace(/\$MINOR/g, version.minor.toString())
@@ -109,7 +124,7 @@ export async function ensurePatchReleaseIssue({
     return ensureIssue(
         octokit,
         {
-            title: `${version.version} patch release`,
+            title: trackingIssueTitle(version),
             owner: 'sourcegraph',
             repo: 'sourcegraph',
             assignees,
@@ -184,8 +199,11 @@ export async function listIssues(
     return (await octokit.search.issuesAndPullRequests({ per_page: 100, q: query })).data.items
 }
 
-export function trackingIssueTitle(major: string, minor: string): string {
-    return `${major}.${minor} release tracking issue`
+export function trackingIssueTitle(version: semver.SemVer): string {
+    if (!version.patch) {
+        return `${version.major}.${version.minor} release tracking issue`
+    }
+    return `${version.version} patch release tracking issue`
 }
 
 export async function getAuthenticatedGitHubClient(): Promise<Octokit> {
@@ -253,13 +271,21 @@ export async function createChangesets(options: ChangesetsOptions): Promise<Crea
     // Generate changes
     const results: CreatedChangeset[] = []
     for (const change of options.changes) {
+        const repository = `${change.owner}/${change.repo}`
+        console.log(`Preparing change for ${repository} on '${change.base}' to '${change.head}'
+
+Title: ${change.title}
+Body: ${change.body || 'none'}
+Dryrun: ${options.dryRun || false}`)
         await createBranchWithChanges(octokit, { ...change, dryRun: options.dryRun })
+
         let pullRequest: { url: string; number: number } = { url: '', number: -1 }
         if (!options.dryRun) {
             pullRequest = await createPR(octokit, change)
         }
+
         results.push({
-            repository: `${change.owner}/${change.repo}`,
+            repository,
             branch: change.base,
             pullRequestURL: pullRequest.url,
             pullRequestNumber: pullRequest.number,

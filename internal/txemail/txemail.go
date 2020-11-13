@@ -117,7 +117,8 @@ func Send(ctx context.Context, message Message) error {
 		return fmt.Errorf("invalid SMTP authentication type %q", conf.EmailSmtp.Authentication)
 	}
 
-	if conf.EmailSmtp.DisableTLS {
+	// TODO: 2020/11/12 @arussellsaw, after next release delete DisableTLS option
+	if conf.EmailSmtp.DisableTLS || conf.EmailSmtp.NoVerifyTLS {
 		return m.SendWithStartTLS(
 			net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)),
 			smtpAuth,

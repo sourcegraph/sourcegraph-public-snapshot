@@ -89,3 +89,8 @@ Here is an example `package.json` created by the [Sourcegraph extension creator]
   }
 }
 ```
+
+## Evaluating expressions in manifest fields
+
+You can interpolate [Context key expressions](context_key_expressions.md) in
+some string fields in the manifest, allowing you to set dynamic values.

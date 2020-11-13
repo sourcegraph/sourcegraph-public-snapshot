@@ -48,3 +48,9 @@ async function readLineNoCache(prompt: string): Promise<string> {
     readlineInterface.close()
     return userInput
 }
+
+export function getWeekNumber(date: Date): number {
+    const firstJan = new Date(date.getFullYear(), 0, 1)
+    const day = 86400000
+    return Math.ceil(((date.valueOf() - firstJan.valueOf()) / day + firstJan.getDay() + 1) / 7)
+}

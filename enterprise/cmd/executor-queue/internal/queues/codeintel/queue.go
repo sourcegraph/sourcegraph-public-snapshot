@@ -7,7 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiserver"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -39,7 +39,7 @@ func QueueOptions(db dbutil.DB, config *Config) apiserver.QueueOptions {
 // newWorkerStore creates a dbworker store that wraps the lsif_indexes table.
 func newWorkerStore(db dbutil.DB) dbworkerstore.Store {
 	handle := basestore.NewHandleWithDB(db, sql.TxOptions{})
-	options := dbworkerstore.StoreOptions{
+	options := dbworkerstore.Options{
 		TableName:         "lsif_indexes",
 		ViewName:          "lsif_indexes_with_repository_name u",
 		ColumnExpressions: store.IndexColumnsWithNullRank,
@@ -49,5 +49,5 @@ func newWorkerStore(db dbutil.DB) dbworkerstore.Store {
 		MaxNumResets:      MaximumNumResets,
 	}
 
-	return dbworkerstore.NewStore(handle, options)
+	return dbworkerstore.New(handle, options)
 }

@@ -6,6 +6,7 @@ import (
 	neturl "net/url"
 	"os"
 	"path"
+	"strings"
 	"sync"
 	"time"
 
@@ -235,20 +236,41 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 				return "", errors.Wrap(err, "parse config")
 			}
 
+			var host string
 			var rs reposource.RepoSource
 			switch c := cfg.(type) {
 			case *schema.GitHubConnection:
 				rs = reposource.GitHub{GitHubConnection: c}
+				host = c.Url
 			case *schema.GitLabConnection:
 				rs = reposource.GitLab{GitLabConnection: c}
+				host = c.Url
 			case *schema.BitbucketServerConnection:
 				rs = reposource.BitbucketServer{BitbucketServerConnection: c}
+				host = c.Url
 			case *schema.AWSCodeCommitConnection:
 				rs = reposource.AWS{AWSCodeCommitConnection: c}
+				// AWS type does not have URL
 			case *schema.GitoliteConnection:
 				rs = reposource.Gitolite{GitoliteConnection: c}
+				// Gitolite type does not have URL
 			default:
 				return "", errors.Errorf("unexpected connection type: %T", cfg)
+			}
+
+			// Submodules are allowed to have relative paths for their .gitmodules URL.
+			// In that case, we default to stripping any relative prefix and crafting
+			// a new URL based on the reposource's host, if available.
+			if strings.HasPrefix(cloneURL, "../") && host != "" {
+				u, err := neturl.Parse(cloneURL)
+				if err != nil {
+					return "", err
+				}
+				base, err := neturl.Parse(host)
+				if err != nil {
+					return "", err
+				}
+				cloneURL = base.ResolveReference(u).String()
 			}
 
 			repoName, err := rs.CloneURLToRepoName(cloneURL)

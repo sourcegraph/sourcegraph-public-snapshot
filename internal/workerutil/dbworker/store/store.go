@@ -13,7 +13,7 @@ import (
 )
 
 // Store is the persistence layer for the dbworker package that handles worker-side operations backed by a Postgres
-// database. See StoreOptions for details on the required shape of the database tables (e.g. table column names/types).
+// database. See Options for details on the required shape of the database tables (e.g. table column names/types).
 type Store interface {
 	basestore.ShareableStore
 
@@ -65,14 +65,14 @@ type Store interface {
 
 type store struct {
 	*basestore.Store
-	options        StoreOptions
+	options        Options
 	columnReplacer *strings.Replacer
 }
 
 var _ Store = &store{}
 
-// StoreOptions configure the behavior of Store over a particular set of tables, columns, and expressions.
-type StoreOptions struct {
+// Options configure the behavior of Store over a particular set of tables, columns, and expressions.
+type Options struct {
 	// TableName is the name of the table containing work records.
 	//
 	// The target table (and the target view referenced by `ViewName`) must have the following columns
@@ -162,13 +162,13 @@ type StoreOptions struct {
 // See the `CloseRows` function in the store/base package for suggested implementation details.
 type RecordScanFn func(rows *sql.Rows, err error) (workerutil.Record, bool, error)
 
-// NewStore creates a new store with the given database handle and options.
-func NewStore(handle *basestore.TransactableHandle, options StoreOptions) Store {
+// New creates a new store with the given database handle and options.
+func New(handle *basestore.TransactableHandle, options Options) Store {
 	return newStore(handle, options)
 }
 
 // newStore creates a new store with the given database handle and options.
-func newStore(handle *basestore.TransactableHandle, options StoreOptions) *store {
+func newStore(handle *basestore.TransactableHandle, options Options) *store {
 	if options.ViewName == "" {
 		options.ViewName = options.TableName
 	}

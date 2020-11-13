@@ -1,7 +1,8 @@
-import * as React from 'react'
 import * as H from 'history'
+import * as React from 'react'
+import classNames from 'classnames'
+import { CaseSensitivityProps, InteractiveSearchProps, PatternTypeProps } from '..'
 import { SearchResultTabHeader } from './SearchResultTab'
-import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps } from '..'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 
 interface Props
@@ -12,10 +13,11 @@ interface Props
     location: H.Location
     history: H.History
     query: string
+    className?: string
 }
 
 export const SearchResultTypeTabs: React.FunctionComponent<Props> = props => (
-    <div className="mt-2 border-bottom test-search-result-type-tabs">
+    <div className={classNames(props.className, 'mt-2 border-bottom test-search-result-type-tabs')}>
         <ul className="nav nav-tabs border-bottom-0">
             <SearchResultTabHeader {...props} type={null} />
             <SearchResultTabHeader {...props} type="diff" />

@@ -7,16 +7,20 @@ import (
 	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -53,8 +57,29 @@ func campaignsCreateAccess(ctx context.Context) error {
 		return ErrCampaignsDotCom{}
 	}
 
-	// Only site-admins can create campaigns/patchsets/changesets
-	return backend.CheckCurrentUserIsSiteAdmin(ctx)
+	act := actor.FromContext(ctx)
+	if !act.IsAuthenticated() {
+		return backend.ErrNotAuthenticated
+	}
+	return nil
+}
+
+// checkLicense returns a user-facing error if the campaigns feature is not purchased
+// with the current license or any error occurred while validating the license.
+func checkLicense() error {
+	if !licensing.EnforceTiers {
+		return nil
+	}
+
+	err := licensing.Check(licensing.FeatureCampaigns)
+	if err != nil {
+		if licensing.IsFeatureNotActivated(err) {
+			return err
+		}
+		log15.Error("campaigns.Resolver.checkLicense", "err", err)
+		return errors.New("Unable to check license feature, please refer to logs for actual error message.")
+	}
+	return nil
 }
 
 func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
@@ -194,6 +219,31 @@ func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 	}, nil
 }
 
+func (r *Resolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignsCredentialResolver, error) {
+	if err := campaignsEnabled(); err != nil {
+		return nil, err
+	}
+
+	dbID, err := unmarshalCampaignsCredentialID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	cred, err := db.UserCredentials.GetByID(ctx, dbID)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	if err := backend.CheckSiteAdminOrSameUser(ctx, cred.UserID); err != nil {
+		return nil, err
+	}
+
+	return &campaignsCredentialResolver{credential: cred}, nil
+}
+
 func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.CreateCampaignArgs) (graphqlbackend.CampaignResolver, error) {
 	var err error
 	tr, _ := trace.New(ctx, "Resolver.CreateCampaign", fmt.Sprintf("CampaignSpec %s", args.CampaignSpec))
@@ -201,6 +251,11 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
+	// Validate that the instance's licensing tier supports campaigns.
+	if err := checkLicense(); err != nil {
+		return nil, err
+	}
 
 	if err := campaignsEnabled(); err != nil {
 		return nil, err
@@ -243,6 +298,11 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
+	// Validate that the instance's licensing tier supports campaigns.
+	if err := checkLicense(); err != nil {
+		return nil, err
+	}
 
 	if err := campaignsEnabled(); err != nil {
 		return nil, err
@@ -485,6 +545,33 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 	}, nil
 }
 
+func (r *Resolver) CampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
+	if err := campaignsEnabled(); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only viewable for self or by site admins.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, args.UserID); err != nil {
+		return nil, err
+	}
+
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return nil, err
+	}
+	limitOffset := db.LimitOffset{
+		Limit: int(args.First),
+	}
+	if args.After != nil {
+		cursor, err := strconv.ParseInt(*args.After, 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		limitOffset.Offset = int(cursor)
+	}
+
+	return &campaignsCodeHostConnectionResolver{userID: args.UserID, limitOffset: limitOffset, store: r.store}, nil
+}
+
 // listChangesetOptsFromArgs turns the graphqlbackend.ListChangesetsArgs into
 // ListChangesetsOpts.
 // If the args do not include a filter that would reveal sensitive information
@@ -620,6 +707,108 @@ func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncC
 	// 🚨 SECURITY: EnqueueChangesetSync checks whether current user is authorized.
 	svc := ee.NewService(r.store, r.httpFactory)
 	if err = svc.EnqueueChangesetSync(ctx, changesetID); err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlbackend.CreateCampaignsCredentialArgs) (_ graphqlbackend.CampaignsCredentialResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CreateCampaignsCredential", fmt.Sprintf("%q (%q)", args.ExternalServiceKind, args.ExternalServiceURL))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := campaignsEnabled(); err != nil {
+		return nil, err
+	}
+
+	// Check user is authenticated.
+	user := actor.FromContext(ctx)
+	if !user.IsAuthenticated() {
+		return nil, backend.ErrNotAuthenticated
+	}
+
+	// Need to validate externalServiceKind, otherwise this'll panic.
+	kind, valid := extsvc.ParseServiceKind(args.ExternalServiceKind)
+	if !valid {
+		return nil, errors.New("invalid external service kind")
+	}
+
+	// TODO: Do we want to validate the URL, or even if such an external service exists? Or better, would the DB have a constraint?
+
+	if args.Credential == "" {
+		return nil, errors.New("empty credential not allowed")
+	}
+
+	scope := db.UserCredentialScope{
+		Domain:              db.UserCredentialDomainCampaigns,
+		ExternalServiceID:   args.ExternalServiceURL,
+		ExternalServiceType: extsvc.KindToType(kind),
+		UserID:              user.UID,
+	}
+
+	// Throw error documented in schema.graphql.
+	existing, err := db.UserCredentials.GetByScope(ctx, scope)
+	if err != nil && !errcode.IsNotFound(err) {
+		return nil, err
+	}
+	if existing != nil {
+		return nil, ErrDuplicateCredential{}
+	}
+
+	var a auth.Authenticator
+	if kind == extsvc.KindBitbucketServer {
+		svc := ee.NewService(r.store, r.httpFactory)
+		username, err := svc.FetchUsernameForBitbucketServerToken(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential)
+		if err != nil {
+			return nil, err
+		}
+		a = &auth.BasicAuth{Username: username, Password: args.Credential}
+	} else {
+		a = &auth.OAuthBearerToken{Token: args.Credential}
+	}
+
+	cred, err := db.UserCredentials.Create(ctx, scope, a)
+	if err != nil {
+		return nil, err
+	}
+
+	return &campaignsCredentialResolver{credential: cred}, nil
+}
+
+func (r *Resolver) DeleteCampaignsCredential(ctx context.Context, args *graphqlbackend.DeleteCampaignsCredentialArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.DeleteCampaignsCredential", fmt.Sprintf("Credential: %q", args.CampaignsCredential))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := campaignsEnabled(); err != nil {
+		return nil, err
+	}
+
+	dbID, err := unmarshalCampaignsCredentialID(args.CampaignsCredential)
+	if err != nil {
+		return nil, err
+	}
+
+	if dbID == 0 {
+		return nil, ErrIDIsZero{}
+	}
+
+	// Get existing credential.
+	cred, err := db.UserCredentials.GetByID(ctx, dbID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Check that the requesting user may delete the credential.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, cred.UserID); err != nil {
+		return nil, err
+	}
+
+	// This also fails if the credential was not found.
+	if err := db.UserCredentials.Delete(ctx, dbID); err != nil {
 		return nil, err
 	}
 

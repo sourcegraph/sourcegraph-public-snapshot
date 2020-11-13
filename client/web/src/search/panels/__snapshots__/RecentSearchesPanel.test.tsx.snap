@@ -262,7 +262,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                           className="text-monospace search-query-link"
                         >
                           <span
-                            className="search-keyword"
+                            className="search-filter-keyword"
                           >
                             r
                             :
@@ -624,7 +624,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                           className="text-monospace search-query-link"
                         >
                           <span
-                            className="search-keyword"
+                            className="search-filter-keyword"
                           >
                             r
                             :
@@ -718,7 +718,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                           className="text-monospace search-query-link"
                         >
                           <span
-                            className="search-keyword"
+                            className="search-filter-keyword"
                           >
                             r
                             :
@@ -1013,7 +1013,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                           className="text-monospace search-query-link"
                         >
                           <span
-                            className="search-keyword"
+                            className="search-filter-keyword"
                           >
                             r
                             :

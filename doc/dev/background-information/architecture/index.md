@@ -29,8 +29,8 @@ These clients generally communicate with a Sourcegraph instance (either https://
 Our backend is composed of multiple services:
 
 - Most are Go services found in the [cmd](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd) and [enterprise/cmd](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/enterprise/cmd) folders.
-- [Syntect server](https://sourcegraph.com/github.com/sourcegraph/syntect_server) is our syntax highlighting service written in Rust. It is not horizontally scalable so only 1 replica is supported.
 - [zoekt-indexserver](https://sourcegraph.com/github.com/sourcegraph/zoekt/-/tree/cmd/zoekt-sourcegraph-indexserver) and [zoekt-webserver](https://sourcegraph.com/github.com/sourcegraph/zoekt/-/tree/cmd/zoekt-webserver) provide indexed search. They are written in Go.
+- [Syntect server](https://sourcegraph.com/github.com/sourcegraph/syntect_server) is our syntax highlighting service written in Rust. It is not horizontally scalable so only 1 replica is supported.
 
 ## Infrastructure
 
@@ -48,9 +48,9 @@ Here are some references to help you understand how multiple systems fit togethe
 - [Life of a ping](life-of-a-ping.md)
 - [Search pagination](search-pagination.md)
 - Code intelligence
-  - [Uploads](../codeintel/queries.md)
+  - [Uploads](../codeintel/uploads.md)
   - [Queries](../codeintel/queries.md)
-  - [Extensions](../codeintel/queries.md)
+  - [Extensions](../codeintel/extensions.md)
 - Future topics we will cover here:
   - Sourcegraph extension architecture
   - Web app and browser extension architecture

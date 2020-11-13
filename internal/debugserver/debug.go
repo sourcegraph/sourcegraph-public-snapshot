@@ -11,8 +11,11 @@ import (
 	"strings"
 
 	"github.com/felixge/fgprof"
+	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"golang.org/x/net/trace"
 )
 
@@ -64,11 +67,16 @@ type Service struct {
 	DefaultPath string
 }
 
-// Start runs a debug server (pprof, prometheus, etc) if it is configured (via
-// SRC_PROF_HTTP environment variable). It is blocking.
-func Start(extra ...Endpoint) {
+// Dumper is a service which can dump its state for debugging.
+type Dumper interface {
+	// DebugDump returns a snapshot of the current state.
+	DebugDump() interface{}
+}
+
+// NewServerRoutine returns a background routine that exposes pprof and metrics endpoints.
+func NewServerRoutine(extra ...Endpoint) (goroutine.BackgroundRoutine, error) {
 	if addr == "" {
-		return
+		return goroutine.NoopRoutine(), nil
 	}
 
 	// we're protected by adminOnly on the front of this
@@ -76,61 +84,59 @@ func Start(extra ...Endpoint) {
 		return true, true
 	}
 
-	pp := http.NewServeMux()
-	index := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte(`
+	handler := httpserver.NewHandler(func(router *mux.Router) {
+		index := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write([]byte(`
 				<a href="vars">Vars</a><br>
 				<a href="debug/pprof/">PProf</a><br>
 				<a href="metrics">Metrics</a><br>
 				<a href="debug/requests">Requests</a><br>
 				<a href="debug/events">Events</a><br>
 			`))
-		for _, e := range extra {
-			fmt.Fprintf(w, `<a href="%s">%s</a><br>`, strings.TrimPrefix(e.Path, "/"), e.Name)
-		}
-		_, _ = w.Write([]byte(`
+
+			for _, e := range extra {
+				fmt.Fprintf(w, `<a href="%s">%s</a><br>`, strings.TrimPrefix(e.Path, "/"), e.Name)
+			}
+
+			_, _ = w.Write([]byte(`
 				<br>
 				<form method="post" action="gc" style="display: inline;"><input type="submit" value="GC"></form>
 				<form method="post" action="freeosmemory" style="display: inline;"><input type="submit" value="Free OS Memory"></form>
 			`))
+		})
+
+		router.Handle("/", index)
+		router.Handle("/debug", index)
+		router.Handle("/vars", http.HandlerFunc(expvarHandler))
+		router.Handle("/gc", http.HandlerFunc(gcHandler))
+		router.Handle("/freeosmemory", http.HandlerFunc(freeOSMemoryHandler))
+		router.Handle("/debug/fgprof", fgprof.Handler())
+		router.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
+		router.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
+		router.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
+		router.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
+		router.Handle("/debug/requests", http.HandlerFunc(trace.Traces))
+		router.Handle("/debug/events", http.HandlerFunc(trace.Events))
+		router.Handle("/metrics", promhttp.Handler())
+
+		// This path acts as a wildcard and should appear after more specific entries.
+		router.PathPrefix("/debug/pprof").HandlerFunc(pprof.Index)
+
+		for _, e := range extra {
+			router.Handle(e.Path, e.Handler)
+		}
 	})
-	pp.Handle("/", index)
-	pp.Handle("/debug", index)
-	pp.Handle("/vars", http.HandlerFunc(expvarHandler))
-	pp.Handle("/gc", http.HandlerFunc(gcHandler))
-	pp.Handle("/freeosmemory", http.HandlerFunc(freeOSMemoryHandler))
-	pp.Handle("/debug/fgprof", fgprof.Handler())
-	pp.Handle("/debug/pprof/", http.HandlerFunc(pprof.Index))
-	pp.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
-	pp.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
-	pp.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
-	pp.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
-	pp.Handle("/debug/requests", http.HandlerFunc(trace.Traces))
-	pp.Handle("/debug/events", http.HandlerFunc(trace.Events))
 
-	pp.Handle("/metrics", promhttp.Handler())
-	for _, e := range extra {
-		pp.Handle(e.Path, e.Handler)
+	return httpserver.NewFromAddr(addr, handler, httpserver.Options{})
+}
+
+// Start runs a debug server (pprof, prometheus, etc) if it is configured (via
+// SRC_PROF_HTTP environment variable). It is blocking.
+func Start(extra ...Endpoint) {
+	debugServer, err := NewServerRoutine(extra...)
+	if err != nil {
+		log.Fatalf("Failed to create listener: %s", err)
 	}
-	log.Println("warning: could not start debug HTTP server:", http.ListenAndServe(addr, pp))
-}
 
-// Dumper is a service which can dump its state for debugging.
-type Dumper interface {
-	// DebugDump returns a snapshot of the current state.
-	DebugDump() interface{}
-}
-
-// ServerRoutine is a type wrapping the `Start` method so it can be used
-// easily by the goroutine package.
-type ServerRoutine struct {
-	extra []Endpoint
-}
-
-func NewServerRoutine(extra ...Endpoint) *ServerRoutine {
-	return &ServerRoutine{extra: extra}
-}
-
-func (r *ServerRoutine) Start() {
-	Start(r.extra...)
+	debugServer.Start()
 }

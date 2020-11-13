@@ -1,6 +1,7 @@
 package git
 
 import (
+	"context"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -30,7 +31,7 @@ func TestGetObject(t *testing.T) {
 
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
-			oid, objectType, err := GetObject(ctx, test.repo, test.objectName)
+			oid, objectType, err := GetObject(context.Background(), test.repo, test.objectName)
 			if err != nil {
 				t.Fatal(err)
 			}

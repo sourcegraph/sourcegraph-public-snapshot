@@ -148,20 +148,16 @@ AND deleted_at IS NULL
 		count, err := scanCount(`
 -- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_user_repos_total
 SELECT COUNT(*)
-FROM
-    repo r
-WHERE
-    EXISTS (
-        SELECT
-        FROM
-            external_service_repos sr
-            INNER JOIN external_services s ON s.id = sr.external_service_id
-        WHERE
-            s.namespace_user_id IS NOT NULL
-            AND s.deleted_at IS NULL
-            AND r.id = sr.repo_id
-            AND r.deleted_at IS NULL)
-`)
+FROM external_service_repos esr
+JOIN external_services es ON (
+  es.id = esr.external_service_id AND
+  es.namespace_user_id IS NOT NULL AND
+  es.deleted_at IS NULL
+)
+JOIN repo ON (
+  repo.id = esr.repo_id AND
+  repo.deleted_at IS NULL
+)`)
 		if err != nil {
 			log15.Error("Failed to get total user repositories", "err", err)
 			return 0

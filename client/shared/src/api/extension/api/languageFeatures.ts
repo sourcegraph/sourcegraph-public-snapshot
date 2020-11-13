@@ -2,14 +2,7 @@
 import * as comlink from 'comlink'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Unsubscribable } from 'rxjs'
-import {
-    CompletionItemProvider,
-    DefinitionProvider,
-    DocumentSelector,
-    Location,
-    LocationProvider,
-    ReferenceProvider,
-} from 'sourcegraph'
+import { CompletionItemProvider, DocumentSelector, Location, LocationProvider, ReferenceProvider } from 'sourcegraph'
 import { ClientLanguageFeaturesAPI } from '../../client/api/languageFeatures'
 import { ReferenceParameters, TextDocumentPositionParameters } from '../../protocol'
 import { syncSubscription } from '../../util'
@@ -20,20 +13,6 @@ import { fromLocation, toPosition, fromDocumentSelector } from './types'
 /** @internal */
 export class ExtensionLanguageFeatures {
     constructor(private proxy: comlink.Remote<ClientLanguageFeaturesAPI>, private documents: ExtensionDocuments) {}
-
-    public registerDefinitionProvider(selector: DocumentSelector, provider: DefinitionProvider): Unsubscribable {
-        const providerFunction: comlink.Local<
-            Parameters<ClientLanguageFeaturesAPI['$registerDefinitionProvider']>[1]
-        > = comlink.proxy(async ({ textDocument, position }: TextDocumentPositionParameters) =>
-            toProxyableSubscribable(
-                provider.provideDefinition(await this.documents.getSync(textDocument.uri), toPosition(position)),
-                toLocations
-            )
-        )
-        return syncSubscription(
-            this.proxy.$registerDefinitionProvider(fromDocumentSelector(selector), providerFunction)
-        )
-    }
 
     public registerReferenceProvider(selector: DocumentSelector, provider: ReferenceProvider): Unsubscribable {
         const providerFunction: comlink.Local<
