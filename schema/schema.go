@@ -985,12 +985,14 @@ type SAMLAuthProvider struct {
 type SMTPServerConfig struct {
 	// Authentication description: The type of authentication to use for the SMTP server.
 	Authentication string `json:"authentication"`
-	// DisableTLS description: Disable TLS verification
+	// DisableTLS description: DEPRECATED: use noVerifyTLS instead, this field will be removed in a future release
 	DisableTLS bool `json:"disableTLS,omitempty"`
 	// Domain description: The HELO domain to provide to the SMTP server (if needed).
 	Domain string `json:"domain,omitempty"`
 	// Host description: The SMTP server host.
 	Host string `json:"host"`
+	// NoVerifyTLS description: Disable TLS verification
+	NoVerifyTLS bool `json:"noVerifyTLS,omitempty"`
 	// Password description: The password to use when communicating with the SMTP server.
 	Password string `json:"password,omitempty"`
 	// Port description: The SMTP server port.
@@ -1095,8 +1097,12 @@ type Settings struct {
 type SettingsExperimentalFeatures struct {
 	// CodeInsights description: Enables code insights on directory pages.
 	CodeInsights *bool `json:"codeInsights,omitempty"`
+	// CodeMonitoring description: Enables code monitoring on directory pages.
+	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
 	// CopyQueryButton description: Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
+	// EnableSmartQuery description: Enables contextual syntax highlighting and hovers for search queries in the web app
+	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
 	// SearchStats description: Enables a new page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// SearchStreaming description: Enables experimental streaming support.

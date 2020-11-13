@@ -13,17 +13,20 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gomodule/redigo/redis"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -175,25 +178,98 @@ func getAndMarshalRetentionStatisticsJSON(ctx context.Context) (_ json.RawMessag
 	return json.Marshal(retentionStatistics)
 }
 
-func getAndMarshalAggregatedUsageJSON(ctx context.Context) (_ json.RawMessage, _ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalAggregatedUsageJSON")(&err)
+func getAndMarshalSearchOnboardingJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalSearchOnboardingJSON")(&err)
 
-	codeIntelUsage, searchUsage, err := usagestats.GetAggregatedStats(ctx)
+	searchOnboarding, err := usagestats.GetSearchOnboarding(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	serializedCodeIntelUsage, err := json.Marshal(codeIntelUsage)
+	return json.Marshal(searchOnboarding)
+}
+
+func getAndMarshalAggregatedCodeIntelUsageJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalAggregatedCodeIntelUsageJSON")(&err)
+
+	codeIntelUsage, err := usagestats.GetAggregatedCodeIntelStats(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	serializedSearchUsage, err := json.Marshal(searchUsage)
+	return json.Marshal(codeIntelUsage)
+}
+
+func getAndMarshalAggregatedSearchUsageJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalAggregatedSearchUsageJSON")(&err)
+
+	searchUsage, err := usagestats.GetAggregatedSearchStats(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return serializedCodeIntelUsage, serializedSearchUsage, nil
+	return json.Marshal(searchUsage)
+}
+
+func getDependencyVersions(ctx context.Context, logFunc func(string, ...interface{})) (json.RawMessage, error) {
+	var (
+		err error
+		dv  dependencyVersions
+	)
+	// get redis cache server version
+	dv.RedisCacheVersion, err = getRedisVersion(redispool.Cache.Dial)
+	if err != nil {
+		logFunc("updatecheck.getDependencyVersions: unable to get Redis cache version", "error", err)
+	}
+
+	// get redis store server version
+	dv.RedisStoreVersion, err = getRedisVersion(redispool.Store.Dial)
+	if err != nil {
+		logFunc("updatecheck.getDependencyVersions: unable to get Redis store version", "error", err)
+	}
+
+	// get postgres version
+	err = dbconn.Global.QueryRowContext(ctx, "SHOW server_version").Scan(&dv.PostgresVersion)
+	if err != nil {
+		logFunc("updatecheck.getDependencyVersions: unable to get Postgres version", "error", err)
+	}
+	return json.Marshal(dv)
+}
+
+func getRedisVersion(dialFunc func() (redis.Conn, error)) (string, error) {
+	conn, err := dialFunc()
+	if err != nil {
+		return "", err
+	}
+	buf, err := redis.Bytes(conn.Do("INFO"))
+	if err != nil {
+		return "", err
+	}
+
+	m, err := parseRedisInfo(buf)
+	return m["redis_version"], err
+
+}
+func parseRedisInfo(buf []byte) (map[string]string, error) {
+	var (
+		lines = bytes.Split(buf, []byte("\n"))
+		m     = make(map[string]string, len(lines))
+	)
+
+	for _, line := range lines {
+		line = bytes.TrimSpace(line)
+		if bytes.HasPrefix(line, []byte("#")) || len(line) == 0 {
+			continue
+		}
+
+		parts := bytes.Split(line, []byte(":"))
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("expected a key:value line, got %q", string(line))
+		}
+		m[string(parts[0])] = string(parts[1])
+	}
+
+	return m, nil
 }
 
 func updateBody(ctx context.Context) (io.Reader, error) {
@@ -215,6 +291,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		HomepagePanels:      []byte("{}"),
 		Repositories:        []byte("{}"),
 		RetentionStatistics: []byte("{}"),
+		SearchOnboarding:    []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx)
@@ -225,6 +302,11 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	r.InitialAdminEmail, err = getInitialSiteAdminEmail(ctx)
 	if err != nil {
 		logFunc("telemetry: db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
+	}
+
+	r.DependencyVersions, err = getDependencyVersions(ctx, logFunc)
+	if err != nil {
+		logFunc("telemetry: getDependencyVersions failed", "error", err)
 	}
 
 	if !conf.Get().DisableNonCriticalTelemetry {
@@ -271,6 +353,11 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getAndMarshalHomepagePanelsJSON failed", "error", err)
 		}
 
+		r.SearchOnboarding, err = getAndMarshalSearchOnboardingJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalSearchOnboardingJSON failed", "error", err)
+		}
+
 		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
@@ -307,11 +394,21 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			r.CodeIntelUsage, r.SearchUsage, err = getAndMarshalAggregatedUsageJSON(ctx)
+			r.CodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx)
 			if err != nil {
-				logFunc("telemetry: updatecheck.getAndMarshalAggregatedUsageJSON failed", "error", err)
+				logFunc("telemetry: updatecheck.getAndMarshalAggregatedCodeIntelUsageJSON failed", "error", err)
 			}
 		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r.SearchUsage, err = getAndMarshalAggregatedSearchUsageJSON(ctx)
+			if err != nil {
+				logFunc("telemetry: updatecheck.getAndMarshalAggregatedSearchUsageJSON failed", "error", err)
+			}
+		}()
+
 		wg.Wait()
 	} else {
 		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, true)
@@ -324,7 +421,6 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	err = db.EventLogs.Insert(ctx, &db.Event{
 		UserID:          0,
 		Name:            "ping",

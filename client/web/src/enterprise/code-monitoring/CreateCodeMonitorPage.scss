@@ -1,0 +1,10 @@
+.create-monitor-page {
+    &__query-input {
+        position: relative;
+        &-preview-link {
+            position: absolute;
+            right: 0.375rem;
+            top: 1rem;
+        }
+    }
+}

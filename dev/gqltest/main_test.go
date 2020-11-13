@@ -38,6 +38,13 @@ func TestMain(m *testing.M) {
 
 	*baseURL = strings.TrimSuffix(*baseURL, "/")
 
+	// Make it possible to use a different token on non-default branches
+	// so we don't break builds on the default branch.
+	mockGitHubToken := os.Getenv("MOCK_GITHUB_TOKEN")
+	if mockGitHubToken != "" {
+		*githubToken = mockGitHubToken
+	}
+
 	needsSiteInit, err := gqltestutil.NeedsSiteInit(*baseURL)
 	if err != nil {
 		log.Fatal("Failed to check if site needs init: ", err)

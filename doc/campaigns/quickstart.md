@@ -29,9 +29,9 @@ Campaigns need write permissions for the repositories in which you want to make 
 
 Configure your code host connections to have the right permissions for campaigns:
 
-- [GitHub](../../admin/external_service/github.md#github-api-token-and-access)
-- [GitLab](../../admin/external_service/gitlab.md#access-token-scopes)
-- [Bitbucket Server](../../admin/external_service/gitlab.md#access-token-permissions)
+- `repo`, `read:org`, and `read:discussion` (see [GitHub api token and access](../../admin/external_service/github.md#github-api-token-and-access) )
+- `api`, `read_repository`, `write_repository` (see [GitLab access token scopes](../../admin/external_service/gitlab.md#access-token-scopes))
+- **write** permissions on the project and repository level (see [Bitbucket Server access token permissions](../../admin/external_service/bitbucket_server.md#access-token-permissions))
 
 See ["Code host interactions in campaigns"](explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns) for details on what the permissions are used for.
 
@@ -99,9 +99,7 @@ Let's see the changes that will be made. Don't worry---no commits, branches, or 
 
 1. In your terminal, run this command:
 
-    <pre>src campaign preview -f hello-world.campaign.yaml -namespace <em>USERNAME_OR_ORG</em></pre>
-
-    > The `namespace` is either your Sourcegraph username or the name of a Sourcegraph organisation under which you want to create the campaign. If you're not sure what to choose, use your username.
+    <pre>src campaign preview -f hello-world.campaign.yaml</pre>
 1. Wait for it to run and compute the changes for each repository.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/src_campaign_preview_waiting.png" class="screenshot">
 1. When it's done, click the displayed link to see all of the changes that will be made.

@@ -12,9 +12,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commits"
-	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
-	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers/graphql"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
+	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
+	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -59,15 +59,16 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 func newResolver(ctx context.Context) (gql.CodeIntelResolver, error) {
 	hunkCache, err := codeintelresolvers.NewHunkCache(config.HunkCacheSize)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize hunk cache: %s", err)
+		return nil, fmt.Errorf("Failed to initialize hunk cache: %s", err)
 	}
 
-	resolver := codeintelgqlresolvers.NewResolver(codeintelresolvers.NewResolver(
-		services.store,
-		services.bundleManagerClient,
+	innerResolver := codeintelresolvers.NewResolver(
+		&resolvers.DBStoreShim{services.dbStore},
+		services.lsifStore,
 		services.api,
 		hunkCache,
-	))
+	)
+	resolver := codeintelgqlresolvers.NewResolver(innerResolver)
 
 	return resolver, err
 }
@@ -101,18 +102,21 @@ func newBackgroundRoutines() ([]goroutine.BackgroundRoutine, error) {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
+	dbStoreShim := &background.DBStoreShim{services.dbStore}
+	lsifStoreShim := services.lsifStore
+	gitserverClient := services.gitserverClient
 	metrics := background.NewMetrics(observationContext.Registerer)
 
 	routines := []goroutine.BackgroundRoutine{
-		background.NewAbandonedUploadJanitor(services.store, config.UploadTimeout, config.BackgroundTaskInterval, metrics),
-		background.NewDeletedRepositoryJanitor(services.store, config.BackgroundTaskInterval, metrics),
-		background.NewHardDeleter(services.store, services.lsifStore, config.BackgroundTaskInterval, metrics),
-		background.NewIndexScheduler(services.store, services.gitserverClient, config.IndexBatchSize, config.MinimumTimeSinceLastEnqueue, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.BackgroundTaskInterval, metrics),
-		background.NewIndexabilityUpdater(services.store, services.gitserverClient, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.BackgroundTaskInterval, metrics),
-		background.NewRecordExpirer(services.store, config.DataTTL, config.BackgroundTaskInterval, metrics),
-		background.NewUploadResetter(services.store, config.BackgroundTaskInterval, metrics),
-		background.NewIndexResetter(services.store, config.BackgroundTaskInterval, metrics),
-		background.NewCommitUpdater(services.store, commits.NewUpdater(services.store, services.gitserverClient), config.BackgroundTaskInterval),
+		background.NewAbandonedUploadJanitor(dbStoreShim, config.UploadTimeout, config.BackgroundTaskInterval, metrics),
+		background.NewDeletedRepositoryJanitor(dbStoreShim, config.BackgroundTaskInterval, metrics),
+		background.NewHardDeleter(dbStoreShim, lsifStoreShim, config.BackgroundTaskInterval, metrics),
+		background.NewIndexScheduler(dbStoreShim, gitserverClient, config.IndexBatchSize, config.MinimumTimeSinceLastEnqueue, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.BackgroundTaskInterval, metrics),
+		background.NewIndexabilityUpdater(dbStoreShim, gitserverClient, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.BackgroundTaskInterval, metrics),
+		background.NewRecordExpirer(dbStoreShim, config.DataTTL, config.BackgroundTaskInterval, metrics),
+		background.NewUploadResetter(dbStoreShim, config.BackgroundTaskInterval, metrics),
+		background.NewIndexResetter(dbStoreShim, config.BackgroundTaskInterval, metrics),
+		background.NewCommitUpdater(dbStoreShim, gitserverClient, config.BackgroundTaskInterval),
 	}
 
 	return routines, nil

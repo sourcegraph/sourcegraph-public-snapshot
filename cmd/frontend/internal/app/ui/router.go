@@ -43,6 +43,7 @@ const (
 	routeRepoStats      = "repo-stats"
 	routeInsights       = "insights"
 	routeCampaigns      = "campaigns"
+	routeCodeMonitoring = "code-monitoring"
 	routeThreads        = "threads"
 	routeTree           = "tree"
 	routeBlob           = "blob"
@@ -119,6 +120,7 @@ func newRouter() *mux.Router {
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
 	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
 	r.PathPrefix("/campaigns").Methods("GET").Name(routeCampaigns)
+	r.PathPrefix("/code-monitoring").Methods("GET").Name(routeCodeMonitoring)
 	r.PathPrefix("/organizations").Methods("GET").Name(routeOrganizations)
 	r.PathPrefix("/settings").Methods("GET").Name(routeSettings)
 	r.PathPrefix("/site-admin").Methods("GET").Name(routeSiteAdmin)
@@ -200,6 +202,7 @@ func initRouter() {
 	router.Get(routeThreads).Handler(handler(serveBrandedPageString("Threads", nil)))
 	router.Get(routeInsights).Handler(handler(serveBrandedPageString("Insights", nil)))
 	router.Get(routeCampaigns).Handler(handler(serveBrandedPageString("Campaigns", nil)))
+	router.Get(routeCodeMonitoring).Handler(handler(serveBrandedPageString("Code Monitoring", nil)))
 	router.Get(uirouter.RouteSignIn).Handler(handler(serveSignIn))
 	router.Get(uirouter.RouteSignUp).Handler(handler(serveBrandedPageString("Sign up", nil)))
 	router.Get(routeOrganizations).Handler(handler(serveBrandedPageString("Organization", nil)))

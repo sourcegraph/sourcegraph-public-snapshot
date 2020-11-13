@@ -6,12 +6,11 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
 type RecordExpirer struct {
-	store   store.Store
+	dbStore DBStore
 	ttl     time.Duration
 	metrics Metrics
 }
@@ -22,16 +21,16 @@ var _ goroutine.Handler = &RecordExpirer{}
 // and index records that are older than the given TTL. Upload records which have
 // valid LSIF data (not just a historic upload failure record) will only be deleted
 // if it is not visible at the tip of its repository's default branch.
-func NewRecordExpirer(store store.Store, ttl, interval time.Duration, metrics Metrics) goroutine.BackgroundRoutine {
+func NewRecordExpirer(dbStore DBStore, ttl, interval time.Duration, metrics Metrics) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &RecordExpirer{
-		store:   store,
+		dbStore: dbStore,
 		ttl:     ttl,
 		metrics: metrics,
 	})
 }
 
 func (e *RecordExpirer) Handle(ctx context.Context) error {
-	tx, err := e.store.Transact(ctx)
+	tx, err := e.dbStore.Transact(ctx)
 	if err != nil {
 		return err
 	}

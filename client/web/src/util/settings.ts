@@ -55,6 +55,7 @@ export function experimentalFeaturesFromSettings(
     showEnterpriseHomePanels: boolean
     showMultilineSearchConsole: boolean
     showQueryBuilder: boolean
+    enableSmartQuery: boolean
 } {
     const experimentalFeatures: SettingsExperimentalFeatures =
         (settingsCascade.final && !isErrorLike(settingsCascade.final) && settingsCascade.final.experimentalFeatures) ||
@@ -69,6 +70,7 @@ export function experimentalFeaturesFromSettings(
         showEnterpriseHomePanels = true, // Default to true if not set
         showMultilineSearchConsole = false,
         showQueryBuilder = false,
+        enableSmartQuery = false,
     } = experimentalFeatures
 
     return {
@@ -80,5 +82,6 @@ export function experimentalFeaturesFromSettings(
         showEnterpriseHomePanels,
         showMultilineSearchConsole,
         showQueryBuilder,
+        enableSmartQuery,
     }
 }

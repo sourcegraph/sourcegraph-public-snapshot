@@ -214,7 +214,7 @@ func newExternalServices(es ...*repos.ExternalService) []api.ExternalService {
 		}
 
 		if e.IsDeleted() {
-			svc.DeletedAt = &e.DeletedAt
+			svc.DeletedAt = e.DeletedAt
 		}
 
 		svcs = append(svcs, svc)
@@ -362,7 +362,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 }
 
 func externalServiceValidate(ctx context.Context, req *protocol.ExternalServiceSyncRequest) error {
-	if req.ExternalService.DeletedAt != nil {
+	if !req.ExternalService.DeletedAt.IsZero() {
 		// We don't need to check deleted services.
 		return nil
 	}

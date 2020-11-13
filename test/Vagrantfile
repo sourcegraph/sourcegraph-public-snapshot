@@ -35,6 +35,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       end
 
       srv.vm.provider :google do |g, o|
+        g.service_account = ENV["VAGRANT_SERVICE_ACCOUNT"] || nil
         g.machine_type = server['machine_type']
         g.image = 'e2e-491e9f27-2020-10-28t17-32-00z'
         g.image_project_id = 'sourcegraph-ci'
@@ -46,7 +47,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         g.disk_size = 20
         g.disk_type = 'pd-ssd'
         g.scopes = [
-            "compute-rw"
+            "compute-rw",
+            "storage-ro"
         ]
 
         o.ssh.username = username
@@ -110,6 +112,11 @@ export NODE_TLS_REJECT_UNAUTHORIZED=#{ENV['NODE_TLS_REJECT_UNAUTHORIZED']}
 export BITBUCKET_CLOUD_USER_BOB_APP_PASSWORD=#{ENV['BITBUCKET_CLOUD_USER_BOB_APP_PASSWORD']}
 export KEEP_BROWSER=#{ENV['KEEP_BROWSER']}
 export VERSION=#{ENV['VERSION']}
+export CANDIDATE_VERSION=#{ENV['CANDIDATE_VERSION']}
+export VAGRANT_SERVICE_ACCOUNT=#{ENV['VAGRANT_SERVICE_ACCOUNT']}
+
+# Env vars for sourcegraph-upgrade tests
+export MINIMUM_UPGRADEABLE_VERSION=#{ENV['MINIMUM_UPGRADEABLE_VERSION']}
 
 EOF
       SHELL

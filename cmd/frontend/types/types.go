@@ -192,6 +192,10 @@ func (r *Repo) Clone() *Repo {
 		return nil
 	}
 	clone := *r
+	if r.RepoFields != nil {
+		repoFields := *r.RepoFields
+		clone.RepoFields = &repoFields
+	}
 	if r.Sources != nil {
 		clone.Sources = make(map[string]*SourceInfo, len(r.Sources))
 		for k, v := range r.Sources {
@@ -393,10 +397,11 @@ type ExternalService struct {
 	Config          string
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
-	DeletedAt       *time.Time
-	LastSyncAt      *time.Time
-	NextSyncAt      *time.Time
-	NamespaceUserID *int32
+	DeletedAt       time.Time
+	LastSyncAt      time.Time
+	NextSyncAt      time.Time
+	NamespaceUserID int32
+	Unrestricted    bool // Whether access to repositories belong to this external service is unrestricted.
 }
 
 // URN returns a unique resource identifier of this external service,
@@ -431,7 +436,7 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 		e.UpdatedAt, modified = n.UpdatedAt, true
 	}
 
-	if (e.DeletedAt == nil && n.DeletedAt != nil) || (e.DeletedAt != nil && (n.DeletedAt == nil || !e.DeletedAt.Equal(*n.DeletedAt))) {
+	if !e.DeletedAt.Equal(n.DeletedAt) {
 		e.DeletedAt, modified = n.DeletedAt, true
 	}
 
@@ -1276,6 +1281,16 @@ type WeeklyRetentionStats struct {
 
 type RetentionStats struct {
 	Weekly []*WeeklyRetentionStats
+}
+
+type SearchOnboarding struct {
+	TotalOnboardingTourViews   *int32
+	ViewedLangStep             *int32
+	ViewedFilterRepoStep       *int32
+	ViewedAddQueryTermStep     *int32
+	ViewedSubmitSearchStep     *int32
+	ViewedSearchReferenceStep  *int32
+	CloseOnboardingTourClicked *int32
 }
 
 // Secret represents the secrets table

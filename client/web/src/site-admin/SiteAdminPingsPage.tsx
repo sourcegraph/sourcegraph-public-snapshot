@@ -89,6 +89,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                     know who to contact regarding sales, product updates, security updates, and policy updates
                 </li>
                 <li>Sourcegraph version string (e.g. "vX.X.X")</li>
+                <li>Dependency versions (e.g. "6.0.9" for Redis, or "13.0" for Postgres)</li>
                 <li>
                     Deployment type (single Docker image, Docker Compose, Kubernetes cluster, or pure Docker cluster)
                 </li>
@@ -178,6 +179,14 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                     </ul>
                 </li>
                 <li>Weekly retention rates for user cohorts created in the last 12 weeks</li>
+                <li>
+                    Search onboarding engagement
+                    <ul>
+                        <li>Total number of views of the onboarding tour</li>
+                        <li>Total number of views of each step in the onboarding tour</li>
+                        <li>Total number of tours closed</li>
+                    </ul>
+                </li>
             </ul>
             {updatesDisabled ? (
                 <p>All telemetry is disabled.</p>

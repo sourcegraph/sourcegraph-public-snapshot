@@ -35,3 +35,11 @@ kbd {
     background-color: var(--color-bg-2);
     box-shadow: inset 0 -2px 0 var(--color-bg-3);
 }
+
+.search-filter-keyword {
+    color: var(--search-filter-keyword-color);
+}
+
+.search-keyword {
+    color: var(--search-keyword-color);
+}

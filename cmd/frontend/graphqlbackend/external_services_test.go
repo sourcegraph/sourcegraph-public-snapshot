@@ -113,10 +113,10 @@ func TestAddExternalService(t *testing.T) {
 			}
 
 			// We want to check the namespace field is populated
-			if result.externalService.NamespaceUserID == nil {
+			if result.externalService.NamespaceUserID == 0 {
 				t.Fatal("NamespaceUserID: want non-nil but got nil")
-			} else if *result.externalService.NamespaceUserID != userID {
-				t.Fatalf("NamespaceUserID: want %d but got %d", userID, *result.externalService.NamespaceUserID)
+			} else if result.externalService.NamespaceUserID != userID {
+				t.Fatalf("NamespaceUserID: want %d but got %d", userID, result.externalService.NamespaceUserID)
 			}
 		})
 
@@ -161,10 +161,10 @@ func TestAddExternalService(t *testing.T) {
 			}
 
 			// We want to check the namespace field is populated
-			if result.externalService.NamespaceUserID == nil {
+			if result.externalService.NamespaceUserID == 0 {
 				t.Fatal("NamespaceUserID: want non-nil but got nil")
-			} else if *result.externalService.NamespaceUserID != userID {
-				t.Fatalf("NamespaceUserID: want %d but got %d", userID, *result.externalService.NamespaceUserID)
+			} else if result.externalService.NamespaceUserID != userID {
+				t.Fatalf("NamespaceUserID: want %d but got %d", userID, result.externalService.NamespaceUserID)
 			}
 		})
 	})
@@ -249,7 +249,7 @@ func TestUpdateExternalService(t *testing.T) {
 			db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
 					ID:              id,
-					NamespaceUserID: &userID,
+					NamespaceUserID: userID,
 				}, nil
 			}
 			defer func() {
@@ -278,7 +278,7 @@ func TestUpdateExternalService(t *testing.T) {
 			db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
 					ID:              id,
-					NamespaceUserID: &userID,
+					NamespaceUserID: userID,
 				}, nil
 			}
 			calledUpdate := false
@@ -349,14 +349,14 @@ func TestUpdateExternalService(t *testing.T) {
 		if cachedUpdate == nil {
 			return &types.ExternalService{
 				ID:              id,
-				NamespaceUserID: &userID,
+				NamespaceUserID: userID,
 			}, nil
 		}
 		return &types.ExternalService{
 			ID:              id,
 			DisplayName:     *cachedUpdate.DisplayName,
 			Config:          *cachedUpdate.Config,
-			NamespaceUserID: &userID,
+			NamespaceUserID: userID,
 		}, nil
 	}
 	t.Cleanup(func() {
@@ -427,7 +427,7 @@ func TestDeleteExternalService(t *testing.T) {
 			db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
 					ID:              id,
-					NamespaceUserID: &userID,
+					NamespaceUserID: userID,
 				}, nil
 			}
 			defer func() {
@@ -454,7 +454,7 @@ func TestDeleteExternalService(t *testing.T) {
 			db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
 					ID:              id,
-					NamespaceUserID: &userID,
+					NamespaceUserID: userID,
 				}, nil
 			}
 			calledDelete := false
@@ -489,7 +489,7 @@ func TestDeleteExternalService(t *testing.T) {
 		userID := int32(1)
 		return &types.ExternalService{
 			ID:              id,
-			NamespaceUserID: &userID,
+			NamespaceUserID: userID,
 		}, nil
 	}
 	t.Cleanup(func() {

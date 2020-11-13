@@ -1,0 +1,496 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
+<StreamingProgressSkippedPopover
+  progress={
+    Object {
+      "done": true,
+      "durationMs": 1500,
+      "matchCount": 2,
+      "repositoriesCount": 2,
+      "skipped": Array [
+        Object {
+          "message": "10k forked repositories excluded",
+          "reason": "excluded-fork",
+          "severity": "info",
+          "suggested": Object {
+            "queryExpression": "forked:yes",
+            "title": "forked:yes",
+          },
+          "title": "10k forked repositories excluded",
+        },
+        Object {
+          "message": "60k archived repositories excluded",
+          "reason": "excluded-archive",
+          "severity": "info",
+          "suggested": Object {
+            "queryExpression": "archived:yes",
+            "title": "archived:yes",
+          },
+          "title": "60k archived repositories excluded",
+        },
+        Object {
+          "message": "Search timed out",
+          "reason": "shard-timedout",
+          "severity": "warn",
+          "suggested": Object {
+            "queryExpression": "timeout:2m",
+            "title": "timeout:2m",
+          },
+          "title": "Search timed out",
+        },
+      ],
+    }
+  }
+>
+  <Alert
+    closeAriaLabel="Close"
+    color="primary"
+    fade={true}
+    isOpen={true}
+    key="excluded-fork"
+    tag="div"
+    transition={
+      Object {
+        "appear": true,
+        "baseClass": "fade",
+        "baseClassActive": "show",
+        "enter": true,
+        "exit": true,
+        "in": true,
+        "mountOnEnter": false,
+        "onEnter": [Function],
+        "onEntered": [Function],
+        "onEntering": [Function],
+        "onExit": [Function],
+        "onExited": [Function],
+        "onExiting": [Function],
+        "tag": "div",
+        "timeout": 150,
+        "unmountOnExit": true,
+      }
+    }
+  >
+    <Fade
+      appear={true}
+      baseClass="fade"
+      baseClassActive="show"
+      className="alert alert-primary"
+      enter={true}
+      exit={true}
+      in={true}
+      mountOnEnter={false}
+      onEnter={[Function]}
+      onEntered={[Function]}
+      onEntering={[Function]}
+      onExit={[Function]}
+      onExited={[Function]}
+      onExiting={[Function]}
+      role="alert"
+      tag="div"
+      timeout={150}
+      unmountOnExit={true}
+    >
+      <Transition
+        appear={true}
+        enter={true}
+        exit={true}
+        in={true}
+        mountOnEnter={false}
+        onEnter={[Function]}
+        onEntered={[Function]}
+        onEntering={[Function]}
+        onExit={[Function]}
+        onExited={[Function]}
+        onExiting={[Function]}
+        timeout={150}
+        unmountOnExit={true}
+      >
+        <div
+          className="alert alert-primary fade"
+          role="alert"
+        >
+          <h4
+            className="d-flex align-items-center mb-0"
+          >
+            <Memo(InformationOutlineIcon)
+              className="icon-inline mr-2"
+            />
+            <span>
+              10k forked repositories excluded
+            </span>
+          </h4>
+          <div
+            className="mt-2"
+          >
+            10k forked repositories excluded
+          </div>
+        </div>
+      </Transition>
+    </Fade>
+  </Alert>
+  <Alert
+    closeAriaLabel="Close"
+    color="primary"
+    fade={true}
+    isOpen={true}
+    key="excluded-archive"
+    tag="div"
+    transition={
+      Object {
+        "appear": true,
+        "baseClass": "fade",
+        "baseClassActive": "show",
+        "enter": true,
+        "exit": true,
+        "in": true,
+        "mountOnEnter": false,
+        "onEnter": [Function],
+        "onEntered": [Function],
+        "onEntering": [Function],
+        "onExit": [Function],
+        "onExited": [Function],
+        "onExiting": [Function],
+        "tag": "div",
+        "timeout": 150,
+        "unmountOnExit": true,
+      }
+    }
+  >
+    <Fade
+      appear={true}
+      baseClass="fade"
+      baseClassActive="show"
+      className="alert alert-primary"
+      enter={true}
+      exit={true}
+      in={true}
+      mountOnEnter={false}
+      onEnter={[Function]}
+      onEntered={[Function]}
+      onEntering={[Function]}
+      onExit={[Function]}
+      onExited={[Function]}
+      onExiting={[Function]}
+      role="alert"
+      tag="div"
+      timeout={150}
+      unmountOnExit={true}
+    >
+      <Transition
+        appear={true}
+        enter={true}
+        exit={true}
+        in={true}
+        mountOnEnter={false}
+        onEnter={[Function]}
+        onEntered={[Function]}
+        onEntering={[Function]}
+        onExit={[Function]}
+        onExited={[Function]}
+        onExiting={[Function]}
+        timeout={150}
+        unmountOnExit={true}
+      >
+        <div
+          className="alert alert-primary fade"
+          role="alert"
+        >
+          <h4
+            className="d-flex align-items-center mb-0"
+          >
+            <Memo(InformationOutlineIcon)
+              className="icon-inline mr-2"
+            />
+            <span>
+              60k archived repositories excluded
+            </span>
+          </h4>
+          <div
+            className="mt-2"
+          >
+            60k archived repositories excluded
+          </div>
+        </div>
+      </Transition>
+    </Fade>
+  </Alert>
+  <Alert
+    closeAriaLabel="Close"
+    color="danger"
+    fade={true}
+    isOpen={true}
+    key="shard-timedout"
+    tag="div"
+    transition={
+      Object {
+        "appear": true,
+        "baseClass": "fade",
+        "baseClassActive": "show",
+        "enter": true,
+        "exit": true,
+        "in": true,
+        "mountOnEnter": false,
+        "onEnter": [Function],
+        "onEntered": [Function],
+        "onEntering": [Function],
+        "onExit": [Function],
+        "onExited": [Function],
+        "onExiting": [Function],
+        "tag": "div",
+        "timeout": 150,
+        "unmountOnExit": true,
+      }
+    }
+  >
+    <Fade
+      appear={true}
+      baseClass="fade"
+      baseClassActive="show"
+      className="alert alert-danger"
+      enter={true}
+      exit={true}
+      in={true}
+      mountOnEnter={false}
+      onEnter={[Function]}
+      onEntered={[Function]}
+      onEntering={[Function]}
+      onExit={[Function]}
+      onExited={[Function]}
+      onExiting={[Function]}
+      role="alert"
+      tag="div"
+      timeout={150}
+      unmountOnExit={true}
+    >
+      <Transition
+        appear={true}
+        enter={true}
+        exit={true}
+        in={true}
+        mountOnEnter={false}
+        onEnter={[Function]}
+        onEntered={[Function]}
+        onEntering={[Function]}
+        onExit={[Function]}
+        onExited={[Function]}
+        onExiting={[Function]}
+        timeout={150}
+        unmountOnExit={true}
+      >
+        <div
+          className="alert alert-danger fade"
+          role="alert"
+        >
+          <h4
+            className="d-flex align-items-center mb-0"
+          >
+            <Memo(AlertCircleIcon)
+              className="icon-inline mr-2"
+            />
+            <span>
+              Search timed out
+            </span>
+          </h4>
+          <div
+            className="mt-2"
+          >
+            Search timed out
+          </div>
+        </div>
+      </Transition>
+    </Fade>
+  </Alert>
+  <Form
+    onSubmit={[Function]}
+    tag="form"
+  >
+    <form
+      className=""
+      onSubmit={[Function]}
+    >
+      <div
+        className="mb-2"
+      >
+        Search again:
+      </div>
+      <FormGroup
+        check={true}
+        tag="div"
+      >
+        <div
+          className="form-check"
+        >
+          <Label
+            check={true}
+            className="mb-1 d-block"
+            key="forked:yes"
+            tag="label"
+            widths={
+              Array [
+                "xs",
+                "sm",
+                "md",
+                "lg",
+                "xl",
+              ]
+            }
+          >
+            <label
+              className="mb-1 d-block form-check-label"
+            >
+              <Input
+                onChange={[Function]}
+                type="checkbox"
+                value="forked:yes"
+              >
+                <input
+                  className="form-check-input"
+                  onChange={[Function]}
+                  type="checkbox"
+                  value="forked:yes"
+                />
+              </Input>
+               
+              forked:yes
+               (
+              <SyntaxHighlightedSearchQuery
+                query="forked:yes"
+              >
+                <span
+                  className="text-monospace search-query-link"
+                >
+                  forked:yes
+                </span>
+              </SyntaxHighlightedSearchQuery>
+              )
+            </label>
+          </Label>
+          <Label
+            check={true}
+            className="mb-1 d-block"
+            key="archived:yes"
+            tag="label"
+            widths={
+              Array [
+                "xs",
+                "sm",
+                "md",
+                "lg",
+                "xl",
+              ]
+            }
+          >
+            <label
+              className="mb-1 d-block form-check-label"
+            >
+              <Input
+                onChange={[Function]}
+                type="checkbox"
+                value="archived:yes"
+              >
+                <input
+                  className="form-check-input"
+                  onChange={[Function]}
+                  type="checkbox"
+                  value="archived:yes"
+                />
+              </Input>
+               
+              archived:yes
+               (
+              <SyntaxHighlightedSearchQuery
+                query="archived:yes"
+              >
+                <span
+                  className="text-monospace search-query-link"
+                >
+                  <span
+                    className="search-filter-keyword"
+                  >
+                    archived
+                    :
+                  </span>
+                  yes
+                </span>
+              </SyntaxHighlightedSearchQuery>
+              )
+            </label>
+          </Label>
+          <Label
+            check={true}
+            className="mb-1 d-block"
+            key="timeout:2m"
+            tag="label"
+            widths={
+              Array [
+                "xs",
+                "sm",
+                "md",
+                "lg",
+                "xl",
+              ]
+            }
+          >
+            <label
+              className="mb-1 d-block form-check-label"
+            >
+              <Input
+                onChange={[Function]}
+                type="checkbox"
+                value="timeout:2m"
+              >
+                <input
+                  className="form-check-input"
+                  onChange={[Function]}
+                  type="checkbox"
+                  value="timeout:2m"
+                />
+              </Input>
+               
+              timeout:2m
+               (
+              <SyntaxHighlightedSearchQuery
+                query="timeout:2m"
+              >
+                <span
+                  className="text-monospace search-query-link"
+                >
+                  <span
+                    className="search-filter-keyword"
+                  >
+                    timeout
+                    :
+                  </span>
+                  2m
+                </span>
+              </SyntaxHighlightedSearchQuery>
+              )
+            </label>
+          </Label>
+        </div>
+      </FormGroup>
+      <Button
+        className="mt-2"
+        color="primary"
+        disabled={true}
+        tag="button"
+        type="submit"
+      >
+        <button
+          aria-label={null}
+          className="mt-2 btn btn-primary disabled"
+          disabled={true}
+          onClick={[Function]}
+          type="submit"
+        >
+          <Memo(SearchIcon)
+            className="icon-inline mr-1"
+          />
+          Search again
+        </button>
+      </Button>
+    </form>
+  </Form>
+</StreamingProgressSkippedPopover>
+`;

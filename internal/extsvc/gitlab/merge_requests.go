@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -96,6 +97,8 @@ func (c *Client) CreateMergeRequest(ctx context.Context, project *Project, opts 
 		return nil, errors.Wrap(err, "marshalling options")
 	}
 
+	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
+
 	req, err := http.NewRequest("POST", fmt.Sprintf("projects/%d/merge_requests", project.ID), bytes.NewBuffer(data))
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request to create a merge request")
@@ -117,6 +120,8 @@ func (c *Client) GetMergeRequest(ctx context.Context, project *Project, iid ID) 
 	if MockGetMergeRequest != nil {
 		return MockGetMergeRequest(c, ctx, project, iid)
 	}
+
+	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
 
 	req, err := http.NewRequest("GET", fmt.Sprintf("projects/%d/merge_requests/%d", project.ID, iid), nil)
 	if err != nil {
@@ -153,6 +158,8 @@ func (c *Client) GetOpenMergeRequestByRefs(ctx context.Context, project *Project
 	u := &url.URL{
 		Path: fmt.Sprintf("projects/%d/merge_requests", project.ID), RawQuery: values.Encode(),
 	}
+
+	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
 
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
@@ -204,6 +211,8 @@ func (c *Client) UpdateMergeRequest(ctx context.Context, project *Project, mr *M
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling options")
 	}
+
+	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
 
 	req, err := http.NewRequest("PUT", fmt.Sprintf("projects/%d/merge_requests/%d", project.ID, mr.IID), bytes.NewBuffer(data))
 	if err != nil {

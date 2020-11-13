@@ -7,8 +7,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/inference"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/autoindex/inference"
+	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"golang.org/x/time/rate"
 )
@@ -16,8 +16,8 @@ import (
 const MaxGitserverRequestsPerSecond = 20
 
 type IndexabilityUpdater struct {
-	store               store.Store
-	gitserverClient     gitserverClient
+	dbStore             DBStore
+	gitserverClient     GitserverClient
 	metrics             Metrics
 	minimumSearchCount  int
 	minimumSearchRatio  float64
@@ -29,8 +29,8 @@ type IndexabilityUpdater struct {
 var _ goroutine.Handler = &IndexabilityUpdater{}
 
 func NewIndexabilityUpdater(
-	store store.Store,
-	gitserverClient gitserverClient,
+	dbStore DBStore,
+	gitserverClient GitserverClient,
 	minimumSearchCount int,
 	minimumSearchRatio float64,
 	minimumPreciseCount int,
@@ -38,7 +38,7 @@ func NewIndexabilityUpdater(
 	metrics Metrics,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &IndexabilityUpdater{
-		store:               store,
+		dbStore:             dbStore,
 		gitserverClient:     gitserverClient,
 		metrics:             metrics,
 		minimumSearchCount:  minimumSearchCount,
@@ -52,7 +52,7 @@ func NewIndexabilityUpdater(
 func (u *IndexabilityUpdater) Handle(ctx context.Context) error {
 	start := time.Now().UTC()
 
-	stats, err := u.store.RepoUsageStatistics(ctx)
+	stats, err := u.dbStore.RepoUsageStatistics(ctx)
 	if err != nil {
 		return errors.Wrap(err, "store.RepoUsageStatistics")
 	}
@@ -74,7 +74,7 @@ func (u *IndexabilityUpdater) Handle(ctx context.Context) error {
 	// Anything we didn't update hasn't had any activity and didn't come back
 	// from RepoUsageStatitsics. Ensure we don't retain the last usage count
 	// for these repositories indefinitely.
-	if err := u.store.ResetIndexableRepositories(ctx, start); err != nil {
+	if err := u.dbStore.ResetIndexableRepositories(ctx, start); err != nil {
 		return errors.Wrap(err, "store.ResetIndexableRepositories")
 	}
 
@@ -91,12 +91,12 @@ func (u *IndexabilityUpdater) queueRepository(ctx context.Context, repoUsageStat
 		return err
 	}
 
-	commit, err := u.gitserverClient.Head(ctx, u.store, repoUsageStatistics.RepositoryID)
+	commit, err := u.gitserverClient.Head(ctx, repoUsageStatistics.RepositoryID)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.Head")
 	}
 
-	paths, err := u.gitserverClient.ListFiles(ctx, u.store, repoUsageStatistics.RepositoryID, commit, inference.Patterns)
+	paths, err := u.gitserverClient.ListFiles(ctx, repoUsageStatistics.RepositoryID, commit, inference.Patterns)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.ListFiles")
 	}
@@ -119,7 +119,7 @@ func (u *IndexabilityUpdater) queueRepository(ctx context.Context, repoUsageStat
 		PreciseCount: &repoUsageStatistics.PreciseCount,
 	}
 
-	if err := u.store.UpdateIndexableRepository(ctx, indexableRepository, time.Now().UTC()); err != nil {
+	if err := u.dbStore.UpdateIndexableRepository(ctx, indexableRepository, time.Now().UTC()); err != nil {
 		return errors.Wrap(err, "store.UpdateIndexableRepository")
 	}
 
