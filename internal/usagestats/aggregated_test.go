@@ -123,7 +123,7 @@ func TestGroupAggregateSearchStats(t *testing.T) {
 	t2 := t1.Add(time.Hour)
 	t3 := t2.Add(time.Hour)
 
-	searchStats := groupAggreatedSearchStats([]types.AggregatedEvent{
+	searchStats := groupAggregatedSearchStats([]types.AggregatedEvent{
 		{
 			Name:           "search.latencies.structural",
 			Month:          t1,
@@ -292,7 +292,7 @@ func TestGroupAggregatedCodeIntelStats(t *testing.T) {
 	lang2 := "typescript"
 	t1 := time.Now().UTC().Add(time.Hour)
 
-	codeIntelStats := groupAggreatedCodeIntelStats([]types.CodeIntelAggregatedEvent{
+	codeIntelStats := groupAggregatedCodeIntelStats([]types.CodeIntelAggregatedEvent{
 		{Name: "codeintel.lsifHover", Week: t1, TotalWeek: 10, UniquesWeek: 1},
 		{Name: "codeintel.searchDefinitions", Week: t1, TotalWeek: 20, UniquesWeek: 2, LanguageID: &lang1},
 		{Name: "codeintel.lsifDefinitions", Week: t1, TotalWeek: 30, UniquesWeek: 3},
