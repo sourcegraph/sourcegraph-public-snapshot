@@ -14,6 +14,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -144,7 +145,7 @@ func newGitHubExternalService(t *testing.T, store *db.ExternalServiceStore) *typ
 	svc := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
-		Config:      `{"url": "https://github.com"}`,
+		Config:      `{"url": "https://github.com", "authorization": {}}`,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
