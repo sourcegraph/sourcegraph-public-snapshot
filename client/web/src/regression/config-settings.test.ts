@@ -41,6 +41,15 @@ describe('Site config test suite', () => {
     afterEach(async () => {
         await resourceManager.destroyAll()
     })
+
+    after(async () => {
+        if (!config.noCleanup) {
+            await resourceManager.destroyAll()
+        }
+        if (driver) {
+            await driver.close()
+        }
+    })
     test('htmlBodyTop', async function () {
         this.timeout(10 * 1000)
         resourceManager.add(
