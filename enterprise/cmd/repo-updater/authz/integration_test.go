@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	authzGitHub "github.com/sourcegraph/sourcegraph/internal/authz/github"
@@ -68,7 +69,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
 
 	testDB := dbtest.NewDB(t, *dsn)
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 
 	clock := func() time.Time {
 		return time.Now().UTC().Truncate(time.Microsecond)

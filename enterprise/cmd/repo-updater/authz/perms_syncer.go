@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -182,7 +181,6 @@ func (s *PermsSyncer) providersByURNs() map[string]authz.Provider {
 // syncUserPerms processes permissions syncing request in user-centric way. When `noPerms` is true,
 // the method will use partial results to update permissions tables even when error occurs.
 func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool) (err error) {
-	ctx = actor.WithInternalActor(ctx)
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
 
@@ -304,7 +302,6 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 // When `noPerms` is true, the method will use partial results to update permissions
 // tables even when error occurs.
 func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPerms bool) (err error) {
-	ctx = actor.WithInternalActor(ctx)
 	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms", "")
 	defer save(requestTypeRepo, int32(repoID), &err)
 

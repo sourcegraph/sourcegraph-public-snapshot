@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	campaignsBackground "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	ossDB "github.com/sourcegraph/sourcegraph/internal/db"
@@ -46,7 +47,7 @@ func enterpriseInit(
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
 ) (debugDumpers []debugserver.Dumper) {
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 	clock := func() time.Time {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
