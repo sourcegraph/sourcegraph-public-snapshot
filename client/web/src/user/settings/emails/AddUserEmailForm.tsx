@@ -15,7 +15,7 @@ interface Props {
     user: GQL.ID
 
     /** Called after successfully adding an email to the user. */
-    onDidAdd: () => void
+    onDidAdd: (email: string) => void
 
     className?: string
     history: H.History
@@ -41,7 +41,7 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
                         merge(
                             of<Pick<State, 'error'>>({ error: undefined }),
                             this.addUserEmail(this.state.email).pipe(
-                                tap(() => this.props.onDidAdd()),
+                                tap(() => this.props.onDidAdd(this.state.email)),
                                 map(() => ({ error: null, email: '' })),
                                 catchError(error => [{ error, email: this.state.email }])
                             )
