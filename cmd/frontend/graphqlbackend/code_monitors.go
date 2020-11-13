@@ -177,7 +177,6 @@ type EditMonitorArgs struct {
 }
 
 type UpdateCodeMonitorArgs struct {
-	Id      graphql.ID
 	Monitor *EditMonitorArgs
 	Trigger *EditTriggerArgs
 	Actions []*EditActionArgs
