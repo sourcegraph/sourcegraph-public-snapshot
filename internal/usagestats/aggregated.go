@@ -57,7 +57,7 @@ func groupSiteUsageStats(summary types.SiteUsageSummary, monthsOnly bool) *types
 	return stats
 }
 
-// GetAggregateCodeIntelStats returns aggregates statistics for code intelligence usage.
+// GetAggregatedCodeIntelStats returns aggregated statistics for code intelligence usage.
 func GetAggregatedCodeIntelStats(ctx context.Context) (*types.NewCodeIntelUsageStatistics, error) {
 	codeIntelEvents, err := db.EventLogs.AggregatedCodeIntelEvents(ctx)
 	if err != nil {
@@ -65,7 +65,7 @@ func GetAggregatedCodeIntelStats(ctx context.Context) (*types.NewCodeIntelUsageS
 	} else if len(codeIntelEvents) == 0 {
 		return nil, nil
 	}
-	stats := groupAggreatedCodeIntelStats(codeIntelEvents)
+	stats := groupAggregatedCodeIntelStats(codeIntelEvents)
 
 	usersCount, err := db.EventLogs.CodeIntelligenceCombinedWAU(ctx)
 	if err != nil {
@@ -102,7 +102,7 @@ var sourceMap = map[string]types.CodeIntelSource{
 	"codeintel.searchReferences.xrepo":  types.SearchSource,
 }
 
-func groupAggreatedCodeIntelStats(rawEvents []types.CodeIntelAggregatedEvent) *types.NewCodeIntelUsageStatistics {
+func groupAggregatedCodeIntelStats(rawEvents []types.CodeIntelAggregatedEvent) *types.NewCodeIntelUsageStatistics {
 	var eventSummaries []types.CodeIntelEventSummary
 	for _, event := range rawEvents {
 		languageID := ""
@@ -133,10 +133,10 @@ func GetAggregatedSearchStats(ctx context.Context) (*types.SearchUsageStatistics
 		return nil, err
 	}
 
-	return groupAggreatedSearchStats(events), nil
+	return groupAggregatedSearchStats(events), nil
 }
 
-func groupAggreatedSearchStats(events []types.AggregatedEvent) *types.SearchUsageStatistics {
+func groupAggregatedSearchStats(events []types.AggregatedEvent) *types.SearchUsageStatistics {
 	searchUsageStats := &types.SearchUsageStatistics{
 		Daily:   []*types.SearchUsagePeriod{newSearchEventPeriod()},
 		Weekly:  []*types.SearchUsagePeriod{newSearchEventPeriod()},
