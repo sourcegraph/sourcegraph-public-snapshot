@@ -217,37 +217,136 @@ func commitParametersToDiffParameters(ctx context.Context, op *search.CommitPara
 	}, nil
 }
 
+type searchCommitsInRepoEvent struct {
+	// Results are new commit results found.
+	Results []*CommitSearchResultResolver
+
+	// LimitHit is true if we stopped searching since we found FileMatchLimit
+	// results.
+	LimitHit bool
+
+	// TimedOut is true when the results may have been parsed from only
+	// partial output from the underlying git command (because, e.g., it timed
+	// out during execution and only returned partial output).
+	TimedOut bool
+
+	// Error is non-nil if an error occurred. It will be the last event if
+	// set.
+	//
+	// Note: Results will be empty if Error is set.
+	Error error
+}
+
+// searchCommitsInRepo is a blocking version of searchCommitsInRepoStream.
 func searchCommitsInRepo(ctx context.Context, op search.CommitParameters) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
+	for event := range searchCommitsInRepoStream(ctx, op) {
+		results = append(results, event.Results...)
+		limitHit = event.LimitHit
+		timedOut = event.TimedOut
+		err = event.Error
+	}
+	return results, limitHit, timedOut, err
+}
+
+// searchCommitsInRepoStream searchs for commits based on op.
+//
+// The returned channel must be read until closed, otherwise you may leak
+// resources.
+func searchCommitsInRepoStream(ctx context.Context, op search.CommitParameters) chan searchCommitsInRepoEvent {
+	c := make(chan searchCommitsInRepoEvent)
+	go func() {
+		defer close(c)
+		_, _, _ = doSearchCommitsInRepoStream(ctx, op, c)
+	}()
+
+	return c
+}
+
+func doSearchCommitsInRepoStream(ctx context.Context, op search.CommitParameters, c chan searchCommitsInRepoEvent) (limitHit, timedOut bool, err error) {
+	resultCount := 0
 	tr, ctx := trace.New(ctx, "searchCommitsInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v", op.RepoRevs, op.PatternInfo))
 	defer func() {
-		tr.LazyPrintf("%d results, limitHit=%v, timedOut=%v", len(results), limitHit, timedOut)
+		tr.LazyPrintf("%d results, limitHit=%v, timedOut=%v", resultCount, limitHit, timedOut)
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
+	// This defer will read the named return values. This is a convenient way
+	// to send errors down the channel, since we only want to do this once.
+	empty := true
+	defer func() {
+		// Send a final event if we had an error or if we hadn't sent down the
+		// channel.
+		if err != nil || empty {
+			c <- searchCommitsInRepoEvent{
+				LimitHit: limitHit,
+				TimedOut: timedOut,
+				Error:    err,
+			}
+		}
+	}()
+
 	diffParameters, err := commitParametersToDiffParameters(ctx, &op)
 	if err != nil {
-		return nil, false, false, err
+		return false, false, err
 	}
 
-	rawResults, complete, err := git.RawLogDiffSearch(ctx, diffParameters.Repo, diffParameters.Options)
-	if err != nil {
-		return nil, false, false, err
-	}
+	// Cancel context so we can stop RawLogDiffSearchOptions if we return
+	// early.
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
-	// if the result is incomplete, git log timed out and the client should be notified of that
-	timedOut = !complete
-	if len(rawResults) > int(op.PatternInfo.FileMatchLimit) {
-		limitHit = true
-		rawResults = rawResults[:op.PatternInfo.FileMatchLimit]
-	}
+	// Start the commit search stream.
+	events := git.RawLogDiffSearchStream(ctx, diffParameters.Repo, diffParameters.Options)
+
+	// Ensure we drain events if we return early (limitHit or error).
+	defer func() {
+		cancel()
+		for range events {
+		}
+	}()
 
 	repoResolver := &RepositoryResolver{repo: op.RepoRevs.Repo}
-	results, err = logCommitSearchResultsToResolvers(ctx, &op, repoResolver, rawResults)
-	return results, limitHit, timedOut, err
+	for event := range events {
+		// if the result is incomplete, git log timed out and the client
+		// should be notified of that.
+		timedOut = !event.Complete
+
+		// Convert the results into resolvers and send them.
+		results, err := logCommitSearchResultsToResolvers(ctx, &op, repoResolver, event.Results)
+		if len(results) > 0 {
+			empty = false
+			resultCount += len(event.Results)
+			limitHit = resultCount > int(op.PatternInfo.FileMatchLimit)
+			c <- searchCommitsInRepoEvent{
+				Results:  results,
+				LimitHit: limitHit,
+				TimedOut: timedOut,
+			}
+		}
+		if err != nil {
+			return limitHit, timedOut, err
+		}
+
+		// If we have hit the limit we stop (after we sent the above results).
+		if limitHit {
+			break
+		}
+
+		// If we have an error, stop and report it.
+		if event.Error != nil {
+			return limitHit, timedOut, event.Error
+		}
+	}
+
+	return limitHit, timedOut, nil
 }
 
 func logCommitSearchResultsToResolvers(ctx context.Context, op *search.CommitParameters, repoResolver *RepositoryResolver, rawResults []*git.LogCommitSearchResult) ([]*CommitSearchResultResolver, error) {
+	if len(rawResults) == 0 {
+		return nil, nil
+	}
+
 	results := make([]*CommitSearchResultResolver, len(rawResults))
 	for i, rawResult := range rawResults {
 		commit := rawResult.Commit
