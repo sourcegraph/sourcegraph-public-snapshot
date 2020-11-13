@@ -333,7 +333,7 @@ describe('Blob viewer', () => {
                                 sourcegraph.languages.registerReferenceProvider(['*'], {
                                     provideReferences: () => [
                                         new sourcegraph.Location(
-                                            new URL('git://github.com/sourcegraph/test?1234#test spaces.ts'),
+                                            new URL('git://github.com/sourcegraph/test%20repo?1234#test%20spaces.ts'),
                                             new sourcegraph.Range(
                                                 new sourcegraph.Position(0, 0),
                                                 new sourcegraph.Position(1, 0)
@@ -352,7 +352,7 @@ describe('Blob viewer', () => {
                 })
 
             await driver.page.goto(
-                `${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts#L1:1&tab=references`
+                `${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test%20repo/-/blob/test.ts#L1:1&tab=references`
             )
 
             await driver.page.waitForSelector('.test-file-match-children-item')
@@ -363,7 +363,7 @@ describe('Blob viewer', () => {
                 await driver.page.waitForFunction(
                     () =>
                         document
-                            .querySelector('[data-line="1"]')
+                            .querySelector('.test-repo-blob [data-line="1"]')
                             ?.nextElementSibling?.textContent?.includes('file path: test spaces.ts'),
                     { timeout: 5000 }
                 )
