@@ -62,6 +62,8 @@ func GetAggregatedCodeIntelStats(ctx context.Context) (*types.NewCodeIntelUsageS
 	codeIntelEvents, err := db.EventLogs.AggregatedCodeIntelEvents(ctx)
 	if err != nil {
 		return nil, err
+	} else if len(codeIntelEvents) == 0 {
+		return nil, nil
 	}
 	stats := groupAggreatedCodeIntelStats(codeIntelEvents)
 
