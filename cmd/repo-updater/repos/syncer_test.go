@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -24,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T) {
@@ -1654,7 +1656,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 			// Confirm that there are zero relationships
 			assertSourceCount(ctx, t, db, 0)
 
-			// User service can only sync public code, even if they have access to private code
+			// By default, user service can only sync public code, even if they have access to private code
 			syncer = &repos.Syncer{
 				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
 					s := repos.NewFakeSource(userService, nil, publicRepo, privateRepo)
@@ -1668,6 +1670,28 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 
 			// Confirm that there is one relationship
 			assertSourceCount(ctx, t, db, 1)
+
+			// If the private code feature flag is set, user service can also sync private code
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					ExternalServiceUserMode: "all",
+				},
+			})
+
+			syncer = &repos.Syncer{
+				Sourcer: func(services ...*repos.ExternalService) (repos.Sources, error) {
+					s := repos.NewFakeSource(userService, nil, publicRepo, privateRepo)
+					return repos.Sources{s}, nil
+				},
+				Now: time.Now,
+			}
+			if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err != nil {
+				t.Fatal(err)
+			}
+
+			// Confirm that there are two relationships
+			assertSourceCount(ctx, t, db, 2)
+			conf.Mock(nil)
 
 			// Attempt to add some repos with a per user limit set
 			syncer = &repos.Syncer{
