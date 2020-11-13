@@ -563,7 +563,7 @@ VALUES
 	globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
 	defer globals.SetPermissionsUserMapping(before)
 
-	// Alice should see "alice_private_repo" but not "alice_public_repo" or "bob_public_repo"
+	// Alice should see "alice_private_repo" but not "alice_public_repo", "bob_public_repo", "bob_private_repo"
 	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
 	repos, err := Repos.List(aliceCtx, ReposListOptions{})
 	if err != nil {
