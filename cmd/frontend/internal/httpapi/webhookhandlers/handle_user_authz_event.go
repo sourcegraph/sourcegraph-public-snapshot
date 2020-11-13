@@ -58,14 +58,16 @@ func scheduleUserUpdate(ctx context.Context, githubUser *gh.User) error {
 		// this user is not a sourcegraph user (yet...)
 		return nil
 	}
-	if len(accs) > 1 {
-		return fmt.Errorf("could not map github user to external account, %d external accounts returned, 1 expected", len(accs))
+
+	ids := []int32{}
+	for _, acc := range accs {
+		ids = append(ids, acc.UserID)
 	}
 
-	log15.Debug(fmt.Sprintf("scheduleUserUpdate: Dispatching permissions update for user %d", accs[0].UserID))
+	log15.Debug(fmt.Sprintf("scheduleUserUpdate: Dispatching permissions update for users %v", ids))
 
 	c := repoupdater.DefaultClient
 	return c.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-		UserIDs: []int32{accs[0].UserID},
+		UserIDs: ids,
 	})
 }

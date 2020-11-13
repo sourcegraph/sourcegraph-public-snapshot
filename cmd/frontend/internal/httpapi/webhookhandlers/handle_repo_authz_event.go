@@ -7,6 +7,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -37,6 +38,9 @@ func scheduleRepoUpdate(ctx context.Context, repo *gh.Repository) error {
 	if repo == nil {
 		return nil
 	}
+
+	// 🚨 SECURITY: we want to be able to find any private repo here, so set internal actor
+	ctx = actor.WithActor(ctx, &actor.Actor{Internal: true})
 	r, err := backend.Repos.GetByName(ctx, api.RepoName("github.com/"+repo.GetFullName()))
 	if err != nil {
 		return err
