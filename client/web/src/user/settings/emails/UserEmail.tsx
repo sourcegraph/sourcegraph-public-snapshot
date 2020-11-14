@@ -1,5 +1,4 @@
 import React, { useState, FunctionComponent } from 'react'
-import classNames from 'classnames'
 import * as H from 'history'
 
 import { mutateGraphQL } from '../../../backend/graphql'
