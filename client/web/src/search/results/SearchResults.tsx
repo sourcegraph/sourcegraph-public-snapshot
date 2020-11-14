@@ -39,6 +39,7 @@ import { FlatExtensionHostAPI } from '../../../../shared/src/api/contract'
 import { DeployType } from '../../jscontext'
 import { AuthenticatedUser } from '../../auth'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
+import { eraseTopLevelParameter } from '../../../../shared/src/search/parser/transformer'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
@@ -172,7 +173,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             // Do async search request
                             this.props
                                 .searchRequest(
-                                    caseSensitive ? `${query} case:yes` : query,
+                                    caseSensitive && eraseTopLevelParameter(query, 'case').type === 'success'
+                                        ? `${query} case:yes`
+                                        : query,
                                     LATEST_VERSION,
                                     patternType,
                                     resolveVersionContext(versionContext, this.props.availableVersionContexts),

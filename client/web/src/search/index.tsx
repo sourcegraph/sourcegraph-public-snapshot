@@ -3,6 +3,7 @@ import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/ut
 import { parseCaseSensitivityFromQuery, parsePatternTypeFromQuery } from '../../../shared/src/util/url'
 import { replaceRange } from '../../../shared/src/util/strings'
 import { discreteValueAliases } from '../../../shared/src/search/parser/filters'
+import { eraseTopLevelParameter } from '../../../shared/src/search/parser/transformer'
 import { VersionContext } from '../schema/site.schema'
 import { SearchPatternType } from '../../../shared/src/graphql-operations'
 import { Observable } from 'rxjs'
@@ -92,7 +93,8 @@ export function parseSearchURL(
     }
 
     const caseInQuery = parseCaseSensitivityFromQuery(finalQuery)
-    if (caseInQuery) {
+    const caseErases = eraseTopLevelParameter(finalQuery, 'case')
+    if (caseInQuery && caseErases.type === 'success') {
         // Any `case:` filter in the query should override the case= URL query parameter if it exists.
         finalQuery = replaceRange(finalQuery, caseInQuery.range)
 
