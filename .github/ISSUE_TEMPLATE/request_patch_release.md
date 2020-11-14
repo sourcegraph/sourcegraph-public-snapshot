@@ -39,9 +39,10 @@ I have read [when and why we perform patch releases](https://about.sourcegraph.c
 
 ---
 
-_For the release captain_: after reviewing and approving this request:
-* If there is [already an upcoming patch release](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+label%3Arelease-tracker+), add the listed commits alongside a link in this issue
-* If there is no upcoming patch release, create a new one:
-	* Update `dev/release/config.json` with the patch release in `upcomingRelease`
-	* `cd dev/release && yarn run release tracking:patch-issue`
-	* Add the listed commits alongside a link in this issue
+**For the [release captain](https://about.sourcegraph.com/handbook/engineering/releases#release-captain)** - after reviewing and approving this request:
+
+- If there is [already an upcoming patch release](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+label%3Arelease-tracking+), add the listed commits alongside a link to this issue
+- If there is no upcoming patch release, create a new one:
+  - Update `dev/release/config.json` with the patch release in `upcomingRelease` (and open a PR to `main` to update it)
+  - `cd dev/release && yarn build && yarn run release tracking:patch-issue`
+  - Add the listed commits alongside a link in this issue
