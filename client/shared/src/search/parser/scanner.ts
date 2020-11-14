@@ -41,6 +41,44 @@ export const toMonacoRange = ({ start, end }: CharacterRange): IRange => ({
 })
 
 /**
+ * Losslessly constructs the query string from tokens.
+ */
+export const toQueryString = (tokens: Token[]): string => {
+    const values: string[] = []
+    for (const token of tokens) {
+        switch (token.type) {
+            case 'openingParen':
+                values.push('(')
+                break
+            case 'closingParen':
+                values.push(')')
+                break
+            case 'quoted':
+                values.push(token.quotedValue)
+                break
+            case 'filter': {
+                const filterValue =
+                    token.filterValue && token.filterValue.type === 'literal'
+                        ? token.filterValue.value
+                        : token.filterValue?.quotedValue
+                values.push(`${token.filterType.value}:${filterValue || ''}`)
+                break
+            }
+            case 'whitespace':
+            case 'keyword':
+            case 'comment':
+            case 'literal':
+            case 'pattern':
+                values.push(token.value)
+                break
+            default:
+                throw new Error('unreachable')
+        }
+    }
+    return values.join('')
+}
+
+/**
  * A label associated with a pattern token. We don't use SearchPatternType because
  * that is used as a global quantifier for all patterns in a query. PatternKind
  * allows to qualify multiple pattern tokens differently within a single query.
@@ -121,6 +159,7 @@ export interface Comment extends BaseToken {
 
 export interface Whitespace extends BaseToken {
     type: 'whitespace'
+    value: string
 }
 
 export interface OpeningParen extends BaseToken {
@@ -283,9 +322,10 @@ const scanToken = <T extends Term = Literal>(
     }
 }
 
-const whitespace = scanToken(/\s+/, (_input, range) => ({
+const whitespace = scanToken(/\s+/, (input, { start, end }) => ({
     type: 'whitespace',
-    range,
+    value: input.slice(start, end),
+    range: { start, end },
 }))
 
 const literal = scanToken(/[^\s)]+/)
