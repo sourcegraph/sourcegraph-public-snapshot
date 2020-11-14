@@ -7,6 +7,7 @@ import { replaceRange } from './strings'
 import { discreteValueAliases } from '../search/parser/filters'
 import { tryCatch } from './errors'
 import { SearchPatternType } from '../graphql-operations'
+import { eraseTopLevelParameter } from '../search/parser/transformer'
 
 export interface RepoSpec {
     /**
@@ -592,7 +593,8 @@ export function buildSearchURLQuery(
     }
 
     const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
-    if (patternTypeInQuery) {
+    const patterntypeErases = eraseTopLevelParameter(fullQuery, 'patterntype')
+    if (patternTypeInQuery && patterntypeErases.type === 'success') {
         const { start, end } = patternTypeInQuery.range
         fullQuery = replaceRange(fullQuery, { start: Math.max(0, start - 1), end }).trim()
         searchParameters.set('q', fullQuery)
@@ -603,7 +605,8 @@ export function buildSearchURLQuery(
     }
 
     const caseInQuery = parseCaseSensitivityFromQuery(fullQuery)
-    if (caseInQuery) {
+    const caseErases = eraseTopLevelParameter(fullQuery, 'case')
+    if (caseInQuery && caseErases.type === 'success') {
         fullQuery = replaceRange(fullQuery, caseInQuery.range)
         searchParameters.set('q', fullQuery)
 
