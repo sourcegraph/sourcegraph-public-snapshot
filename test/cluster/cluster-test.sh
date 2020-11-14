@@ -7,7 +7,7 @@ DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)""
 cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
 
 function cluster_setup() {
-git clone --depth 1 --branch v3.21.2 \
+git clone --depth 1 --branch v3.20.1 \
   https://github.com/sourcegraph/deploy-sourcegraph.git \
   "$DIR/deploy-sourcegraph"
 
@@ -36,15 +36,15 @@ time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeou
 }
 
 function test_setup() {
-  LOGFILE=frontend-logs
-  # kubectl logs
-  kubectl_logs() {
-    echo "Appending frontend logs"
-    kubectl logs -l "app=sourcegraph-frontend" -c frontend >>$LOGFILE.log
-    chmod 744 $LOGFILE.log
-    #kubectl delete namespace $NAMESPACE
-  }
-  trap kubectl_logs EXIT
+#  LOGFILE=frontend-logs
+# kubectl logs
+#  kubectl_logs() {
+#    echo "Appending frontend logs"
+#    kubectl logs -l "app=sourcegraph-frontend" -c frontend >>$LOGFILE.log
+#    chmod 744 $LOGFILE.log
+#    #kubectl delete namespace $NAMESPACE
+#  }
+#  trap kubectl_logs EXIT
 
   set +x +u
   # shellcheck disable=SC1091

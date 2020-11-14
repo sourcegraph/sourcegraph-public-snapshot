@@ -5,4 +5,5 @@ steps:
     artifact_paths: ./*.png;./*.mp4;./*.log
     concurrency: 1
     concurrency_group: "cluster-test"
+    timeout_in_minutes: 60
 
