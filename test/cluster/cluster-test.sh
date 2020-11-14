@@ -11,18 +11,17 @@ git clone --depth 1 --branch v3.20.1 \
   https://github.com/sourcegraph/deploy-sourcegraph.git \
   "$DIR/deploy-sourcegraph"
 
-#NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER"
-# TODO(Dax): Buildkite cannot create namespaces at cluster level
-export NAMESPACE=cluster-ci-122
-kubectl create ns $NAMESPACE -oyaml --dry-run | kubectl apply -f -
-
 
 # TODO(Dax): Bit concerning this works...
 gcloud container clusters get-credentials default-buildkite --zone=us-central1-c --project=sourcegraph-ci
-kubectl config current-context
 
+#NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER"
+export NAMESPACE=cluster-ci-122
+kubectl create ns $NAMESPACE -oyaml --dry-run | kubectl apply -f -
 kubectl apply -f "$DIR/storageClass.yaml"
 kubectl config set-context --current --namespace="$NAMESPACE"
+kubectl config current-context
+sleep 15  #wait for namespace to come up
 kubectl get -n $NAMESPACE pods
 
 pushd "$DIR/deploy-sourcegraph/"
@@ -33,18 +32,11 @@ popd
 
 kubectl get pods
 time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=20m
+# Cleanup when done
+trap kubectl delete namespace $NAMESPACE EXIT
 }
 
 function test_setup() {
-#  LOGFILE=frontend-logs
-# kubectl logs
-#  kubectl_logs() {
-#    echo "Appending frontend logs"
-#    kubectl logs -l "app=sourcegraph-frontend" -c frontend >>$LOGFILE.log
-#    chmod 744 $LOGFILE.log
-#    #kubectl delete namespace $NAMESPACE
-#  }
-#  trap kubectl_logs EXIT
 
   set +x +u
   # shellcheck disable=SC1091
@@ -76,8 +68,7 @@ function e2e() {
   pushd client/web
   echo $SOURCEGRAPH_BASE_URL
   # TODO: File issue for broken test
-  #SOURCEGRAPH_BASE_URL="http://sourcegraph-frontend.$NAMESPACE.svc.cluster.local:30080" yarn run test:regression:core
-
+  #yarn run test:regression:core
   yarn run test:regression:config-settings
   popd
 }
@@ -86,6 +77,3 @@ function e2e() {
 cluster_setup
 test_setup
 e2e
-
-# ==========================
-test/cleanup-display.sh
