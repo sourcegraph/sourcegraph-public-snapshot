@@ -8,13 +8,11 @@ import (
 	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -62,24 +60,6 @@ func campaignsCreateAccess(ctx context.Context) error {
 	act := actor.FromContext(ctx)
 	if !act.IsAuthenticated() {
 		return backend.ErrNotAuthenticated
-	}
-	return nil
-}
-
-// checkLicense returns a user-facing error if the campaigns feature is not purchased
-// with the current license or any error occurred while validating the license.
-func checkLicense() error {
-	if !licensing.EnforceTiers {
-		return nil
-	}
-
-	err := licensing.Check(licensing.FeatureCampaigns)
-	if err != nil {
-		if licensing.IsFeatureNotActivated(err) {
-			return err
-		}
-		log15.Error("campaigns.Resolver.checkLicense", "err", err)
-		return errors.New("Unable to check license feature, please refer to logs for actual error message.")
 	}
 	return nil
 }
@@ -254,11 +234,6 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		tr.Finish()
 	}()
 
-	// Validate that the instance's licensing tier supports campaigns.
-	if err := checkLicense(); err != nil {
-		return nil, err
-	}
-
 	if err := campaignsEnabled(); err != nil {
 		return nil, err
 	}
@@ -300,11 +275,6 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		tr.SetError(err)
 		tr.Finish()
 	}()
-
-	// Validate that the instance's licensing tier supports campaigns.
-	if err := checkLicense(); err != nil {
-		return nil, err
-	}
 
 	if err := campaignsEnabled(); err != nil {
 		return nil, err
