@@ -14,10 +14,16 @@ import (
 
 func TestRetentionUsageStatistics(t *testing.T) {
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
 
-	userCreationDate := time.Date(2020, 10, 26, 0, 0, 0, 0, time.UTC)
+	defer func() {
+		timeNow = time.Now
+	}()
+
 	eventDate := time.Date(2020, 11, 3, 0, 0, 0, 0, time.UTC)
+	userCreationDate := time.Date(2020, 10, 26, 0, 0, 0, 0, time.UTC)
+
+	mockTimeNow(eventDate)
+	dbtesting.SetupGlobalTestDB(t)
 
 	events := []db.Event{{
 		Name:      "ViewHome",
@@ -108,7 +114,6 @@ func TestRetentionUsageStatistics(t *testing.T) {
 			Week10:     nil,
 			Week11:     nil,
 		})
-
 	}
 
 	want := &types.RetentionStats{
