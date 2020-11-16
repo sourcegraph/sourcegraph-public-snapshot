@@ -376,7 +376,6 @@ describe('Blob viewer', () => {
                 })
 
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/test.ts`)
-            // TODO: don't visit ref panel url
 
             // Click on "log" in "console.log()" in line 2
             await driver.page.waitForSelector('.test-log-token', { visible: true })
