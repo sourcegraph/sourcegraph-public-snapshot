@@ -39,6 +39,8 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
     queryChangesets?: typeof _queryChangesets
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
+    /** For testing only. */
+    expandByDefault?: boolean
 }
 
 /**
@@ -56,6 +58,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     hideFilters = false,
     queryChangesets = _queryChangesets,
     queryExternalChangesetWithFileDiffs,
+    expandByDefault,
 }) => {
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
@@ -159,6 +162,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                         history,
                         location,
                         extensionInfo: { extensionsController, hoverifier },
+                        expandByDefault,
                         queryExternalChangesetWithFileDiffs,
                     }}
                     queryConnection={queryChangesetsConnection}
