@@ -177,7 +177,7 @@ func TestStoreDequeueView(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	options := StoreOptions{
+	options := Options{
 		TableName:         "workerutil_test w",
 		ViewName:          "workerutil_test_view v",
 		Scan:              testScanFirstRecordView,
@@ -261,7 +261,7 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	options := StoreOptions{
+	options := Options{
 		TableName:     defaultTestStoreOptions.TableName,
 		StalledMaxAge: defaultTestStoreOptions.StalledMaxAge,
 
@@ -306,7 +306,7 @@ func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	options := StoreOptions{
+	options := Options{
 		TableName:     defaultTestStoreOptions.TableName,
 		StalledMaxAge: defaultTestStoreOptions.StalledMaxAge,
 

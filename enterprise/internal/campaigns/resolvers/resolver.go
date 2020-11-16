@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
 // Resolver is the GraphQL resolver of all things related to Campaigns.
@@ -381,6 +383,10 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 		return nil, err
 	}
 
+	if err := logCampaignSpecCreated(ctx, &opts); err != nil {
+		return nil, err
+	}
+
 	specResolver := &campaignSpecResolver{
 		store:        r.store,
 		httpFactory:  r.httpFactory,
@@ -388,6 +394,24 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 	}
 
 	return specResolver, nil
+}
+
+func logCampaignSpecCreated(ctx context.Context, opts *ee.CreateCampaignSpecOpts) error {
+	// Log an analytics event when a CampaignSpec has been created.
+	// See internal/usagestats/campaigns.go.
+	actor := actor.FromContext(ctx)
+
+	type eventArg struct {
+		ChangesetSpecsCount int `json:"changeset_specs_count"`
+	}
+	arg := eventArg{ChangesetSpecsCount: len(opts.ChangesetSpecRandIDs)}
+
+	jsonArg, err := json.Marshal(arg)
+	if err != nil {
+		return err
+	}
+
+	return usagestats.LogBackendEvent(actor.UID, "CampaignSpecCreated", json.RawMessage(jsonArg))
 }
 
 func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend.CreateChangesetSpecArgs) (graphqlbackend.ChangesetSpecResolver, error) {

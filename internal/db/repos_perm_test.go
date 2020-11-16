@@ -8,12 +8,15 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -252,89 +255,354 @@ func TestAuthzQueryConds(t *testing.T) {
 	}
 }
 
-// 🚨 SECURITY: test necessary to ensure security
-func Test_getBySQL_permissionsCheck(t *testing.T) {
+// 🚨 SECURITY: Tests are necessary to ensure security.
+func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	defer func() { MockAuthzFilter = nil }()
 
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-	allRepos := mustCreate(ctx, t,
+	// Set up three users: alice, bob and admin
+	alice, err := Users.Create(ctx, NewUser{
+		Email:                 "alice@example.com",
+		Username:              "alice",
+		Password:              "alice",
+		EmailVerificationCode: "alice",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	bob, err := Users.Create(ctx, NewUser{
+		Email:                 "bob@example.com",
+		Username:              "bob",
+		Password:              "bob",
+		EmailVerificationCode: "bob",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	admin, err := Users.Create(ctx, NewUser{
+		Email:                 "admin@example.com",
+		Username:              "admin",
+		Password:              "admin",
+		EmailVerificationCode: "admin",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Ensure only "admin" is the site admin, alice was prompted as site admin
+	// because it was the first user.
+	err = Users.SetIsSiteAdmin(ctx, admin.ID, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = Users.SetIsSiteAdmin(ctx, alice.ID, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Set up some repositories: public and private for both alice and bob
+	internalCtx := actor.WithInternalActor(ctx)
+	alicePublicRepo := mustCreate(internalCtx, t,
 		&types.Repo{
-
-			Name: "r0",
+			Name: "alice_public_repo",
 			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "a0",
-				ServiceType: "b0",
-				ServiceID:   "c0",
-			}},
-
+				ID:          "alice_public_repo",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		},
+	)[0]
+	alicePrivateRepo := mustCreate(internalCtx, t,
 		&types.Repo{
-
-			Name: "r1",
+			Name:    "alice_private_repo",
+			Private: true,
 			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "a1",
-				ServiceType: "b1",
-				ServiceID:   "c1",
-			}},
+				ID:          "alice_private_repo",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		},
+	)[0]
+	bobPublicRepo := mustCreate(internalCtx, t,
+		&types.Repo{
+			Name: "bob_public_repo",
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "bob_public_repo",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		},
+	)[0]
+	bobPrivateRepo := mustCreate(internalCtx, t,
+		&types.Repo{
+			Name:    "bob_private_repo",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "bob_private_repo",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		},
+	)[0]
+
+	// Set up another unrestricted private repo from cindy
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	cindyExternalService := &types.ExternalService{
+		Kind:         extsvc.KindGitHub,
+		DisplayName:  "GITHUB #1",
+		Config:       `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Unrestricted: true,
+	}
+	err = ExternalServices.Create(ctx, confGet, cindyExternalService)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cindyPrivateRepo := mustCreate(internalCtx, t,
+		&types.Repo{
+			Name:    "cindy_private_repo",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "cindy_private_repo",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		},
+	)[0]
+	cindyPrivateRepo.Sources = map[string]*types.SourceInfo{
+		cindyExternalService.URN(): {ID: cindyExternalService.URN()},
+	}
+
+	q := sqlf.Sprintf(`
+INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+VALUES (%s, %s, '')
+`, cindyExternalService.ID, cindyPrivateRepo.ID)
+	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Set up permissions: alice and bob have access to their own private repositories
+	q = sqlf.Sprintf(`
+INSERT INTO user_permissions (user_id, permission, object_type, object_ids_ints, updated_at)
+VALUES
+	(%s, 'read', 'repos', %s, NOW()),
+	(%s, 'read', 'repos', %s, NOW())
+`,
+		alice.ID, pq.Array([]int32{int32(alicePrivateRepo.ID)}),
+		bob.ID, pq.Array([]int32{int32(bobPrivateRepo.ID)}),
 	)
-	{
-		calledFilter := false
-		MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-			calledFilter = true
-			return repos, nil
-		}
-
-		gotRepos, err := Repos.getBySQL(ctx, sqlf.Sprintf("true"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !jsonEqual(t, gotRepos, allRepos) {
-			t.Errorf("got %v, want %v", gotRepos, allRepos)
-		}
-		if !calledFilter {
-			t.Error("did not call authzFilter (SECURITY)")
-		}
+	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatal(err)
 	}
-	{
-		calledFilter := false
-		MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-			calledFilter = true
-			return nil, nil
-		}
 
-		gotRepos, err := Repos.getBySQL(ctx, sqlf.Sprintf("true"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !jsonEqual(t, gotRepos, nil) {
-			t.Errorf("got %v, want %v", gotRepos, nil)
-		}
-		if !calledFilter {
-			t.Error("did not call authzFilter (SECURITY)")
-		}
+	authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
+	defer authz.SetProviders(true, nil)
+
+	// Alice should see "alice_public_repo", "alice_private_repo", "bob_public_repo", "cindy_private_repo"
+	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
+	repos, err := Repos.List(aliceCtx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
 	}
-	{
-		calledFilter := false
-		filteredRepos := allRepos[0:1]
-		MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-			calledFilter = true
-			return filteredRepos, nil
-		}
+	wantRepos := []*types.Repo{alicePublicRepo, alicePrivateRepo, bobPublicRepo, cindyPrivateRepo}
+	if diff := cmp.Diff(wantRepos, repos); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
 
-		gotRepos, err := Repos.getBySQL(ctx, sqlf.Sprintf("true"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !jsonEqual(t, gotRepos, filteredRepos) {
-			t.Errorf("got %v, want %v", gotRepos, filteredRepos)
-		}
-		if !calledFilter {
-			t.Error("did not call authzFilter (SECURITY)")
-		}
+	// Bob should see "alice_public_repo", "bob_private_repo", "bob_public_repo", "cindy_private_repo"
+	bobCtx := actor.WithActor(ctx, &actor.Actor{UID: bob.ID})
+	repos, err = Repos.List(bobCtx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRepos = []*types.Repo{alicePublicRepo, bobPublicRepo, bobPrivateRepo, cindyPrivateRepo}
+	if diff := cmp.Diff(wantRepos, repos); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
+
+	// Admin should see all repositories
+	adminCtx := actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
+	repos, err = Repos.List(adminCtx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRepos = []*types.Repo{alicePublicRepo, alicePrivateRepo, bobPublicRepo, bobPrivateRepo, cindyPrivateRepo}
+	if diff := cmp.Diff(wantRepos, repos); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
+
+	// A random user should only see "alice_public_repo", "bob_public_repo", "cindy_private_repo"
+	repos, err = Repos.List(ctx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRepos = []*types.Repo{alicePublicRepo, bobPublicRepo, cindyPrivateRepo}
+	if diff := cmp.Diff(wantRepos, repos); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
+}
+
+// 🚨 SECURITY: Tests are necessary to ensure security.
+func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	// Set up three users: alice, bob and admin
+	alice, err := Users.Create(ctx, NewUser{
+		Email:                 "alice@example.com",
+		Username:              "alice",
+		Password:              "alice",
+		EmailVerificationCode: "alice",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	bob, err := Users.Create(ctx, NewUser{
+		Email:                 "bob@example.com",
+		Username:              "bob",
+		Password:              "bob",
+		EmailVerificationCode: "bob",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	admin, err := Users.Create(ctx, NewUser{
+		Email:                 "admin@example.com",
+		Username:              "admin",
+		Password:              "admin",
+		EmailVerificationCode: "admin",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Ensure only "admin" is the site admin, alice was prompted as site admin
+	// because it was the first user.
+	err = Users.SetIsSiteAdmin(ctx, admin.ID, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = Users.SetIsSiteAdmin(ctx, alice.ID, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Set up some repositories: public and private for both alice and bob
+	internalCtx := actor.WithInternalActor(ctx)
+	alicePublicRepo := mustCreate(internalCtx, t,
+		&types.Repo{
+			Name: "alice_public_repo",
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "alice_public_repo",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		},
+	)[0]
+	alicePrivateRepo := mustCreate(internalCtx, t,
+		&types.Repo{
+			Name:    "alice_private_repo",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "alice_private_repo",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		},
+	)[0]
+	bobPublicRepo := mustCreate(internalCtx, t,
+		&types.Repo{
+			Name: "bob_public_repo",
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "bob_public_repo",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		},
+	)[0]
+	bobPrivateRepo := mustCreate(internalCtx, t,
+		&types.Repo{
+			Name:    "bob_private_repo",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "bob_private_repo",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		},
+	)[0]
+
+	// Set up permissions: alice and bob have access to their own private repositories
+	q := sqlf.Sprintf(`
+INSERT INTO user_permissions (user_id, permission, object_type, object_ids_ints, updated_at)
+VALUES
+	(%s, 'read', 'repos', %s, NOW()),
+	(%s, 'read', 'repos', %s, NOW())
+`,
+		alice.ID, pq.Array([]int32{int32(alicePrivateRepo.ID)}),
+		bob.ID, pq.Array([]int32{int32(bobPrivateRepo.ID)}),
+	)
+	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	before := globals.PermissionsUserMapping()
+	globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+	defer globals.SetPermissionsUserMapping(before)
+
+	// Alice should see "alice_private_repo" but not "alice_public_repo", "bob_public_repo", "bob_private_repo"
+	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
+	repos, err := Repos.List(aliceCtx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRepos := []*types.Repo{alicePrivateRepo}
+	if diff := cmp.Diff(wantRepos, repos); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
+
+	// Bob should see "bob_private_repo" but not "alice_public_repo" or "bob_public_repo"
+	bobCtx := actor.WithActor(ctx, &actor.Actor{UID: bob.ID})
+	repos, err = Repos.List(bobCtx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRepos = []*types.Repo{bobPrivateRepo}
+	if diff := cmp.Diff(wantRepos, repos); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
+
+	// Admin should see all repositories
+	adminCtx := actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
+	repos, err = Repos.List(adminCtx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRepos = []*types.Repo{alicePublicRepo, alicePrivateRepo, bobPublicRepo, bobPrivateRepo}
+	if diff := cmp.Diff(wantRepos, repos); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
+
+	// A random user sees nothing
+	repos, err = Repos.List(ctx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRepos = ([]*types.Repo)(nil)
+	if diff := cmp.Diff(wantRepos, repos); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 }

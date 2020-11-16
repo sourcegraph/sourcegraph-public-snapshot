@@ -53,7 +53,7 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 		sqlf.Sprintf("next_sync_at"),
 	}...)
 
-	store := store.NewStore(dbHandle, store.StoreOptions{
+	store := store.New(dbHandle, store.Options{
 		TableName:         "external_service_sync_jobs",
 		ViewName:          "external_service_sync_jobs_with_next_sync_at",
 		Scan:              scanSingleJob,

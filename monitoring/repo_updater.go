@@ -148,7 +148,6 @@ func RepoUpdater() *Container {
 							Description:       "repositories scheduled due to user traffic",
 							Query:             `sum(rate(src_repoupdater_sched_manual_fetch[1m]))`,
 							DataMayNotExist:   true,
-							Warning:           Alert().LessOrEqual(0).For(syncDurationThreshold),
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Check repo-updater logs. This is expected to fire if there are no user added code hosts",
