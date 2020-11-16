@@ -50,17 +50,12 @@ export const initMainThreadAPI = (
 
     const api: MainThreadAPI = {
         applySettingsEdit: edit => updateSettings(platformContext, edit),
-        requestGraphQL: <TResult extends object = any, TVariables extends object = any>(
-            request: string,
-            variables: TVariables
-        ) =>
-            from(
-                platformContext.requestGraphQL<TResult, TVariables>({
+        requestGraphQL: (request, variables) =>
+                platformContext.requestGraphQL({
                     request,
                     variables,
                     mightContainPrivateInfo: true,
-                })
-            ).toPromise(),
+                }).toPromise(),
         // Commands
         executeCommand: (command, args) => commands.executeCommand({ command, arguments: args }),
         registerCommand: (command, run) => {
