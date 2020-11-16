@@ -34,8 +34,11 @@ export const CampaignListIntro: React.FunctionComponent = () => (
                         <ul className="text-muted mb-0 pl-3">
                             <li>Users can now create campaigns</li>
                             <li>
-                                Changeset are published using the configured code host tokens of the user applying the
-                                campaign
+                                Changeset are published using the{' '}
+                                <a href="https://docs.sourcegraph.com/campaigns/how-tos/configuring_user_credentials">
+                                    configured code host tokens
+                                </a>{' '}
+                                of the user applying the campaign
                             </li>
                             <li>
                                 Template variables such as <code>search_result_paths</code> and{' '}
