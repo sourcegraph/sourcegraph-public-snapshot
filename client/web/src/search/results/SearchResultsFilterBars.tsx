@@ -1,37 +1,43 @@
 import React from 'react'
 import { SearchFilters } from '../../../../shared/src/api/protocol'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { QuickLink } from '../../schema/settings.schema'
 import { FilterChip } from '../FilterChip'
-import { isSearchResults } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
 
-export interface SearchScopeWithOptionalName {
+export interface SearchFilterData {
     name?: string
+
     value: string
+
+    count?: number
+    limitHit?: boolean
 }
 
 export const SearchResultsFilterBars: React.FunctionComponent<{
     navbarSearchQuery: string
-    results?: GQL.ISearchResults
-    filters: SearchScopeWithOptionalName[]
+    resultsFound: boolean
+    resultsLimitHit: boolean
+    filters: SearchFilterData[]
     extensionFilters: SearchFilters[] | undefined
+    repoFilters: SearchFilterData[] | undefined
     quickLinks?: QuickLink[] | undefined
     onFilterClick: (value: string) => void
     onShowMoreResultsClick: (value: string) => void
     calculateShowMoreResultsCount: () => number
 }> = ({
     navbarSearchQuery,
-    results,
+    resultsFound,
+    resultsLimitHit,
     filters,
     extensionFilters,
+    repoFilters,
     quickLinks,
     onFilterClick,
     onShowMoreResultsClick,
     calculateShowMoreResultsCount,
 }) => (
     <div className="search-results-filter-bars">
-        {((isSearchResults(results) && filters.length > 0) || extensionFilters) && (
+        {((resultsFound && filters.length > 0) || extensionFilters) && (
             <div className="search-results-filter-bars__row" data-testid="filters-bar">
                 Filters:
                 <div className="search-results-filter-bars__filters">
@@ -60,24 +66,22 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                 </div>
             </div>
         )}
-        {isSearchResults(results) && results.dynamicFilters.filter(filter => filter.kind === 'repo').length > 0 && (
+        {resultsFound && repoFilters && repoFilters.length > 0 && (
             <div className="search-results-filter-bars__row" data-testid="repo-filters-bar">
                 Repositories:
                 <div className="search-results-filter-bars__filters">
-                    {results.dynamicFilters
-                        .filter(filter => filter.kind === 'repo' && filter.value !== '')
-                        .map(filter => (
-                            <FilterChip
-                                name={filter.label}
-                                query={navbarSearchQuery}
-                                onFilterChosen={onFilterClick}
-                                key={filter.value}
-                                value={filter.value}
-                                count={filter.count}
-                                limitHit={filter.limitHit}
-                            />
-                        ))}
-                    {results.limitHit && !/\brepo:/.test(navbarSearchQuery) && (
+                    {repoFilters.map(filter => (
+                        <FilterChip
+                            name={filter.name}
+                            query={navbarSearchQuery}
+                            onFilterChosen={onFilterClick}
+                            key={filter.value}
+                            value={filter.value}
+                            count={filter.count}
+                            limitHit={filter.limitHit}
+                        />
+                    ))}
+                    {resultsLimitHit && !/\brepo:/.test(navbarSearchQuery) && (
                         <FilterChip
                             name="Show more"
                             query={navbarSearchQuery}
