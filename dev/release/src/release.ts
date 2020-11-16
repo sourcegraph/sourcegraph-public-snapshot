@@ -1,26 +1,31 @@
 import { ensureEvent, getClient, EventOptions } from './google-calendar'
 import { postMessage } from './slack'
 import {
-    ensureTrackingIssue,
     getAuthenticatedGitHubClient,
     listIssues,
-    getIssueByTitle,
-    trackingIssueTitle,
+    getTrackingIssue,
+    ensureReleaseTrackingIssue,
     ensurePatchReleaseIssue,
     createChangesets,
     CreatedChangeset,
+    createTag,
 } from './github'
 import * as changelog from './changelog'
 import * as campaigns from './campaigns'
 import { Config, releaseVersions, loadConfig } from './config'
 import { formatDate, timezoneLink } from './util'
 import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
-import execa from 'execa'
 import { readFileSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import commandExists from 'command-exists'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
+
+/**
+ * Convenience function for getting relevant configured releases as semver.SemVer
+ *
+ * It prompts for a confirmation of the `upcomingRelease` that is cached for a week.
+ */
 
 type StepID =
     | 'help'
@@ -154,7 +159,7 @@ const steps: Step[] = [
             const { upcoming: release } = await releaseVersions(config)
 
             // Create issue
-            const { url, created } = await ensureTrackingIssue({
+            const { url, created } = await ensureReleaseTrackingIssue({
                 version: release,
                 assignees: [captainGitHubUsername],
                 releaseDateTime: new Date(releaseDateTime),
@@ -277,39 +282,27 @@ If you have changes that should go into this patch release, <${patchRequestTempl
             const githubClient = await getAuthenticatedGitHubClient()
             const { upcoming: release } = await releaseVersions(config)
 
-            const trackingIssueURL = await getIssueByTitle(githubClient, trackingIssueTitle(release))
-            if (!trackingIssueURL) {
+            const trackingIssue = await getTrackingIssue(githubClient, release)
+            if (!trackingIssue) {
                 throw new Error(`Tracking issue for version ${release.version} not found - has it been created yet?`)
             }
 
             const blockingQuery = 'is:open org:sourcegraph label:release-blocker'
             const blockingIssues = await listIssues(githubClient, blockingQuery)
             const blockingIssuesURL = `https://github.com/issues?q=${encodeURIComponent(blockingQuery)}`
-
-            const releaseMilestone = `${release.major}.${release.minor}${
-                release.patch !== 0 ? `.${release.patch}` : ''
-            }`
-            const openQuery = `is:open org:sourcegraph is:issue milestone:${releaseMilestone}`
-            const openIssues = await listIssues(githubClient, openQuery)
-            const openIssuesURL = `https://github.com/issues?q=${encodeURIComponent(openQuery)}`
-
-            const issueCategories = [
-                { name: 'release-blocking', issues: blockingIssues, issuesURL: blockingIssuesURL },
-                { name: 'open', issues: openIssues, issuesURL: openIssuesURL },
-            ]
+            const blockingMessage =
+                blockingIssues.length === 0
+                    ? 'There are no release-blocking issues'
+                    : `There ${
+                          blockingIssues.length === 1
+                              ? 'is 1 release-blocking issue'
+                              : `are ${blockingIssues.length} release-blocking issues`
+                      }`
 
             const message = `:mega: *${release.version} Release Status Update*
 
-* Tracking issue: ${trackingIssueURL}
-${issueCategories
-    .map(
-        category =>
-            '* ' +
-            (category.issues.length === 1
-                ? `There is 1 ${category.name} issue: ${category.issuesURL}`
-                : `There are ${category.issues.length} ${category.name} issues: ${category.issuesURL}`)
-    )
-    .join('\n')}`
+* Tracking issue: ${trackingIssue.url}
+* ${blockingMessage}: ${blockingIssuesURL}`
             await postMessage(message, config.slackAnnounceChannel)
         },
     },
@@ -322,18 +315,17 @@ ${issueCategories
                 throw new Error('Candidate information is required (either "final" or a number)')
             }
             const { upcoming: release } = await releaseVersions(config)
-
-            const tag = JSON.stringify(`v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`)
-            const branch = JSON.stringify(`${release.major}.${release.minor}`)
-
-            console.log(`Creating and pushing tag ${tag} on ${branch}`)
-            await execa(
-                'bash',
-                [
-                    '-c',
-                    `git diff --quiet && git checkout ${branch} && git pull --rebase && git tag -a ${tag} -m ${tag} && git push origin ${tag}`,
-                ],
-                { stdio: 'inherit' }
+            const branch = `${release.major}.${release.minor}`
+            const tag = `v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`
+            await createTag(
+                await getAuthenticatedGitHubClient(),
+                {
+                    owner: 'sourcegraph',
+                    repo: 'sourcegraph',
+                    branch,
+                    tag,
+                },
+                config.dryRun.tags || false
             )
         },
     },
@@ -351,11 +343,8 @@ ${issueCategories
             const isPatchRelease = release.patch === 0
             const versionRegex = '[0-9]+\\.[0-9]+\\.[0-9]+'
             const campaignURL = campaigns.campaignURL(campaign)
-            const trackingIssueURL = await getIssueByTitle(
-                await getAuthenticatedGitHubClient(),
-                trackingIssueTitle(release)
-            )
-            if (!trackingIssueURL) {
+            const trackingIssue = await getTrackingIssue(await getAuthenticatedGitHubClient(), release)
+            if (!trackingIssue) {
                 // Do not block release staging on lack of tracking issue
                 console.error(`Tracking issue for version ${release.version} not found - has it been created yet?`)
             }
@@ -366,7 +355,7 @@ ${issueCategories
                 const defaultBody = `This pull request is part of the Sourcegraph ${release.version} release.
 
 * [Release campaign](${campaignURL})
-* ${trackingIssueURL ? `[Tracking issue](${trackingIssueURL}` : 'No tracking issue exists for this release'}`
+* ${trackingIssue ? `[Tracking issue](${trackingIssue.url}` : 'No tracking issue exists for this release'}`
                 if (!actionItems || actionItems.length === 0) {
                     return { draft: false, body: defaultBody }
                 }
@@ -536,19 +525,56 @@ Campaign: ${campaignURL}`,
         run: async config => {
             const { slackAnnounceChannel } = config
             const { upcoming: release } = await releaseVersions(config)
+            const githubClient = await getAuthenticatedGitHubClient()
 
+            // Push final tags
+            const branch = `${release.major}.${release.minor}`
+            const tag = `v${release.version}`
+            for (const repo of ['deploy-sourcegraph', 'deploy-sourcegraph-docker']) {
+                await createTag(
+                    await getAuthenticatedGitHubClient(),
+                    {
+                        owner: 'sourcegraph',
+                        repo,
+                        branch,
+                        tag,
+                    },
+                    config.dryRun.tags || false
+                )
+            }
+            if (config.dryRun.tags) {
+                console.error('Do not close release with dry run! Aborting')
+                return
+            }
+
+            // Set up announcement message
             const versionAnchor = release.version.replace('.', '-')
             const campaignURL = campaigns.campaignURL(
                 campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphCLIConfig())
             )
-            await postMessage(
-                `:captain: *${release.version} has been published*
+            const releaseMessage = `*${release.version} has been published*
 
 * Changelog: https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}
-* Release campaign: ${campaignURL}`,
-                slackAnnounceChannel
-            )
+* Release campaign: ${campaignURL}`
+
+            // Slack
+            await postMessage(`:captain: ${releaseMessage}`, slackAnnounceChannel)
             console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
+
+            // GitHub
+            const trackingIssue = await getTrackingIssue(githubClient, release)
+            if (!trackingIssue) {
+                console.warn(`Could not find tracking issue for release ${release.version} - skipping`)
+            } else {
+                await githubClient.issues.createComment({
+                    owner: trackingIssue.owner,
+                    repo: trackingIssue.repo,
+                    issue_number: trackingIssue.number,
+                    body: `${releaseMessage}
+
+@${config.captainGitHubUsername}: Please complete the post-release steps before closing this issue.`,
+                })
+            }
         },
     },
     {

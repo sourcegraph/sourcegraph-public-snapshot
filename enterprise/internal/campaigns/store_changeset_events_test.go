@@ -29,12 +29,17 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ rep
 	}
 
 	events := make([]*cmpgn.ChangesetEvent, 0, 3)
+	kinds := []cmpgn.ChangesetEventKind{
+		cmpgn.ChangesetEventKindGitHubCommented,
+		cmpgn.ChangesetEventKindGitHubClosed,
+		cmpgn.ChangesetEventKindGitHubAssigned,
+	}
 
 	t.Run("Upsert", func(t *testing.T) {
-		for i := 1; i < cap(events); i++ {
+		for i := 0; i < cap(events); i++ {
 			e := &cmpgn.ChangesetEvent{
-				ChangesetID: int64(i),
-				Kind:        cmpgn.ChangesetEventKindGitHubCommented,
+				ChangesetID: int64(i + 1),
+				Kind:        kinds[i],
 				Key:         issueComment.Key(),
 				CreatedAt:   clock.now(),
 				Metadata:    issueComment,
@@ -162,6 +167,51 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ rep
 
 				for i := 1; i <= len(events); i++ {
 					opts.ChangesetIDs = append(opts.ChangesetIDs, int64(i))
+				}
+
+				ts, next, err := s.ListChangesetEvents(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := next, int64(0); have != want {
+					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				}
+
+				have, want := ts, events
+				if len(have) != len(want) {
+					t.Fatalf("listed %d events, want: %d", len(have), len(want))
+				}
+			}
+		})
+
+		t.Run("ByKinds", func(t *testing.T) {
+			for _, k := range kinds {
+				opts := ListChangesetEventsOpts{Kinds: []cmpgn.ChangesetEventKind{k}}
+
+				ts, next, err := s.ListChangesetEvents(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := next, int64(0); have != want {
+					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				}
+
+				if have, want := len(ts), 1; have != want {
+					t.Fatalf("listed %d events for %q, want: %d", have, k, want)
+				}
+
+				if have, want := ts[0].Kind, k; have != want {
+					t.Fatalf("listed %q events, want of kind: %q", have, want)
+				}
+			}
+
+			{
+				opts := ListChangesetEventsOpts{Kinds: []cmpgn.ChangesetEventKind{}}
+
+				for _, e := range events {
+					opts.Kinds = append(opts.Kinds, e.Kind)
 				}
 
 				ts, next, err := s.ListChangesetEvents(ctx, opts)

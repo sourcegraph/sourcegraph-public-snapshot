@@ -809,6 +809,7 @@ description: somestring",
           nodeComponent={[Function]}
           nodeComponentProps={
             Object {
+              "expandByDefault": undefined,
               "extensionInfo": Object {
                 "extensionsController": undefined,
                 "hoverifier": Object {
@@ -862,6 +863,7 @@ description: somestring",
               nodeComponent={[Function]}
               nodeComponentProps={
                 Object {
+                  "expandByDefault": undefined,
                   "extensionInfo": Object {
                     "extensionsController": undefined,
                     "hoverifier": Object {
@@ -1760,6 +1762,7 @@ description: somestring",
           nodeComponent={[Function]}
           nodeComponentProps={
             Object {
+              "expandByDefault": undefined,
               "extensionInfo": Object {
                 "extensionsController": undefined,
                 "hoverifier": Object {
@@ -1813,6 +1816,7 @@ description: somestring",
               nodeComponent={[Function]}
               nodeComponentProps={
                 Object {
+                  "expandByDefault": undefined,
                   "extensionInfo": Object {
                     "extensionsController": undefined,
                     "hoverifier": Object {

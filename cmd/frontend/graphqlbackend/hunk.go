@@ -46,5 +46,5 @@ func (r *hunkResolver) Message() string {
 }
 
 func (r *hunkResolver) Commit(ctx context.Context) (*GitCommitResolver, error) {
-	return toGitCommitResolver(r.repo, &git.Commit{ID: r.hunk.CommitID}), nil
+	return toGitCommitResolver(r.repo, r.hunk.CommitID, nil), nil
 }
