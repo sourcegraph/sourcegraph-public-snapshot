@@ -34,13 +34,15 @@ Publishing a changesets will:
 - Push a branch using the branch name you defined in the campaign spec with [`changesetTemplate.branch`](../references/campaign_spec_yaml_reference.md#changesettemplate-branch).
 - Create a changeset (e.g., GitHub pull request) on the code host for review and merging.
 
-> NOTE: When pushing the branch Sourcegraph will use a force push. Make sure that the branch names are unused, otherwise previous commits will be overwritten.
+> NOTE: When pushing the branch Sourcegraph will use a **force push**. Make sure that the branch names are unused, otherwise previous commits will be overwritten.
 
 In the Sourcegraph web UI you'll see a progress indicator for the changesets that are being published and any possible errors:
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/publishing_changesets_viewing_progress_and_errors.png" class="screenshot center">
 
-If you run into any errors, you can retry publishing after you've resolved the problem by running `src campaign apply` again. You don't need to worry about multiple branches or pull requests being created when you retry, because the same branch name will be used.
+If you run into any errors, you can retry publishing after you've resolved the problem by running `src campaign apply` again.
+
+You don't need to worry about multiple branches or pull requests being created when you retry, because the same branch name will be used and the commit will be overwritten.
 
 ## Publishing a subset of changesets
 
