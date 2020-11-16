@@ -2,7 +2,7 @@ package webhookhandlers
 
 import "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 
-func Init(w *webhooks.GithubWebhook) {
+func Init(w *webhooks.GitHubWebhook) {
 	w.Register(handleGitHubRepoAuthzEvent, "public")
 	w.Register(handleGitHubRepoAuthzEvent, "repository")
 	w.Register(handleGitHubRepoAuthzEvent, "member") // member has both users and repos

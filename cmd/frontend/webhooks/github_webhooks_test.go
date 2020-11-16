@@ -26,7 +26,7 @@ import (
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
 func TestGithubWebhookDispatchSuccess(t *testing.T) {
-	h := GithubWebhook{}
+	h := GitHubWebhook{}
 	var called bool
 	h.Register(func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
 		called = true
@@ -43,7 +43,7 @@ func TestGithubWebhookDispatchSuccess(t *testing.T) {
 }
 
 func TestGithubWebhookDispatchNoHandler(t *testing.T) {
-	h := GithubWebhook{}
+	h := GitHubWebhook{}
 	ctx := context.Background()
 	// no op
 	if err := h.Dispatch(ctx, "test-event-1", nil, nil); err != nil {
@@ -53,7 +53,7 @@ func TestGithubWebhookDispatchNoHandler(t *testing.T) {
 
 func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {
 	var (
-		h      = GithubWebhook{}
+		h      = GitHubWebhook{}
 		called = make(chan struct{}, 2)
 	)
 	h.Register(func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
@@ -76,7 +76,7 @@ func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {
 
 func TestGithubWebhookDispatchError(t *testing.T) {
 	var (
-		h      = GithubWebhook{}
+		h      = GitHubWebhook{}
 		called = make(chan struct{}, 2)
 	)
 	h.Register(func(ctx context.Context, svc *repos.ExternalService, payload interface{}) error {
@@ -133,7 +133,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 		t.Fatal(t)
 	}
 
-	hook := GithubWebhook{
+	hook := GitHubWebhook{
 		Repos: repoStore,
 	}
 

@@ -3,8 +3,10 @@ package webhookhandlers
 import (
 	"context"
 	"fmt"
+
 	gh "github.com/google/go-github/v28/github"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -12,12 +14,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
 
+// handleGitHubUserAuthzEvent handles a github webhook for the events described in webhookhandlers/handlers.go
+// extracting a user from the github event and scheduling it for a perms update in repo-updater
 func handleGitHubUserAuthzEvent(ctx context.Context, extSvc *repos.ExternalService, payload interface{}) error {
-	if !conf.Get().ExperimentalFeatures.EnablePermissionsWebhooks {
+	if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
 		return nil
 	}
 
-	log15.Debug(fmt.Sprintf("handleGitHubUserAuthzEvent: Got github event %T", payload))
+	log15.Debug("handleGitHubUserAuthzEvent: Got github event", "type", fmt.Sprintf("%T", payload))
 
 	var user *gh.User
 
@@ -33,7 +37,7 @@ func handleGitHubUserAuthzEvent(ctx context.Context, extSvc *repos.ExternalServi
 		return fmt.Errorf("could not extract GitHub user from %T GitHub event", payload)
 	}
 
-	return scheduleUserUpdate(ctx, user)
+	return scheduleUserUpdate(ctx, extSvc, user)
 }
 
 type memberGetter interface {
@@ -44,12 +48,14 @@ type membershipGetter interface {
 	GetMembership() *gh.Membership
 }
 
-func scheduleUserUpdate(ctx context.Context, githubUser *gh.User) error {
+func scheduleUserUpdate(ctx context.Context, extSvc *repos.ExternalService, githubUser *gh.User) error {
 	if githubUser == nil {
 		return nil
 	}
 	accs, err := db.ExternalAccounts.List(ctx, db.ExternalAccountsListOptions{
-		AccountID: githubUser.GetID(),
+		ServiceID:   fmt.Sprint(extSvc.ID),
+		ServiceType: "github",
+		AccountID:   githubUser.GetID(),
 	})
 	if err != nil {
 		return err
@@ -64,7 +70,7 @@ func scheduleUserUpdate(ctx context.Context, githubUser *gh.User) error {
 		ids = append(ids, acc.UserID)
 	}
 
-	log15.Debug(fmt.Sprintf("scheduleUserUpdate: Dispatching permissions update for users %v", ids))
+	log15.Debug("scheduleUserUpdate: Dispatching permissions update", "users", ids)
 
 	c := repoupdater.DefaultClient
 	return c.SchedulePermsSync(ctx, protocol.PermsSyncRequest{

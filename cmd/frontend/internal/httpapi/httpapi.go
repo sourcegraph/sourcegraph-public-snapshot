@@ -57,7 +57,7 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, gitlabWebh
 	m.Get(apirouter.RepoRefresh).Handler(trace.TraceRoute(handler(serveRepoRefresh)))
 
 	if os.Getenv("USE_NEW_WEBHOOKS") != "" {
-		gh := webhooks.GithubWebhook{
+		gh := webhooks.GitHubWebhook{
 			Repos: repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
 		}
 
