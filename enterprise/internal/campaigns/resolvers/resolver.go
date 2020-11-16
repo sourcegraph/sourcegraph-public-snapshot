@@ -36,13 +36,16 @@ func NewResolver(db *sql.DB) graphqlbackend.CampaignsResolver {
 	return &Resolver{store: ee.NewStore(db)}
 }
 
-func campaignsEnabled() error {
+func campaignsEnabled(ctx context.Context) error {
 	// On Sourcegraph.com nobody can read/create campaign entities
 	if envvar.SourcegraphDotComMode() {
 		return ErrCampaignsDotCom{}
 	}
 
 	if enabled := conf.CampaignsEnabled(); enabled {
+		if conf.Get().CampaignsRestrictToAdmins && backend.CheckCurrentUserIsSiteAdmin(ctx) != nil {
+			return ErrCampaignsDisabledForUser{}
+		}
 		return nil
 	}
 
@@ -65,7 +68,7 @@ func campaignsCreateAccess(ctx context.Context) error {
 }
 
 func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
-	if err := campaignsEnabled(); err != nil {
+	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
@@ -97,7 +100,7 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 }
 
 func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignResolver, error) {
-	if err := campaignsEnabled(); err != nil {
+	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
@@ -122,7 +125,7 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 }
 
 func (r *Resolver) Campaign(ctx context.Context, args *graphqlbackend.CampaignArgs) (graphqlbackend.CampaignResolver, error) {
-	if err := campaignsEnabled(); err != nil {
+	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
@@ -145,7 +148,7 @@ func (r *Resolver) Campaign(ctx context.Context, args *graphqlbackend.CampaignAr
 }
 
 func (r *Resolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignSpecResolver, error) {
-	if err := campaignsEnabled(); err != nil {
+	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
@@ -171,7 +174,7 @@ func (r *Resolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (graphql
 }
 
 func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetSpecResolver, error) {
-	if err := campaignsEnabled(); err != nil {
+	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
@@ -202,7 +205,7 @@ func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 }
 
 func (r *Resolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignsCredentialResolver, error) {
-	if err := campaignsEnabled(); err != nil {
+	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
@@ -234,7 +237,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		tr.Finish()
 	}()
 
-	if err := campaignsEnabled(); err != nil {
+	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
@@ -276,7 +279,7 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		tr.Finish()
 	}()
 
-	if err := campaignsEnabled(); err != nil {
+	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
@@ -324,7 +327,7 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 		tr.Finish()
 	}()
 
-	if err := campaignsEnabled(); err != nil {
+	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
@@ -392,7 +395,7 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 		tr.Finish()
 	}()
 
-	if err := campaignsEnabled(); err != nil {
+	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
@@ -428,7 +431,7 @@ func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCa
 		tr.Finish()
 	}()
 
-	if err := campaignsEnabled(); err != nil {
+	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
@@ -470,7 +473,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := campaignsEnabled(); err != nil {
+	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
@@ -490,7 +493,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 }
 
 func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignsArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
-	if err := campaignsEnabled(); err != nil {
+	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
@@ -540,7 +543,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 }
 
 func (r *Resolver) CampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
-	if err := campaignsEnabled(); err != nil {
+	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
@@ -656,7 +659,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		tr.Finish()
 	}()
 
-	if err := campaignsEnabled(); err != nil {
+	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
@@ -685,7 +688,7 @@ func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncC
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := campaignsEnabled(); err != nil {
+	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
@@ -713,7 +716,7 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := campaignsEnabled(); err != nil {
+	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
@@ -777,7 +780,7 @@ func (r *Resolver) DeleteCampaignsCredential(ctx context.Context, args *graphqlb
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := campaignsEnabled(); err != nil {
+	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
