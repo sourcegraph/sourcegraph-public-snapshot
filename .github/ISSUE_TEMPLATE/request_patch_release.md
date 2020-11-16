@@ -2,7 +2,7 @@
 name: Request patch release
 about: Sourcegraph teams, use this issue to request the Distribution team perform a patch release or include your changes in a patch release..
 title: ''
-labels: 'team/distribution'
+labels: 'team/distribution,patch-release-request'
 assignees: ''
 
 ---
