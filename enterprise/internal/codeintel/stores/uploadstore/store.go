@@ -15,9 +15,7 @@ type Store interface {
 	Init(ctx context.Context) error
 
 	// Get returns a reader that streams the content of the object at the given key.
-	// If a positive skipBytes is supplied, the reader will begin reading at that byte
-	// offset.
-	Get(ctx context.Context, key string, skipBytes int64) (io.ReadCloser, error)
+	Get(ctx context.Context, key string) (io.ReadCloser, error)
 
 	// Upload writes the content in the given reader to the object at the given key.
 	Upload(ctx context.Context, key string, r io.Reader) (int64, error)
