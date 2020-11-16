@@ -6,7 +6,8 @@ export const CampaignListIntro: React.FunctionComponent = () => (
         <div className="col-12 col-md-6 mb-2">
             <div className="campaign-list-intro__card card p-2 h-100">
                 <div className="card-body d-flex align-items-start">
-                    <SourcegraphIcon className="mr-3 col-2 mt-2" />
+                    {/* d-none d-sm-block ensure that we hide the icon on XS displays. */}
+                    <SourcegraphIcon className="mr-3 col-2 mt-2 d-none d-sm-block" />
                     <div>
                         <h4>Campaigns trial</h4>
                         <p className="text-muted mb-0">
