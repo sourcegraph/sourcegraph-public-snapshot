@@ -1,5 +1,5 @@
 import React from 'react'
-import { ChangesetSpecType, ChangesetSpecFields } from '../../../graphql-operations'
+import { ChangesetSpecFields } from '../../../graphql-operations'
 import BlankCircleIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import ImportIcon from 'mdi-react/ImportIcon'
 import UploadIcon from 'mdi-react/UploadIcon'
@@ -12,10 +12,12 @@ export interface ChangesetSpecActionProps {
 
 export const ChangesetSpecAction: React.FunctionComponent<ChangesetSpecActionProps> = ({ spec, className }) => {
     if (spec.__typename === 'HiddenChangesetSpec') {
-        if (spec.type === ChangesetSpecType.BRANCH) {
-            return <ChangesetSpecActionNoPublish className={className} />
-        }
-        return <ChangesetSpecActionImport className={className} />
+        return (
+            <ChangesetSpecActionNoAction
+                reason={NoActionReasonStrings[NoActionReason.NO_ACCESS]}
+                className={className}
+            />
+        )
     }
     if (spec.description.__typename === 'ExistingChangesetReference') {
         return <ChangesetSpecActionImport className={className} />
@@ -53,5 +55,20 @@ export const ChangesetSpecActionImport: React.FunctionComponent<{ className?: st
     <div className={classNames(className, iconClassNames)}>
         <ImportIcon data-tooltip="This changeset will be imported and tracked in this campaign" />
         <span>Import</span>
+    </div>
+)
+export enum NoActionReason {
+    NO_ACCESS = 'no-access',
+}
+export const NoActionReasonStrings: Record<NoActionReason, string> = {
+    [NoActionReason.NO_ACCESS]: "You don't have access to the repository this changeset spec targets.",
+}
+export const ChangesetSpecActionNoAction: React.FunctionComponent<{ className?: string; reason: string }> = ({
+    className,
+    reason,
+}) => (
+    <div className={classNames(className, iconClassNames, 'text-muted')}>
+        <BlankCircleIcon data-tooltip={reason} />
+        <span>No action</span>
     </div>
 )
