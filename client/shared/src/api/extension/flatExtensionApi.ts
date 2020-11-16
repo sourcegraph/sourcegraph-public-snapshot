@@ -230,9 +230,7 @@ export const initNewExtensionAPI = (
 
     // GraphQL
     const graphQL: typeof sourcegraph['graphQL'] = {
-        requestGraphQL: <TResult, TVariables extends object>(query: string, variables: TVariables) =>
-            // Remote functions lose generic type parameters, so we have to cast the result
-            (mainAPI.requestGraphQL(query, variables) as unknown) as Promise<GraphQLResult<TResult>>,
+        requestGraphQL: (query, variables) => mainAPI.requestGraphQL(query, variables)
     }
 
     return {
