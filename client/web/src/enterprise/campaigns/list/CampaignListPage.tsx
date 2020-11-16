@@ -17,6 +17,7 @@ import { Link } from '../../../../../shared/src/components/Link'
 import { PageHeader } from '../../../components/PageHeader'
 import { CampaignsIconFlushLeft } from '../icons'
 import { CampaignsListEmpty } from './CampaignsListEmpty'
+import { CampaignListIntro } from './CampaignListIntro'
 import { filter, map, tap } from 'rxjs/operators'
 import { Observable } from 'rxjs'
 
@@ -83,6 +84,7 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
             <p className="text-muted">
                 Run custom code over hundreds of repositories and manage the resulting changesets
             </p>
+            <CampaignListIntro />
             {totalCampaignsCount === 0 && <CampaignsListEmpty />}
             {totalCampaignsCount !== 0 && (
                 <FilteredConnection<ListCampaign, Omit<CampaignNodeProps, 'node'>>
