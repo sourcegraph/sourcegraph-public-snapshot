@@ -1336,6 +1336,7 @@ Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL
     "users_username" UNIQUE, btree (username) WHERE deleted_at IS NULL
+    "users_created_at_idx" btree (created_at)
 Check constraints:
     "users_display_name_max_length" CHECK (char_length(display_name) <= 255)
     "users_username_max_length" CHECK (char_length(username::text) <= 255)

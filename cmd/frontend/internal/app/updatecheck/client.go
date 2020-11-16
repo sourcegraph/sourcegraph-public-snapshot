@@ -167,6 +167,17 @@ func getAndMarshalRepositoriesJSON(ctx context.Context) (_ json.RawMessage, err 
 	return json.Marshal(repos)
 }
 
+func getAndMarshalRetentionStatisticsJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalRetentionStatisticsJSON")(&err)
+
+	retentionStatistics, err := usagestats.GetRetentionStatistics(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(retentionStatistics)
+}
+
 func getAndMarshalSearchOnboardingJSON(ctx context.Context) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalSearchOnboardingJSON")(&err)
 
@@ -280,6 +291,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		SavedSearches:       []byte("{}"),
 		HomepagePanels:      []byte("{}"),
 		Repositories:        []byte("{}"),
+		RetentionStatistics: []byte("{}"),
 		SearchOnboarding:    []byte("{}"),
 	}
 
@@ -350,6 +362,11 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
+		}
+
+		r.RetentionStatistics, err = getAndMarshalRetentionStatisticsJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalRetentionStatisticsJSON failed", "error", err)
 		}
 
 		r.ExternalServices, err = externalServiceKinds(ctx)

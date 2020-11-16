@@ -1243,6 +1243,27 @@ type HomepagePanels struct {
 	PercentUsersShown                      *float64
 }
 
+type WeeklyRetentionStats struct {
+	WeekStart  time.Time
+	CohortSize *int32
+	Week0      *float64
+	Week1      *float64
+	Week2      *float64
+	Week3      *float64
+	Week4      *float64
+	Week5      *float64
+	Week6      *float64
+	Week7      *float64
+	Week8      *float64
+	Week9      *float64
+	Week10     *float64
+	Week11     *float64
+}
+
+type RetentionStats struct {
+	Weekly []*WeeklyRetentionStats
+}
+
 type SearchOnboarding struct {
 	TotalOnboardingTourViews   *int32
 	ViewedLangStep             *int32
