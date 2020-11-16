@@ -1,6 +1,6 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useMemo, useState, useEffect, useCallback } from 'react'
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
 import { escapeRegExp, uniqueId } from 'lodash'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Observable, NEVER, ObservableInput, of } from 'rxjs'
@@ -362,14 +362,18 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     // Increment hovers that the user has seen. Enable browser extension discoverability
     // features after hover count threshold is reached (e.g. alerts, popovers)
+    // Store hover count in ref to avoid circular dependency
+    // hoverCount -> onHoverShown -> WebHoverOverlay (onHoverShown in useEffect deps) -> onHoverShown()
+    const hoverCountReference = useRef(hoverCount)
+    hoverCountReference.current = hoverCount
     const onHoverShown = useCallback(() => {
-        const count = hoverCount + 1
+        const count = hoverCountReference.current + 1
         if (count > HOVER_THRESHOLD) {
             // No need to keep updating localStorage
             return
         }
         setHoverCount(count)
-    }, [hoverCount, setHoverCount])
+    }, [setHoverCount])
 
     const onPopoverDismissed = useCallback(() => {
         setHasDismissedPopover(true)
