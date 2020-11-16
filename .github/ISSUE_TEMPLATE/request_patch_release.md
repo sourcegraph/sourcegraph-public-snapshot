@@ -2,7 +2,7 @@
 name: Request patch release
 about: Sourcegraph teams, use this issue to request the Distribution team perform a patch release or include your changes in a patch release..
 title: ''
-labels: 'team/distribution'
+labels: 'team/distribution,patch-release-request'
 assignees: ''
 
 ---
@@ -43,6 +43,8 @@ I have read [when and why we perform patch releases](https://about.sourcegraph.c
 
 - If there is [already an upcoming patch release](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+label%3Arelease-tracking+), add the listed commits alongside a link to this issue
 - If there is no upcoming patch release, create a new one:
-  - Update `dev/release/config.json` with the patch release in `upcomingRelease` (and open a PR to `main` to update it)
+  - Update [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) with the patch release in `upcomingRelease` (and open a PR to `main` to update it)
   - `cd dev/release && yarn build && yarn run release tracking:patch-issue`
-  - Add the listed commits alongside a link in this issue
+  - Add the listed commits alongside a link to this issue to the generated [release tracking issue](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+label%3Arelease-tracking+)
+
+Comment and close this issue once the relevant commit(s) have been cherry-picked into the release branch.
