@@ -200,7 +200,7 @@ const CampaignListTabHeader: React.FunctionComponent<{
         [setSelectedTab]
     )
     return (
-        <div className="overflow-auto mb-2">
+        <div className="overflow-auto mb-4">
             <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
                 <li className="nav-item">
                     <a
