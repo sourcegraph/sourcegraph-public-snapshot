@@ -405,6 +405,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		HasRepos:             true,
 		EverSearched:         false,
 		EverFindRefs:         true,
+		RetentionStatistics:  nil,
 	}
 
 	payload, err := marshalPing(pr, true, "127.0.0.1", now)
