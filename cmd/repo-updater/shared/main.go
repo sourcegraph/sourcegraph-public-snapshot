@@ -31,7 +31,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/secret"
@@ -332,8 +334,12 @@ func Main(enterpriseInit EnterpriseInit) {
 	},
 	)
 
-	srv := &http.Server{Addr: addr, Handler: handler}
-	log.Fatal(srv.ListenAndServe())
+	httpSrv, err := httpserver.NewFromAddr(addr, handler, httpserver.Options{})
+	if err != nil {
+		log.Fatalf("Failed to create listener: %s", err)
+	}
+
+	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }
 
 type scheduler interface {
