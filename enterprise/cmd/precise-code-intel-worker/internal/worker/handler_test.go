@@ -223,7 +223,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 //
 //
 
-func copyTestDump(ctx context.Context, key string, offsetBytes int64) (io.ReadCloser, error) {
+func copyTestDump(ctx context.Context, key string) (io.ReadCloser, error) {
 	return os.Open("../../testdata/dump1.lsif.gz")
 }
 

@@ -181,7 +181,7 @@ func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, 
 	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", id)
 
 	// Pull raw uploaded data from bucket
-	rc, err := uploadStore.Get(ctx, uploadFilename, 0)
+	rc, err := uploadStore.Get(ctx, uploadFilename)
 	if err != nil {
 		return errors.Wrap(err, "uploadStore.Get")
 	}
