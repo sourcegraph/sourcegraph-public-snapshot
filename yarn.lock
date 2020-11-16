@@ -5074,7 +5074,7 @@ ajv@^6.1.0, ajv@^6.1.1, ajv@^6.10.0, ajv@^6.10.2, ajv@^6.12.2, ajv@^6.12.3, ajv@
     json-schema-traverse "^0.4.1"
     uri-js "^4.2.2"
 
-alphanum-sort@^1.0.2:
+alphanum-sort@^1.0.0:
   version "1.0.2"
   resolved "https://registry.npmjs.org/alphanum-sort/-/alphanum-sort-1.0.2.tgz#97a1119649b211ad33691d9f9f486a8ec9fbe0a3"
   integrity sha1-l6ERlkmyEa0zaR2fn0hqjsn74KM=
@@ -6550,7 +6550,7 @@ browserslist@4.10.0:
     node-releases "^1.1.52"
     pkg-up "^3.1.0"
 
-browserslist@^4.0.0, browserslist@^4.12.0, browserslist@^4.14.5, browserslist@^4.5.6, browserslist@^4.6.0, browserslist@^4.8.3, browserslist@^4.9.1:
+browserslist@^4.0.0, browserslist@^4.12.0, browserslist@^4.14.5, browserslist@^4.8.3, browserslist@^4.9.1:
   version "4.14.7"
   resolved "https://registry.npmjs.org/browserslist/-/browserslist-4.14.7.tgz#c071c1b3622c1c2e790799a37bb09473a4351cb6"
   integrity sha512-BSVRLCeG3Xt/j/1cCGj1019Wbty0H+Yvu2AOuZSuoaUWn3RatbL33Cxk+Q4jRMRAbOm0p7SLravLjpnT6s0vzQ==
@@ -7593,10 +7593,10 @@ color-name@^1.0.0, color-name@~1.1.4:
   resolved "https://registry.npmjs.org/color-name/-/color-name-1.1.4.tgz#c2a09a87acbde69543de6f63fa3995c826c536a2"
   integrity sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==
 
-color-string@^1.5.2:
-  version "1.5.3"
-  resolved "https://registry.npmjs.org/color-string/-/color-string-1.5.3.tgz#c9bbc5f01b58b5492f3d6857459cb6590ce204cc"
-  integrity sha512-dC2C5qeWoYkxki5UAXapdjqO672AM4vZuPGRQfO8b5HKuKGBbKWpITyDYN7TOFKvRW7kOgAn3746clDBMDJyQw==
+color-string@^1.5.4:
+  version "1.5.4"
+  resolved "https://registry.npmjs.org/color-string/-/color-string-1.5.4.tgz#dd51cd25cfee953d138fe4002372cc3d0e504cb6"
+  integrity sha512-57yF5yt8Xa3czSEW1jfQDE79Idk0+AkN/4KWad6tbdxUmAs3MvjxlWSWD4deYytcRfoZ9nhKyFl1kj5tBvidbw==
   dependencies:
     color-name "^1.0.0"
     simple-swizzle "^0.2.2"
@@ -7606,13 +7606,13 @@ color-support@^1.1.3:
   resolved "https://registry.npmjs.org/color-support/-/color-support-1.1.3.tgz#93834379a1cc9a0c61f82f52f0d04322251bd5a2"
   integrity sha512-qiBjkpbMLO/HL68y+lh4q0/O1MZFj2RX6X/KmMa3+gJD3z+WwI1ZzDHysvqHGS3mP6mznPckpXmw1nI9cJjyRg==
 
-color@^3.1.1:
-  version "3.1.2"
-  resolved "https://registry.npmjs.org/color/-/color-3.1.2.tgz#68148e7f85d41ad7649c5fa8c8106f098d229e10"
-  integrity sha512-vXTJhHebByxZn3lDvDJYw4lR5+uB3vuoHsuYA5AKuxRVn5wzzIfQKGLBmgdVRHKTJYeK5rvJcHnrd0Li49CFpg==
+color@^3.0.0:
+  version "3.1.3"
+  resolved "https://registry.npmjs.org/color/-/color-3.1.3.tgz#ca67fb4e7b97d611dcde39eceed422067d91596e"
+  integrity sha512-xgXAcTHa2HeFCGLE9Xs/R82hujGtu9Jd9x4NW3T34+OMs7VoPsjwzRczKHvTAHeJwWFwX5j15+MgAppE8ztObQ==
   dependencies:
     color-convert "^1.9.1"
-    color-string "^1.5.2"
+    color-string "^1.5.4"
 
 colorette@^1.2.1:
   version "1.2.1"
@@ -7974,7 +7974,7 @@ cosmiconfig@^4.0.0:
     parse-json "^4.0.0"
     require-from-string "^2.0.1"
 
-cosmiconfig@^5.2.1:
+cosmiconfig@^5.0.0, cosmiconfig@^5.2.1:
   version "5.2.1"
   resolved "https://registry.npmjs.org/cosmiconfig/-/cosmiconfig-5.2.1.tgz#040f726809c591e77a17c0a3626ca45b4f168b1a"
   integrity sha512-H65gsXo1SKjf8zmrJ67eJk8aIRKV5ff2D4uKZIBZShbhGSpEmsQOPW/SKMKYhSTrqR7ufy6RP69rPogdaPh/kA==
@@ -8135,22 +8135,17 @@ crypto-random-string@^2.0.0:
   resolved "https://registry.npmjs.org/crypto-random-string/-/crypto-random-string-2.0.0.tgz#ef2a7a966ec11083388369baa02ebead229b30d5"
   integrity sha512-v1plID3y9r/lPhviJ1wrXpLeyUIGAZ2SHNYTEapm7/8A9nLPoyvVp3RK/EPFqn5kEznyWgYZNsRtYYIWbuG8KA==
 
-css-color-names@^0.0.4:
+css-color-names@0.0.4, css-color-names@^0.0.4:
   version "0.0.4"
-  resolved "http://registry.npmjs.org/css-color-names/-/css-color-names-0.0.4.tgz#808adc2e79cf84738069b646cb20ec27beb629e0"
+  resolved "https://registry.npmjs.org/css-color-names/-/css-color-names-0.0.4.tgz#808adc2e79cf84738069b646cb20ec27beb629e0"
   integrity sha1-gIrcLnnPhHOAabZGyyDsJ762KeA=
 
-css-color-names@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.npmjs.org/css-color-names/-/css-color-names-1.0.1.tgz#6ff7ee81a823ad46e020fa2fd6ab40a887e2ba67"
-  integrity sha512-/loXYOch1qU1biStIFsHH8SxTmOseh1IJqFvy8IujXOm1h+QjUdDhkzOrR5HG8K8mlxREj0yfi8ewCHx0eMxzA==
-
-css-declaration-sorter@^5.1.2:
-  version "5.1.2"
-  resolved "https://registry.npmjs.org/css-declaration-sorter/-/css-declaration-sorter-5.1.2.tgz#1361e99aa9beac280ae77b593ad1bdb5d9bdd0a5"
-  integrity sha512-XXyZJ7wJ9VXG6DIuMg2XS9ZRsuJRHqVgnaD7PuTN1icSC9uxKBDrWtGktZkat8uPNl4effVtO5vYTiBJtg1ijg==
+css-declaration-sorter@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.npmjs.org/css-declaration-sorter/-/css-declaration-sorter-4.0.1.tgz#c198940f63a76d7e36c1e71018b001721054cb22"
+  integrity sha512-BcxQSKTSEEQUftYpBVnsH4SF05NTuBokb19/sBt6asXGKZ/6VP7PLG1CBCkFDYOnhXhPh0jMhO6xZ71oYHXHBA==
   dependencies:
-    postcss "^7.0.26"
+    postcss "^7.0.1"
     timsort "^0.3.0"
 
 css-loader@^3.5.3, css-loader@^3.6.0:
@@ -8238,59 +8233,73 @@ cssesc@^3.0.0:
   resolved "https://registry.npmjs.org/cssesc/-/cssesc-3.0.0.tgz#37741919903b868565e1c09ea747445cd18983ee"
   integrity sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg==
 
-cssnano-preset-default@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/cssnano-preset-default/-/cssnano-preset-default-4.0.0-nightly.2020.9.9.tgz#35780149a2a9be10a8a705fcdece8ed1d9d54df3"
-  integrity sha512-ujy8pr6a7u7IJqw0TsjsuyWV07mI6xkEhIwQaFZaaEbqwt9nozzKzjNK57hvMHCshK/JWSv2ASmF7Xr1dsd/jQ==
+cssnano-preset-default@^4.0.7:
+  version "4.0.7"
+  resolved "https://registry.npmjs.org/cssnano-preset-default/-/cssnano-preset-default-4.0.7.tgz#51ec662ccfca0f88b396dcd9679cdb931be17f76"
+  integrity sha512-x0YHHx2h6p0fCl1zY9L9roD7rnlltugGu7zXSKQx6k2rYw0Hi3IqxcoAGF7u9Q5w1nt7vK0ulxV8Lo+EvllGsA==
   dependencies:
-    css-declaration-sorter "^5.1.2"
-    cssnano-utils nightly
-    postcss "^7.0.16"
+    css-declaration-sorter "^4.0.1"
+    cssnano-util-raw-cache "^4.0.1"
+    postcss "^7.0.0"
     postcss-calc "^7.0.1"
-    postcss-colormin nightly
-    postcss-convert-values nightly
-    postcss-discard-comments nightly
-    postcss-discard-duplicates nightly
-    postcss-discard-empty nightly
-    postcss-discard-overridden nightly
-    postcss-merge-longhand nightly
-    postcss-merge-rules nightly
-    postcss-minify-font-values nightly
-    postcss-minify-gradients nightly
-    postcss-minify-params nightly
-    postcss-minify-selectors nightly
-    postcss-normalize-charset nightly
-    postcss-normalize-display-values nightly
-    postcss-normalize-positions nightly
-    postcss-normalize-repeat-style nightly
-    postcss-normalize-string nightly
-    postcss-normalize-timing-functions nightly
-    postcss-normalize-unicode nightly
-    postcss-normalize-url nightly
-    postcss-normalize-whitespace nightly
-    postcss-ordered-values nightly
-    postcss-reduce-initial nightly
-    postcss-reduce-transforms nightly
-    postcss-svgo nightly
-    postcss-unique-selectors nightly
+    postcss-colormin "^4.0.3"
+    postcss-convert-values "^4.0.1"
+    postcss-discard-comments "^4.0.2"
+    postcss-discard-duplicates "^4.0.2"
+    postcss-discard-empty "^4.0.1"
+    postcss-discard-overridden "^4.0.1"
+    postcss-merge-longhand "^4.0.11"
+    postcss-merge-rules "^4.0.3"
+    postcss-minify-font-values "^4.0.2"
+    postcss-minify-gradients "^4.0.2"
+    postcss-minify-params "^4.0.2"
+    postcss-minify-selectors "^4.0.2"
+    postcss-normalize-charset "^4.0.1"
+    postcss-normalize-display-values "^4.0.2"
+    postcss-normalize-positions "^4.0.2"
+    postcss-normalize-repeat-style "^4.0.2"
+    postcss-normalize-string "^4.0.2"
+    postcss-normalize-timing-functions "^4.0.2"
+    postcss-normalize-unicode "^4.0.1"
+    postcss-normalize-url "^4.0.1"
+    postcss-normalize-whitespace "^4.0.2"
+    postcss-ordered-values "^4.1.2"
+    postcss-reduce-initial "^4.0.3"
+    postcss-reduce-transforms "^4.0.2"
+    postcss-svgo "^4.0.2"
+    postcss-unique-selectors "^4.0.1"
 
-cssnano-utils@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/cssnano-utils/-/cssnano-utils-4.0.0-nightly.2020.9.9.tgz#39b3eb3fc0ae521ffe4e1a0ddbe2959188ad91ff"
-  integrity sha512-nWfHP8auyTEHPB0FnYORV5JretGXVXQV8T+XOBhHxSaQLTSuHay7jgF6BvsfMIxisEQpyO8ZXQvo28lHuxd25w==
-  dependencies:
-    postcss "^7.0.16"
+cssnano-util-get-arguments@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.npmjs.org/cssnano-util-get-arguments/-/cssnano-util-get-arguments-4.0.0.tgz#ed3a08299f21d75741b20f3b81f194ed49cc150f"
+  integrity sha1-7ToIKZ8h11dBsg87gfGU7UnMFQ8=
 
-cssnano@4.0.0-nightly.2020.9.9, cssnano@^4.1.10:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/cssnano/-/cssnano-4.0.0-nightly.2020.9.9.tgz#d7a89a50e9ed2b5bb79c5b43ef96e6f7f950b4d2"
-  integrity sha512-E+saivd9l/JINYNE0Qr8e0/gFE9C0ohdI/tHb9ixEUeLH4KO2mx9NAIkJKV9iv2WaRmpQLygmEDn51k0O9AyAw==
+cssnano-util-get-match@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.npmjs.org/cssnano-util-get-match/-/cssnano-util-get-match-4.0.0.tgz#c0e4ca07f5386bb17ec5e52250b4f5961365156d"
+  integrity sha1-wOTKB/U4a7F+xeUiULT1lhNlFW0=
+
+cssnano-util-raw-cache@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.npmjs.org/cssnano-util-raw-cache/-/cssnano-util-raw-cache-4.0.1.tgz#b26d5fd5f72a11dfe7a7846fb4c67260f96bf282"
+  integrity sha512-qLuYtWK2b2Dy55I8ZX3ky1Z16WYsx544Q0UWViebptpwn/xDBmog2TLg4f+DBMg1rJ6JDWtn96WHbOKDWt1WQA==
   dependencies:
-    cosmiconfig "^6.0.0"
-    cssnano-preset-default nightly
-    is-resolvable "^1.1.0"
-    opencollective-postinstall "^2.0.2"
-    postcss "^7.0.16"
+    postcss "^7.0.0"
+
+cssnano-util-same-parent@^4.0.0:
+  version "4.0.1"
+  resolved "https://registry.npmjs.org/cssnano-util-same-parent/-/cssnano-util-same-parent-4.0.1.tgz#574082fb2859d2db433855835d9a8456ea18bbf3"
+  integrity sha512-WcKx5OY+KoSIAxBW6UBBRay1U6vkYheCdjyVNDm85zt5K9mHoGOfsOsqIszfAqrQQFIIKgjh2+FDgIj/zsl21Q==
+
+cssnano@4.1.10, cssnano@^4.1.10:
+  version "4.1.10"
+  resolved "https://registry.npmjs.org/cssnano/-/cssnano-4.1.10.tgz#0ac41f0b13d13d465487e111b778d42da631b8b2"
+  integrity sha512-5wny+F6H4/8RgNlaqab4ktc3e0/blKutmq8yNlBFXA//nSFFAqAngjNVRzUvCgYROULmZZUoosL/KSoZo5aUaQ==
+  dependencies:
+    cosmiconfig "^5.0.0"
+    cssnano-preset-default "^4.0.7"
+    is-resolvable "^1.0.0"
+    postcss "^7.0.0"
 
 csso@^4.0.2:
   version "4.0.3"
@@ -11987,7 +11996,7 @@ has-yarn@^2.1.0:
   resolved "https://registry.npmjs.org/has-yarn/-/has-yarn-2.1.0.tgz#137e11354a7b5bf11aa5cb649cf0c6f3ff2b2e77"
   integrity sha512-UqBRqi4ju7T+TqGNdqAO0PaSVGsDGJUBQvk9eUWNGRY1CFGDzYhLWoM7JQEemnlvVcv/YEmc2wNW8BC24EnUsw==
 
-has@^1.0.3:
+has@^1.0.0, has@^1.0.3:
   version "1.0.3"
   resolved "https://registry.npmjs.org/has/-/has-1.0.3.tgz#722d7cbfc1f6aa8241f16dd814e011e1f41e8796"
   integrity sha512-f2dvO0VU6Oej7RkWJGrehjbzMAjFp5/VKPp5tTpWIV4JHHZK1/BxbFRtf/siA2SWTe09caDmVtYYzWEIbBS4zw==
@@ -12122,7 +12131,7 @@ hsla-regex@^1.0.0:
   resolved "https://registry.npmjs.org/hsla-regex/-/hsla-regex-1.0.0.tgz#c1ce7a3168c8c6614033a4b5f7877f3b225f9c38"
   integrity sha1-wc56MWjIxmFAM6S194d/OyJfnDg=
 
-html-comment-regex@^1.1.2:
+html-comment-regex@^1.1.0:
   version "1.1.2"
   resolved "https://registry.npmjs.org/html-comment-regex/-/html-comment-regex-1.1.2.tgz#97d4688aeb5c81886a364faa0cad1dda14d433a7"
   integrity sha512-P+M65QY2JQ5Y0G9KKdlDpo0zK+/OHptU5AaBwUfAIDJZk1MYf32Frm84EcOytfJE0t5JvkAnKlmjsXDnWzCJmQ==
@@ -12742,7 +12751,7 @@ is-absolute-url@*, is-absolute-url@^3.0.0, is-absolute-url@^3.0.3:
   resolved "https://registry.npmjs.org/is-absolute-url/-/is-absolute-url-3.0.3.tgz#96c6a22b6a23929b11ea0afb1836c36ad4a5d698"
   integrity sha512-opmNIX7uFnS96NtPmhWQgQx6/NYFgsUXYMllcfzwWKUMwfo8kku1TvE6hkNcH+Q1ts5cMVrsY7j0bxXQDciu9Q==
 
-is-absolute-url@^2.1.0:
+is-absolute-url@^2.0.0:
   version "2.1.0"
   resolved "https://registry.npmjs.org/is-absolute-url/-/is-absolute-url-2.1.0.tgz#50530dfb84fcc9aa7dbe7852e83a37b93b9f2aa6"
   integrity sha1-UFMN+4T8yap9vnhS6Do3uTufKqY=
@@ -12864,7 +12873,7 @@ is-cidr@^3.0.0:
   dependencies:
     cidr-regex "^2.0.10"
 
-is-color-stop@^1.1.0:
+is-color-stop@^1.0.0:
   version "1.1.0"
   resolved "https://registry.npmjs.org/is-color-stop/-/is-color-stop-1.1.0.tgz#cfff471aee4dd5c9e158598fbe12967b5cdad345"
   integrity sha1-z/9HGu5N1cnhWFmPvhKWe1za00U=
@@ -13223,7 +13232,7 @@ is-relative@^1.0.0:
   dependencies:
     is-unc-path "^1.0.0"
 
-is-resolvable@^1.0.0, is-resolvable@^1.1.0:
+is-resolvable@^1.0.0:
   version "1.1.0"
   resolved "https://registry.npmjs.org/is-resolvable/-/is-resolvable-1.1.0.tgz#fb18f87ce1feb925169c9a407c19318a3206ed88"
   integrity sha512-qgDYXFSR5WvEfuS5dMj6oTMEbrrSaM0CrFk2Yiq/gXnBvD9pMa2jGXxyhGLfvhZpuMZe18CJpFxAt3CRs42NMg==
@@ -13263,12 +13272,12 @@ is-subset@^0.1.1:
   resolved "https://registry.npmjs.org/is-subset/-/is-subset-0.1.1.tgz#8a59117d932de1de00f245fcdd39ce43f1e939a6"
   integrity sha1-ilkRfZMt4d4A8kX83TnOQ/HpOaY=
 
-is-svg@^4.1.0:
-  version "4.2.1"
-  resolved "https://registry.npmjs.org/is-svg/-/is-svg-4.2.1.tgz#095b496e345fec9211c2a7d5d021003e040d6f81"
-  integrity sha512-PHx3ANecKsKNl5y5+Jvt53Y4J7MfMpbNZkv384QNiswMKAWIbvcqbPz+sYbFKJI8Xv3be01GSFniPmoaP+Ai5A==
+is-svg@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.npmjs.org/is-svg/-/is-svg-3.0.0.tgz#9321dbd29c212e5ca99c4fa9794c714bcafa2f75"
+  integrity sha512-gi4iHK53LR2ujhLVVj+37Ykh9GLqYHX6JOVXbLAucaG/Cqw9xwdFOjDM2qeifLs1sF1npXXFvDu0r5HNgCMrzQ==
   dependencies:
-    html-comment-regex "^1.1.2"
+    html-comment-regex "^1.1.0"
 
 is-symbol@^1.0.2, is-symbol@^1.0.3:
   version "1.0.3"
@@ -16321,7 +16330,7 @@ normalize-url@1.9.1:
     query-string "^4.1.0"
     sort-keys "^1.0.0"
 
-normalize-url@^3.3.0:
+normalize-url@^3.0.0:
   version "3.3.0"
   resolved "https://registry.npmjs.org/normalize-url/-/normalize-url-3.3.0.tgz#b2e1c4dc4f7c6d57743df733a4f5978d18650559"
   integrity sha512-U+JJi7duF1o+u2pynbp2zXDW2/PADgC30f0GsHZtRh+HOcXHnw137TrNlyxxRvWW5fjKd3bcLHPxofWuCjaeZg==
@@ -16872,11 +16881,6 @@ open@^7.0.2, open@^7.0.3, open@^7.0.4:
   dependencies:
     is-docker "^2.0.0"
     is-wsl "^2.1.1"
-
-opencollective-postinstall@^2.0.2:
-  version "2.0.3"
-  resolved "https://registry.npmjs.org/opencollective-postinstall/-/opencollective-postinstall-2.0.3.tgz#7a0fff978f6dbfa4d006238fbac98ed4198c3259"
-  integrity sha512-8AV/sCtuzUeTo8gQK5qDZzARrulB3egtLzFgteqB2tcT4Mw7B8Kt7JcDHmltjz6FOAHsvTevk70gZEbhM4ZS9Q==
 
 opener@^1.5.1:
   version "1.5.1"
@@ -17713,52 +17717,52 @@ postcss-calc@^7.0.1:
     postcss-selector-parser "^5.0.0-rc.4"
     postcss-value-parser "^3.3.1"
 
-postcss-colormin@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-colormin/-/postcss-colormin-4.0.0-nightly.2020.9.9.tgz#bf889ea365af1230b531338b37a46b17bbc3581f"
-  integrity sha512-sre+mLCwGTOSBbdqc7G206/ILVNpzsP02SY19zWwSDLJOeqolPhO0BNVrvQBmDSkz2LuWHhZ8FfiB/9Naafr5g==
+postcss-colormin@^4.0.3:
+  version "4.0.3"
+  resolved "https://registry.npmjs.org/postcss-colormin/-/postcss-colormin-4.0.3.tgz#ae060bce93ed794ac71264f08132d550956bd381"
+  integrity sha512-WyQFAdDZpExQh32j0U0feWisZ0dmOtPl44qYmJKkq9xFWY3p+4qnRzCHeNrkeRhwPHz9bQ3mo0/yVkaply0MNw==
   dependencies:
-    browserslist "^4.6.0"
-    color "^3.1.1"
-    has "^1.0.3"
-    postcss "^7.0.16"
-    postcss-value-parser "^3.3.1"
+    browserslist "^4.0.0"
+    color "^3.0.0"
+    has "^1.0.0"
+    postcss "^7.0.0"
+    postcss-value-parser "^3.0.0"
 
-postcss-convert-values@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-convert-values/-/postcss-convert-values-4.0.0-nightly.2020.9.9.tgz#013db26607e491e55f38bc6b87c2e2c2112fff57"
-  integrity sha512-KAjnPzSJxoOar7UbptvWBCbP8pV7IUDgBEqpEbR0iqrPuiuDuRIGV00GRu5x6GKjNNVZtezVuGC0jK14E/zusw==
+postcss-convert-values@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.npmjs.org/postcss-convert-values/-/postcss-convert-values-4.0.1.tgz#ca3813ed4da0f812f9d43703584e449ebe189a7f"
+  integrity sha512-Kisdo1y77KUC0Jmn0OXU/COOJbzM8cImvw1ZFsBgBgMgb1iL23Zs/LXRe3r+EZqM3vGYKdQ2YJVQ5VkJI+zEJQ==
   dependencies:
-    postcss "^7.0.16"
-    postcss-value-parser "^3.3.1"
+    postcss "^7.0.0"
+    postcss-value-parser "^3.0.0"
 
-postcss-discard-comments@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-discard-comments/-/postcss-discard-comments-4.0.0-nightly.2020.9.9.tgz#6208cdeb844c0f80943242c431c1ee72d8561307"
-  integrity sha512-eu62voI5fGJGAZxRSoycY0o0MFAuZoHU1U0Uf+WpTlvUwkxBjK/wFCViWdy8ZqozJMUngk6W0X128Kh9BfUYHg==
+postcss-discard-comments@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/postcss-discard-comments/-/postcss-discard-comments-4.0.2.tgz#1fbabd2c246bff6aaad7997b2b0918f4d7af4033"
+  integrity sha512-RJutN259iuRf3IW7GZyLM5Sw4GLTOH8FmsXBnv8Ab/Tc2k4SR4qbV4DNbyyY4+Sjo362SyDmW2DQ7lBSChrpkg==
   dependencies:
-    postcss "^7.0.16"
+    postcss "^7.0.0"
 
-postcss-discard-duplicates@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-discard-duplicates/-/postcss-discard-duplicates-4.0.0-nightly.2020.9.9.tgz#d69b84beef44a6a7c4391e612236151138edd030"
-  integrity sha512-/tT0m08IC5/H+PEN00iCU2lUprQjwoWeBFA5A6nc2QhV8EgXVC9IOzaxktXeQpuHUGAOeROZSK6WMqgBySI/rA==
+postcss-discard-duplicates@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/postcss-discard-duplicates/-/postcss-discard-duplicates-4.0.2.tgz#3fe133cd3c82282e550fc9b239176a9207b784eb"
+  integrity sha512-ZNQfR1gPNAiXZhgENFfEglF93pciw0WxMkJeVmw8eF+JZBbMD7jp6C67GqJAXVZP2BWbOztKfbsdmMp/k8c6oQ==
   dependencies:
-    postcss "^7.0.16"
+    postcss "^7.0.0"
 
-postcss-discard-empty@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-discard-empty/-/postcss-discard-empty-4.0.0-nightly.2020.9.9.tgz#5a562488b82c93f699427cf55d58f8c7439baac0"
-  integrity sha512-BA1xzynav0G/RMXRnlCzCORM3Yusg5EzgB/GGvLKOtk0qIyAMLQCD3fBcZaLsbQ0s3RfAKElTLSp4cVuBtkYmA==
+postcss-discard-empty@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.npmjs.org/postcss-discard-empty/-/postcss-discard-empty-4.0.1.tgz#c8c951e9f73ed9428019458444a02ad90bb9f765"
+  integrity sha512-B9miTzbznhDjTfjvipfHoqbWKwd0Mj+/fL5s1QOz06wufguil+Xheo4XpOnc4NqKYBCNqqEzgPv2aPBIJLox0w==
   dependencies:
-    postcss "^7.0.16"
+    postcss "^7.0.0"
 
-postcss-discard-overridden@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-discard-overridden/-/postcss-discard-overridden-4.0.0-nightly.2020.9.9.tgz#be338b20f0cfcf6db1dbe5e5716fd2b3b21214ce"
-  integrity sha512-YWiVz6VSMQ53AGexfux9iWEsLVS64UbhlRgTkVluJqvTKAVepUeCtCLz35OXltI98Tqzgm/cD8pQ8Ev1lARvXw==
+postcss-discard-overridden@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.npmjs.org/postcss-discard-overridden/-/postcss-discard-overridden-4.0.1.tgz#652aef8a96726f029f5e3e00146ee7a4e755ff57"
+  integrity sha512-IYY2bEDD7g1XM1IDEsUT4//iEYCxAmP5oDSFMVU/JVvT7gh+l4fmjciLqGgwjdWpQIdb0Che2VX00QObS5+cTg==
   dependencies:
-    postcss "^7.0.16"
+    postcss "^7.0.0"
 
 postcss-flexbugs-fixes@^4.1.0:
   version "4.1.0"
@@ -17822,67 +17826,67 @@ postcss-media-query-parser@^0.2.3:
   resolved "https://registry.npmjs.org/postcss-media-query-parser/-/postcss-media-query-parser-0.2.3.tgz#27b39c6f4d94f81b1a73b8f76351c609e5cef244"
   integrity sha1-J7Ocb02U+Bsac7j3Y1HGCeXO8kQ=
 
-postcss-merge-longhand@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-merge-longhand/-/postcss-merge-longhand-4.0.0-nightly.2020.9.9.tgz#ce7fe15d629c7c73c583a1a9ea53bed294dbe333"
-  integrity sha512-dfCy7qdZIjRqpgYji6by7nMKefmWbPTfnUaPn4EUh8sIuiFNBXUQ+lt82J6TMWd4hH2ssAltxZsdiHvZDeOugA==
+postcss-merge-longhand@^4.0.11:
+  version "4.0.11"
+  resolved "https://registry.npmjs.org/postcss-merge-longhand/-/postcss-merge-longhand-4.0.11.tgz#62f49a13e4a0ee04e7b98f42bb16062ca2549e24"
+  integrity sha512-alx/zmoeXvJjp7L4mxEMjh8lxVlDFX1gqWHzaaQewwMZiVhLo42TEClKaeHbRf6J7j82ZOdTJ808RtN0ZOZwvw==
   dependencies:
-    css-color-names "^1.0.1"
-    postcss "^7.0.16"
-    postcss-value-parser "^3.3.1"
-    stylehacks nightly
+    css-color-names "0.0.4"
+    postcss "^7.0.0"
+    postcss-value-parser "^3.0.0"
+    stylehacks "^4.0.0"
 
-postcss-merge-rules@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-merge-rules/-/postcss-merge-rules-4.0.0-nightly.2020.9.9.tgz#6763d277c53fcc3290fa28dc398b412cc8c61156"
-  integrity sha512-xTBUv41ORS706BR9sRI8Q94oTYUTnJS+oyQ4t58m7uZv4oIkqOImA18plmF15ZcD+dOjy8U7FS7GJ3sU5Huy7w==
+postcss-merge-rules@^4.0.3:
+  version "4.0.3"
+  resolved "https://registry.npmjs.org/postcss-merge-rules/-/postcss-merge-rules-4.0.3.tgz#362bea4ff5a1f98e4075a713c6cb25aefef9a650"
+  integrity sha512-U7e3r1SbvYzO0Jr3UT/zKBVgYYyhAz0aitvGIYOYK5CPmkNih+WDSsS5tvPrJ8YMQYlEMvsZIiqmn7HdFUaeEQ==
   dependencies:
-    browserslist "^4.6.0"
+    browserslist "^4.0.0"
     caniuse-api "^3.0.0"
-    cssnano-utils nightly
-    postcss "^7.0.16"
-    postcss-selector-parser "^3.1.1"
-    vendors "^1.0.3"
+    cssnano-util-same-parent "^4.0.0"
+    postcss "^7.0.0"
+    postcss-selector-parser "^3.0.0"
+    vendors "^1.0.0"
 
-postcss-minify-font-values@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-minify-font-values/-/postcss-minify-font-values-4.0.0-nightly.2020.9.9.tgz#1a705236e83f0c1bfbd5ef88ba181ebfe9ab52f0"
-  integrity sha512-wSbWH1/E2gbLkrqoSx8wXYTZTFREKInaLP/M34c4hHPUwWpf8g09kJWG9Zi/ubi24VFR+5byRJGaUY9rV3RR5w==
+postcss-minify-font-values@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/postcss-minify-font-values/-/postcss-minify-font-values-4.0.2.tgz#cd4c344cce474343fac5d82206ab2cbcb8afd5a6"
+  integrity sha512-j85oO6OnRU9zPf04+PZv1LYIYOprWm6IA6zkXkrJXyRveDEuQggG6tvoy8ir8ZwjLxLuGfNkCZEQG7zan+Hbtg==
   dependencies:
-    postcss "^7.0.16"
-    postcss-value-parser "^3.3.1"
+    postcss "^7.0.0"
+    postcss-value-parser "^3.0.0"
 
-postcss-minify-gradients@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-minify-gradients/-/postcss-minify-gradients-4.0.0-nightly.2020.9.9.tgz#7226281e11b41d3a519b8d70d4573dbbe905b0a0"
-  integrity sha512-ZqLWIMtNtg23yn46c1ReyHOP2mN3m7ShDXHlj8SxJlwGwMvUEi0ZDYHkeucF08XYaV6FDTiVfZyZTiFmIzUSKg==
+postcss-minify-gradients@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/postcss-minify-gradients/-/postcss-minify-gradients-4.0.2.tgz#93b29c2ff5099c535eecda56c4aa6e665a663471"
+  integrity sha512-qKPfwlONdcf/AndP1U8SJ/uzIJtowHlMaSioKzebAXSG4iJthlWC9iSWznQcX4f66gIWX44RSA841HTHj3wK+Q==
   dependencies:
-    cssnano-utils nightly
-    is-color-stop "^1.1.0"
-    postcss "^7.0.16"
-    postcss-value-parser "^3.3.1"
+    cssnano-util-get-arguments "^4.0.0"
+    is-color-stop "^1.0.0"
+    postcss "^7.0.0"
+    postcss-value-parser "^3.0.0"
 
-postcss-minify-params@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-minify-params/-/postcss-minify-params-4.0.0-nightly.2020.9.9.tgz#07d90a1b5b94006edb5f1577d8bfdf1e5c3b1ab6"
-  integrity sha512-xaB8Rxj2ao5aV3x+HgVvEFtGrF758I693+pivE35FdRL6/2b76DAEU1oQaz7fAdaNFswnqGGFP3SJL4Z6z533g==
+postcss-minify-params@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/postcss-minify-params/-/postcss-minify-params-4.0.2.tgz#6b9cef030c11e35261f95f618c90036d680db874"
+  integrity sha512-G7eWyzEx0xL4/wiBBJxJOz48zAKV2WG3iZOqVhPet/9geefm/Px5uo1fzlHu+DOjT+m0Mmiz3jkQzVHe6wxAWg==
   dependencies:
-    alphanum-sort "^1.0.2"
-    browserslist "^4.6.0"
-    cssnano-utils nightly
-    postcss "^7.0.16"
-    postcss-value-parser "^3.3.1"
+    alphanum-sort "^1.0.0"
+    browserslist "^4.0.0"
+    cssnano-util-get-arguments "^4.0.0"
+    postcss "^7.0.0"
+    postcss-value-parser "^3.0.0"
     uniqs "^2.0.0"
 
-postcss-minify-selectors@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-minify-selectors/-/postcss-minify-selectors-4.0.0-nightly.2020.9.9.tgz#d84bd6f79b35b799c267fe2230d4df426cc9fdad"
-  integrity sha512-SB3oU0HVrHMUtdlnCaD2SW4sOPBimhCYd9B8/9Zit/UURgx4avs3g6WIwS5ViJirXwIMQJ4eTWoSJE/wfUxirw==
+postcss-minify-selectors@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/postcss-minify-selectors/-/postcss-minify-selectors-4.0.2.tgz#e2e5eb40bfee500d0cd9243500f5f8ea4262fbd8"
+  integrity sha512-D5S1iViljXBj9kflQo4YutWnJmwm8VvIsU1GeXJGiG9j8CIg9zs4voPMdQDUmIxetUOh60VilsNzCiAFTOqu3g==
   dependencies:
-    alphanum-sort "^1.0.2"
-    has "^1.0.3"
-    postcss "^7.0.16"
-    postcss-selector-parser "^3.1.1"
+    alphanum-sort "^1.0.0"
+    has "^1.0.0"
+    postcss "^7.0.0"
+    postcss-selector-parser "^3.0.0"
 
 postcss-modules-extract-imports@^2.0.0:
   version "2.0.0"
@@ -17917,113 +17921,115 @@ postcss-modules-values@^3.0.0:
     icss-utils "^4.0.0"
     postcss "^7.0.6"
 
-postcss-normalize-charset@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-normalize-charset/-/postcss-normalize-charset-4.0.0-nightly.2020.9.9.tgz#ae11bb175dd37a14b2be19af07d9d1e729c86aff"
-  integrity sha512-dEtKWFJ+1VK6KjCKsdLYsHveLVQ0l/uxGmQd7dXMoLRSqY4T1ZFyDuo2woIIMUTc+92r7lHV1sHxJ4Mqq53QRQ==
+postcss-normalize-charset@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.npmjs.org/postcss-normalize-charset/-/postcss-normalize-charset-4.0.1.tgz#8b35add3aee83a136b0471e0d59be58a50285dd4"
+  integrity sha512-gMXCrrlWh6G27U0hF3vNvR3w8I1s2wOBILvA87iNXaPvSNo5uZAMYsZG7XjCUf1eVxuPfyL4TJ7++SGZLc9A3g==
   dependencies:
-    postcss "^7.0.16"
+    postcss "^7.0.0"
 
-postcss-normalize-display-values@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-normalize-display-values/-/postcss-normalize-display-values-4.0.0-nightly.2020.9.9.tgz#aefa3085f40d6328254ae3e160e8eacb89293b0c"
-  integrity sha512-aC6Y82d6O1W+8bSqkk8IMsWpMW7punAKZsdR2FH1JTZcuDFb8jxPbY+9bfu95yEVrbG9CMf5xrgSgDSQ2e/UKA==
+postcss-normalize-display-values@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/postcss-normalize-display-values/-/postcss-normalize-display-values-4.0.2.tgz#0dbe04a4ce9063d4667ed2be476bb830c825935a"
+  integrity sha512-3F2jcsaMW7+VtRMAqf/3m4cPFhPD3EFRgNs18u+k3lTJJlVe7d0YPO+bnwqo2xg8YiRpDXJI2u8A0wqJxMsQuQ==
   dependencies:
-    cssnano-utils nightly
-    postcss "^7.0.16"
-    postcss-value-parser "^3.3.1"
+    cssnano-util-get-match "^4.0.0"
+    postcss "^7.0.0"
+    postcss-value-parser "^3.0.0"
 
-postcss-normalize-positions@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-normalize-positions/-/postcss-normalize-positions-4.0.0-nightly.2020.9.9.tgz#02f73f15219ab5de08a933490124789721195773"
-  integrity sha512-bs99WiLosuUqSTszgdGdM4oiCFrtMDr9s/KoZCte0VtLD5iSgbRM50reIURqhVo+QSzTkFjPIzSBpAYck5cUUw==
+postcss-normalize-positions@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/postcss-normalize-positions/-/postcss-normalize-positions-4.0.2.tgz#05f757f84f260437378368a91f8932d4b102917f"
+  integrity sha512-Dlf3/9AxpxE+NF1fJxYDeggi5WwV35MXGFnnoccP/9qDtFrTArZ0D0R+iKcg5WsUd8nUYMIl8yXDCtcrT8JrdA==
   dependencies:
-    has "^1.0.3"
-    postcss "^7.0.16"
-    postcss-value-parser "^3.3.1"
+    cssnano-util-get-arguments "^4.0.0"
+    has "^1.0.0"
+    postcss "^7.0.0"
+    postcss-value-parser "^3.0.0"
 
-postcss-normalize-repeat-style@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-normalize-repeat-style/-/postcss-normalize-repeat-style-4.0.0-nightly.2020.9.9.tgz#728121026c2ad401bfd09889e8426e069e783aba"
-  integrity sha512-q0JW5N6F0AOVCveOrfDz1UaGS6YPXPMYrngvJOlM4KZbemgao2hmNctiUL1BfDr1PaVRAQdlGawI4HgK6hBumQ==
+postcss-normalize-repeat-style@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/postcss-normalize-repeat-style/-/postcss-normalize-repeat-style-4.0.2.tgz#c4ebbc289f3991a028d44751cbdd11918b17910c"
+  integrity sha512-qvigdYYMpSuoFs3Is/f5nHdRLJN/ITA7huIoCyqqENJe9PvPmLhNLMu7QTjPdtnVf6OcYYO5SHonx4+fbJE1+Q==
   dependencies:
-    cssnano-utils nightly
-    postcss "^7.0.16"
-    postcss-value-parser "^3.3.1"
+    cssnano-util-get-arguments "^4.0.0"
+    cssnano-util-get-match "^4.0.0"
+    postcss "^7.0.0"
+    postcss-value-parser "^3.0.0"
 
-postcss-normalize-string@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-normalize-string/-/postcss-normalize-string-4.0.0-nightly.2020.9.9.tgz#fd257eff39ead560129869747e29713265a28222"
-  integrity sha512-mILv1ZoT3ZRrRltZS9WpzcxjaZDsPInG+V0u1V4ZG1Qs63JujZpqwjBC2cEDp1yoToL3vh6HWQBErM/5zs1KRw==
+postcss-normalize-string@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/postcss-normalize-string/-/postcss-normalize-string-4.0.2.tgz#cd44c40ab07a0c7a36dc5e99aace1eca4ec2690c"
+  integrity sha512-RrERod97Dnwqq49WNz8qo66ps0swYZDSb6rM57kN2J+aoyEAJfZ6bMx0sx/F9TIEX0xthPGCmeyiam/jXif0eA==
   dependencies:
-    has "^1.0.3"
-    postcss "^7.0.16"
-    postcss-value-parser "^3.3.1"
+    has "^1.0.0"
+    postcss "^7.0.0"
+    postcss-value-parser "^3.0.0"
 
-postcss-normalize-timing-functions@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-normalize-timing-functions/-/postcss-normalize-timing-functions-4.0.0-nightly.2020.9.9.tgz#6169af2300eac7babca3c907bf48e8673a20f21e"
-  integrity sha512-LN9+Nl1M4gOx/CgthQHECAROgnD1zzZchyamaeETvCWPRN/wHfzxLhW4Kdweq5prXF5B55BmmQVuLxSg+rC1pA==
+postcss-normalize-timing-functions@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/postcss-normalize-timing-functions/-/postcss-normalize-timing-functions-4.0.2.tgz#8e009ca2a3949cdaf8ad23e6b6ab99cb5e7d28d9"
+  integrity sha512-acwJY95edP762e++00Ehq9L4sZCEcOPyaHwoaFOhIwWCDfik6YvqsYNxckee65JHLKzuNSSmAdxwD2Cud1Z54A==
   dependencies:
-    cssnano-utils nightly
-    postcss "^7.0.16"
-    postcss-value-parser "^3.3.1"
+    cssnano-util-get-match "^4.0.0"
+    postcss "^7.0.0"
+    postcss-value-parser "^3.0.0"
 
-postcss-normalize-unicode@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-normalize-unicode/-/postcss-normalize-unicode-4.0.0-nightly.2020.9.9.tgz#bafbafa4d04a34e5351aa9878973538de09bc714"
-  integrity sha512-ZSyPPgO7nwyHrVjnCYJRhDfDKOJeslJON1b8XdTpV/ll/V8aHYm80KMLk8Zwrgf+Lc/xyM8yeBQduIDbt+fq9w==
+postcss-normalize-unicode@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.npmjs.org/postcss-normalize-unicode/-/postcss-normalize-unicode-4.0.1.tgz#841bd48fdcf3019ad4baa7493a3d363b52ae1cfb"
+  integrity sha512-od18Uq2wCYn+vZ/qCOeutvHjB5jm57ToxRaMeNuf0nWVHaP9Hua56QyMF6fs/4FSUnVIw0CBPsU0K4LnBPwYwg==
   dependencies:
-    browserslist "^4.6.0"
-    postcss "^7.0.16"
-    postcss-value-parser "^3.3.1"
+    browserslist "^4.0.0"
+    postcss "^7.0.0"
+    postcss-value-parser "^3.0.0"
 
-postcss-normalize-url@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-normalize-url/-/postcss-normalize-url-4.0.0-nightly.2020.9.9.tgz#2c3b122a4f32195611e4665b677076a9e34c333b"
-  integrity sha512-yRclz4FOYOsoojXqizAb6Uqrs8r9MIRaGNFjPeoH4NvG1H+kkrGeicdeSLciK5ACEokpU7rhQ8dnUADGJIvaUw==
+postcss-normalize-url@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.npmjs.org/postcss-normalize-url/-/postcss-normalize-url-4.0.1.tgz#10e437f86bc7c7e58f7b9652ed878daaa95faae1"
+  integrity sha512-p5oVaF4+IHwu7VpMan/SSpmpYxcJMtkGppYf0VbdH5B6hN8YNmVyJLuY9FmLQTzY3fag5ESUUHDqM+heid0UVA==
   dependencies:
-    is-absolute-url "^2.1.0"
-    normalize-url "^3.3.0"
-    postcss "^7.0.16"
-    postcss-value-parser "^3.3.1"
+    is-absolute-url "^2.0.0"
+    normalize-url "^3.0.0"
+    postcss "^7.0.0"
+    postcss-value-parser "^3.0.0"
 
-postcss-normalize-whitespace@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-normalize-whitespace/-/postcss-normalize-whitespace-4.0.0-nightly.2020.9.9.tgz#78c6378ec885cbd0edf2576a2c09740e10005f23"
-  integrity sha512-mOThdGnerHURN8pXajodP1IRXuHZxjb79TBeCA4wTC5i5MKzef7mLmGwnlpZbJl1cxFYmeN8X7hN5p2UJSDriQ==
+postcss-normalize-whitespace@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/postcss-normalize-whitespace/-/postcss-normalize-whitespace-4.0.2.tgz#bf1d4070fe4fcea87d1348e825d8cc0c5faa7d82"
+  integrity sha512-tO8QIgrsI3p95r8fyqKV+ufKlSHh9hMJqACqbv2XknufqEDhDvbguXGBBqxw9nsQoXWf0qOqppziKJKHMD4GtA==
   dependencies:
-    postcss "^7.0.16"
-    postcss-value-parser "^3.3.1"
+    postcss "^7.0.0"
+    postcss-value-parser "^3.0.0"
 
-postcss-ordered-values@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-ordered-values/-/postcss-ordered-values-4.0.0-nightly.2020.9.9.tgz#6fa6ca1d42ce1307b10946311b72491544c74355"
-  integrity sha512-+RXlp/etgix6t9Rl6zhIrEEze7S9q0pr/ramKQQ1NMJFubrOKeSj6Oo8D0jwP1bnqcwpiaAZV4gmoM/M/8JIVg==
+postcss-ordered-values@^4.1.2:
+  version "4.1.2"
+  resolved "https://registry.npmjs.org/postcss-ordered-values/-/postcss-ordered-values-4.1.2.tgz#0cf75c820ec7d5c4d280189559e0b571ebac0eee"
+  integrity sha512-2fCObh5UanxvSxeXrtLtlwVThBvHn6MQcu4ksNT2tsaV2Fg76R2CV98W7wNSlX+5/pFwEyaDwKLLoEV7uRybAw==
   dependencies:
-    cssnano-utils nightly
-    postcss "^7.0.16"
-    postcss-value-parser "^3.3.1"
+    cssnano-util-get-arguments "^4.0.0"
+    postcss "^7.0.0"
+    postcss-value-parser "^3.0.0"
 
-postcss-reduce-initial@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-reduce-initial/-/postcss-reduce-initial-4.0.0-nightly.2020.9.9.tgz#901f8b94de5eafe099d415c56bfc84c2867fa0ff"
-  integrity sha512-rv7wJcES+GD35EaDwKxG0h96J1j+v0R67n3ziTshaXtt2gi9Q52FaqZKvWcTtOC7wWPrdKcPW+eLhCWRlPmhMA==
+postcss-reduce-initial@^4.0.3:
+  version "4.0.3"
+  resolved "https://registry.npmjs.org/postcss-reduce-initial/-/postcss-reduce-initial-4.0.3.tgz#7fd42ebea5e9c814609639e2c2e84ae270ba48df"
+  integrity sha512-gKWmR5aUulSjbzOfD9AlJiHCGH6AEVLaM0AV+aSioxUDd16qXP1PCh8d1/BGVvpdWn8k/HiK7n6TjeoXN1F7DA==
   dependencies:
-    browserslist "^4.5.6"
+    browserslist "^4.0.0"
     caniuse-api "^3.0.0"
-    has "^1.0.3"
-    postcss "^7.0.16"
+    has "^1.0.0"
+    postcss "^7.0.0"
 
-postcss-reduce-transforms@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-reduce-transforms/-/postcss-reduce-transforms-4.0.0-nightly.2020.9.9.tgz#1ec10cadcb66c388f04773822045579d1a050659"
-  integrity sha512-xm5LNalBVBhXzLqkKqyCvlFI4yukOb9fLWBYA3qDbb6qlN5nBGl+8qqC6hybG9F83JcHR5tpA0OHKzejoEzCvA==
+postcss-reduce-transforms@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/postcss-reduce-transforms/-/postcss-reduce-transforms-4.0.2.tgz#17efa405eacc6e07be3414a5ca2d1074681d4e29"
+  integrity sha512-EEVig1Q2QJ4ELpJXMZR8Vt5DQx8/mo+dGWSR7vWXqcob2gQLyQGsionYcGKATXvQzMPn6DSN1vTN7yFximdIAg==
   dependencies:
-    cssnano-utils nightly
-    has "^1.0.3"
-    postcss "^7.0.16"
-    postcss-value-parser "^3.3.1"
+    cssnano-util-get-match "^4.0.0"
+    has "^1.0.0"
+    postcss "^7.0.0"
+    postcss-value-parser "^3.0.0"
 
 postcss-resolve-nested-selector@^0.1.1:
   version "0.1.1"
@@ -18052,7 +18058,7 @@ postcss-scss@^2.1.1:
   dependencies:
     postcss "^7.0.6"
 
-postcss-selector-parser@^3.1.1:
+postcss-selector-parser@^3.0.0:
   version "3.1.2"
   resolved "https://registry.npmjs.org/postcss-selector-parser/-/postcss-selector-parser-3.1.2.tgz#b310f5c4c0fdaf76f94902bbaa30db6aa84f5270"
   integrity sha512-h7fJ/5uWuRVyOtkO45pnt1Ih40CEleeyCHzipqAZO2e5H20g25Y48uYnFUiShvY4rZWNJ/Bib/KVPmanaCtOhA==
@@ -18079,32 +18085,31 @@ postcss-selector-parser@^6.0.0, postcss-selector-parser@^6.0.2:
     indexes-of "^1.0.1"
     uniq "^1.0.1"
 
-postcss-svgo@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-svgo/-/postcss-svgo-4.0.0-nightly.2020.9.9.tgz#9c880124833ad50ff894b27d23c224ebcc15e1d4"
-  integrity sha512-rhEu74BsYzXoFhvCvhJfLlnLkGJeOeGqvmRdKnaV0OvOI3wmJ0pnYnZtM+SyJLCw32Ahl1h6GbLbNYM8+fqxdg==
+postcss-svgo@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/postcss-svgo/-/postcss-svgo-4.0.2.tgz#17b997bc711b333bab143aaed3b8d3d6e3d38258"
+  integrity sha512-C6wyjo3VwFm0QgBy+Fu7gCYOkCmgmClghO+pjcxvrcBKtiKt0uCF+hvbMO1fyv5BMImRK90SMb+dwUnfbGd+jw==
   dependencies:
-    is-svg "^4.1.0"
-    postcss "^7.0.16"
-    postcss-value-parser "^3.3.1"
-    svgo "^1.2.2"
+    is-svg "^3.0.0"
+    postcss "^7.0.0"
+    postcss-value-parser "^3.0.0"
+    svgo "^1.0.0"
 
 postcss-syntax@^0.36.2:
   version "0.36.2"
   resolved "https://registry.npmjs.org/postcss-syntax/-/postcss-syntax-0.36.2.tgz#f08578c7d95834574e5593a82dfbfa8afae3b51c"
   integrity sha512-nBRg/i7E3SOHWxF3PpF5WnJM/jQ1YpY9000OaVXlAQj6Zp/kIqJxEDWIZ67tAd7NLuk7zqN4yqe9nc0oNAOs1w==
 
-postcss-unique-selectors@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/postcss-unique-selectors/-/postcss-unique-selectors-4.0.0-nightly.2020.9.9.tgz#6f731b42827c794447baa194c17eb5fc3f78c878"
-  integrity sha512-nzmHad8V6Gyp6KSZkbeXgUJB9Sq7UZlVJGHlZCdnJLShrqNT8lb0W8gyqubtWWllqvyjSdr7IA2SdDFXBTX66w==
+postcss-unique-selectors@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.npmjs.org/postcss-unique-selectors/-/postcss-unique-selectors-4.0.1.tgz#9446911f3289bfd64c6d680f073c03b1f9ee4bac"
+  integrity sha512-+JanVaryLo9QwZjKrmJgkI4Fn8SBgRO6WXQBJi7KiAVPlmxikB5Jzc4EvXMT2H0/m0RjrVVm9rGNhZddm/8Spg==
   dependencies:
-    alphanum-sort "^1.0.2"
-    postcss "^7.0.16"
-    postcss-selector-parser "^6.0.2"
+    alphanum-sort "^1.0.0"
+    postcss "^7.0.0"
     uniqs "^2.0.0"
 
-postcss-value-parser@^3.3.1:
+postcss-value-parser@^3.0.0, postcss-value-parser@^3.3.1:
   version "3.3.1"
   resolved "https://registry.npmjs.org/postcss-value-parser/-/postcss-value-parser-3.3.1.tgz#9ff822547e2893213cf1c30efa51ac5fd1ba8281"
   integrity sha512-pISE66AbVkp4fDQ7VHBwRNXzAAKJjw4Vw7nWI/+Q3vuly7SNfgYXvm6i5IgFylHGK5sP/xHAbB7N49OS4gWNyQ==
@@ -18123,10 +18128,10 @@ postcss@7.0.27:
     source-map "^0.6.1"
     supports-color "^6.1.0"
 
-postcss@^7.0.0, postcss@^7.0.14, postcss@^7.0.16, postcss@^7.0.2, postcss@^7.0.21, postcss@^7.0.26, postcss@^7.0.27, postcss@^7.0.32, postcss@^7.0.5, postcss@^7.0.6:
-  version "7.0.32"
-  resolved "https://registry.npmjs.org/postcss/-/postcss-7.0.32.tgz#4310d6ee347053da3433db2be492883d62cec59d"
-  integrity sha512-03eXong5NLnNCD05xscnGKGDZ98CyzoqPSMjOe6SuoQY7Z2hIj0Ld1g/O/UQRuOle2aRtiIRDg9tDcTGAkLfKw==
+postcss@^7.0.0, postcss@^7.0.1, postcss@^7.0.14, postcss@^7.0.16, postcss@^7.0.2, postcss@^7.0.21, postcss@^7.0.26, postcss@^7.0.27, postcss@^7.0.32, postcss@^7.0.5, postcss@^7.0.6:
+  version "7.0.35"
+  resolved "https://registry.npmjs.org/postcss/-/postcss-7.0.35.tgz#d2be00b998f7f211d8a276974079f2e92b970e24"
+  integrity sha512-3QT8bBJeX/S5zKTTjTCIjRF3If4avAT6kqxcASlTWEtAFCb9NH0OUxNDfgZSWdP5fJnBYCMEWkIFfWeugjzYMg==
   dependencies:
     chalk "^2.4.2"
     source-map "^0.6.1"
@@ -21488,14 +21493,14 @@ styled-system@^5.1.5:
     "@styled-system/variant" "^5.1.5"
     object-assign "^4.1.1"
 
-stylehacks@nightly:
-  version "4.0.0-nightly.2020.9.9"
-  resolved "https://registry.npmjs.org/stylehacks/-/stylehacks-4.0.0-nightly.2020.9.9.tgz#efc7486df0547754bdf50b7f74860edcac073f39"
-  integrity sha512-FMj8i9fPsC/9MY/EWRlZ515QPwixXrR7zmskPjWk0cHposHXtOE7gBO7NtEyWntInaiIpj5G807/zQXOTzjcvg==
+stylehacks@^4.0.0:
+  version "4.0.3"
+  resolved "https://registry.npmjs.org/stylehacks/-/stylehacks-4.0.3.tgz#6718fcaf4d1e07d8a1318690881e8d96726a71d5"
+  integrity sha512-7GlLk9JwlElY4Y6a/rmbH2MhVlTyVmiJd1PfTCqFaIBEGMYNsrO/v3SeGTdhBThLg4Z+NbOk/qFMwCa+J+3p/g==
   dependencies:
-    browserslist "^4.6.0"
-    postcss "^7.0.16"
-    postcss-selector-parser "^3.1.1"
+    browserslist "^4.0.0"
+    postcss "^7.0.0"
+    postcss-selector-parser "^3.0.0"
 
 stylelint-config-prettier@^8.0.1:
   version "8.0.1"
@@ -21664,7 +21669,7 @@ svg-tags@^1.0.0:
   resolved "https://registry.npmjs.org/svg-tags/-/svg-tags-1.0.0.tgz#58f71cee3bd519b59d4b2a843b6c7de64ac04764"
   integrity sha1-WPcc7jvVGbWdSyqEO2x95krAR2Q=
 
-svgo@^1.2.2:
+svgo@^1.0.0, svgo@^1.2.2:
   version "1.3.2"
   resolved "https://registry.npmjs.org/svgo/-/svgo-1.3.2.tgz#b6dc511c063346c9e415b81e43401145b96d4167"
   integrity sha512-yhy/sQYxR5BkC98CY7o31VGsg014AKLEPxdfhora76l36hD9Rdy5NZA/Ocn6yayNPgSamYdtX2rFJdcv07AYVw==
@@ -22985,7 +22990,7 @@ vary@^1, vary@~1.1.2:
   resolved "https://registry.npmjs.org/vary/-/vary-1.1.2.tgz#2299f02c6ded30d4a5961b0b9f74524a18f634fc"
   integrity sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=
 
-vendors@^1.0.3:
+vendors@^1.0.0:
   version "1.0.4"
   resolved "https://registry.npmjs.org/vendors/-/vendors-1.0.4.tgz#e2b800a53e7a29b93506c3cf41100d16c4c4ad8e"
   integrity sha512-/juG65kTL4Cy2su4P8HjtkTxk6VmJDiOPBufWniqQ6wknac6jNiXS9vU+hO3wgusiyqWlzTbVHi0dyJqRONg3w==
