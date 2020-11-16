@@ -140,7 +140,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		server.SourcegraphDotComMode = true
 
 		es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
-			// On Cloud we want to fetch our admin owned external service only here
+			// On Cloud we want to fetch only site level external services here
 			NamespaceUserID: -1,
 			Kinds:           []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		})
