@@ -50,7 +50,7 @@ describe('Code intelligence regression test suite', () => {
     let outerResourceManager: TestResourceManager
     before(async function () {
         // sourcegraph/sourcegraph takes a while to clone
-        this.timeout(30 * 1000)
+        this.timeout(6 * 6 * 60 * 1000)
         ;({ driver, gqlClient, resourceManager: outerResourceManager } = await getTestTools(config))
         outerResourceManager.add(
             'User',
@@ -76,7 +76,7 @@ describe('Code intelligence regression test suite', () => {
                     },
                     waitForRepos: testRepoSlugs.map(slug => `github.com/${slug}`),
                 },
-                config
+                { ...config, timeout: 3 * 60 * 1000 }
             )
         )
 
