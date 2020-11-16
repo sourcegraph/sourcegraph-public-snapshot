@@ -226,6 +226,7 @@ describe('Blob viewer', () => {
         })
 
         it('properly displays reference panel for URIs with spaces', async () => {
+            const repositoryName = 'github.com/sourcegraph/test%20repo'
             const files = ['test.ts', 'test spaces.ts']
             const commitID = '1234'
             const userSettings: Settings = {
@@ -282,15 +283,14 @@ describe('Blob viewer', () => {
                     repository: {
                         commit: {
                             file: {
-                                content: '// Log to console\nconsole.log("Hello world")',
+                                content: `// file path: ${filePath}\nconsole.log("Hello world")`,
                                 richHTML: '',
                                 highlight: {
                                     aborted: false,
                                     html:
-                                        // Note: whitespace in this string is significant.
                                         `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color: gray">&sol;&sol; file path: ${filePath}</span></div></td></tr>\n` +
-                                        '<tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: gray">&sol;&sol; line 2</span></div></td></tr>\n' +
-                                        '<tr><td class="line" data-line="3"></td><td class="code"><div><span style="color: gray">&sol;&sol; line 3</span></div></td></tr></tbody></table>',
+                                        '<tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: #859900;" class="test-console-token">console</span><span style="color: #657b83;">.</span><span style="color: #859900;" class="test-log-token">log</span><span style="color: #657b83;">(</span><span style="color: #839496;">&quot;</span><span style="color: #2aa198;">Hello world</span><span style="color: #839496;">&quot;</span><span style="color: #657b83;">)</span></div></td></tr>\n' +
+                                        '</tbody></table>',
                                 },
                             },
                         },
@@ -308,8 +308,8 @@ describe('Blob viewer', () => {
                                     aborted: false,
                                     html:
                                         `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color: gray">&sol;&sol; file path: ${filePath}</span></div></td></tr>\n` +
-                                        '<tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: gray">&sol;&sol; line 2</span></div></td></tr>\n' +
-                                        '<tr><td class="line" data-line="3"></td><td class="code"><div><span style="color: gray">&sol;&sol; line 3</span></div></td></tr></tbody></table>',
+                                        '<tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: #859900;" class="test-console-token">console</span><span style="color: #657b83;">.</span><span style="color: #859900;" class="test-log-token">log</span><span style="color: #657b83;">(</span><span style="color: #839496;">&quot;</span><span style="color: #2aa198;">Hello world</span><span style="color: #839496;">&quot;</span><span style="color: #657b83;">)</span></div></td></tr>\n' +
+                                        '</tbody></table>',
                                 },
                             },
                         },
@@ -317,6 +317,15 @@ describe('Blob viewer', () => {
                 }),
                 FetchCommits: () => ({
                     node: { __typename: 'GitCommit' },
+                }),
+                // Required for definition provider,
+                ResolveRawRepoName: () => ({
+                    repository: {
+                        mirrorInfo: {
+                            cloned: true,
+                        },
+                        uri: repositoryName,
+                    },
                 }),
             })
 
@@ -342,6 +351,21 @@ describe('Blob viewer', () => {
                                     ],
                                 })
                             )
+
+                            // We aren't testing definition providers in this test; we include a definition provider
+                            // because the "Find references" action isn't displayed unless a definition is found
+                            context.subscriptions.add(
+                                sourcegraph.languages.registerDefinitionProvider(['*'], {
+                                    provideDefinition: () =>
+                                        new sourcegraph.Location(
+                                            new URL('git://github.com/sourcegraph/test%20repo?1234#test%20spaces.ts'),
+                                            new sourcegraph.Range(
+                                                new sourcegraph.Position(0, 0),
+                                                new sourcegraph.Position(1, 0)
+                                            )
+                                        ),
+                                })
+                            )
                         }
 
                         exports.activate = activate
@@ -351,14 +375,22 @@ describe('Blob viewer', () => {
                     response.type('application/javascript; charset=utf-8').send(extensionBundleString)
                 })
 
-            await driver.page.goto(
-                `${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test%20repo/-/blob/test.ts#L1:1&tab=references`
-            )
+            await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/test.ts`)
+            // TODO: don't visit ref panel url
 
+            // Click on "log" in "console.log()" in line 2
+            await driver.page.waitForSelector('.test-log-token', { visible: true })
+            await driver.page.click('.test-log-token')
+
+            // Click 'Find references'
+            await driver.page.waitForSelector('.test-tooltip-find-references', { visible: true })
+            await driver.page.click('.test-tooltip-find-references')
+
+            // Click on the first reference
             await driver.page.waitForSelector('.test-file-match-children-item')
             await driver.page.click('.test-file-match-children-item')
 
-            // assert that the first line of code has text content which contains: 'file path: test spaces.ts'
+            // Assert that the first line of code has text content which contains: 'file path: test spaces.ts'
             try {
                 await driver.page.waitForFunction(
                     () =>
