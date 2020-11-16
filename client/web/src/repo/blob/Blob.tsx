@@ -1,43 +1,36 @@
-import { createHoverifier, findPositionsFromEvents, HoveredToken, HoverState } from '@sourcegraph/codeintellify'
+import { HoverState } from '@sourcegraph/codeintellify'
 import { getCodeElementsInRange, locateTarget } from '@sourcegraph/codeintellify/lib/token_position'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { combineLatest, fromEvent, merge, ReplaySubject, Subject, Subscription } from 'rxjs'
-import { catchError, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
+import { combineLatest, merge, ReplaySubject } from 'rxjs'
+import { catchError, share, switchMap } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { groupDecorationsByLine } from '../../../../shared/src/api/client/services/decoration'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { getHoverActions } from '../../../../shared/src/hover/actions'
 import { HoverContext } from '../../../../shared/src/hover/HoverOverlay'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { asError, isErrorLike } from '../../../../shared/src/util/errors'
-import { isDefined, property } from '../../../../shared/src/util/types'
 import {
     AbsoluteRepoFile,
-    FileSpec,
     LineOrPositionOrRange,
     lprToSelectionsZeroIndexed,
     ModeSpec,
     parseHash,
-    UIPositionSpec,
-    RepoSpec,
-    ResolvedRevisionSpec,
-    RevisionSpec,
     toPositionOrRangeHash,
     toURIWithPath,
 } from '../../../../shared/src/util/url'
-import { getHover, getDocumentHighlights } from '../../backend/features'
-import { WebHoverOverlay } from '../../components/shared'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { LineDecorator } from './LineDecorator'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { HoverThresholdProps } from '../RepoContainer'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 import iterate from 'iterare'
+import { Hoverifier } from '../../components/Hoverifier'
+import { Falsy } from 'utility-types'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorator} portal containers.
@@ -104,32 +97,19 @@ const domFunctions = {
     },
 }
 
-export const Blob: React.FunctionComponent<BlobProps> = props => {
-    const { location, isLightTheme, extensionsController, blobInfo } = props
-
-    // Element reference subjects passed to `hoverifier`. They must be `ReplaySubjects` because
-    // the ref callback is called before hoverifier is created in `useEffect`
-    const blobElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-    const nextBlobElement = useCallback((blobElement: HTMLElement | null) => blobElements.next(blobElement), [
-        blobElements,
-    ])
-
-    const hoverOverlayElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-    const nextOverlayElement = useCallback(
-        (overlayElement: HTMLElement | null) => hoverOverlayElements.next(overlayElement),
-        [hoverOverlayElements]
-    )
-
-    const codeViewElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-    const codeViewReference = useRef<HTMLElement | null>()
-    const nextCodeViewElement = useCallback(
-        (codeView: HTMLElement | null) => {
-            codeViewReference.current = codeView
-            codeViewElements.next(codeView)
-        },
-        [codeViewElements]
-    )
-
+export const Blob: React.FunctionComponent<BlobProps> = ({
+    blobInfo,
+    settingsCascade,
+    telemetryService,
+    isLightTheme,
+    location,
+    extensionsController,
+    platformContext,
+    history,
+    className,
+    wrapCode,
+    onHoverShown,
+}) => {
     // Emits on position changes from URL hash
     const locationPositions = useMemo(() => new ReplaySubject<LineOrPositionOrRange>(1), [])
     const nextLocationPosition = useCallback(
@@ -138,14 +118,27 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     )
     const parsedHash = useMemo(() => parseHash(location.hash), [location.hash])
     useDeepCompareEffect(() => {
+        // Update selected line when position in hash changes
+        const codeView = codeViewReference.current
+        if (codeView) {
+            const codeCells = getCodeElementsInRange({
+                codeView,
+                position: parsedHash,
+                getCodeElementFromLineNumber: domFunctions.getCodeElementFromLineNumber,
+            })
+            // Remove existing highlighting
+            for (const selected of codeView.querySelectorAll('.selected')) {
+                selected.classList.remove('selected')
+            }
+            for (const { element } of codeCells) {
+                // Highlight row
+                const row = element.parentElement as HTMLTableRowElement
+                row.classList.add('selected')
+            }
+        }
+
         nextLocationPosition(parsedHash)
     }, [parsedHash])
-
-    // Subject that emits on every render. Source for `hoverOverlayRerenders`
-    const rerenders = useMemo(() => new ReplaySubject(1), [])
-    useEffect(() => {
-        rerenders.next()
-    })
 
     // Emits on blob info changes to update extension host model
     const blobInfoChanges = useMemo(() => new ReplaySubject<BlobInfo>(1), [])
@@ -154,209 +147,118 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         nextBlobInfoChange(blobInfo)
     }, [blobInfo, nextBlobInfoChange])
 
-    const closeButtonClicks = useMemo(() => new Subject<MouseEvent>(), [])
-    const nextCloseButtonClick = useCallback((click: MouseEvent) => closeButtonClicks.next(click), [closeButtonClicks])
+    // Update the Sourcegraph extensions model to reflect the current file.
+    useEffect(() => {
+        const subscription = combineLatest([blobInfoChanges, locationPositions]).subscribe(([blobInfo, position]) => {
+            const uri = toURIWithPath(blobInfo)
+            if (!extensionsController.services.model.hasModel(uri)) {
+                extensionsController.services.model.addModel({
+                    uri,
+                    languageId: blobInfo.mode,
+                    text: blobInfo.content,
+                })
+            }
+            extensionsController.services.viewer.removeAllViewers()
+            extensionsController.services.viewer.addViewer({
+                type: 'CodeEditor' as const,
+                resource: uri,
+                selections: lprToSelectionsZeroIndexed(position),
+                isActive: true,
+            })
+        })
 
-    /** Create hoverifier */
-    // We don't want to recreate hoverifier on each render, so props can't be a dependency
-    // in useEffect, but hoverifier needs a way to access the latest props.
-    const propsReference = useRef<BlobProps>(props)
-    propsReference.current = props
+        return () => {
+            subscription.unsubscribe()
+        }
+    }, [extensionsController, blobInfoChanges, locationPositions])
 
-    const [hoverState, setHoverState] = useState<HoverState<HoverContext, HoverMerged, ActionItemAction>>({})
+    // When clicking a line, update the URL (which will in turn trigger a highlight of the line)
+    const onLineSelection = useCallback(
+        (event: MouseEvent, hoverState: HoverState<HoverContext, HoverMerged, ActionItemAction>): void => {
+            // BUG: Sometimes requires two clicks to register click event
+            const position = locateTarget(event.target as HTMLElement, domFunctions)
+            let hash: string
+            if (
+                position &&
+                event.shiftKey &&
+                hoverState.selectedPosition &&
+                hoverState.selectedPosition.line !== undefined
+            ) {
+                hash = toPositionOrRangeHash({
+                    range: {
+                        start: {
+                            line: Math.min(hoverState.selectedPosition.line, position.line),
+                        },
+                        end: {
+                            line: Math.max(hoverState.selectedPosition.line, position.line),
+                        },
+                    },
+                })
+            } else {
+                hash = toPositionOrRangeHash({ position })
+            }
+
+            if (!hash.startsWith('#')) {
+                hash = '#' + hash
+            }
+
+            history.push({ ...location, hash })
+        },
+        [history, location]
+    )
+
+    const singleClickGoToDefinition = useMemo(
+        () =>
+            Boolean(
+                settingsCascade.final &&
+                    !isErrorLike(settingsCascade.final) &&
+                    settingsCascade.final.singleClickGoToDefinition === true
+            ),
+        [settingsCascade]
+    )
+
+    // Previously hovered token element and its event listener
+    const hoveredTokenElement = useRef<{ element?: HTMLElement; eventListener?: (event: MouseEvent) => void }>({})
+    const onHoverStateUpdate = useCallback(
+        (hoverState: HoverState<HoverContext, HoverMerged, ActionItemAction>): void => {
+            const { element, eventListener } = hoveredTokenElement.current
+            if (singleClickGoToDefinition && element !== hoverState.hoveredTokenElement) {
+                if (element) {
+                    element.style.cursor = 'auto'
+                    if (eventListener) {
+                        element.removeEventListener('click', eventListener)
+                    }
+                    hoveredTokenElement.current = {}
+                }
+
+                if (hoverState.hoveredTokenElement) {
+                    const goToDefinition = (event: MouseEvent): void => {
+                        const goToDefinitionAction =
+                            Array.isArray(hoverState.actionsOrError) &&
+                            hoverState.actionsOrError.find(action => action.action.id === 'goToDefinition.preloaded')
+                        if (goToDefinitionAction) {
+                            history.push(goToDefinitionAction.action.commandArguments![0] as string)
+                            event.stopPropagation()
+                        }
+                    }
+
+                    hoverState.hoveredTokenElement.style.cursor = 'pointer'
+                    hoverState.hoveredTokenElement.addEventListener('click', goToDefinition)
+                    hoveredTokenElement.current = {
+                        element: hoverState.hoveredTokenElement,
+                        eventListener: goToDefinition,
+                    }
+                }
+            }
+        },
+        [history, singleClickGoToDefinition]
+    )
 
     const [decorationsOrError, setDecorationsOrError] = useState<TextDocumentDecoration[] | Error | null>()
+    const codeViewReference = useRef<HTMLElement | null>()
 
-    // This effect is meant to run only after first render, cleanup on unmount.
-    // TODO: Create a hoverifier React hook
+    // Get decorations for the current file
     useEffect(() => {
-        const subscriptions = new Subscription()
-
-        const singleClickGoToDefinition = Boolean(
-            propsReference.current.settingsCascade.final &&
-                !isErrorLike(propsReference.current.settingsCascade.final) &&
-                propsReference.current.settingsCascade.final.singleClickGoToDefinition === true
-        )
-
-        const hoverifier = createHoverifier<HoverContext, HoverMerged, ActionItemAction>({
-            closeButtonClicks,
-            hoverOverlayElements,
-            hoverOverlayRerenders: rerenders.pipe(
-                withLatestFrom(hoverOverlayElements, blobElements),
-                map(([, hoverOverlayElement, blobElement]) => ({
-                    hoverOverlayElement,
-                    relativeElement: blobElement,
-                })),
-                filter(property('relativeElement', isDefined)),
-                // Can't reposition HoverOverlay if it wasn't rendered
-                filter(property('hoverOverlayElement', isDefined))
-            ),
-            getHover: position =>
-                // before, static methods could read from this.props
-                getHover(
-                    getLSPTextDocumentPositionParameters(position, propsReference.current.blobInfo.mode),
-                    propsReference.current
-                ),
-            getDocumentHighlights: position =>
-                getDocumentHighlights(
-                    getLSPTextDocumentPositionParameters(position, propsReference.current.blobInfo.mode),
-                    propsReference.current
-                ),
-            getActions: context => getHoverActions(propsReference.current, context),
-            pinningEnabled: !singleClickGoToDefinition,
-        })
-        subscriptions.add(hoverifier)
-
-        subscriptions.add(
-            hoverifier.hoverify({
-                positionEvents: codeViewElements.pipe(filter(isDefined), findPositionsFromEvents({ domFunctions })),
-                positionJumps: locationPositions.pipe(
-                    withLatestFrom(codeViewElements, blobElements),
-                    map(([position, codeView, scrollElement]) => ({
-                        position,
-                        // locationPositions is derived from componentUpdates,
-                        // so these elements are guaranteed to have been rendered.
-                        codeView: codeView!,
-                        scrollElement: scrollElement!,
-                    }))
-                ),
-                resolveContext: () => {
-                    const { repoName, revision, commitID, filePath } = propsReference.current.blobInfo
-                    return {
-                        repoName,
-                        revision,
-                        commitID,
-                        filePath,
-                    }
-                },
-                dom: domFunctions,
-            })
-        )
-
-        let hoveredTokenElement: HTMLElement | undefined
-        let goToDefinition: (event: MouseEvent) => void
-        // Make latest hover state accessible to other callbacks in this scope
-        // without re-initializing hoverifier. Reassign on each hoverStateUpdates emission
-        let latestHoverState: typeof hoverState = {}
-        subscriptions.add(
-            hoverifier.hoverStateUpdates.subscribe(update => {
-                if (singleClickGoToDefinition && hoveredTokenElement !== update.hoveredTokenElement && goToDefinition) {
-                    if (hoveredTokenElement) {
-                        hoveredTokenElement.style.cursor = 'auto'
-                        hoveredTokenElement.removeEventListener('click', goToDefinition)
-                    }
-
-                    if (update.hoveredTokenElement) {
-                        // Create new goToDefinition function that closes over latest hover state
-                        goToDefinition = (event: MouseEvent): void => {
-                            const goToDefinitionAction =
-                                Array.isArray(update.actionsOrError) &&
-                                update.actionsOrError.find(action => action.action.id === 'goToDefinition.preloaded')
-                            if (goToDefinitionAction) {
-                                propsReference.current.history.push(
-                                    goToDefinitionAction.action.commandArguments![0] as string
-                                )
-                                event.stopPropagation()
-                            }
-                        }
-                        update.hoveredTokenElement.style.cursor = 'pointer'
-                        update.hoveredTokenElement.addEventListener('click', goToDefinition)
-                    }
-                    hoveredTokenElement = update.hoveredTokenElement
-                }
-                latestHoverState = update
-                setHoverState(update)
-            })
-        )
-
-        // When clicking a line, update the URL (which will in turn trigger a highlight of the line)
-        subscriptions.add(
-            codeViewElements
-                .pipe(
-                    filter(isDefined),
-                    switchMap(codeView => fromEvent<MouseEvent>(codeView, 'click')),
-                    // Ignore click events caused by the user selecting text
-                    filter(() => !window.getSelection()?.toString())
-                )
-                .subscribe(event => {
-                    // Prevent selecting text on shift click (click+drag to select will still work)
-                    // Note that this is only called if the selection was empty initially (see above),
-                    // so this only clears a selection caused by this click.
-                    window.getSelection()!.removeAllRanges()
-
-                    const position = locateTarget(event.target as HTMLElement, domFunctions)
-                    let hash: string
-                    if (
-                        position &&
-                        event.shiftKey &&
-                        latestHoverState.selectedPosition &&
-                        latestHoverState.selectedPosition.line !== undefined
-                    ) {
-                        hash = toPositionOrRangeHash({
-                            range: {
-                                start: {
-                                    line: Math.min(latestHoverState.selectedPosition.line, position.line),
-                                },
-                                end: {
-                                    line: Math.max(latestHoverState.selectedPosition.line, position.line),
-                                },
-                            },
-                        })
-                    } else {
-                        hash = toPositionOrRangeHash({ position })
-                    }
-
-                    if (!hash.startsWith('#')) {
-                        hash = '#' + hash
-                    }
-
-                    propsReference.current.history.push({ ...propsReference.current.location, hash })
-                })
-        )
-
-        // Update selected line when position in hash changes
-        subscriptions.add(
-            locationPositions.pipe(withLatestFrom(codeViewElements)).subscribe(([position, codeView]) => {
-                codeView = codeView! // locationPositions is derived from componentUpdates, so this is guaranteed to exist
-                const codeCells = getCodeElementsInRange({
-                    codeView,
-                    position,
-                    getCodeElementFromLineNumber: domFunctions.getCodeElementFromLineNumber,
-                })
-                // Remove existing highlighting
-                for (const selected of codeView.querySelectorAll('.selected')) {
-                    selected.classList.remove('selected')
-                }
-                for (const { element } of codeCells) {
-                    // Highlight row
-                    const row = element.parentElement as HTMLTableRowElement
-                    row.classList.add('selected')
-                }
-            })
-        )
-
-        // Update the Sourcegraph extensions model to reflect the current file.
-        subscriptions.add(
-            combineLatest([blobInfoChanges, locationPositions]).subscribe(([blobInfo, position]) => {
-                const uri = toURIWithPath(blobInfo)
-                if (!propsReference.current.extensionsController.services.model.hasModel(uri)) {
-                    propsReference.current.extensionsController.services.model.addModel({
-                        uri,
-                        languageId: blobInfo.mode,
-                        text: blobInfo.content,
-                    })
-                }
-                propsReference.current.extensionsController.services.viewer.removeAllViewers()
-                propsReference.current.extensionsController.services.viewer.addViewer({
-                    type: 'CodeEditor' as const,
-                    resource: uri,
-                    selections: lprToSelectionsZeroIndexed(position),
-                    isActive: true,
-                })
-            })
-        )
-
-        // Get decorations for the current file
         let lastBlobInfo: (AbsoluteRepoFile & ModeSpec) | undefined
         const decorations = blobInfoChanges.pipe(
             switchMap(blobInfo => {
@@ -366,7 +268,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 // keep the old decorations until the new ones are available, to avoid UI jitter
                 return merge(
                     blobInfoChanged ? [null] : [],
-                    propsReference.current.extensionsController.services.textDocumentDecoration.getDecorations({
+                    extensionsController.services.textDocumentDecoration.getDecorations({
                         uri: `git://${blobInfo.repoName}?${blobInfo.commitID}#${blobInfo.filePath}`,
                     })
                 )
@@ -374,79 +276,86 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             share()
         )
 
-        subscriptions.add(
-            decorations.pipe(catchError(error => [asError(error)])).subscribe(decorationsOrError => {
-                setDecorationsOrError(decorationsOrError)
-            })
-        )
+        const subscription = decorations.pipe(catchError(error => [asError(error)])).subscribe(decorationsOrError => {
+            setDecorationsOrError(decorationsOrError)
+        })
 
         return () => {
-            subscriptions.unsubscribe()
+            subscription.unsubscribe()
         }
-    }, [
-        hoverOverlayElements,
-        blobElements,
-        codeViewElements,
-        rerenders,
-        locationPositions,
-        blobInfoChanges,
-        closeButtonClicks,
-    ])
+    }, [blobInfoChanges, extensionsController])
 
     // Memoize `groupedDecorations` to avoid clearing and setting decorations in `LineDecorator`s on renders in which
     // decorations haven't changed.
     const groupedDecorations = useMemo(
-        () => decorationsOrError && !isErrorLike(decorationsOrError) && groupDecorationsByLine(decorationsOrError),
-        [decorationsOrError]
+        () =>
+            decorationsOrError &&
+            !isErrorLike(decorationsOrError) &&
+            iterate(groupDecorationsByLine(decorationsOrError))
+                .map(([line, decorations]) => {
+                    const portalID = toPortalID(line)
+                    return (
+                        <LineDecorator
+                            isLightTheme={isLightTheme}
+                            key={`${portalID}-${blobInfo.filePath}`}
+                            portalID={portalID}
+                            getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
+                            line={line}
+                            decorations={decorations}
+                            codeViewReference={codeViewReference}
+                        />
+                    )
+                })
+                .toArray(),
+
+        [decorationsOrError, blobInfo.filePath, isLightTheme]
     )
 
     return (
-        <div className={`blob ${props.className}`} ref={nextBlobElement}>
-            <code
-                className={`blob__code ${props.wrapCode ? ' blob__code--wrapped' : ''} test-blob`}
-                ref={nextCodeViewElement}
-                dangerouslySetInnerHTML={{ __html: blobInfo.html }}
-            />
-            {hoverState.hoverOverlayProps && (
-                <WebHoverOverlay
-                    {...props}
-                    {...hoverState.hoverOverlayProps}
-                    hoverRef={nextOverlayElement}
-                    onCloseButtonClick={nextCloseButtonClick}
-                    extensionsController={extensionsController}
-                />
-            )}
-            {groupedDecorations &&
-                iterate(groupedDecorations)
-                    .map(([line, decorations]) => {
-                        const portalID = toPortalID(line)
-                        return (
-                            <LineDecorator
-                                isLightTheme={isLightTheme}
-                                key={`${portalID}-${blobInfo.filePath}`}
-                                portalID={portalID}
-                                getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
-                                line={line}
-                                decorations={decorations}
-                                codeViewReference={codeViewReference}
-                            />
-                        )
-                    })
-                    .toArray()}
-        </div>
-    )
-}
+        <Hoverifier<{
+            blobInfo: BlobInfo
+            groupedDecorations: JSX.Element[] | Falsy
+            wrapCode: boolean
+            className: string
+        }>
+            // Hover overlay props
+            telemetryService={telemetryService}
+            location={location}
+            extensionsController={extensionsController}
+            platformContext={platformContext}
+            isLightTheme={isLightTheme}
+            domFunctions={domFunctions}
+            pinningEnabled={!singleClickGoToDefinition}
+            absoluteRepoFile={blobInfo}
+            // Observable that hoverifier depends on
+            locationPositions={locationPositions}
+            // Callbacks to hook into hoverifier state updates
+            onHoverShown={onHoverShown}
+            onHoverStateUpdate={onHoverStateUpdate}
+            onLineSelection={onLineSelection}
+            // Props to pass through
+            passthroughProps={{ blobInfo, groupedDecorations, wrapCode, className }}
+        >
+            {useCallback(({ overlay, nextBlobElement, nextCodeViewElement, passthroughProps }) => {
+                const { blobInfo, className, groupedDecorations, wrapCode } = passthroughProps
 
-function getLSPTextDocumentPositionParameters(
-    position: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
-    mode: string
-): RepoSpec & RevisionSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec & ModeSpec {
-    return {
-        repoName: position.repoName,
-        filePath: position.filePath,
-        commitID: position.commitID,
-        revision: position.revision,
-        mode,
-        position,
-    }
+                return (
+                    <div className={`blob ${className}`} ref={nextBlobElement}>
+                        <code
+                            className={`blob__code ${wrapCode ? ' blob__code--wrapped' : ''} test-blob`}
+                            ref={codeView => {
+                                // alternating between null and code view. https://github.com/facebook/react/issues/11258
+                                console.log('ref', codeView)
+                                codeViewReference.current = codeView
+                                nextCodeViewElement(codeView)
+                            }}
+                            dangerouslySetInnerHTML={{ __html: blobInfo.html }}
+                        />
+                        {overlay}
+                        {groupedDecorations}
+                    </div>
+                )
+            }, [])}
+        </Hoverifier>
+    )
 }
