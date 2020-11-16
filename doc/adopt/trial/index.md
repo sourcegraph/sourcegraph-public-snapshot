@@ -4,7 +4,7 @@ If you're still fuzzy (all the code intelligence puns intended) on how Sourcegra
 
 However, if you already know deep down in your bones that Sourcegraph will greatly benefit your teams and you want to verify your hunch, or perhaps you need to prove out the ROI value to your manager; either way, one great way of accomplishing either is by running a Sourcegraph trial or POC (proof of concept) within your team.
 
-# How to run a Sourcegraph trial
+## How to run a Sourcegraph trial
 
 Sourcegraph has been deployed inside of thousands of organizations. From our experience working with those that have been successful, and those that haven't, we have collected a set of recommendations for running an effective trial.
 
