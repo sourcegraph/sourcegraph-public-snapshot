@@ -201,7 +201,7 @@ Considerations when enabling for the first time:
 
 Please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) if you have any concerns/questions about enabling this feature for your Sourcegraph instance.
 
-## Webhook permissions syncing
+## Faster permissions syncing via webhooks
 
 Sourcegraph {{VERSION GOES HERE}} can speed up permissions syncing by receiving webhooks from your code hosts for events related to user and repo permissions. These events include...
 
