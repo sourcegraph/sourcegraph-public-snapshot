@@ -484,6 +484,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"homepage_panels": null,
 		"search_onboarding": null,
 		"repositories": null,
+		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
