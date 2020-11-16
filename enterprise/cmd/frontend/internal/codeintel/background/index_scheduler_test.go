@@ -54,7 +54,7 @@ func TestIndexSchedulerUpdateIndexConfigurationInDatabase(t *testing.T) {
 	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(indexConfiguration, true, nil)
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, dbStore DBStore, repositoryID int) (string, error) {
+	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, error) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})
 
@@ -175,10 +175,10 @@ func TestIndexSchedulerUpdateIndexConfigurationInRepository(t *testing.T) {
 	mockDBStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{42}, nil)
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, dbStore DBStore, repositoryID int) (string, error) {
+	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, error) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})
-	mockGitserverClient.FileExistsFunc.SetDefaultHook(func(ctx context.Context, dbStore DBStore, repositoryID int, commit, file string) (bool, error) {
+	mockGitserverClient.FileExistsFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file string) (bool, error) {
 		return file == "sourcegraph.yaml", nil
 	})
 	mockGitserverClient.RawContentsFunc.SetDefaultReturn(yamlIndexConfiguration, nil)
@@ -271,10 +271,10 @@ func TestIndexSchedulerUpdateIndexConfigurationInferred(t *testing.T) {
 	})
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, dbStore DBStore, repositoryID int) (string, error) {
+	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, error) {
 		return fmt.Sprintf("c%d", repositoryID), nil
 	})
-	mockGitserverClient.ListFilesFunc.SetDefaultHook(func(ctx context.Context, dbStoretore DBStore, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
+	mockGitserverClient.ListFilesFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error) {
 		switch repositoryID {
 		case 42:
 			return []string{"go.mod"}, nil

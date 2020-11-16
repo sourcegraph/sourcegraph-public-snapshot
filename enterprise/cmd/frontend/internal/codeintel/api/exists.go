@@ -106,7 +106,7 @@ func (api *CodeIntelAPI) inferClosestUploads(ctx context.Context, repositoryID i
 		return nil, nil
 	}
 
-	graph, err := api.gitserverClient.CommitGraph(ctx, api.dbStore, repositoryID, gitserver.CommitGraphOptions{
+	graph, err := api.gitserverClient.CommitGraph(ctx, repositoryID, gitserver.CommitGraphOptions{
 		Commit: commit,
 		Limit:  NumAncestors,
 	})

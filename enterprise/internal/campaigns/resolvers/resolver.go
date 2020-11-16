@@ -3,17 +3,16 @@ package resolvers
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
 // Resolver is the GraphQL resolver of all things related to Campaigns.
@@ -60,24 +60,6 @@ func campaignsCreateAccess(ctx context.Context) error {
 	act := actor.FromContext(ctx)
 	if !act.IsAuthenticated() {
 		return backend.ErrNotAuthenticated
-	}
-	return nil
-}
-
-// checkLicense returns a user-facing error if the campaigns feature is not purchased
-// with the current license or any error occurred while validating the license.
-func checkLicense() error {
-	if !licensing.EnforceTiers {
-		return nil
-	}
-
-	err := licensing.Check(licensing.FeatureCampaigns)
-	if err != nil {
-		if licensing.IsFeatureNotActivated(err) {
-			return err
-		}
-		log15.Error("campaigns.Resolver.checkLicense", "err", err)
-		return errors.New("Unable to check license feature, please refer to logs for actual error message.")
 	}
 	return nil
 }
@@ -252,11 +234,6 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		tr.Finish()
 	}()
 
-	// Validate that the instance's licensing tier supports campaigns.
-	if err := checkLicense(); err != nil {
-		return nil, err
-	}
-
 	if err := campaignsEnabled(); err != nil {
 		return nil, err
 	}
@@ -298,11 +275,6 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		tr.SetError(err)
 		tr.Finish()
 	}()
-
-	// Validate that the instance's licensing tier supports campaigns.
-	if err := checkLicense(); err != nil {
-		return nil, err
-	}
 
 	if err := campaignsEnabled(); err != nil {
 		return nil, err
@@ -381,6 +353,10 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 		return nil, err
 	}
 
+	if err := logCampaignSpecCreated(ctx, &opts); err != nil {
+		return nil, err
+	}
+
 	specResolver := &campaignSpecResolver{
 		store:        r.store,
 		httpFactory:  r.httpFactory,
@@ -388,6 +364,24 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 	}
 
 	return specResolver, nil
+}
+
+func logCampaignSpecCreated(ctx context.Context, opts *ee.CreateCampaignSpecOpts) error {
+	// Log an analytics event when a CampaignSpec has been created.
+	// See internal/usagestats/campaigns.go.
+	actor := actor.FromContext(ctx)
+
+	type eventArg struct {
+		ChangesetSpecsCount int `json:"changeset_specs_count"`
+	}
+	arg := eventArg{ChangesetSpecsCount: len(opts.ChangesetSpecRandIDs)}
+
+	jsonArg, err := json.Marshal(arg)
+	if err != nil {
+		return err
+	}
+
+	return usagestats.LogBackendEvent(actor.UID, "CampaignSpecCreated", json.RawMessage(jsonArg))
 }
 
 func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend.CreateChangesetSpecArgs) (graphqlbackend.ChangesetSpecResolver, error) {

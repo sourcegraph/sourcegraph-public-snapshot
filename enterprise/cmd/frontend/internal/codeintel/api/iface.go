@@ -64,13 +64,5 @@ type LSIFStore interface {
 }
 
 type GitserverClient interface {
-	CommitGraph(ctx context.Context, dbStore DBStore, repositoryID int, options gitserver.CommitGraphOptions) (map[string][]string, error)
-}
-
-type GitserverClientShim struct {
-	*gitserver.Client
-}
-
-func (c *GitserverClientShim) CommitGraph(ctx context.Context, dbStore DBStore, repositoryID int, options gitserver.CommitGraphOptions) (map[string][]string, error) {
-	return c.Client.CommitGraph(ctx, dbStore, repositoryID, options)
+	CommitGraph(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (map[string][]string, error)
 }

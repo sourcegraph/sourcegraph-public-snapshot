@@ -1,6 +1,5 @@
 # See https://github.com/sourcegraph/codenotify for documentation.
 
-**/CODENOTIFY @nicksnyder
 **/CODEOWNERS @nicksnyder
 
 cmd/frontend/graphqlbackend/campaigns.go @eseliger

@@ -203,6 +203,12 @@ type CampaignSpec struct {
 
 	AppliesToCampaign Campaign
 
+	ViewerCampaignsCodeHosts CampaignsCodeHostsConnection
+	// Alias for the above.
+	AllCodeHosts CampaignsCodeHostsConnection
+	// Alias for the above.
+	OnlyWithoutCredential CampaignsCodeHostsConnection
+
 	CreatedAt graphqlbackend.DateTime
 	ExpiresAt *graphqlbackend.DateTime
 }

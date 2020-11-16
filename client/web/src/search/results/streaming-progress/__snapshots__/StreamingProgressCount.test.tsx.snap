@@ -1,0 +1,94 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`StreamingProgressCount should render correctly for 0 items in progress 1`] = `
+<StreamingProgressCount
+  progress={
+    Object {
+      "done": false,
+      "durationMs": 0,
+      "matchCount": 0,
+      "skipped": Array [],
+    }
+  }
+>
+  <div
+    className="streaming-progress__count p-2 d-flex align-items-center streaming-progress__count--in-progress"
+  >
+    <Memo(CalculatorIcon)
+      className="mr-2"
+    />
+    0
+     
+    results
+     in 
+    0.00
+    s
+  </div>
+</StreamingProgressCount>
+`;
+
+exports[`StreamingProgressCount should render correctly for 1 item complete 1`] = `
+<StreamingProgressCount
+  progress={
+    Object {
+      "done": true,
+      "durationMs": 1250,
+      "matchCount": 1,
+      "repositoriesCount": 1,
+      "skipped": Array [],
+    }
+  }
+>
+  <div
+    className="streaming-progress__count p-2 d-flex align-items-center"
+  >
+    <Memo(CalculatorIcon)
+      className="mr-2"
+    />
+    1
+     
+    result
+     in 
+    1.25
+    s
+     
+    from 
+    1
+     
+    repository
+  </div>
+</StreamingProgressCount>
+`;
+
+exports[`StreamingProgressCount should render correctly for 123 items complete 1`] = `
+<StreamingProgressCount
+  progress={
+    Object {
+      "done": true,
+      "durationMs": 1250,
+      "matchCount": 123,
+      "repositoriesCount": 500,
+      "skipped": Array [],
+    }
+  }
+>
+  <div
+    className="streaming-progress__count p-2 d-flex align-items-center"
+  >
+    <Memo(CalculatorIcon)
+      className="mr-2"
+    />
+    123
+     
+    results
+     in 
+    1.25
+    s
+     
+    from 
+    500
+     
+    repositories
+  </div>
+</StreamingProgressCount>
+`;

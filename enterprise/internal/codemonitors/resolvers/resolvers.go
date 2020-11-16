@@ -47,6 +47,10 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 	if err != nil {
 		return nil, err
 	}
+	// Hydrate the monitors with the resolver.
+	for _, m := range ms {
+		m.(*monitor).Resolver = r
+	}
 	return &monitorConnection{r, ms}, nil
 }
 
@@ -175,6 +179,22 @@ func (r *Resolver) runEmailQuery(ctx context.Context, q *sqlf.Query) (graphqlbac
 	return ms[0], nil
 }
 
+func (r *Resolver) runTriggerQuery(ctx context.Context, q *sqlf.Query) (graphqlbackend.MonitorQueryResolver, error) {
+	rows, err := r.db.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	ms, err := scanQueries(rows)
+	if err != nil {
+		return nil, err
+	}
+	if len(ms) == 0 {
+		return nil, fmt.Errorf("operation failed. Query should have returned 1 row")
+	}
+	return ms[0], nil
+}
+
 func scanMonitors(rows *sql.Rows) ([]graphqlbackend.MonitorResolver, error) {
 	var ms []graphqlbackend.MonitorResolver
 	for rows.Next() {
@@ -215,6 +235,34 @@ func scanEmails(rows *sql.Rows) ([]graphqlbackend.MonitorEmailResolver, error) {
 			&m.enabled,
 			&m.priority,
 			&m.header,
+			&m.createdBy,
+			&m.createdAt,
+			&m.changedBy,
+			&m.changedAt,
+		); err != nil {
+			return nil, err
+		}
+		ms = append(ms, m)
+	}
+	err := rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	// Rows.Err will report the last error encountered by Rows.Scan.
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return ms, nil
+}
+
+func scanQueries(rows *sql.Rows) ([]graphqlbackend.MonitorQueryResolver, error) {
+	var ms []graphqlbackend.MonitorQueryResolver
+	for rows.Next() {
+		m := &monitorQuery{}
+		if err := rows.Scan(
+			&m.id,
+			&m.monitor,
+			&m.query,
 			&m.createdBy,
 			&m.createdAt,
 			&m.changedBy,
@@ -344,6 +392,18 @@ RETURNING %s;
 		a.UID,
 		now,
 		sqlf.Join(queryColumns, ", "),
+	), nil
+}
+
+func (r *Resolver) triggerQueryByMonitorQuery(ctx context.Context, monitorID int64) (*sqlf.Query, error) {
+	const triggerQueryByMonitorQuery = `
+SELECT id, monitor, query, created_by, created_at, changed_by, changed_at
+FROM cm_queries
+WHERE monitor = %s;
+`
+	return sqlf.Sprintf(
+		triggerQueryByMonitorQuery,
+		monitorID,
 	), nil
 }
 
@@ -552,6 +612,7 @@ func (m *monitorConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo
 // Monitor
 //
 type monitor struct {
+	*Resolver
 	id              int64
 	createdBy       int32
 	createdAt       time.Time
@@ -565,6 +626,7 @@ type monitor struct {
 
 const (
 	monitorKind = "CodeMonitor"
+	triggerKind = "CodeMonitorTrigger"
 )
 
 func (m *monitor) ID() graphql.ID {
@@ -597,7 +659,17 @@ func (m *monitor) Owner(ctx context.Context) (n graphqlbackend.NamespaceResolver
 }
 
 func (m *monitor) Trigger(ctx context.Context) (graphqlbackend.MonitorTrigger, error) {
-	return &monitorTrigger{&monitorQuery{monitorID: m.ID(), userID: m.ID()}}, nil
+	q, err := m.triggerQueryByMonitorQuery(ctx, m.id)
+	if err != nil {
+		return nil, err
+	}
+	t, err := m.runTriggerQuery(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	// Hydrate with resolver.
+	t.(*monitorQuery).Resolver = m.Resolver
+	return &monitorTrigger{t}, nil
 }
 
 func (m *monitor) Actions(ctx context.Context, args *graphqlbackend.ListActionArgs) (graphqlbackend.MonitorActionConnectionResolver, error) {
@@ -622,20 +694,26 @@ func (t *monitorTrigger) ToMonitorQuery() (graphqlbackend.MonitorQueryResolver, 
 // Query
 //
 type monitorQuery struct {
-	monitorID graphql.ID
-	userID    graphql.ID // TODO: remove this. Just for stub implementation
+	*Resolver
+	id        int64
+	monitor   int64
+	query     string
+	createdBy int64
+	createdAt time.Time
+	changedBy int64
+	changedAt time.Time
 }
 
 func (q *monitorQuery) ID() graphql.ID {
-	return "monitorQuery ID not implemented"
+	return relay.MarshalID(triggerKind, q.id)
 }
 
 func (q *monitorQuery) Query() string {
-	return "repo:github.com/sourcegraph/sourcegraph file:code_monitors not implemented"
+	return q.query
 }
 
 func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) graphqlbackend.MonitorTriggerEventConnectionResolver {
-	return &monitorTriggerEventConnection{monitorID: q.monitorID, userID: q.userID}
+	return &monitorTriggerEventConnection{monitorID: relay.MarshalID(monitorKind, q.monitor), userID: relay.MarshalID("User", actor.FromContext(ctx).UID)}
 }
 
 //

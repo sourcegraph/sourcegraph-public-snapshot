@@ -3,7 +3,12 @@ import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
 import { CampaignApplyPage } from './CampaignApplyPage'
 import { of, Observable } from 'rxjs'
-import { CampaignSpecChangesetSpecsResult, ChangesetSpecFields, CampaignSpecFields } from '../../../graphql-operations'
+import {
+    CampaignSpecChangesetSpecsResult,
+    ChangesetSpecFields,
+    CampaignSpecFields,
+    ExternalServiceKind,
+} from '../../../graphql-operations'
 import { visibleChangesetSpecStories } from './VisibleChangesetSpecNode.story'
 import { hiddenChangesetSpecStories } from './HiddenChangesetSpecNode.story'
 import { fetchCampaignSpecById } from './backend'
@@ -46,9 +51,31 @@ const campaignSpec: CampaignSpecFields = {
         url: '/users/alice',
     },
     viewerCanAdminister: boolean('viewerCanAdminister', true),
+    viewerCampaignsCodeHosts: {
+        totalCount: 0,
+        nodes: [],
+    },
 }
 
 const fetchCampaignSpecCreate: typeof fetchCampaignSpecById = () => of(campaignSpec)
+
+const fetchCampaignSpecMissingCredentials: typeof fetchCampaignSpecById = () =>
+    of({
+        ...campaignSpec,
+        viewerCampaignsCodeHosts: {
+            totalCount: 2,
+            nodes: [
+                {
+                    externalServiceKind: ExternalServiceKind.GITHUB,
+                    externalServiceURL: 'https://github.com/',
+                },
+                {
+                    externalServiceKind: ExternalServiceKind.GITLAB,
+                    externalServiceURL: 'https://gitlab.com/',
+                },
+            ],
+        },
+    })
 
 const fetchCampaignSpecUpdate: typeof fetchCampaignSpecById = () =>
     of({
@@ -97,6 +124,7 @@ add('Create', () => (
                 fetchCampaignSpecById={fetchCampaignSpecCreate}
                 queryChangesetSpecs={queryChangesetSpecs}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                authenticatedUser={{ url: '/users/alice' }}
             />
         )}
     </EnterpriseWebStory>
@@ -112,6 +140,23 @@ add('Update', () => (
                 fetchCampaignSpecById={fetchCampaignSpecUpdate}
                 queryChangesetSpecs={queryChangesetSpecs}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                authenticatedUser={{ url: '/users/alice' }}
+            />
+        )}
+    </EnterpriseWebStory>
+))
+
+add('Missing credentials', () => (
+    <EnterpriseWebStory>
+        {props => (
+            <CampaignApplyPage
+                {...props}
+                expandChangesetDescriptions={true}
+                specID="123123"
+                fetchCampaignSpecById={fetchCampaignSpecMissingCredentials}
+                queryChangesetSpecs={queryChangesetSpecs}
+                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                authenticatedUser={{ url: '/users/alice' }}
             />
         )}
     </EnterpriseWebStory>
@@ -127,6 +172,7 @@ add('No changesets', () => (
                 fetchCampaignSpecById={fetchCampaignSpecCreate}
                 queryChangesetSpecs={queryEmptyChangesetSpecs}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                authenticatedUser={{ url: '/users/alice' }}
             />
         )}
     </EnterpriseWebStory>

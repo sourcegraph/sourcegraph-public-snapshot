@@ -48,12 +48,12 @@ func (s *Service) WithStore(store *Store) *Service {
 }
 
 type CreateCampaignSpecOpts struct {
-	RawSpec string
+	RawSpec string `json:"raw_spec"`
 
-	NamespaceUserID int32
-	NamespaceOrgID  int32
+	NamespaceUserID int32 `json:"namespace_user_id"`
+	NamespaceOrgID  int32 `json:"namespace_org_id"`
 
-	ChangesetSpecRandIDs []string
+	ChangesetSpecRandIDs []string `json:"changeset_spec_rand_ids"`
 }
 
 // CreateCampaignSpec creates the CampaignSpec.

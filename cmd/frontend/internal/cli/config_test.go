@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"os"
 	"reflect"
 	"testing"
 
@@ -8,6 +9,8 @@ import (
 )
 
 func TestServiceConnections(t *testing.T) {
+	os.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
+
 	// We only test that we get something non-empty back.
 	sc := serviceConnections()
 	if reflect.DeepEqual(sc, conftypes.ServiceConnections{}) {
