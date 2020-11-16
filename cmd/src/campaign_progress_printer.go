@@ -37,7 +37,7 @@ type campaignProgressPrinter struct {
 	statusBarRepo map[int]string
 }
 
-func (p *campaignProgressPrinter) initProgressBar(statuses []*campaigns.TaskStatus) {
+func (p *campaignProgressPrinter) initProgressBar(statuses []*campaigns.TaskStatus) int {
 	numStatusBars := p.numParallelism
 	if len(statuses) < numStatusBars {
 		numStatusBars = len(statuses)
@@ -52,6 +52,8 @@ func (p *campaignProgressPrinter) initProgressBar(statuses []*campaigns.TaskStat
 		Label: fmt.Sprintf("Executing steps in %d repositories", len(statuses)),
 		Max:   float64(len(statuses)),
 	}}, statusBars, nil)
+
+	return numStatusBars
 }
 
 func (p *campaignProgressPrinter) Complete() {
@@ -65,8 +67,9 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 		return
 	}
 
+	var numStatusBars int
 	if p.progress == nil {
-		p.initProgressBar(statuses)
+		numStatusBars = p.initProgressBar(statuses)
 	}
 
 	newlyCompleted := []*campaigns.TaskStatus{}
@@ -110,11 +113,19 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 		newlyStarted[ts.RepoName] = ts
 		p.runningTasks[ts.RepoName] = ts
 
-		// Find free slot
+		// Find free status bar slot
 		_, ok := p.statusBarRepo[statusBarIndex]
 		for ok {
 			statusBarIndex += 1
 			_, ok = p.statusBarRepo[statusBarIndex]
+		}
+
+		if statusBarIndex >= numStatusBars {
+			// If the only free slot is past the number of status bars we
+			// have, there's a race condition going on where we have more tasks
+			// reporting as "currently executing" than could be executing, most
+			// likely because one of them hasn't been updated yet.
+			break
 		}
 
 		p.statusBarRepo[statusBarIndex] = ts.RepoName

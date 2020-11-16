@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- Fixed a bug that could cause `src campaign [apply|preview]` to crash in rare circumstances when executing a campaign spec due to a bug in the logic for the progress bar. [#378](https://github.com/sourcegraph/src-cli/pull/378)
+
 ### Removed
 
 ## 3.21.9
@@ -24,7 +26,6 @@ All notable changes to `src-cli` are documented in this file.
 ### Added
 
 - Commands for campaigns no longer require the `-namespace` parameter. If omitted, campaigns will use the currently authenticated user as the namespace. [#372](https://github.com/sourcegraph/src-cli/pull/372)
-
 - `src campaign [apply|preview]` now caches the result of running steps in a repository even if they didn't produce changes.
 
 ## 3.21.8
