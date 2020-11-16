@@ -50,8 +50,8 @@ type CommitGraphOptions struct {
 func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitGraphOptions) (_ map[string][]string, err error) {
 	ctx, endObservation := c.operations.commitGraph.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
-		log.String("opts.Commit", opts.Commit),
-		log.Int("opts.Limit", opts.Limit),
+		log.String("commit", opts.Commit),
+		log.Int("limit", opts.Limit),
 	}})
 	defer endObservation(1, observation.Args{})
 
