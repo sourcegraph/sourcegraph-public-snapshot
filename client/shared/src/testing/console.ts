@@ -25,7 +25,11 @@ const useSimpleBrowserConsoleLogs = parseBool(process.env.SIMPLE_BROWSER_CONSOLE
  * output on the NodeJS terminal. Tries to mirror Chrome's console output as
  * closely as possible and makes sense.
  */
-export async function formatPuppeteerConsoleMessage(page: Page, message: ConsoleMessage): Promise<string> {
+export async function formatPuppeteerConsoleMessage(
+    page: Page,
+    message: ConsoleMessage,
+    simple?: boolean
+): Promise<string> {
     // Troubleshooting formatted puppeteer console messages: these are known
     // problems:
     //
@@ -37,7 +41,7 @@ export async function formatPuppeteerConsoleMessage(page: Page, message: Console
     //
     // Workaround: use `SIMPLE_BROWSER_CONSOLE_LOGS=1` when running tests to
     //    switch to simple formatting, which avoids these problems.
-    if (useSimpleBrowserConsoleLogs) {
+    if (useSimpleBrowserConsoleLogs || simple) {
         return `Browser console (${message.type()}): ${message.text()}`
     }
 
