@@ -243,10 +243,11 @@ func (r *RepositoryResolver) UpdatedAt() *DateTime {
 }
 
 func (r *RepositoryResolver) URL() string {
+	url := "/" + escapePathForURL(string(r.repo.Name))
 	if r.rev != "" {
-		return "/" + string(r.repo.Name) + "@" + r.rev
+		url += "@" + escapePathForURL(r.rev)
 	}
-	return "/" + string(r.repo.Name)
+	return url
 }
 
 func (r *RepositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
