@@ -18,7 +18,6 @@ import { Hover, Location } from '@sourcegraph/extension-api-types'
 import { castArray, isEqual } from 'lodash'
 import { fromHoverMerged, HoverMerged } from '../client/types/hover'
 import { isNot, isExactly, isDefined } from '../../util/types'
-import { GraphQLResult } from '../../graphql/graphql'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -230,7 +229,7 @@ export const initNewExtensionAPI = (
 
     // GraphQL
     const graphQL: typeof sourcegraph['graphQL'] = {
-        requestGraphQL: (query, variables) => mainAPI.requestGraphQL(query, variables)
+        execute: (query, variables) => mainAPI.requestGraphQL(query, variables),
     }
 
     return {
