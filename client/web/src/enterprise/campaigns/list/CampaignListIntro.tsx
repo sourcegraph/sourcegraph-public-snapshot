@@ -32,15 +32,19 @@ export const CampaignListIntro: React.FunctionComponent = () => (
                     <div className="card-body">
                         <h4>New campaigns features in version 3.22</h4>
                         <ul className="text-muted mb-0 pl-3">
-                            <li>All users can now create campaigns</li>
+                            <li>Users can now create campaigns</li>
                             <li>
-                                Publishing a changeset requires a code host token from the user applying the campaign
+                                Changeset are published using the configured code host tokens of the user applying the
+                                campaign
                             </li>
                             <li>
                                 Template variables such as <code>search_result_paths</code> and{' '}
-                                <code>modified_files</code> are now available in campaign specifications
+                                <code>modified_files</code> are now{' '}
+                                <a href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_templating">
+                                    available in campaign specifications
+                                </a>
                             </li>
-                            <li>Rate limit improvements</li>
+                            <li>Handling of code host rate limits when syncing changeset data has been improved</li>
                         </ul>
                     </div>
                 </div>
