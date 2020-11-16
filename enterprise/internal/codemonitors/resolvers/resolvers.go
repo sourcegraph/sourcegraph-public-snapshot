@@ -32,6 +32,43 @@ type Resolver struct {
 	clock func() time.Time
 }
 
+func (r *Resolver) CreateCodeMonitorAction(ctx context.Context, args *graphqlbackend.CreateActionForMonitorArgs) (a graphqlbackend.MonitorAction, err error) {
+	err = r.isAllowedToEdit(ctx, args.Id)
+	if err != nil {
+		return nil, fmt.Errorf("CreateCodeMonitorAction: %w", err)
+	}
+	tx, err := r.transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.db.Done(err) }()
+
+	var monitorID int64
+	relay.UnmarshalSpec(args.Id, &monitorID)
+	q, err := tx.createActionEmailQuery(ctx, monitorID, args.Action.Email)
+	if err != nil {
+		return nil, err
+	}
+	e, err := tx.runEmailQuery(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	// insert recipients
+	for _, recipient := range args.Action.Email.Recipients {
+		q, err = tx.createRecipientQuery(ctx, e.(*monitorEmail).id, recipient)
+		if err != nil {
+			return nil, err
+		}
+		err = tx.db.Exec(ctx, q)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// Hydrate with resolver.
+	e.(*monitorEmail).Resolver = r
+	return &action{e}, nil
+}
+
 func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) (graphqlbackend.MonitorConnectionResolver, error) {
 	q, err := monitorsQuery(userID, args)
 	if err != nil {

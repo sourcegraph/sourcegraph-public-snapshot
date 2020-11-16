@@ -14,6 +14,7 @@ type CodeMonitorsResolver interface {
 	ToggleCodeMonitor(ctx context.Context, args *ToggleCodeMonitorArgs) (MonitorResolver, error)
 	DeleteCodeMonitor(ctx context.Context, args *DeleteCodeMonitorArgs) (*EmptyResponse, error)
 	UpdateCodeMonitor(ctx context.Context, args *UpdateCodeMonitorArgs) (MonitorResolver, error)
+	CreateCodeMonitorAction(ctx context.Context, args *CreateActionForMonitorArgs) (MonitorAction, error)
 }
 
 type MonitorConnectionResolver interface {
@@ -131,6 +132,11 @@ type CreateTriggerArgs struct {
 	Query string
 }
 
+type CreateActionForMonitorArgs struct {
+	Id     graphql.ID
+	Action *CreateActionArgs
+}
+
 type CreateActionArgs struct {
 	Email *CreateActionEmailArgs
 }
@@ -207,4 +213,8 @@ func (d defaultCodeMonitorsResolver) DeleteCodeMonitor(ctx context.Context, args
 
 func (d defaultCodeMonitorsResolver) UpdateCodeMonitor(ctx context.Context, args *UpdateCodeMonitorArgs) (MonitorResolver, error) {
 	return nil, codeMonitorsOnlyInEnterprise
+}
+
+func (d defaultCodeMonitorsResolver) CreateCodeMonitorAction(ctx context.Context, args *CreateActionForMonitorArgs) (MonitorAction, error) {
+	panic("implement me")
 }

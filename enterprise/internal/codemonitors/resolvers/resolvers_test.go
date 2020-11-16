@@ -6,12 +6,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/resolvers/apitest"
-
+	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	campaignApitest "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -396,3 +396,100 @@ mutation ($monitorID: ID!, $triggerID: ID!, $actionID: ID!, $userID: ID!) {
   }
 }
 `
+
+func TestCreateActionForMonitor(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+	r := newTestResolver(t)
+
+	user1 := "cm-user1"
+	user1ID := insertTestUser(t, dbconn.Global, user1, true)
+	user2 := "cm-user2"
+	user2ID := insertTestUser(t, dbconn.Global, user2, true)
+
+	// Create a monitor.
+	ctx = actor.WithActor(ctx, actor.FromUser(user1ID))
+	ns := relay.MarshalID("User", user1ID)
+	m, err := r.insertTestMonitor(ctx, t, ns)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := apitest.ActionEmail{
+		Id:       string(relay.MarshalID(monitorActionEmailKind, 2)),
+		Enabled:  true,
+		Priority: "CRITICAL",
+		Recipients: apitest.RecipientsConnection{
+			Nodes:      []apitest.UserOrg{{user1}, {user2}},
+			TotalCount: 2,
+		},
+		Header: "another action",
+	}
+
+	// Add a second action to the monitor we just created.
+	res, err := r.CreateCodeMonitorAction(ctx, &graphqlbackend.CreateActionForMonitorArgs{
+		Id: m.ID(),
+		Action: &graphqlbackend.CreateActionArgs{
+			Email: &graphqlbackend.CreateActionEmailArgs{
+				Enabled:    want.Enabled,
+				Priority:   want.Priority,
+				Recipients: []graphql.ID{relay.MarshalID("User", user1ID), relay.MarshalID("User", user2ID)},
+				Header:     want.Header,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Check that we hydrated the returned resolver by checking whether we can get the
+	// recipients from the MonitorAction resolver.
+	e, ok := res.ToMonitorEmail()
+	if !ok {
+		t.Fatal("expected monitorEmail")
+	}
+	rec, err := e.Recipients(ctx, &graphqlbackend.ListRecipientsArgs{
+		First: 2,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	nsRes, err := rec.Nodes(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := nsRes[0].NamespaceName(); got != user1 {
+		t.Fatalf("got %s, want %s", got, user1)
+	}
+	if got := nsRes[1].NamespaceName(); got != user2 {
+		t.Fatalf("got %s, want %s", got, user2)
+	}
+
+	// Query the monitor with all its actions.
+	input := map[string]interface{}{
+		"userName": user1,
+	}
+	queryResponse := apitest.Response{}
+	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r)
+	campaignApitest.MustExec(ctx, t, schema, input, &queryResponse, queryMonitor)
+
+	// Get the second action of the user's first monitor.
+	gotMonitors := queryResponse.User.Monitors.Nodes
+	if len(gotMonitors) != 1 {
+		t.Fatalf("user should have had 1 monitor")
+	}
+	// First monitor.
+	gotActions := gotMonitors[0].Actions.Nodes
+	if len(gotActions) != 2 {
+		t.Fatalf("user should have had 2 actions")
+	}
+	// Second action.
+	got := gotActions[1].ActionEmail
+	if !reflect.DeepEqual(&got, &want) {
+		t.Fatalf("\ngot:\t%+v\nwant:\t%+v\n", got, want)
+	}
+}

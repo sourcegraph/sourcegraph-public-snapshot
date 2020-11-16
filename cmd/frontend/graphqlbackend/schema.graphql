@@ -807,6 +807,19 @@ type Mutation {
         """
         actions: [MonitorEditActionInput!]!
     ): Monitor!
+    """
+    Add an action to an existing code monitor.
+    """
+    createCodeMonitorAction(
+        """
+        The id of the monitor.
+        """
+        id: ID!
+        """
+        The input needed to create an action.
+        """
+        action: MonitorActionInput!
+    ): MonitorAction!
 }
 
 """
