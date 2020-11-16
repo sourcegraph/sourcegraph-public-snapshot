@@ -785,7 +785,7 @@ export async function createDriverForTest(options?: DriverOptions): Promise<Driv
             // const browserWSEndpoint = `ws://127.0.0.1:${cdpPort}`
             // browser = await puppeteerFirefox.connect({ browserWSEndpoint })
 
-            // TODO: Link to issue
+            // TODO: explain https://github.com/mozilla/web-ext/issues/1927#issuecomment-706979142
             await new Promise(resolve => setTimeout(resolve, 2000))
 
             browser = await puppeteer.connect({ browserURL: `http://localhost:${cdpPort}` })
