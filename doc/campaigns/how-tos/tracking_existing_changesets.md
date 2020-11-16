@@ -1,22 +1,5 @@
 # Tracking existing changesets
 
-<style>
-
-img.screenshot {
-    max-width: 600px;
-    margin: 1em;
-    margin-bottom: 0.5em;
-    border: 1px solid lightgrey;
-    border-radius: 10px;
-}
-
-img.center {
-  display: block;
-  margin: auto
-}
-
-</style>
-
 Campaigns allow you not only to [publish changesets](publishing_changesets.md) but also to **import and track changesets** that already exist on different code hosts. That allows you to get an overview of the status of multiple changesets, with the ability to filter and drill down into the details of a specific changeset.
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tracking_existing_changesets_overview.png" class="screenshot center">

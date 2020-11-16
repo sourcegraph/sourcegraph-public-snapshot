@@ -1,18 +1,5 @@
 # Creating a campaign
 
-<style>
-
-img.screenshot {
-    max-width: 600px;
-    margin: 1em;
-    margin-bottom: 0.5em;
-    border: 1px solid lightgrey;
-    border-radius: 10px;
-}
-
-</style>
-
-
 Campaigns are created by writing a [campaign spec](references/campaign_spec_yaml_reference.md) and executing that campaign spec with the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) `src`.
 
 ## Requirements

@@ -1,22 +1,5 @@
 # Publishing changesets to the code host
 
-<style>
-
-img.screenshot {
-    max-width: 600px;
-    margin: 1em;
-    margin-bottom: 0.5em;
-    border: 1px solid lightgrey;
-    border-radius: 10px;
-}
-
-img.center {
-  display: block;
-  margin: auto
-}
-
-</style>
-
 After you've [created a campaign](creating_a_campaign.md) with `published: false` in its campaign spec, you can see a preview of the changesets (e.g., GitHub pull requests) that will be created on the code host once they're published:
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/publishing_changesets_preview_unpublished.png" class="screenshot center">
