@@ -81,7 +81,9 @@ You can use [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) to
 
 Instead of running `src campaign preview` you run the following:
 
-<pre><code>src campaign <em>apply</em> -f YOUR_CAMPAIGN_SPEC.campaign.yaml</code></pre>
+```bash
+src campaign apply -f YOUR_CAMPAIGN_SPEC.campaign.yaml
+```
 
 This command won't print a link to a preview. It will create or update the campaign it describes directly.
 
@@ -93,4 +95,6 @@ Campaigns are uniquely identified by their name and namespace. The namespace can
 
 By default, campaigns will use your username on Sourcegraph as your namespace. To create campaigns in a different namespace use the `-namespace` flag when previewing or applying a campaign spec:
 
-<pre><code>src campaign preview -f YOUR_CAMPAIGN_SPEC.campaign.yaml -namespace <em>USERNAME_OR_ORG</em></code></pre>
+```
+src campaign preview -f your_campaign_spec.campaign.yaml -namespace USERNAME_OR_ORG
+```
