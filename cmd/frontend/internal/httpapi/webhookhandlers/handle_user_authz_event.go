@@ -3,6 +3,7 @@ package webhookhandlers
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 
 	gh "github.com/google/go-github/v28/github"
 	"github.com/inconshreveable/log15"
@@ -18,6 +19,9 @@ import (
 // extracting a user from the github event and scheduling it for a perms update in repo-updater
 func handleGitHubUserAuthzEvent(ctx context.Context, extSvc *repos.ExternalService, payload interface{}) error {
 	if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
+		return nil
+	}
+	if globals.PermissionsUserMapping().Enabled {
 		return nil
 	}
 

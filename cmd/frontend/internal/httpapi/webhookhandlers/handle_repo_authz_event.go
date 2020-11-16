@@ -5,6 +5,7 @@ import (
 	"fmt"
 	gh "github.com/google/go-github/v28/github"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -18,6 +19,9 @@ import (
 // repo for permissions synchronisation.
 func handleGitHubRepoAuthzEvent(ctx context.Context, extSvc *repos.ExternalService, payload interface{}) error {
 	if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
+		return nil
+	}
+	if globals.PermissionsUserMapping().Enabled {
 		return nil
 	}
 
