@@ -271,6 +271,12 @@ const SiteSchemaJSON = `{
       "!go": { "pointer": true },
       "group": "Campaigns"
     },
+    "campaigns.restrictToAdmins": {
+      "description": "When enabled, only site admins can create and apply campaigns.",
+      "type": "boolean",
+      "group": "Campaigns",
+      "default": false
+    },
     "corsOrigin": {
       "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
       "type": "string",
@@ -426,9 +432,9 @@ const SiteSchemaJSON = `{
       "group": "Security"
     },
     "externalService.userMode": {
-      "description": "Enable to allow users to add external services for public repositories to the Sourcegraph instance.",
+      "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
       "type": "string",
-      "enum": ["public", "disabled"],
+      "enum": ["public", "disabled", "all"],
       "default": "disabled"
     },
     "permissions.userMapping": {

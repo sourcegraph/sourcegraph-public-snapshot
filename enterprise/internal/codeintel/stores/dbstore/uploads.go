@@ -575,7 +575,7 @@ func (s *Store) makeUploadWorkQueueStore() dbworkerstore.Store {
 }
 
 func WorkerutilUploadStore(s basestore.ShareableStore) dbworkerstore.Store {
-	return dbworkerstore.NewStore(s.Handle(), dbworkerstore.StoreOptions{
+	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		TableName:         "lsif_uploads",
 		ViewName:          "lsif_uploads_with_repository_name u",
 		ColumnExpressions: uploadColumnsWithNullRank,

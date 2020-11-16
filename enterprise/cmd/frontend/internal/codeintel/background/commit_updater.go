@@ -70,14 +70,14 @@ func (u *CommitUpdater) tryUpdate(ctx context.Context, repositoryID, dirtyToken 
 		err = unlock(err)
 	}()
 
-	graph, err := u.gitserverClient.CommitGraph(ctx, u.dbStore, repositoryID, gitserver.CommitGraphOptions{})
-	if err != nil {
-		return errors.Wrap(err, "gitserver.CommitGraph")
-	}
-
-	tipCommit, err := u.gitserverClient.Head(ctx, u.dbStore, repositoryID)
+	tipCommit, err := u.gitserverClient.Head(ctx, repositoryID)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.Head")
+	}
+
+	graph, err := u.gitserverClient.CommitGraph(ctx, repositoryID, gitserver.CommitGraphOptions{})
+	if err != nil {
+		return errors.Wrap(err, "gitserver.CommitGraph")
 	}
 
 	if err := u.dbStore.CalculateVisibleUploads(ctx, repositoryID, graph, tipCommit, dirtyToken); err != nil {

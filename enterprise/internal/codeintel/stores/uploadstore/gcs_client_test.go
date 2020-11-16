@@ -94,7 +94,7 @@ func TestGCSGet(t *testing.T) {
 	objectHandle.NewRangeReaderFunc.SetDefaultReturn(ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))), nil)
 
 	client := testGCSClient(gcsClient, false)
-	rc, err := client.Get(context.Background(), "test-key", 0)
+	rc, err := client.Get(context.Background(), "test-key")
 	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err.Error())
 	}
@@ -119,45 +119,6 @@ func TestGCSGet(t *testing.T) {
 		t.Fatalf("unexpected number of NewRangeReader calls. want=%d have=%d", 1, len(calls))
 	} else if value := calls[0].Arg1; value != 0 {
 		t.Errorf("unexpected offset argument. want=%d have=%d", 0, value)
-	} else if value := calls[0].Arg2; value != -1 {
-		t.Errorf("unexpected length argument. want=%d have=%d", -1, value)
-	}
-}
-
-func TestGCSGetSkipBytes(t *testing.T) {
-	gcsClient := NewMockGcsAPI()
-	bucketHandle := NewMockGcsBucketHandle()
-	objectHandle := NewMockGcsObjectHandle()
-	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
-	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
-	objectHandle.NewRangeReaderFunc.SetDefaultReturn(ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))), nil)
-
-	client := testGCSClient(gcsClient, false)
-	rc, err := client.Get(context.Background(), "test-key", 20)
-	if err != nil {
-		t.Fatalf("unexpected error getting key: %s", err.Error())
-	}
-
-	defer rc.Close()
-	contents, err := ioutil.ReadAll(rc)
-	if err != nil {
-		t.Fatalf("unexpected error reading object: %s", err.Error())
-	}
-
-	if string(contents) != "TEST PAYLOAD" {
-		t.Fatalf("unexpected contents. want=%s have=%s", "TEST PAYLOAD", contents)
-	}
-
-	if calls := gcsClient.BucketFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of Bucket calls. want=%d have=%d", 1, len(calls))
-	} else if value := calls[0].Arg0; value != "test-bucket" {
-		t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
-	}
-
-	if calls := objectHandle.NewRangeReaderFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of NewRangeReader calls. want=%d have=%d", 1, len(calls))
-	} else if value := calls[0].Arg1; value != 20 {
-		t.Errorf("unexpected offset argument. want=%d have=%d", 20, value)
 	} else if value := calls[0].Arg2; value != -1 {
 		t.Errorf("unexpected length argument. want=%d have=%d", -1, value)
 	}

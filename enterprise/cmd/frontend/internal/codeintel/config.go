@@ -10,17 +10,19 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	UploadStoreConfig *uploadstore.Config
-
-	HunkCacheSize               int
-	BackgroundTaskInterval      time.Duration
-	IndexBatchSize              int
-	MinimumTimeSinceLastEnqueue time.Duration
-	MinimumSearchCount          int
-	MinimumSearchRatio          int
-	MinimumPreciseCount         int
-	UploadTimeout               time.Duration
-	DataTTL                     time.Duration
+	UploadStoreConfig             *uploadstore.Config
+	CommitGraphUpdateTaskInterval time.Duration
+	CleanupTaskInterval           time.Duration
+	AutoIndexingTaskInterval      time.Duration
+	HunkCacheSize                 int
+	DataTTL                       time.Duration
+	UploadTimeout                 time.Duration
+	EnableAutoIndexing            bool
+	IndexBatchSize                int
+	MinimumTimeSinceLastEnqueue   time.Duration
+	MinimumSearchCount            int
+	MinimumSearchRatio            int
+	MinimumPreciseCount           int
 }
 
 var config = &Config{}
@@ -31,12 +33,15 @@ func init() {
 	config.UploadStoreConfig = uploadStoreConfig
 
 	config.HunkCacheSize = config.GetInt("PRECISE_CODE_INTEL_HUNK_CACHE_SIZE", "1000", "The capacity of the git diff hunk cache.")
-	config.BackgroundTaskInterval = config.GetInterval("PRECISE_CODE_INTEL_BACKGROUND_TASK_INTERVAL", "1m", "The frequency with which to run periodic codeintel background tasks.")
+	config.DataTTL = config.GetInterval("PRECISE_CODE_INTEL_DATA_TTL", "720h", "The maximum time an non-critical index can live in the database.")
+	config.UploadTimeout = config.GetInterval("PRECISE_CODE_INTEL_UPLOAD_TIMEOUT", "24h", "The maximum time an upload can be in the 'uploading' state.")
+	config.CommitGraphUpdateTaskInterval = config.GetInterval("PRECISE_CODE_INTEL_COMMIT_GRAPH_UPDATE_TASK_INTERVAL", "10s", "The frequency with which to run periodic codeintel commit graph update tasks.")
+	config.CleanupTaskInterval = config.GetInterval("PRECISE_CODE_INTEL_CLEANUP_TASK_INTERVAL", "1m", "The frequency with which to run periodic codeintel cleanup tasks.")
+	config.AutoIndexingTaskInterval = config.GetInterval("PRECISE_CODE_INTEL_AUTO_INDEXING_TASK_INTERVAL", "10m", "The frequency with which to run periodic codeintel auto-indexing tasks.")
+	config.EnableAutoIndexing = config.GetBool("PRECISE_CODE_INTEL_ENABLE_AUTO_INDEXING", "false", "Whether to enable scheduling of auto-indexing tasks.")
 	config.IndexBatchSize = config.GetInt("PRECISE_CODE_INTEL_INDEX_BATCH_SIZE", "100", "The number of indexable repositories to schedule at a time.")
 	config.MinimumTimeSinceLastEnqueue = config.GetInterval("PRECISE_CODE_INTEL_MINIMUM_TIME_SINCE_LAST_ENQUEUE", "24h", "The minimum time between auto-index enqueues for the same repository.")
 	config.MinimumSearchCount = config.GetInt("PRECISE_CODE_INTEL_MINIMUM_SEARCH_COUNT", "50", "The minimum number of search-based code intel events that triggers auto-indexing on a repository.")
 	config.MinimumSearchRatio = config.GetInt("PRECISE_CODE_INTEL_MINIMUM_SEARCH_RATIO", "50", "The minimum ratio of search-based to total code intel events that triggers auto-indexing on a repository.")
 	config.MinimumPreciseCount = config.GetInt("PRECISE_CODE_INTEL_MINIMUM_PRECISE_COUNT", "1", "The minimum number of precise code intel events that triggers auto-indexing on a repository.")
-	config.UploadTimeout = config.GetInterval("PRECISE_CODE_INTEL_UPLOAD_TIMEOUT", "24h", "The maximum time an upload can be in the 'uploading' state.")
-	config.DataTTL = config.GetInterval("PRECISE_CODE_INTEL_DATA_TTL", "720h", "The maximum time an non-critical index can live in the database.")
 }

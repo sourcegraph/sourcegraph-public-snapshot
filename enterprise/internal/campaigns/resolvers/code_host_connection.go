@@ -14,20 +14,23 @@ import (
 )
 
 type campaignsCodeHostConnectionResolver struct {
-	userID      int32
-	limitOffset db.LimitOffset
-	store       *ee.Store
+	userID                int32
+	onlyWithoutCredential bool
+	opts                  ee.ListCodeHostsOpts
+	limitOffset           db.LimitOffset
+	store                 *ee.Store
 
-	once    sync.Once
-	chs     []*campaigns.CodeHost
-	chsPage []*campaigns.CodeHost
-	chsErr  error
+	once          sync.Once
+	chs           []*campaigns.CodeHost
+	chsPage       []*campaigns.CodeHost
+	credsByIDType map[idType]*db.UserCredential
+	chsErr        error
 }
 
 var _ graphqlbackend.CampaignsCodeHostConnectionResolver = &campaignsCodeHostConnectionResolver{}
 
 func (c *campaignsCodeHostConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	chs, _, err := c.compute(ctx)
+	chs, _, _, err := c.compute(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -35,7 +38,7 @@ func (c *campaignsCodeHostConnectionResolver) TotalCount(ctx context.Context) (i
 }
 
 func (c *campaignsCodeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	chs, _, err := c.compute(ctx)
+	chs, _, _, err := c.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -49,24 +52,9 @@ func (c *campaignsCodeHostConnectionResolver) PageInfo(ctx context.Context) (*gr
 }
 
 func (c *campaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CampaignsCodeHostResolver, error) {
-	_, page, err := c.compute(ctx)
+	_, page, credsByIDType, err := c.compute(ctx)
 	if err != nil {
 		return nil, err
-	}
-
-	// Fetch all user credentials to avoid N+1 per credential resolver.
-	creds, _, err := db.UserCredentials.List(ctx, db.UserCredentialsListOpts{Scope: db.UserCredentialScope{Domain: db.UserCredentialDomainCampaigns, UserID: c.userID}})
-	if err != nil {
-		return nil, err
-	}
-
-	credsByIDType := make(map[idType]*db.UserCredential)
-	for _, cred := range creds {
-		t := idType{
-			externalServiceID:   cred.ExternalServiceID,
-			externalServiceType: cred.ExternalServiceType,
-		}
-		credsByIDType[t] = cred
 	}
 
 	nodes := make([]graphqlbackend.CampaignsCodeHostResolver, len(page))
@@ -75,16 +63,50 @@ func (c *campaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]grap
 			externalServiceID:   ch.ExternalServiceID,
 			externalServiceType: ch.ExternalServiceType,
 		}
-		nodes[i] = &campaignsCodeHostResolver{externalServiceKind: extsvc.TypeToKind(ch.ExternalServiceType), externalServiceURL: ch.ExternalServiceID, credential: credsByIDType[t]}
+		cred := credsByIDType[t]
+		nodes[i] = &campaignsCodeHostResolver{externalServiceKind: extsvc.TypeToKind(ch.ExternalServiceType), externalServiceURL: ch.ExternalServiceID, credential: cred}
 	}
 
 	return nodes, nil
 }
 
-func (c *campaignsCodeHostConnectionResolver) compute(ctx context.Context) (all, page []*campaigns.CodeHost, err error) {
+func (c *campaignsCodeHostConnectionResolver) compute(ctx context.Context) (all, page []*campaigns.CodeHost, credsByIDType map[idType]*db.UserCredential, err error) {
 	c.once.Do(func() {
 		// Don't pass c.limitOffset here, as we want all code hosts for the totalCount anyways.
-		c.chs, c.chsErr = c.store.ListCodeHosts(ctx)
+		c.chs, c.chsErr = c.store.ListCodeHosts(ctx, c.opts)
+		if c.chsErr != nil {
+			return
+		}
+
+		// Fetch all user credentials to avoid N+1 per credential resolver.
+		creds, _, err := db.UserCredentials.List(ctx, db.UserCredentialsListOpts{Scope: db.UserCredentialScope{Domain: db.UserCredentialDomainCampaigns, UserID: c.userID}})
+		if err != nil {
+			c.chsErr = err
+			return
+		}
+
+		c.credsByIDType = make(map[idType]*db.UserCredential)
+		for _, cred := range creds {
+			t := idType{
+				externalServiceID:   cred.ExternalServiceID,
+				externalServiceType: cred.ExternalServiceType,
+			}
+			c.credsByIDType[t] = cred
+		}
+
+		if c.onlyWithoutCredential {
+			chs := make([]*campaigns.CodeHost, 0)
+			for _, ch := range c.chs {
+				t := idType{
+					externalServiceID:   ch.ExternalServiceID,
+					externalServiceType: ch.ExternalServiceType,
+				}
+				if _, ok := c.credsByIDType[t]; !ok {
+					chs = append(chs, ch)
+				}
+			}
+			c.chs = chs
+		}
 
 		afterIdx := c.limitOffset.Offset
 
@@ -106,10 +128,26 @@ func (c *campaignsCodeHostConnectionResolver) compute(ctx context.Context) (all,
 		}
 		c.chsPage = c.chs[afterIdx : limit+afterIdx]
 	})
-	return c.chs, c.chsPage, c.chsErr
+	return c.chs, c.chsPage, c.credsByIDType, c.chsErr
 }
 
 type idType struct {
 	externalServiceID   string
 	externalServiceType string
+}
+
+type emptyCampaignsCodeHostConnectionResolver struct{}
+
+var _ graphqlbackend.CampaignsCodeHostConnectionResolver = &emptyCampaignsCodeHostConnectionResolver{}
+
+func (c *emptyCampaignsCodeHostConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	return int32(0), nil
+}
+
+func (c *emptyCampaignsCodeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	return graphqlutil.HasNextPage(false), nil
+}
+
+func (c emptyCampaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CampaignsCodeHostResolver, error) {
+	return []graphqlbackend.CampaignsCodeHostResolver{}, nil
 }

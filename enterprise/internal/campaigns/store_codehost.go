@@ -4,12 +4,17 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 )
 
-func (s *Store) ListCodeHosts(ctx context.Context) ([]*campaigns.CodeHost, error) {
-	q := listCodeHostsQuery()
+type ListCodeHostsOpts struct {
+	RepoIDs []api.RepoID
+}
+
+func (s *Store) ListCodeHosts(ctx context.Context, opts ListCodeHostsOpts) ([]*campaigns.CodeHost, error) {
+	q := listCodeHostsQuery(opts)
 
 	cs := make([]*campaigns.CodeHost, 0)
 	err := s.query(ctx, q, func(sc scanner) error {
@@ -34,7 +39,7 @@ GROUP BY external_service_type, external_service_id
 ORDER BY external_service_type ASC, external_service_id ASC
 `
 
-func listCodeHostsQuery() *sqlf.Query {
+func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		// Only for those which have any enabled repositories.
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
@@ -46,6 +51,14 @@ func listCodeHostsQuery() *sqlf.Query {
 		supportedTypes = append(supportedTypes, sqlf.Sprintf("%s", extSvcType))
 	}
 	preds = append(preds, sqlf.Sprintf("external_service_type IN (%s)", sqlf.Join(supportedTypes, ", ")))
+
+	if len(opts.RepoIDs) > 0 {
+		repoIDs := make([]*sqlf.Query, len(opts.RepoIDs))
+		for i, id := range opts.RepoIDs {
+			repoIDs[i] = sqlf.Sprintf("%s", id)
+		}
+		preds = append(preds, sqlf.Sprintf("repo.id IN (%s)", sqlf.Join(repoIDs, ",")))
+	}
 
 	return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Join(preds, "AND"))
 }

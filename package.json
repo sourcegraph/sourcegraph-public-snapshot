@@ -70,12 +70,12 @@
   },
   "devDependencies": {
     "@atlassian/aui": "^7.10.1",
-    "@babel/core": "^7.11.5",
-    "@babel/plugin-proposal-class-properties": "^7.10.4",
-    "@babel/plugin-proposal-decorators": "^7.10.5",
-    "@babel/preset-env": "^7.11.5",
-    "@babel/preset-typescript": "^7.10.4",
-    "@babel/runtime": "^7.11.2",
+    "@babel/core": "^7.12.3",
+    "@babel/plugin-proposal-class-properties": "^7.12.1",
+    "@babel/plugin-proposal-decorators": "^7.12.1",
+    "@babel/preset-env": "^7.12.1",
+    "@babel/preset-typescript": "^7.12.1",
+    "@babel/runtime": "^7.12.5",
     "@gql2ts/from-schema": "^1.10.1",
     "@gql2ts/language-typescript": "^1.9.0",
     "@gql2ts/types": "^1.9.0",
@@ -167,7 +167,7 @@
     "abort-controller": "^3.0.0",
     "autoprefixer": "^9.8.6",
     "babel-jest": "^25.5.1",
-    "babel-loader": "^8.1.0",
+    "babel-loader": "^8.2.1",
     "babel-plugin-lodash": "^3.3.4",
     "babel-preset-react-app": "^9.1.2",
     "browserslist": "^4.12.0",
@@ -225,7 +225,7 @@
     "react-hot-loader": "^4.12.21",
     "react-test-renderer": "^16.13.1",
     "sass": "^1.28.0",
-    "sass-loader": "^10.0.3",
+    "sass-loader": "^10.1.0",
     "shelljs": "^0.8.4",
     "signale": "^1.4.0",
     "simmerjs": "^0.5.6",
@@ -324,6 +324,6 @@
   },
   "resolutions": {
     "history": "4.5.1",
-    "cssnano": "4.0.0-nightly.2020.9.9"
+    "cssnano": "4.1.10"
   }
 }

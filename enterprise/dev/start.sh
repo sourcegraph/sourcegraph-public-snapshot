@@ -36,6 +36,7 @@ fi
 SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat "$DEV_PRIVATE_PATH"/enterprise/dev/test-license-generation-key.pem)
 export SOURCEGRAPH_LICENSE_GENERATION_KEY
 
+export PRECISE_CODE_INTEL_ENABLE_AUTO_INDEXING=true
 export PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT=http://localhost:9000
 export DISABLE_CNCF=notonmybox
 

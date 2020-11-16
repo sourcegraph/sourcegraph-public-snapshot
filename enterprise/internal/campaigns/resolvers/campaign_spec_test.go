@@ -15,10 +15,12 @@ import (
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func TestCampaignSpecResolver(t *testing.T) {
@@ -42,6 +44,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 	username := "campaign-spec-by-id-user-name"
 	orgname := "test-org"
 	userID := insertTestUser(t, dbconn.Global, username, false)
+	adminID := insertTestUser(t, dbconn.Global, "alice", true)
 	org, err := db.Orgs.Create(ctx, orgname, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -137,12 +140,21 @@ func TestCampaignSpecResolver(t *testing.T) {
 		AppliesToCampaign: apitest.Campaign{
 			ID: string(marshalCampaignID(matchingCampaign.ID)),
 		},
+
+		AllCodeHosts: apitest.CampaignsCodeHostsConnection{
+			TotalCount: 1,
+			Nodes:      []apitest.CampaignsCodeHost{{ExternalServiceKind: extsvc.KindGitHub, ExternalServiceURL: "https://github.com/"}},
+		},
+		OnlyWithoutCredential: apitest.CampaignsCodeHostsConnection{
+			TotalCount: 1,
+			Nodes:      []apitest.CampaignsCodeHost{{ExternalServiceKind: extsvc.KindGitHub, ExternalServiceURL: "https://github.com/"}},
+		},
 	}
 
 	input := map[string]interface{}{"campaignSpec": apiID}
 	{
 		var response struct{ Node apitest.CampaignSpec }
-		apitest.MustExec(ctx, t, s, input, &response, queryCampaignSpecNode)
+		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryCampaignSpecNode)
 
 		if diff := cmp.Diff(want, response.Node); diff != "" {
 			t.Fatalf("unexpected response (-want +got):\n%s", diff)
@@ -156,10 +168,14 @@ func TestCampaignSpecResolver(t *testing.T) {
 	}
 	{
 		var response struct{ Node apitest.CampaignSpec }
-		apitest.MustExec(ctx, t, s, input, &response, queryCampaignSpecNode)
+		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(adminID)), t, s, input, &response, queryCampaignSpecNode)
 
 		// Expect creator to not be returned anymore.
 		want.Creator = nil
+		// Expect all set for admin user.
+		want.OnlyWithoutCredential = apitest.CampaignsCodeHostsConnection{
+			Nodes: []apitest.CampaignsCodeHost{},
+		}
 
 		if diff := cmp.Diff(want, response.Node); diff != "" {
 			t.Fatalf("unexpected response (-want +got):\n%s", diff)
@@ -173,10 +189,14 @@ func TestCampaignSpecResolver(t *testing.T) {
 	}
 	{
 		var response struct{ Node apitest.CampaignSpec }
-		apitest.MustExec(ctx, t, s, input, &response, queryCampaignSpecNode)
+		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(adminID)), t, s, input, &response, queryCampaignSpecNode)
 
 		// Expect creator to not be returned anymore.
 		want.Creator = nil
+		// Expect all set for admin user.
+		want.OnlyWithoutCredential = apitest.CampaignsCodeHostsConnection{
+			Nodes: []apitest.CampaignsCodeHost{},
+		}
 
 		if diff := cmp.Diff(want, response.Node); diff != "" {
 			t.Fatalf("unexpected response (-want +got):\n%s", diff)
@@ -211,7 +231,23 @@ query($campaignSpec: ID!) {
 
       diffStat { added, deleted, changed }
 
-      appliesToCampaign { id }
+	  appliesToCampaign { id }
+
+	  allCodeHosts: viewerCampaignsCodeHosts {
+		totalCount
+		  nodes {
+			  externalServiceKind
+			  externalServiceURL
+		  }
+	  }
+
+	  onlyWithoutCredential: viewerCampaignsCodeHosts(onlyWithoutCredential: true) {
+		  totalCount
+		  nodes {
+			  externalServiceKind
+			  externalServiceURL
+		  }
+	  }
 
       changesetSpecs(first: 100) {
         totalCount

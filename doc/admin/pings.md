@@ -41,14 +41,23 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Search filters used (e.g. "type:", "repo:", "file:", "lang:", etc.)
 - Aggregate daily, weekly, and monthly latencies (in ms) of search queries
 - Aggregate daily, weekly, and monthly counts of:
-  - Code intelligence events (e.g., hover tooltips) 
   - Searches using each search mode (interactive search, plain-text search)
   - Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)
+- Total number of code intelligence queries (e.g., hover tooltips) per week grouped by language
+- Number of users performing code intelligence queries (e.g., hover tooltips) per week grouped by language
 <!-- depends-on-source: ~/internal/usagestats/campaigns.go -->
 - Campaign usage data
+  - Total count of page views on the campaign apply page
+  - Total count of page views on the campaign details page after creating a campaign
+  - Total count of page views on the campaign details page after updating a campaign
+  - Total count of created changeset specs
+  - Total count of created campaign specs
   - Total count of created campaigns
+  - Total count of closed campaigns
   - Total count of changesets created by campaigns
+  - Aggregate counts of lines changed, added, deleted in all changesets
   - Total count of changesets created by campaigns that have been merged
+  - Aggregate counts of lines changed, added, deleted in all merged changesets
   - Total count of changesets manually added to a campaign
   - Total count of changesets manually added to a campaign that have been merged
 - Aggregated counts of users created, deleted, retained, resurrected and churned within the month
@@ -64,6 +73,7 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
 - Homepage panel engagement
   - Percentage of panel clicks (out of total views)
   - Total count of unique users engaging with the panels
+- Weekly retention rates for user cohorts created in the last 12 weeks
 - Search onboarding engagement
   - Total number of views of the onboarding tour
   - Total number of views of each step in the onboarding tour
