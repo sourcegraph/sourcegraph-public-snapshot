@@ -49,10 +49,7 @@ export interface MainThreadAPI {
     /**
      * GraphQL request API
      */
-    requestGraphQL: <TResult extends object = any, TVariables extends object = any>(
-        request: string,
-        variables: TVariables
-    ) => Promise<GraphQLResult<TResult>>
+    requestGraphQL: (request: string, variables: any) => Promise<GraphQLResult<any>>
 
     // Commands
     executeCommand: (command: string, args: any[]) => Promise<any>
