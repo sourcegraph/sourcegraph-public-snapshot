@@ -7,33 +7,32 @@ DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)""
 cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
 
 function cluster_setup() {
-git clone --depth 1 --branch v3.20.1 \
-  https://github.com/sourcegraph/deploy-sourcegraph.git \
-  "$DIR/deploy-sourcegraph"
+  git clone --depth 1 --branch v3.20.1 \
+    https://github.com/sourcegraph/deploy-sourcegraph.git \
+    "$DIR/deploy-sourcegraph"
 
+  # TODO(Dax): Bit concerning this works...
+  gcloud container clusters get-credentials default-buildkite --zone=us-central1-c --project=sourcegraph-ci
 
-# TODO(Dax): Bit concerning this works...
-gcloud container clusters get-credentials default-buildkite --zone=us-central1-c --project=sourcegraph-ci
+  #NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER"
+  export NAMESPACE=cluster-ci-122
+  kubectl create ns $NAMESPACE -oyaml --dry-run | kubectl apply -f -
+  kubectl apply -f "$DIR/storageClass.yaml"
+  kubectl config set-context --current --namespace="$NAMESPACE"
+  kubectl config current-context
+  sleep 15 #wait for namespace to come up
+  kubectl get -n $NAMESPACE pods
 
-#NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER"
-export NAMESPACE=cluster-ci-122
-kubectl create ns $NAMESPACE -oyaml --dry-run | kubectl apply -f -
-kubectl apply -f "$DIR/storageClass.yaml"
-kubectl config set-context --current --namespace="$NAMESPACE"
-kubectl config current-context
-sleep 15  #wait for namespace to come up
-kubectl get -n $NAMESPACE pods
+  pushd "$DIR/deploy-sourcegraph/"
+  pwd
+  # script contains relative paths :(
+  ./create-new-cluster.sh
+  popd
 
-pushd "$DIR/deploy-sourcegraph/"
-pwd
-# script contains relative paths :(
-./create-new-cluster.sh
-popd
-
-kubectl get pods
-time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=20m
-# Cleanup when done
-trap kubectl delete namespace $NAMESPACE EXIT
+  kubectl get pods
+  time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=20m
+  #shellcheck disable=SC2064
+  trap "kubectl delete namespace $NAMESPACE" EXIT
 }
 
 function test_setup() {
