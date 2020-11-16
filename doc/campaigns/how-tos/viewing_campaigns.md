@@ -2,7 +2,7 @@
 
 You can view a list of all campaigns by clicking the <img src="../campaigns-icon.svg" alt="Campaigns icon" /> campaigns icon in the top navigation bar:
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/viewing_campaigns_icon_in_menu.png" class="screenshot center">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/campaigns_icon_in_menu.png" class="screenshot center">
 
 ## Filtering campaigns
 
