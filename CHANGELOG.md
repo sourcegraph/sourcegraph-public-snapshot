@@ -17,9 +17,13 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
-- Fixed a bug that could cause `src campaign [apply|preview]` to crash in rare circumstances when executing a campaign spec due to a bug in the logic for the progress bar. [#378](https://github.com/sourcegraph/src-cli/pull/378)
-
 ### Removed
+
+## 3.22.0
+
+### Fixed
+
+- Fixed a bug that could cause `src campaign [apply|preview]` to crash in rare circumstances when executing a campaign spec due to a bug in the logic for the progress bar. [#378](https://github.com/sourcegraph/src-cli/pull/378)
 
 ## 3.21.9
 
