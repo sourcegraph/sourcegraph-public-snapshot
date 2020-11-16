@@ -534,6 +534,10 @@ describe('Campaigns', () => {
                                           url: '/organizations/test-org',
                                       },
                             viewerCanAdminister: true,
+                            viewerCampaignsCodeHosts: {
+                                totalCount: 0,
+                                nodes: [],
+                            },
                         },
                     }),
                     CampaignSpecChangesetSpecs: () => ({

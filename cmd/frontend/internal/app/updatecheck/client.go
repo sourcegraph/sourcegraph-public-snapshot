@@ -273,6 +273,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		ClientVersionString: version.Version(),
 		LicenseKey:          conf.Get().LicenseKey,
 		CodeIntelUsage:      []byte("{}"),
+		NewCodeIntelUsage:   []byte("{}"),
 		SearchUsage:         []byte("{}"),
 		CampaignsUsage:      []byte("{}"),
 		GrowthStatistics:    []byte("{}"),
@@ -377,7 +378,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			r.CodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx)
+			r.NewCodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx)
 			if err != nil {
 				logFunc("telemetry: updatecheck.getAndMarshalAggregatedCodeIntelUsageJSON failed", "error", err)
 			}

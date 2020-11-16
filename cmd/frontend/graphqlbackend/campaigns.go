@@ -90,6 +90,12 @@ type ListCampaignsCodeHostsArgs struct {
 	UserID int32
 }
 
+type ListViewerCampaignsCodeHostsArgs struct {
+	First                 int32
+	After                 *string
+	OnlyWithoutCredential bool
+}
+
 type CampaignsResolver interface {
 	// Mutations
 	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error)
@@ -138,6 +144,8 @@ type CampaignSpecResolver interface {
 	DiffStat(ctx context.Context) (*DiffStat, error)
 
 	AppliesToCampaign(ctx context.Context) (CampaignResolver, error)
+
+	ViewerCampaignsCodeHosts(ctx context.Context, args *ListViewerCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
 }
 
 type CampaignDescriptionResolver interface {

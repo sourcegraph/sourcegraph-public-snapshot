@@ -167,7 +167,7 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 		return nil, err
 	}
 
-	resolver := toGitCommitResolver(r, commit)
+	resolver := toGitCommitResolver(r, commitID, commit)
 	if args.InputRevspec != nil {
 		resolver.inputRev = args.InputRevspec
 	} else {

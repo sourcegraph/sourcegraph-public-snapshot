@@ -1206,6 +1206,24 @@ type CampaignSpec implements Node {
     campaign doesn't yet exist.
     """
     appliesToCampaign: Campaign
+
+    """
+    The code host connections required for applying this spec. Includes the credentials of the current user.
+    """
+    viewerCampaignsCodeHosts(
+        """
+        Returns the first n code hosts from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only returns the code hosts for which the viewer doesn't have credentials.
+        """
+        onlyWithoutCredential: Boolean = false
+    ): CampaignsCodeHostConnection!
 }
 
 """
