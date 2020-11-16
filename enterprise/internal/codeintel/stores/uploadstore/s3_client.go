@@ -115,7 +115,7 @@ func (s *s3Store) Get(ctx context.Context, key string) (_ io.ReadCloser, err err
 			}
 
 			byteOffset += n
-			log15.Warn("Transient error while reading payload", "error", err)
+			log15.Warn("Transient error while reading payload", "key", key, "error", err)
 
 			if n == 0 {
 				zeroReads++
