@@ -72,6 +72,12 @@ changesetTemplate:
 
 See [`changesetTemplate.published`](../references/campaign_spec_yaml_reference.md#changesettemplate-published) in the campaign spec reference for more details.
 
+## Fully publishing draft changesets
+
+If you have previously published changesets as drafts on code hosts by setting `published` to `draft`, you then fully publish them and take them out of draft mode by updating the `published` to `true`.
+
+See [`changesetTemplate.published`](../references/campaign_spec_yaml_reference.md#changesettemplate-published) in the campaign spec reference for more details.
+
 ## Specifying Git commit details
 
 The commit that's created and pushed to the branch uses the details specified in the campaign spec's `changesetTemplate` field.
