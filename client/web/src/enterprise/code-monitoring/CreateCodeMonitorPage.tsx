@@ -21,6 +21,7 @@ import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 import { deriveInputClassName, useInputValidation } from '../../../../shared/src/util/useInputValidation'
 import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
 import { FilterType } from '../../../../shared/src/search/interactive/util'
+import { resolveFilter } from '../../../../shared/src/search/parser/filters'
 
 export interface CreateCodeMonitorPageProps extends BreadcrumbsProps, BreadcrumbSetters {
     location: H.Location
@@ -276,7 +277,7 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             const typeFilters = filters.filter(
                                 filter =>
                                     filter.type === 'filter' &&
-                                    filter.filterType.value === FilterType.type &&
+                                    resolveFilter(filter.filterType.value)?.type === FilterType.type &&
                                     ((filter.filterValue?.type === 'literal' &&
                                         filter.filterValue &&
                                         isDiffOrCommit(filter.filterValue.value)) ||
@@ -287,7 +288,7 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             const patternTypeFilters = filters.filter(
                                 filter =>
                                     (filter.type === 'filter' &&
-                                        filter.filterType.value === FilterType.patterntype &&
+                                        resolveFilter(filter.filterType.value)?.type === FilterType.patterntype &&
                                         filter.filterValue?.type === 'literal' &&
                                         filter.filterValue &&
                                         isValidPatternType(filter.filterValue.value)) ||
