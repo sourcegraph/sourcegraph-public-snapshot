@@ -243,9 +243,9 @@ func (r *RepositoryResolver) UpdatedAt() *DateTime {
 }
 
 func (r *RepositoryResolver) URL() string {
-	url := "/" + pathEscapeExceptSlashes(string(r.repo.Name))
+	url := "/" + escapePathForURL(string(r.repo.Name))
 	if r.rev != "" {
-		url += "@" + escapeRevspecForURL(r.rev)
+		url += "@" + escapePathForURL(r.rev)
 	}
 	return url
 }

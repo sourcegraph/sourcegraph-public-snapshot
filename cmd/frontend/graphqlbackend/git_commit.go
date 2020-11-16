@@ -312,7 +312,7 @@ func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
 // canonical OID for the revision.
 func (r *GitCommitResolver) inputRevOrImmutableRev() string {
 	if r.inputRev != nil && *r.inputRev != "" {
-		return escapeRevspecForURL(*r.inputRev)
+		return escapePathForURL(*r.inputRev)
 	}
 	return string(r.oid)
 }
@@ -331,7 +331,7 @@ func (r *GitCommitResolver) repoRevURL() (string, error) {
 		rev = string(r.oid)
 	}
 	if rev != "" {
-		return url + "@" + escapeRevspecForURL(rev), nil
+		return url + "@" + escapePathForURL(rev), nil
 	}
 	return url, nil
 }
