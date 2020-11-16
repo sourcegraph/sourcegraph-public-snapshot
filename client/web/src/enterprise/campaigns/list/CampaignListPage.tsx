@@ -87,7 +87,12 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
                         }
                     }
                 }),
-                filter(([response, isFirst]) => openTab === undefined || !isFirst || response.totalCount > 0),
+                // Don't emit when we are switching to the getting started tab right away to prevent a costly render.
+                // Only if:
+                //  - We don't fetch for the first time (the user clicked a tab) OR
+                //  - There are more than 0 changesets in the namespace OR
+                //  - A test forces us to display a specific tab
+                filter(([response, isFirst]) => !isFirst || openTab !== undefined || response.totalCount > 0),
                 map(([response]) => response.campaigns)
             ),
         [queryCampaigns, isFirstFetch, openTab]
