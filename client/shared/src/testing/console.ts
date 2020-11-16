@@ -5,7 +5,6 @@ import terminalSize from 'term-size'
 import stringWidth from 'string-width'
 import { identity } from 'lodash'
 import { asError } from '../util/errors'
-import { parseBool } from './config'
 
 const colors: Partial<Record<ConsoleMessageType, Chalk>> = {
     error: chalk.red,
@@ -18,8 +17,6 @@ const icons: Partial<Record<ConsoleMessageType, string>> = {
     info: 'ℹ',
 }
 
-const useSimpleBrowserConsoleLogs = parseBool(process.env.SIMPLE_BROWSER_CONSOLE_LOGS)
-
 /**
  * Formats a console message that was logged in a Puppeteer Chrome instance for
  * output on the NodeJS terminal. Tries to mirror Chrome's console output as
@@ -30,18 +27,10 @@ export async function formatPuppeteerConsoleMessage(
     message: ConsoleMessage,
     simple?: boolean
 ): Promise<string> {
-    // Troubleshooting formatted puppeteer console messages: these are known
-    // problems:
-    //
-    // 1. Firefox tests with `puppeteer-firefox`: It does not support
-    //    `argumentHandle.evaluateHandle` so messages will be broken, until we
-    //    migrate away from `puppeteer-firefox` which is deprecated.
-    // 2. Known terminal-size problem: if a message's location string is too
-    //    long for the terminal, the formatting logic below will throw an error.
-    //
-    // Workaround: use `SIMPLE_BROWSER_CONSOLE_LOGS=1` when running tests to
-    //    switch to simple formatting, which avoids these problems.
-    if (useSimpleBrowserConsoleLogs || simple) {
+    // Firefox tests with `puppeteer-firefox`: It does not support
+    // `argumentHandle.evaluateHandle` so messages will be broken, until we
+    // migrate away from `puppeteer-firefox` which is deprecated.
+    if (simple) {
         return `Browser console (${message.type()}): ${message.text()}`
     }
 
