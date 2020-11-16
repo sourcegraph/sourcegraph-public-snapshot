@@ -33,7 +33,7 @@ The definitions provider returns the set of locations that reference the symbol 
 
 The LSIF provider is invoked first. This provider will make a paginated `References` query, returning each page of results to the extension host as they are resolved (up to a maximum number of pages).
 
-This result set is then supplemented by results from the search provider. The search provider will perform two regexp searches using the text of the hovered symbol as the base of the query. One search will look only within the same repository and commit, and the other sesarch will _exclude_ the source repository. Both searches are made in parallel. Results from the search provider for a location in a file that also contains a precise result are filtered before being sent to the extension host to avoid littering the result set.
+This result set is then supplemented by results from the search provider. The search provider will perform two regexp searches using the text of the hovered symbol as the base of the query. One search will look only within the same repository and commit, and the other search will _exclude_ the source repository. Both searches are made in parallel. Results from the search provider for a location in a file that also contains a precise result are filtered before being sent to the extension host to avoid littering the result set.
 
 ## Hover
 
