@@ -9,3 +9,9 @@ You can view a list of all campaigns by clicking the <img src="../campaigns-icon
 Use the filters to switch between showing all campaigns, open campaigns, or closed campaigns.
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/viewing_campaigns_filtering.png" class="screenshot center">
+
+## Filtering changesets
+
+When looking at a campaign you can filter the list of changesets with the controls at the top of the list:
+
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/viewing_campaigns_filtering_changesets.png" class="screenshot center">
