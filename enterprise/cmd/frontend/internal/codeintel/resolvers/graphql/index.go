@@ -50,18 +50,18 @@ func (r *IndexResolver) LogContents(ctx context.Context) (*string, error) {
 	user, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		if errcode.IsNotFound(err) || err == db.ErrNoCurrentUser {
-			return nil
+			return nil, nil
 		}
 
 		return nil, err
 	}
 
 	if !user.SiteAdmin {
-		return nil
+		return nil, nil
 	}
 
 	// 🚨 SECURITY: Only site admins can view executor log contents.
-	return strPtr(r.index.LogContents)
+	return strPtr(r.index.LogContents), nil
 }
 
 func (r *IndexResolver) ProjectRoot(ctx context.Context) (*gql.GitTreeEntryResolver, error) {

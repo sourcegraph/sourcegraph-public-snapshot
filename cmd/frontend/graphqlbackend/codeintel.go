@@ -139,7 +139,7 @@ type LSIFIndexResolver interface {
 	Indexer() string
 	IndexerArgs() []string
 	Outfile() *string
-	LogContents() *string
+	LogContents(ctx context.Context) (*string, error)
 	PlaceInQueue() *int32
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 }
