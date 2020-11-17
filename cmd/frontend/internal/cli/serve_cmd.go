@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -254,7 +255,8 @@ func makeExternalAPI(schema *graphql.Schema, enterprise enterprise.Services) (go
 		return nil, err
 	}
 
-	server := httpserver.New(listener, externalHandler, httpserver.Options{
+	server := httpserver.New(listener, &http.Server{
+		Handler:      externalHandler,
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
 	})
@@ -276,7 +278,8 @@ func makeInternalAPI(schema *graphql.Schema, enterprise enterprise.Services) (go
 	// The internal HTTP handler does not include the auth handlers.
 	internalHandler := newInternalHTTPHandler(schema, enterprise.NewCodeIntelUploadHandler)
 
-	server := httpserver.New(listener, internalHandler, httpserver.Options{
+	server := httpserver.New(listener, &http.Server{
+		Handler:     internalHandler,
 		ReadTimeout: 75 * time.Second,
 		// Higher since for internal RPCs which can have large responses
 		// (eg git archive). Should match the timeout used for git archive
