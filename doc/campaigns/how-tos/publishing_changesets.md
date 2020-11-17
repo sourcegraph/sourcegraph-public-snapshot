@@ -8,7 +8,7 @@ In order to create these changesets on the code hosts, you need to publish them.
 
 ## Requirements
 
-To publish a changeset, you need [admin permissions for the campaign](../explanations/permissions_in_campaigns#permission-levels-for-campaigns) and write access to the changeset's repository (on the code host). For more information, see [Code host interactions in campaigns](../explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns).
+To publish a changeset, you need [admin permissions for the campaign](../explanations/permissions_in_campaigns.md#permission-levels-for-campaigns) and write access to the changeset's repository (on the code host). For more information, see [Code host interactions in campaigns](../explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns).
 
 [Forking the repository](../explanations/introduction_to_campaigns.md#known-issues) is not yet supported.
 

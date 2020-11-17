@@ -1,6 +1,6 @@
 # Creating a campaign
 
-Campaigns are created by writing a [campaign spec](references/campaign_spec_yaml_reference.md) and executing that campaign spec with the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) `src`.
+Campaigns are created by writing a [campaign spec](../references/campaign_spec_yaml_reference.md) and executing that campaign spec with the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) `src`.
 
 ## Requirements
 
@@ -34,7 +34,7 @@ changesetTemplate:
   published: false # Do not publish any changes to the code hosts yet
 ```
 
-See the ["Campaign spec YAML reference"](references/campaign_spec_yaml_reference.md) and the [tutorials](../tutorials/index.md) for more details on how to write campaign specs.
+See the ["Campaign spec YAML reference"](../references/campaign_spec_yaml_reference.md) and the [tutorials](../tutorials/index.md) for more details on how to write campaign specs.
 
 ## Creating a campaign after previewing
 
