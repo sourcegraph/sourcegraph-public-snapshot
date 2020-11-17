@@ -1,17 +1,14 @@
 import * as Monaco from 'monaco-editor'
-import { Sequence, toMonacoRange } from './scanner'
+import { Token, toMonacoRange } from './scanner'
 import { validateFilter } from './filters'
 import { SearchPatternType } from '../../graphql-operations'
 
 /**
  * Returns the diagnostics for a scanned search query to be displayed in the Monaco query input.
  */
-export function getDiagnostics(
-    { members }: Pick<Sequence, 'members'>,
-    patternType: SearchPatternType
-): Monaco.editor.IMarkerData[] {
+export function getDiagnostics(tokens: Token[], patternType: SearchPatternType): Monaco.editor.IMarkerData[] {
     const diagnostics: Monaco.editor.IMarkerData[] = []
-    for (const token of members) {
+    for (const token of tokens) {
         if (token.type === 'filter') {
             const { filterType, filterValue } = token
             const validationResult = validateFilter(filterType.value, filterValue)

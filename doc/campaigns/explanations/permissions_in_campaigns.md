@@ -1,7 +1,5 @@
 # Permissions in campaigns
 
-> NOTE: This documentation describes the current work-in-progress version of campaigns. [Click here](https://docs.sourcegraph.com/@3.18/user/campaigns) to read the documentation for campaigns in Sourcegraph 3.18.
-
 You can customize access to a campaign and propose changes to repositories with varying permission levels. Other people see the campaign's proposed changes to a repository if they can view that repository; otherwise, they can see only limited, non-identifying information about the change.
 
 ## Permission levels for campaigns
@@ -15,7 +13,7 @@ To see the campaign's proposed changes on a repository, a person *also* needs re
 
 Site admins have admin permissions on all campaigns.
 
-For now, users only have read access to campaigns. In the future, users will have admin permissions on their own campaigns too.
+Users have admin permissions on the campaigns they created and read access to other campaigns.
 
 ### Campaign access for each permission level
 
@@ -84,3 +82,7 @@ If you are not permitted to view a repository on Sourcegraph, then you won't be 
 ## Disabling campaigns
 
 A site admin can disable campaigns for the entire site by setting the [site configuration](../../../admin/config/site_config.md) property `"campaigns.enabled"` to `false`.
+
+## Disabling campaigns for non-site-admin users
+
+A site admin can disable campaigns for normal users by setting the [site configuration](../../../admin/config/site_config.md) property `"campaigns.restrictToAdmins"` to `true`.

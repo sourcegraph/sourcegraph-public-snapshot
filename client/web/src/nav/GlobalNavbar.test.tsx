@@ -45,6 +45,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     availableVersionContexts: [],
     variant: 'default',
     globbing: false,
+    enableSmartQuery: false,
     showOnboardingTour: false,
     branding: undefined,
 }

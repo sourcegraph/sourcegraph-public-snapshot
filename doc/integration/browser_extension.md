@@ -19,13 +19,13 @@ Enterprise, GitLab, Phabricator, and Bitbucket Server.
 >NOTE: The Firefox extension may need to be manually enabled from `about:addons`, you can find more information in [Firefox add-on security](firefox_security.md).
 
 <video class="theme-dark-only" width="1760" height="1060" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostDark.webm" type="video/webm">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostDark.mp4" type="video/mp4">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostDark.webm" type="video/webm">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostDark.mp4" type="video/mp4">
   <p>Sourcegraph browser extension adds code intelligence to your code host</p>
 </video>
 <video class="theme-light-only" width="1760" height="1060" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostLight.webm" type="video/webm">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostLight.mp4" type="video/mp4">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostLight.webm" type="video/webm">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostLight.mp4" type="video/mp4">
   <p>Sourcegraph browser extension adds code intelligence to your code host</p>
 </video>
 
@@ -42,13 +42,13 @@ When you hover your mouse over code in files, diffs, pull requests, etc., the So
 ### Search shortcut in URL location bar
 
 <video class="theme-dark-only" width="1196" height="720" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/BrowserShortcutDark.webm" type="video/webm">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/BrowserShortcutDark.mp4" type="video/mp4">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/BrowserShortcutDark.webm" type="video/webm">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/BrowserShortcutDark.mp4" type="video/mp4">
   <p>Sourcegraph search shortcut</p>
 </video>
 <video class="theme-light-only" width="1196" height="720" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/BrowserShortcutLight.webm" type="video/webm">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/BrowserShortcutLight.mp4" type="video/mp4">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/BrowserShortcutLight.webm" type="video/webm">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/BrowserShortcutLight.mp4" type="video/mp4">
   <p>Sourcegraph search shortcut</p>
 </video>
 
@@ -63,13 +63,13 @@ To install this search engine shortcut manually, and for more information, see "
 ## Make it work on your code host
 
 <video class="theme-dark-only" width="1762" height="1384" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/GrantPermissionsDark.webm" type="video/webm">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/GrantPermissionsDark.mp4" type="video/mp4">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/GrantPermissionsDark.webm" type="video/webm">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/GrantPermissionsDark.mp4" type="video/mp4">
   <p>Grant permissions</p>
 </video>
 <video class="theme-light-only" width="1762" height="1384" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/GrantPermissionsLight.webm" type="video/webm">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/GrantPermissionsLight.mp4" type="video/mp4">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/GrantPermissionsLight.webm" type="video/webm">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/GrantPermissionsLight.mp4" type="video/mp4">
   <p>Grant permissions</p>
 </video>
 
@@ -86,13 +86,13 @@ To grant these permissions:
 ## Make it work for private code
 
 <video class="theme-dark-only" width="1764" height="1390" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/PrivateInstanceDark.webm" type="video/webm">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/PrivateInstanceDark.mp4" type="video/mp4">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/PrivateInstanceDark.webm" type="video/webm">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/PrivateInstanceDark.mp4" type="video/mp4">
   <p>Configure browser extension for your private Sourcegraph instance</p>
 </video>
 <video class="theme-light-only" width="1764" height="1390" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/PrivateInstanceLight.webm" type="video/webm">
-  <source src="https://storage.cloud.google.com/sourcegraph-assets/code-host-integration/PrivateInstanceLight.mp4" type="video/mp4">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/PrivateInstanceLight.webm" type="video/webm">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/PrivateInstanceLight.mp4" type="video/mp4">
   <p>Configure browser extension for your private Sourcegraph instance</p>
 </video>
 

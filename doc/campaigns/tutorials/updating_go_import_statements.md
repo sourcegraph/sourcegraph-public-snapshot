@@ -76,9 +76,7 @@ changesetTemplate:
 
 1. In your terminal, run this command:
 
-    <pre>src campaign preview -f update-log15-import.campaign.yaml -namespace <em>USERNAME_OR_ORG</em></pre>
-
-    > The `namespace` is either your Sourcegraph username or the name of a Sourcegraph organisation under which you want to create the campaign. If you're not sure what to choose, use your username.
+    <pre>src campaign preview -f update-log15-import.campaign.yaml</pre>
 1. Wait for it to run and compute the changes for each repository.
 1. Open the preview URL that the command printed out.
 1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.

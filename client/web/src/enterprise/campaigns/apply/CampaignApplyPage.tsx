@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { PageTitle } from '../../../components/PageTitle'
 import {
@@ -16,11 +16,15 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { HeroPage } from '../../../components/HeroPage'
 import { CampaignDescription } from '../detail/CampaignDescription'
 import { CampaignSpecInfoByline } from './CampaignSpecInfoByline'
+import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { AuthenticatedUser } from '../../../auth'
+import { CampaignSpecMissingCredentialsAlert } from './CampaignSpecMissingCredentialsAlert'
 
-export interface CampaignApplyPageProps extends ThemeProps {
+export interface CampaignApplyPageProps extends ThemeProps, TelemetryProps {
     specID: string
     history: H.History
     location: H.Location
+    authenticatedUser: Pick<AuthenticatedUser, 'url'>
 
     /** Used for testing. */
     fetchCampaignSpecById?: typeof _fetchCampaignSpecById
@@ -36,13 +40,19 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
     specID,
     history,
     location,
+    authenticatedUser,
     isLightTheme,
+    telemetryService,
     fetchCampaignSpecById = _fetchCampaignSpecById,
     queryChangesetSpecs,
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
 }) => {
     const spec = useObservable(useMemo(() => fetchCampaignSpecById(specID), [specID, fetchCampaignSpecById]))
+
+    useEffect(() => {
+        telemetryService.logViewEvent('CampaignApplyPage')
+    }, [telemetryService])
 
     if (spec === undefined) {
         return (
@@ -64,11 +74,16 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 className="test-campaign-apply-page"
             />
             <CampaignSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} className="mb-3" />
+            <CampaignSpecMissingCredentialsAlert
+                authenticatedUser={authenticatedUser}
+                viewerCampaignsCodeHosts={spec.viewerCampaignsCodeHosts}
+            />
             <CreateUpdateCampaignAlert
                 history={history}
                 specID={spec.id}
                 campaign={spec.appliesToCampaign}
                 viewerCanAdminister={spec.viewerCanAdminister}
+                telemetryService={telemetryService}
             />
             <CampaignDescription history={history} description={spec.description.description} />
             <ChangesetSpecList

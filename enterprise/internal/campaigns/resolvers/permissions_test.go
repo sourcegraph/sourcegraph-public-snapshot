@@ -10,16 +10,16 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestPermissionLevels(t *testing.T) {
@@ -520,125 +521,127 @@ func TestPermissionLevels(t *testing.T) {
 
 	t.Run("campaign mutations", func(t *testing.T) {
 		mutations := []struct {
-			name           string
-			mutationFunc   func(campaignID, changesetID, campaignSpecID string) string
-			wantLicenseErr bool
+			name         string
+			mutationFunc func(campaignID, changesetID, campaignSpecID string) string
 		}{
 			{
 				name: "createCampaign",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
 					return fmt.Sprintf(`mutation { createCampaign(campaignSpec: %q) { id } }`, campaignSpecID)
 				},
-				wantLicenseErr: true,
 			},
 			{
 				name: "closeCampaign",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
 					return fmt.Sprintf(`mutation { closeCampaign(campaign: %q, closeChangesets: false) { id } }`, campaignID)
 				},
-				wantLicenseErr: false,
 			},
 			{
 				name: "deleteCampaign",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
 					return fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } } `, campaignID)
 				},
-				wantLicenseErr: false,
 			},
 			{
 				name: "syncChangeset",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
 					return fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, changesetID)
 				},
-				wantLicenseErr: false,
 			},
 			{
 				name: "applyCampaign",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
 					return fmt.Sprintf(`mutation { applyCampaign(campaignSpec: %q) { id } }`, campaignSpecID)
 				},
-				wantLicenseErr: true,
 			},
 			{
 				name: "moveCampaign",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
 					return fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, campaignID)
 				},
-				wantLicenseErr: false,
 			},
 		}
 
 		for _, m := range mutations {
 			t.Run(m.name, func(t *testing.T) {
-				// Specific mutations trigger a license check.
-				licensing.EnforceTiers = true
-				defer func() { licensing.EnforceTiers = false }()
-
-				licensing.MockCheckFeature = func(feature licensing.Feature) error { return errors.New("test") }
-				defer func() { licensing.MockCheckFeature = nil }()
-
 				tests := []struct {
 					name           string
 					currentUser    int32
 					campaignAuthor int32
 					wantAuthErr    bool
+
+					// If campaigns.restrictToAdmins is enabled, should an error
+					// be generated?
+					wantDisabledErr bool
 				}{
 					{
-						name:           "unauthorized",
-						currentUser:    userID,
-						campaignAuthor: adminID,
-						wantAuthErr:    true,
+						name:            "unauthorized",
+						currentUser:     userID,
+						campaignAuthor:  adminID,
+						wantAuthErr:     true,
+						wantDisabledErr: true,
 					},
 					{
-						name:           "authorized campaign owner",
-						currentUser:    userID,
-						campaignAuthor: userID,
-						wantAuthErr:    false,
+						name:            "authorized campaign owner",
+						currentUser:     userID,
+						campaignAuthor:  userID,
+						wantAuthErr:     false,
+						wantDisabledErr: true,
 					},
 					{
-						name:           "authorized site-admin",
-						currentUser:    adminID,
-						campaignAuthor: userID,
-						wantAuthErr:    false,
+						name:            "authorized site-admin",
+						currentUser:     adminID,
+						campaignAuthor:  userID,
+						wantAuthErr:     false,
+						wantDisabledErr: false,
 					},
 				}
 
 				for _, tc := range tests {
-					t.Run(tc.name, func(t *testing.T) {
-						cleanUpCampaigns(t, store)
+					for _, restrict := range []bool{true, false} {
+						t.Run(fmt.Sprintf("%s restrict: %v", tc.name, restrict), func(t *testing.T) {
+							cleanUpCampaigns(t, store)
 
-						campaignSpecRandID, campaignSpecID := createCampaignSpec(t, store, tc.campaignAuthor)
-						campaignID := createCampaign(t, store, "test-campaign", tc.campaignAuthor, campaignSpecID)
+							campaignSpecRandID, campaignSpecID := createCampaignSpec(t, store, tc.campaignAuthor)
+							campaignID := createCampaign(t, store, "test-campaign", tc.campaignAuthor, campaignSpecID)
 
-						// We add the changeset to the campaign. It doesn't matter
-						// for the addChangesetsToCampaign mutation, since that is
-						// idempotent and we want to solely check for auth errors.
-						changeset.CampaignIDs = []int64{campaignID}
-						if err := store.UpdateChangeset(ctx, changeset); err != nil {
-							t.Fatal(err)
-						}
-
-						mutation := m.mutationFunc(
-							string(marshalCampaignID(campaignID)),
-							string(marshalChangesetID(changeset.ID)),
-							string(marshalCampaignSpecRandID(campaignSpecRandID)),
-						)
-
-						actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-
-						var response struct{}
-						errs := apitest.Exec(actorCtx, t, s, nil, &response, mutation)
-
-						// Validate that the current license supports the campaign operation.
-						if m.wantLicenseErr {
-							if len(errs) != 1 {
-								t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
+							// We add the changeset to the campaign. It doesn't
+							// matter for the addChangesetsToCampaign mutation,
+							// since that is idempotent and we want to solely
+							// check for auth errors.
+							changeset.CampaignIDs = []int64{campaignID}
+							if err := store.UpdateChangeset(ctx, changeset); err != nil {
+								t.Fatal(err)
 							}
-							if !strings.Contains(errs[0].Error(), "license") {
-								t.Fatalf("expected license error, got %q", errs[0])
-							}
-						} else {
-							if tc.wantAuthErr {
+
+							mutation := m.mutationFunc(
+								string(marshalCampaignID(campaignID)),
+								string(marshalChangesetID(changeset.ID)),
+								string(marshalCampaignSpecRandID(campaignSpecRandID)),
+							)
+
+							actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+
+							conf.Mock(&conf.Unified{
+								SiteConfiguration: schema.SiteConfiguration{
+									CampaignsRestrictToAdmins: restrict,
+								},
+							})
+							defer conf.Mock(nil)
+
+							var response struct{}
+							errs := apitest.Exec(actorCtx, t, s, nil, &response, mutation)
+
+							// We don't care about other errors, we only want to
+							// check that we didn't get an auth error.
+							if restrict && tc.wantDisabledErr {
+								if len(errs) != 1 {
+									t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
+								}
+								if !strings.Contains(errs[0].Error(), "campaigns are disabled for non-site-admin users") {
+									t.Fatalf("wrong error: %s %T", errs[0], errs[0])
+								}
+							} else if tc.wantAuthErr {
 								if len(errs) != 1 {
 									t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
 								}
@@ -646,16 +649,19 @@ func TestPermissionLevels(t *testing.T) {
 									t.Fatalf("wrong error: %s %T", errs[0], errs[0])
 								}
 							} else {
-								// We don't care about other errors, we only want to
-								// check that we didn't get an auth error.
+								// We don't care about other errors, we only
+								// want to check that we didn't get an auth
+								// or site admin error.
 								for _, e := range errs {
 									if strings.Contains(e.Error(), "must be authenticated") {
 										t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
+									} else if strings.Contains(e.Error(), "campaigns are disabled for non-site-admin users") {
+										t.Fatalf("site admin error wrongly returned: %s %T", errs[0], errs[0])
 									}
 								}
 							}
-						}
-					})
+						})
+					}
 				}
 			})
 		}
@@ -855,9 +861,10 @@ func TestRepositoryPermissions(t *testing.T) {
 			testChangesetResponse(t, s, userCtx, c.ID, "ExternalChangeset")
 		}
 
-		// Now we add the authzFilter and filter out the repository of one changeset
+		// Now we set permissions and filter out the repository of one changeset
 		filteredRepo := changesets[0].RepoID
-		ct.AuthzFilterRepos(t, filteredRepo)
+		accessibleRepo := changesets[1].RepoID
+		ct.MockRepoPermissions(t, userID, accessibleRepo)
 
 		// Send query again and check that for each filtered repository we get a
 		// HiddenChangeset
@@ -950,9 +957,10 @@ func TestRepositoryPermissions(t *testing.T) {
 			testChangesetSpecResponse(t, s, userCtx, c.RandID, "VisibleChangesetSpec")
 		}
 
-		// Now we add the authzFilter and filter out the repository of one changeset
+		// Now we set permissions and filter out the repository of one changeset
 		filteredRepo := changesetSpecs[0].RepoID
-		ct.AuthzFilterRepos(t, filteredRepo)
+		accessibleRepo := changesetSpecs[1].RepoID
+		ct.MockRepoPermissions(t, userID, accessibleRepo)
 
 		// Send query again and check that for each filtered repository we get a
 		// HiddenChangesetSpec.

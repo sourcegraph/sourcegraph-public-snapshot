@@ -180,12 +180,15 @@ type Observable struct {
 	// set this to true.
 	DataMayNotBeNaN bool
 
-	// Warning and Critical alert definitions. At least a Warning alert must be present.
-	// Alerts are created using the Alert() constructor.
-	//
-	// See README.md for why it is intentionally impossible to create a dashboard to monitor
-	// something without at least a warning alert being defined.
-	Warning, Critical alertDefinition
+	// Warning and Critical alert definitions.
+	// Consider adding at least a Warning or Critical alert to each Observable to make it easy to
+	// identify when the target of this metric is missbehaving.
+	Warning, Critical *alertDefinition
+
+	// NoAlerts is used by Observables that don't need any alerts.
+	// We want to be explicit about this to ensure alerting is considered and if we choose not to Alert,
+	// its easy to identify it is an intentional behavior.
+	NoAlert bool
 
 	// PossibleSolutions is Markdown describing possible solutions in the event that the alert is
 	// firing. If there is no clear potential resolution, "none" must be explicitly stated.
@@ -225,15 +228,11 @@ func (o Observable) validate() error {
 	if v := string([]rune(o.Description)[0]); v != strings.ToLower(v) {
 		return fmt.Errorf("Observable.Description must be lowercase; found \"%s\"", o.Description)
 	}
-	if o.Warning.isEmpty() && o.Critical.isEmpty() {
-		return fmt.Errorf("%s: a Warning or Critical alert MUST be defined", o.Name)
+
+	if !o.NoAlert && o.Warning.isEmpty() && o.Critical.isEmpty() {
+		return fmt.Errorf("Observable.Warning or Observable.Critical must be set or explicitly disable alerts with Observable.NoAlert")
 	}
-	if err := o.Warning.validate(); err != nil && !o.Warning.isEmpty() {
-		return fmt.Errorf("warning: %v", err)
-	}
-	if err := o.Critical.validate(); err != nil && !o.Critical.isEmpty() {
-		return fmt.Errorf("critical: %v", err)
-	}
+
 	if l := strings.ToLower(o.PossibleSolutions); strings.Contains(l, "contact support") || strings.Contains(l, "contact us") {
 		return fmt.Errorf("PossibleSolutions: should not include mentions of contacting support")
 	}
@@ -250,8 +249,8 @@ func (o Observable) validate() error {
 	return nil
 }
 
-func Alert() alertDefinition {
-	return alertDefinition{}
+func Alert() *alertDefinition {
+	return &alertDefinition{}
 }
 
 // alertDefinition defines when an alert would be considered firing.
@@ -269,30 +268,23 @@ type alertDefinition struct {
 	duration time.Duration
 }
 
-func (a alertDefinition) GreaterOrEqual(f float64) alertDefinition {
+func (a *alertDefinition) GreaterOrEqual(f float64) *alertDefinition {
 	a.greaterOrEqual = &f
 	return a
 }
 
-func (a alertDefinition) LessOrEqual(f float64) alertDefinition {
+func (a *alertDefinition) LessOrEqual(f float64) *alertDefinition {
 	a.lessOrEqual = &f
 	return a
 }
 
-func (a alertDefinition) For(d time.Duration) alertDefinition {
+func (a *alertDefinition) For(d time.Duration) *alertDefinition {
 	a.duration = d
 	return a
 }
 
-func (a alertDefinition) isEmpty() bool {
-	return a == alertDefinition{} || (a.greaterOrEqual == nil && a.lessOrEqual == nil)
-}
-
-func (a alertDefinition) validate() error {
-	if a.isEmpty() {
-		return errors.New("empty")
-	}
-	return nil
+func (a *alertDefinition) isEmpty() bool {
+	return a == nil || (*a == alertDefinition{}) || (a.greaterOrEqual == nil && a.lessOrEqual == nil)
 }
 
 // UnitType for controlling the unit type display on graphs.
@@ -569,7 +561,7 @@ func (c *Container) dashboard() *sdk.Board {
 					Show:     true,
 				}
 
-				if o.Warning.greaterOrEqual != nil {
+				if o.Warning != nil && o.Warning.greaterOrEqual != nil {
 					// Warning threshold
 					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
 						Value:     float32(*o.Warning.greaterOrEqual),
@@ -580,7 +572,7 @@ func (c *Container) dashboard() *sdk.Board {
 						FillColor: "rgba(255, 73, 53, 0.8)",
 					})
 				}
-				if o.Critical.greaterOrEqual != nil {
+				if o.Critical != nil && o.Critical.greaterOrEqual != nil {
 					// Critical threshold
 					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
 						Value:     float32(*o.Critical.greaterOrEqual),
@@ -591,7 +583,7 @@ func (c *Container) dashboard() *sdk.Board {
 						FillColor: "rgba(255, 17, 36, 0.8)",
 					})
 				}
-				if o.Warning.lessOrEqual != nil {
+				if o.Warning != nil && o.Warning.lessOrEqual != nil {
 					// Warning threshold
 					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
 						Value:     float32(*o.Warning.lessOrEqual),
@@ -602,7 +594,7 @@ func (c *Container) dashboard() *sdk.Board {
 						FillColor: "rgba(255, 73, 53, 0.8)",
 					})
 				}
-				if o.Critical.lessOrEqual != nil {
+				if o.Critical != nil && o.Critical.lessOrEqual != nil {
 					// Critical threshold
 					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
 						Value:     float32(*o.Critical.lessOrEqual),
@@ -645,7 +637,7 @@ func (c *Container) dashboard() *sdk.Board {
 }
 
 // alertDescription generates an alert description for the specified coontainer's alert.
-func (c *Container) alertDescription(o Observable, alert alertDefinition) string {
+func (c *Container) alertDescription(o Observable, alert *alertDefinition) string {
 	if alert.isEmpty() {
 		panic("never here")
 	}
@@ -684,7 +676,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 	for _, g := range c.Groups {
 		for _, r := range g.Rows {
 			for _, o := range r {
-				for level, a := range map[string]alertDefinition{
+				for level, a := range map[string]*alertDefinition{
 					"warning":  o.Warning,
 					"critical": o.Critical,
 				} {
@@ -700,11 +692,11 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							// make sure the prometheus alert description only describes one bound
 							name = fmt.Sprintf("%s_%s", o.Name, bound)
 							if bound == "high" {
-								description = c.alertDescription(o, alertDefinition{
+								description = c.alertDescription(o, &alertDefinition{
 									greaterOrEqual: a.greaterOrEqual,
 								})
 							} else if bound == "low" {
-								description = c.alertDescription(o, alertDefinition{
+								description = c.alertDescription(o, &alertDefinition{
 									lessOrEqual: a.lessOrEqual,
 								})
 							} else {
@@ -837,6 +829,10 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 		for _, g := range c.Groups {
 			for _, r := range g.Rows {
 				for _, o := range r {
+					if o.Warning == nil && o.Critical == nil {
+						continue
+					}
+
 					fmt.Fprintf(&b, "## %s: %s\n\n", c.Name, o.Name)
 					fmt.Fprintf(&b, `<p class="subtitle">%s: %s</p>`, o.Owner, o.Description)
 
@@ -845,7 +841,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 					var prometheusAlertNames []string
 					for _, alert := range []struct {
 						level     string
-						threshold alertDefinition
+						threshold *alertDefinition
 					}{
 						{level: "warning", threshold: o.Warning},
 						{level: "critical", threshold: o.Critical},

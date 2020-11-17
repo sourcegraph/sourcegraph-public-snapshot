@@ -29,12 +29,17 @@ const ListCampaignFragment = gql`
     }
 `
 
+export interface ListCampaignsResult {
+    campaigns: CampaignsResult['campaigns']
+    totalCount: number
+}
+
 export const queryCampaigns = ({
     first,
     after,
     state,
     viewerCanAdminister,
-}: Partial<CampaignsVariables>): Observable<CampaignsResult['campaigns']> =>
+}: Partial<CampaignsVariables>): Observable<ListCampaignsResult> =>
     requestGraphQL<CampaignsResult, CampaignsVariables>(
         gql`
             query Campaigns($first: Int, $after: String, $state: CampaignState, $viewerCanAdminister: Boolean) {
@@ -46,6 +51,9 @@ export const queryCampaigns = ({
                         endCursor
                         hasNextPage
                     }
+                    totalCount
+                }
+                allCampaigns: campaigns(first: 0) {
                     totalCount
                 }
             }
@@ -60,7 +68,10 @@ export const queryCampaigns = ({
         }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.campaigns)
+        map(data => ({
+            campaigns: data.campaigns,
+            totalCount: data.allCampaigns.totalCount,
+        }))
     )
 
 export const queryCampaignsByNamespace = ({
@@ -69,7 +80,7 @@ export const queryCampaignsByNamespace = ({
     after,
     state,
     viewerCanAdminister,
-}: CampaignsByNamespaceVariables): Observable<CampaignsResult['campaigns']> =>
+}: CampaignsByNamespaceVariables): Observable<ListCampaignsResult> =>
     requestGraphQL<CampaignsByNamespaceResult, CampaignsByNamespaceVariables>(
         gql`
             query CampaignsByNamespace(
@@ -90,6 +101,9 @@ export const queryCampaignsByNamespace = ({
                         ) {
                             ...CampaignsFields
                         }
+                        allCampaigns: campaigns(first: 0) {
+                            totalCount
+                        }
                     }
                     ... on Org {
                         campaigns(
@@ -99,6 +113,9 @@ export const queryCampaignsByNamespace = ({
                             viewerCanAdminister: $viewerCanAdminister
                         ) {
                             ...CampaignsFields
+                        }
+                        allCampaigns: campaigns(first: 0) {
+                            totalCount
                         }
                     }
                 }
@@ -128,6 +145,9 @@ export const queryCampaignsByNamespace = ({
             if (data.node.__typename !== 'Org' && data.node.__typename !== 'User') {
                 throw new Error(`Requested node is a ${data.node.__typename}, not a User or Org`)
             }
-            return data.node.campaigns
+            return {
+                campaigns: data.node.campaigns,
+                totalCount: data.node.allCampaigns.totalCount,
+            }
         })
     )

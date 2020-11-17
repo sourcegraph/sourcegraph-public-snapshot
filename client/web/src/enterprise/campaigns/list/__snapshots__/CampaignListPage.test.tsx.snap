@@ -4,24 +4,33 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
 <Fragment>
   <PageHeader
     actions={
-      <AnchorLink
-        className="btn btn-primary"
-        to="//create"
-      >
-        <Memo(PlusIcon)
-          className="icon-inline"
-        />
-         New campaign
-      </AnchorLink>
+      <NewCampaignButton
+        location="[Location path=/]"
+      />
     }
     className="justify-content-end test-campaign-list-page"
     icon={[Function]}
     title="Campaigns"
   />
+  <p
+    className="text-muted"
+  >
+    Run custom code over hundreds of repositories and manage the resulting changesets
+  </p>
+  <CampaignListIntro />
+  <CampaignListTabHeader
+    selectedTab="campaigns"
+    setSelectedTab={[Function]}
+  />
   <FilteredConnection
     className="mb-3"
     cursorPaging={true}
     defaultFirst={15}
+    emptyElement={
+      <CampaignListEmptyElement
+        location="[Location path=/]"
+      />
+    }
     filters={
       Array [
         Object {
@@ -79,24 +88,33 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
 <Fragment>
   <PageHeader
     actions={
-      <AnchorLink
-        className="btn btn-primary"
-        to="//create"
-      >
-        <Memo(PlusIcon)
-          className="icon-inline"
-        />
-         New campaign
-      </AnchorLink>
+      <NewCampaignButton
+        location="[Location path=/]"
+      />
     }
     className="justify-content-end test-campaign-list-page"
     icon={[Function]}
     title="Campaigns"
   />
+  <p
+    className="text-muted"
+  >
+    Run custom code over hundreds of repositories and manage the resulting changesets
+  </p>
+  <CampaignListIntro />
+  <CampaignListTabHeader
+    selectedTab="campaigns"
+    setSelectedTab={[Function]}
+  />
   <FilteredConnection
     className="mb-3"
     cursorPaging={true}
     defaultFirst={15}
+    emptyElement={
+      <CampaignListEmptyElement
+        location="[Location path=/]"
+      />
+    }
     filters={
       Array [
         Object {
@@ -154,24 +172,33 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
 <Fragment>
   <PageHeader
     actions={
-      <AnchorLink
-        className="btn btn-primary"
-        to="//create"
-      >
-        <Memo(PlusIcon)
-          className="icon-inline"
-        />
-         New campaign
-      </AnchorLink>
+      <NewCampaignButton
+        location="[Location path=/]"
+      />
     }
     className="justify-content-end test-campaign-list-page"
     icon={[Function]}
     title="Campaigns"
   />
+  <p
+    className="text-muted"
+  >
+    Run custom code over hundreds of repositories and manage the resulting changesets
+  </p>
+  <CampaignListIntro />
+  <CampaignListTabHeader
+    selectedTab="campaigns"
+    setSelectedTab={[Function]}
+  />
   <FilteredConnection
     className="mb-3"
     cursorPaging={true}
     defaultFirst={15}
+    emptyElement={
+      <CampaignListEmptyElement
+        location="[Location path=/]"
+      />
+    }
     filters={
       Array [
         Object {
@@ -229,24 +256,33 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
 <Fragment>
   <PageHeader
     actions={
-      <AnchorLink
-        className="btn btn-primary"
-        to="//create"
-      >
-        <Memo(PlusIcon)
-          className="icon-inline"
-        />
-         New campaign
-      </AnchorLink>
+      <NewCampaignButton
+        location="[Location path=/]"
+      />
     }
     className="justify-content-end test-campaign-list-page"
     icon={[Function]}
     title="Campaigns"
   />
+  <p
+    className="text-muted"
+  >
+    Run custom code over hundreds of repositories and manage the resulting changesets
+  </p>
+  <CampaignListIntro />
+  <CampaignListTabHeader
+    selectedTab="campaigns"
+    setSelectedTab={[Function]}
+  />
   <FilteredConnection
     className="mb-3"
     cursorPaging={true}
     defaultFirst={15}
+    emptyElement={
+      <CampaignListEmptyElement
+        location="[Location path=/]"
+      />
+    }
     filters={
       Array [
         Object {

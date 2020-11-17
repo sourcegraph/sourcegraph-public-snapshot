@@ -1,95 +1,31 @@
 import { ensureEvent, getClient, EventOptions } from './google-calendar'
 import { postMessage } from './slack'
 import {
-    ensureTrackingIssue,
     getAuthenticatedGitHubClient,
     listIssues,
-    getIssueByTitle,
-    trackingIssueTitle,
+    getTrackingIssue,
+    ensureReleaseTrackingIssue,
     ensurePatchReleaseIssue,
     createChangesets,
     CreatedChangeset,
+    createTag,
 } from './github'
 import * as changelog from './changelog'
 import * as campaigns from './campaigns'
-import { formatDate, timezoneLink, readLine, getWeekNumber } from './util'
-import * as persistedConfig from './config.json'
+import { Config, releaseVersions, loadConfig } from './config'
+import { formatDate, timezoneLink } from './util'
 import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
-import * as semver from 'semver'
-import execa from 'execa'
 import { readFileSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import commandExists from 'command-exists'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
-interface Config {
-    teamEmail: string
-
-    captainSlackUsername: string
-    captainGitHubUsername: string
-
-    previousRelease: string
-    upcomingRelease: string
-
-    releaseDateTime: string
-    oneWorkingDayBeforeRelease: string
-    fourWorkingDaysBeforeRelease: string
-    fiveWorkingDaysBeforeRelease: string
-
-    slackAnnounceChannel: string
-
-    dryRun: {
-        changesets?: boolean
-        trackingIssues?: boolean
-    }
-}
 
 /**
  * Convenience function for getting relevant configured releases as semver.SemVer
  *
  * It prompts for a confirmation of the `upcomingRelease` that is cached for a week.
  */
-async function releaseVersions(
-    config: Config
-): Promise<{
-    previous: semver.SemVer
-    upcoming: semver.SemVer
-}> {
-    const parseOptions: semver.Options = { loose: false }
-    const parsedPrevious = semver.parse(config.previousRelease, parseOptions)
-    if (!parsedPrevious) {
-        throw new Error(`config.previousRelease '${config.previousRelease}' is not valid semver`)
-    }
-    const parsedUpcoming = semver.parse(config.upcomingRelease, parseOptions)
-    if (!parsedUpcoming) {
-        throw new Error(`config.upcomingRelease '${config.upcomingRelease}' is not valid semver`)
-    }
-
-    // Verify the configured upcoming release. The response is cached and expires in a
-    // week, after which the captain is required to confirm again.
-    const now = new Date()
-    const cachedVersion = `.secrets/current_release_${now.getUTCFullYear()}_${getWeekNumber(now)}.txt`
-    const confirmVersion = await readLine(
-        `Please confirm the upcoming release version (configured: '${config.upcomingRelease}'): `,
-        cachedVersion
-    )
-    const parsedConfirmed = semver.parse(confirmVersion, parseOptions)
-    if (!parsedConfirmed) {
-        throw new Error(`Provided version '${confirmVersion}' is not valid semver (in ${cachedVersion})`)
-    }
-    if (semver.neq(parsedConfirmed, parsedUpcoming)) {
-        throw new Error(
-            `Provided version '${confirmVersion}' and config.upcomingRelease '${config.upcomingRelease}' to not match - please update the release configuration`
-        )
-    }
-
-    const versions = {
-        previous: parsedPrevious,
-        upcoming: parsedUpcoming,
-    }
-    console.log(`Using versions: { upcoming: ${versions.upcoming.format()}, previous: ${versions.previous.format()} }`)
-    return versions
-}
 
 type StepID =
     | 'help'
@@ -109,9 +45,11 @@ type StepID =
     | '_test:google-calendar'
     | '_test:slack'
     | '_test:campaign-create-from-changes'
+    | '_test:config'
 
 interface Step {
     id: StepID
+    description: string
     run?: ((config: Config, ...args: string[]) => Promise<void>) | ((config: Config, ...args: string[]) => void)
     argNames?: string[]
 }
@@ -119,25 +57,33 @@ interface Step {
 const steps: Step[] = [
     {
         id: 'help',
-        run: () => {
-            console.error('Steps are:')
+        description: 'Output help text about this tool',
+        argNames: ['all'],
+        run: (_config, all) => {
+            console.error('Sourcegraph release tool - https://about.sourcegraph.com/handbook/engineering/releases')
+            console.error('\nUSAGE\n')
+            console.error('\tyarn run release <step>')
+            console.error('\nAVAILABLE STEPS\n')
             console.error(
                 steps
-                    .filter(({ id }) => !id.startsWith('_'))
+                    .filter(({ id }) => all || !id.startsWith('_'))
                     .map(
-                        ({ id, argNames }) =>
+                        ({ id, argNames, description }) =>
                             '\t' +
                             id +
                             (argNames && argNames.length > 0
                                 ? ' ' + argNames.map(argumentName => `<${argumentName}>`).join(' ')
-                                : '')
+                                : '') +
+                            '\n\t\t' +
+                            description
                     )
-                    .join('\n')
+                    .join('\n') + '\n'
             )
         },
     },
     {
         id: 'tracking:release-timeline',
+        description: 'Generate a set of Google Calendar events for a MAJOR.MINOR release',
         run: async config => {
             const googleCalendar = await getClient()
             const { upcoming: release } = await releaseVersions(config)
@@ -197,6 +143,7 @@ const steps: Step[] = [
     },
     {
         id: 'tracking:release-issue',
+        description: 'Generate a GitHub tracking issue for a MAJOR.MINOR release',
         run: async (config: Config) => {
             const {
                 releaseDateTime,
@@ -212,7 +159,7 @@ const steps: Step[] = [
             const { upcoming: release } = await releaseVersions(config)
 
             // Create issue
-            const { url, created } = await ensureTrackingIssue({
+            const { url, created } = await ensureReleaseTrackingIssue({
                 version: release,
                 assignees: [captainGitHubUsername],
                 releaseDateTime: new Date(releaseDateTime),
@@ -253,6 +200,7 @@ const steps: Step[] = [
     },
     {
         id: 'tracking:patch-issue',
+        description: 'Generate a GitHub tracking issue for a MAJOR.MINOR.PATCH release',
         run: async config => {
             const { captainGitHubUsername, captainSlackUsername, slackAnnounceChannel, dryRun } = config
             const { upcoming: release } = await releaseVersions(config)
@@ -285,6 +233,7 @@ If you have changes that should go into this patch release, <${patchRequestTempl
     },
     {
         id: 'changelog:cut',
+        description: 'Generate pull requests to perform a changelog cut for branch cut',
         argNames: ['changelogFile'],
         run: async (config, changelogFile = 'CHANGELOG.md') => {
             const { upcoming: release } = await releaseVersions(config)
@@ -328,71 +277,61 @@ If you have changes that should go into this patch release, <${patchRequestTempl
     },
     {
         id: 'release:status',
+        description: 'Post a message in Slack summarizing the progress of a release',
         run: async config => {
             const githubClient = await getAuthenticatedGitHubClient()
             const { upcoming: release } = await releaseVersions(config)
 
-            const trackingIssueURL = await getIssueByTitle(githubClient, trackingIssueTitle(release))
-            if (!trackingIssueURL) {
+            const trackingIssue = await getTrackingIssue(githubClient, release)
+            if (!trackingIssue) {
                 throw new Error(`Tracking issue for version ${release.version} not found - has it been created yet?`)
             }
 
             const blockingQuery = 'is:open org:sourcegraph label:release-blocker'
             const blockingIssues = await listIssues(githubClient, blockingQuery)
             const blockingIssuesURL = `https://github.com/issues?q=${encodeURIComponent(blockingQuery)}`
-
-            const releaseMilestone = `${release.major}.${release.minor}${
-                release.patch !== 0 ? `.${release.patch}` : ''
-            }`
-            const openQuery = `is:open org:sourcegraph is:issue milestone:${releaseMilestone}`
-            const openIssues = await listIssues(githubClient, openQuery)
-            const openIssuesURL = `https://github.com/issues?q=${encodeURIComponent(openQuery)}`
-
-            const issueCategories = [
-                { name: 'release-blocking', issues: blockingIssues, issuesURL: blockingIssuesURL },
-                { name: 'open', issues: openIssues, issuesURL: openIssuesURL },
-            ]
+            const blockingMessage =
+                blockingIssues.length === 0
+                    ? 'There are no release-blocking issues'
+                    : `There ${
+                          blockingIssues.length === 1
+                              ? 'is 1 release-blocking issue'
+                              : `are ${blockingIssues.length} release-blocking issues`
+                      }`
 
             const message = `:mega: *${release.version} Release Status Update*
 
-* Tracking issue: ${trackingIssueURL}
-${issueCategories
-    .map(
-        category =>
-            '* ' +
-            (category.issues.length === 1
-                ? `There is 1 ${category.name} issue: ${category.issuesURL}`
-                : `There are ${category.issues.length} ${category.name} issues: ${category.issuesURL}`)
-    )
-    .join('\n')}`
+* Tracking issue: ${trackingIssue.url}
+* ${blockingMessage}: ${blockingIssuesURL}`
             await postMessage(message, config.slackAnnounceChannel)
         },
     },
     {
         id: 'release:create-candidate',
+        description: 'Generate the Nth release candidate. Set <candidate> to "final" to generate a final release',
         argNames: ['candidate'],
         run: async (config, candidate) => {
             if (!candidate) {
                 throw new Error('Candidate information is required (either "final" or a number)')
             }
             const { upcoming: release } = await releaseVersions(config)
-
-            const tag = JSON.stringify(`v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`)
-            const branch = JSON.stringify(`${release.major}.${release.minor}`)
-
-            console.log(`Creating and pushing tag ${tag} on ${branch}`)
-            await execa(
-                'bash',
-                [
-                    '-c',
-                    `git diff --quiet && git checkout ${branch} && git pull --rebase && git tag -a ${tag} -m ${tag} && git push origin ${tag}`,
-                ],
-                { stdio: 'inherit' }
+            const branch = `${release.major}.${release.minor}`
+            const tag = `v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`
+            await createTag(
+                await getAuthenticatedGitHubClient(),
+                {
+                    owner: 'sourcegraph',
+                    repo: 'sourcegraph',
+                    branch,
+                    tag,
+                },
+                config.dryRun.tags || false
             )
         },
     },
     {
         id: 'release:stage',
+        description: 'Open pull requests and a campaign staging a release',
         run: async config => {
             const { slackAnnounceChannel, dryRun } = config
             const { upcoming: release, previous } = await releaseVersions(config)
@@ -404,11 +343,8 @@ ${issueCategories
             const isPatchRelease = release.patch === 0
             const versionRegex = '[0-9]+\\.[0-9]+\\.[0-9]+'
             const campaignURL = campaigns.campaignURL(campaign)
-            const trackingIssueURL = await getIssueByTitle(
-                await getAuthenticatedGitHubClient(),
-                trackingIssueTitle(release)
-            )
-            if (!trackingIssueURL) {
+            const trackingIssue = await getTrackingIssue(await getAuthenticatedGitHubClient(), release)
+            if (!trackingIssue) {
                 // Do not block release staging on lack of tracking issue
                 console.error(`Tracking issue for version ${release.version} not found - has it been created yet?`)
             }
@@ -419,7 +355,7 @@ ${issueCategories
                 const defaultBody = `This pull request is part of the Sourcegraph ${release.version} release.
 
 * [Release campaign](${campaignURL})
-* ${trackingIssueURL ? `[Tracking issue](${trackingIssueURL}` : 'No tracking issue exists for this release'}`
+* ${trackingIssue ? `[Tracking issue](${trackingIssue.url}` : 'No tracking issue exists for this release'}`
                 if (!actionItems || actionItems.length === 0) {
                     return { draft: false, body: defaultBody }
                 }
@@ -561,8 +497,9 @@ Campaign: ${campaignURL}`,
     },
     {
         id: 'release:add-to-campaign',
-        // Example: yarn run release release:add-to-campaign sourcegraph/about 1797
+        description: 'Manually add a change to a release campaign',
         argNames: ['changeRepo', 'changeID'],
+        // Example: yarn run release release:add-to-campaign sourcegraph/about 1797
         run: async (config, changeRepo, changeID) => {
             const { upcoming: release } = await releaseVersions(config)
             if (!changeRepo || !changeID) {
@@ -584,26 +521,65 @@ Campaign: ${campaignURL}`,
     },
     {
         id: 'release:close',
+        description: 'Mark a release as closed',
         run: async config => {
             const { slackAnnounceChannel } = config
             const { upcoming: release } = await releaseVersions(config)
+            const githubClient = await getAuthenticatedGitHubClient()
 
+            // Push final tags
+            const branch = `${release.major}.${release.minor}`
+            const tag = `v${release.version}`
+            for (const repo of ['deploy-sourcegraph', 'deploy-sourcegraph-docker']) {
+                await createTag(
+                    await getAuthenticatedGitHubClient(),
+                    {
+                        owner: 'sourcegraph',
+                        repo,
+                        branch,
+                        tag,
+                    },
+                    config.dryRun.tags || false
+                )
+            }
+            if (config.dryRun.tags) {
+                console.error('Do not close release with dry run! Aborting')
+                return
+            }
+
+            // Set up announcement message
             const versionAnchor = release.version.replace('.', '-')
             const campaignURL = campaigns.campaignURL(
                 campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphCLIConfig())
             )
-            await postMessage(
-                `:captain: *${release.version} has been published*
+            const releaseMessage = `*${release.version} has been published*
 
 * Changelog: https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}
-* Release campaign: ${campaignURL}`,
-                slackAnnounceChannel
-            )
+* Release campaign: ${campaignURL}`
+
+            // Slack
+            await postMessage(`:captain: ${releaseMessage}`, slackAnnounceChannel)
             console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
+
+            // GitHub
+            const trackingIssue = await getTrackingIssue(githubClient, release)
+            if (!trackingIssue) {
+                console.warn(`Could not find tracking issue for release ${release.version} - skipping`)
+            } else {
+                await githubClient.issues.createComment({
+                    owner: trackingIssue.owner,
+                    repo: trackingIssue.repo,
+                    issue_number: trackingIssue.number,
+                    body: `${releaseMessage}
+
+@${config.captainGitHubUsername}: Please complete the post-release steps before closing this issue.`,
+                })
+            }
         },
     },
     {
         id: '_test:google-calendar',
+        description: 'Test Google Calendar integration',
         run: async config => {
             const googleCalendar = await getClient()
             await ensureEvent(
@@ -618,13 +594,17 @@ Campaign: ${campaignURL}`,
     },
     {
         id: '_test:slack',
-        run: async (_config, message) => {
-            await postMessage(message, '_test-channel')
+        description: 'Test Slack integration',
+        argNames: ['channel', 'message'],
+        run: async (_config, channel, message) => {
+            await postMessage(message, channel)
         },
     },
     {
-        // Example: yarn run release _test:campaign-create-from-changes "$(cat ./.secrets/import.json)"
         id: '_test:campaign-create-from-changes',
+        description: 'Test campaigns integration',
+        argNames: ['campaignConfigJSON'],
+        // Example: yarn run release _test:campaign-create-from-changes "$(cat ./.secrets/import.json)"
         run: async (_config, campaignConfigJSON) => {
             const campaignConfig = JSON.parse(campaignConfigJSON) as {
                 changes: CreatedChangeset[]
@@ -645,6 +625,13 @@ Campaign: ${campaignURL}`,
             console.log(`Created campaign ${campaigns.campaignURL(campaign)}`)
         },
     },
+    {
+        id: '_test:config',
+        description: 'Test release configuration loading',
+        run: config => {
+            console.log(JSON.stringify(config, null, '  '))
+        },
+    },
 ]
 
 async function run(config: Config, stepIDToRun: StepID, ...stepArguments: string[]): Promise<void> {
@@ -663,7 +650,7 @@ async function run(config: Config, stepIDToRun: StepID, ...stepArguments: string
  * Release captain automation
  */
 async function main(): Promise<void> {
-    const config = persistedConfig
+    const config = loadConfig()
     const args = process.argv.slice(2)
     if (args.length === 0) {
         console.error('This command expects at least 1 argument')

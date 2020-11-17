@@ -12,6 +12,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -94,7 +95,7 @@ func (s *RepoStore) Get(ctx context.Context, id api.RepoID) (*types.Repo, error)
 	}
 	s.ensureStore()
 
-	repos, err := s.getBySQL(ctx, sqlf.Sprintf("id=%d LIMIT 1", id))
+	repos, err := s.getBySQL(ctx, sqlf.Sprintf("id=%d", id), sqlf.Sprintf("LIMIT 1"))
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +119,7 @@ func (s *RepoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (*typ
 	}
 	s.ensureStore()
 
-	repos, err := s.getBySQL(ctx, sqlf.Sprintf("name=%s LIMIT 1", nameOrURI))
+	repos, err := s.getBySQL(ctx, sqlf.Sprintf("name=%s", nameOrURI), sqlf.Sprintf("LIMIT 1"))
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +131,7 @@ func (s *RepoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (*typ
 	// We don't fetch in the same SQL query since uri is not unique and could
 	// conflict with a name. We prefer returning the matching name if it
 	// exists.
-	repos, err = s.getBySQL(ctx, sqlf.Sprintf("uri=%s LIMIT 1", nameOrURI))
+	repos, err = s.getBySQL(ctx, sqlf.Sprintf("uri=%s", nameOrURI), sqlf.Sprintf("LIMIT 1"))
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +160,7 @@ func (s *RepoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.R
 		items[i] = sqlf.Sprintf("%d", ids[i])
 	}
 	q := sqlf.Sprintf("id IN (%s)", sqlf.Join(items, ","))
-	return s.getReposBySQL(ctx, true, nil, q)
+	return s.getReposBySQL(ctx, true, nil, q, nil)
 }
 
 // GetReposSetByIDs returns a map of repositories with the given IDs, indexed by their IDs. The number of results
@@ -217,8 +218,11 @@ func (s *RepoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 const getRepoByQueryFmtstr = `
 SELECT %s
 FROM %%s
-WHERE deleted_at IS NULL
-AND %%s
+WHERE
+	deleted_at IS NULL
+AND %%s   -- Populates "queryConds"
+AND (%%s) -- Populates "authzConds"
+%%s       -- Populates "querySuffix"
 `
 
 const getSourcesByRepoQueryStr = `
@@ -263,13 +267,24 @@ func minimalColumns(columns []string) []string {
 	return columns[:6]
 }
 
-func (s *RepoStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
-	return s.getReposBySQL(ctx, false, nil, querySuffix)
+func (s *RepoStore) getBySQL(ctx context.Context, queryConds, querySuffix *sqlf.Query) ([]*types.Repo, error) {
+	return s.getReposBySQL(ctx, false, nil, queryConds, querySuffix)
 }
 
-func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause, querySuffix *sqlf.Query) ([]*types.Repo, error) {
+func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause, queryConds, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	if fromClause == nil {
 		fromClause = sqlf.Sprintf("repo")
+	}
+	if queryConds == nil {
+		queryConds = sqlf.Sprintf("TRUE")
+	}
+	if querySuffix == nil {
+		querySuffix = sqlf.Sprintf("")
+	}
+
+	authzConds, err := authzQueryConds(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	columns := getBySQLColumns
@@ -280,6 +295,8 @@ func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause,
 	q := sqlf.Sprintf(
 		fmt.Sprintf(getRepoByQueryFmtstr, strings.Join(columns, ",")),
 		fromClause,
+		queryConds,
+		authzConds, // 🚨 SECURITY: Enforce repository permissions
 		querySuffix,
 	)
 
@@ -306,8 +323,7 @@ func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause,
 		return nil, err
 	}
 
-	// 🚨 SECURITY: This enforces repository permissions
-	return authzFilter(ctx, repos, authz.Read)
+	return repos, nil
 }
 
 func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
@@ -546,20 +562,20 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 		fromClause = sqlf.Sprintf("repo JOIN external_service_repos e ON (repo.id = e.repo_id AND e.external_service_id = %s)", opt.ExternalServiceID)
 	}
 
-	// fetch matching repos
-	predQ := sqlf.Sprintf("TRUE")
+	queryConds := sqlf.Sprintf("TRUE")
 	if len(conds) > 0 {
 		if opt.UseOr {
-			predQ = sqlf.Join(conds, "\n OR ")
+			queryConds = sqlf.Join(conds, "\n OR ")
 		} else {
-			predQ = sqlf.Join(conds, "\n AND ")
+			queryConds = sqlf.Join(conds, "\n AND ")
 		}
 	}
+	queryConds = sqlf.Sprintf("(%s)", queryConds)
 
-	fetchSQL := sqlf.Sprintf("%s %s %s", sqlf.Sprintf("(%s)", predQ), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
-	tr.LogFields(trace.SQL(fetchSQL))
+	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
+	tr.LogFields(trace.SQL(queryConds), trace.SQL(querySuffix))
 
-	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fromClause, fetchSQL)
+	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fromClause, queryConds, querySuffix)
 }
 
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.

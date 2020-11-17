@@ -40,8 +40,10 @@ export const enterpriseRoutes: readonly LayoutRouteProps<{}>[] = [
     },
     {
         path: '/code-monitoring',
-        exact: true,
-        render: lazyComponent(() => import('./code-monitoring/CodeMonitoringPage'), 'CodeMonitoringPage'),
+        render: lazyComponent(
+            () => import('./code-monitoring/global/GlobalCodeMonitoringArea'),
+            'GlobalCodeMonitoringArea'
+        ),
         condition: props =>
             !isErrorLike(props.settingsCascade.final) &&
             !!props.settingsCascade.final?.experimentalFeatures?.codeMonitoring,

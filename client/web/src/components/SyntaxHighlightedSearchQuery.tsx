@@ -4,9 +4,9 @@ import { scanSearchQuery } from '../../../shared/src/search/parser/scanner'
 // A read-only syntax highlighted search query
 export const SyntaxHighlightedSearchQuery: React.FunctionComponent<{ query: string }> = ({ query }) => {
     const tokens = useMemo(() => {
-        const parsedQuery = scanSearchQuery(query)
-        return parsedQuery.type === 'success'
-            ? parsedQuery.token.members.map(token => {
+        const scannedQuery = scanSearchQuery(query)
+        return scannedQuery.type === 'success'
+            ? scannedQuery.term.map(token => {
                   if (token.type === 'filter') {
                       return (
                           <Fragment key={token.range.start}>

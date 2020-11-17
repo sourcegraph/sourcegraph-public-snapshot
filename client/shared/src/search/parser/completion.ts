@@ -1,7 +1,7 @@
 import * as Monaco from 'monaco-editor'
 import { escapeRegExp, startCase } from 'lodash'
 import { FILTERS, resolveFilter } from './filters'
-import { Sequence, toMonacoRange } from './scanner'
+import { Token, toMonacoRange } from './scanner'
 import { Omit } from 'utility-types'
 import { Observable } from 'rxjs'
 import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup } from '../../graphql/schema'
@@ -185,7 +185,7 @@ const TRIGGER_SUGGESTIONS: Monaco.languages.Command = {
  * including both static and dynamically fetched suggestions.
  */
 export async function getCompletionItems(
-    { members }: Pick<Sequence, 'members'>,
+    tokens: Token[],
     { column }: Pick<Monaco.Position, 'column'>,
     dynamicSuggestions: Observable<SearchSuggestion[]>,
     globbing: boolean
@@ -209,7 +209,7 @@ export async function getCompletionItems(
             ),
         }
     }
-    const tokenAtColumn = members.find(({ range }) => range.start + 1 <= column && range.end + 1 >= column)
+    const tokenAtColumn = tokens.find(({ range }) => range.start + 1 <= column && range.end + 1 >= column)
     if (!tokenAtColumn) {
         throw new Error('getCompletionItems: no token at column')
     }

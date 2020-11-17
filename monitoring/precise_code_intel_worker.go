@@ -61,7 +61,7 @@ func PreciseCodeIntelWorker() *Container {
 						{
 							Name:              "codeintel_dbstore_errors",
 							Description:       "dbstore errors every 5m",
-							Query:             `increase(src_codeintel_dbstore_errors_total{job="precise-code-intel-worker"}[5m])`,
+							Query:             `sum(increase(src_codeintel_dbstore_errors_total{job="precise-code-intel-worker"}[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
 							PanelOptions:      PanelOptions().LegendFormat("error"),
@@ -83,7 +83,7 @@ func PreciseCodeIntelWorker() *Container {
 						{
 							Name:              "codeintel_lsifstore_errors",
 							Description:       "lsifstore errors every 5m",
-							Query:             `increase(src_codeintel_lsifstore_errors_total{job="precise-code-intel-worker"}[5m])`,
+							Query:             `sum(increase(src_codeintel_lsifstore_errors_total{job="precise-code-intel-worker"}[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
 							PanelOptions:      PanelOptions().LegendFormat("error"),
@@ -105,7 +105,7 @@ func PreciseCodeIntelWorker() *Container {
 						{
 							Name:              "codeintel_uploadstore_errors",
 							Description:       "uploadstore errors every 5m",
-							Query:             `increase(src_codeintel_uploadstore_errors_total{job="precise-code-intel-worker"}[5m])`,
+							Query:             `sum(increase(src_codeintel_uploadstore_errors_total{job="precise-code-intel-worker"}[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
 							PanelOptions:      PanelOptions().LegendFormat("error"),
@@ -127,7 +127,7 @@ func PreciseCodeIntelWorker() *Container {
 						{
 							Name:              "codeintel_gitserver_errors",
 							Description:       "gitserver errors every 5m",
-							Query:             `increase(src_codeintel_gitserver_errors_total{job="precise-code-intel-worker"}[5m])`,
+							Query:             `sum(increase(src_codeintel_gitserver_errors_total{job="precise-code-intel-worker"}[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(20),
 							PanelOptions:      PanelOptions().LegendFormat("error"),

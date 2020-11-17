@@ -260,11 +260,12 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 	}
 
 	if info.Email != "" {
+		// The first email address added should be their primary
 		var err error
 		if info.EmailIsVerified {
-			_, err = tx.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verified_at) VALUES ($1, $2, now())", id, info.Email)
+			_, err = tx.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verified_at, is_primary) VALUES ($1, $2, now(), true)", id, info.Email)
 		} else {
-			_, err = tx.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verification_code) VALUES ($1, $2, $3)", id, info.Email, info.EmailVerificationCode)
+			_, err = tx.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verification_code, is_primary) VALUES ($1, $2, $3, true)", id, info.Email, info.EmailVerificationCode)
 		}
 		if err != nil {
 			if pqErr, ok := err.(*pq.Error); ok {

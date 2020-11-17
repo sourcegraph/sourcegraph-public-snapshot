@@ -1,21 +1,18 @@
 import { getDiagnostics } from './diagnostics'
-import { scanSearchQuery, ScanSuccess, Sequence } from './scanner'
+import { scanSearchQuery, ScanSuccess, ScanResult, Token } from './scanner'
 import { SearchPatternType } from '../../graphql-operations'
+
+const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSuccess<Token[]>).term
 
 describe('getDiagnostics()', () => {
     test('do not raise invalid filter type', () => {
         expect(
-            getDiagnostics(
-                (scanSearchQuery('repos:^github.com/sourcegraph') as ScanSuccess<Sequence>).token,
-                SearchPatternType.literal
-            )
+            getDiagnostics(toSuccess(scanSearchQuery('repos:^github.com/sourcegraph')), SearchPatternType.literal)
         ).toStrictEqual([])
     })
 
     test('invalid filter value', () => {
-        expect(
-            getDiagnostics((scanSearchQuery('case:maybe') as ScanSuccess<Sequence>).token, SearchPatternType.literal)
-        ).toStrictEqual([
+        expect(getDiagnostics(toSuccess(scanSearchQuery('case:maybe')), SearchPatternType.literal)).toStrictEqual([
             {
                 endColumn: 5,
                 endLineNumber: 1,
@@ -29,37 +26,25 @@ describe('getDiagnostics()', () => {
 
     test('search query containing colon, literal pattern type, do not raise error', () => {
         expect(
-            getDiagnostics(
-                (scanSearchQuery('Configuration::doStuff(...)') as ScanSuccess<Sequence>).token,
-                SearchPatternType.literal
-            )
+            getDiagnostics(toSuccess(scanSearchQuery('Configuration::doStuff(...)')), SearchPatternType.literal)
         ).toStrictEqual([])
     })
 
     test('search query containing quoted token, regexp pattern type', () => {
         expect(
-            getDiagnostics(
-                (scanSearchQuery('"Configuration::doStuff(...)"') as ScanSuccess<Sequence>).token,
-                SearchPatternType.regexp
-            )
+            getDiagnostics(toSuccess(scanSearchQuery('"Configuration::doStuff(...)"')), SearchPatternType.regexp)
         ).toStrictEqual([])
     })
 
     test('search query containing parenthesized parameterss', () => {
         expect(
-            getDiagnostics(
-                (scanSearchQuery('repo:a (file:b and c)') as ScanSuccess<Sequence>).token,
-                SearchPatternType.regexp
-            )
+            getDiagnostics(toSuccess(scanSearchQuery('repo:a (file:b and c)')), SearchPatternType.regexp)
         ).toStrictEqual([])
     })
 
     test('search query containing quoted token, literal pattern type', () => {
         expect(
-            getDiagnostics(
-                (scanSearchQuery('"Configuration::doStuff(...)"') as ScanSuccess<Sequence>).token,
-                SearchPatternType.literal
-            )
+            getDiagnostics(toSuccess(scanSearchQuery('"Configuration::doStuff(...)"')), SearchPatternType.literal)
         ).toStrictEqual([
             {
                 endColumn: 30,

@@ -12,6 +12,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"google.golang.org/api/option"
 )
@@ -86,14 +87,13 @@ func (s *gcsStore) Init(ctx context.Context) error {
 	return nil
 }
 
-func (s *gcsStore) Get(ctx context.Context, key string, skipBytes int64) (_ io.ReadCloser, err error) {
+func (s *gcsStore) Get(ctx context.Context, key string) (_ io.ReadCloser, err error) {
 	ctx, endObservation := s.operations.get.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("key", key),
-		log.Int64("skipBytes", skipBytes),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	rc, err := s.client.Bucket(s.bucket).Object(key).NewRangeReader(ctx, skipBytes, -1)
+	rc, err := s.client.Bucket(s.bucket).Object(key).NewRangeReader(ctx, 0, -1)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get object")
 	}
@@ -197,7 +197,7 @@ func (s *gcsStore) lifecycle() storage.Lifecycle {
 }
 
 func (s *gcsStore) deleteSources(ctx context.Context, bucket gcsBucketHandle, sources []string) error {
-	return invokeParallel(sources, func(index int, source string) error {
+	return goroutine.RunWorkersOverStrings(sources, func(index int, source string) error {
 		if err := bucket.Object(source).Delete(ctx); err != nil {
 			return errors.Wrap(err, "failed to delete source object")
 		}

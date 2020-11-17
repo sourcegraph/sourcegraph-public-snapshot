@@ -1044,47 +1044,28 @@ type SiteActivityPeriod struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type CampaignsUsageStatistics struct {
-	CampaignsCount              int32
-	ActionChangesetsCount       int32
-	ActionChangesetsMergedCount int32
+	ViewCampaignApplyPageCount              int32
+	ViewCampaignDetailsPageAfterCreateCount int32
+	ViewCampaignDetailsPageAfterUpdateCount int32
+
+	CampaignsCount       int32
+	CampaignsClosedCount int32
+
+	CampaignSpecsCreatedCount  int32
+	ChangesetSpecsCreatedCount int32
+
+	ActionChangesetsCount              int32
+	ActionChangesetsDiffStatAddedSum   int32
+	ActionChangesetsDiffStatChangedSum int32
+	ActionChangesetsDiffStatDeletedSum int32
+
+	ActionChangesetsMergedCount              int32
+	ActionChangesetsMergedDiffStatAddedSum   int32
+	ActionChangesetsMergedDiffStatChangedSum int32
+	ActionChangesetsMergedDiffStatDeletedSum int32
+
 	ManualChangesetsCount       int32
 	ManualChangesetsMergedCount int32
-}
-
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type CodeIntelUsageStatistics struct {
-	Daily   []*CodeIntelUsagePeriod
-	Weekly  []*CodeIntelUsagePeriod
-	Monthly []*CodeIntelUsagePeriod
-}
-
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type CodeIntelUsagePeriod struct {
-	StartTime   time.Time
-	Hover       *CodeIntelEventCategoryStatistics
-	Definitions *CodeIntelEventCategoryStatistics
-	References  *CodeIntelEventCategoryStatistics
-}
-
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type CodeIntelEventCategoryStatistics struct {
-	LSIF   *CodeIntelEventStatistics
-	LSP    *CodeIntelEventStatistics
-	Search *CodeIntelEventStatistics
-}
-
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type CodeIntelEventStatistics struct {
-	UsersCount  int32
-	EventsCount *int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -1260,6 +1241,27 @@ type HomepagePanels struct {
 	UsersSavedSearchesClickedPercentage    *float64
 	UsersNewSavedSearchesClickedPercentage *float64
 	PercentUsersShown                      *float64
+}
+
+type WeeklyRetentionStats struct {
+	WeekStart  time.Time
+	CohortSize *int32
+	Week0      *float64
+	Week1      *float64
+	Week2      *float64
+	Week3      *float64
+	Week4      *float64
+	Week5      *float64
+	Week6      *float64
+	Week7      *float64
+	Week8      *float64
+	Week9      *float64
+	Week10     *float64
+	Week11     *float64
+}
+
+type RetentionStats struct {
+	Weekly []*WeeklyRetentionStats
 }
 
 type SearchOnboarding struct {

@@ -435,7 +435,7 @@ func readTestFilter(t *testing.T, dirname, filename string) []byte {
 }
 
 func setMockGitserverCommitGraph(t *testing.T, mockGitserverClient *MockGitserverClient, expectedRepositoryID int, graph map[string][]string) {
-	mockGitserverClient.CommitGraphFunc.SetDefaultHook(func(ctx context.Context, s DBStore, repositoryID int, options gitserver.CommitGraphOptions) (map[string][]string, error) {
+	mockGitserverClient.CommitGraphFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (map[string][]string, error) {
 		if repositoryID != expectedRepositoryID {
 			t.Errorf("unexpected repository identifier for CommitGraph. want=%d have=%d", expectedRepositoryID, repositoryID)
 		}

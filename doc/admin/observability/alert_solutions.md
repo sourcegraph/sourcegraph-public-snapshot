@@ -2214,24 +2214,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```
 
 <br />
-## repo-updater: syncer_sync_last_time
-
-<p class="subtitle">cloud: time since last sync</p>**Descriptions:**
-
-- _repo-updater: 3600s+ time since last sync for 5m0s_
-
-**Possible solutions:**
-
-- Make sure there are external services added with valid tokens
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_syncer_sync_last_time"
-]
-```
-
-<br />
 ## repo-updater: src_repoupdater_max_sync_backoff
 
 <p class="subtitle">cloud: time since oldest sync</p>**Descriptions:**
@@ -2240,7 +2222,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- Make sure there are external services added with valid tokens
+- An alert here indicates that no code host connections have synced in at least 9h0m0s. This indicates that there could be a configuration issue
+with your code hosts connections or networking issues affecting communication with your code hosts.
+- Check the code host status indicator (cloud icon in top right of Sourcegraph homepage) for errors.
+- Make sure external services do not have invalid tokens by navigating to them in the web UI and clicking save. If there are no errors, they are valid.
+- Check the repo-updater logs for errors about syncing.
+- Confirm that outbound network connections are allowed where repo-updater is deployed.
+- Check back in an hour to see if the issue has resolved itself.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2390,24 +2378,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "warning_repo-updater_sched_auto_fetch"
-]
-```
-
-<br />
-## repo-updater: sched_manual_fetch
-
-<p class="subtitle">cloud: repositories scheduled due to user traffic</p>**Descriptions:**
-
-- _repo-updater: less than 0 repositories scheduled due to user traffic for 9h0m0s_
-
-**Possible solutions:**
-
-- Check repo-updater logs. This is expected to fire if there are no user added code hosts
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_sched_manual_fetch"
 ]
 ```
 

@@ -25,7 +25,7 @@ func (s *Store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
 	}
 
 	ctx, endObservation := s.operations.clear.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("bundelIDs", strings.Join(stringIDs, ", ")),
+		log.String("bundleIDs", strings.Join(stringIDs, ", ")),
 	}})
 	defer endObservation(1, observation.Args{})
 

@@ -699,6 +699,20 @@ body > #page > main > #content {
     font-size: 1rem;
 }
 
+img.screenshot {
+    display: block;
+    margin: 1em auto;
+    max-width: 600px;
+    margin-bottom: 0.5em;
+    border: 1px solid lightgrey;
+    border-radius: 10px;
+}
+
+img.center {
+  display: block;
+  margin: auto
+}
+
 /* SYNTAX HIGLIGHTING */
 /* Light theme */
 body.theme-light .markdown-body .chroma .c { color: #888888 } /* Comment */

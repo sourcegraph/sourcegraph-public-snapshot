@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"strings"
 	"sync"
 	"time"
@@ -18,6 +19,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -77,45 +79,69 @@ func (s *s3Store) Init(ctx context.Context) error {
 		return nil
 	}
 
-	//
-	// TODO - rewrite, test
-
-	tryCreate := func() error {
-		if err := s.create(ctx); err != nil {
-			return errors.Wrap(err, "failed to create bucket")
-		}
-
-		if err := s.update(ctx); err != nil {
-			return errors.Wrap(err, "failed to update bucket attributes")
-		}
-
-		return nil
+	if err := s.create(ctx); err != nil {
+		return errors.Wrap(err, "failed to create bucket")
 	}
 
-	var err error
-	for i := 0; i < 20; i++ {
-		if i > 0 {
-			<-time.After(time.Second)
-		}
-
-		if err = tryCreate(); err == nil {
-			break
-		}
+	if err := s.update(ctx); err != nil {
+		return errors.Wrap(err, "failed to update bucket attributes")
 	}
 
 	return nil
 }
 
-func (s *s3Store) Get(ctx context.Context, key string, skipBytes int64) (_ io.ReadCloser, err error) {
+// maxZeroReads is the maximum number of no-progress iterations (due to connection reset errors)
+// in Get that can occur in a row before returning an error.
+const maxZeroReads = 3
+
+// errNoDownloadProgress is returned from Get after multiple connection reset errors occur
+// in a row.
+var errNoDownloadProgress = errors.New("no download progress")
+
+func (s *s3Store) Get(ctx context.Context, key string) (_ io.ReadCloser, err error) {
 	ctx, endObservation := s.operations.get.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("key", key),
-		log.Int64("skipBytes", skipBytes),
 	}})
 	defer endObservation(1, observation.Args{})
 
+	reader := writeToPipe(func(w io.Writer) error {
+		zeroReads := 0
+		byteOffset := int64(0)
+
+		for {
+			n, err := s.readObjectInto(ctx, w, key, byteOffset)
+			if err == nil || !isConnectionResetError(err) {
+				return err
+			}
+
+			byteOffset += n
+			log15.Warn("Transient error while reading payload", "key", key, "error", err)
+
+			if n == 0 {
+				zeroReads++
+
+				if zeroReads > maxZeroReads {
+					return errNoDownloadProgress
+				}
+			} else {
+				zeroReads = 0
+			}
+		}
+	})
+
+	return ioutil.NopCloser(reader), nil
+}
+
+// ioCopyHook is a pointer to io.Copy. This function is replaced in unit tests so that we can
+// easily inject errors when reading from the backing S3 store.
+var ioCopyHook = io.Copy
+
+// readObjectInto reads the content of the given key starting at the given byte offset into the
+// given writer. The number of bytes read is returned. On successful read, the error value is nil.
+func (s *s3Store) readObjectInto(ctx context.Context, w io.Writer, key string, byteOffset int64) (int64, error) {
 	var bytesRange *string
-	if skipBytes > 0 {
-		bytesRange = aws.String(fmt.Sprintf("bytes=%d-", skipBytes))
+	if byteOffset > 0 {
+		bytesRange = aws.String(fmt.Sprintf("bytes=%d-", byteOffset))
 	}
 
 	resp, err := s.client.GetObject(ctx, &s3.GetObjectInput{
@@ -124,10 +150,11 @@ func (s *s3Store) Get(ctx context.Context, key string, skipBytes int64) (_ io.Re
 		Range:  bytesRange,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get object")
+		return 0, errors.Wrap(err, "failed to get object")
 	}
+	defer resp.Body.Close()
 
-	return resp.Body, nil
+	return ioCopyHook(w, resp.Body)
 }
 
 func (s *s3Store) Upload(ctx context.Context, key string, r io.Reader) (_ int64, err error) {
@@ -185,7 +212,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 	var m sync.Mutex
 	etags := map[int]*string{}
 
-	if err := invokeParallel(sources, func(index int, source string) error {
+	if err := goroutine.RunWorkersOverStrings(sources, func(index int, source string) error {
 		partNumber := index + 1
 
 		copyResult, err := s.client.UploadPartCopy(ctx, &s3.UploadPartCopyInput{
@@ -303,7 +330,7 @@ func (s *s3Store) lifecycle() *s3.BucketLifecycleConfiguration {
 }
 
 func (s *s3Store) deleteSources(ctx context.Context, bucket string, sources []string) error {
-	return invokeParallel(sources, func(index int, source string) error {
+	return goroutine.RunWorkersOverStrings(sources, func(index int, source string) error {
 		if _, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 			Bucket: aws.String(bucket),
 			Key:    aws.String(source),
@@ -315,6 +342,8 @@ func (s *s3Store) deleteSources(ctx context.Context, bucket string, sources []st
 	})
 }
 
+// countingReader is an io.Reader that counts the number of bytes sent
+// back to the caller.
 type countingReader struct {
 	r io.Reader
 	n int
@@ -344,4 +373,20 @@ func s3SessionOptions(backend string, config S3Config) session.Options {
 	}
 
 	return session.Options{Config: awsConfig}
+}
+
+// writeToPipe invokes the given function with a pipe writer in a goroutine
+// and returns the associated pipe reader.
+func writeToPipe(fn func(w io.Writer) error) io.Reader {
+	pr, pw := io.Pipe()
+	go func() { _ = pw.CloseWithError(fn(pw)) }()
+	return pr
+}
+
+func isConnectionResetError(err error) bool {
+	if err != nil && strings.Contains(err.Error(), "read: connection reset by peer") {
+		return true
+	}
+
+	return false
 }

@@ -9,9 +9,11 @@ import { UserProfileFormFields, UserProfileFormFieldsValue } from './UserProfile
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { UserAreaGQLFragment } from '../../area/UserArea'
 import { Form } from '../../../../../branded/src/components/Form'
+import { AuthenticatedUser } from '../../../auth'
 
 interface Props {
-    user: Pick<GQL.IUser, 'id' | 'viewerCanChangeUsername' | 'siteAdmin'>
+    authenticatedUser: Pick<AuthenticatedUser, 'siteAdmin'>
+    user: Pick<GQL.IUser, 'id' | 'viewerCanChangeUsername'>
 
     initialValue: UserProfileFormFieldsValue
 
@@ -24,7 +26,13 @@ interface Props {
 /**
  * A form to edit a user's profile.
  */
-export const EditUserProfileForm: React.FunctionComponent<Props> = ({ user, initialValue, onUpdate, after }) => {
+export const EditUserProfileForm: React.FunctionComponent<Props> = ({
+    user,
+    authenticatedUser,
+    initialValue,
+    onUpdate,
+    after,
+}) => {
     const [value, setValue] = useState<UserProfileFormFieldsValue>(initialValue)
     const onChange = useCallback<React.ComponentProps<typeof UserProfileFormFields>['onChange']>(
         newValue => setValue(previous => ({ ...previous, ...newValue })),
@@ -59,7 +67,7 @@ export const EditUserProfileForm: React.FunctionComponent<Props> = ({ user, init
                         }
                         ${UserAreaGQLFragment}
                     `,
-                    { ...value, user: user.id, siteAdmin: user.siteAdmin }
+                    { ...value, user: user.id, siteAdmin: authenticatedUser.siteAdmin }
                 )
                     .pipe(
                         map(dataOrThrowErrors),
@@ -74,7 +82,7 @@ export const EditUserProfileForm: React.FunctionComponent<Props> = ({ user, init
                 setOpState(error)
             }
         },
-        [onUpdate, user.id, user.siteAdmin, value]
+        [onUpdate, user.id, authenticatedUser.siteAdmin, value]
     )
 
     return (

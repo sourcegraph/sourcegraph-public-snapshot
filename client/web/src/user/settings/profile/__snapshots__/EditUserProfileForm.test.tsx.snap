@@ -3,6 +3,11 @@
 exports[`EditUserProfileForm simple 1`] = `
 <EditUserProfileForm
   after="AFTER"
+  authenticatedUser={
+    Object {
+      "siteAdmin": false,
+    }
+  }
   initialValue={
     Object {
       "avatarURL": "https://example.com/image.jpg",
@@ -14,7 +19,6 @@ exports[`EditUserProfileForm simple 1`] = `
   user={
     Object {
       "id": "x",
-      "siteAdmin": false,
       "viewerCanChangeUsername": true,
     }
   }
