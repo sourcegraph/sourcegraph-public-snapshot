@@ -52,6 +52,7 @@ func TestCreateCodeMonitor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	want.Resolver = got.(*monitor).Resolver
 	if !reflect.DeepEqual(want, got.(*monitor)) {
 		t.Fatalf("\ngot:\t %+v,\nwant:\t %+v", got, want)
 	}
@@ -251,5 +252,147 @@ query($userName: String!){
 			}
 		}
 	}
+}
+`
+
+func TestEditCodeMonitor(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+	r := newTestResolver(t)
+	userName := "cm-user1"
+	userID := insertTestUser(t, dbconn.Global, userName, true)
+
+	// Create a monitor.
+	ctx = actor.WithActor(ctx, actor.FromUser(userID))
+	ns := relay.MarshalID("User", userID)
+	_, err := r.insertTestMonitor(ctx, t, ns)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Query the monitor we just inserted to get the IDs of the monitor, trigger, and
+	// action. We could use the output from insertTestMonitor instead, but going
+	// through the GraphQL server makes it much easier to retrieve the deeply nested IDs.
+	input := map[string]interface{}{
+		"userName": userName,
+	}
+	queryResponse := apitest.Response{}
+	campaignApitest.MustExec(actorCtx, t, schema, input, &queryResponse, queryMonitor)
+	input = map[string]interface{}{
+		"monitorID": queryResponse.User.Monitors.Nodes[0].Id,
+		"triggerID": queryResponse.User.Monitors.Nodes[0].Trigger.Id,
+		"actionID":  queryResponse.User.Monitors.Nodes[0].Actions.Nodes[0].Id,
+		"userID":    relay.MarshalID("User", userID),
+	}
+
+	want := apitest.UpdateCodeMonitorResponse{
+		UpdateCodeMonitor: apitest.Monitor{
+			Id:          queryResponse.User.Monitors.Nodes[0].Id,
+			Description: "updated test monitor",
+			Enabled:     false,
+			Owner: apitest.UserOrg{
+				Name: userName,
+			},
+			CreatedBy: apitest.UserOrg{
+				Name: userName,
+			},
+			CreatedAt: marshalDateTime(t, r.clock()),
+			Trigger: apitest.Trigger{
+				Id:    queryResponse.User.Monitors.Nodes[0].Trigger.Id,
+				Query: "repo:bar",
+			},
+			Actions: apitest.ActionConnection{
+				Nodes: []apitest.Action{{
+					ActionEmail: apitest.ActionEmail{
+						Id:       queryResponse.User.Monitors.Nodes[0].Actions.Nodes[0].Id,
+						Enabled:  false,
+						Priority: "CRITICAL",
+						Recipients: apitest.RecipientsConnection{
+							Nodes: []apitest.UserOrg{
+								{
+									Name: userName,
+								},
+							},
+						},
+						Header: "updated test header",
+					}},
+				},
+			},
+		}}
+
+	// Update the code monitor.
+	got := apitest.UpdateCodeMonitorResponse{}
+	campaignApitest.MustExec(actorCtx, t, schema, input, &got, editMonitor)
+
+	if !reflect.DeepEqual(&got, &want) {
+		t.Fatalf("\ngot:\t%+v\nwant:\t%+v\n", got, want)
+	}
+}
+
+const editMonitor = `
+fragment u on User {
+  id
+  username
+}
+
+fragment o on Org {
+  id
+  name
+}
+
+mutation ($monitorID: ID!, $triggerID: ID!, $actionID: ID!, $userID: ID!) {
+  updateCodeMonitor(monitor: {id: $monitorID, update: {description: "updated test monitor", enabled: false, namespace: $userID}}, trigger: {id: $triggerID, update: {query: "repo:bar"}}, actions: [{email: {id: $actionID, update: {enabled: false, priority: CRITICAL, recipients: [$userID], header: "updated test header"}}}]) {
+    id
+    description
+    enabled
+    owner {
+      ... on User {
+        ...u
+      }
+      ... on Org {
+        ...o
+      }
+    }
+    createdBy {
+      ...u
+    }
+    createdAt
+    trigger {
+      ... on MonitorQuery {
+        id
+        query
+      }
+    }
+    actions {
+      nodes {
+        ... on MonitorEmail {
+          id
+          enabled
+          priority
+          header
+          recipients {
+            nodes {
+              ... on User {
+                username
+              }
+              ... on Org {
+                name
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
 `

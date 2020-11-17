@@ -117,6 +117,8 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 			return nil, fmt.Errorf("missing email object for action %d", i)
 		}
 	}
+	// Hydrate monitor with Resolver.
+	m.(*monitor).Resolver = r
 	return m, nil
 }
 
@@ -147,8 +149,91 @@ func (r *Resolver) DeleteCodeMonitor(ctx context.Context, args *graphqlbackend.D
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
-	return nil, fmt.Errorf("not implemented")
+func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (m graphqlbackend.MonitorResolver, err error) {
+	err = r.isAllowedToEdit(ctx, args.Monitor.Id)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateCodeMonitor: %w", err)
+	}
+	var (
+		q  *sqlf.Query
+		tx *Resolver
+	)
+	tx, err = r.transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.db.Done(err) }()
+
+	// Update monitor.
+	q, err = tx.updateCodeMonitorQuery(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	m, err = tx.runMonitorQuery(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("update monitor: %w", err)
+	}
+
+	// Update trigger.
+	q, err = tx.updateTriggerQueryQuery(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	err = tx.db.Exec(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("update trigger: %w", err)
+	}
+
+	// Update actions.
+	q, err = tx.deleteRecipientQuery(ctx, m.(*monitor).id)
+	if err != nil {
+		return nil, err
+	}
+	err = tx.db.Exec(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("delete recipient: %w", err)
+	}
+	for i, action := range args.Actions {
+		if action.Email != nil {
+			q, err = tx.updateActionEmailQuery(ctx, m.(*monitor).id, action.Email)
+			if err != nil {
+				return nil, err
+			}
+			var e graphqlbackend.MonitorEmailResolver
+			e, err = tx.runEmailQuery(ctx, q)
+			if err != nil {
+				return nil, fmt.Errorf("update email: %w", err)
+			}
+
+			// Insert recipients.
+			for _, recipient := range action.Email.Update.Recipients {
+				q, err = tx.createRecipientQuery(ctx, e.(*monitorEmail).id, recipient)
+				if err != nil {
+					return nil, err
+				}
+				err = tx.db.Exec(ctx, q)
+				if err != nil {
+					return nil, fmt.Errorf("create recipient: %w", err)
+				}
+			}
+		} else {
+			return nil, fmt.Errorf("missing email object for action %d", i)
+		}
+	}
+	// Hydrate monitor with Resolver.
+	m.(*monitor).Resolver = r
+	return m, nil
+}
+
+func (r *Resolver) transact(ctx context.Context) (*Resolver, error) {
+	txStore, err := r.db.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &Resolver{
+		db:    txStore,
+		clock: r.clock,
+	}, nil
 }
 
 func (r *Resolver) runMonitorQuery(ctx context.Context, q *sqlf.Query) (graphqlbackend.MonitorResolver, error) {
@@ -388,6 +473,44 @@ RETURNING %s;
 	), nil
 }
 
+func (r *Resolver) updateCodeMonitorQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (*sqlf.Query, error) {
+	const updateCodeMonitorQuery = `
+UPDATE cm_monitors
+SET description = %s,
+	enabled	= %s,
+	namespace_user_id = %s,
+	namespace_org_id = %s,
+	changed_by = %s,
+	changed_at = %s
+WHERE id = %s
+RETURNING %s;
+`
+	var userID int32
+	var orgID int32
+	err := graphqlbackend.UnmarshalNamespaceID(args.Monitor.Update.Namespace, &userID, &orgID)
+	if err != nil {
+		return nil, err
+	}
+	now := r.clock()
+	a := actor.FromContext(ctx)
+	var monitorID int64
+	err = relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
+	if err != nil {
+		return nil, err
+	}
+	return sqlf.Sprintf(
+		updateCodeMonitorQuery,
+		args.Monitor.Update.Description,
+		args.Monitor.Update.Enabled,
+		nilOrInt32(userID),
+		nilOrInt32(orgID),
+		a.UID,
+		now,
+		monitorID,
+		sqlf.Join(monitorColumns, ", "),
+	), nil
+}
+
 var queryColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_queries.id"),
 	sqlf.Sprintf("cm_queries.monitor"),
@@ -421,6 +544,42 @@ RETURNING %s;
 		now,
 		a.UID,
 		now,
+		sqlf.Join(queryColumns, ", "),
+	), nil
+}
+
+func (r *Resolver) updateTriggerQueryQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (q *sqlf.Query, err error) {
+	const updateTriggerQueryQuery = `
+UPDATE cm_queries
+SET query = %s,
+	changed_by = %s,
+	changed_at = %s
+WHERE id = %s
+AND monitor = %s
+RETURNING %s;
+`
+	now := r.clock()
+	a := actor.FromContext(ctx)
+
+	var triggerID int64
+	err = relay.UnmarshalSpec(args.Trigger.Id, &triggerID)
+	if err != nil {
+		return nil, err
+	}
+
+	var monitorID int64
+	err = relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
+	if err != nil {
+		return nil, err
+	}
+
+	return sqlf.Sprintf(
+		updateTriggerQueryQuery,
+		args.Trigger.Update.Query,
+		a.UID,
+		now,
+		triggerID,
+		monitorID,
 		sqlf.Join(queryColumns, ", "),
 	), nil
 }
@@ -479,6 +638,38 @@ var recipientsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_recipients.namespace_org_id"),
 }
 
+func (r *Resolver) updateActionEmailQuery(ctx context.Context, monitorID int64, args *graphqlbackend.EditActionEmailArgs) (q *sqlf.Query, err error) {
+	const updateMonitorActionEmailQuery = `
+UPDATE cm_emails
+SET enabled = %s,
+	priority = %s,
+	header = %s,
+	changed_by = %s,
+	changed_at = %s
+WHERE id = %s
+AND monitor = %s
+RETURNING %s;
+`
+	var actionID int64
+	err = relay.UnmarshalSpec(args.Id, &actionID)
+	if err != nil {
+		return nil, err
+	}
+	now := r.clock()
+	a := actor.FromContext(ctx)
+	return sqlf.Sprintf(
+		updateMonitorActionEmailQuery,
+		args.Update.Enabled,
+		args.Update.Priority,
+		args.Update.Header,
+		a.UID,
+		now,
+		actionID,
+		monitorID,
+		sqlf.Join(emailsColumns, ", "),
+	), nil
+}
+
 func (r *Resolver) readActionEmailQuery(ctx context.Context, monitorId int64, args *graphqlbackend.ListActionArgs) (*sqlf.Query, error) {
 	const readActionEmailQuery = `
 SELECT id, monitor, enabled, priority, header, created_by, created_at, changed_by, changed_at
@@ -510,6 +701,14 @@ RETURNING %s;
 		nilOrInt32(userID),
 		nilOrInt32(orgID),
 		sqlf.Join(recipientsColumns, ", "),
+	), nil
+}
+
+func (r *Resolver) deleteRecipientQuery(ctx context.Context, emailId int64) (*sqlf.Query, error) {
+	const deleteRecipientQuery = `DELETE FROM cm_recipients WHERE email = %s`
+	return sqlf.Sprintf(
+		deleteRecipientQuery,
+		emailId,
 	), nil
 }
 
