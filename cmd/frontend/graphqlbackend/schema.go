@@ -7775,27 +7775,27 @@ type LSIFIndex implements Node {
     failure: String
 
     """
-    TODO
+    A series of pre-indexing steps to perform.
     """
     dockerSteps: [DockerStep!]!
 
     """
-    TODO
+    The original root supplied at index schedule time.
     """
     inputRoot: String!
 
     """
-    TODO
+    The name of the target indexer Docker image (e.g., sourcegraph/lsif-go@sha256:...).
     """
     indexer: String!
 
     """
-    TODO
+    The arguments to supply to the indexer container.
     """
     indexerArgs: [String!]!
 
     """
-    TODO
+    The path to the index file relative to the root directory (`dump.lsif` by default).
     """
     outfile: String
 
@@ -7806,21 +7806,21 @@ type LSIFIndex implements Node {
 }
 
 """
-TODO
+A description of a command to run inside of a Docker container.
 """
 type DockerStep {
     """
-    TODO
+    The working directory relative to the cloned repository root.
     """
     root: String!
 
     """
-    TODO
+    The name of the Docker image to run.
     """
     image: String!
 
     """
-    TODO
+    The arguments to supply to the Docker container's entrypoint.
     """
     commands: [String!]!
 }
