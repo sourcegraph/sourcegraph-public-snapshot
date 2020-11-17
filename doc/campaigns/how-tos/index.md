@@ -9,3 +9,4 @@ The following is a list of how-tos that show how to use [Sourcegraph campaigns](
 - [Tracking existing changesets](tracking_existing_changesets.md)
 - [Closing or deleting a campaign](closing_or_deleting_a_campaign.md)
 - [Site admin configuration for campaigns](site_admin_configuration.md)
+- [Configuring user credentials for campaigns](configuring_user_credentials.md)

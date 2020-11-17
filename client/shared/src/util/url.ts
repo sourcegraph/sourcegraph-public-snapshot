@@ -169,8 +169,8 @@ const parsePosition = (string: string): Position => {
  */
 export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     const parsed = new URL(uri)
-    const repoName = parsed.hostname + parsed.pathname
-    const revision = parsed.search.slice('?'.length) || undefined
+    const repoName = parsed.hostname + decodeURIComponent(parsed.pathname)
+    const revision = decodeURIComponent(parsed.search.slice('?'.length)) || undefined
     let commitID: string | undefined
     if (revision?.match(/[\dA-f]{40}/)) {
         commitID = revision
@@ -469,7 +469,7 @@ function parseLineOrPosition(
 
 /** Encodes a repository at a revspec for use in a URL. */
 export function encodeRepoRevision({ repoName, revision }: RepoSpec & Partial<RevisionSpec>): string {
-    return revision ? `${repoName}@${escapeRevspecForURL(revision)}` : repoName
+    return revision ? `${encodeURIComponentExceptSlashes(repoName)}@${escapeRevspecForURL(revision)}` : repoName
 }
 
 export function toPrettyBlobURL(
@@ -507,7 +507,7 @@ export function toRepoURL(target: RepoSpec & Partial<RevisionSpec>): string {
  * for (e.g.) branches with slashes look a lot nicer with '/' than '%2F'.
  */
 export function escapeRevspecForURL(revision: string): string {
-    return encodeURIComponent(revision).replace(/%2F/g, '/')
+    return encodeURIComponentExceptSlashes(revision)
 }
 
 export function toViewStateHashComponent(viewState: string | undefined): string {
@@ -517,24 +517,28 @@ export function toViewStateHashComponent(viewState: string | undefined): string 
 const positionString = (position: Position): string =>
     position.line.toString() + (position.character ? `,${position.character}` : '')
 
+export const encodeURIComponentExceptSlashes = (component: string): string =>
+    component.split('/').map(encodeURIComponent).join('/')
+
 /**
  * The inverse of parseRepoURI, this generates a string from parsed values.
  */
 export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
     const revision = parsed.commitID || parsed.revision
-    let uri = `git://${parsed.repoName}`
-    uri += revision ? '?' + revision : ''
-    uri += parsed.filePath ? '#' + parsed.filePath : ''
+    let uri = `git://${encodeURIComponentExceptSlashes(parsed.repoName)}`
+    uri += revision ? '?' + encodeURIComponentExceptSlashes(revision) : ''
+    uri += parsed.filePath ? '#' + encodeURIComponentExceptSlashes(parsed.filePath) : ''
     uri += parsed.position || parsed.range ? ':' : ''
     uri += parsed.position ? positionString(parsed.position) : ''
     uri += parsed.range ? positionString(parsed.range.start) + '-' + positionString(parsed.range.end) : ''
     return uri
 }
 
-export const toRootURI = (context: RepoSpec & ResolvedRevisionSpec): string =>
-    `git://${context.repoName}?${context.commitID}`
-export function toURIWithPath(context: RepoSpec & ResolvedRevisionSpec & FileSpec): string {
-    return `git://${context.repoName}?${context.commitID}#${context.filePath}`
+export const toRootURI = ({ repoName, commitID }: RepoSpec & ResolvedRevisionSpec): string =>
+    `git://${encodeURIComponentExceptSlashes(repoName)}?${commitID}`
+
+export function toURIWithPath({ repoName, filePath, commitID }: RepoSpec & ResolvedRevisionSpec & FileSpec): string {
+    return `git://${encodeURIComponentExceptSlashes(repoName)}?${commitID}#${encodeURIComponentExceptSlashes(filePath)}`
 }
 
 /**

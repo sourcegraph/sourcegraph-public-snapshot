@@ -148,6 +148,7 @@ function createExtensionAPI(
         commands,
         search,
         languages: { registerHoverProvider, registerDocumentHighlightProvider, registerDefinitionProvider },
+        graphQL,
     } = initNewExtensionAPI(proxy, initData.initialSettings, documents)
 
     // Expose the extension host API to the client (main thread)
@@ -254,6 +255,7 @@ function createExtensionAPI(
 
         search,
         commands,
+        graphQL,
         content: {
             registerLinkPreviewProvider: (urlMatchPattern: string, provider: sourcegraph.LinkPreviewProvider) =>
                 content.registerLinkPreviewProvider(urlMatchPattern, provider),

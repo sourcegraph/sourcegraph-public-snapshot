@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
@@ -37,6 +38,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 	if user.SiteAdmin {
 		t.Fatal("user is admin, want non-admin")
 	}
+	userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
 	repos, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 4)
 
@@ -491,26 +493,26 @@ func TestServiceApplyCampaign(t *testing.T) {
 		})
 
 		t.Run("missing repository permissions", func(t *testing.T) {
-			// Single repository filtered out by authzFilter
-			ct.AuthzFilterRepos(t, repos[1].ID)
+			ct.MockRepoPermissions(t, user.ID, repos[0].ID, repos[2].ID, repos[3].ID)
 
-			campaignSpec := createCampaignSpec(t, ctx, store, "missing-permissions", admin.ID)
+			// NOTE: We cannot use a context that has authz bypassed.
+			campaignSpec := createCampaignSpec(t, userCtx, store, "missing-permissions", user.ID)
 
-			createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
+			createChangesetSpec(t, userCtx, store, testSpecOpts{
+				user:         user.ID,
 				repo:         repos[0].ID,
 				campaignSpec: campaignSpec.ID,
 				externalID:   "1234",
 			})
 
-			createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[1].ID, // Filtered out by authzFilter
+			createChangesetSpec(t, userCtx, store, testSpecOpts{
+				user:         user.ID,
+				repo:         repos[1].ID, // Not authorized to access this repository
 				campaignSpec: campaignSpec.ID,
 				headRef:      "refs/heads/my-branch",
 			})
 
-			_, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
+			_, err := svc.ApplyCampaign(userCtx, ApplyCampaignOpts{
 				CampaignSpecRandID: campaignSpec.RandID,
 			})
 			if err == nil {

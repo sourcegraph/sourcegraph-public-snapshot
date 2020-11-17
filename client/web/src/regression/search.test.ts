@@ -155,7 +155,7 @@ describe('Search regression test suite', () => {
         let gqlClient: GraphQLClient
         let resourceManager: TestResourceManager
         before(async function () {
-            this.timeout(3 * 60 * 1000 + 30 * 1000)
+            this.timeout(10 * 60 * 1000 + 30 * 1000)
             ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
             resourceManager.add(
                 'User',

@@ -126,6 +126,10 @@
 // 1528395745_ref_prefix_external_branch.up.sql (731B)
 // 1528395746_add_is_primary_to_user_emails.down.sql (132B)
 // 1528395746_add_is_primary_to_user_emails.up.sql (643B)
+// 1528395747_add_users_created_at_index.down.sql (60B)
+// 1528395747_add_users_created_at_index.up.sql (87B)
+// 1528395748_drop_commit.down.sql (76B)
+// 1528395748_drop_commit.up.sql (72B)
 
 package migrations
 
@@ -2714,6 +2718,86 @@ func _1528395746_add_is_primary_to_user_emailsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395747_add_users_created_at_indexDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x2d\x4e\x2d\x2a\x8e\x4f\x2e\x4a\x4d\x2c\x49\x4d\x89\x4f\x2c\x89\xcf\x4c\xa9\xb0\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x5c\xb7\x74\x51\x3c\x00\x00\x00")
+
+func _1528395747_add_users_created_at_indexDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395747_add_users_created_at_indexDownSql,
+		"1528395747_add_users_created_at_index.down.sql",
+	)
+}
+
+func _1528395747_add_users_created_at_indexDownSql() (*asset, error) {
+	bytes, err := _1528395747_add_users_created_at_indexDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395747_add_users_created_at_index.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x23, 0x8d, 0x73, 0x8, 0xc1, 0xf4, 0x1d, 0x6d, 0xef, 0xe0, 0x0, 0xde, 0xbe, 0x42, 0xec, 0x41, 0xfe, 0xda, 0x1c, 0x58, 0x70, 0xec, 0x5c, 0x6f, 0xcb, 0x55, 0x60, 0x3d, 0xb6, 0x8c, 0x57, 0xcd}}
+	return a, nil
+}
+
+var __1528395747_add_users_created_at_indexUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x0e\x72\x75\x0c\x71\x55\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\xf0\xf3\x0f\x51\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x2d\x4e\x2d\x2a\x8e\x4f\x2e\x4a\x4d\x2c\x49\x4d\x89\x4f\x2c\x89\xcf\x4c\xa9\x50\xf0\xf7\x83\x88\x6b\x20\xc4\x35\x41\xc6\xf8\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\x2e\x96\x65\xd0\x57\x00\x00\x00")
+
+func _1528395747_add_users_created_at_indexUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395747_add_users_created_at_indexUpSql,
+		"1528395747_add_users_created_at_index.up.sql",
+	)
+}
+
+func _1528395747_add_users_created_at_indexUpSql() (*asset, error) {
+	bytes, err := _1528395747_add_users_created_at_indexUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395747_add_users_created_at_index.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x72, 0x9d, 0x3d, 0xc9, 0x9, 0xbc, 0x9c, 0xb9, 0x95, 0x48, 0x87, 0x84, 0xef, 0xf0, 0x11, 0xb5, 0x2c, 0xfc, 0xa3, 0xa, 0x10, 0xa3, 0xff, 0xd, 0xc4, 0x47, 0x3e, 0x7d, 0xf, 0xff, 0x84, 0xe7}}
+	return a, nil
+}
+
+var __1528395748_drop_commitDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\xcf\x4b\x4d\x2c\x4a\x2d\x2e\x89\x2f\x2d\xc8\xc9\x4f\x4c\x29\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x50\x4a\xce\xcf\xcd\xcd\x2c\x51\x52\x08\x71\x8d\x08\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x50\xc7\x43\x91\x4c\x00\x00\x00")
+
+func _1528395748_drop_commitDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395748_drop_commitDownSql,
+		"1528395748_drop_commit.down.sql",
+	)
+}
+
+func _1528395748_drop_commitDownSql() (*asset, error) {
+	bytes, err := _1528395748_drop_commitDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395748_drop_commit.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x5e, 0xc0, 0x3e, 0xc3, 0x6c, 0x7, 0xb, 0xc0, 0xe3, 0x59, 0xe8, 0xc, 0x2d, 0x7e, 0xe7, 0x17, 0x4c, 0x58, 0x15, 0xbe, 0xac, 0xd8, 0x77, 0x1e, 0x16, 0x91, 0x32, 0x8e, 0x5a, 0x20, 0xa6, 0x9c}}
+	return a, nil
+}
+
+var __1528395748_drop_commitUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\xcf\x4b\x4d\x2c\x4a\x2d\x2e\x89\x2f\x2d\xc8\xc9\x4f\x4c\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x50\x4a\xce\xcf\xcd\xcd\x2c\x51\xb2\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xf2\x02\xe8\x52\x48\x00\x00\x00")
+
+func _1528395748_drop_commitUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395748_drop_commitUpSql,
+		"1528395748_drop_commit.up.sql",
+	)
+}
+
+func _1528395748_drop_commitUpSql() (*asset, error) {
+	bytes, err := _1528395748_drop_commitUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395748_drop_commit.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x49, 0xe5, 0x98, 0x45, 0xc4, 0xf8, 0xc7, 0xae, 0x20, 0x9, 0x58, 0x44, 0x1c, 0xf6, 0xcb, 0x1a, 0x67, 0x62, 0x47, 0xb3, 0x5b, 0xdc, 0xae, 0x7d, 0xa9, 0x8c, 0x3d, 0x6a, 0x88, 0x3e, 0xed, 0xe3}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2931,6 +3015,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395745_ref_prefix_external_branch.up.sql":                                 _1528395745_ref_prefix_external_branchUpSql,
 	"1528395746_add_is_primary_to_user_emails.down.sql":                            _1528395746_add_is_primary_to_user_emailsDownSql,
 	"1528395746_add_is_primary_to_user_emails.up.sql":                              _1528395746_add_is_primary_to_user_emailsUpSql,
+	"1528395747_add_users_created_at_index.down.sql":                               _1528395747_add_users_created_at_indexDownSql,
+	"1528395747_add_users_created_at_index.up.sql":                                 _1528395747_add_users_created_at_indexUpSql,
+	"1528395748_drop_commit.down.sql":                                              _1528395748_drop_commitDownSql,
+	"1528395748_drop_commit.up.sql":                                                _1528395748_drop_commitUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3103,6 +3191,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395745_ref_prefix_external_branch.up.sql":                                 {_1528395745_ref_prefix_external_branchUpSql, map[string]*bintree{}},
 	"1528395746_add_is_primary_to_user_emails.down.sql":                            {_1528395746_add_is_primary_to_user_emailsDownSql, map[string]*bintree{}},
 	"1528395746_add_is_primary_to_user_emails.up.sql":                              {_1528395746_add_is_primary_to_user_emailsUpSql, map[string]*bintree{}},
+	"1528395747_add_users_created_at_index.down.sql":                               {_1528395747_add_users_created_at_indexDownSql, map[string]*bintree{}},
+	"1528395747_add_users_created_at_index.up.sql":                                 {_1528395747_add_users_created_at_indexUpSql, map[string]*bintree{}},
+	"1528395748_drop_commit.down.sql":                                              {_1528395748_drop_commitDownSql, map[string]*bintree{}},
+	"1528395748_drop_commit.up.sql":                                                {_1528395748_drop_commitUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

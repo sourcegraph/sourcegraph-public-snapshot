@@ -720,14 +720,12 @@ Check constraints:
       Column      |  Type   | Modifiers 
 ------------------+---------+-----------
  repository_id    | integer | not null
- commit           | text    | 
  upload_id        | integer | not null
  distance         | integer | not null
  ancestor_visible | boolean | not null
  overwritten      | boolean | not null
  commit_bytea     | bytea   | not null
 Indexes:
-    "lsif_nearest_uploads_repository_id_commit" btree (repository_id, commit)
     "lsif_nearest_uploads_repository_id_commit_bytea" btree (repository_id, commit_bytea)
 
 ```
@@ -1336,6 +1334,7 @@ Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL
     "users_username" UNIQUE, btree (username) WHERE deleted_at IS NULL
+    "users_created_at_idx" btree (created_at)
 Check constraints:
     "users_display_name_max_length" CHECK (char_length(display_name) <= 255)
     "users_username_max_length" CHECK (char_length(username::text) <= 255)
