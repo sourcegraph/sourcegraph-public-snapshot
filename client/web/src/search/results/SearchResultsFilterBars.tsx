@@ -4,7 +4,7 @@ import { QuickLink } from '../../schema/settings.schema'
 import { FilterChip } from '../FilterChip'
 import { QuickLinks } from '../QuickLinks'
 
-export interface SearchFilterData {
+export interface DynamicSearchFilter {
     name?: string
 
     value: string
@@ -13,22 +13,24 @@ export interface SearchFilterData {
     limitHit?: boolean
 }
 
-export const SearchResultsFilterBars: React.FunctionComponent<{
+export interface SearchResultsFilterBarsProps {
     navbarSearchQuery: string
-    resultsFound: boolean
+    searchSucceeded: boolean
     resultsLimitHit: boolean
-    filters: SearchFilterData[]
+    genericFilters: DynamicSearchFilter[]
     extensionFilters: SearchFilters[] | undefined
-    repoFilters: SearchFilterData[] | undefined
+    repoFilters?: DynamicSearchFilter[] | undefined
     quickLinks?: QuickLink[] | undefined
     onFilterClick: (value: string) => void
     onShowMoreResultsClick: (value: string) => void
     calculateShowMoreResultsCount: () => number
-}> = ({
+}
+
+export const SearchResultsFilterBars: React.FunctionComponent<SearchResultsFilterBarsProps> = ({
     navbarSearchQuery,
-    resultsFound,
+    searchSucceeded: resultsFound,
     resultsLimitHit,
-    filters,
+    genericFilters: filters,
     extensionFilters,
     repoFilters,
     quickLinks,
@@ -37,7 +39,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
     calculateShowMoreResultsCount,
 }) => (
     <div className="search-results-filter-bars">
-        {((resultsFound && filters.length > 0) || extensionFilters) && (
+        {((resultsFound && filters.length > 0) || (extensionFilters && extensionFilters.length > 0)) && (
             <div className="search-results-filter-bars__row" data-testid="filters-bar">
                 Filters:
                 <div className="search-results-filter-bars__filters">
@@ -61,6 +63,8 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                                 key={String(filter.name) + filter.value}
                                 value={filter.value}
                                 name={filter.name}
+                                count={filter.count}
+                                limitHit={filter.limitHit}
                             />
                         ))}
                 </div>

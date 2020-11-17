@@ -27,7 +27,7 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { EventLogger } from '../../tracking/eventLogger'
 import { isSearchResults, submitSearch, toggleSearchFilter, getSearchTypeFromQuery, QueryState } from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
-import { SearchResultsFilterBars, SearchFilterData } from './SearchResultsFilterBars'
+import { SearchResultsFilterBars, DynamicSearchFilter } from './SearchResultsFilterBars'
 import { SearchResultsList } from './SearchResultsList'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { VersionContextProps } from '../../../../shared/src/search/util'
@@ -302,11 +302,11 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 {!this.props.interactiveSearchMode && (
                     <SearchResultsFilterBars
                         navbarSearchQuery={this.props.navbarSearchQueryState.query}
-                        resultsFound={isSearchResults(this.state.resultsOrError)}
+                        searchSucceeded={isSearchResults(this.state.resultsOrError)}
                         resultsLimitHit={
                             isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.limitHit
                         }
-                        filters={filters}
+                        genericFilters={filters}
                         extensionFilters={extensionFilters}
                         repoFilters={repoFilters}
                         quickLinks={quickLinks}
@@ -347,8 +347,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     /** Combines dynamic filters and search scopes into a list de-duplicated by value. */
-    private getFilters(): SearchFilterData[] {
-        const filters = new Map<string, SearchFilterData>()
+    private getFilters(): DynamicSearchFilter[] {
+        const filters = new Map<string, DynamicSearchFilter>()
 
         if (isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.dynamicFilters) {
             let dynamicFilters = this.state.resultsOrError.dynamicFilters
@@ -383,7 +383,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         return [...filters.values()]
     }
 
-    private getRepoFilters(): SearchFilterData[] | undefined {
+    private getRepoFilters(): DynamicSearchFilter[] | undefined {
         if (isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.dynamicFilters) {
             return this.state.resultsOrError.dynamicFilters
                 .filter(filter => filter.kind === 'repo' && filter.value !== '')
