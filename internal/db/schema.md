@@ -720,14 +720,12 @@ Check constraints:
       Column      |  Type   | Modifiers 
 ------------------+---------+-----------
  repository_id    | integer | not null
- commit           | text    | 
  upload_id        | integer | not null
  distance         | integer | not null
  ancestor_visible | boolean | not null
  overwritten      | boolean | not null
  commit_bytea     | bytea   | not null
 Indexes:
-    "lsif_nearest_uploads_repository_id_commit" btree (repository_id, commit)
     "lsif_nearest_uploads_repository_id_commit_bytea" btree (repository_id, commit_bytea)
 
 ```
@@ -1243,8 +1241,10 @@ Foreign-key constraints:
  verification_code         | text                     | 
  verified_at               | timestamp with time zone | 
  last_verification_sent_at | timestamp with time zone | 
+ is_primary                | boolean                  | not null default false
 Indexes:
     "user_emails_no_duplicates_per_user" UNIQUE CONSTRAINT, btree (user_id, email)
+    "user_emails_user_id_is_primary_idx" UNIQUE, btree (user_id, is_primary) WHERE is_primary = true
     "user_emails_unique_verified_email" EXCLUDE USING btree (email WITH =) WHERE (verified_at IS NOT NULL)
 Foreign-key constraints:
     "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
@@ -1253,19 +1253,21 @@ Foreign-key constraints:
 
 # Table "public.user_external_accounts"
 ```
-    Column    |           Type           |                              Modifiers                              
---------------+--------------------------+---------------------------------------------------------------------
- id           | integer                  | not null default nextval('user_external_accounts_id_seq'::regclass)
- user_id      | integer                  | not null
- service_type | text                     | not null
- service_id   | text                     | not null
- account_id   | text                     | not null
- auth_data    | text                     | 
- account_data | text                     | 
- created_at   | timestamp with time zone | not null default now()
- updated_at   | timestamp with time zone | not null default now()
- deleted_at   | timestamp with time zone | 
- client_id    | text                     | not null
+    Column     |           Type           |                              Modifiers                              
+---------------+--------------------------+---------------------------------------------------------------------
+ id            | integer                  | not null default nextval('user_external_accounts_id_seq'::regclass)
+ user_id       | integer                  | not null
+ service_type  | text                     | not null
+ service_id    | text                     | not null
+ account_id    | text                     | not null
+ auth_data     | text                     | 
+ account_data  | text                     | 
+ created_at    | timestamp with time zone | not null default now()
+ updated_at    | timestamp with time zone | not null default now()
+ deleted_at    | timestamp with time zone | 
+ client_id     | text                     | not null
+ expired_at    | timestamp with time zone | 
+ last_valid_at | timestamp with time zone | 
 Indexes:
     "user_external_accounts_pkey" PRIMARY KEY, btree (id)
     "user_external_accounts_account" UNIQUE, btree (service_type, service_id, client_id, account_id) WHERE deleted_at IS NULL
@@ -1334,6 +1336,7 @@ Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL
     "users_username" UNIQUE, btree (username) WHERE deleted_at IS NULL
+    "users_created_at_idx" btree (created_at)
 Check constraints:
     "users_display_name_max_length" CHECK (char_length(display_name) <= 255)
     "users_username_max_length" CHECK (char_length(username::text) <= 255)

@@ -12,22 +12,27 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
+	eauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker"
+	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 const addr = ":3188"
@@ -63,7 +68,7 @@ func main() {
 	// Initialize stores
 	dbStore := store.NewWithDB(db, observationContext)
 	lsifStore := lsifstore.NewStore(codeIntelDB, observationContext)
-	gitserverClient := gitserver.New(observationContext)
+	gitserverClient := gitserver.New(dbStore, observationContext)
 
 	uploadStore, err := uploadstore.CreateLazy(context.Background(), config.UploadStoreConfig, observationContext)
 	if err != nil {
@@ -85,8 +90,7 @@ func main() {
 		config.WorkerPollInterval,
 		config.WorkerConcurrency,
 		config.WorkerBudget,
-		metrics.NewWorkerMetrics(observationContext),
-		observationContext,
+		makeWorkerMetrics(observationContext),
 	)
 
 	// Initialize health server
@@ -107,6 +111,24 @@ func mustInitializeDB() *sql.DB {
 	if err := dbconn.SetupGlobalConnection(postgresDSN); err != nil {
 		log.Fatalf("Failed to connect to frontend database: %s", err)
 	}
+
+	//
+	// START FLAILING
+
+	// TODO(efritz) - rearrange the authz packages so we don't have to import from frontend
+	ctx := context.Background()
+	var msResolutionClock = func() time.Time { return time.Now().UTC().Truncate(time.Microsecond) }
+	eauthz.Init(dbconn.Global, msResolutionClock)
+
+	go func() {
+		for range time.NewTicker(5 * time.Second).C {
+			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices)
+			authz.SetProviders(allowAccessByDefault, authzProviders)
+		}
+	}()
+
+	// END FLAILING
+	//
 
 	return dbconn.Global
 }
@@ -143,6 +165,23 @@ func mustRegisterQueueMetric(observationContext *observation.Context, dbStore *s
 
 		return float64(count)
 	}))
+}
+
+func makeWorkerMetrics(observationContext *observation.Context) workerutil.WorkerMetrics {
+	metrics := metrics.NewOperationMetrics(
+		observationContext.Registerer,
+		"upload_queue_processor",
+		metrics.WithLabels("op"),
+		metrics.WithCountHelp("Total number of records processed"),
+	)
+
+	return workerutil.WorkerMetrics{
+		HandleOperation: observationContext.Operation(observation.Op{
+			Name:         "Processor.Process",
+			MetricLabels: []string{"process"},
+			Metrics:      metrics,
+		}),
+	}
 }
 
 func initializeUploadStore(ctx context.Context, uploadStore uploadstore.Store) error {

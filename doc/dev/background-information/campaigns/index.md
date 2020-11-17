@@ -6,10 +6,7 @@ Before diving into the technical part of campaigns, make sure to read up on what
 
 1. Start by looking at the [campaigns description on about.sourcegraph.com](https://about.sourcegraph.com).
 1. Read through the [campaigns documentation](../../../campaigns/index.md).
-
-## [Campaigns design doc](campaigns_design.md)
-
-See "[Campaigns design doc](campaigns_design.md)".
+	- Especially: "[Campaigns design doc](../../../campaigns/explanations/campaigns_design.md)".
 
 ## Starting up your environment
 

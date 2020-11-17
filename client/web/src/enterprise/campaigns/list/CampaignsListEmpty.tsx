@@ -6,7 +6,7 @@ export interface CampaignsListEmptyProps {
 
 export const CampaignsListEmpty: React.FunctionComponent<CampaignsListEmptyProps> = () => (
     <div className="web-content">
-        <h2 className="my-5">Get started with campaigns</h2>
+        <h2 className="mb-4">Get started with campaigns</h2>
         <h3 className="mb-3">Tutorials to help with your first campaign</h3>
         <div className="row">
             <div className="col-12 col-md-6 mb-2">
@@ -55,12 +55,15 @@ export const CampaignsListEmpty: React.FunctionComponent<CampaignsListEmptyProps
                     </div>
                 </div>
             </div>
+            <div className="col-12 mb-4">
+                <p>
+                    <a href="https://docs.sourcegraph.com/campaigns/tutorials" rel="noopener">
+                        More tutorials
+                    </a>
+                </p>
+            </div>
         </div>
-        <p>
-            <a href="https://docs.sourcegraph.com/campaigns/tutorials" rel="noopener">
-                More tutorials
-            </a>
-        </p>
+
         <div className="row mb-4">
             <div className="col-12 col-md-4 mb-3">
                 <p>

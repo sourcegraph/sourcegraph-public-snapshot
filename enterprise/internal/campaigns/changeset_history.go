@@ -38,6 +38,36 @@ func (h changesetHistory) StatesAtTime(t time.Time) (changesetStatesAtTime, bool
 	return states, found
 }
 
+// RequiredEventTypesForHistory keeps track of all event kinds required for calculating the history of a changeset.
+//
+// We specifically ignore ChangesetEventKindGitHubReviewDismissed
+// events since GitHub updates the original
+// ChangesetEventKindGitHubReviewed event when a review has been
+// dismissed.
+// See: https://github.com/sourcegraph/sourcegraph/pull/9461
+var RequiredEventTypesForHistory = []campaigns.ChangesetEventKind{
+	campaigns.ChangesetEventKindGitLabUnmarkWorkInProgress,
+	campaigns.ChangesetEventKindGitHubReadyForReview,
+	campaigns.ChangesetEventKindGitLabMarkWorkInProgress,
+	campaigns.ChangesetEventKindGitHubConvertToDraft,
+	campaigns.ChangesetEventKindGitHubClosed,
+	campaigns.ChangesetEventKindBitbucketServerDeclined,
+	campaigns.ChangesetEventKindGitLabClosed,
+	campaigns.ChangesetEventKindGitHubMerged,
+	campaigns.ChangesetEventKindBitbucketServerMerged,
+	campaigns.ChangesetEventKindGitLabMerged,
+	campaigns.ChangesetEventKindGitHubReopened,
+	campaigns.ChangesetEventKindBitbucketServerReopened,
+	campaigns.ChangesetEventKindGitLabReopened,
+	campaigns.ChangesetEventKindGitHubReviewed,
+	campaigns.ChangesetEventKindBitbucketServerApproved,
+	campaigns.ChangesetEventKindBitbucketServerReviewed,
+	campaigns.ChangesetEventKindGitLabApproved,
+	campaigns.ChangesetEventKindBitbucketServerUnapproved,
+	campaigns.ChangesetEventKindBitbucketServerDismissed,
+	campaigns.ChangesetEventKindGitLabUnapproved,
+}
+
 type changesetStatesAtTime struct {
 	t             time.Time
 	externalState campaigns.ChangesetExternalState
@@ -81,6 +111,7 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 			continue
 		}
 
+		// NOTE: If you add any kinds here, make sure they also appear in `RequiredEventTypesForHistory`.
 		switch e.Kind {
 		case campaigns.ChangesetEventKindGitHubClosed,
 			campaigns.ChangesetEventKindBitbucketServerDeclined,
@@ -170,14 +201,6 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 				currentReviewState = newReviewState
 				pushStates(et)
 			}
-
-		case campaigns.ChangesetEventKindGitHubReviewDismissed:
-			// We specifically ignore ChangesetEventKindGitHubReviewDismissed
-			// events since GitHub updates the original
-			// ChangesetEventKindGitHubReviewed event when a review has been
-			// dismissed.
-			// See: https://github.com/sourcegraph/sourcegraph/pull/9461
-			continue
 
 		case campaigns.ChangesetEventKindBitbucketServerUnapproved,
 			campaigns.ChangesetEventKindBitbucketServerDismissed,

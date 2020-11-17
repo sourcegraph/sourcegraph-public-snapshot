@@ -1,6 +1,8 @@
 package gitserver
 
 import (
+	"fmt"
+
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -24,7 +26,7 @@ func makeOperations(observationContext *observation.Context) *operations {
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:         "codeintel.gitserver.%s",
+			Name:         fmt.Sprintf("codeintel.gitserver.%s", name),
 			MetricLabels: []string{name},
 			Metrics:      metrics,
 		})

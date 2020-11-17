@@ -365,12 +365,12 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
                             return (
                                 <>
-                                    <div className="d-lg-flex mb-2 align-items-end">
+                                    <div className="d-lg-flex mb-2 align-items-end flex-wrap">
                                         <SearchResultTypeTabs
                                             {...this.props}
                                             query={this.props.navbarSearchQueryState.query}
                                             filtersInQuery={this.props.filtersInQuery}
-                                            className="flex-grow-1"
+                                            className="search-results-list__tabs"
                                         />
 
                                         <SearchResultsInfoBar
@@ -379,7 +379,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                             results={results}
                                             showDotComMarketing={this.props.isSourcegraphDotCom}
                                             displayPerformanceWarning={this.state.displayPerformanceWarning}
-                                            className="border-bottom"
+                                            className="border-bottom flex-grow-1"
                                         />
                                     </div>
 

@@ -4,7 +4,6 @@ package worker
 
 import (
 	"context"
-	gitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	basestore "github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"sync"
@@ -1337,7 +1336,7 @@ type MockGitserverClient struct {
 func NewMockGitserverClient() *MockGitserverClient {
 	return &MockGitserverClient{
 		DirectoryChildrenFunc: &GitserverClientDirectoryChildrenFunc{
-			defaultHook: func(context.Context, gitserver.DBStore, int, string, []string) (map[string][]string, error) {
+			defaultHook: func(context.Context, int, string, []string) (map[string][]string, error) {
 				return nil, nil
 			},
 		},
@@ -1359,24 +1358,24 @@ func NewMockGitserverClientFrom(i GitserverClient) *MockGitserverClient {
 // DirectoryChildren method of the parent MockGitserverClient instance is
 // invoked.
 type GitserverClientDirectoryChildrenFunc struct {
-	defaultHook func(context.Context, gitserver.DBStore, int, string, []string) (map[string][]string, error)
-	hooks       []func(context.Context, gitserver.DBStore, int, string, []string) (map[string][]string, error)
+	defaultHook func(context.Context, int, string, []string) (map[string][]string, error)
+	hooks       []func(context.Context, int, string, []string) (map[string][]string, error)
 	history     []GitserverClientDirectoryChildrenFuncCall
 	mutex       sync.Mutex
 }
 
 // DirectoryChildren delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) DirectoryChildren(v0 context.Context, v1 gitserver.DBStore, v2 int, v3 string, v4 []string) (map[string][]string, error) {
-	r0, r1 := m.DirectoryChildrenFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.DirectoryChildrenFunc.appendCall(GitserverClientDirectoryChildrenFuncCall{v0, v1, v2, v3, v4, r0, r1})
+func (m *MockGitserverClient) DirectoryChildren(v0 context.Context, v1 int, v2 string, v3 []string) (map[string][]string, error) {
+	r0, r1 := m.DirectoryChildrenFunc.nextHook()(v0, v1, v2, v3)
+	m.DirectoryChildrenFunc.appendCall(GitserverClientDirectoryChildrenFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the DirectoryChildren
 // method of the parent MockGitserverClient instance is invoked and the hook
 // queue is empty.
-func (f *GitserverClientDirectoryChildrenFunc) SetDefaultHook(hook func(context.Context, gitserver.DBStore, int, string, []string) (map[string][]string, error)) {
+func (f *GitserverClientDirectoryChildrenFunc) SetDefaultHook(hook func(context.Context, int, string, []string) (map[string][]string, error)) {
 	f.defaultHook = hook
 }
 
@@ -1385,7 +1384,7 @@ func (f *GitserverClientDirectoryChildrenFunc) SetDefaultHook(hook func(context.
 // inovkes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *GitserverClientDirectoryChildrenFunc) PushHook(hook func(context.Context, gitserver.DBStore, int, string, []string) (map[string][]string, error)) {
+func (f *GitserverClientDirectoryChildrenFunc) PushHook(hook func(context.Context, int, string, []string) (map[string][]string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1394,7 +1393,7 @@ func (f *GitserverClientDirectoryChildrenFunc) PushHook(hook func(context.Contex
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *GitserverClientDirectoryChildrenFunc) SetDefaultReturn(r0 map[string][]string, r1 error) {
-	f.SetDefaultHook(func(context.Context, gitserver.DBStore, int, string, []string) (map[string][]string, error) {
+	f.SetDefaultHook(func(context.Context, int, string, []string) (map[string][]string, error) {
 		return r0, r1
 	})
 }
@@ -1402,12 +1401,12 @@ func (f *GitserverClientDirectoryChildrenFunc) SetDefaultReturn(r0 map[string][]
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *GitserverClientDirectoryChildrenFunc) PushReturn(r0 map[string][]string, r1 error) {
-	f.PushHook(func(context.Context, gitserver.DBStore, int, string, []string) (map[string][]string, error) {
+	f.PushHook(func(context.Context, int, string, []string) (map[string][]string, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientDirectoryChildrenFunc) nextHook() func(context.Context, gitserver.DBStore, int, string, []string) (map[string][]string, error) {
+func (f *GitserverClientDirectoryChildrenFunc) nextHook() func(context.Context, int, string, []string) (map[string][]string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1446,16 +1445,13 @@ type GitserverClientDirectoryChildrenFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 gitserver.DBStore
+	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 int
+	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 []string
+	Arg3 []string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 map[string][]string
@@ -1467,7 +1463,7 @@ type GitserverClientDirectoryChildrenFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientDirectoryChildrenFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this

@@ -186,7 +186,6 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
             routePrefix: this.props.match.url,
             platformContext: this.props.platformContext,
         }
-
         return (
             <div className="repository-compare-area container" ref={this.nextRepositoryCompareAreaElement}>
                 <RepositoryCompareHeader
