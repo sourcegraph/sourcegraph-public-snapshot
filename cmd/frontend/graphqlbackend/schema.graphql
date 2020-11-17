@@ -7788,7 +7788,7 @@ type LSIFIndex implements Node {
     indexerArgs: [String!]!
 
     """
-    The path to the index file relative to the root directory (`dump.lsif` by default).
+    The path to the index file relative to the root directory (dump.lsif by default).
     """
     outfile: String
 
