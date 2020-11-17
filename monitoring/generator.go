@@ -229,10 +229,8 @@ func (o Observable) validate() error {
 		return fmt.Errorf("Observable.Description must be lowercase; found \"%s\"", o.Description)
 	}
 
-	if o.Warning.isEmpty() && o.Critical.isEmpty() {
-		if o.NoAlert == false {
-			return fmt.Errorf("Observable.Warning or Observable.Critical must be set or explicitly disable alerts with Observable.NoAlert")
-		}
+	if !o.NoAlert && o.Warning.isEmpty() && o.Critical.isEmpty() {
+		return fmt.Errorf("Observable.Warning or Observable.Critical must be set or explicitly disable alerts with Observable.NoAlert")
 	}
 
 	if l := strings.ToLower(o.PossibleSolutions); strings.Contains(l, "contact support") || strings.Contains(l, "contact us") {
