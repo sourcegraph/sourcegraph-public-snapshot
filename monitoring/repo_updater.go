@@ -31,7 +31,6 @@ func RepoUpdater() *Container {
 							Description:       "time since last sync",
 							Query:             `max(timestamp(vector(time()))) - max(src_repoupdater_syncer_sync_last_time)`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(time.Hour.Seconds()).For(5 * time.Minute),
 							PanelOptions:      PanelOptions().Unit(Seconds),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Make sure there are external services added with valid tokens",
