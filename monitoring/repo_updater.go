@@ -146,6 +146,7 @@ func RepoUpdater() *Container {
 							Name:              "sched_manual_fetch",
 							Description:       "repositories scheduled due to user traffic",
 							Query:             `sum(rate(src_repoupdater_sched_manual_fetch[1m]))`,
+							NoAlert:           true,
 							DataMayNotExist:   true,
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
