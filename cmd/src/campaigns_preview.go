@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 
@@ -30,6 +31,10 @@ Examples:
 	handler := func(args []string) error {
 		if err := flagSet.Parse(args); err != nil {
 			return err
+		}
+
+		if len(flagSet.Args()) != 0 {
+			return &usageError{errors.New("additional arguments not allowed")}
 		}
 
 		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})

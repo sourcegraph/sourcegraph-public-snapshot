@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 
@@ -28,6 +29,10 @@ Examples:
 	handler := func(args []string) error {
 		if err := flagSet.Parse(args); err != nil {
 			return err
+		}
+
+		if len(flagSet.Args()) != 0 {
+			return &usageError{errors.New("additional arguments not allowed")}
 		}
 
 		specFile, err := campaignsOpenFileFlag(fileFlag)
