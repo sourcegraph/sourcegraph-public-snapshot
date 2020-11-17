@@ -18,7 +18,7 @@ jobs:
       with: { node-version: '${{ steps.nvmrc.outputs.NODE_VERSION }}' }
 
     - name: Install license_finder
-      run: gem install license_finder:6.8.0
+      run: gem install license_finder:6.9.0 # sync with licenses-update.yml
 
     - name: Check dependencies
       run: LICENSE_CHECK=true ./dev/licenses.sh
