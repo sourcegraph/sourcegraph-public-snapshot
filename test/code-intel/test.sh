@@ -4,7 +4,7 @@
 source /root/.profile
 cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
 
-set -x
+set -ex
 
 test/setup-deps.sh
 
