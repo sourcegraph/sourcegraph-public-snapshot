@@ -11,7 +11,6 @@ function cluster_setup() {
     https://github.com/sourcegraph/deploy-sourcegraph.git \
     "$DIR/deploy-sourcegraph"
 
-  # TODO(Dax): Bit concerning this works...
   gcloud container clusters get-credentials default-buildkite --zone=us-central1-c --project=sourcegraph-ci
 
   #NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER"
