@@ -1570,11 +1570,7 @@ declare module 'sourcegraph' {
 
     // TODO(tj): move these somewhere more reasonable
     export interface FileDecorationProvider {
-        // Will be a general API for streaming decorations
-
-        // provideFileDecorations: (context: FileDecorationContext) => ProviderResult<FileDecoration[]>
-
-        // (Temporary?) simple API that works for directory view
+        // TODO (tj): docs
         provideFileDecorations: (
             files: { url: string; isDirectory: boolean; name: string; path: string }[]
         ) => ProviderResult<FileDecoration[]>
