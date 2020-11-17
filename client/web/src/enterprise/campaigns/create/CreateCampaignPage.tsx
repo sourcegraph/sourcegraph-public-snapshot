@@ -88,11 +88,7 @@ export const CreateCampaignPage: React.FunctionComponent<CreateCampaignPageProps
                     </a>{' '}
                     to preview the commits and changesets that your campaign will make:
                 </p>
-                <CodeSnippet
-                    code={`src campaign preview -f ${selectedSample.name}`}
-                    language="shell"
-                    className="mb-3"
-                />
+                <CodeSnippet code={`src campaign preview -f ${selectedSample.name}`} language="bash" className="mb-3" />
                 <p>
                     Follow the URL printed in your terminal to see the preview and (when you're ready) create the
                     campaign.

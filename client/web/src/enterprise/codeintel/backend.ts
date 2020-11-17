@@ -35,15 +35,15 @@ export const lsifIndexFieldsFragment = gql`
         __typename
         id
         inputCommit
-        # inputRoot
-        # indexer
-        # indexerArgs
-        # outfile
-        # dockerSteps {
-        #     root
-        #     image
-        #     commands
-        # }
+        inputRoot
+        indexer
+        indexerArgs
+        outfile
+        dockerSteps {
+            root
+            image
+            commands
+        }
         projectRoot {
             url
             path
@@ -58,7 +58,6 @@ export const lsifIndexFieldsFragment = gql`
             }
         }
         state
-        # logContents
         failure
         queuedAt
         startedAt

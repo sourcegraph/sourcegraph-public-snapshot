@@ -793,6 +793,27 @@ type Mutation {
         """
         id: ID!
     ): EmptyResponse!
+    """
+    Update a code monitor. Objects in the db will be overwritten with the objects in the request. Objects
+    which are not contained in the request remain unchanged. If the request contains objects that have
+    no corresponding entry in the db, an error is returned.
+    """
+    updateCodeMonitor(
+        """
+        The input required to edit a monitor.
+        """
+        monitor: MonitorEditInput!
+        """
+        The input required to edit the trigger of a monitor. You can only edit triggers that are
+        associated with the monitor (value of field monitor).
+        """
+        trigger: MonitorEditTriggerInput!
+        """
+        The input required to edit the actions of a monitor. You can only edit actions that are
+        associated with the monitor (value of field monitor).
+        """
+        actions: [MonitorEditActionInput!]!
+    ): Monitor!
 }
 
 """
@@ -3305,6 +3326,39 @@ enum EventStatus {
 }
 
 """
+The input required to create a code monitor.
+"""
+input MonitorInput {
+    """
+    The namespace represents the owner of the code monitor.
+    Owners can either be users or organizations.
+    """
+    namespace: ID!
+    """
+    A meaningful description of the code monitor.
+    """
+    description: String!
+    """
+    Whether the code monitor is enabled or not.
+    """
+    enabled: Boolean!
+}
+
+"""
+The input required to edit a code monitor.
+"""
+input MonitorEditInput {
+    """
+    The id of the monitor.
+    """
+    id: ID!
+    """
+    The desired state after the udpate.
+    """
+    update: MonitorInput!
+}
+
+"""
 The input required to create a trigger.
 """
 input MonitorTriggerInput {
@@ -3312,6 +3366,20 @@ input MonitorTriggerInput {
     The query string.
     """
     query: String!
+}
+
+"""
+The input required to edit a trigger.
+"""
+input MonitorEditTriggerInput {
+    """
+    The id of the Trigger.
+    """
+    id: ID!
+    """
+    The desired state after the udpate.
+    """
+    update: MonitorTriggerInput!
 }
 
 """
@@ -3344,6 +3412,29 @@ input MonitorEmailInput {
     Use header to automatically approve the message in a read-only or moderated mailing list.
     """
     header: String!
+}
+"""
+The input required to edit an action.
+"""
+input MonitorEditActionInput {
+    """
+    An email action.
+    """
+    email: MonitorEditEmailInput
+}
+
+"""
+The input required to edit an email action.
+"""
+input MonitorEditEmailInput {
+    """
+    The id of an email action.
+    """
+    id: ID!
+    """
+    The desired state after the update.
+    """
+    update: MonitorEmailInput!
 }
 
 """
@@ -7799,9 +7890,54 @@ type LSIFIndex implements Node {
     failure: String
 
     """
+    A series of pre-indexing steps to perform.
+    """
+    dockerSteps: [DockerStep!]!
+
+    """
+    The original root supplied at index schedule time.
+    """
+    inputRoot: String!
+
+    """
+    The name of the target indexer Docker image (e.g., sourcegraph/lsif-go@sha256:...).
+    """
+    indexer: String!
+
+    """
+    The arguments to supply to the indexer container.
+    """
+    indexerArgs: [String!]!
+
+    """
+    The path to the index file relative to the root directory (dump.lsif by default).
+    """
+    outfile: String
+
+    """
     The rank of this index in the queue. The value of this field is null if the index has been processed.
     """
     placeInQueue: Int
+}
+
+"""
+A description of a command to run inside of a Docker container.
+"""
+type DockerStep {
+    """
+    The working directory relative to the cloned repository root.
+    """
+    root: String!
+
+    """
+    The name of the Docker image to run.
+    """
+    image: String!
+
+    """
+    The arguments to supply to the Docker container's entrypoint.
+    """
+    commands: [String!]!
 }
 
 """

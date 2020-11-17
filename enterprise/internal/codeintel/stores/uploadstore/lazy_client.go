@@ -22,12 +22,12 @@ func (s *lazyStore) Init(ctx context.Context) error {
 	return s.initOnce(ctx)
 }
 
-func (s *lazyStore) Get(ctx context.Context, key string, skipBytes int64) (io.ReadCloser, error) {
+func (s *lazyStore) Get(ctx context.Context, key string) (io.ReadCloser, error) {
 	if err := s.initOnce(ctx); err != nil {
 		return nil, err
 	}
 
-	return s.store.Get(ctx, key, skipBytes)
+	return s.store.Get(ctx, key)
 }
 
 func (s *lazyStore) Upload(ctx context.Context, key string, r io.Reader) (int64, error) {

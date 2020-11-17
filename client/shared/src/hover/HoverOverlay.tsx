@@ -127,6 +127,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
         if (!hoverOrError && (!actionsOrError || isErrorLike(actionsOrError))) {
             return null
         }
+
         return (
             <div
                 // needed for dynamic styling

@@ -46,7 +46,10 @@ type ConfigFields = {
     [K in keyof Config]: Field<Config[K]> & (Config[K] extends string ? Partial<FieldParser> : FieldParser<Config[K]>)
 }
 
-const parseBool = (string: string): boolean => {
+export const parseBool = (string: string | undefined, defaultValue = false): boolean => {
+    if (!string) {
+        return defaultValue
+    }
     if (['1', 't', 'true'].some(trueString => trueString === string.toLowerCase())) {
         return true
     }

@@ -128,8 +128,10 @@
 // 1528395746_add_is_primary_to_user_emails.up.sql (643B)
 // 1528395747_add_users_created_at_index.down.sql (60B)
 // 1528395747_add_users_created_at_index.up.sql (87B)
-// 1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.down.sql (158B)
-// 1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql (188B)
+// 1528395748_drop_commit.down.sql (76B)
+// 1528395748_drop_commit.up.sql (72B)
+// 1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.down.sql (158B)
+// 1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql (188B)
 
 package migrations
 
@@ -2758,42 +2760,82 @@ func _1528395747_add_users_created_at_indexUpSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accountsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x8a\x4f\xad\x28\x49\x2d\xca\x4b\xcc\x89\x4f\x4c\x4e\xce\x2f\xcd\x2b\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xad\x28\xc8\x2c\x4a\x4d\x89\x4f\x2c\xb1\x26\xdf\x90\x9c\xc4\xe2\x92\xf8\xb2\xc4\x9c\x4c\x88\x39\x5c\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\x67\xea\x34\x6a\x9e\x00\x00\x00")
+var __1528395748_drop_commitDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\xcf\x4b\x4d\x2c\x4a\x2d\x2e\x89\x2f\x2d\xc8\xc9\x4f\x4c\x29\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x50\x4a\xce\xcf\xcd\xcd\x2c\x51\x52\x08\x71\x8d\x08\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x50\xc7\x43\x91\x4c\x00\x00\x00")
 
-func _1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accountsDownSqlBytes() ([]byte, error) {
+func _1528395748_drop_commitDownSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accountsDownSql,
-		"1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.down.sql",
+		__1528395748_drop_commitDownSql,
+		"1528395748_drop_commit.down.sql",
 	)
 }
 
-func _1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accountsDownSql() (*asset, error) {
-	bytes, err := _1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accountsDownSqlBytes()
+func _1528395748_drop_commitDownSql() (*asset, error) {
+	bytes, err := _1528395748_drop_commitDownSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	info := bindataFileInfo{name: "1528395748_drop_commit.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x5e, 0xc0, 0x3e, 0xc3, 0x6c, 0x7, 0xb, 0xc0, 0xe3, 0x59, 0xe8, 0xc, 0x2d, 0x7e, 0xe7, 0x17, 0x4c, 0x58, 0x15, 0xbe, 0xac, 0xd8, 0x77, 0x1e, 0x16, 0x91, 0x32, 0x8e, 0x5a, 0x20, 0xa6, 0x9c}}
+	return a, nil
+}
+
+var __1528395748_drop_commitUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\xcf\x4b\x4d\x2c\x4a\x2d\x2e\x89\x2f\x2d\xc8\xc9\x4f\x4c\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x50\x4a\xce\xcf\xcd\xcd\x2c\x51\xb2\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xf2\x02\xe8\x52\x48\x00\x00\x00")
+
+func _1528395748_drop_commitUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395748_drop_commitUpSql,
+		"1528395748_drop_commit.up.sql",
+	)
+}
+
+func _1528395748_drop_commitUpSql() (*asset, error) {
+	bytes, err := _1528395748_drop_commitUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395748_drop_commit.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x49, 0xe5, 0x98, 0x45, 0xc4, 0xf8, 0xc7, 0xae, 0x20, 0x9, 0x58, 0x44, 0x1c, 0xf6, 0xcb, 0x1a, 0x67, 0x62, 0x47, 0xb3, 0x5b, 0xdc, 0xae, 0x7d, 0xa9, 0x8c, 0x3d, 0x6a, 0x88, 0x3e, 0xed, 0xe3}}
+	return a, nil
+}
+
+var __1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x8a\x4f\xad\x28\x49\x2d\xca\x4b\xcc\x89\x4f\x4c\x4e\xce\x2f\xcd\x2b\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xad\x28\xc8\x2c\x4a\x4d\x89\x4f\x2c\xb1\x26\xdf\x90\x9c\xc4\xe2\x92\xf8\xb2\xc4\x9c\x4c\x88\x39\x5c\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\x67\xea\x34\x6a\x9e\x00\x00\x00")
+
+func _1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsDownSql,
+		"1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.down.sql",
+	)
+}
+
+func _1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsDownSql() (*asset, error) {
+	bytes, err := _1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xad, 0x24, 0xb3, 0xad, 0x73, 0x8d, 0xc1, 0x3e, 0xaa, 0x77, 0xe1, 0x86, 0xa9, 0xe5, 0xe2, 0xd6, 0xd3, 0xe5, 0x1d, 0xd4, 0xf9, 0xd3, 0x80, 0x28, 0xdd, 0xf2, 0xb2, 0xf3, 0x2d, 0x49, 0xa0, 0xdd}}
 	return a, nil
 }
 
-var __1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\xcc\x51\x0a\xc2\x30\x0c\x00\xd0\xff\x9e\x22\xf7\xd8\x57\xb7\x55\x09\x34\xad\xd8\x08\xe2\x4f\x09\x33\x1f\x83\x32\xa5\xed\x64\xc7\xf7\x00\x7e\x7a\x81\x37\xba\x33\x86\xc1\x18\xeb\xd9\x5d\x81\xed\xe8\x1d\xec\x4d\x6b\xd6\xa3\x6b\xdd\xa4\x64\x59\x96\xd7\xbe\xf5\x06\x76\x9e\x61\x8a\xfe\x46\x01\xf0\x04\x21\x32\xb8\x3b\x26\x4e\xa0\xc7\x7b\xad\xfa\xcc\xd2\x81\x91\x5c\x62\x4b\x17\x7e\x0c\x7f\x99\x45\x5a\xcf\x1f\x29\xeb\x2f\x6b\xa6\x48\x84\x3c\x98\x6f\x00\x00\x00\xff\xff\xff\xf0\x8c\x4b\xbc\x00\x00\x00")
+var __1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\xcc\x51\x0a\xc2\x30\x0c\x00\xd0\xff\x9e\x22\xf7\xd8\x57\xb7\x55\x09\x34\xad\xd8\x08\xe2\x4f\x09\x33\x1f\x83\x32\xa5\xed\x64\xc7\xf7\x00\x7e\x7a\x81\x37\xba\x33\x86\xc1\x18\xeb\xd9\x5d\x81\xed\xe8\x1d\xec\x4d\x6b\xd6\xa3\x6b\xdd\xa4\x64\x59\x96\xd7\xbe\xf5\x06\x76\x9e\x61\x8a\xfe\x46\x01\xf0\x04\x21\x32\xb8\x3b\x26\x4e\xa0\xc7\x7b\xad\xfa\xcc\xd2\x81\x91\x5c\x62\x4b\x17\x7e\x0c\x7f\x99\x45\x5a\xcf\x1f\x29\xeb\x2f\x6b\xa6\x48\x84\x3c\x98\x6f\x00\x00\x00\xff\xff\xff\xf0\x8c\x4b\xbc\x00\x00\x00")
 
-func _1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSqlBytes() ([]byte, error) {
+func _1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSql,
-		"1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql",
+		__1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSql,
+		"1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql",
 	)
 }
 
-func _1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSql() (*asset, error) {
-	bytes, err := _1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSqlBytes()
+func _1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSql() (*asset, error) {
+	bytes, err := _1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	info := bindataFileInfo{name: "1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xea, 0xcf, 0x43, 0x46, 0xab, 0xea, 0x4e, 0x8c, 0x5f, 0x6a, 0xe0, 0x2b, 0x3f, 0x94, 0xfb, 0xa1, 0xf3, 0xab, 0x1d, 0x46, 0xfc, 0xaa, 0x2f, 0xf4, 0x4a, 0xb, 0x9b, 0x54, 0x3f, 0xae, 0x59, 0xd2}}
 	return a, nil
 }
@@ -3017,8 +3059,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395746_add_is_primary_to_user_emails.up.sql":                                        _1528395746_add_is_primary_to_user_emailsUpSql,
 	"1528395747_add_users_created_at_index.down.sql":                                         _1528395747_add_users_created_at_indexDownSql,
 	"1528395747_add_users_created_at_index.up.sql":                                           _1528395747_add_users_created_at_indexUpSql,
-	"1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.down.sql": _1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accountsDownSql,
-	"1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql":   _1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSql,
+	"1528395748_drop_commit.down.sql":                                                        _1528395748_drop_commitDownSql,
+	"1528395748_drop_commit.up.sql":                                                          _1528395748_drop_commitUpSql,
+	"1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.down.sql": _1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsDownSql,
+	"1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql":   _1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3193,8 +3237,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395746_add_is_primary_to_user_emails.up.sql":                                        {_1528395746_add_is_primary_to_user_emailsUpSql, map[string]*bintree{}},
 	"1528395747_add_users_created_at_index.down.sql":                                         {_1528395747_add_users_created_at_indexDownSql, map[string]*bintree{}},
 	"1528395747_add_users_created_at_index.up.sql":                                           {_1528395747_add_users_created_at_indexUpSql, map[string]*bintree{}},
-	"1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.down.sql": {_1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accountsDownSql, map[string]*bintree{}},
-	"1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql":   {_1528395748_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSql, map[string]*bintree{}},
+	"1528395748_drop_commit.down.sql":                                                        {_1528395748_drop_commitDownSql, map[string]*bintree{}},
+	"1528395748_drop_commit.up.sql":                                                          {_1528395748_drop_commitUpSql, map[string]*bintree{}},
+	"1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.down.sql": {_1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsDownSql, map[string]*bintree{}},
+	"1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql":   {_1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

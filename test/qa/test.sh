@@ -37,6 +37,7 @@ curl -f http://localhost:7080/healthz
 echo "TEST: Running tests"
 pushd client/web || exit
 yarn run test:regression:core
+yarn run test:regression:codeintel
 yarn run test:regression:config-settings
 yarn run test:regression:integrations
 yarn run test:regression:search

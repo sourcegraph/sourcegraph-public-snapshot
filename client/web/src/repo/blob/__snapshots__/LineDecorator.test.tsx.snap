@@ -1,0 +1,194 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`LineDecorator renders multiple attachments 1`] = `
+<Memo()
+  codeViewReference={
+    Object {
+      "current": <div />,
+    }
+  }
+  decorations={
+    Array [
+      Object {
+        "after": Object {
+          "contentText": "attachment from extension one",
+        },
+        "range": Object {
+          "end": Object {
+            "character": 0,
+            "line": 0,
+          },
+          "start": Object {
+            "character": 0,
+            "line": 0,
+          },
+        },
+      },
+      Object {
+        "after": Object {
+          "contentText": "attachment from extension two",
+        },
+        "range": Object {
+          "end": Object {
+            "character": 0,
+            "line": 0,
+          },
+          "start": Object {
+            "character": 0,
+            "line": 0,
+          },
+        },
+      },
+    ]
+  }
+  getCodeElementFromLineNumber={[Function]}
+  isLightTheme={false}
+  line={1}
+  portalID="line-decoration-attachment-1"
+>
+  <Portal
+    containerInfo={
+      <div
+        class="line-decoration-attachment-portal"
+        id="line-decoration-attachment-1"
+      >
+        <span
+          class="line-decoration-attachment"
+          rel="noreferrer noopener"
+        >
+          <span
+            class="line-decoration-attachment__contents"
+            data-contents="attachment from extension one"
+          />
+        </span>
+        <span
+          class="line-decoration-attachment"
+          rel="noreferrer noopener"
+        >
+          <span
+            class="line-decoration-attachment__contents"
+            data-contents="attachment from extension two"
+          />
+        </span>
+      </div>
+    }
+  >
+    <LinkOrSpan
+      className="line-decoration-attachment"
+      key="attachment from extension one-0"
+      rel="noreferrer noopener"
+    >
+      <span
+        className="line-decoration-attachment"
+        rel="noreferrer noopener"
+      >
+        <span
+          className="line-decoration-attachment__contents"
+          data-contents="attachment from extension one"
+          style={
+            Object {
+              "backgroundColor": undefined,
+              "color": undefined,
+            }
+          }
+        />
+      </span>
+    </LinkOrSpan>
+    <LinkOrSpan
+      className="line-decoration-attachment"
+      key="attachment from extension two-1"
+      rel="noreferrer noopener"
+    >
+      <span
+        className="line-decoration-attachment"
+        rel="noreferrer noopener"
+      >
+        <span
+          className="line-decoration-attachment__contents"
+          data-contents="attachment from extension two"
+          style={
+            Object {
+              "backgroundColor": undefined,
+              "color": undefined,
+            }
+          }
+        />
+      </span>
+    </LinkOrSpan>
+  </Portal>
+</Memo()>
+`;
+
+exports[`LineDecorator renders one attachment 1`] = `
+<Memo()
+  codeViewReference={
+    Object {
+      "current": <div />,
+    }
+  }
+  decorations={
+    Array [
+      Object {
+        "after": Object {
+          "contentText": "test content",
+        },
+        "range": Object {
+          "end": Object {
+            "character": 0,
+            "line": 0,
+          },
+          "start": Object {
+            "character": 0,
+            "line": 0,
+          },
+        },
+      },
+    ]
+  }
+  getCodeElementFromLineNumber={[Function]}
+  isLightTheme={false}
+  line={1}
+  portalID="line-decoration-attachment-1"
+>
+  <Portal
+    containerInfo={
+      <div
+        class="line-decoration-attachment-portal"
+        id="line-decoration-attachment-1"
+      >
+        <span
+          class="line-decoration-attachment"
+          rel="noreferrer noopener"
+        >
+          <span
+            class="line-decoration-attachment__contents"
+            data-contents="test content"
+          />
+        </span>
+      </div>
+    }
+  >
+    <LinkOrSpan
+      className="line-decoration-attachment"
+      key="test content-0"
+      rel="noreferrer noopener"
+    >
+      <span
+        className="line-decoration-attachment"
+        rel="noreferrer noopener"
+      >
+        <span
+          className="line-decoration-attachment__contents"
+          data-contents="test content"
+          style={
+            Object {
+              "backgroundColor": undefined,
+              "color": undefined,
+            }
+          }
+        />
+      </span>
+    </LinkOrSpan>
+  </Portal>
+</Memo()>
+`;
