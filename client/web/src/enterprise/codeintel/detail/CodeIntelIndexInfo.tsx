@@ -116,6 +116,13 @@ export const CodeIntelIndexInfo: FunctionComponent<CodeIntelIndexInfoProps> = ({
                         />
                     </td>
                 </tr>
+
+                <tr>
+                    <td>Log contents</td>
+                    <td>
+                        <pre>{index.logContents}</pre>
+                    </td>
+                </tr>
             </tbody>
         </table>
     </>
