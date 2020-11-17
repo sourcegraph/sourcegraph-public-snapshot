@@ -13,14 +13,13 @@ function cluster_setup() {
 
   gcloud container clusters get-credentials default-buildkite --zone=us-central1-c --project=sourcegraph-ci
 
-  #NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER"
-  export NAMESPACE=cluster-ci-122
-  kubectl create ns $NAMESPACE -oyaml --dry-run | kubectl apply -f -
+  export NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER"
+  kubectl create ns "$NAMESPACE" -oyaml --dry-run | kubectl apply -f -
   kubectl apply -f "$DIR/storageClass.yaml"
   kubectl config set-context --current --namespace="$NAMESPACE"
   kubectl config current-context
   sleep 15 #wait for namespace to come up
-  kubectl get -n $NAMESPACE pods
+  kubectl get -n "$NAMESPACE" pods
 
   pushd "$DIR/deploy-sourcegraph/"
   pwd
@@ -44,10 +43,10 @@ function test_setup() {
 
   sleep 15
   export SOURCEGRAPH_BASE_URL="http://sourcegraph-frontend.$NAMESPACE.svc.cluster.local:30080"
-  curl $SOURCEGRAPH_BASE_URL
+  curl "$SOURCEGRAPH_BASE_URL"
 
   # setup admin users, etc
-  go run test/init-server.go -base-url=$SOURCEGRAPH_BASE_URL
+  go run test/init-server.go -base-url="$SOURCEGRAPH_BASE_URL"
 
   # Load variables set up by init-server, disabling `-x` to avoid printing variables, setting +u to avoid blowing up on ubound ones
   set +x +u
@@ -57,14 +56,14 @@ function test_setup() {
 
   echo "TEST: Checking Sourcegraph instance is accessible"
 
-  curl --fail $SOURCEGRAPH_BASE_URL
+  curl --fail "$SOURCEGRAPH_BASE_URL"
   curl --fail "$SOURCEGRAPH_BASE_URL/healthz"
 }
 
 function e2e() {
   echo "TEST: Running tests"
   pushd client/web
-  echo $SOURCEGRAPH_BASE_URL
+  echo "$SOURCEGRAPH_BASE_URL"
   # TODO: File issue for broken tests and add more
   yarn run test:regression:core
   yarn run test:regression:config-settings
