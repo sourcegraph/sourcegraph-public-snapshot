@@ -4,7 +4,7 @@
 
 To view all available extensions on your Sourcegraph instance, click **User menu > Extensions** in the top navigation bar.
 
-> Don't see an extension you need? You can also [author your own extension](authoring/index.md) or [request it](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+label%3Aextension-request) with an issue labeled `extension-request`.
+> Don't see an extension you need? You can also [author your own extension](authoring/index.md) or [share your idea](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+label%3Aextension-request) with an issue labeled `extension-request`.
 
 To enable/disable an extension for yourself, click **User menu > Extensions**, find the extension, and toggle the slider.
 
@@ -37,5 +37,4 @@ On a self-hosted Sourcegraph instance, add the same JSON above to global setting
 <div style="text-align:center;margin:20px 0;display:flex">
 <img src="https://sourcegraphstatic.com/docs/images/extensions/all-users-global-settings.png" style="padding:15px"></a>
 </div>
-
 
