@@ -50,8 +50,11 @@ func CalcCounts(start, end time.Time, cs []*campaigns.Changeset) ([]*ChangesetCo
 	for _, changeset := range cs {
 		// Go through every point in time we want to record and check the
 		// states of the changeset at that point in time
+		afterIdx := 0
 		for _, c := range counts {
-			states, ok := changeset.History.StatesAtTime(c.Time)
+			var states campaigns.ChangesetStatesAtTime
+			var ok bool
+			states, afterIdx, ok = changeset.History.StatesAtTime(c.Time, afterIdx)
 			if !ok {
 				// Changeset didn't exist yet
 				continue
