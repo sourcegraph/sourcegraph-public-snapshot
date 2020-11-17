@@ -17,10 +17,14 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+### Removed
+
+## 3.22.1
+
+### Fixed
+
 - `src campaign [validate|apply|preview]` now print an error and usage information if a user accidentally provides an additional argument. [#384](https://github.com/sourcegraph/src-cli/pull/384)
 - Fix a regression that was introduced by [#361](https://github.com/sourcegraph/src-cli/pull/361) and caused the "Resolving repositories" step of `src campaign [apply|preview]` to crash when the search query in the campaign spec yielded file matches and repository matches from the same repository.
-
-### Removed
 
 ## 3.22.0
 
