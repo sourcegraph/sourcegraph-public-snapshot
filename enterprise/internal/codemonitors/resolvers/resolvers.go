@@ -365,13 +365,17 @@ func (r *Resolver) createActions(ctx context.Context, args []*graphqlbackend.Cre
 }
 
 func (r *Resolver) deleteActionsInt64(ctx context.Context, actionIDs []int64, monitorID int64) (err error) {
-	for _, d := range actionIDs {
-		// TODO: Can we put this in one query?
-		q, err := r.deleteActionEmailQuery(ctx, d, monitorID)
-		err = r.db.Exec(ctx, q)
-		if err != nil {
-			return err
-		}
+	if len(actionIDs) == 0 {
+		return nil
+	}
+	var q *sqlf.Query
+	q, err = r.deleteActionsEmailQuery(ctx, actionIDs, monitorID)
+	if err != nil {
+		return err
+	}
+	err = r.db.Exec(ctx, q)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -845,13 +849,15 @@ LIMIT %s;
 	), nil
 }
 
-func (r *Resolver) deleteActionEmailQuery(ctx context.Context, actionID int64, monitorID int64) (*sqlf.Query, error) {
-	const deleteActionEmailQuery = `
-DELETE FROM cm_emails WHERE id = %s AND MONITOR = %s
-`
+func (r *Resolver) deleteActionsEmailQuery(ctx context.Context, actionIDs []int64, monitorID int64) (*sqlf.Query, error) {
+	const deleteActionEmailQuery = `DELETE FROM cm_emails WHERE id in (%s) AND MONITOR = %s`
+	var deleteIDs []*sqlf.Query
+	for _, ids := range actionIDs {
+		deleteIDs = append(deleteIDs, sqlf.Sprintf("%d", ids))
+	}
 	return sqlf.Sprintf(
 		deleteActionEmailQuery,
-		actionID,
+		sqlf.Join(deleteIDs, ", "),
 		monitorID,
 	), nil
 }
