@@ -330,12 +330,12 @@ const (
 // ExternalServiceUserMode returns the mode describing if users are allowed to add external services
 // for public and private repositories.
 func ExternalServiceUserMode() ExternalServiceMode {
-	switch Get().ExternalServiceUserMode { 0
-	case "public": 0
-		return ExternalServiceModePublic 0
-	case "all": 0
-		return ExternalServiceModeAll 0
-	default: 0
-		return ExternalServiceModeDisabled 0
+	switch Get().ExternalServiceUserMode {
+	case "public":
+		return ExternalServiceModePublic
+	case "all":
+		return ExternalServiceModeAll
+	default:
+		return ExternalServiceModeDisabled
 	}
 }
