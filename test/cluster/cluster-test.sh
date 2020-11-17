@@ -4,10 +4,10 @@ set -euxo pipefail
 # setup DIR for easier pathing /Users/dax/work/sourcegraph/test/cluster
 DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)""
 # cd to repo root
-cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
+cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 function cluster_setup() {
-  git clone --depth 1 --branch v3.20.1 \
+  git clone --depth 1 \
     https://github.com/sourcegraph/deploy-sourcegraph.git \
     "$DIR/deploy-sourcegraph"
 
@@ -65,7 +65,7 @@ function e2e() {
   echo "TEST: Running tests"
   pushd client/web
   echo $SOURCEGRAPH_BASE_URL
-  # TODO: File issue for broken test
+  # TODO: File issue for broken tests and add more
   #yarn run test:regression:core
   yarn run test:regression:config-settings
   popd
