@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -198,40 +199,39 @@ func NewGitHubWebhook(store *Store, repos repos.Store, now func() time.Time) *Gi
 	return &GitHubWebhook{&Webhook{store, repos, now, extsvc.TypeGitHub}}
 }
 
-// ServeHTTP implements the http.Handler interface.
-func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	e, extSvc, httpErr := h.parseEvent(r)
-	if httpErr != nil {
-		respond(w, httpErr.code, httpErr)
-		return
-	}
+func (h *GitHubWebhook) Register(router *webhooks.GithubWebhook) {
+	router.Register(
+		h.handleGithubWebhook,
+		"issue_comment",
+		"pull_request",
+		"pull_request_review",
+		"pull_request_review_comment",
+		"status",
+		"check_suite",
+		"check_run",
+	)
+}
 
+func (h *GitHubWebhook) handleGithubWebhook(ctx context.Context, extSvc *repos.ExternalService, payload interface{}) error {
+	m := new(multierror.Error)
 	externalServiceID, err := extractExternalServiceID(extSvc)
 	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
+		return err
 	}
 
-	prs, ev := h.convertEvent(r.Context(), externalServiceID, e)
-	if len(prs) == 0 || ev == nil {
-		respond(w, http.StatusOK, nil) // Nothing to do
-		return
-	}
+	prs, ev := h.parsePRsFromEvent(ctx, externalServiceID, payload)
 
-	m := new(multierror.Error)
 	for _, pr := range prs {
 		if pr == (PR{}) {
 			continue
 		}
 
-		err := h.upsertChangesetEvent(r.Context(), externalServiceID, pr, ev)
+		err := h.upsertChangesetEvent(ctx, externalServiceID, pr, ev)
 		if err != nil {
 			m = multierror.Append(m, err)
 		}
 	}
-	if m.ErrorOrNil() != nil {
-		respond(w, http.StatusInternalServerError, m)
-	}
+	return m.ErrorOrNil()
 }
 
 func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *repos.ExternalService, *httpError) {
@@ -295,7 +295,7 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *repos.Externa
 	return e, extSvc, nil
 }
 
-func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID string, theirs interface{}) (prs []PR, ours keyer) {
+func (h *GitHubWebhook) parsePRsFromEvent(ctx context.Context, externalServiceID string, theirs interface{}) (prs []PR, ours keyer) {
 	log15.Debug("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
 	switch e := theirs.(type) {
 	case *gh.IssueCommentEvent:
