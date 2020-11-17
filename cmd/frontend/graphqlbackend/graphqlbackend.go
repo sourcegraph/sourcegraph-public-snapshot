@@ -54,6 +54,8 @@ func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, oper
 		ctx, finish = trace.OpenTracingTracer{}.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 	}
 
+	ctx = context.WithValue(ctx, "graphql-query", queryString)
+
 	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
 
 	// Note: We don't care about the error here, we just extract the username if
@@ -325,7 +327,7 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver) (*graphql.Schema, error) {
+func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
 	resolver := &schemaResolver{
 		CampaignsResolver: defaultCampaignsResolver{},
 		AuthzResolver:     defaultAuthzResolver{},
@@ -343,7 +345,10 @@ func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz A
 		EnterpriseResolvers.authzResolver = authz
 		resolver.AuthzResolver = authz
 	}
-
+	if codeMonitors != nil {
+		EnterpriseResolvers.codeMonitorsResolver = codeMonitors
+		resolver.CodeMonitorsResolver = codeMonitors
+	}
 	return graphql.ParseSchema(
 		Schema,
 		resolver,
@@ -372,6 +377,31 @@ type NodeResolver struct {
 
 func (r *NodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
 	n, ok := r.Node.(*accessTokenResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitor() (MonitorResolver, bool) {
+	n, ok := r.Node.(MonitorResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorQuery() (MonitorQueryResolver, bool) {
+	n, ok := r.Node.(MonitorQueryResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorEmail() (MonitorEmailResolver, bool) {
+	n, ok := r.Node.(MonitorEmailResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorActionEvent() (MonitorActionEventResolver, bool) {
+	n, ok := r.Node.(MonitorActionEventResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorTriggerEvent() (MonitorTriggerEventResolver, bool) {
+	n, ok := r.Node.(MonitorTriggerEventResolver)
 	return n, ok
 }
 
@@ -420,6 +450,11 @@ func (r *NodeResolver) ToVisibleChangesetSpec() (VisibleChangesetSpecResolver, b
 		return nil, ok
 	}
 	return n.ToVisibleChangesetSpec()
+}
+
+func (r *NodeResolver) ToCampaignsCredential() (CampaignsCredentialResolver, bool) {
+	n, ok := r.Node.(CampaignsCredentialResolver)
+	return n, ok
 }
 
 func (r *NodeResolver) ToProductLicense() (ProductLicense, bool) {
@@ -506,18 +541,21 @@ type schemaResolver struct {
 	CampaignsResolver
 	AuthzResolver
 	CodeIntelResolver
+	CodeMonitorsResolver
 }
 
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
-	codeIntelResolver CodeIntelResolver
-	authzResolver     AuthzResolver
-	campaignsResolver CampaignsResolver
+	codeIntelResolver    CodeIntelResolver
+	authzResolver        AuthzResolver
+	campaignsResolver    CampaignsResolver
+	codeMonitorsResolver CodeMonitorsResolver
 }{
-	codeIntelResolver: defaultCodeIntelResolver{},
-	authzResolver:     defaultAuthzResolver{},
-	campaignsResolver: defaultCampaignsResolver{},
+	codeIntelResolver:    defaultCodeIntelResolver{},
+	authzResolver:        defaultAuthzResolver{},
+	campaignsResolver:    defaultCampaignsResolver{},
+	codeMonitorsResolver: defaultCodeMonitorsResolver{},
 }
 
 // DEPRECATED
@@ -548,6 +586,8 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return r.ChangesetSpecByID(ctx, id)
 	case "Changeset":
 		return r.ChangesetByID(ctx, id)
+	case "CampaignsCredential":
+		return r.CampaignsCredentialByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
 			return f(ctx, id)

@@ -1,20 +1,17 @@
 import * as Monaco from 'monaco-editor'
-import { Sequence, toMonacoRange } from './parser'
+import { Token, toMonacoRange } from './scanner'
 import { validateFilter } from './filters'
 import { SearchPatternType } from '../../graphql-operations'
 
 /**
- * Returns the diagnostics for a parsed search query to be displayed in the Monaco query input.
+ * Returns the diagnostics for a scanned search query to be displayed in the Monaco query input.
  */
-export function getDiagnostics(
-    { members }: Pick<Sequence, 'members'>,
-    patternType: SearchPatternType
-): Monaco.editor.IMarkerData[] {
+export function getDiagnostics(tokens: Token[], patternType: SearchPatternType): Monaco.editor.IMarkerData[] {
     const diagnostics: Monaco.editor.IMarkerData[] = []
-    for (const { token, range } of members) {
+    for (const token of tokens) {
         if (token.type === 'filter') {
             const { filterType, filterValue } = token
-            const validationResult = validateFilter(filterType.token.value, filterValue)
+            const validationResult = validateFilter(filterType.value, filterValue)
             if (validationResult.valid) {
                 continue
             }
@@ -29,7 +26,7 @@ export function getDiagnostics(
                     severity: Monaco.MarkerSeverity.Warning,
                     message:
                         'Your search is interpreted literally and contains quotes. Did you mean to search for quotes?',
-                    ...toMonacoRange(range),
+                    ...toMonacoRange(token.range),
                 })
             }
         }

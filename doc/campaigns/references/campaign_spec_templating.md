@@ -28,7 +28,7 @@ steps:
     container: unibeautify/goimports
 ```
 
-In this case, `${{ repository.search_result_paths }}` will be replaced with the relative-to-root-dir file paths of each search resulted yielded by `repositoriesMatchingQuery`. By using the [template helper function](#template-helper-functions) `join` an argument list of whitespace-separated values is constructed. Before the step is executed the final `run` value would look close to this:
+In this case, `${{ repository.search_result_paths }}` will be replaced with the relative-to-root-dir file paths of each search resulted yielded by `repositoriesMatchingQuery`. By using the [template helper function](#template-helper-functions) `join`, an argument list of whitespace-separated values is constructed. Before the step is executed the final `run` value would look close to this:
 
 ```yaml
 run: comby -in-place 'fmt.Sprintf("%d", :[v])' 'strconv.Itoa(:[v])' cmd/src/main.go internal/fmt/fmt.go
@@ -72,7 +72,7 @@ The following template variables are available:
 - `${{ previous_step.stdout }}`
 
     The complete output of the previous step on standard output.
-- `${{ previous_step.stderr}}`
+- `${{ previous_step.stderr }}`
 
     The complete output of the previous step on standard error.
 

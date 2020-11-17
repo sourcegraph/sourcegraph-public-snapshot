@@ -61,6 +61,9 @@ export interface RepogroupPageProps
 
     /** Whether globbing is enabled for filters. */
     globbing: boolean
+
+    // Whether to additionally highlight or provide hovers for tokens, e.g., regexp character sets.
+    enableSmartQuery: boolean
 }
 
 export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props: RepogroupPageProps) => {
@@ -103,7 +106,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                     <>{props.repogroupMetadata.description}</>
                 ) : (
                     <span className="text-monospace">
-                        <span className="search-keyword">repogroup:</span>
+                        <span className="search-filter-keyword">repogroup:</span>
                         {props.repogroupMetadata.name}
                     </span>
                 )}
@@ -164,7 +167,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
                                 <p>
                                     Using the syntax{' '}
                                     <code>
-                                        <span className="search-keyword ">repogroup:</span>
+                                        <span className="search-filter-keyword ">repogroup:</span>
                                         {props.repogroupMetadata.name}
                                     </code>{' '}
                                     in a query will search these repositories:
@@ -204,7 +207,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
                 <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <GithubIcon className="icon-inline repogroup-page__repo-list-icon" />
                 </a>
-                <Link to={`/${repo}`} className="text-monospace search-keyword">
+                <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
                 </Link>
             </>
@@ -214,7 +217,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
                 <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <GitlabIcon className="icon-inline repogroup-page__repo-list-icon" />
                 </a>
-                <Link to={`/${repo}`} className="text-monospace search-keyword">
+                <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
                 </Link>
             </>
@@ -224,7 +227,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
                 <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <BitbucketIcon className="icon-inline repogroup-page__repo-list-icon" />
                 </a>
-                <Link to={`/${repo}`} className="text-monospace search-keyword">
+                <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
                 </Link>
             </>

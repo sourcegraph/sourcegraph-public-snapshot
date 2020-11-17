@@ -545,7 +545,7 @@ func TestUsers_Delete(t *testing.T) {
 				Kind:            extsvc.KindGitHub,
 				DisplayName:     "GITHUB #1",
 				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-				NamespaceUserID: &user.ID,
+				NamespaceUserID: user.ID,
 			})
 			if err != nil {
 				t.Fatal(err)

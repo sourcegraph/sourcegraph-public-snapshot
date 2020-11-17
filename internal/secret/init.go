@@ -1,10 +1,11 @@
 package secret
 
 import (
-	"bytes"
 	"crypto/rand"
+	"encoding/base64"
 	"io/ioutil"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/inconshreveable/log15"
@@ -15,15 +16,30 @@ import (
 
 // gatherKeys splits the comma-separated encryption data into its potential two components:
 // primary and secondary keys, where the first key is assumed to be the primary key.
+// Each key is expected to be base64-encoded separately.
 func gatherKeys(data []byte) (primaryKey, secondaryKey []byte, err error) {
-	parts := bytes.Split(data, []byte(","))
+	parts := strings.Split(string(data), ",")
 	if len(parts) > 2 {
 		return nil, nil, errors.Errorf("expect at most two encryption keys but got %d", len(parts))
 	}
-	if len(parts) == 1 {
-		return parts[0], nil, nil
+
+	primaryKey, err = base64.StdEncoding.DecodeString(parts[0])
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "decode primary key")
+	} else if len(primaryKey) < requiredKeyLength {
+		return nil, nil, errors.Errorf("primary key length of %d bytes is required", requiredKeyLength)
 	}
-	return parts[0], parts[1], nil
+
+	if len(parts) == 2 {
+		secondaryKey, err = base64.StdEncoding.DecodeString(parts[1])
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "decode secondary key")
+		} else if len(primaryKey) < requiredKeyLength {
+			return nil, nil, errors.Errorf("secondary key length of %d bytes is required", requiredKeyLength)
+		}
+	}
+
+	return primaryKey, secondaryKey, nil
 }
 
 var initErr error
@@ -76,15 +92,12 @@ func initDefaultEncryptor() error {
 		return errors.New("key file permissions are not 0400")
 	}
 
-	encryptionKey, err := ioutil.ReadFile(secretFile)
+	encryptionKeys, err := ioutil.ReadFile(secretFile)
 	if err != nil {
 		return errors.Wrapf(err, "read file %q", secretFile)
 	}
-	if len(encryptionKey) < requiredKeyLength {
-		return errors.Errorf("key length of %d characters is required", requiredKeyLength)
-	}
 
-	primaryKey, secondaryKey, err := gatherKeys(encryptionKey)
+	primaryKey, secondaryKey, err := gatherKeys(encryptionKeys)
 	if err != nil {
 		return errors.Wrap(err, "gather keys")
 	}

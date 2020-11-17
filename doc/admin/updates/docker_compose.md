@@ -9,6 +9,8 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
+<!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
+
 ## 3.21.0 -> 3.21.1
 
 No manual migration required.
@@ -19,7 +21,7 @@ Please upgrade to the [`v3.20.1` tag of deploy-sourcegraph-docker](https://githu
 
 Please upgrade to the [`v3.21.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.21.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
-This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database  as described in the [external database documentation](../external_database.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
+This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database as described in the [external database documentation](../external_services/postgres.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
 
 ### If you wish to keep existing LSIF data
 
@@ -150,7 +152,7 @@ Then on your server:
 
 ```sh
 cd deploy-sourcegraph-docker/docker-compose/
-docker-compose down
+docker-compose down --remove-orphans
 git pull
 docker-compose up -d
 ```

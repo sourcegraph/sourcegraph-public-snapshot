@@ -20,7 +20,7 @@ func (r TestWorkRecord) RecordID() int {
 	return r.ID
 }
 
-func testStore(options StoreOptions) *store {
+func testStore(options Options) *store {
 	return newStore(basestore.NewHandleWithDB(dbconn.Global, sql.TxOptions{}), options)
 }
 
@@ -139,7 +139,7 @@ func setupStoreTest(t *testing.T) {
 	}
 }
 
-var defaultTestStoreOptions = StoreOptions{
+var defaultTestStoreOptions = Options{
 	TableName:         "workerutil_test w",
 	Scan:              testScanFirstRecord,
 	OrderByExpression: sqlf.Sprintf("w.uploaded_at"),

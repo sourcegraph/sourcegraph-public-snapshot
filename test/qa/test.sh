@@ -1,34 +1,48 @@
 #!/usr/bin/env bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
-set -x
-
 # shellcheck disable=SC1091
 source /root/.profile
-Xvfb "$DISPLAY" -screen 0 1280x1024x24 &
-x11vnc -display "$DISPLAY" -forever -rfbport 5900 >/x11vnc.log 2>&1 &
+cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
 
-curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
-chmod +x /usr/local/bin/src
+set -x
 
-asdf install
-yarn
-yarn generate
+test/setup-deps.sh
+test/setup-display.sh
 
-ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p qatest.mp4 >ffmpeg.log 2>&1 &
+# ==========================
 
-IMAGE=sourcegraph/server:insiders ./dev/run-server-image.sh -d --name sourcegraph-server
+CONTAINER=sourcegraph-server
 
+docker_logs() {
+  LOGFILE=$(docker inspect ${CONTAINER} --format '{{.LogPath}}')
+  cp "$LOGFILE" $CONTAINER.log
+  chmod 744 $CONTAINER.log
+}
+
+IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION ./dev/run-server-image.sh -d --name $CONTAINER
+trap docker_logs exit
 sleep 15
 
-pushd test/qa || exit
-go run main.go
-popd || exit
+go run test/init-server.go
 
+# Load variables set up by init-server, disabling `-x` to avoid printing variables
+set +x
+# shellcheck disable=SC1091
 source /root/.profile
+set -x
+
+echo "TEST: Checking Sourcegraph instance is accessible"
+curl -f http://localhost:7080
+curl -f http://localhost:7080/healthz
+echo "TEST: Running tests"
 pushd client/web || exit
 yarn run test:regression:core
+yarn run test:regression:codeintel
+yarn run test:regression:config-settings
 yarn run test:regression:integrations
+yarn run test:regression:search
 popd || exit
-PID=$(pgrep ffmpeg)
-kill "$PID"
+
+# ==========================
+
+test/cleanup-display.sh

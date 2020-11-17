@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
 	"net"
@@ -12,22 +13,27 @@ import (
 	"time"
 
 	"github.com/golang/gddo/httputil"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared/assets"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/secret"
@@ -136,7 +142,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		server.SourcegraphDotComMode = true
 
 		es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
-			// On Cloud we want to fetch our admin owned external service only here
+			// On Cloud we want to fetch only site level external services here
 			NamespaceUserID: -1,
 			Kinds:           []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		})
@@ -151,13 +157,14 @@ func Main(enterpriseInit EnterpriseInit) {
 				log.Fatalf("bad external service config: %v", err)
 			}
 
+			// We only allow one external service per kind to be flagged as CloudGlobal, so pick those.
 			switch c := cfg.(type) {
 			case *schema.GitHubConnection:
-				if strings.HasPrefix(c.Url, "https://github.com") && c.Token != "" {
+				if strings.HasPrefix(c.Url, "https://github.com") && c.Token != "" && c.CloudGlobal {
 					server.GithubDotComSource, err = repos.NewGithubSource(e, cf)
 				}
 			case *schema.GitLabConnection:
-				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" {
+				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" && c.CloudGlobal {
 					server.GitLabDotComSource, err = repos.NewGitLabSource(e, cf)
 				}
 			}
@@ -236,6 +243,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		)(server.Handler())
 	}
 
+	globals.WatchExternalURL(nil)
 	go debugserver.Start(debugserver.Endpoint{
 		Name: "Repo Updater State",
 		Path: "/repo-updater-state",
@@ -292,10 +300,47 @@ func Main(enterpriseInit EnterpriseInit) {
 				}
 			}
 		}),
-	})
+	}, debugserver.Endpoint{
+		Name: "List Authz Providers",
+		Path: "/list-authz-providers",
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			type providerInfo struct {
+				ServiceType        string `json:"service_type"`
+				ServiceID          string `json:"service_id"`
+				ExternalServiceURL string `json:"external_service_url"`
+			}
 
-	srv := &http.Server{Addr: addr, Handler: handler}
-	log.Fatal(srv.ListenAndServe())
+			_, providers := authz.GetProviders()
+			infos := make([]providerInfo, len(providers))
+			for i, p := range providers {
+				_, id := extsvc.DecodeURN(p.URN())
+
+				// Note that the ID marshalling below replicates code found in `graphqlbackend`.
+				// We cannot import that package's code into this one (see /dev/check/go-dbconn-import.sh).
+				infos[i] = providerInfo{
+					ServiceType:        p.ServiceType(),
+					ServiceID:          p.ServiceID(),
+					ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", globals.ExternalURL(), relay.MarshalID("ExternalService", id)),
+				}
+			}
+
+			resp, err := json.MarshalIndent(infos, "", "  ")
+			if err != nil {
+				http.Error(w, "failed to marshal infos: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(resp)
+		}),
+	},
+	)
+
+	httpSrv, err := httpserver.NewFromAddr(addr, handler, httpserver.Options{})
+	if err != nil {
+		log.Fatalf("Failed to create listener: %s", err)
+	}
+
+	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }
 
 type scheduler interface {

@@ -10,14 +10,14 @@ import { TextDocumentIdentifier, match } from '../client/types/textDocument'
 import { getModeFromPath } from '../../languages'
 import { parseRepoURI } from '../../util/url'
 import { ExtensionDocuments } from './api/documents'
-import { toPosition } from './api/types'
+import { fromLocation, toPosition } from './api/types'
 import { TextDocumentPositionParameters } from '../protocol'
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
-import { Hover } from '@sourcegraph/extension-api-types'
-import { isEqual } from 'lodash'
+import { Hover, Location } from '@sourcegraph/extension-api-types'
+import { castArray, isEqual } from 'lodash'
 import { fromHoverMerged, HoverMerged } from '../client/types/hover'
-import { isNot, isExactly } from '../../util/types'
+import { isNot, isExactly, isDefined } from '../../util/types'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -36,6 +36,7 @@ export interface ExtensionHostState {
     // Lang
     hoverProviders: BehaviorSubject<RegisteredProvider<sourcegraph.HoverProvider>[]>
     documentHighlightProviders: BehaviorSubject<RegisteredProvider<sourcegraph.DocumentHighlightProvider>[]>
+    definitionProviders: BehaviorSubject<RegisteredProvider<sourcegraph.DefinitionProvider>[]>
 }
 
 export interface RegisteredProvider<T> {
@@ -51,7 +52,11 @@ export interface InitResult {
     state: Readonly<ExtensionHostState>
     commands: typeof sourcegraph['commands']
     search: typeof sourcegraph['search']
-    languages: Pick<typeof sourcegraph['languages'], 'registerHoverProvider' | 'registerDocumentHighlightProvider'>
+    languages: Pick<
+        typeof sourcegraph['languages'],
+        'registerHoverProvider' | 'registerDocumentHighlightProvider' | 'registerDefinitionProvider'
+    >
+    graphQL: typeof sourcegraph['graphQL']
 }
 
 /**
@@ -82,6 +87,7 @@ export const initNewExtensionAPI = (
         documentHighlightProviders: new BehaviorSubject<RegisteredProvider<sourcegraph.DocumentHighlightProvider>[]>(
             []
         ),
+        definitionProviders: new BehaviorSubject<RegisteredProvider<sourcegraph.DefinitionProvider>[]>([]),
     }
 
     const configChanges = new BehaviorSubject<void>(undefined)
@@ -160,6 +166,19 @@ export const initNewExtensionAPI = (
                 ).pipe(map(result => (result.isLoading ? [] : result.result)))
             )
         },
+        getDefinition: (textParameters: TextDocumentPositionParameters) => {
+            const document = textDocuments.get(textParameters.textDocument.uri)
+            const position = toPosition(textParameters.position)
+
+            return proxySubscribable(
+                callProviders(
+                    state.definitionProviders,
+                    document,
+                    provider => provider.provideDefinition(document, position),
+                    mergeDefinition
+                )
+            )
+        },
     }
 
     // Configuration
@@ -202,6 +221,16 @@ export const initNewExtensionAPI = (
         selector: sourcegraph.DocumentSelector,
         provider: sourcegraph.DocumentHighlightProvider
     ): sourcegraph.Unsubscribable => addWithRollback(state.documentHighlightProviders, { selector, provider })
+    // definition
+    const registerDefinitionProvider = (
+        selector: sourcegraph.DocumentSelector,
+        provider: sourcegraph.DefinitionProvider
+    ): sourcegraph.Unsubscribable => addWithRollback(state.definitionProviders, { selector, provider })
+
+    // GraphQL
+    const graphQL: typeof sourcegraph['graphQL'] = {
+        execute: (query, variables) => mainAPI.requestGraphQL(query, variables),
+    }
 
     return {
         configuration: Object.assign(configChanges.asObservable(), {
@@ -215,7 +244,9 @@ export const initNewExtensionAPI = (
         languages: {
             registerHoverProvider,
             registerDocumentHighlightProvider,
+            registerDefinitionProvider,
         },
+        graphQL,
     }
 }
 
@@ -311,7 +342,7 @@ export function callProviders<TProvider, TProviderResult, TMergedResult>(
 }
 
 /**
- * merges latests results from hover providers into a form that is convenient to show
+ * merges latest results from hover providers into a form that is convenient to show
  *
  * @param results latests results from hover providers
  * @returns a {@link HoverMerged} results if there are any actual Hover results or null in case of no results or loading
@@ -321,10 +352,20 @@ export function mergeHoverResults(results: (typeof LOADING | Hover | null | unde
 }
 
 /**
- * merges latests results from document highlight providers into a form that is convenient to show
+ * Merges definition result and converts it to client types for sending it to the main thread.
  *
+ * @param results Results from all definition providers.
+ */
+export function mergeDefinition(results: (typeof LOADING | sourcegraph.Definition | null | undefined)[]): Location[] {
+    return results
+        .filter(isNot(isExactly(LOADING)))
+        .flatMap(castArray)
+        .filter(isDefined)
+        .map(fromLocation)
+}
+
+/**
  * @param results latests results from document highlight providers
- * @returns a {@link DocumentHighlight} results if there are any actual document highlights or null in case of no results or loading
  */
 export function mergeDocumentHighlightResults(
     results: (typeof LOADING | sourcegraph.DocumentHighlight[] | null | undefined)[]

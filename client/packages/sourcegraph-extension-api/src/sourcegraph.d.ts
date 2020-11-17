@@ -1123,8 +1123,8 @@ declare module 'sourcegraph' {
 
     /**
      * A provider result represents the values that a provider, such as the {@link HoverProvider}, may return. The
-     * result may be a single value, a Promise that resolves to a single value, or a Subscribable that emits zero
-     * or more values.
+     * result may be a single value, a Promise that resolves to a single value, a Subscribable that emits zero
+     * or more values, or an AsyncIterable that yields zero or more values.
      */
     export type ProviderResult<T> =
         | T
@@ -1132,6 +1132,7 @@ declare module 'sourcegraph' {
         | null
         | Promise<T | undefined | null>
         | Subscribable<T | undefined | null>
+        | AsyncIterable<T | undefined | null>
 
     /** The kinds of markup that can be used. */
     export enum MarkupKind {
@@ -1606,6 +1607,73 @@ declare module 'sourcegraph' {
          * @throws If no command exists with the given command identifier, an error is thrown.
          */
         export function executeCommand<T = any>(command: string, ...args: any[]): Promise<T>
+    }
+
+    export namespace graphQL {
+        /**
+         * Executes a [Sourcegraph GraphQL API](https://docs.sourcegraph.com/api/graphql) query or mutation on the associated Sourcegraph instance and returns a promise for the result.
+         *
+         * @template TResult The GraphQL result type
+         * @template TVariables The type of the variables object
+         * @param request The GraphQL request (query or mutation)
+         * @param variables An object whose properties are GraphQL query name-value variable pairs
+         * @returns A Promise for the result of the GraphQL request
+         */
+        export function execute<TResult, TVariables extends object>(
+            request: string,
+            variables: TVariables
+        ): Promise<GraphQLResult<TResult>>
+
+        export type GraphQLResult<T> = SuccessGraphQLResult<T> | ErrorGraphQLResult
+
+        export interface SuccessGraphQLResult<T> {
+            data: T
+            errors: undefined
+        }
+        export interface ErrorGraphQLResult {
+            data: undefined
+            errors: GraphQLError[]
+        }
+
+        /**
+         * A spec-compliant member of the GraphQL `errors` array.
+         */
+        export interface GraphQLError {
+            /**
+             * Every error must contain an entry with the key message with a string description of the error intended for
+             * the developer as a guide to understand and correct the error.
+             */
+            message: string
+
+            /**
+             * If an error can be associated to a particular point in the requested GraphQL document, it should contain an
+             * entry with the key locations with a list of locations, where each location is a map with the keys line and
+             * column, both positive numbers starting from 1 which describe the beginning of an associated syntax element.
+             */
+            locations?: {
+                line: number
+                column: number
+            }[]
+
+            /**
+             * If an error can be associated to a particular field in the GraphQL result, it must contain an entry with the
+             * key path that details the path of the response field which experienced the error. This allows clients to
+             * identify whether a null result is intentional or caused by a runtime error.
+             *
+             * This field should be a list of path segments starting at the root of the response and ending with the field
+             * associated with the error. Path segments that represent fields should be strings, and path segments that
+             * represent list indices should be 0‐indexed integers. If the error happens in an aliased field, the path to
+             * the error should use the aliased name, since it represents a path in the response, not in the query.
+             */
+            path?: (string | number)[]
+
+            /**
+             * GraphQL services may provide an additional entry to errors with key extensions. This entry, if set, must
+             * have a map as its value. This entry is reserved for implementors to add additional information to errors
+             * however they see fit, and there are no additional restrictions on its contents.
+             */
+            extensions?: Record<string, unknown>
+        }
     }
 
     /**

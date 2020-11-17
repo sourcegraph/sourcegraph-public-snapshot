@@ -1,4 +1,4 @@
-import { Filter } from './parser'
+import { Filter } from './scanner'
 import { SearchSuggestion } from '../suggestions'
 import {
     FilterType,
@@ -258,9 +258,9 @@ export const validateFilter = (
     if (
         definition.discreteValues &&
         (!filterValue ||
-            (filterValue.token.type !== 'literal' && filterValue.token.type !== 'quoted') ||
-            (filterValue.token.type === 'literal' && !isValidDiscreteValue(definition, filterValue.token.value)) ||
-            (filterValue.token.type === 'quoted' && !isValidDiscreteValue(definition, filterValue.token.quotedValue)))
+            (filterValue.type !== 'literal' && filterValue.type !== 'quoted') ||
+            (filterValue.type === 'literal' && !isValidDiscreteValue(definition, filterValue.value)) ||
+            (filterValue.type === 'quoted' && !isValidDiscreteValue(definition, filterValue.quotedValue)))
     ) {
         return {
             valid: false,

@@ -1,5 +1,5 @@
 import { ProxyMarked, transferHandlers, releaseProxy, TransferHandler, Remote } from 'comlink'
-import { Subscription } from 'rxjs'
+import { Observable, Observer, Subscription } from 'rxjs'
 import { Subscribable, Unsubscribable } from 'sourcegraph'
 import { hasProperty } from '../util/types'
 
@@ -63,6 +63,57 @@ export const isSubscribable = (value: unknown): value is Subscribable<unknown> =
     value !== null &&
     hasProperty('subscribe')(value) &&
     typeof value.subscribe === 'function'
+
+/**
+ * Reports whether the value is an AsyncIterable
+ */
+export const isAsyncIterable = (value: unknown): value is AsyncIterable<unknown> =>
+    typeof value === 'object' && value !== null && typeof (value as any)[Symbol.asyncIterator] === 'function'
+
+/**
+ * Convert an async iterable into an observable.
+ *
+ * @param iterable The source iterable.
+ */
+export const observableFromAsyncIterable = <T>(iterable: AsyncIterable<T>): Observable<T> =>
+    new Observable((observer: Observer<T>) => {
+        const iterator = iterable[Symbol.asyncIterator]()
+        let unsubscribed = false
+        let iteratorDone = false
+        function next(): void {
+            iterator.next().then(
+                result => {
+                    if (unsubscribed) {
+                        return
+                    }
+                    if (result.done) {
+                        iteratorDone = true
+                        observer.complete()
+                    } else {
+                        observer.next(result.value)
+                        return next()
+                    }
+                },
+                error => {
+                    observer.error(error)
+                }
+            )
+        }
+        next()
+        return () => {
+            unsubscribed = true
+            if (!iteratorDone && iterator.throw) {
+                iterator.throw(new AbortError()).catch(() => {
+                    // ignore
+                })
+            }
+        }
+    })
+
+export class AbortError extends Error {
+    public readonly name = 'AbortError'
+    public readonly message = 'Aborted'
+}
 
 /**
  * Promisifies method calls and objects if specified, throws otherwise if there is no stub provided

@@ -17,7 +17,7 @@ export const ExtensionPermissionModal: React.FunctionComponent<{
         <Dialog
             className="modal-body modal-body--centered p-4 rounded border"
             onDismiss={denyPermission}
-            aria-labelledBy={labelId}
+            aria-labelledby={labelId}
         >
             <div className="web-content">
                 <h3 id={labelId}>Add {name || extensionID} Sourcegraph extension?</h3>

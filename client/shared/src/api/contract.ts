@@ -7,6 +7,7 @@ import { ProxySubscribable } from './extension/api/common'
 import { TextDocumentPositionParameters } from './protocol'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { HoverMerged } from './client/types/hover'
+import { GraphQLResult } from '../graphql/graphql'
 
 /**
  * This is exposed from the extension host thread to the main thread
@@ -29,6 +30,9 @@ export interface FlatExtensionHostAPI {
     // Languages
     getHover: (parameters: TextDocumentPositionParameters) => ProxySubscribable<MaybeLoadingResult<HoverMerged | null>>
     getDocumentHighlights: (parameters: TextDocumentPositionParameters) => ProxySubscribable<DocumentHighlight[]>
+    getDefinition: (
+        parameters: TextDocumentPositionParameters
+    ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
 }
 
 /**
@@ -41,6 +45,11 @@ export interface MainThreadAPI {
      * Applies a settings update from extensions.
      */
     applySettingsEdit: (edit: SettingsEdit) => Promise<void>
+
+    /**
+     * GraphQL request API
+     */
+    requestGraphQL: (request: string, variables: any) => Promise<GraphQLResult<any>>
 
     // Commands
     executeCommand: (command: string, args: any[]) => Promise<any>

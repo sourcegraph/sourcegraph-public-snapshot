@@ -46,16 +46,16 @@ export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPagePro
                     </li>
                     <li>
                         Follow the{' '}
-                        <a href="https://docs.sourcegraph.com/campaigns/getting_started" rel="noopener">
-                            Getting started with campaigns
+                        <a href="https://docs.sourcegraph.com/campaigns/quickstart" rel="noopener">
+                            quickstart guide for campaigns
                         </a>{' '}
-                        guide to enable campaigns on your instance and start using them.
+                        to enable campaigns on your instance and start using them.
                     </li>
                 </ol>
 
                 <p>
                     Learn more about campaigns{' '}
-                    <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener">
+                    <a href="https://docs.sourcegraph.com/campaigns" rel="noopener">
                         in the documentation
                     </a>
                     .

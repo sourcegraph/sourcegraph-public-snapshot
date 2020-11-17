@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"sort"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -17,8 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
 func TestParseIncludePattern(t *testing.T) {
@@ -318,58 +315,15 @@ func TestRepos_Create(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-	now, err := time.Parse(time.RFC3339, "2020-10-27T8:40:00Z")
-	if err != nil {
-		t.Fatalf("Time error: %v", err)
+	svcs := types.MakeExternalServices()
+	if err := ExternalServices.Upsert(ctx, svcs...); err != nil {
+		t.Fatalf("Upsert error: %s", err)
 	}
 
-	servicesPerKind := createExternalServices(t)
+	msvcs := types.ExternalServicesToMap(svcs)
 
-	repo1 := types.Repo{
-		Name: "github.com/foo/bar",
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "AAAAA==",
-			ServiceType: "github",
-			ServiceID:   "http://github.com",
-		},
-		RepoFields: &types.RepoFields{
-			URI:         "github.com/foo/bar",
-			Description: "The description",
-			CreatedAt:   now,
-			Sources: map[string]*types.SourceInfo{
-				servicesPerKind[extsvc.KindGitHub].URN(): {
-					ID:       servicesPerKind[extsvc.KindGitHub].URN(),
-					CloneURL: "git@github.com:foo/bar.git",
-				},
-				servicesPerKind[extsvc.KindBitbucketServer].URN(): {
-					ID:       servicesPerKind[extsvc.KindBitbucketServer].URN(),
-					CloneURL: "git@bitbucketserver.mycorp.com:foo/bar.git",
-				},
-			},
-			Metadata: new(github.Repository),
-		},
-	}
-
-	repo2 := types.Repo{
-		Name: "gitlab.com/foo/bar",
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "1234",
-			ServiceType: extsvc.TypeGitLab,
-			ServiceID:   "http://gitlab.com",
-		},
-		RepoFields: &types.RepoFields{
-			URI:         "gitlab.com/foo/bar",
-			Description: "The description",
-			CreatedAt:   now,
-			Sources: map[string]*types.SourceInfo{
-				servicesPerKind[extsvc.KindGitLab].URN(): {
-					ID:       servicesPerKind[extsvc.KindGitLab].URN(),
-					CloneURL: "git@gitlab.com:foo/bar.git",
-				},
-			},
-			Metadata: new(gitlab.Project),
-		},
-	}
+	repo1 := types.MakeGithubRepo(msvcs[extsvc.KindGitHub], msvcs[extsvc.KindBitbucketServer])
+	repo2 := types.MakeGitlabRepo(msvcs[extsvc.KindGitLab])
 
 	t.Run("no repos should not fail", func(t *testing.T) {
 		if err := Repos.Create(ctx); err != nil {
@@ -378,7 +332,7 @@ func TestRepos_Create(t *testing.T) {
 	})
 
 	t.Run("many repos", func(t *testing.T) {
-		want := generateRepos(7, &repo1, &repo2)
+		want := types.GenerateRepos(7, repo1, repo2)
 
 		if err := Repos.Create(ctx, want...); err != nil {
 			t.Fatalf("Create error: %s", err)

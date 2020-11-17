@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
@@ -14,15 +15,18 @@ import (
 type FakeChangesetSource struct {
 	Svc *repos.ExternalService
 
-	CreateDraftChangesetCalled bool
-	UndraftedChangesetsCalled  bool
-	CreateChangesetCalled      bool
-	UpdateChangesetCalled      bool
-	ListReposCalled            bool
-	ExternalServicesCalled     bool
-	LoadChangesetCalled        bool
-	CloseChangesetCalled       bool
-	ReopenChangesetCalled      bool
+	authenticator auth.Authenticator
+
+	CreateDraftChangesetCalled  bool
+	UndraftedChangesetsCalled   bool
+	CreateChangesetCalled       bool
+	UpdateChangesetCalled       bool
+	ListReposCalled             bool
+	ExternalServicesCalled      bool
+	LoadChangesetCalled         bool
+	CloseChangesetCalled        bool
+	ReopenChangesetCalled       bool
+	AuthenticatedUsernameCalled bool
 
 	// The Changeset.HeadRef to be expected in CreateChangeset/UpdateChangeset calls.
 	WantHeadRef string
@@ -59,10 +63,14 @@ type FakeChangesetSource struct {
 
 	// UndraftedChangesets contains the changesets that were passed to UndraftChangeset
 	UndraftedChangesets []*repos.Changeset
+
+	// Username is the username returned by AuthenticatedUsername
+	Username string
 }
 
 var _ repos.ChangesetSource = &FakeChangesetSource{}
 var _ repos.DraftChangesetSource = &FakeChangesetSource{}
+var _ repos.UserSource = &FakeChangesetSource{}
 
 func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *repos.Changeset) (bool, error) {
 	s.CreateDraftChangesetCalled = true
@@ -218,6 +226,16 @@ func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *repos.Chan
 	return c.SetMetadata(s.FakeMetadata)
 }
 
+func (s *FakeChangesetSource) WithAuthenticator(a auth.Authenticator) (repos.Source, error) {
+	s.authenticator = a
+	return s, nil
+}
+
+func (s *FakeChangesetSource) AuthenticatedUsername(ctx context.Context) (string, error) {
+	s.AuthenticatedUsernameCalled = true
+	return s.Username, nil
+}
+
 // FakeGitserverClient is a test implementation of the GitserverClient
 // interface required by ExecChangesetJob.
 type FakeGitserverClient struct {
@@ -225,9 +243,11 @@ type FakeGitserverClient struct {
 	ResponseErr error
 
 	CreateCommitFromPatchCalled bool
+	CreateCommitFromPatchReq    *protocol.CreateCommitFromPatchRequest
 }
 
 func (f *FakeGitserverClient) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
 	f.CreateCommitFromPatchCalled = true
+	f.CreateCommitFromPatchReq = &req
 	return f.Response, f.ResponseErr
 }

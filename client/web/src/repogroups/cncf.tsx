@@ -15,6 +15,6 @@ export const cncf: RepogroupMetadata = {
     ),
     examples: [],
     homepageDescription: 'Search CNCF projects.',
-    homepageIcon: 'https://github.com/cncf/artwork/blob/master/other/cncf/icon/color/cncf-icon-color.png?raw=true',
+    homepageIcon: 'https://raw.githubusercontent.com/cncf/artwork/master/other/cncf/icon/color/cncf-icon-color.png',
     lowProfile: true,
 }

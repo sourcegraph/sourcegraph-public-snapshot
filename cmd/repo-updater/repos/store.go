@@ -27,6 +27,7 @@ import (
 
 // A Store exposes methods to read and write repos and external services.
 type Store interface {
+	GetExternalService(ctx context.Context, id int64) (*ExternalService, error)
 	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
 	UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) error
 
@@ -202,6 +203,35 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 	return &DBStore{Store: txBase}, nil
 }
 
+func (s *DBStore) GetExternalService(ctx context.Context, id int64) (*ExternalService, error) {
+	query := sqlf.Sprintf(
+		getExternalServiceQueryFmtstr,
+		id,
+	)
+	svc := ExternalService{}
+	err := scanExternalService(&svc, s.QueryRow(ctx, query))
+	return &svc, err
+}
+
+const getExternalServiceQueryFmtstr = `
+-- source: cmd/repo-updated/repos/store.go:DBStore.GetExternalService
+SELECT
+  id,
+  kind,
+  display_name,
+  config,
+  created_at,
+  updated_at,
+  deleted_at,
+  last_sync_at,
+  next_sync_at,
+  namespace_user_id,
+  unrestricted
+FROM external_services
+WHERE id = %s
+AND deleted_at IS NULL
+`
+
 // ListExternalServices lists all stored external services matching the given args.
 func (s *DBStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (svcs []*ExternalService, _ error) {
 	if args.PerPage <= 0 {
@@ -232,7 +262,8 @@ SELECT
   deleted_at,
   last_sync_at,
   next_sync_at,
-  namespace_user_id
+  namespace_user_id,
+  unrestricted
 FROM external_services
 WHERE id > %s
 AND %s
@@ -1366,6 +1397,7 @@ func scanExternalService(svc *ExternalService, s scanner) error {
 		&dbutil.NullTime{Time: &svc.LastSyncAt},
 		&dbutil.NullTime{Time: &svc.NextSyncAt},
 		&dbutil.NullInt32{N: &svc.NamespaceUserID},
+		&svc.Unrestricted,
 	)
 }
 

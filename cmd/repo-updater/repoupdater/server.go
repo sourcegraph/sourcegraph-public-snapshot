@@ -214,7 +214,7 @@ func newExternalServices(es ...*repos.ExternalService) []api.ExternalService {
 		}
 
 		if e.IsDeleted() {
-			svc.DeletedAt = &e.DeletedAt
+			svc.DeletedAt = e.DeletedAt
 		}
 
 		svcs = append(svcs, svc)
@@ -362,7 +362,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 }
 
 func externalServiceValidate(ctx context.Context, req *protocol.ExternalServiceSyncRequest) error {
-	if req.ExternalService.DeletedAt != nil {
+	if !req.ExternalService.DeletedAt.IsZero() {
 		// We don't need to check deleted services.
 		return nil
 	}
@@ -456,6 +456,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 				repoResult, err := s.remoteRepoSync(ctx, codehost, string(args.Repo))
 				if err != nil {
 					log15.Error("async remoteRepoSync failed", "repo", args.Repo, "error", err)
+					return
 				}
 
 				// Since we don't support private repositories on Cloud,

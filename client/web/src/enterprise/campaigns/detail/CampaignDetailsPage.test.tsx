@@ -6,7 +6,6 @@ import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/tele
 import { PageTitle } from '../../../components/PageTitle'
 import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
 import { mount } from 'enzyme'
-import { NOOP_BREADCRUMB_SETTERS } from '../../../components/Breadcrumbs'
 
 // This is idempotent, so calling it in multiple tests is not a problem.
 registerHighlightContributions()
@@ -36,10 +35,7 @@ describe('CampaignDetailsPage', () => {
                     name: 'n',
                     description: 'd',
                     initialApplier: { username: 'alice', url: '/users/alice' },
-                    changesets: {
-                        totalCount: 0,
-                        stats: { total: 10, closed: 0, merged: 0, open: 8, unpublished: 2, deleted: 1, draft: 0 },
-                    },
+                    changesetsStats: { total: 10, closed: 0, merged: 0, open: 8, unpublished: 2, deleted: 1, draft: 0 },
                     viewerCanAdminister,
                     branch: 'awesome-branch',
                     createdAt: '2020-01-01',
@@ -67,7 +63,6 @@ describe('CampaignDetailsPage', () => {
             queryChangesets={() => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })}
             deleteCampaign={() => Promise.resolve(undefined)}
             queryChangesetCountsOverTime={() => of([])}
-            {...NOOP_BREADCRUMB_SETTERS}
         />
     )
 

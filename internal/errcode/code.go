@@ -157,6 +157,17 @@ func IsTimeout(err error) bool {
 	})
 }
 
+// IsTerminal will check if err or one of its causes is a terminal error that cannot be retried.
+func IsTerminal(err error) bool {
+	type terminaler interface {
+		Terminal() bool
+	}
+	return isErrorPredicate(err, func(err error) bool {
+		e, ok := err.(terminaler)
+		return ok && e.Terminal()
+	})
+}
+
 // isErrorPredicate returns true if err or one of its causes returns true when
 // passed to p.
 func isErrorPredicate(err error, p func(err error) bool) bool {

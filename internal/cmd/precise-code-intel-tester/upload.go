@@ -259,7 +259,7 @@ func makeTestUploadFunction(ctx context.Context, name string, rev string, upload
 }
 
 // uploadIDPattern extracts a GraphQL identifier from the output of the `src lsif upload` command.
-var uploadIDPattern = regexp.MustCompile(`/code-intelligence/lsif-uploads/([0-9A-Za-z=]+)\.`)
+var uploadIDPattern = regexp.MustCompile(`/settings/code-intelligence/lsif-uploads/([0-9A-Za-z=]+)`)
 
 // upload invokes the `src lsif upload` command. This requires that src is installed on the
 // current user's $PATH and is relatively up to date.
@@ -287,5 +287,10 @@ func upload(ctx context.Context, name, rev string, limiter *util.Limiter) (strin
 		return "", errors.Wrap(err, fmt.Sprintf("error running 'src %s':\n%s\n", strings.Join(args, " "), output))
 	}
 
-	return string(uploadIDPattern.FindSubmatch(output)[1]), nil
+	match := uploadIDPattern.FindSubmatch(output)
+	if len(match) == 0 {
+		return "", fmt.Errorf("failed to extract URL:\n%s", output)
+	}
+
+	return string(match[1]), nil
 }

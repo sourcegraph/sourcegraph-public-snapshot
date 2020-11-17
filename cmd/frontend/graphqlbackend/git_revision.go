@@ -60,8 +60,9 @@ func (r *gitRevisionRange) HeadRevSpec() *gitRevSpecExpr {
 }
 func (r *gitRevisionRange) MergeBase() *gitObject { return r.mergeBase }
 
-// escapeRevspecForURL escapes revspec for use in a Sourcegraph URL. For niceness/readability, we do
-// NOT escape slashes but we do escape other characters like '#' that are necessary for correctness.
-func escapeRevspecForURL(revspec string) string {
-	return strings.Replace(url.PathEscape(revspec), "%2F", "/", -1)
+// escapePathForURL escapes path (e.g. repository name, revspec) for use in a Sourcegraph URL.
+// For niceness/readability, we do NOT escape slashes but we do escape other characters like '#'
+// that are necessary for correctness.
+func escapePathForURL(path string) string {
+	return strings.Replace(url.PathEscape(path), "%2F", "/", -1)
 }

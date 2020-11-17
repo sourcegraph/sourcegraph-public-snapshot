@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -78,20 +79,35 @@ func viewerFinalSettings(ctx context.Context) (*configurationResolver, error) {
 }
 
 func (r *settingsCascade) Final(ctx context.Context) (string, error) {
-	var allSettings []string
 	subjects, err := r.Subjects(ctx)
 	if err != nil {
 		return "", err
 	}
-	for _, s := range subjects {
-		settings, err := s.LatestSettings(ctx)
-		if err != nil {
-			return "", err
-		}
-		if settings != nil {
-			allSettings = append(allSettings, settings.settings.Contents)
-		}
+
+	// Each LatestSettings is a roundtrip to the database. So we do the
+	// requests concurrently. If the subject has no settings, then
+	// allSettings[i] will be the empty string. mergeSettings ignores empty
+	// strings.
+	allSettings := make([]string, len(subjects))
+	bounded := goroutine.NewBounded(8)
+	for i := range subjects {
+		i := i
+		bounded.Go(func() error {
+			settings, err := subjects[i].LatestSettings(ctx)
+			if err != nil {
+				return err
+			}
+			if settings != nil {
+				allSettings[i] = settings.settings.Contents
+			}
+			return nil
+		})
 	}
+
+	if err := bounded.Wait(); err != nil {
+		return "", err
+	}
+
 	final, err := mergeSettings(allSettings)
 	return string(final), err
 }

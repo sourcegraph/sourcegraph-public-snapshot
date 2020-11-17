@@ -19,12 +19,12 @@ func TestNextSync(t *testing.T) {
 	clock := func() time.Time { return time.Date(2020, 01, 01, 01, 01, 01, 01, time.UTC) }
 	tests := []struct {
 		name string
-		h    campaigns.ChangesetSyncData
+		h    *campaigns.ChangesetSyncData
 		want time.Time
 	}{
 		{
 			name: "No time passed",
-			h: campaigns.ChangesetSyncData{
+			h: &campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock(),
 			},
@@ -32,7 +32,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Linear backoff",
-			h: campaigns.ChangesetSyncData{
+			h: &campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-1 * time.Hour),
 			},
@@ -40,7 +40,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Use max of ExternalUpdateAt and LatestEvent",
-			h: campaigns.ChangesetSyncData{
+			h: &campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-2 * time.Hour),
 				LatestEvent:       clock().Add(-1 * time.Hour),
@@ -49,7 +49,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Diff max is capped",
-			h: campaigns.ChangesetSyncData{
+			h: &campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-2 * maxSyncDelay),
 			},
@@ -57,7 +57,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Diff min is capped",
-			h: campaigns.ChangesetSyncData{
+			h: &campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-1 * minSyncDelay / 2),
 			},
@@ -65,7 +65,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Event arrives after sync",
-			h: campaigns.ChangesetSyncData{
+			h: &campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-1 * maxSyncDelay / 2),
 				LatestEvent:       clock().Add(10 * time.Minute),
@@ -74,7 +74,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Never synced",
-			h:    campaigns.ChangesetSyncData{},
+			h:    &campaigns.ChangesetSyncData{},
 			want: clock(),
 		},
 	}
@@ -210,46 +210,12 @@ func TestPrioritizeChangesetsWithoutDiffStats(t *testing.T) {
 			},
 			wantIDs: []int64{1, 2},
 		},
-		"non-empty list with unpublished changesets": {
-			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
-				return []*campaigns.Changeset{
-					{
-						ID:               1,
-						ReconcilerState:  campaigns.ReconcilerStateCompleted,
-						PublicationState: campaigns.ChangesetPublicationStateUnpublished,
-					},
-					{
-						ID:               2,
-						ReconcilerState:  campaigns.ReconcilerStateCompleted,
-						PublicationState: campaigns.ChangesetPublicationStateUnpublished,
-					},
-				}, 0, nil
-			},
-			wantIDs: []int64{},
-		},
-		"non-empty list with processing changesets": {
-			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
-				return []*campaigns.Changeset{
-					{
-						ID:               1,
-						ReconcilerState:  campaigns.ReconcilerStateProcessing,
-						PublicationState: campaigns.ChangesetPublicationStatePublished,
-					},
-					{
-						ID:               2,
-						ReconcilerState:  campaigns.ReconcilerStateProcessing,
-						PublicationState: campaigns.ChangesetPublicationStatePublished,
-					},
-				}, 0, nil
-			},
-			wantIDs: []int64{},
-		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			var wg sync.WaitGroup
 
 			syncer := &ChangesetSyncer{
-				SyncStore:      MockSyncStore{listChangesets: tc.listChangesets},
+				syncStore:      MockSyncStore{listChangesets: tc.listChangesets},
 				priorityNotify: make(chan []int64),
 			}
 
@@ -296,8 +262,8 @@ func TestSyncerRun(t *testing.T) {
 			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
 				return nil, 0, nil
 			},
-			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
-				return []campaigns.ChangesetSyncData{
+			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
+				return []*campaigns.ChangesetSyncData{
 					{
 						ChangesetID:       1,
 						UpdatedAt:         now.Add(-2 * maxSyncDelay),
@@ -312,7 +278,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &ChangesetSyncer{
-			SyncStore:        store,
+			syncStore:        store,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 		}
@@ -330,8 +296,8 @@ func TestSyncerRun(t *testing.T) {
 		now := time.Now()
 		store := MockSyncStore{
 			listChangesets: mockListChangesets,
-			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
-				return []campaigns.ChangesetSyncData{
+			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
+				return []*campaigns.ChangesetSyncData{
 					{
 						ChangesetID:       1,
 						UpdatedAt:         now,
@@ -347,7 +313,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &ChangesetSyncer{
-			SyncStore:        store,
+			syncStore:        store,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 		}
@@ -362,8 +328,8 @@ func TestSyncerRun(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		store := MockSyncStore{
 			listChangesets: mockListChangesets,
-			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
-				return []campaigns.ChangesetSyncData{}, nil
+			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
+				return []*campaigns.ChangesetSyncData{}, nil
 			},
 		}
 		syncFunc := func(ctx context.Context, ids int64) error {
@@ -371,7 +337,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &ChangesetSyncer{
-			SyncStore:        store,
+			syncStore:        store,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 			priorityNotify:   make(chan []int64, 1),
@@ -387,83 +353,33 @@ func TestSyncerRun(t *testing.T) {
 
 }
 
-func TestFilterSyncData(t *testing.T) {
-	testCases := []struct {
-		name        string
-		codeHostURL string
-		data        []campaigns.ChangesetSyncData
-		want        []campaigns.ChangesetSyncData
-	}{
-		{
-			name:        "Empty",
-			codeHostURL: "https://example.com/",
-			data:        []campaigns.ChangesetSyncData{},
-			want:        []campaigns.ChangesetSyncData{},
-		},
-		{
-			name:        "single item, should match",
-			codeHostURL: "https://example.com/",
-			data: []campaigns.ChangesetSyncData{
-				{
-					ChangesetID:           1,
-					RepoExternalServiceID: "https://example.com/",
-				},
-			},
-			want: []campaigns.ChangesetSyncData{
-				{
-					ChangesetID:           1,
-					RepoExternalServiceID: "https://example.com/",
-				},
-			},
-		},
-		{
-			name:        "single item, should not match",
-			codeHostURL: "https://example.com/",
-			data: []campaigns.ChangesetSyncData{
-				{
-					ChangesetID:           1,
-					RepoExternalServiceID: "https://example2.com/",
-				},
-			},
-			want: []campaigns.ChangesetSyncData{},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			data := filterSyncData(tc.codeHostURL, tc.data)
-			if diff := cmp.Diff(tc.want, data); diff != "" {
-				t.Fatal(diff)
-			}
-		})
-	}
-}
-
 func TestSyncRegistry(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	now := time.Now()
 
+	extSvc := &repos.ExternalService{
+		ID:          1,
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "",
+		Config:      `{"url": "https://example.com/"}`,
+		CreatedAt:   time.Time{},
+		UpdatedAt:   time.Time{},
+	}
+
 	repoStore := MockRepoStore{
 		listExternalServices: func(ctx context.Context, args repos.StoreListExternalServicesArgs) (services []*repos.ExternalService, err error) {
 			return []*repos.ExternalService{
-				{
-					ID:          1,
-					Kind:        extsvc.KindGitHub,
-					DisplayName: "",
-					Config:      `{"url": "https://example.com/"}`,
-					CreatedAt:   time.Time{},
-					UpdatedAt:   time.Time{},
-				},
+				extSvc,
 			}, nil
 		},
 	}
 
 	syncStore := MockSyncStore{
 		listChangesets: mockListChangesets,
-		listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) (data []campaigns.ChangesetSyncData, err error) {
-			return []campaigns.ChangesetSyncData{
+		listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) (data []*campaigns.ChangesetSyncData, err error) {
+			return []*campaigns.ChangesetSyncData{
 				{
 					ChangesetID:           1,
 					UpdatedAt:             now,
@@ -486,7 +402,7 @@ func TestSyncRegistry(t *testing.T) {
 	assertSyncerCount(1)
 
 	// Adding it again should have no effect
-	r.Add(1)
+	r.Add(extSvc)
 	assertSyncerCount(1)
 
 	// Simulate a service being removed
@@ -494,15 +410,14 @@ func TestSyncRegistry(t *testing.T) {
 		ID:        1,
 		Kind:      extsvc.KindGitHub,
 		Config:    `{"url": "https://example.com/"}`,
-		DeletedAt: &now,
+		DeletedAt: now,
 	})
 	assertSyncerCount(0)
 
 	// And added again
 	r.HandleExternalServiceSync(api.ExternalService{
-		ID:        1,
-		Kind:      extsvc.KindGitHub,
-		DeletedAt: nil,
+		ID:   1,
+		Kind: extsvc.KindGitHub,
 	})
 	assertSyncerCount(1)
 
@@ -511,9 +426,8 @@ func TestSyncRegistry(t *testing.T) {
 	// In order to test that priority items are delivered we'll inject our own syncer
 	// with a custom sync func
 	syncer := &ChangesetSyncer{
-		SyncStore:   syncStore,
-		ReposStore:  repoStore,
-		HTTPFactory: nil,
+		syncStore:   syncStore,
+		reposStore:  repoStore,
 		codeHostURL: "https://example.com/",
 		syncFunc: func(ctx context.Context, id int64) error {
 			syncChan <- id
@@ -545,7 +459,7 @@ func TestSyncRegistry(t *testing.T) {
 }
 
 type MockSyncStore struct {
-	listChangesetSyncData func(context.Context, ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error)
+	listChangesetSyncData func(context.Context, ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error)
 	getChangeset          func(context.Context, GetChangesetOpts) (*campaigns.Changeset, error)
 	listChangesets        func(context.Context, ListChangesetsOpts) (campaigns.Changesets, int64, error)
 	updateChangeset       func(context.Context, *campaigns.Changeset) error
@@ -553,7 +467,7 @@ type MockSyncStore struct {
 	transact              func(context.Context) (*Store, error)
 }
 
-func (m MockSyncStore) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
+func (m MockSyncStore) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
 	return m.listChangesetSyncData(ctx, opts)
 }
 

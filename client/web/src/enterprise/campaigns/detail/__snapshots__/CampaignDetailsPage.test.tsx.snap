@@ -11,14 +11,12 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
   namespaceID="namespace123"
   queryChangesetCountsOverTime={[Function]}
   queryChangesets={[Function]}
-  setBreadcrumb={[Function]}
   telemetryService={
     Object {
       "log": [Function],
       "logViewEvent": [Function],
     }
   }
-  useBreadcrumb={[Function]}
 >
   <PageTitle
     title="n"
@@ -399,17 +397,14 @@ exports[`CampaignDetailsPage viewerCanAdminister: false viewing existing 1`] = `
       Object {
         "__typename": "Campaign",
         "branch": "awesome-branch",
-        "changesets": Object {
-          "stats": Object {
-            "closed": 0,
-            "deleted": 1,
-            "draft": 0,
-            "merged": 0,
-            "open": 8,
-            "total": 10,
-            "unpublished": 2,
-          },
-          "totalCount": 0,
+        "changesetsStats": Object {
+          "closed": 0,
+          "deleted": 1,
+          "draft": 0,
+          "merged": 0,
+          "open": 8,
+          "total": 10,
+          "unpublished": 2,
         },
         "closedAt": null,
         "createdAt": "2020-01-01",
@@ -814,6 +809,7 @@ description: somestring",
           nodeComponent={[Function]}
           nodeComponentProps={
             Object {
+              "expandByDefault": undefined,
               "extensionInfo": Object {
                 "extensionsController": undefined,
                 "hoverifier": Object {
@@ -867,6 +863,7 @@ description: somestring",
               nodeComponent={[Function]}
               nodeComponentProps={
                 Object {
+                  "expandByDefault": undefined,
                   "extensionInfo": Object {
                     "extensionsController": undefined,
                     "hoverifier": Object {
@@ -967,14 +964,12 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
   namespaceID="namespace123"
   queryChangesetCountsOverTime={[Function]}
   queryChangesets={[Function]}
-  setBreadcrumb={[Function]}
   telemetryService={
     Object {
       "log": [Function],
       "logViewEvent": [Function],
     }
   }
-  useBreadcrumb={[Function]}
 >
   <PageTitle
     title="n"
@@ -1355,17 +1350,14 @@ exports[`CampaignDetailsPage viewerCanAdminister: true viewing existing 1`] = `
       Object {
         "__typename": "Campaign",
         "branch": "awesome-branch",
-        "changesets": Object {
-          "stats": Object {
-            "closed": 0,
-            "deleted": 1,
-            "draft": 0,
-            "merged": 0,
-            "open": 8,
-            "total": 10,
-            "unpublished": 2,
-          },
-          "totalCount": 0,
+        "changesetsStats": Object {
+          "closed": 0,
+          "deleted": 1,
+          "draft": 0,
+          "merged": 0,
+          "open": 8,
+          "total": 10,
+          "unpublished": 2,
         },
         "closedAt": null,
         "createdAt": "2020-01-01",
@@ -1770,6 +1762,7 @@ description: somestring",
           nodeComponent={[Function]}
           nodeComponentProps={
             Object {
+              "expandByDefault": undefined,
               "extensionInfo": Object {
                 "extensionsController": undefined,
                 "hoverifier": Object {
@@ -1823,6 +1816,7 @@ description: somestring",
               nodeComponent={[Function]}
               nodeComponentProps={
                 Object {
+                  "expandByDefault": undefined,
                   "extensionInfo": Object {
                     "extensionsController": undefined,
                     "hoverifier": Object {

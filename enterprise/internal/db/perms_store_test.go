@@ -1935,16 +1935,19 @@ func testPermsStore_ListExternalAccounts(db *sql.DB) func(*testing.T) {
 
 		// Set up test users and external accounts
 		extSQL := `
-INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at)
-	VALUES(%s, %s, %s, %s, %s, %s, %s)
+INSERT INTO
+	user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at, deleted_at)
+VALUES
+	(%s, %s, %s, %s, %s, %s, %s, %s)
 `
 		qs := []*sqlf.Query{
 			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`), // ID=1
 			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),   // ID=2
 
-			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock()), // ID=1
-			sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock()),          // ID=2
-			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock()),     // ID=3
+			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil), // ID=1
+			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitHub, "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock(), nil), // ID=2
+			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock(), nil),     // ID=3
+			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitHub, "https://github.com/", "bob_github", "bob_github_client_id", clock(), clock(), clock()), // ID=4
 		}
 		for _, q := range qs {
 			if err := s.execute(ctx, q); err != nil {
@@ -2405,36 +2408,66 @@ WHERE repo_id = 2`, clock().AddDate(1, 0, 0))
 func testPermsStore_Metrics(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, clock)
-		t.Cleanup(func() {
-			cleanupPermsTables(t, s)
-		})
 
 		ctx := context.Background()
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
 
-		// Set up some permissions
-		err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
-			RepoID:  1,
-			Perm:    authz.Read,
-			UserIDs: toBitmap(1, 2),
+			if t.Failed() {
+				return
+			}
+
+			if err := s.execute(ctx, sqlf.Sprintf(`DELETE FROM repo`)); err != nil {
+				t.Fatal(err)
+			}
 		})
-		if err != nil {
-			t.Fatal(err)
+
+		// Set up repositories in various states (public/private, deleted/not, etc.)
+		qs := []*sqlf.Query{
+			sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
+			sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'private_repo_2', TRUE)`),
+			sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(3, 'private_repo_3', FALSE, NOW())`),
+			sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(4, 'private_repo_4', TRUE)`),
 		}
-		err = s.SetRepoPermissions(ctx, &authz.RepoPermissions{
-			RepoID:  2,
-			Perm:    authz.Read,
-			UserIDs: toBitmap(1, 2),
-		})
-		if err != nil {
-			t.Fatal(err)
+		for _, q := range qs {
+			if err := s.execute(ctx, q); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		// Set up users in various states (deleted/not, etc.)
+		qs = []*sqlf.Query{
+			sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(1, 'user1')`),
+			sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(2, 'user2')`),
+			sqlf.Sprintf(`INSERT INTO users(id, username, deleted_at) VALUES(3, 'user3', NOW())`),
+		}
+		for _, q := range qs {
+			if err := s.execute(ctx, q); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		// Set up permissions for the various repos.
+		for i := 0; i < 4; i++ {
+			err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
+				RepoID:  int32(i),
+				Perm:    authz.Read,
+				UserIDs: toBitmap(1, 2, 3, 4),
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
 		}
 
 		// Mock rows for testing
-		qs := []*sqlf.Query{
-			sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 1`, clock().Add(-1*time.Minute)),
-			sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 2`, clock()),
-			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 1`, clock().Add(-2*time.Minute)),
-			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 2`, clock()),
+		qs = []*sqlf.Query{
+			sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 1`, clock()),
+			sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 2`, clock().Add(-1*time.Minute)),
+			sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 3`, clock().Add(-2*time.Minute)), // Meant to be excluded because it has been deleted
+			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 1`, clock()),
+			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 2`, clock().Add(-2*time.Minute)),
+			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 3`, clock().Add(-3*time.Minute)), // Meant to be excluded because it has been deleted
+			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 4`, clock().Add(-3*time.Minute)), // Meant to be excluded because it is public
 		}
 		for _, q := range qs {
 			if err := s.execute(ctx, q); err != nil {
@@ -2454,7 +2487,7 @@ func testPermsStore_Metrics(db *sql.DB) func(*testing.T) {
 			ReposPermsGapSeconds: 120,
 		}
 		if diff := cmp.Diff(expMetrics, m); diff != "" {
-			t.Fatal(diff)
+			t.Fatalf("mismatch (-want +got):\n%s", diff)
 		}
 	}
 }

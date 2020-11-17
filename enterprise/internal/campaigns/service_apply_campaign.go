@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // ErrApplyClosedCampaign is returned by ApplyCampaign when the campaign
@@ -282,7 +281,7 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 		//
 		// So, let's check:
 		// Do we already have a changeset on this branch in this repo?
-		k := repoHeadRef{repo: spec.RepoID, headRef: git.EnsureRefPrefix(spec.Spec.HeadRef)}
+		k := repoHeadRef{repo: spec.RepoID, headRef: spec.Spec.HeadRef}
 		c, ok := r.changesetsByRepoHeadRef[k]
 		if !ok {
 			// No, we don't have a changeset on that branch in this repo.
@@ -440,7 +439,7 @@ func (r *changesetRewirer) indexAssociations(ctx context.Context) (err error) {
 
 		k := repoHeadRef{repo: c.RepoID}
 		if c.ExternalBranch != "" {
-			k.headRef = git.EnsureRefPrefix(c.ExternalBranch)
+			k.headRef = c.ExternalBranch
 			r.changesetsByRepoHeadRef[k] = c
 			continue
 		}
@@ -453,7 +452,7 @@ func (r *changesetRewirer) indexAssociations(ctx context.Context) (err error) {
 			// So we load the spec to get the branch where we _would_ push
 			// the commit.
 
-			k.headRef = git.EnsureRefPrefix(s.Spec.HeadRef)
+			k.headRef = s.Spec.HeadRef
 			r.changesetsByRepoHeadRef[k] = c
 		}
 	}

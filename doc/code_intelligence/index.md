@@ -45,6 +45,8 @@ Code intelligence provides advanced code navigation features that let developers
 
 ## [How-tos](how-to/index.md)
 
+- [Enable LSIF](how-to/enable_lsif.md)
+- [Add a Go repository to your Sourcegraph instance](how-to/add_a_go_repository.md)
 - [LSIF quickstart guide](lsif_quickstart.md)
 - [Add LSIF to many repositories](how-to/adding_lsif_to_many_repos.md)
 - [Adding LSIF to CI workflows](how-to/adding_lsif_to_workflows.md)
@@ -53,10 +55,10 @@ Code intelligence provides advanced code navigation features that let developers
 
 ## [Tutorials](tutorials/index.md)
 
-- TODO: Index a popular public repository for Go
+- [Index a popular public Go repository](tutorials/indexing_go_repo.md)
 - TODO: Index a popular public repository for TypeScript
 
 ## [References](references/index.md)
 
+- [Sourcegraph recommended indexers](references/indexers.md)
 - [LSIF.dev](https://lsif.dev/)
-- TODO: Supported languages/indexer status

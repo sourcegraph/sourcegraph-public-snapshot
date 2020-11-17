@@ -20,6 +20,16 @@ func (e ErrCampaignsDisabled) Extensions() map[string]interface{} {
 	return map[string]interface{}{"code": "ErrCampaignsDisabled"}
 }
 
+type ErrCampaignsDisabledForUser struct{}
+
+func (e ErrCampaignsDisabledForUser) Error() string {
+	return "campaigns are disabled for non-site-admin users"
+}
+
+func (e ErrCampaignsDisabledForUser) Extensions() map[string]interface{} {
+	return map[string]interface{}{"code": "ErrCampaignsDisabledForUser"}
+}
+
 type ErrCampaignsDotCom struct{}
 
 func (e ErrCampaignsDotCom) Error() string {
@@ -58,4 +68,14 @@ func (e ErrMatchingCampaignExists) Error() string {
 
 func (e ErrMatchingCampaignExists) Extensions() map[string]interface{} {
 	return map[string]interface{}{"code": "ErrMatchingCampaignExists"}
+}
+
+type ErrDuplicateCredential struct{}
+
+func (e ErrDuplicateCredential) Error() string {
+	return "a credential for this code host already exists"
+}
+
+func (e ErrDuplicateCredential) Extensions() map[string]interface{} {
+	return map[string]interface{}{"code": "ErrDuplicateCredential"}
 }

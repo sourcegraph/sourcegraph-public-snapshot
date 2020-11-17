@@ -1061,7 +1061,7 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	query = Map(query, LowercaseFieldNames, SubstituteAliases)
+	query = Map(query, LowercaseFieldNames, SubstituteAliases(options.SearchType))
 
 	switch options.SearchType {
 	case SearchTypeLiteral:

@@ -12,8 +12,8 @@ sequenceDiagram
     alt if cursor is supplied
       Note right of Resolvers: cursor is decoded from request
     else
-      Resolvers       ->>+ Bundle Manager: MonikersForPosition(dumps[i], adjusted file, adjusted position)
-      Bundle Manager -->>- Resolvers: monikers
+      Resolvers       ->>+ LSIF Store: MonikersForPosition(dumps[i], adjusted file, adjusted position)
+      LSIF Store     -->>- Resolvers: monikers
 
       Note right of Resolvers: cursor is created from <dump, monikers, adjusted file, adjusted position>
     end

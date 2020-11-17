@@ -10,13 +10,20 @@
 
 This campaign rewrites Go import paths for the `log15` package from `gopkg.in/inconshreveable/log15.v2` to `github.com/inconshreveable/log15` using [Comby](https://comby.dev/).
 
-It can handle single-package import statements like these
+It can handle single-package import statements like this one:
 
 ```go
 import "gopkg.in/inconshreveable/log15.v2"
 ```
 
-and multi-package import statements like these:
+Single-package imports with an alias:
+
+
+```go
+import log15 "gopkg.in/inconshreveable/log15.v2"
+```
+
+And multi-package import statements with our without an alias:
 
 ```go
 import (
@@ -52,7 +59,7 @@ steps:
   - run: comby -in-place 'import (:[before]"gopkg.in/inconshreveable/log15.v2":[after])' 'import (:[before]"github.com/inconshreveable/log15":[after])' .go -matcher .go -exclude-dir .,vendor
     container: comby/comby
   # ... and when it's a single import line.
-  - run: comby -in-place 'import "gopkg.in/inconshreveable/log15.v2"' 'import "github.com/inconshreveable/log15"' .go -matcher .go -exclude-dir .,vendor
+  - run: comby -in-place 'import:[alias]"gopkg.in/inconshreveable/log15.v2"' 'import:[alias]"github.com/inconshreveable/log15"' .go -matcher .go -exclude-dir .,vendor
     container: comby/comby
 
 # Describe the changeset (e.g., GitHub pull request) you want for each repository.
@@ -69,9 +76,7 @@ changesetTemplate:
 
 1. In your terminal, run this command:
 
-    <pre>src campaign preview -f update-log15-import.campaign.yaml -namespace <em>USERNAME_OR_ORG</em></pre>
-
-    > The `namespace` is either your Sourcegraph username or the name of a Sourcegraph organisation under which you want to create the campaign. If you're not sure what to choose, use your username.
+    <pre>src campaign preview -f update-log15-import.campaign.yaml</pre>
 1. Wait for it to run and compute the changes for each repository.
 1. Open the preview URL that the command printed out.
 1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.

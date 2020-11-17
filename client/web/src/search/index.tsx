@@ -53,7 +53,7 @@ export function parseSearchURLVersionContext(query: string): string | undefined 
 }
 
 export function searchURLIsCaseSensitive(query: string): boolean {
-    const queryCaseSensitivity = parseCaseSensitivityFromQuery(query)
+    const queryCaseSensitivity = parseCaseSensitivityFromQuery(parseSearchURLQuery(query) || '')
     if (queryCaseSensitivity) {
         // if `case:` filter exists in the query, override the existing case: query param
         return discreteValueAliases.yes.includes(queryCaseSensitivity.value)
@@ -178,6 +178,10 @@ export interface HomePanelsProps {
 
     /** Function that returns current time (for stability in visual tests). */
     now?: () => Date
+}
+
+export interface SearchStreamingProps {
+    searchStreaming: boolean
 }
 
 /**
