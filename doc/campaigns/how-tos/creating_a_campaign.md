@@ -74,7 +74,7 @@ src campaign apply -f YOUR_CAMPAIGN_SPEC.campaign.yaml
 
 This command won't print a link to a preview. It will create or update the campaign it describes directly.
 
-That can be useful if you just want to update a single field in the campaign spec, i.e. the `description` or the `changesetTemplate.body`, or if you want to run continously update a campaign by running `src` in a CI workflow.
+That can be useful if you just want to update a single field in the campaign spec, i.e. the `description` or the `changesetTemplate.body`, or if you want to continously update a campaign by running `src` in a CI workflow.
 
 ## Creating a campaign in a different namespace
 
