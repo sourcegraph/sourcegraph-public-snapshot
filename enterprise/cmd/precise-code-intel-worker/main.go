@@ -46,15 +46,15 @@ func main() {
 		log.Fatalf("Failed to load config: %s", err)
 	}
 
-	// Start debug server
-	go debugserver.NewServerRoutine().Start()
-
 	// Initialize tracing/metrics
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
+
+	// Start debug server
+	go debugserver.NewServerRoutine().Start()
 
 	// Connect to databases
 	db := mustInitializeDB()
