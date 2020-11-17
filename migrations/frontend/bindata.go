@@ -128,6 +128,8 @@
 // 1528395746_add_is_primary_to_user_emails.up.sql (643B)
 // 1528395747_add_users_created_at_index.down.sql (60B)
 // 1528395747_add_users_created_at_index.up.sql (87B)
+// 1528395748_repair_view.down.sql (536B)
+// 1528395748_repair_view.up.sql (348B)
 
 package migrations
 
@@ -2756,6 +2758,46 @@ func _1528395747_add_users_created_at_indexUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395748_repair_viewDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x90\x41\x53\xf2\x30\x10\x86\xef\xf9\x15\x7b\xfc\x0e\x1f\xfd\x01\x76\x3c\x20\x46\xad\x03\x2d\x53\x50\x8e\x99\xd8\x6c\x21\x43\xdb\xe0\xee\x66\xd0\x7f\xef\x28\xb4\x42\x4f\xde\xb2\xcf\xbc\xc9\x9b\x7d\xee\xf4\x63\x96\xa7\x4a\xdd\x97\xc5\x12\x5e\x33\xbd\x81\x86\x7d\x6d\x7c\xe7\xf0\x03\xd9\x1c\xbd\xec\x0c\xe1\x21\xb0\x97\x40\x9f\xa6\xb3\x2d\xa6\x4a\x4d\x26\xb0\x8c\x02\x5e\xe0\xcd\x56\x7b\xd8\x85\xe3\xf7\xf9\x68\x19\x6e\xfe\xa9\x59\xa9\xa7\x6b\xfd\xc7\xc7\x60\xba\x82\x95\x9e\xeb\xd9\x1a\x62\xe2\xdd\x7f\x05\x00\x10\x93\x2a\xb4\xad\x97\x7e\x7a\x8f\x18\xd1\x19\x3b\x00\x16\x2b\xd8\x0f\xb5\xf5\x4d\x24\x34\x2d\x32\xdb\x2d\x5e\x64\x48\xae\x6e\xd5\xbe\xf3\xbc\xbb\x42\x17\xbf\xf9\x2d\x3f\x50\xa8\x90\xd9\xd8\x5a\x90\x7a\xd8\xc5\xd6\x10\x32\x0a\x5f\x92\x73\xf7\xc0\x5c\xa8\xf6\x48\x86\x05\x0f\x03\xa3\x10\x86\xbe\x93\x0a\x1a\x8d\xc6\xd2\x76\x88\x87\x28\xb5\x6f\xce\x6b\x50\xd2\x4b\x1a\x79\x53\x0f\x65\xb1\xb8\xd2\x0b\x51\x3d\x17\x59\xfe\x13\x04\x82\x22\x07\x4a\xbc\x83\xdb\xf1\x96\x6a\xf3\xa4\x4b\x0d\x94\x38\x6c\xf0\x24\x08\xb2\x15\xe4\x2f\xf3\x79\xaa\xd4\xac\x58\x2c\xb2\x75\xaa\xbe\x02\x00\x00\xff\xff\xd5\x3d\x74\xc3\x18\x02\x00\x00")
+
+func _1528395748_repair_viewDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395748_repair_viewDownSql,
+		"1528395748_repair_view.down.sql",
+	)
+}
+
+func _1528395748_repair_viewDownSql() (*asset, error) {
+	bytes, err := _1528395748_repair_viewDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395748_repair_view.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x70, 0xe3, 0xc3, 0xac, 0xa2, 0xa, 0xd1, 0x7a, 0xb, 0xfd, 0x3a, 0x96, 0xf2, 0x1e, 0x71, 0x31, 0xbd, 0x61, 0xe7, 0x59, 0xa2, 0x81, 0xc0, 0xf2, 0x4c, 0xe, 0xb2, 0x47, 0x11, 0x73, 0x6e, 0x96}}
+	return a, nil
+}
+
+var __1528395748_repair_viewUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x8f\xcb\x4e\xc3\x30\x14\x44\xf7\xfe\x8a\x59\x23\x6a\x01\x55\x05\x28\x62\x51\x8a\x81\xa0\x3c\x90\x13\xe8\xd2\x8a\xe2\x0b\x58\x72\xed\xe2\x07\x85\xbf\x47\xcd\x06\xca\x8a\xf5\x3d\xe7\xce\xcc\xb5\xb8\x2b\x9b\x82\xb1\xd9\x0c\x92\xc6\x40\x43\x22\xd8\x68\x5e\x94\x71\x9a\x3e\x29\xe2\xc3\xd0\x0e\x3b\x93\xde\x30\x7a\x9b\x37\x2e\xc2\xb8\x14\xbc\xce\x23\x69\x18\x87\xd3\xc5\xd9\xc5\xfc\x72\x71\x3e\x3f\x51\x3f\x9e\xb2\xfe\x55\x8d\xde\x25\x72\x29\xf2\xbc\xe5\xf1\xdd\x72\x76\x23\xdb\x47\x3c\x97\x62\x7d\x90\xa0\xf6\xcf\x55\xa0\xad\x8f\x26\xf9\xf0\xa5\xdc\xb0\xa1\x82\xb1\x95\x14\xcb\x5e\xfc\x93\xc7\xb2\x63\x00\xd0\x89\x4a\xac\x7a\x64\x7e\x74\x8c\xc0\xa7\xcb\x10\xf1\x17\xbe\x95\x6d\x7d\xb8\x32\x4f\xf6\x43\x5b\x36\x13\x8c\x80\xb6\x41\xe0\x46\xe3\x0a\x99\xff\xf2\x8d\x9e\xc8\xf5\xbd\x90\x02\x81\x6b\xb2\x94\x48\xab\x21\xa1\xec\xd0\x3c\x55\xd5\xbe\x79\x5b\xd7\x65\x5f\xb0\xef\x00\x00\x00\xff\xff\x4b\x8e\xa5\x60\x5c\x01\x00\x00")
+
+func _1528395748_repair_viewUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395748_repair_viewUpSql,
+		"1528395748_repair_view.up.sql",
+	)
+}
+
+func _1528395748_repair_viewUpSql() (*asset, error) {
+	bytes, err := _1528395748_repair_viewUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395748_repair_view.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc7, 0xd3, 0xbc, 0x88, 0xd5, 0x8c, 0x5a, 0x58, 0xcd, 0xae, 0xb7, 0x4a, 0xa7, 0x34, 0x7a, 0x43, 0x6e, 0x9f, 0xa7, 0xe1, 0x7d, 0x49, 0xb6, 0xca, 0x6e, 0xf9, 0x4c, 0xc5, 0x7c, 0x55, 0x83, 0xc7}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2975,6 +3017,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395746_add_is_primary_to_user_emails.up.sql":                              _1528395746_add_is_primary_to_user_emailsUpSql,
 	"1528395747_add_users_created_at_index.down.sql":                               _1528395747_add_users_created_at_indexDownSql,
 	"1528395747_add_users_created_at_index.up.sql":                                 _1528395747_add_users_created_at_indexUpSql,
+	"1528395748_repair_view.down.sql":                                              _1528395748_repair_viewDownSql,
+	"1528395748_repair_view.up.sql":                                                _1528395748_repair_viewUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3149,6 +3193,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395746_add_is_primary_to_user_emails.up.sql":                              {_1528395746_add_is_primary_to_user_emailsUpSql, map[string]*bintree{}},
 	"1528395747_add_users_created_at_index.down.sql":                               {_1528395747_add_users_created_at_indexDownSql, map[string]*bintree{}},
 	"1528395747_add_users_created_at_index.up.sql":                                 {_1528395747_add_users_created_at_indexUpSql, map[string]*bintree{}},
+	"1528395748_repair_view.down.sql":                                              {_1528395748_repair_viewDownSql, map[string]*bintree{}},
+	"1528395748_repair_view.up.sql":                                                {_1528395748_repair_viewUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

@@ -33,6 +33,7 @@ func (r *IndexResolver) InputRoot() string         { return r.index.Root }
 func (r *IndexResolver) Indexer() string           { return r.index.Indexer }
 func (r *IndexResolver) IndexerArgs() []string     { return r.index.IndexerArgs }
 func (r *IndexResolver) Outfile() *string          { return strPtr(r.index.Outfile) }
+func (r *IndexResolver) LogContents() *string      { return strPtr(r.index.LogContents) }
 func (r *IndexResolver) PlaceInQueue() *int32      { return toInt32(r.index.Rank) }
 
 func (r *IndexResolver) DockerSteps() []gql.DockerStepResolver {

@@ -146,8 +146,9 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 				root,
 				indexer,
 				indexer_args,
-				outfile
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+				outfile,
+				log_contents
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			index.ID,
 			index.Commit,
@@ -165,6 +166,7 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 			index.Indexer,
 			pq.Array(index.IndexerArgs),
 			index.Outfile,
+			index.LogContents,
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {

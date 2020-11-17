@@ -50,6 +50,7 @@ func TestGetIndexByID(t *testing.T) {
 		Indexer:     "sourcegraph/lsif-tsc:latest",
 		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
 		Outfile:     "dump.lsif",
+		LogContents: "Indexing\nUploading\nDone.\n",
 		Rank:        nil,
 	}
 
@@ -298,6 +299,7 @@ func TestInsertIndex(t *testing.T) {
 		Indexer:     "sourcegraph/lsif-tsc:latest",
 		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
 		Outfile:     "dump.lsif",
+		LogContents: "Indexing\nUploading\nDone.\n",
 	})
 	if err != nil {
 		t.Fatalf("unexpected error enqueueing index: %s", err)
@@ -324,6 +326,7 @@ func TestInsertIndex(t *testing.T) {
 		Indexer:     "sourcegraph/lsif-tsc:latest",
 		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
 		Outfile:     "dump.lsif",
+		LogContents: "Indexing\nUploading\nDone.\n",
 		Rank:        &rank,
 	}
 

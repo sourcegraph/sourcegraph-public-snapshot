@@ -7824,6 +7824,11 @@ type LSIFIndex implements Node {
     outfile: String
 
     """
+    The output of the configured docker step, indexer, and src-cli invocations.
+    """
+    logContents: String
+
+    """
     The rank of this index in the queue. The value of this field is null if the index has been processed.
     """
     placeInQueue: Int
