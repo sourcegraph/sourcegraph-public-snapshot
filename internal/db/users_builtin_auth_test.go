@@ -235,7 +235,7 @@ func TestUsers_PasswordResetExpiry(t *testing.T) {
 		}
 	})
 
-	t.Run("link exipres one hour from now", func(t *testing.T) {
+	t.Run("link expires one hour from now", func(t *testing.T) {
 		mockPasswordExpiration = 3600
 		defer func() { mockPasswordExpiration = 0 }()
 
