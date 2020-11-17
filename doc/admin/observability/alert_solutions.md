@@ -2214,24 +2214,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```
 
 <br />
-## repo-updater: syncer_sync_last_time
-
-<p class="subtitle">cloud: time since last sync</p>**Descriptions:**
-
-- _repo-updater: 3600s+ time since last sync for 5m0s_
-
-**Possible solutions:**
-
-- Make sure there are external services added with valid tokens
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_syncer_sync_last_time"
-]
-```
-
-<br />
 ## repo-updater: src_repoupdater_max_sync_backoff
 
 <p class="subtitle">cloud: time since oldest sync</p>**Descriptions:**
