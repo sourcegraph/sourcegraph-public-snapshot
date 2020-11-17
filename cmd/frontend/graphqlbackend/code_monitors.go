@@ -216,5 +216,5 @@ func (d defaultCodeMonitorsResolver) UpdateCodeMonitor(ctx context.Context, args
 }
 
 func (d defaultCodeMonitorsResolver) CreateCodeMonitorAction(ctx context.Context, args *CreateActionForMonitorArgs) (MonitorAction, error) {
-	panic("implement me")
+	return nil, codeMonitorsOnlyInEnterprise
 }
