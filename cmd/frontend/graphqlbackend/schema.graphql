@@ -787,9 +787,9 @@ type Mutation {
         id: ID!
     ): EmptyResponse!
     """
-    Update a code monitor. Objects in the db will be overwritten with the objects in the request. Objects
-    which are not contained in the request remain unchanged. If the request contains objects that have
-    no corresponding entry in the db, an error is returned.
+    Update a code monitor. We assume that the request contains a complete code monitor.
+    Existing actions which are missing from the request will be deleted from DB. Actions
+    without an ID will be created.
     """
     updateCodeMonitor(
         """
@@ -3423,7 +3423,7 @@ input MonitorEditEmailInput {
     """
     The id of an email action.
     """
-    id: ID!
+    id: ID
     """
     The desired state after the update.
     """

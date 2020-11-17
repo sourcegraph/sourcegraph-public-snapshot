@@ -158,7 +158,7 @@ type MonitorArgs struct {
 }
 
 type EditActionEmailArgs struct {
-	Id     graphql.ID
+	Id     *graphql.ID
 	Update *CreateActionEmailArgs
 }
 

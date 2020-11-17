@@ -154,75 +154,226 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	if err != nil {
 		return nil, fmt.Errorf("UpdateCodeMonitor: %w", err)
 	}
-	var (
-		q  *sqlf.Query
-		tx *Resolver
-	)
+	var monitorID int64
+	err = relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get all action IDs of the monitor.
+	actionIDs, err := r.actionIDsForMonitorIDInt64(ctx, monitorID)
+	if err != nil {
+		return nil, err
+	}
+
+	toCreate, toDelete, err := splitActionIDs(ctx, args, actionIDs)
+
+	// Run all queries within a transaction.
+	var tx *Resolver
 	tx, err = r.transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.db.Done(err) }()
 
-	// Update monitor.
-	q, err = tx.updateCodeMonitorQuery(ctx, args)
+	err = tx.deleteActionsInt64(ctx, toDelete, monitorID)
 	if err != nil {
 		return nil, err
 	}
-	m, err = tx.runMonitorQuery(ctx, q)
+	err = tx.createActions(ctx, toCreate, monitorID)
 	if err != nil {
-		return nil, fmt.Errorf("update monitor: %w", err)
+		return nil, err
+	}
+	m, err = tx.updateCodeMonitor(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	// Hydrate monitor with Resolver.
+	m.(*monitor).Resolver = r
+	return m, nil
+}
+
+func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) (actionIDs []graphql.ID, err error) {
+	limit := 50
+	var ids []graphql.ID
+	var after *string
+	var q *sqlf.Query
+	q, err = r.readActionEmailQuery(ctx, monitorID, &graphqlbackend.ListActionArgs{
+		First: int32(limit),
+		After: after,
+	})
+	if err != nil {
+		return nil, err
+	}
+	// Paging.
+	for {
+		es, cur, err := r.actionIDsForMonitorIDINT64SinglePage(ctx, q, limit)
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, es...)
+		if cur == nil {
+			break
+		}
+		after = cur
+	}
+	return ids, nil
+}
+
+func (r *Resolver) actionIDsForMonitorIDINT64SinglePage(ctx context.Context, q *sqlf.Query, limit int) (IDs []graphql.ID, cursor *string, err error) {
+	var rows *sql.Rows
+	rows, err = r.db.Query(ctx, q)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	var res []graphqlbackend.MonitorEmailResolver
+	res, err = scanEmails(rows)
+	if err != nil {
+		return nil, nil, err
 	}
 
+	// Set the cursor if the result size equals limit.
+	if len(res) == limit {
+		stringID := string(res[len(res)-1].ID())
+		cursor = &stringID
+	}
+	IDs = make([]graphql.ID, 0, len(res))
+	for _, er := range res {
+		IDs = append(IDs, er.ID())
+	}
+	return IDs, cursor, nil
+}
+
+// splitActionIDs splits actions into three buckets: create, delete and update.
+// Note: args is mutated. After splitActionIDs, args only contains actions to be updated.
+func splitActionIDs(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs, actionIDs []graphql.ID) (toCreate []*graphqlbackend.CreateActionArgs, toDelete []int64, err error) {
+	aMap := make(map[graphql.ID]struct{}, len(actionIDs))
+	for _, id := range actionIDs {
+		aMap[id] = struct{}{}
+	}
+	var toUpdateActions []*graphqlbackend.EditActionArgs
+	for _, a := range args.Actions {
+		if a.Email.Id == nil {
+			toCreate = append(toCreate, &graphqlbackend.CreateActionArgs{Email: a.Email.Update})
+			continue
+		}
+		if _, ok := aMap[*a.Email.Id]; !ok {
+			return nil, nil, fmt.Errorf("unknown ID=%s for action", a.Email.Id)
+		}
+		toUpdateActions = append(toUpdateActions, a)
+		delete(aMap, *a.Email.Id)
+	}
+	var actionID int64
+	for k := range aMap {
+		err = relay.UnmarshalSpec(k, &actionID)
+		if err != nil {
+			return nil, nil, err
+		}
+		toDelete = append(toDelete, actionID)
+	}
+	args.Actions = toUpdateActions
+	return toCreate, toDelete, nil
+}
+
+func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (m graphqlbackend.MonitorResolver, err error) {
+	var q *sqlf.Query
+	q, err = r.updateCodeMonitorQuery(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	m, err = r.runMonitorQuery(ctx, q)
+	if err != nil {
+		return nil, err
+	}
 	// Update trigger.
-	q, err = tx.updateTriggerQueryQuery(ctx, args)
+	q, err = r.updateTriggerQueryQuery(ctx, args)
 	if err != nil {
 		return nil, err
 	}
-	err = tx.db.Exec(ctx, q)
+	err = r.db.Exec(ctx, q)
 	if err != nil {
-		return nil, fmt.Errorf("update trigger: %w", err)
+		return nil, err
 	}
-
 	// Update actions.
-	q, err = tx.deleteRecipientQuery(ctx, m.(*monitor).id)
+	if len(args.Actions) == 0 {
+		return m, nil
+	}
+	q, err = r.deleteRecipientQuery(ctx, m.(*monitor).id)
 	if err != nil {
 		return nil, err
 	}
-	err = tx.db.Exec(ctx, q)
+	err = r.db.Exec(ctx, q)
 	if err != nil {
-		return nil, fmt.Errorf("delete recipient: %w", err)
+		return nil, err
 	}
 	for i, action := range args.Actions {
 		if action.Email != nil {
-			q, err = tx.updateActionEmailQuery(ctx, m.(*monitor).id, action.Email)
+			q, err = r.updateActionEmailQuery(ctx, m.(*monitor).id, action.Email)
 			if err != nil {
 				return nil, err
 			}
 			var e graphqlbackend.MonitorEmailResolver
-			e, err = tx.runEmailQuery(ctx, q)
+			e, err = r.runEmailQuery(ctx, q)
 			if err != nil {
-				return nil, fmt.Errorf("update email: %w", err)
+				return nil, err
 			}
 
 			// Insert recipients.
 			for _, recipient := range action.Email.Update.Recipients {
-				q, err = tx.createRecipientQuery(ctx, e.(*monitorEmail).id, recipient)
+				q, err = r.createRecipientQuery(ctx, e.(*monitorEmail).id, recipient)
 				if err != nil {
 					return nil, err
 				}
-				err = tx.db.Exec(ctx, q)
+				err = r.db.Exec(ctx, q)
 				if err != nil {
-					return nil, fmt.Errorf("create recipient: %w", err)
+					return nil, err
 				}
 			}
 		} else {
 			return nil, fmt.Errorf("missing email object for action %d", i)
 		}
 	}
-	// Hydrate monitor with Resolver.
-	m.(*monitor).Resolver = r
 	return m, nil
+}
+
+func (r *Resolver) createActions(ctx context.Context, args []*graphqlbackend.CreateActionArgs, monitorID int64) (err error) {
+	var q *sqlf.Query
+	for _, a := range args {
+		q, err = r.createActionEmailQuery(ctx, monitorID, a.Email)
+		if err != nil {
+			return err
+		}
+		e, err := r.runEmailQuery(ctx, q)
+		if err != nil {
+			return err
+		}
+		// insert recipients
+		for _, recipient := range a.Email.Recipients {
+			q, err = r.createRecipientQuery(ctx, e.(*monitorEmail).id, recipient)
+			if err != nil {
+				return err
+			}
+			err = r.db.Exec(ctx, q)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return err
+}
+
+func (r *Resolver) deleteActionsInt64(ctx context.Context, actionIDs []int64, monitorID int64) (err error) {
+	for _, d := range actionIDs {
+		// TODO: Can we put this in one query?
+		q, err := r.deleteActionEmailQuery(ctx, d, monitorID)
+		err = r.db.Exec(ctx, q)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (r *Resolver) transact(ctx context.Context) (*Resolver, error) {
@@ -651,7 +802,10 @@ AND monitor = %s
 RETURNING %s;
 `
 	var actionID int64
-	err = relay.UnmarshalSpec(args.Id, &actionID)
+	if args.Id == nil {
+		return nil, fmt.Errorf("nil is not a valid action ID")
+	}
+	err = relay.UnmarshalSpec(*args.Id, &actionID)
 	if err != nil {
 		return nil, err
 	}
@@ -674,11 +828,31 @@ func (r *Resolver) readActionEmailQuery(ctx context.Context, monitorId int64, ar
 	const readActionEmailQuery = `
 SELECT id, monitor, enabled, priority, header, created_by, created_at, changed_by, changed_at
 FROM cm_emails
-WHERE monitor = %s;
+WHERE monitor = %s
+AND id > %s
+LIMIT %s;
+;
 `
+	after, err := unmarshallAfter(args.After)
+	if err != nil {
+		return nil, err
+	}
 	return sqlf.Sprintf(
 		readActionEmailQuery,
 		monitorId,
+		after,
+		args.First,
+	), nil
+}
+
+func (r *Resolver) deleteActionEmailQuery(ctx context.Context, actionID int64, monitorID int64) (*sqlf.Query, error) {
+	const deleteActionEmailQuery = `
+DELETE FROM cm_emails WHERE id = %s AND MONITOR = %s
+`
+	return sqlf.Sprintf(
+		deleteActionEmailQuery,
+		actionID,
+		monitorID,
 	), nil
 }
 
