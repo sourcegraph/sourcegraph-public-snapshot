@@ -80,10 +80,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case c.isPR() && c.isGoOnly():
 		// If this is a go-only PR, run only the steps necessary to verify the go code.
 		pipelineOperations = []func(*bk.Pipeline){
-			addGoTests,            // ~1.5m
-			addCheck,              // ~1m
-			addGoBuild,            // ~0.5m
-			addPostgresBackcompat, // ~0.25m
+			addDockerImages(c, false), // ~8m (candidate images)
+			addGoTests,                // ~1.5m
+			addCheck,                  // ~1m
+			addGoBuild,                // ~0.5m
+			addPostgresBackcompat,     // ~0.25m
 		}
 
 	case c.isBextReleaseBranch:
