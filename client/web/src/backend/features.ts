@@ -6,6 +6,7 @@ import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { switchMap } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
 import { DocumentHighlight, FileDecoration } from 'sourcegraph'
+import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 
 /**
  * Fetches hover information for the given location.
@@ -70,13 +71,33 @@ export function getDocumentHighlights(
 /**
  * Fetches file decorations
  *
- * TODO(tj): Memoize observable, just like fetchTreeEntries
+ * Will sometimes ask for decorations for the same files, but is that an important enough problem
+ * to solve (single child, then user clicks on its child)?
  */
-export function getFileDecorations(
-    files: { url: string; isDirectory: boolean; name: string; path: string }[],
-    { extensionsController }: ExtensionsControllerProps
-): Observable<FileDecoration[][]> {
-    return from(extensionsController.extHostAPI).pipe(
-        switchMap(extensionHost => wrapRemoteObservable(extensionHost.getFileDecorations(files)))
-    )
-}
+export const getFileDecorations = memoizeObservable(
+    ({
+        files,
+        extensionsController,
+        commitID,
+        repoName,
+    }: {
+        files: { url: string; isDirectory: boolean; name: string; path: string }[]
+        nodeUrl: string
+    } & ExtensionsControllerProps &
+        RepoSpec &
+        ResolvedRevisionSpec): Observable<FileDecoration[][]> =>
+        from(extensionsController.extHostAPI).pipe(
+            switchMap(extensionHost =>
+                wrapRemoteObservable(
+                    extensionHost.getFileDecorations(
+                        files.map(file => ({
+                            ...file,
+                            uri: toURIWithPath({ repoName, filePath: file.path, commitID }),
+                        }))
+                    )
+                )
+            )
+        ),
+
+    ({ nodeUrl, files }) => `nodeUrl:${nodeUrl} files:${files.length}`
+)

@@ -600,7 +600,7 @@ describe('Repository', () => {
                                                 isSingleChild: true,
                                                 name: 'nested',
                                                 path: 'nested',
-                                                url: `/${repoName}/-/blob/nested`,
+                                                url: `/${repoName}/-/tree/nested`,
                                                 submodule: null,
                                             },
                                             // recursiveSingleChild is always true in the web app
@@ -624,7 +624,7 @@ describe('Repository', () => {
                                                 name: 'doubly-nested',
                                                 path: 'nested/doubly-nested',
                                                 isDirectory: true,
-                                                url: `/${repoName}/-/blob/nested/doubly-nested`,
+                                                url: `/${repoName}/-/tree/nested/doubly-nested`,
                                                 submodule: null,
                                                 isSingleChild: false,
                                             },
@@ -663,7 +663,7 @@ describe('Repository', () => {
                                                 name: 'doubly-nested',
                                                 path: 'nested/doubly-nested',
                                                 isDirectory: true,
-                                                url: `/${repoName}/-/blob/nested/doubly-nested`,
+                                                url: `/${repoName}/-/tree/nested/doubly-nested`,
                                                 submodule: null,
                                                 isSingleChild: false,
                                             },
@@ -680,11 +680,11 @@ describe('Repository', () => {
                                 commit: {
                                     tree: {
                                         isRoot: false,
-                                        url: `/${repoName}/-/tree/nested/triply-nested`,
+                                        url: `/${repoName}/-/tree/nested/doubly-nested`,
                                         entries: [
                                             {
                                                 name: 'triply-nested.ts',
-                                                path: 'nested/test.ts',
+                                                path: 'nested/doubly-nested/triply-nested.ts',
                                                 isDirectory: false,
                                                 url: `/${repoName}/-/blob/nested/doubly-nested/triply-nested.ts`,
                                                 submodule: null,
@@ -750,16 +750,18 @@ describe('Repository', () => {
                         function activate(context: sourcegraph.ExtensionContext): void {
                             context.subscriptions.add(
                                 sourcegraph.tree.registerFileDecorationProvider({
-                                    provideFileDecorations: files =>
-                                        files.map(file => ({
-                                            url: file.url,
+                                    provideFileDecorations: files => {
+                                        console.log('file context in ext', files)
+                                        return files.map(file => ({
+                                            uri: file.uri,
                                             path: file.path,
                                             name: file.name,
                                             text: `${
                                                 file.name.split('').filter(char => vowels.includes(char)).length
                                             } vowels`,
                                             color: file.isDirectory ? 'red' : 'blue',
-                                        })),
+                                        }))
+                                    },
                                 })
                             )
                         }
@@ -774,7 +776,7 @@ describe('Repository', () => {
             // await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repoName}/-/tree/nested`)
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repoName}`)
 
-            // await new Promise(() => {})
+            await new Promise(() => {})
         })
     })
 })

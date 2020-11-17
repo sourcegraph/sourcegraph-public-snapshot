@@ -1549,7 +1549,7 @@ declare module 'sourcegraph' {
     }
 
     export interface FileDecoration {
-        url: string
+        uri: string
 
         name: string
 
@@ -1563,17 +1563,17 @@ declare module 'sourcegraph' {
     }
 
     export interface FileDecorationContext {
-        root: { uri: string }
-
-        files: Subscribable<{ uri: string }>
+        uri: string
+        isDirectory: boolean
+        // repo, name, and path are temporary vars until we implement parse repo uri.. or maybe not? would be wasteful to parse + unparse back n forth
+        // repo: string
+        name: string
+        path: string
     }
-
     // TODO(tj): move these somewhere more reasonable
     export interface FileDecorationProvider {
         // TODO (tj): docs
-        provideFileDecorations: (
-            files: { url: string; isDirectory: boolean; name: string; path: string }[]
-        ) => ProviderResult<FileDecoration[]>
+        provideFileDecorations: (files: FileDecorationContext[]) => ProviderResult<FileDecoration[]>
     }
 
     // TODO(tj): Explain tree namespace

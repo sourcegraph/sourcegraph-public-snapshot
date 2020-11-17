@@ -2,7 +2,7 @@ import { SettingsCascade } from '../settings/settings'
 import { SettingsEdit } from './client/services/settings'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Remote, ProxyMarked } from 'comlink'
-import { Unsubscribable, DocumentHighlight, FileDecoration } from 'sourcegraph'
+import { Unsubscribable, DocumentHighlight, FileDecoration, FileDecorationContext } from 'sourcegraph'
 import { ProxySubscribable } from './extension/api/common'
 import { TextDocumentPositionParameters } from './protocol'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
@@ -35,9 +35,7 @@ export interface FlatExtensionHostAPI {
     ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
 
     // Tree
-    getFileDecorations: (
-        files: { url: string; isDirectory: boolean; name: string; path: string }[]
-    ) => ProxySubscribable<FileDecoration[][]>
+    getFileDecorations: (files: FileDecorationContext[]) => ProxySubscribable<FileDecoration[][]>
 }
 
 /**

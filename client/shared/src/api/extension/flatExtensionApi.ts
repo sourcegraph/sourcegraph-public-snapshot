@@ -188,31 +188,27 @@ export const initNewExtensionAPI = (
         },
 
         // Tree
-        getFileDecorations: (files: { url: string; isDirectory: boolean; name: string; path: string }[]) => {
-            // main thread should expose an observable that emits every time it fetches tree entries.
-            // when a workspace root is removed, clear all its decorations from the cache.
+        getFileDecorations: (files: sourcegraph.FileDecorationContext[]) =>
+            // TODO(tj): keyBy path
+            proxySubscribable(
+                state.fileDecorationProviders.pipe(
+                    map(providers => providers.map(provider => provider.provideFileDecorations)),
+                    switchMap(providers =>
+                        combineLatestOrDefault(
+                            providers.map(provider =>
+                                providerResultToObservable(provider(files)).pipe(
+                                    catchError(error => {
+                                        // TODO: conditional log errors
+                                        console.error('Provider errored:', error)
 
-            const combined = state.fileDecorationProviders.pipe(
-                map(providers => providers.map(provider => provider.provideFileDecorations)),
-                switchMap(providers =>
-                    combineLatestOrDefault(
-                        providers.map(provider =>
-                            providerResultToObservable(provider(files)).pipe(
-                                catchError(error => {
-                                    // TODO: conditional log errors
-                                    console.error('Provider errored:', error)
-
-                                    return EMPTY
-                                })
+                                        return EMPTY
+                                    })
+                                )
                             )
                         )
                     )
                 )
-            )
-
-            // TODO: turn into object
-            return proxySubscribable(combined)
-        },
+            ),
     }
 
     // Configuration

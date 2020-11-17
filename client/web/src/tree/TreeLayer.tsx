@@ -369,8 +369,13 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
     // TODO(tj): explain
     private getFileDecorations(treeOrError: TreeFields | ErrorLike | 'loading'): void {
         if (treeOrError !== 'loading' && !isErrorLike(treeOrError)) {
+            console.log('url in layer', treeOrError.url)
             this.subscriptions.add(
-                getFileDecorations(treeOrError.entries, {
+                getFileDecorations({
+                    files: treeOrError.entries,
+                    nodeUrl: treeOrError.url,
+                    repoName: this.props.repoName,
+                    commitID: this.props.commitID,
                     extensionsController: this.props.extensionsController,
                 }).subscribe(fileDecorations => {
                     const fileDecorationByPath = keyBy(fileDecorations.flat(), 'path')

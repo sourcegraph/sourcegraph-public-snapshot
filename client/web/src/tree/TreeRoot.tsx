@@ -224,7 +224,11 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
     private getFileDecorations(treeOrError: TreeFields | ErrorLike | 'loading'): void {
         if (treeOrError !== 'loading' && !isErrorLike(treeOrError)) {
             this.subscriptions.add(
-                getFileDecorations(treeOrError.entries, {
+                getFileDecorations({
+                    files: treeOrError.entries,
+                    nodeUrl: treeOrError.url,
+                    repoName: this.props.repoName,
+                    commitID: this.props.commitID,
                     extensionsController: this.props.extensionsController,
                 }).subscribe(fileDecorations => {
                     const fileDecorationByPath = keyBy(fileDecorations.flat(), 'path')

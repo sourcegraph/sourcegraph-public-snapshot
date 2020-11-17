@@ -195,19 +195,20 @@ export const TreePage: React.FunctionComponent<Props> = ({
         if (!treeOrError || isErrorLike(treeOrError)) {
             return
         }
-
-        const subscription = getFileDecorations(treeOrError.entries, {
+        const subscription = getFileDecorations({
+            files: treeOrError.entries,
             extensionsController: props.extensionsController,
+            repoName,
+            commitID,
+            nodeUrl: treeOrError.url,
         }).subscribe(fileDecorations => {
-            console.log('stuff from file decoration providers!', fileDecorations)
-
             setFileDecorationByPath(keyBy(fileDecorations.flat(), 'path'))
         })
 
         return () => {
             subscription.unsubscribe()
         }
-    }, [treeOrError, props.extensionsController])
+    }, [treeOrError, repoName, commitID, props.extensionsController])
 
     const { services } = props.extensionsController
 
