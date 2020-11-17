@@ -189,7 +189,7 @@ func addBackendIntegrationTests(c Config) func(*bk.Pipeline) {
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
-	for _, browser := range []string{"chrome", "firefox"} {
+	for _, browser := range []string{"chrome"} {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s: E2E for %s extension", browser, browser),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
