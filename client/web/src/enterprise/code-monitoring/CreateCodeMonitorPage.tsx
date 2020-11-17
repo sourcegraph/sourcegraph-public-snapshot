@@ -242,9 +242,6 @@ interface TriggerAreaProps {
 
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
 
-export const errorMissingCommitOrDiff = 'Code monitors require queries to specify either `type:commit` or `type:diff`.'
-export const errorMissingPatternType =
-    'Code monitors require queries to specify a `patternType:` of literal, regexp, or structural.'
 const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     query,
     onQueryChange,
@@ -295,19 +292,11 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             if (hasTypeDiffOrCommitFilter && hasPatternTypeFilter) {
                                 return undefined
                             }
-<<<<<<< HEAD
-                            if (typeFilters.length === 0) {
-                                return errorMissingCommitOrDiff
-                            }
-                            if (patternTypeFilters.length === 0) {
-                                return errorMissingPatternType
-=======
                             if (!hasTypeDiffOrCommitFilter) {
                                 return 'Code monitors require queries to specify either `type:commit` or `type:diff`.'
                             }
                             if (!hasPatternTypeFilter) {
                                 return 'Code monitors require queries to specify a `patternType:` of literal, regexp, or structural.'
->>>>>>> main
                             }
                         }
                         return 'Failed to parse query'
@@ -366,7 +355,7 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     to={buildSearchURLQuery(query, SearchPatternType.literal, false)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="create-monitor-page__query-input-preview-link"
+                                    className="create-monitor-page__query-input-preview-link test-preview-link"
                                 >
                                     Preview results <OpenInNewIcon />
                                 </Link>
@@ -487,7 +476,7 @@ const ActionArea: React.FunctionComponent<ActionAreaProps> = ({
                     <>
                         <div className="font-weight-bold">Send email notifications</div>
                         <span className="text-muted">Deliver email notifications to specified recipients.</span>
-                        <div className="mt-4">
+                        <div className="mt-4 test-action-form">
                             Recipients
                             <input
                                 type="text"
