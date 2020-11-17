@@ -3,10 +3,15 @@ package resolvers
 import (
 	"context"
 	"encoding/json"
+	"strconv"
+	"strings"
+	"time"
 
+	"github.com/opentracing/opentracing-go/log"
 	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // AdjustedLocation is similar to a codeintelapi.ResolvedLocation, but with fields denoting
@@ -57,6 +62,7 @@ type queryResolver struct {
 	commit           string
 	path             string
 	uploads          []store.Dump
+	operations       *operations
 }
 
 // NewQueryResolver create a new query resolver with the given services. The methods of this
@@ -71,12 +77,14 @@ func NewQueryResolver(
 	commit string,
 	path string,
 	uploads []store.Dump,
+	operations *operations,
 ) QueryResolver {
 	return &queryResolver{
 		dbStore:          dbStore,
 		lsifStore:        lsifStore,
 		codeIntelAPI:     codeIntelAPI,
 		positionAdjuster: positionAdjuster,
+		operations:       operations,
 		repositoryID:     repositoryID,
 		commit:           commit,
 		path:             path,
@@ -84,10 +92,24 @@ func NewQueryResolver(
 	}
 }
 
+const slowRangesRequestThreshold = time.Second
+
 // Ranges returns code intelligence for the ranges that fall within the given range of lines. These
 // results are partial and do not include references outside the current file, or any location that
 // requires cross-linking of bundles (cross-repo or cross-root).
-func (r *queryResolver) Ranges(ctx context.Context, startLine, endLine int) ([]AdjustedCodeIntelligenceRange, error) {
+func (r *queryResolver) Ranges(ctx context.Context, startLine, endLine int) (_ []AdjustedCodeIntelligenceRange, err error) {
+	ctx, endObservation := observeResolver(ctx, &err, "Ranges", r.operations.ranges, slowRangesRequestThreshold, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", r.repositoryID),
+			log.String("commit", r.commit),
+			log.String("path", r.path),
+			log.String("uploadIDs", strings.Join(r.uploadIDs(), ", ")),
+			log.Int("startLine", startLine),
+			log.Int("endLine", endLine),
+		},
+	})
+	defer endObservation()
+
 	var adjustedRanges []AdjustedCodeIntelligenceRange
 	for i := range r.uploads {
 		adjustedPath, ok, err := r.positionAdjuster.AdjustPath(ctx, r.uploads[i].Commit, r.path, false)
@@ -132,11 +154,25 @@ func (r *queryResolver) Ranges(ctx context.Context, startLine, endLine int) ([]A
 	return adjustedRanges, nil
 }
 
+const slowDefinitionsRequestThreshold = time.Second
+
 // Definitions returns the list of source locations that define the symbol at the given position.
 // This may include remote definitions if the remote repository is also indexed. If there are multiple
 // bundles associated with this resolver, the definitions from the first bundle with any results will
 // be returned.
-func (r *queryResolver) Definitions(ctx context.Context, line, character int) ([]AdjustedLocation, error) {
+func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_ []AdjustedLocation, err error) {
+	ctx, endObservation := observeResolver(ctx, &err, "Definitions", r.operations.definitions, slowDefinitionsRequestThreshold, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", r.repositoryID),
+			log.String("commit", r.commit),
+			log.String("path", r.path),
+			log.String("uploadIDs", strings.Join(r.uploadIDs(), ", ")),
+			log.Int("line", line),
+			log.Int("character", character),
+		},
+	})
+	defer endObservation()
+
 	position := lsifstore.Position{Line: line, Character: character}
 
 	for i := range r.uploads {
@@ -162,10 +198,24 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) ([
 	return nil, nil
 }
 
+const slowReferencesRequestThreshold = time.Second
+
 // References returns the list of source locations that reference the symbol at the given position.
 // This may include references from other dumps and repositories. If there are multiple bundles
 // associated with this resolver, results from all bundles will be concatenated and returned.
-func (r *queryResolver) References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error) {
+func (r *queryResolver) References(ctx context.Context, line, character, limit int, rawCursor string) (_ []AdjustedLocation, _ string, err error) {
+	ctx, endObservation := observeResolver(ctx, &err, "References", r.operations.references, slowReferencesRequestThreshold, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", r.repositoryID),
+			log.String("commit", r.commit),
+			log.String("path", r.path),
+			log.String("uploadIDs", strings.Join(r.uploadIDs(), ", ")),
+			log.Int("line", line),
+			log.Int("character", character),
+		},
+	})
+	defer endObservation()
+
 	position := lsifstore.Position{Line: line, Character: character}
 
 	// Decode a map of upload ids to the next url that serves
@@ -231,10 +281,24 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	return adjustedLocations, endCursor, nil
 }
 
+const slowHoverRequestThreshold = time.Second
+
 // Hover returns the hover text and range for the symbol at the given position. If there are
 // multiple bundles associated with this resolver, the hover text and range from the first
 // bundle with any results will be returned.
-func (r *queryResolver) Hover(ctx context.Context, line, character int) (string, lsifstore.Range, bool, error) {
+func (r *queryResolver) Hover(ctx context.Context, line, character int) (_ string, _ lsifstore.Range, _ bool, err error) {
+	ctx, endObservation := observeResolver(ctx, &err, "Hover", r.operations.hover, slowHoverRequestThreshold, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", r.repositoryID),
+			log.String("commit", r.commit),
+			log.String("path", r.path),
+			log.String("uploadIDs", strings.Join(r.uploadIDs(), ", ")),
+			log.Int("line", line),
+			log.Int("character", character),
+		},
+	})
+	defer endObservation()
+
 	position := lsifstore.Position{Line: line, Character: character}
 
 	for i := range r.uploads {
@@ -271,10 +335,23 @@ func (r *queryResolver) Hover(ctx context.Context, line, character int) (string,
 	return "", lsifstore.Range{}, false, nil
 }
 
+const slowDiagnosticsRequestThreshold = time.Second
+
 // Diagnostics returns the diagnostics for documents with the given path prefix. If there are
 // multiple bundles associated with this resolver, results from all bundles will be concatenated
 // and returned.
-func (r *queryResolver) Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error) {
+func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (_ []AdjustedDiagnostic, _ int, err error) {
+	ctx, endObservation := observeResolver(ctx, &err, "Diagnostics", r.operations.diagnostics, slowDiagnosticsRequestThreshold, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", r.repositoryID),
+			log.String("commit", r.commit),
+			log.String("path", r.path),
+			log.String("uploadIDs", strings.Join(r.uploadIDs(), ", ")),
+			log.Int("limit", limit),
+		},
+	})
+	defer endObservation()
+
 	totalCount := 0
 	var allDiagnostics []codeintelapi.ResolvedDiagnostic
 	for i := range r.uploads {
@@ -321,6 +398,16 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) ([]AdjustedD
 	}
 
 	return adjustedDiagnostics, totalCount, nil
+}
+
+// uploadIDs returns a slice of this query's matched upload identifiers.
+func (r *queryResolver) uploadIDs() []string {
+	uploadIDs := make([]string, 0, len(r.uploads))
+	for i := range r.uploads {
+		uploadIDs = append(uploadIDs, strconv.Itoa(r.uploads[i].ID))
+	}
+
+	return uploadIDs
 }
 
 // adjustLocations translates a list of resolved locations (relative to the indexed commit) into a list of
