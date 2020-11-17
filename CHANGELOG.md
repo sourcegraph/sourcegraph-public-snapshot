@@ -15,7 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- Password reset link expiration can be customized via `auth.passwordResetLinkExpiry` in the site config. [#13999](https://github.com/sourcegraph/sourcegraph/issues/13999)
 
 ### Changed
 
