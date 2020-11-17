@@ -128,6 +128,8 @@
 // 1528395746_add_is_primary_to_user_emails.up.sql (643B)
 // 1528395747_add_users_created_at_index.down.sql (60B)
 // 1528395747_add_users_created_at_index.up.sql (87B)
+// 1528395748_drop_commit.down.sql (76B)
+// 1528395748_drop_commit.up.sql (72B)
 
 package migrations
 
@@ -2756,6 +2758,46 @@ func _1528395747_add_users_created_at_indexUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395748_drop_commitDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\xcf\x4b\x4d\x2c\x4a\x2d\x2e\x89\x2f\x2d\xc8\xc9\x4f\x4c\x29\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x50\x4a\xce\xcf\xcd\xcd\x2c\x51\x52\x08\x71\x8d\x08\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x50\xc7\x43\x91\x4c\x00\x00\x00")
+
+func _1528395748_drop_commitDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395748_drop_commitDownSql,
+		"1528395748_drop_commit.down.sql",
+	)
+}
+
+func _1528395748_drop_commitDownSql() (*asset, error) {
+	bytes, err := _1528395748_drop_commitDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395748_drop_commit.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x5e, 0xc0, 0x3e, 0xc3, 0x6c, 0x7, 0xb, 0xc0, 0xe3, 0x59, 0xe8, 0xc, 0x2d, 0x7e, 0xe7, 0x17, 0x4c, 0x58, 0x15, 0xbe, 0xac, 0xd8, 0x77, 0x1e, 0x16, 0x91, 0x32, 0x8e, 0x5a, 0x20, 0xa6, 0x9c}}
+	return a, nil
+}
+
+var __1528395748_drop_commitUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\xcf\x4b\x4d\x2c\x4a\x2d\x2e\x89\x2f\x2d\xc8\xc9\x4f\x4c\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x50\x4a\xce\xcf\xcd\xcd\x2c\x51\xb2\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xf2\x02\xe8\x52\x48\x00\x00\x00")
+
+func _1528395748_drop_commitUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395748_drop_commitUpSql,
+		"1528395748_drop_commit.up.sql",
+	)
+}
+
+func _1528395748_drop_commitUpSql() (*asset, error) {
+	bytes, err := _1528395748_drop_commitUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395748_drop_commit.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x49, 0xe5, 0x98, 0x45, 0xc4, 0xf8, 0xc7, 0xae, 0x20, 0x9, 0x58, 0x44, 0x1c, 0xf6, 0xcb, 0x1a, 0x67, 0x62, 0x47, 0xb3, 0x5b, 0xdc, 0xae, 0x7d, 0xa9, 0x8c, 0x3d, 0x6a, 0x88, 0x3e, 0xed, 0xe3}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2975,6 +3017,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395746_add_is_primary_to_user_emails.up.sql":                              _1528395746_add_is_primary_to_user_emailsUpSql,
 	"1528395747_add_users_created_at_index.down.sql":                               _1528395747_add_users_created_at_indexDownSql,
 	"1528395747_add_users_created_at_index.up.sql":                                 _1528395747_add_users_created_at_indexUpSql,
+	"1528395748_drop_commit.down.sql":                                              _1528395748_drop_commitDownSql,
+	"1528395748_drop_commit.up.sql":                                                _1528395748_drop_commitUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3149,6 +3193,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395746_add_is_primary_to_user_emails.up.sql":                              {_1528395746_add_is_primary_to_user_emailsUpSql, map[string]*bintree{}},
 	"1528395747_add_users_created_at_index.down.sql":                               {_1528395747_add_users_created_at_indexDownSql, map[string]*bintree{}},
 	"1528395747_add_users_created_at_index.up.sql":                                 {_1528395747_add_users_created_at_indexUpSql, map[string]*bintree{}},
+	"1528395748_drop_commit.down.sql":                                              {_1528395748_drop_commitDownSql, map[string]*bintree{}},
+	"1528395748_drop_commit.up.sql":                                                {_1528395748_drop_commitUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
