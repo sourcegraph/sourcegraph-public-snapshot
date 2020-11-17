@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"database/sql"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"log"
@@ -55,7 +56,7 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, gitlabWebh
 	m.Get(apirouter.RepoRefresh).Handler(trace.TraceRoute(handler(serveRepoRefresh)))
 
 	if os.Getenv("USE_NEW_WEBHOOKS") != "" {
-		gh := GithubWebhook{
+		gh := webhooks.GithubWebhook{
 			Repos: repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
 		}
 		m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(&gh))

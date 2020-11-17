@@ -1,4 +1,4 @@
-package httpapi
+package webhooks
 
 import (
 	"bytes"
