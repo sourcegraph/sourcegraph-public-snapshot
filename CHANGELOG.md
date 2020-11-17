@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- Fix a regression that was introduced by [#361](https://github.com/sourcegraph/src-cli/pull/361) and caused the "Resolving repositories" step of `src campaign [apply|preview]` to crash when the search query in the campaign spec yielded file matches and repository matches from the same repository.
+
 ### Removed
 
 ## 3.22.0

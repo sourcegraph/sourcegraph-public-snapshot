@@ -535,7 +535,11 @@ func (sr *searchResult) UnmarshalJSON(data []byte) error {
 		return nil
 
 	case "Repository":
-		return json.Unmarshal(data, &sr.Repository)
+		if err := json.Unmarshal(data, &sr.Repository); err != nil {
+			return err
+		}
+		sr.Repository.FileMatches = map[string]bool{}
+		return nil
 
 	default:
 		return errors.Errorf("unknown GraphQL type %q", tn.Typename)
