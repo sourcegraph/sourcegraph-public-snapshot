@@ -404,7 +404,7 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (_ []Adjuste
 func (r *queryResolver) uploadIDs() []string {
 	uploadIDs := make([]string, 0, len(r.uploads))
 	for i := range r.uploads {
-		uploadIDs = append(uploadIDs, strconv.FormatInt(int64(r.uploads[i].ID), 10))
+		uploadIDs = append(uploadIDs, strconv.Itoa(r.uploads[i].ID))
 	}
 
 	return uploadIDs
