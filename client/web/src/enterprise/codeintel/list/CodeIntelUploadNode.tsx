@@ -5,7 +5,7 @@ import { LsifUploadFields } from '../../../graphql-operations'
 import { CodeIntelUploadOrIndexCommit } from '../shared/CodeIntelUploadOrIndexCommit'
 import { CodeIntelUploadOrIndexIndexer } from '../shared/CodeIntelUploadOrIndexIndexer'
 import { CodeIntelUploadOrIndexLastActivity } from '../shared/CodeIntelUploadOrIndexLastActivity'
-import { CodeIntelUploadRoot } from '../shared/CodeIntelUploadRoot'
+import { CodeIntelUploadOrIndexRoot } from '../shared/CodeIntelUploadOrIndexRoot'
 import { CodeIntelUploadOrIndexRepository } from '../shared/CodeInteUploadOrIndexerRepository'
 import { CodeIntelState } from './CodeIntelState'
 
@@ -27,7 +27,7 @@ export const CodeIntelUploadNode: FunctionComponent<CodeIntelUploadNodeProps> = 
 
             <div>
                 <span className="mr-2 d-block d-mdinline-block">
-                    Directory <CodeIntelUploadRoot node={node} /> indexed at commit{' '}
+                    Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
                     <CodeIntelUploadOrIndexCommit node={node} /> by <CodeIntelUploadOrIndexIndexer node={node} />
                 </span>
 

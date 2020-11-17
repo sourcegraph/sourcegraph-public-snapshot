@@ -7792,9 +7792,54 @@ type LSIFIndex implements Node {
     failure: String
 
     """
+    A series of pre-indexing steps to perform.
+    """
+    dockerSteps: [DockerStep!]!
+
+    """
+    The original root supplied at index schedule time.
+    """
+    inputRoot: String!
+
+    """
+    The name of the target indexer Docker image (e.g., sourcegraph/lsif-go@sha256:...).
+    """
+    indexer: String!
+
+    """
+    The arguments to supply to the indexer container.
+    """
+    indexerArgs: [String!]!
+
+    """
+    The path to the index file relative to the root directory (dump.lsif by default).
+    """
+    outfile: String
+
+    """
     The rank of this index in the queue. The value of this field is null if the index has been processed.
     """
     placeInQueue: Int
+}
+
+"""
+A description of a command to run inside of a Docker container.
+"""
+type DockerStep {
+    """
+    The working directory relative to the cloned repository root.
+    """
+    root: String!
+
+    """
+    The name of the Docker image to run.
+    """
+    image: String!
+
+    """
+    The arguments to supply to the Docker container's entrypoint.
+    """
+    commands: [String!]!
 }
 
 """
