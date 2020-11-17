@@ -30,7 +30,7 @@ Note that the extension host execution context varies depending on the client ap
 | --- | --- |
 | Sourcegraph web application | Web Worker |
 | Browser extensions | A Web Worker spawned in the browser extension's background page for each content script instance. Messages are forwarded from the content script to its corresponding worker. |
-| Native Integration | Web Worker spawned in an `<iframe/>`. `MessagePort` endpoints are transferred to the worker. |
+| [Native Integration](/dev/background-information/web/code_host_integrations#how-code-host-integrations-are-delivered) | Web Worker spawned in an `<iframe/>`. `MessagePort` endpoints are transferred to the worker. |
 
 
 ## Inter-process communication
