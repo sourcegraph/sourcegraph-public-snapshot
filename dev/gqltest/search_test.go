@@ -308,6 +308,10 @@ func TestSearch(t *testing.T) {
 				minMatchCount: 1001,
 			},
 			{
+				name:  "repohasfile returns results for global search",
+				query: "repohasfile:README",
+			},
+			{
 				name:  "regular expression without indexed search",
 				query: "index:no patterntype:regexp ^func.*$",
 			},
