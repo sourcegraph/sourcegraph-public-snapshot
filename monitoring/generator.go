@@ -180,12 +180,15 @@ type Observable struct {
 	// set this to true.
 	DataMayNotBeNaN bool
 
-	// Warning and Critical alert definitions. At least a Warning alert must be present.
-	// Alerts are created using the Alert() constructor.
-	//
-	// See README.md for why it is intentionally impossible to create a dashboard to monitor
-	// something without at least a warning alert being defined.
+	// Warning and Critical alert definitions.
+	// Consider adding at least a Warning or Critical alert to each Observable to make it easy to
+	// identify when the target of this metric is missbehaving.
 	Warning, Critical *alertDefinition
+
+	// NoAlerts is used by Observables that don't need any alerts.
+	// We want to be explicit about this to ensure alerting is considered and if we choose not to Alert,
+	// its easy to identify it is an intentional behavior.
+	NoAlert bool
 
 	// PossibleSolutions is Markdown describing possible solutions in the event that the alert is
 	// firing. If there is no clear potential resolution, "none" must be explicitly stated.
@@ -226,11 +229,10 @@ func (o Observable) validate() error {
 		return fmt.Errorf("Observable.Description must be lowercase; found \"%s\"", o.Description)
 	}
 
-	if o.Warning != nil && o.Warning.isEmpty() {
-		return fmt.Errorf("Observable.Warning was set, but is empty")
-	}
-	if o.Critical != nil && o.Critical.isEmpty() {
-		return fmt.Errorf("Observable.Critical was set, but is empty")
+	if o.Warning.isEmpty() && o.Critical.isEmpty() {
+		if o.NoAlert == false {
+			return fmt.Errorf("Observable.Warning or Observable.Critical must be set or explicitly disable alerts with Observable.NoAlert")
+		}
 	}
 
 	if l := strings.ToLower(o.PossibleSolutions); strings.Contains(l, "contact support") || strings.Contains(l, "contact us") {
