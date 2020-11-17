@@ -199,3 +199,52 @@ func TestUsers_UpdatePassword(t *testing.T) {
 		t.Fatal("accepted wrong (old) password")
 	}
 }
+
+func TestUsers_PasswordResetExpiry(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	user, err := Users.Create(ctx, NewUser{
+		Email:                 "foo@bar.com",
+		Username:              "foo",
+		Password:              "right-password",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resetCode, err := Users.RenewPasswordResetCode(ctx, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("link expired one hour ago", func(t *testing.T) {
+		mockPasswordExpiration = -3600
+		defer func() { mockPasswordExpiration = 0 }()
+
+		success, err := Users.SetPassword(ctx, user.ID, resetCode, "new-password")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if success {
+			t.Fatal("accepted an expired password reset")
+		}
+	})
+
+	t.Run("link exipres one hour from now", func(t *testing.T) {
+		mockPasswordExpiration = 3600
+		defer func() { mockPasswordExpiration = 0 }()
+
+		success, err := Users.SetPassword(ctx, user.ID, resetCode, "new-password")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !success {
+			t.Fatal("did not accept an unexpired password reset")
+		}
+	})
+}
