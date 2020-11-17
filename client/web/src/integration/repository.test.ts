@@ -13,6 +13,9 @@ import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/scr
 import * as path from 'path'
 import { DiffHunkLineType } from '../graphql-operations'
 import { encodeURIComponentExceptSlashes } from '../../../shared/src/util/url'
+import { ExtensionManifest } from '../../../shared/src/extensions/extensionManifest'
+import { Settings } from '../../../shared/src/settings/settings'
+import type * as sourcegraph from 'sourcegraph'
 
 describe('Repository', () => {
     let driver: Driver
@@ -536,6 +539,152 @@ describe('Repository', () => {
                 '@master',
                 'readme.md',
             ])
+        })
+    })
+
+    // Describes the ways the directory viewer can be extended through Sourcegraph extensions.
+    describe('extensibility', () => {
+        it.skip('works with file decoration providers', async () => {
+            const repoName = 'github.com/sourcegraph/file-decs'
+
+            const userSettings: Settings = {
+                extensions: {
+                    'test/test': true,
+                },
+            }
+            const extensionManifest: ExtensionManifest = {
+                url: new URL('/-/static/extension/0001-test-test.js?hash--test-test', driver.sourcegraphBaseUrl).href,
+                activationEvents: ['*'],
+            }
+
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+                ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
+                FileExternalLinks: ({ filePath, repoName, revision }) =>
+                    createFileExternalLinksResult(
+                        `https://${encodeURIComponentExceptSlashes(repoName)}/blob/${encodeURIComponentExceptSlashes(
+                            revision
+                        )}/${encodeURIComponentExceptSlashes(filePath)}`
+                    ),
+                ViewerSettings: () => ({
+                    viewerSettings: {
+                        final: JSON.stringify(userSettings),
+                        subjects: [
+                            {
+                                __typename: 'User',
+                                displayName: 'Test User',
+                                id: 'TestUserSettingsID',
+                                latestSettings: {
+                                    id: 123,
+                                    contents: JSON.stringify(userSettings),
+                                },
+                                username: 'test',
+                                viewerCanAdminister: true,
+                                settingsURL: '/users/test/settings',
+                            },
+                        ],
+                    },
+                }),
+                TreeEntries: () => ({
+                    repository: {
+                        commit: {
+                            tree: {
+                                isRoot: false,
+                                url: '/github.com/ggilmore/q-test/-/tree/nested',
+                                entries: [
+                                    {
+                                        name: 'test.ts',
+                                        path: 'nested/test.ts',
+                                        isDirectory: false,
+                                        url: '/github.com/ggilmore/q-test/-/blob/nested/test.ts',
+                                        submodule: null,
+                                        isSingleChild: false,
+                                    },
+                                    {
+                                        name: 'ReactComponent.tsx',
+                                        path: 'nested/ReactComponent.tsx',
+                                        isDirectory: false,
+                                        url: '/github.com/ggilmore/q-test/-/blob/nested/ReactComponent.tsx',
+                                        submodule: null,
+                                        isSingleChild: false,
+                                    },
+                                    {
+                                        name: 'doubly-nested',
+                                        path: 'nested/doubly-nested',
+                                        isDirectory: true,
+                                        url: '/github.com/ggilmore/q-test/-/blob/nested/doubly-nested',
+                                        submodule: null,
+                                        isSingleChild: false,
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                }),
+                TreeCommits: () => ({
+                    node: {
+                        __typename: 'Repository',
+                        commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false } } },
+                    },
+                }),
+                Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}`),
+                Extensions: () => ({
+                    extensionRegistry: {
+                        extensions: {
+                            nodes: [
+                                {
+                                    id: 'TestExtensionID',
+                                    extensionID: 'test/test',
+                                    manifest: {
+                                        raw: JSON.stringify(extensionManifest),
+                                    },
+                                    url: '/extensions/test/test',
+                                    viewerCanAdminister: false,
+                                },
+                            ],
+                        },
+                    },
+                }),
+            })
+
+            // Serve a mock extension bundle with a simple file decoration provider
+            testContext.server
+                .get(new URL(extensionManifest.url, driver.sourcegraphBaseUrl).href)
+                .intercept((request, response) => {
+                    function extensionBundle(): void {
+                        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+                        const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
+
+                        const vowels = 'aeiouAEIOU'
+
+                        function activate(context: sourcegraph.ExtensionContext): void {
+                            context.subscriptions.add(
+                                sourcegraph.tree.registerFileDecorationProvider({
+                                    provideFileDecorations: files =>
+                                        files.map(file => ({
+                                            url: file.url,
+                                            path: file.path,
+                                            name: file.name,
+                                            text: `${
+                                                file.name.split('').filter(char => vowels.includes(char)).length
+                                            } vowels`,
+                                            color: file.isDirectory ? 'red' : 'blue',
+                                        })),
+                                })
+                            )
+                        }
+
+                        exports.activate = activate
+                    }
+                    // Create an immediately-invoked function expression for the extensionBundle function
+                    const extensionBundleString = `(${extensionBundle.toString()})()`
+                    response.type('application/javascript; charset=utf-8').send(extensionBundleString)
+                })
+
+            await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repoName}/-/tree/nested`)
+
+            await new Promise(() => {})
         })
     })
 })

@@ -5,7 +5,7 @@ import { FileSpec, UIPositionSpec, RepoSpec, ResolvedRevisionSpec, toURIWithPath
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { switchMap } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
-import { DocumentHighlight } from 'sourcegraph'
+import { DocumentHighlight, FileDecoration } from 'sourcegraph'
 
 /**
  * Fetches hover information for the given location.
@@ -64,5 +64,17 @@ export function getDocumentHighlights(
                 )
             )
         )
+    )
+}
+
+/**
+ * Fetches file decorations
+ */
+export function getFileDecorations(
+    files: { url: string; isDirectory: boolean; name: string; path: string }[],
+    { extensionsController }: ExtensionsControllerProps
+): Observable<FileDecoration[][]> {
+    return from(extensionsController.extHostAPI).pipe(
+        switchMap(extensionHost => wrapRemoteObservable(extensionHost.getFileDecorations(files)))
     )
 }

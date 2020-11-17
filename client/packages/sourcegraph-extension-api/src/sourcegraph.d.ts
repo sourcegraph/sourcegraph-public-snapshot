@@ -1548,6 +1548,46 @@ declare module 'sourcegraph' {
         ): Unsubscribable
     }
 
+    export interface FileDecoration {
+        url: string
+
+        name: string
+
+        path: string
+
+        text: string
+
+        color?: string
+
+        // TODO(tj): ThemableDecorationStyle for light and dark
+    }
+
+    export interface FileDecorationContext {
+        root: { uri: string }
+
+        files: Subscribable<{ uri: string }>
+    }
+
+    // TODO(tj): move these somewhere more reasonable
+    export interface FileDecorationProvider {
+        // Will be a general API for streaming decorations
+
+        // provideFileDecorations: (context: FileDecorationContext) => ProviderResult<FileDecoration[]>
+
+        // (Temporary?) simple API that works for directory view
+        provideFileDecorations: (
+            files: { url: string; isDirectory: boolean; name: string; path: string }[]
+        ) => ProviderResult<FileDecoration[]>
+    }
+
+    // TODO(tj): Explain tree namespace
+    export namespace tree {
+        /**
+         * Register a directory-level decoration provider
+         */
+        export function registerFileDecorationProvider(provider: FileDecorationProvider): Unsubscribable
+    }
+
     /**
      * A query transformer alters a user's search query before executing a search.
      *

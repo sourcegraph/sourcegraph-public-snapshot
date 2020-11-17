@@ -148,6 +148,7 @@ function createExtensionAPI(
         commands,
         search,
         languages: { registerHoverProvider, registerDocumentHighlightProvider, registerDefinitionProvider },
+        tree,
         graphQL,
     } = initNewExtensionAPI(proxy, initData.initialSettings, documents)
 
@@ -252,7 +253,7 @@ function createExtensionAPI(
                 provider: sourcegraph.CompletionItemProvider
             ) => languageFeatures.registerCompletionItemProvider(selector, provider),
         },
-
+        tree,
         search,
         commands,
         graphQL,

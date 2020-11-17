@@ -1,7 +1,7 @@
 import { SettingsCascade } from '../../settings/settings'
 import { Remote, proxy } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
-import { BehaviorSubject, Subject, of, Observable, from, concat } from 'rxjs'
+import { BehaviorSubject, Subject, of, Observable, from, concat, EMPTY } from 'rxjs'
 import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
 import { syncSubscription } from '../util'
 import { switchMap, mergeMap, map, defaultIfEmpty, catchError, distinctUntilChanged } from 'rxjs/operators'
@@ -37,6 +37,9 @@ export interface ExtensionHostState {
     hoverProviders: BehaviorSubject<RegisteredProvider<sourcegraph.HoverProvider>[]>
     documentHighlightProviders: BehaviorSubject<RegisteredProvider<sourcegraph.DocumentHighlightProvider>[]>
     definitionProviders: BehaviorSubject<RegisteredProvider<sourcegraph.DefinitionProvider>[]>
+
+    // Tree
+    fileDecorationProviders: BehaviorSubject<sourcegraph.FileDecorationProvider[]>
 }
 
 export interface RegisteredProvider<T> {
@@ -56,6 +59,7 @@ export interface InitResult {
         typeof sourcegraph['languages'],
         'registerHoverProvider' | 'registerDocumentHighlightProvider' | 'registerDefinitionProvider'
     >
+    tree: typeof sourcegraph['tree']
     graphQL: typeof sourcegraph['graphQL']
 }
 
@@ -88,6 +92,7 @@ export const initNewExtensionAPI = (
             []
         ),
         definitionProviders: new BehaviorSubject<RegisteredProvider<sourcegraph.DefinitionProvider>[]>([]),
+        fileDecorationProviders: new BehaviorSubject<sourcegraph.FileDecorationProvider[]>([]),
     }
 
     const configChanges = new BehaviorSubject<void>(undefined)
@@ -98,6 +103,8 @@ export const initNewExtensionAPI = (
     const rootChanges = new Subject<void>()
 
     const versionContextChanges = new Subject<string | undefined>()
+
+    const files = new Subject<{ uri: string }>()
 
     const exposedToMain: FlatExtensionHostAPI = {
         // Configuration
@@ -179,6 +186,33 @@ export const initNewExtensionAPI = (
                 )
             )
         },
+
+        // Tree
+        getFileDecorations: (files: { url: string; isDirectory: boolean; name: string; path: string }[]) => {
+            // main thread should expose an observable that emits every time it fetches tree entries.
+            // when a workspace root is removed, clear all its decorations from the cache.
+
+            const combined = state.fileDecorationProviders.pipe(
+                map(providers => providers.map(provider => provider.provideFileDecorations)),
+                switchMap(providers =>
+                    combineLatestOrDefault(
+                        providers.map(provider =>
+                            providerResultToObservable(provider(files)).pipe(
+                                catchError(error => {
+                                    // TODO: conditional log errors
+                                    console.error('Provider errored:', error)
+
+                                    return EMPTY
+                                })
+                            )
+                        )
+                    )
+                )
+            )
+
+            // TODO: turn into object
+            return proxySubscribable(combined)
+        },
     }
 
     // Configuration
@@ -227,6 +261,10 @@ export const initNewExtensionAPI = (
         provider: sourcegraph.DefinitionProvider
     ): sourcegraph.Unsubscribable => addWithRollback(state.definitionProviders, { selector, provider })
 
+    // File decorations
+    const registerFileDecorationProvider = (provider: sourcegraph.FileDecorationProvider): sourcegraph.Unsubscribable =>
+        addWithRollback(state.fileDecorationProviders, provider)
+
     // GraphQL
     const graphQL: typeof sourcegraph['graphQL'] = {
         execute: (query, variables) => mainAPI.requestGraphQL(query, variables),
@@ -245,6 +283,9 @@ export const initNewExtensionAPI = (
             registerHoverProvider,
             registerDocumentHighlightProvider,
             registerDefinitionProvider,
+        },
+        tree: {
+            registerFileDecorationProvider,
         },
         graphQL,
     }

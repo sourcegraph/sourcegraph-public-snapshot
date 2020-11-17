@@ -46,6 +46,9 @@ import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { TreeEntriesSection } from './TreeEntriesSection'
 import { GitCommitFields } from '../../graphql-operations'
+import { getFileDecorations } from '../../backend/features'
+import { FileDecoration } from 'sourcegraph'
+import { keyBy } from 'lodash'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -184,6 +187,29 @@ export const TreePage: React.FunctionComponent<Props> = ({
             [repoName, commitID, revision, filePath]
         )
     )
+
+    // TODO(tj): Should probably send decorations by filePath by workspace root from ext host
+    const [fileDecorationByPath, setFileDecorationByPath] = useState<Record<string, FileDecoration | undefined>>({})
+    // TODO(tj): use useObservable
+    useEffect(() => {
+        if (!treeOrError || isErrorLike(treeOrError)) {
+            return
+        }
+
+        console.log('treeOrError', treeOrError)
+
+        const subscription = getFileDecorations(treeOrError.entries, {
+            extensionsController: props.extensionsController,
+        }).subscribe(fileDecorations => {
+            console.log('stuff from file decoration providers!', fileDecorations)
+
+            setFileDecorationByPath(keyBy(fileDecorations.flat(), 'path'))
+        })
+
+        return () => {
+            subscription.unsubscribe()
+        }
+    }, [treeOrError, props.extensionsController])
 
     const { services } = props.extensionsController
 
@@ -361,7 +387,11 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     )}
                     <section className="tree-page__section test-tree-entries">
                         <h3 className="tree-page__section-header">Files and directories</h3>
-                        <TreeEntriesSection parentPath={filePath} entries={treeOrError.entries} />
+                        <TreeEntriesSection
+                            parentPath={filePath}
+                            entries={treeOrError.entries}
+                            fileDecorationByPath={fileDecorationByPath}
+                        />
                     </section>
                     {/* eslint-disable react/jsx-no-bind */}
                     <ActionsContainer
