@@ -66,8 +66,10 @@ function e2e() {
   pushd client/web
   echo $SOURCEGRAPH_BASE_URL
   # TODO: File issue for broken tests and add more
-  #yarn run test:regression:core
+  yarn run test:regression:core
   yarn run test:regression:config-settings
+  yarn run test:regression:integrations
+  yarn run test:regression:search
   popd
 }
 
