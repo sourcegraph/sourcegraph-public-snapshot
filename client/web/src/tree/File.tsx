@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { TreeLayerProps } from './TreeLayer'
 import { maxEntries, treePadding } from './util'
+import { FileDecoration } from 'sourcegraph'
 
 interface FileProps extends TreeLayerProps {
     className: string
@@ -10,6 +11,8 @@ interface FileProps extends TreeLayerProps {
     handleTreeClick: () => void
     noopRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
     linkRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
+
+    fileDecoration?: FileDecoration
 }
 
 export const File: React.FunctionComponent<FileProps> = props => (
@@ -39,6 +42,12 @@ export const File: React.FunctionComponent<FileProps> = props => (
                             <span className="tree__row-label">
                                 {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
                             </span>
+                            {/* File Decoration */}
+                            {props.fileDecoration && (
+                                <span style={{ color: props.fileDecoration.color, fontSize: 12 }}>
+                                    {props.fileDecoration.text}
+                                </span>
+                            )}
                         </div>
                     </Link>
                 ) : (
@@ -55,6 +64,12 @@ export const File: React.FunctionComponent<FileProps> = props => (
                             <span className="tree__row-label">
                                 {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
                             </span>
+                            {/* File Decoration (TODO(tj): submodules in integration test) */}
+                            {props.fileDecoration && (
+                                <span style={{ color: props.fileDecoration.color, fontSize: 12 }}>
+                                    {props.fileDecoration.text}
+                                </span>
+                            )}
                         </div>
                     </div>
                 )
@@ -70,7 +85,16 @@ export const File: React.FunctionComponent<FileProps> = props => (
                     style={treePadding(props.depth, false)}
                     tabIndex={-1}
                 >
-                    {props.entryInfo.name}
+                    <div className="tree__row-contents-text">
+                        {props.entryInfo.name}
+
+                        {/* File Decoration */}
+                        {props.fileDecoration && (
+                            <span style={{ color: props.fileDecoration.color, fontSize: 12 }}>
+                                {props.fileDecoration.text}
+                            </span>
+                        )}
+                    </div>
                 </Link>
             )}
             {props.index === maxEntries - 1 && (

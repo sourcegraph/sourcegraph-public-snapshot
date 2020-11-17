@@ -196,8 +196,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
             return
         }
 
-        console.log('treeOrError', treeOrError)
-
         const subscription = getFileDecorations(treeOrError.entries, {
             extensionsController: props.extensionsController,
         }).subscribe(fileDecorations => {

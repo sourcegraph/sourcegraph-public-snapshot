@@ -1,10 +1,14 @@
 import React from 'react'
+import { FileDecoration } from 'sourcegraph'
 import { SingleChildTreeLayer } from './SingleChildTreeLayer'
 import { TreeLayer } from './TreeLayer'
 import { TreeRootProps } from './TreeRoot'
 import { hasSingleChild, SingleChildGitTree, TreeEntryInfo } from './util'
 
 interface ChildTreeLayerProps extends Pick<TreeRootProps, Exclude<keyof TreeRootProps, 'sizeKey'>> {
+    fileDecorationByPath: Record<string, FileDecoration | undefined>
+    // TODO(tj): Consider childrenEntries decorations
+
     entries: TreeEntryInfo[]
     /** The entry information for a SingleChildTreeLayer. Will be a SingleChildGitTree with fields populated, or be an empty object if there is no SingleChildTreeLayer to render. */
     singleChildTreeEntry: SingleChildGitTree
@@ -34,6 +38,7 @@ export const ChildTreeLayer: React.FunctionComponent<ChildTreeLayerProps> = (pro
         setActiveNode: props.setActiveNode,
         onSelect: props.onSelect,
         commitID: props.commitID,
+        extensionsController: props.extensionsController,
     }
 
     return (
@@ -51,6 +56,8 @@ export const ChildTreeLayer: React.FunctionComponent<ChildTreeLayerProps> = (pro
                                     parentPath={props.singleChildTreeEntry.path}
                                     entryInfo={props.singleChildTreeEntry}
                                     childrenEntries={props.singleChildTreeEntry.children}
+                                    fileDecorationByPath={props.fileDecorationByPath}
+                                    fileDecoration={props.fileDecorationByPath[props.singleChildTreeEntry.path]}
                                 />
                             ) : (
                                 props.entries.map((item, index) => (
@@ -61,6 +68,7 @@ export const ChildTreeLayer: React.FunctionComponent<ChildTreeLayerProps> = (pro
                                         isExpanded={props.expandedTrees.includes(item.path)}
                                         parentPath={item.path}
                                         entryInfo={item}
+                                        fileDecoration={props.fileDecorationByPath[item.path]}
                                     />
                                 ))
                             )}

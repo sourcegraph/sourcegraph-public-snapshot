@@ -21,6 +21,10 @@ import { TreeNode } from './Tree'
 import { hasSingleChild, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
 import { ErrorAlert } from '../components/alerts'
 import { TreeFields } from '../graphql-operations'
+import { getFileDecorations } from '../backend/features'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import { keyBy } from 'lodash'
+import { FileDecoration } from 'sourcegraph'
 
 const maxEntries = 2500
 
@@ -28,7 +32,7 @@ const errorWidth = (width?: string): { width: string } => ({
     width: width ? `${width}px` : 'auto',
 })
 
-export interface TreeRootProps extends AbsoluteRepo {
+export interface TreeRootProps extends AbsoluteRepo, ExtensionsControllerProps {
     history: H.History
     location: H.Location
     activeNode: TreeNode
@@ -51,6 +55,7 @@ export interface TreeRootProps extends AbsoluteRepo {
 const LOADING = 'loading' as const
 interface TreeRootState {
     treeOrError?: typeof LOADING | TreeFields | ErrorLike
+    fileDecorationByPath: Record<string, FileDecoration | undefined>
 }
 
 export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
@@ -68,7 +73,9 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
             path: '',
             url: '',
         }
-        this.state = {}
+        this.state = {
+            fileDecorationByPath: {},
+        }
     }
 
     public componentDidMount(): void {
@@ -103,7 +110,12 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                     })
                 )
                 .subscribe(
-                    treeOrError => this.setState({ treeOrError }),
+                    treeOrError => {
+                        // Get file decorations once treeOrError loads
+                        this.getFileDecorations(treeOrError)
+                        console.log('new treeOrError in tree root', treeOrError)
+                        this.setState({ treeOrError })
+                    },
                     error => console.error(error)
                 )
         )
@@ -184,6 +196,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                                                 childrenEntries={singleChildTreeEntry.children}
                                                 onHover={this.fetchChildContents}
                                                 setChildNodes={this.setChildNode}
+                                                fileDecorationByPath={this.state.fileDecorationByPath}
                                             />
                                         )
                                     )}
@@ -205,5 +218,19 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
     }
     private setChildNode = (node: TreeNode, index: number): void => {
         this.node.childNodes[index] = node
+    }
+
+    // TODO(tj): explain
+    private getFileDecorations(treeOrError: TreeFields | ErrorLike | 'loading'): void {
+        if (treeOrError !== 'loading' && !isErrorLike(treeOrError)) {
+            this.subscriptions.add(
+                getFileDecorations(treeOrError.entries, {
+                    extensionsController: this.props.extensionsController,
+                }).subscribe(fileDecorations => {
+                    const fileDecorationByPath = keyBy(fileDecorations.flat(), 'path')
+                    this.setState({ fileDecorationByPath })
+                })
+            )
+        }
     }
 }

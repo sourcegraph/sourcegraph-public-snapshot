@@ -544,7 +544,7 @@ describe('Repository', () => {
 
     // Describes the ways the directory viewer can be extended through Sourcegraph extensions.
     describe('extensibility', () => {
-        it.skip('works with file decoration providers', async () => {
+        it('works with file decoration providers', async () => {
             const repoName = 'github.com/sourcegraph/file-decs'
 
             const userSettings: Settings = {
@@ -586,42 +586,131 @@ describe('Repository', () => {
                         ],
                     },
                 }),
-                TreeEntries: () => ({
-                    repository: {
-                        commit: {
-                            tree: {
-                                isRoot: false,
-                                url: '/github.com/ggilmore/q-test/-/tree/nested',
-                                entries: [
-                                    {
-                                        name: 'test.ts',
-                                        path: 'nested/test.ts',
-                                        isDirectory: false,
-                                        url: '/github.com/ggilmore/q-test/-/blob/nested/test.ts',
-                                        submodule: null,
-                                        isSingleChild: false,
+                TreeEntries: ({ filePath, repoName }) => {
+                    if (filePath === '') {
+                        return {
+                            repository: {
+                                commit: {
+                                    tree: {
+                                        isRoot: true,
+                                        url: `/${repoName}`,
+                                        entries: [
+                                            {
+                                                isDirectory: true,
+                                                isSingleChild: true,
+                                                name: 'nested',
+                                                path: 'nested',
+                                                url: `/${repoName}/-/blob/nested`,
+                                                submodule: null,
+                                            },
+                                            // recursiveSingleChild is always true in the web app
+                                            {
+                                                name: 'test.ts',
+                                                path: 'nested/test.ts',
+                                                isDirectory: false,
+                                                url: `/${repoName}/-/blob/nested/test.ts`,
+                                                submodule: null,
+                                                isSingleChild: false,
+                                            },
+                                            {
+                                                name: 'ReactComponent.tsx',
+                                                path: 'nested/ReactComponent.tsx',
+                                                isDirectory: false,
+                                                url: `/${repoName}/-/blob/nested/ReactComponent.tsx`,
+                                                submodule: null,
+                                                isSingleChild: false,
+                                            },
+                                            {
+                                                name: 'doubly-nested',
+                                                path: 'nested/doubly-nested',
+                                                isDirectory: true,
+                                                url: `/${repoName}/-/blob/nested/doubly-nested`,
+                                                submodule: null,
+                                                isSingleChild: false,
+                                            },
+                                        ],
                                     },
-                                    {
-                                        name: 'ReactComponent.tsx',
-                                        path: 'nested/ReactComponent.tsx',
-                                        isDirectory: false,
-                                        url: '/github.com/ggilmore/q-test/-/blob/nested/ReactComponent.tsx',
-                                        submodule: null,
-                                        isSingleChild: false,
+                                },
+                            },
+                        }
+                    }
+
+                    if (filePath === 'nested') {
+                        return {
+                            repository: {
+                                commit: {
+                                    tree: {
+                                        isRoot: false,
+                                        url: `/${repoName}/-/tree/nested`,
+                                        entries: [
+                                            {
+                                                name: 'test.ts',
+                                                path: 'nested/test.ts',
+                                                isDirectory: false,
+                                                url: `/${repoName}/-/blob/nested/test.ts`,
+                                                submodule: null,
+                                                isSingleChild: false,
+                                            },
+                                            {
+                                                name: 'ReactComponent.tsx',
+                                                path: 'nested/ReactComponent.tsx',
+                                                isDirectory: false,
+                                                url: `/${repoName}/-/blob/nested/ReactComponent.tsx`,
+                                                submodule: null,
+                                                isSingleChild: false,
+                                            },
+                                            {
+                                                name: 'doubly-nested',
+                                                path: 'nested/doubly-nested',
+                                                isDirectory: true,
+                                                url: `/${repoName}/-/blob/nested/doubly-nested`,
+                                                submodule: null,
+                                                isSingleChild: false,
+                                            },
+                                        ],
                                     },
-                                    {
-                                        name: 'doubly-nested',
-                                        path: 'nested/doubly-nested',
-                                        isDirectory: true,
-                                        url: '/github.com/ggilmore/q-test/-/blob/nested/doubly-nested',
-                                        submodule: null,
-                                        isSingleChild: false,
+                                },
+                            },
+                        }
+                    }
+
+                    if (filePath === 'nested/doubly-nested') {
+                        return {
+                            repository: {
+                                commit: {
+                                    tree: {
+                                        isRoot: false,
+                                        url: `/${repoName}/-/tree/nested/triply-nested`,
+                                        entries: [
+                                            {
+                                                name: 'triply-nested.ts',
+                                                path: 'nested/test.ts',
+                                                isDirectory: false,
+                                                url: `/${repoName}/-/blob/nested/doubly-nested/triply-nested.ts`,
+                                                submodule: null,
+                                                isSingleChild: false,
+                                            },
+                                        ],
                                     },
-                                ],
+                                },
+                            },
+                        }
+                    }
+                    // TODO: repo root
+
+                    // unknown
+                    return {
+                        repository: {
+                            commit: {
+                                tree: {
+                                    isRoot: false,
+                                    url: `/${repoName}/${filePath}`,
+                                    entries: [],
+                                },
                             },
                         },
-                    },
-                }),
+                    }
+                },
                 TreeCommits: () => ({
                     node: {
                         __typename: 'Repository',
@@ -682,9 +771,10 @@ describe('Repository', () => {
                     response.type('application/javascript; charset=utf-8').send(extensionBundleString)
                 })
 
-            await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repoName}/-/tree/nested`)
+            // await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repoName}/-/tree/nested`)
+            await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repoName}`)
 
-            await new Promise(() => {})
+            // await new Promise(() => {})
         })
     })
 })

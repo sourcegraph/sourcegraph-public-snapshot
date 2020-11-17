@@ -124,6 +124,7 @@ export class RepoRevisionSidebar extends React.PureComponent<Props, State> {
                             activePath={this.props.filePath}
                             activePathIsDir={this.props.isDir}
                             sizeKey={`Resizable:${STORAGE_KEY}`}
+                            extensionsController={this.props.extensionsController}
                         />
                         <RepoRevisionSidebarSymbols
                             key="symbols"

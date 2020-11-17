@@ -3,6 +3,7 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { FileDecoration } from 'sourcegraph'
 import { TreeLayerProps } from './TreeLayer'
 import { treePadding } from './util'
 
@@ -13,6 +14,8 @@ interface TreeChildProps extends TreeLayerProps {
     handleTreeClick: () => void
     noopRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
     linkRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
+
+    fileDecoration?: FileDecoration
 }
 
 /**
@@ -54,6 +57,12 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                     >
                         {props.entryInfo.name}
                     </Link>
+                    {/* File Decoration */}
+                    {props.fileDecoration && (
+                        <span style={{ color: props.fileDecoration.color, fontSize: 12 }}>
+                            {props.fileDecoration.text}
+                        </span>
+                    )}
                 </div>
                 {props.loading && (
                     <div className="tree__row-loader">

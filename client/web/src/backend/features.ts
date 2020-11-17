@@ -69,6 +69,8 @@ export function getDocumentHighlights(
 
 /**
  * Fetches file decorations
+ *
+ * TODO(tj): Memoize observable, just like fetchTreeEntries
  */
 export function getFileDecorations(
     files: { url: string; isDirectory: boolean; name: string; path: string }[],

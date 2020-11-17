@@ -35,7 +35,6 @@ const TreeEntry: React.FunctionComponent<{
                 {name}
                 {isDir && '/'}
             </Link>
-            {/* TODO(tj): Style is horrible atm */}
             {fileDecoration && <small style={{ color: fileDecoration.color }}>{fileDecoration.text}</small>}
         </>
     )

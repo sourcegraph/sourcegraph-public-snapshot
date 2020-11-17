@@ -30,8 +30,12 @@ import {
 import { ErrorAlert } from '../components/alerts'
 import classNames from 'classnames'
 import { TreeFields } from '../graphql-operations'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import { FileDecoration } from 'sourcegraph'
+import { getFileDecorations } from '../backend/features'
+import { keyBy } from 'lodash'
 
-export interface TreeLayerProps extends AbsoluteRepo {
+export interface TreeLayerProps extends AbsoluteRepo, ExtensionsControllerProps {
     history: H.History
     location: H.Location
     activeNode: TreeNode
@@ -50,11 +54,15 @@ export interface TreeLayerProps extends AbsoluteRepo {
     onToggleExpand: (path: string, expanded: boolean, node: TreeNode) => void
     setChildNodes: (node: TreeNode, index: number) => void
     setActiveNode: (node: TreeNode) => void
+
+    fileDecoration?: FileDecoration
 }
 
 const LOADING = 'loading' as const
 interface TreeLayerState {
     treeOrError?: typeof LOADING | TreeFields | ErrorLike
+
+    fileDecorationByPath: Record<string, FileDecoration | undefined>
 }
 
 export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
@@ -73,7 +81,9 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
             url: this.props.entryInfo ? this.props.entryInfo.url : '',
         }
 
-        this.state = {}
+        this.state = {
+            fileDecorationByPath: {},
+        }
     }
 
     public componentDidMount(): void {
@@ -107,7 +117,11 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                     })
                 )
                 .subscribe(
-                    treeOrError => this.setState({ treeOrError }),
+                    treeOrError => {
+                        this.getFileDecorations(treeOrError)
+                        console.log('new treeOrError in treeLayer', treeOrError)
+                        this.setState({ treeOrError })
+                    },
                     error => console.error(error)
                 )
         )
@@ -287,6 +301,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                         singleChildTreeEntry={singleChildTreeEntry}
                                                         childrenEntries={singleChildTreeEntry.children}
                                                         setChildNodes={this.setChildNode}
+                                                        fileDecorationByPath={this.state.fileDecorationByPath}
                                                     />
                                                 )
                                             )}
@@ -349,5 +364,19 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
 
     private setChildNode = (node: TreeNode, index: number): void => {
         this.node.childNodes[index] = node
+    }
+
+    // TODO(tj): explain
+    private getFileDecorations(treeOrError: TreeFields | ErrorLike | 'loading'): void {
+        if (treeOrError !== 'loading' && !isErrorLike(treeOrError)) {
+            this.subscriptions.add(
+                getFileDecorations(treeOrError.entries, {
+                    extensionsController: this.props.extensionsController,
+                }).subscribe(fileDecorations => {
+                    const fileDecorationByPath = keyBy(fileDecorations.flat(), 'path')
+                    this.setState({ fileDecorationByPath })
+                })
+            )
+        }
     }
 }
