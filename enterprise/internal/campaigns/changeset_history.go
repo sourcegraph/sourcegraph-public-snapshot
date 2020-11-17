@@ -50,7 +50,7 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (campaigns.Chan
 	}
 
 	var (
-		states = []*campaigns.ChangesetStatesAtTime{}
+		states = make([]*campaigns.ChangesetStatesAtTime, 0)
 
 		currentExtState    = initialExternalState(ch, ce)
 		currentReviewState = campaigns.ChangesetReviewStatePending

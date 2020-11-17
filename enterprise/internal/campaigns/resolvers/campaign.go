@@ -179,9 +179,8 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		PublicationState: &publishedState,
 		// Only load fully-synced changesets, so that the data we use for computing the changeset counts is complete.
 		OnlySynced: true,
-		NoMetadata: true,
 	}
-	cs, _, err := r.store.ListChangesets(ctx, opts)
+	cs, _, err := r.store.ListChangesetHistories(ctx, opts)
 	if err != nil {
 		return resolvers, err
 	}

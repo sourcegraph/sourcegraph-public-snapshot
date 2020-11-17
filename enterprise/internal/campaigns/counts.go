@@ -40,21 +40,21 @@ func (cc *ChangesetCounts) String() string {
 // The number of ChangesetCounts returned is the number of 1 day intervals
 // between start and end, with each ChangesetCounts representing a point in
 // time at the boundary of each 24h interval.
-func CalcCounts(start, end time.Time, cs []*campaigns.Changeset) ([]*ChangesetCounts, error) {
+func CalcCounts(start, end time.Time, chs []*campaigns.ChangesetHistory) ([]*ChangesetCounts, error) {
 	ts := generateTimestamps(start, end)
 	counts := make([]*ChangesetCounts, len(ts))
 	for i, t := range ts {
 		counts[i] = &ChangesetCounts{Time: t}
 	}
 
-	for _, changeset := range cs {
+	for _, history := range chs {
 		// Go through every point in time we want to record and check the
 		// states of the changeset at that point in time
 		afterIdx := 0
 		for _, c := range counts {
 			var states campaigns.ChangesetStatesAtTime
 			var ok bool
-			states, afterIdx, ok = changeset.History.StatesAtTime(c.Time, afterIdx)
+			states, afterIdx, ok = history.StatesAtTime(c.Time, afterIdx)
 			if !ok {
 				// Changeset didn't exist yet
 				continue

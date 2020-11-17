@@ -1418,16 +1418,18 @@ func TestCalcCounts(t *testing.T) {
 				byChangeset[c] = byChangesetID[c.ID]
 			}
 
+			histories := []*campaigns.ChangesetHistory{}
+
 			for changeset, csEvents := range byChangeset {
 				// Compute history of changeset
 				history, err := computeHistory(changeset, csEvents)
 				if err != nil {
 					t.Fatal(err)
 				}
-				changeset.History = history
+				histories = append(histories, &history)
 			}
 
-			have, err := CalcCounts(tc.start, tc.end, tc.changesets)
+			have, err := CalcCounts(tc.start, tc.end, histories)
 			if err != nil {
 				t.Fatal(err)
 			}

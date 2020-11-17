@@ -406,13 +406,11 @@ type ListChangesetsOpts struct {
 	OnlySynced           bool
 	ExternalServiceID    string
 	WithoutHistory       bool
-
-	NoMetadata bool
 }
 
 // ListChangesets lists Changesets with the given filters.
 func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs campaigns.Changesets, next int64, err error) {
-	q := listChangesetsQuery(&opts)
+	q := listChangesetsQuery(&opts, ChangesetColumns)
 
 	cs = make([]*campaigns.Changeset, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) (err error) {
@@ -440,7 +438,7 @@ WHERE %s
 ORDER BY id ASC
 `
 
-func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
+func listChangesetsQuery(opts *ListChangesetsOpts, cols []*sqlf.Query) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("changesets.id >= %s", opts.Cursor),
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
@@ -503,50 +501,47 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("changesets.history IS NULL"))
 	}
 
-	cols := ChangesetColumns
-	if opts.NoMetadata {
-		cols = []*sqlf.Query{
-			sqlf.Sprintf("changesets.id"),
-			sqlf.Sprintf("changesets.repo_id"),
-			sqlf.Sprintf("changesets.created_at"),
-			sqlf.Sprintf("changesets.updated_at"),
-			sqlf.Sprintf("'{}'::jsonb as metadata"),
-			sqlf.Sprintf("changesets.campaign_ids"),
-			sqlf.Sprintf("changesets.external_id"),
-			sqlf.Sprintf("changesets.external_service_type"),
-			sqlf.Sprintf("changesets.external_branch"),
-			sqlf.Sprintf("changesets.external_deleted_at"),
-			sqlf.Sprintf("changesets.external_updated_at"),
-			sqlf.Sprintf("changesets.external_state"),
-			sqlf.Sprintf("changesets.external_review_state"),
-			sqlf.Sprintf("changesets.external_check_state"),
-			sqlf.Sprintf("changesets.added_to_campaign"),
-			sqlf.Sprintf("changesets.diff_stat_added"),
-			sqlf.Sprintf("changesets.diff_stat_changed"),
-			sqlf.Sprintf("changesets.diff_stat_deleted"),
-			sqlf.Sprintf("changesets.sync_state"),
-			sqlf.Sprintf("changesets.owned_by_campaign_id"),
-			sqlf.Sprintf("changesets.current_spec_id"),
-			sqlf.Sprintf("changesets.previous_spec_id"),
-			sqlf.Sprintf("changesets.publication_state"),
-			sqlf.Sprintf("changesets.reconciler_state"),
-			sqlf.Sprintf("changesets.failure_message"),
-			sqlf.Sprintf("changesets.started_at"),
-			sqlf.Sprintf("changesets.finished_at"),
-			sqlf.Sprintf("changesets.process_after"),
-			sqlf.Sprintf("changesets.num_resets"),
-			sqlf.Sprintf("changesets.num_failures"),
-			sqlf.Sprintf("changesets.unsynced"),
-			sqlf.Sprintf("changesets.closing"),
-			sqlf.Sprintf("changesets.history"),
-		}
-	}
-
 	return sqlf.Sprintf(
 		listChangesetsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(cols, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
+}
+
+type changesetHistoryRow struct {
+	ID      int64
+	History campaigns.ChangesetHistory
+}
+
+// ListChangesetHistories lists changeset histories with the given filters.
+func (s *Store) ListChangesetHistories(ctx context.Context, opts ListChangesetsOpts) (chs []*campaigns.ChangesetHistory, next int64, err error) {
+	q := listChangesetsQuery(&opts, []*sqlf.Query{sqlf.Sprintf("changesets.id"), sqlf.Sprintf("changesets.history")})
+
+	chs = make([]*campaigns.ChangesetHistory, 0, opts.DBLimit())
+	err = s.query(ctx, q, func(sc scanner) (err error) {
+		var c changesetHistoryRow
+		var history dbutil.NullJSONRawMessage
+
+		if err = sc.Scan(&c.ID, &history); err != nil {
+			return err
+		}
+		if history.Raw != nil {
+			if err = json.Unmarshal(history.Raw, &c.History); err != nil {
+				return errors.Wrapf(err, "ListChangesetHistories: failed to unmarshal history: %s", history)
+			}
+		}
+		next = c.ID
+		chs = append(chs, &c.History)
+		return nil
+	})
+
+	if opts.Limit != 0 && len(chs) == opts.DBLimit() {
+		chs = chs[:len(chs)-1]
+	} else {
+		next = 0
+	}
+
+	return chs, next, err
 }
 
 // ListChangesetsAttachedOrOwnedByCampaign lists Changesets that are either
