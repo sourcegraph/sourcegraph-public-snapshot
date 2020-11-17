@@ -103,7 +103,7 @@ cmd/server/jaeger.sh
 echo "--- docker build"
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --pull \
-  --cache-from "${IMAGE%%:*}" \
+  --cache-from "${IMAGE%%:*}:insiders" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \

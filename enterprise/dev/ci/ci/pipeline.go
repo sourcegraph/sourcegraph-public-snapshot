@@ -111,6 +111,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case c.isQuick:
 		// Run fast steps only
 		pipelineOperations = []func(*bk.Pipeline){
+			addDockerImages(c, false), // ~8m (candidate images)
 			addCheck,
 			addLint,
 			addBrowserExt,

@@ -20,7 +20,7 @@ cp -a ./dev/libsqlite3-pcre/install-alpine.sh "$OUTPUT/libsqlite3-pcre-install-a
 echo "--- docker build"
 docker build -f cmd/symbols/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --pull \
-  --cache-from "${IMAGE%%:*}" \
+  --cache-from "${IMAGE%%:*}:insiders" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \

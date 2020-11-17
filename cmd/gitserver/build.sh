@@ -22,7 +22,7 @@ go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/vers
 docker build -f cmd/gitserver/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --pull \
-  --cache-from "${IMAGE%%:*}" \
+  --cache-from "${IMAGE%%:*}:insiders" \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
   --build-arg VERSION
