@@ -240,6 +240,8 @@ interface TriggerAreaProps {
     setTriggerCompleted: () => void
 }
 
+const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
+
 const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     query,
     onQueryChange,
@@ -264,7 +266,6 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     const [queryState, nextQueryFieldChange, queryInputReference] = useInputValidation(
         useMemo(
             () => ({
-                initialValue: query,
                 synchronousValidators: [
                     (value: string) => {
                         const tokens = scanSearchQuery(value)
@@ -274,8 +275,12 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 filter =>
                                     filter.type === 'filter' &&
                                     resolveFilter(filter.filterType.value)?.type === FilterType.type &&
-                                    filter.filterValue &&
-                                    validateFilter(filter.filterType.value, filter.filterValue)
+                                    ((filter.filterValue?.type === 'literal' &&
+                                        filter.filterValue &&
+                                        isDiffOrCommit(filter.filterValue.value)) ||
+                                        (filter.filterValue?.type === 'quoted' &&
+                                            filter.filterValue &&
+                                            isDiffOrCommit(filter.filterValue.quotedValue)))
                             )
                             const hasPatternTypeFilter = filters.some(
                                 filter =>
@@ -298,7 +303,7 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                     },
                 ],
             }),
-            [query]
+            []
         )
     )
 
