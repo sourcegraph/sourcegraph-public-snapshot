@@ -15,7 +15,7 @@ interface TreeChildProps extends TreeLayerProps {
     noopRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
     linkRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
 
-    fileDecoration?: FileDecoration
+    fileDecorations?: FileDecoration[]
 }
 
 /**
@@ -58,11 +58,9 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                         {props.entryInfo.name}
                     </Link>
                     {/* File Decoration */}
-                    {props.fileDecoration && (
-                        <span style={{ color: props.fileDecoration.color, fontSize: 12 }}>
-                            {props.fileDecoration.text}
-                        </span>
-                    )}
+                    {props.fileDecorations?.map(fileDecoration => (
+                        <span style={{ color: fileDecoration.color, fontSize: 12 }}>{fileDecoration.text}</span>
+                    ))}
                 </div>
                 {props.loading && (
                     <div className="tree__row-loader">

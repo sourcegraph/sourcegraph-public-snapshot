@@ -5,15 +5,15 @@ import { TreeNode } from './Tree'
 import { TreeLayerProps } from './TreeLayer'
 import { maxEntries, SingleChildGitTree } from './util'
 import classNames from 'classnames'
-import { FileDecoration } from 'sourcegraph'
+import { FileDecoration, FileDecorationsByPath } from 'sourcegraph'
 
 interface SingleChildTreeLayerProps extends TreeLayerProps {
     childrenEntries: SingleChildGitTree[]
 
     /** TODO(tj): explain */
-    fileDecorationByPath: Record<string, FileDecoration | undefined>
+    fileDecorationsByPath: FileDecorationsByPath
 
-    fileDecoration?: FileDecoration
+    fileDecorations?: FileDecoration[]
 }
 
 /**
@@ -135,7 +135,7 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
                             handleTreeClick={this.handleTreeClick}
                             noopRowClick={this.noopRowClick}
                             linkRowClick={this.linkRowClick}
-                            fileDecoration={this.props.fileDecoration}
+                            fileDecorations={this.props.fileDecorations}
                         />
                         {this.props.isExpanded && (
                             <tr>

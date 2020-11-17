@@ -544,6 +544,7 @@ describe('Repository', () => {
 
     // Describes the ways the directory viewer can be extended through Sourcegraph extensions.
     describe('extensibility', () => {
+        // This also tests a lot of tree view functionality
         it('works with file decoration providers', async () => {
             const repoName = 'github.com/sourcegraph/file-decs'
 
@@ -752,7 +753,7 @@ describe('Repository', () => {
                                 sourcegraph.tree.registerFileDecorationProvider({
                                     provideFileDecorations: files => {
                                         console.log('file context in ext', files)
-                                        return files.map(file => ({
+                                        return [...files, ...files].map(file => ({
                                             uri: file.uri,
                                             path: file.path,
                                             name: file.name,
@@ -779,4 +780,6 @@ describe('Repository', () => {
             await new Promise(() => {})
         })
     })
+
+    // TODO(tj): test stacked file decs
 })

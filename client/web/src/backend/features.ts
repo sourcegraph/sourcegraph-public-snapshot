@@ -5,7 +5,7 @@ import { FileSpec, UIPositionSpec, RepoSpec, ResolvedRevisionSpec, toURIWithPath
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { switchMap } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
-import { DocumentHighlight, FileDecoration } from 'sourcegraph'
+import { DocumentHighlight, FileDecorationsByPath } from 'sourcegraph'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 
 /**
@@ -85,7 +85,7 @@ export const getFileDecorations = memoizeObservable(
         nodeUrl: string
     } & ExtensionsControllerProps &
         RepoSpec &
-        ResolvedRevisionSpec): Observable<FileDecoration[][]> =>
+        ResolvedRevisionSpec): Observable<FileDecorationsByPath> =>
         from(extensionsController.extHostAPI).pipe(
             switchMap(extensionHost =>
                 wrapRemoteObservable(

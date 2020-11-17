@@ -1,12 +1,12 @@
 import React from 'react'
-import { FileDecoration } from 'sourcegraph'
+import { FileDecorationsByPath } from 'sourcegraph'
 import { SingleChildTreeLayer } from './SingleChildTreeLayer'
 import { TreeLayer } from './TreeLayer'
 import { TreeRootProps } from './TreeRoot'
 import { hasSingleChild, SingleChildGitTree, TreeEntryInfo } from './util'
 
 interface ChildTreeLayerProps extends Pick<TreeRootProps, Exclude<keyof TreeRootProps, 'sizeKey'>> {
-    fileDecorationByPath: Record<string, FileDecoration | undefined>
+    fileDecorationsByPath: FileDecorationsByPath
     // TODO(tj): Consider childrenEntries decorations
 
     entries: TreeEntryInfo[]
@@ -56,8 +56,8 @@ export const ChildTreeLayer: React.FunctionComponent<ChildTreeLayerProps> = (pro
                                     parentPath={props.singleChildTreeEntry.path}
                                     entryInfo={props.singleChildTreeEntry}
                                     childrenEntries={props.singleChildTreeEntry.children}
-                                    fileDecorationByPath={props.fileDecorationByPath}
-                                    fileDecoration={props.fileDecorationByPath[props.singleChildTreeEntry.path]}
+                                    fileDecorationsByPath={props.fileDecorationsByPath}
+                                    fileDecorations={props.fileDecorationsByPath[props.singleChildTreeEntry.path]}
                                 />
                             ) : (
                                 props.entries.map((item, index) => (
@@ -68,7 +68,7 @@ export const ChildTreeLayer: React.FunctionComponent<ChildTreeLayerProps> = (pro
                                         isExpanded={props.expandedTrees.includes(item.path)}
                                         parentPath={item.path}
                                         entryInfo={item}
-                                        fileDecoration={props.fileDecorationByPath[item.path]}
+                                        fileDecorations={props.fileDecorationsByPath[item.path]}
                                     />
                                 ))
                             )}

@@ -1570,6 +1570,11 @@ declare module 'sourcegraph' {
         name: string
         path: string
     }
+
+    // TODO: multiple decorations per path
+    /** Record of path relative to repo root and file decorations */
+    export type FileDecorationsByPath = Record<string, FileDecoration[] | undefined>
+
     // TODO(tj): move these somewhere more reasonable
     export interface FileDecorationProvider {
         // TODO (tj): docs

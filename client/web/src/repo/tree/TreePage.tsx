@@ -47,8 +47,7 @@ import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryServic
 import { TreeEntriesSection } from './TreeEntriesSection'
 import { GitCommitFields } from '../../graphql-operations'
 import { getFileDecorations } from '../../backend/features'
-import { FileDecoration } from 'sourcegraph'
-import { keyBy } from 'lodash'
+import { FileDecorationsByPath } from 'sourcegraph'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -189,26 +188,22 @@ export const TreePage: React.FunctionComponent<Props> = ({
     )
 
     // TODO(tj): Should probably send decorations by filePath by workspace root from ext host
-    const [fileDecorationByPath, setFileDecorationByPath] = useState<Record<string, FileDecoration | undefined>>({})
-    // TODO(tj): use useObservable
-    useEffect(() => {
-        if (!treeOrError || isErrorLike(treeOrError)) {
-            return
-        }
-        const subscription = getFileDecorations({
-            files: treeOrError.entries,
-            extensionsController: props.extensionsController,
-            repoName,
-            commitID,
-            nodeUrl: treeOrError.url,
-        }).subscribe(fileDecorations => {
-            setFileDecorationByPath(keyBy(fileDecorations.flat(), 'path'))
-        })
-
-        return () => {
-            subscription.unsubscribe()
-        }
-    }, [treeOrError, repoName, commitID, props.extensionsController])
+    const fileDecorationsByPath =
+        useObservable<FileDecorationsByPath>(
+            useMemo(
+                () =>
+                    treeOrError && !isErrorLike(treeOrError)
+                        ? getFileDecorations({
+                              files: treeOrError.entries,
+                              extensionsController: props.extensionsController,
+                              repoName,
+                              commitID,
+                              nodeUrl: treeOrError.url,
+                          })
+                        : EMPTY,
+                [treeOrError, repoName, commitID, props.extensionsController]
+            )
+        ) ?? {}
 
     const { services } = props.extensionsController
 
@@ -389,7 +384,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         <TreeEntriesSection
                             parentPath={filePath}
                             entries={treeOrError.entries}
-                            fileDecorationByPath={fileDecorationByPath}
+                            fileDecorationsByPath={fileDecorationsByPath}
                         />
                     </section>
                     {/* eslint-disable react/jsx-no-bind */}

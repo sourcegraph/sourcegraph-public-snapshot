@@ -15,7 +15,7 @@ import { TextDocumentPositionParameters } from '../protocol'
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
 import { Hover, Location } from '@sourcegraph/extension-api-types'
-import { castArray, isEqual } from 'lodash'
+import { castArray, groupBy, isEqual } from 'lodash'
 import { fromHoverMerged, HoverMerged } from '../client/types/hover'
 import { isNot, isExactly, isDefined } from '../../util/types'
 
@@ -189,7 +189,6 @@ export const initNewExtensionAPI = (
 
         // Tree
         getFileDecorations: (files: sourcegraph.FileDecorationContext[]) =>
-            // TODO(tj): keyBy path
             proxySubscribable(
                 state.fileDecorationProviders.pipe(
                     map(providers => providers.map(provider => provider.provideFileDecorations)),
@@ -198,14 +197,15 @@ export const initNewExtensionAPI = (
                             providers.map(provider =>
                                 providerResultToObservable(provider(files)).pipe(
                                     catchError(error => {
-                                        // TODO: conditional log errors
+                                        // TODO(tj): conditional log errors
                                         console.error('Provider errored:', error)
 
                                         return EMPTY
                                     })
                                 )
                             )
-                        )
+                            // TODO(tj): profile
+                        ).pipe(map(decorationsDecorations => groupBy(decorationsDecorations.flat(), 'path')))
                     )
                 )
             ),

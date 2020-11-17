@@ -23,8 +23,7 @@ import { ErrorAlert } from '../components/alerts'
 import { TreeFields } from '../graphql-operations'
 import { getFileDecorations } from '../backend/features'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { keyBy } from 'lodash'
-import { FileDecoration } from 'sourcegraph'
+import { FileDecorationsByPath } from 'sourcegraph'
 
 const maxEntries = 2500
 
@@ -55,7 +54,7 @@ export interface TreeRootProps extends AbsoluteRepo, ExtensionsControllerProps {
 const LOADING = 'loading' as const
 interface TreeRootState {
     treeOrError?: typeof LOADING | TreeFields | ErrorLike
-    fileDecorationByPath: Record<string, FileDecoration | undefined>
+    fileDecorationsByPath: FileDecorationsByPath
 }
 
 export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
@@ -74,7 +73,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
             url: '',
         }
         this.state = {
-            fileDecorationByPath: {},
+            fileDecorationsByPath: {},
         }
     }
 
@@ -196,7 +195,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                                                 childrenEntries={singleChildTreeEntry.children}
                                                 onHover={this.fetchChildContents}
                                                 setChildNodes={this.setChildNode}
-                                                fileDecorationByPath={this.state.fileDecorationByPath}
+                                                fileDecorationsByPath={this.state.fileDecorationsByPath}
                                             />
                                         )
                                     )}
@@ -230,9 +229,8 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                     repoName: this.props.repoName,
                     commitID: this.props.commitID,
                     extensionsController: this.props.extensionsController,
-                }).subscribe(fileDecorations => {
-                    const fileDecorationByPath = keyBy(fileDecorations.flat(), 'path')
-                    this.setState({ fileDecorationByPath })
+                }).subscribe(fileDecorationsByPath => {
+                    this.setState({ fileDecorationsByPath })
                 })
             )
         }

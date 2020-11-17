@@ -31,9 +31,8 @@ import { ErrorAlert } from '../components/alerts'
 import classNames from 'classnames'
 import { TreeFields } from '../graphql-operations'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { FileDecoration } from 'sourcegraph'
+import { FileDecoration, FileDecorationsByPath } from 'sourcegraph'
 import { getFileDecorations } from '../backend/features'
-import { keyBy } from 'lodash'
 
 export interface TreeLayerProps extends AbsoluteRepo, ExtensionsControllerProps {
     history: H.History
@@ -55,14 +54,14 @@ export interface TreeLayerProps extends AbsoluteRepo, ExtensionsControllerProps 
     setChildNodes: (node: TreeNode, index: number) => void
     setActiveNode: (node: TreeNode) => void
 
-    fileDecoration?: FileDecoration
+    fileDecorations?: FileDecoration[]
 }
 
 const LOADING = 'loading' as const
 interface TreeLayerState {
     treeOrError?: typeof LOADING | TreeFields | ErrorLike
 
-    fileDecorationByPath: Record<string, FileDecoration | undefined>
+    fileDecorationsByPath: FileDecorationsByPath
 }
 
 export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
@@ -82,7 +81,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         }
 
         this.state = {
-            fileDecorationByPath: {},
+            fileDecorationsByPath: {},
         }
     }
 
@@ -301,7 +300,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                         singleChildTreeEntry={singleChildTreeEntry}
                                                         childrenEntries={singleChildTreeEntry.children}
                                                         setChildNodes={this.setChildNode}
-                                                        fileDecorationByPath={this.state.fileDecorationByPath}
+                                                        fileDecorationsByPath={this.state.fileDecorationsByPath}
                                                     />
                                                 )
                                             )}
@@ -377,9 +376,8 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                     repoName: this.props.repoName,
                     commitID: this.props.commitID,
                     extensionsController: this.props.extensionsController,
-                }).subscribe(fileDecorations => {
-                    const fileDecorationByPath = keyBy(fileDecorations.flat(), 'path')
-                    this.setState({ fileDecorationByPath })
+                }).subscribe(fileDecorationsByPath => {
+                    this.setState({ fileDecorationsByPath })
                 })
             )
         }
