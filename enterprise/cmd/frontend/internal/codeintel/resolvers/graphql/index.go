@@ -8,6 +8,8 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 type IndexResolver struct {
@@ -33,7 +35,6 @@ func (r *IndexResolver) InputRoot() string         { return r.index.Root }
 func (r *IndexResolver) Indexer() string           { return r.index.Indexer }
 func (r *IndexResolver) IndexerArgs() []string     { return r.index.IndexerArgs }
 func (r *IndexResolver) Outfile() *string          { return strPtr(r.index.Outfile) }
-func (r *IndexResolver) LogContents() *string      { return strPtr(r.index.LogContents) }
 func (r *IndexResolver) PlaceInQueue() *int32      { return toInt32(r.index.Rank) }
 
 func (r *IndexResolver) DockerSteps() []gql.DockerStepResolver {
@@ -43,6 +44,24 @@ func (r *IndexResolver) DockerSteps() []gql.DockerStepResolver {
 	}
 
 	return steps
+}
+
+func (r *IndexResolver) LogContents(ctx context.Context) (*string, error) {
+	user, err := db.Users.GetByCurrentAuthUser(ctx)
+	if err != nil {
+		if errcode.IsNotFound(err) || err == db.ErrNoCurrentUser {
+			return nil
+		}
+
+		return nil, err
+	}
+
+	if !user.SiteAdmin {
+		return nil
+	}
+
+	// 🚨 SECURITY: Only site admins can view executor log contents.
+	return strPtr(r.index.LogContents)
 }
 
 func (r *IndexResolver) ProjectRoot(ctx context.Context) (*gql.GitTreeEntryResolver, error) {
