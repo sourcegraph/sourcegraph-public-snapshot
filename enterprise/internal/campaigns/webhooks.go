@@ -25,6 +25,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+var (
+	// githubEvents is the set of events this webhook handler listens to
+	// you can find info about what these events contain here:
+	// https://docs.github.com/en/free-pro-team@latest/developers/webhooks-and-events/webhook-events-and-payloads
+	githubEvents = []string{
+		"issue_comment",
+		"pull_request",
+		"pull_request_review",
+		"pull_request_review_comment",
+		"status",
+		"check_suite",
+		"check_run",
+	}
+)
+
 type Webhook struct {
 	Store *Store
 	Repos repos.Store
@@ -199,27 +214,24 @@ func NewGitHubWebhook(store *Store, repos repos.Store, now func() time.Time) *Gi
 	return &GitHubWebhook{&Webhook{store, repos, now, extsvc.TypeGitHub}}
 }
 
+// Register registers this webhook handler to handle events with the passed webhook router
 func (h *GitHubWebhook) Register(router *webhooks.GithubWebhook) {
 	router.Register(
-		h.handleGithubWebhook,
-		"issue_comment",
-		"pull_request",
-		"pull_request_review",
-		"pull_request_review_comment",
-		"status",
-		"check_suite",
-		"check_run",
+		h.handleGitHubWebhook,
+		githubEvents...,
 	)
 }
 
-func (h *GitHubWebhook) handleGithubWebhook(ctx context.Context, extSvc *repos.ExternalService, payload interface{}) error {
+// handleGithubWebhook is the entry point for webhooks from the webhook router, see the events
+// it's registered to handle in GitHubWebhook.Register
+func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *repos.ExternalService, payload interface{}) error {
 	m := new(multierror.Error)
 	externalServiceID, err := extractExternalServiceID(extSvc)
 	if err != nil {
 		return err
 	}
 
-	prs, ev := h.parsePRsFromEvent(ctx, externalServiceID, payload)
+	prs, ev := h.convertEvent(ctx, externalServiceID, payload)
 
 	for _, pr := range prs {
 		if pr == (PR{}) {
@@ -234,68 +246,7 @@ func (h *GitHubWebhook) handleGithubWebhook(ctx context.Context, extSvc *repos.E
 	return m.ErrorOrNil()
 }
 
-func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *repos.ExternalService, *httpError) {
-	payload, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return nil, nil, &httpError{http.StatusInternalServerError, err}
-	}
-
-	// 🚨 SECURITY: Try to authenticate the request with any of the stored secrets
-	// in GitHub external services config. Since n is usually small here,
-	// it's ok for this to be have linear complexity.
-	// If there are no secrets or no secret managed to authenticate the request,
-	// we return a 401 to the client.
-	args := repos.StoreListExternalServicesArgs{Kinds: []string{extsvc.KindGitHub}}
-	es, err := h.Repos.ListExternalServices(r.Context(), args)
-	if err != nil {
-		return nil, nil, &httpError{http.StatusInternalServerError, err}
-	}
-
-	sig := r.Header.Get("X-Hub-Signature")
-
-	rawID := r.FormValue(extsvc.IDParam)
-	var externalServiceID int64
-	// If a webhook was setup before we introduced the externalServiceID as part of the URL,
-	// the webhook requests may not contain the external service ID, so we need to fall back.
-	if rawID != "" {
-		externalServiceID, err = strconv.ParseInt(rawID, 10, 64)
-		if err != nil {
-			return nil, nil, &httpError{http.StatusBadRequest, errors.Wrap(err, "invalid external service id")}
-		}
-	}
-
-	var extSvc *repos.ExternalService
-	for _, e := range es {
-		if externalServiceID != 0 && e.ID != externalServiceID {
-			continue
-		}
-
-		c, _ := e.Configuration()
-		for _, hook := range c.(*schema.GitHubConnection).Webhooks {
-			if hook.Secret == "" {
-				continue
-			}
-
-			if err = gh.ValidateSignature(sig, payload, []byte(hook.Secret)); err == nil {
-				extSvc = e
-				break
-			}
-		}
-	}
-
-	if extSvc == nil || err != nil {
-		return nil, nil, &httpError{http.StatusUnauthorized, err}
-	}
-
-	e, err := gh.ParseWebHook(gh.WebHookType(r), payload)
-	if err != nil {
-		return nil, nil, &httpError{http.StatusBadRequest, err}
-	}
-
-	return e, extSvc, nil
-}
-
-func (h *GitHubWebhook) parsePRsFromEvent(ctx context.Context, externalServiceID string, theirs interface{}) (prs []PR, ours keyer) {
+func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID string, theirs interface{}) (prs []PR, ours keyer) {
 	log15.Debug("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
 	switch e := theirs.(type) {
 	case *gh.IssueCommentEvent:

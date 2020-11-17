@@ -155,7 +155,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 						handler := webhooks.GithubWebhook{
 							Repos: repoStore,
 						}
-						handler.Register(hook.handleGithubWebhook, event.PayloadType)
+						hook.Register(&handler)
 
 						u := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, "https://example.com/")
 
