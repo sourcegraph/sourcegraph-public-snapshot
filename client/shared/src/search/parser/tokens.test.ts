@@ -152,7 +152,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 3,
-                "scopes": "identifier"
+                "scopes": "regexpMetaEscapedCharacter"
               },
               {
                 "startIndex": 5,
@@ -417,7 +417,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 3,
-                "scopes": "identifier"
+                "scopes": "regexpMetaEscapedCharacter"
               },
               {
                 "startIndex": 5,
@@ -470,8 +470,7 @@ describe('getMonacoTokens()', () => {
     test('decorate regexp | operator, multiple patterns', () => {
         expect(
             getMonacoTokens(toSuccess(scanSearchQuery('repo:(a|b) (c|d) (e|f)', false, SearchPatternType.regexp)), true)
-        ).toMatchInlineSnapshot(
-            `
+        ).toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,
@@ -532,6 +531,71 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 21,
                 "scopes": "regexpMetaDelimited"
+              }
+            ]
+        `)
+    })
+
+    test('decorate escaped characters', () => {
+        expect(
+            getMonacoTokens(
+                toSuccess(scanSearchQuery('[\\--\\abc] \\|\\.|\\(\\)', false, SearchPatternType.regexp)),
+                true
+            )
+        ).toMatchInlineSnapshot(
+            `
+            [
+              {
+                "startIndex": 0,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 1,
+                "scopes": "regexpMetaEscapedCharacter"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "regexpMetaEscapedCharacter"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "regexpMetaEscapedCharacter"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "regexpMetaEscapedCharacter"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "regexpMetaAlternative"
+              },
+              {
+                "startIndex": 15,
+                "scopes": "regexpMetaEscapedCharacter"
+              },
+              {
+                "startIndex": 17,
+                "scopes": "regexpMetaEscapedCharacter"
               }
             ]
         `
