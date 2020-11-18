@@ -165,7 +165,7 @@ EOF
 # Kick off all build processes in parallel
 goreman --set-ports=false --exit-on-error -f "${tmp_install_procfile}" start
 
-# Once we've built the Go code and the frontend coce, we build the frontend
+# Once we've built the Go code and the frontend code, we build the frontend
 # code once in the background to make sure editor codeintel works.
 # This is fast if no changes were made.
 # Don't fail if it errors as this is only for codeintel, not for the build.

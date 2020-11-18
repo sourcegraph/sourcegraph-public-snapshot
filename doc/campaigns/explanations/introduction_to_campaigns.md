@@ -1,18 +1,5 @@
 # Introduction to campaigns
 
-<style>
-
-img.screenshot {
-    display: block;
-    margin: 1em auto;
-    max-width: 600px;
-    margin-bottom: 0.5em;
-    border: 1px solid lightgrey;
-    border-radius: 10px;
-}
-
-</style>
-
 ## Overview
 
 Campaigns let you make large-scale code changes across many repositories and code hosts. The campaign lets you create pull requests on all affected repositories, and it tracks their progress until they're all merged. You can preview the changes and update them at any time.
