@@ -360,8 +360,8 @@ func (r *changesetRewirer) attachTrackingChangeset(ctx context.Context, changese
 	changeset.AddedToCampaign = true
 	changeset.CampaignIDs = append(changeset.CampaignIDs, r.campaign.ID)
 
-	// If it's errored we re-enqueue it.
-	if changeset.ReconcilerState == campaigns.ReconcilerStateErrored {
+	// If it's errored and not created by another campaign, we re-enqueue it.
+	if changeset.OwnedByCampaignID == 0 && changeset.ReconcilerState == campaigns.ReconcilerStateErrored {
 		changeset.ResetQueued()
 	}
 	return r.tx.UpdateChangeset(ctx, changeset)
