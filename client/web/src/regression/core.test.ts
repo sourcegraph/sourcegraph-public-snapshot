@@ -148,23 +148,7 @@ describe('Core functionality regression test suite', () => {
         }
     })
 
-    test('2.2.2 User emails page', async () => {
-        const testEmail = 'sg-test-account@protonmail.com'
-        await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/emails`)
-        await driver.replaceText({ selector: '.test-user-email-add-input', newText: 'sg-test-account@protonmail.com' })
-        await driver.findElementWithText('Add', { action: 'click' })
-        await driver.findElementWithText(testEmail, { wait: true })
-        try {
-            await driver.findElementWithText('Verification pending')
-        } catch {
-            await driver.findElementWithText('Not verified')
-        }
-        await setUserEmailVerified(gqlClient, testUsername, testEmail, true)
-        await driver.page.reload()
-        await driver.findElementWithText('Verified', { wait: true })
-    })
-
-    test('2.2.3 Access tokens work and invalid access tokens return "401 Unauthorized"', async () => {
+    test('2.2.4 Access tokens work and invalid access tokens return "401 Unauthorized"', async () => {
         await driver.page.goto(config.sourcegraphBaseUrl + `/users/${testUsername}/settings/tokens`)
         await driver.findElementWithText('Generate new token', { action: 'click', wait: { timeout: 5000 } })
         await driver.findElementWithText('New access token', { wait: { timeout: 1000 } })
@@ -219,7 +203,7 @@ describe('Core functionality regression test suite', () => {
         ).rejects.toThrowError('401 Unauthorized')
     })
 
-    test('2.3 Quicklinks: add a quicklink, test that it appears on the front page and works.', async () => {
+    test('2.5 Quicklinks: add a quicklink, test that it appears on the front page and works.', async () => {
         const quicklinkInfo = {
             name: 'Quicklink',
             url: config.sourcegraphBaseUrl + '/api/console',
