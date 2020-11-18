@@ -135,14 +135,20 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                         kind: RegexpMetaKind.Quantifier,
                     })
                 } else {
-                    // regexpp provides no easy way to tell whether the quantifier is a range '{number, number}'.
+                    // regexpp provides no easy way to tell whether the quantifier is a range '{number, number}',
+                    // nor the offsets of this range.
                     // At this point we know it is none of +, *, or ?, so it is a ranged quantifier.
-                    // We skip highlighting for now; it's trickier.
+                    // We need to then find the opening brace of {number, number}, and go backwards from the end
+                    // of this quantifier to avoid dealing with other leading braces that are not part of it.
+                    let openBrace = node.end - 1 - lazyQuantifierOffset
+                    while (pattern.value[openBrace] && pattern.value[openBrace] !== '{') {
+                        openBrace = openBrace - 1
+                    }
                     tokens.push({
-                        type: 'pattern',
-                        range: { start: offset + node.start, end: offset + node.end },
-                        value: node.raw,
-                        kind: PatternKind.Regexp,
+                        type: 'regexpMeta',
+                        range: { start: offset + openBrace, end: offset + node.end },
+                        value: pattern.value.slice(offset + openBrace, offset + node.end),
+                        kind: RegexpMetaKind.Quantifier,
                     })
                 }
             },
