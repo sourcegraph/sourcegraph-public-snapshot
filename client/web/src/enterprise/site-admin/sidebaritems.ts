@@ -45,7 +45,7 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
         {
             to: '/site-admin/code-intelligence/indexes',
             label: 'Auto indexing',
-            condition: () => Boolean(window.context?.sourcegraphDotComMode),
+            // condition: () => Boolean(window.context?.sourcegraphDotComMode),
         },
     ],
 }
