@@ -40,6 +40,7 @@ import { DeployType } from '../../jscontext'
 import { AuthenticatedUser } from '../../auth'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { QueryState } from '../helpers'
+import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
 
 const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     typeof value === 'object' &&
@@ -378,10 +379,13 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                             query={parsedQuery}
                                             results={results}
                                             showDotComMarketing={this.props.isSourcegraphDotCom}
-                                            displayPerformanceWarning={this.state.displayPerformanceWarning}
                                             className="border-bottom flex-grow-1"
                                         />
                                     </div>
+
+                                    {!results.alert && this.state.displayPerformanceWarning && (
+                                        <PerformanceWarningAlert />
+                                    )}
 
                                     {/* Server-provided help message */}
                                     {results.alert && (
