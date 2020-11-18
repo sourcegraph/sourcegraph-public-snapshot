@@ -387,7 +387,7 @@ func (s *Store) GetChangesetSpecRewireData(ctx context.Context, campaignSpecID, 
 
 	err = s.query(ctx, q, func(sc scanner) error {
 		var c campaigns.ChangesetSpecRewire
-		if err := sc.Scan(&c.ChangesetSpecID, &dbutil.NullInt64{N: &c.ChangesetID}, &c.RepoID); err != nil {
+		if err := sc.Scan(&c.ChangesetSpecID, &c.ChangesetID, &c.RepoID); err != nil {
 			return err
 		}
 		csrd = append(csrd, &c)
@@ -400,7 +400,7 @@ var getChangesetSpecRewireDataQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:GetChangesetSpecRewireData
 WITH
 	tracked_mappings AS (
-		SELECT changeset_specs.id AS changeset_spec_id, changesets.id AS changeset_id, changeset_specs.repo_id AS repo_id
+		SELECT changeset_specs.id AS changeset_spec_id, COALESCE(changesets.id, 0) AS changeset_id, changeset_specs.repo_id AS repo_id
 		FROM changeset_specs
 		LEFT JOIN changesets ON changesets.repo_id = changeset_specs.repo_id AND changesets.external_id = changeset_specs.spec->>'externalID'
 		INNER JOIN repo ON changeset_specs.repo_id = repo.id
@@ -410,7 +410,7 @@ WITH
 			repo.deleted_at IS NULL
 	),
 	branch_mappings AS (
-		SELECT changeset_specs.id AS changeset_spec_id, changesets.id AS changeset_id, changeset_specs.repo_id AS repo_id
+		SELECT changeset_specs.id AS changeset_spec_id, COALESCE(changesets.id, 0) AS changeset_id, changeset_specs.repo_id AS repo_id
 		FROM changeset_specs
 		LEFT JOIN changesets ON
 			changesets.repo_id = changeset_specs.repo_id AND
@@ -443,9 +443,9 @@ INNER JOIN repo ON changesets.repo_id = repo.id
 WHERE
 	repo.deleted_at IS NULL AND
  	changesets.id NOT IN (
-		 SELECT changeset_id FROM tracked_mappings WHERE changeset_id IS NOT NULL
+		 SELECT changeset_id FROM tracked_mappings WHERE changeset_id != 0
 		 UNION
-		 SELECT changeset_id FROM branch_mappings WHERE changeset_id IS NOT NULL
+		 SELECT changeset_id FROM branch_mappings WHERE changeset_id != 0
  	) AND
  	((changesets.campaign_ids ? %s) OR changesets.owned_by_campaign_id = %s)
 `
