@@ -232,6 +232,9 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 					return err
 				}
 
+				// We already have a changeset with the given repoID and
+				// externalID, so we can track it.
+				changeset.AddedToCampaign = true
 				changeset.CampaignIDs = append(changeset.CampaignIDs, r.campaign.ID)
 
 				// If it's errored we re-enqueue it.
@@ -240,9 +243,9 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 						return err
 					}
 				} else {
-				if err := r.tx.UpdateChangeset(ctx, changeset); err != nil {
-					return err
-				}
+					if err := r.tx.UpdateChangeset(ctx, changeset); err != nil {
+						return err
+					}
 				}
 				attachedChangesets[changeset.ID] = true
 			} else {
@@ -407,29 +410,6 @@ func (r *changesetRewirer) loadAssociations(ctx context.Context) (
 }
 
 func (r *changesetRewirer) updateOrCreateTrackingChangeset(ctx context.Context, repo *types.Repo, externalID string) (*campaigns.Changeset, error) {
-	existing, err := r.tx.GetChangeset(ctx, GetChangesetOpts{
-		RepoID:              repo.ID,
-		ExternalID:          externalID,
-		ExternalServiceType: repo.ExternalRepo.ServiceType,
-	})
-	if err != nil && err != ErrNoResults {
-		return nil, err
-	}
-
-	if existing != nil {
-		// We already have a changeset with the given repoID and
-		// externalID, so we can track it.
-		existing.AddedToCampaign = true
-		existing.CampaignIDs = append(existing.CampaignIDs, r.campaign.ID)
-
-		// If it errored, we re-enqueue it.
-		if existing.ReconcilerState == campaigns.ReconcilerStateErrored {
-			return existing, r.updateAndReenqueue(ctx, existing)
-		}
-
-		return existing, r.tx.UpdateChangeset(ctx, existing)
-	}
-
 	newChangeset := &campaigns.Changeset{
 		RepoID:              repo.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
