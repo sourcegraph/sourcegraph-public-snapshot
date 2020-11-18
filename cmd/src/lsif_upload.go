@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -219,7 +220,13 @@ Examples:
 			return err
 		}
 
-		uploadURL := fmt.Sprintf("%s/%s/-/settings/code-intelligence/lsif-uploads/%s", cfg.Endpoint, *flags.repo, uploadID)
+		endpointWithoutAuth, err := url.Parse(cfg.Endpoint)
+		if err != nil {
+			return err
+		}
+		endpointWithoutAuth.User = nil
+
+		uploadURL := fmt.Sprintf("%s/%s/-/settings/code-intelligence/lsif-uploads/%s", endpointWithoutAuth.String(), *flags.repo, uploadID)
 
 		if *flags.json {
 			serialized, err := json.Marshal(map[string]interface{}{
