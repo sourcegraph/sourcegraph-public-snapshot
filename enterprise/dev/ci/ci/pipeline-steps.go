@@ -267,6 +267,8 @@ func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	// Test upgrades from mininum upgradeable Sourcegraph version
 	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.20.0"
 
+	env["DOCKER_IMAGES_TXT"] = strings.Join(allDockerImages, "\n")
+
 	return func(pipeline *bk.Pipeline) {
 		if !c.shouldRunE2EandQA() {
 			return
