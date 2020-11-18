@@ -22,7 +22,7 @@ steps:
   agents:
     queue: 'baremetal'
 
-- label: ":k8s:"
+- label: ":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA"
   commands:
     - test/cluster/cluster-test.sh
   artifact_paths: ./*.png;./*.mp4;./*.log
