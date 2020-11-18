@@ -2,19 +2,24 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { FunctionComponent } from 'react'
 import { Link } from '../../../../../shared/src/components/Link'
 import { LsifUploadFields } from '../../../graphql-operations'
-import { CodeIntelUploadOrIndexCommit } from '../shared/CodeIntelUploadOrIndexCommit'
-import { CodeIntelUploadOrIndexIndexer } from '../shared/CodeIntelUploadOrIndexIndexer'
-import { CodeIntelUploadOrIndexLastActivity } from '../shared/CodeIntelUploadOrIndexLastActivity'
-import { CodeIntelUploadOrIndexRoot } from '../shared/CodeIntelUploadOrIndexRoot'
-import { CodeIntelUploadOrIndexRepository } from '../shared/CodeInteUploadOrIndexerRepository'
 import { CodeIntelState } from './CodeIntelState'
+import { CodeIntelUploadOrIndexCommit } from './CodeIntelUploadOrIndexCommit'
+import { CodeIntelUploadOrIndexRepository } from './CodeIntelUploadOrIndexerRepository'
+import { CodeIntelUploadOrIndexIndexer } from './CodeIntelUploadOrIndexIndexer'
+import { CodeIntelUploadOrIndexLastActivity } from './CodeIntelUploadOrIndexLastActivity'
+import { CodeIntelUploadOrIndexRoot } from './CodeIntelUploadOrIndexRoot'
 
 export interface CodeIntelUploadNodeProps {
     node: LsifUploadFields
     now?: () => Date
+    summaryView?: boolean
 }
 
-export const CodeIntelUploadNode: FunctionComponent<CodeIntelUploadNodeProps> = ({ node, now }) => (
+export const CodeIntelUploadNode: FunctionComponent<CodeIntelUploadNodeProps> = ({
+    node,
+    now,
+    summaryView = false,
+}) => (
     <>
         <span className="codeintel-upload-node__separator" />
 
@@ -36,13 +41,18 @@ export const CodeIntelUploadNode: FunctionComponent<CodeIntelUploadNodeProps> = 
                 </small>
             </div>
         </div>
-        <span className="d-none d-md-inline codeintel-upload-node__state">
-            <CodeIntelState node={node} />
-        </span>
-        <span>
-            <Link to={`./uploads/${node.id}`}>
-                <ChevronRightIcon />
-            </Link>
-        </span>
+
+        {!summaryView && (
+            <>
+                <span className="d-none d-md-inline codeintel-upload-node__state">
+                    <CodeIntelState node={node} />
+                </span>
+                <span>
+                    <Link to={`./uploads/${node.id}`}>
+                        <ChevronRightIcon />
+                    </Link>
+                </span>
+            </>
+        )}
     </>
 )

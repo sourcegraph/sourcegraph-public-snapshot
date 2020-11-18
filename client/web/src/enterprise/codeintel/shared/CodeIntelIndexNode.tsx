@@ -2,19 +2,20 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { FunctionComponent } from 'react'
 import { Link } from '../../../../../shared/src/components/Link'
 import { LsifIndexFields } from '../../../graphql-operations'
-import { CodeIntelUploadOrIndexCommit } from '../shared/CodeIntelUploadOrIndexCommit'
-import { CodeIntelUploadOrIndexIndexer } from '../shared/CodeIntelUploadOrIndexIndexer'
-import { CodeIntelUploadOrIndexLastActivity } from '../shared/CodeIntelUploadOrIndexLastActivity'
-import { CodeIntelUploadOrIndexRoot } from '../shared/CodeIntelUploadOrIndexRoot'
-import { CodeIntelUploadOrIndexRepository } from '../shared/CodeInteUploadOrIndexerRepository'
 import { CodeIntelState } from './CodeIntelState'
+import { CodeIntelUploadOrIndexCommit } from './CodeIntelUploadOrIndexCommit'
+import { CodeIntelUploadOrIndexRepository } from './CodeIntelUploadOrIndexerRepository'
+import { CodeIntelUploadOrIndexIndexer } from './CodeIntelUploadOrIndexIndexer'
+import { CodeIntelUploadOrIndexLastActivity } from './CodeIntelUploadOrIndexLastActivity'
+import { CodeIntelUploadOrIndexRoot } from './CodeIntelUploadOrIndexRoot'
 
 export interface CodeIntelIndexNodeProps {
     node: LsifIndexFields
     now?: () => Date
+    summaryView?: boolean
 }
 
-export const CodeIntelIndexNode: FunctionComponent<CodeIntelIndexNodeProps> = ({ node, now }) => (
+export const CodeIntelIndexNode: FunctionComponent<CodeIntelIndexNodeProps> = ({ node, now, summaryView = false }) => (
     <>
         <span className="codeintel-index-node__separator" />
 
@@ -36,13 +37,18 @@ export const CodeIntelIndexNode: FunctionComponent<CodeIntelIndexNodeProps> = ({
                 </small>
             </div>
         </div>
-        <span className="d-none d-md-inline codeintel-index-node__state">
-            <CodeIntelState node={node} />
-        </span>
-        <span>
-            <Link to={`./indexes/${node.id}`}>
-                <ChevronRightIcon />
-            </Link>
-        </span>
+
+        {!summaryView && (
+            <>
+                <span className="d-none d-md-inline codeintel-index-node__state">
+                    <CodeIntelState node={node} />
+                </span>
+                <span>
+                    <Link to={`./indexes/${node.id}`}>
+                        <ChevronRightIcon />
+                    </Link>
+                </span>
+            </>
+        )}
     </>
 )

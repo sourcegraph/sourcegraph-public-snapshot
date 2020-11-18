@@ -15,7 +15,7 @@ import {
     LsifUploadsResult,
     LsifUploadsVariables,
 } from '../../../graphql-operations'
-import { lsifIndexFieldsFragment, lsifUploadFieldsFragment } from '../backend'
+import { lsifIndexFieldsFragment, lsifUploadFieldsFragment } from '../shared/backend'
 
 interface UploadConnection {
     nodes: LsifUploadFields[]

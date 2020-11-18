@@ -1,6 +1,9 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import classNames from 'classnames'
 import * as H from 'history'
-import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
+import CheckIcon from 'mdi-react/CheckIcon'
+import DeleteIcon from 'mdi-react/DeleteIcon'
+import React, { FunctionComponent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { SchedulerLike, timer } from 'rxjs'
 import { catchError, concatMap, delay, repeatWhen, takeWhile } from 'rxjs/operators'
@@ -11,11 +14,10 @@ import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifUploadFields } from '../../../graphql-operations'
+import { CodeIntelStateBanner } from '../shared/CodeIntelStateBanner'
+import { CodeIntelUploadNode } from '../shared/CodeIntelUploadNode'
+import { CodeIntelUploadOrIndexTimeline } from '../shared/CodeIntelUploadOrIndexTimeline'
 import { deleteLsifUpload, fetchLsifUpload as defaultFetchUpload } from './backend'
-import { CodeIntelDeleteUpload } from './CodeIntelDeleteUpload'
-import { CodeIntelStateBanner } from './CodeIntelStateBanner'
-import { CodeIntelUploadInfo } from './CodeIntelUploadInfo'
-import { CodeIntelUploadPageTitle } from './CodeIntelUploadPageTitle'
 
 export interface CodeIntelUploadPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
     fetchLsifUpload?: typeof defaultFetchUpload
@@ -91,7 +93,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
     ) : isErrorLike(deletionOrError) ? (
         <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} history={history} />
     ) : (
-        <div className="site-admin-lsif-upload-page w-100">
+        <div className="site-admin-lsif-upload-page w-100 web-content">
             <PageTitle title="Code intelligence - uploads" />
 
             {isErrorLike(uploadOrError) ? (
@@ -100,7 +102,13 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                 <LoadingSpinner className="icon-inline" />
             ) : (
                 <>
-                    <CodeIntelUploadPageTitle upload={uploadOrError} />
+                    <CodeIntelUploadPageTitle
+                        upload={uploadOrError}
+                        actions={
+                            <CodeIntelDeleteUpload deleteUpload={deleteUpload} deletionOrError={deletionOrError} />
+                        }
+                        className="mb-2"
+                    />
                     <CodeIntelStateBanner
                         state={uploadOrError.state}
                         placeInQueue={uploadOrError.placeInQueue}
@@ -110,8 +118,18 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                         history={history}
                         className={classNamesByState.get(uploadOrError.state)}
                     />
-                    <CodeIntelUploadInfo upload={uploadOrError} now={now} />
-                    <CodeIntelDeleteUpload deleteUpload={deleteUpload} deletionOrError={deletionOrError} />
+                    <div className="card mb-3">
+                        <div className="card-body">
+                            <CodeIntelUploadNode node={uploadOrError} now={now} summaryView={true} />
+                        </div>
+                    </div>
+                    {uploadOrError.isLatestForRepo && (
+                        <div className="alert alert-success action-container__alert">
+                            <CheckIcon className="icon-inline" /> This upload can answer queries for the tip of the
+                            default branch and are targets of cross-repository find reference operations.
+                        </div>
+                    )}
+                    <CodeIntelUploadOrIndexTimeline node={uploadOrError} className="mb-3" />
                 </>
             )}
         </div>
@@ -123,3 +141,43 @@ const terminalStates = new Set([LSIFUploadState.COMPLETED, LSIFUploadState.ERROR
 function shouldReload(upload: LsifUploadFields | ErrorLike | null | undefined): boolean {
     return !isErrorLike(upload) && !(upload && terminalStates.has(upload.state))
 }
+
+interface CodeIntelUploadPageTitleProps {
+    upload: LsifUploadFields
+    actions?: ReactNode
+    className?: string
+}
+
+const CodeIntelUploadPageTitle: FunctionComponent<CodeIntelUploadPageTitleProps> = ({ upload, actions, className }) => (
+    <div className={classNames('d-flex flex-wrap align-items-center', className)}>
+        <h2 className="flex-grow-1">
+            <span className="text-muted">Upload for commit</span>
+            <span className="ml-2">
+                {upload.projectRoot ? upload.projectRoot.commit.abbreviatedOID : upload.inputCommit.slice(0, 7)}
+            </span>
+            <span className="ml-2 text-muted">indexed by</span>
+            <span className="ml-2">{upload.inputIndexer}</span>
+            <span className="ml-2 text-muted">rooted at</span>
+            <span className="ml-2">{(upload.projectRoot ? upload.projectRoot.path : upload.inputRoot) || '/'}</span>
+        </h2>
+        {actions}
+    </div>
+)
+
+interface CodeIntelDeleteUploadProps {
+    deleteUpload: () => Promise<void>
+    deletionOrError?: 'loading' | 'deleted' | ErrorLike
+}
+
+const CodeIntelDeleteUpload: FunctionComponent<CodeIntelDeleteUploadProps> = ({ deleteUpload, deletionOrError }) => (
+    <button
+        type="button"
+        className="btn btn-danger"
+        onClick={deleteUpload}
+        disabled={deletionOrError === 'loading'}
+        aria-describedby="upload-delete-button-help"
+        data-tooltip="Deleting this upload makes it immediately unavailable to answer code intelligence queries."
+    >
+        <DeleteIcon className="icon-inline" /> Delete upload
+    </button>
+)

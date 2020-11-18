@@ -1,0 +1,25 @@
+.executor-timeline-task-separator {
+    height: 2.25rem;
+    border-left: 0.25rem solid var(--border-color);
+    margin-left: 1.5rem;
+    margin-top: -1rem;
+    margin-bottom: -1rem;
+}
+
+.executor-timeline-icon {
+    border-radius: 50%;
+    width: 2.25rem;
+    height: 2.25rem;
+    color: #ffffff;
+    text-align: center;
+    vertical-align: middle;
+    display: table-cell;
+}
+
+.executor-timeline-icon.success {
+    background-color: var(--success);
+}
+
+.executor-timeline-icon.failure {
+    background-color: var(--danger);
+}
