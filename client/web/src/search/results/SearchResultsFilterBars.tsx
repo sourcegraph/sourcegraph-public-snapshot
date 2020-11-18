@@ -28,9 +28,9 @@ export interface SearchResultsFilterBarsProps {
 
 export const SearchResultsFilterBars: React.FunctionComponent<SearchResultsFilterBarsProps> = ({
     navbarSearchQuery,
-    searchSucceeded: resultsFound,
+    searchSucceeded,
     resultsLimitHit,
-    genericFilters: filters,
+    genericFilters,
     extensionFilters,
     repoFilters,
     quickLinks,
@@ -39,7 +39,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<SearchResultsFilte
     calculateShowMoreResultsCount,
 }) => (
     <div className="search-results-filter-bars">
-        {((resultsFound && filters.length > 0) || (extensionFilters && extensionFilters.length > 0)) && (
+        {((searchSucceeded && genericFilters.length > 0) || (extensionFilters && extensionFilters.length > 0)) && (
             <div className="search-results-filter-bars__row" data-testid="filters-bar">
                 Filters:
                 <div className="search-results-filter-bars__filters">
@@ -54,7 +54,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<SearchResultsFilte
                                 name={filter.name}
                             />
                         ))}
-                    {filters
+                    {genericFilters
                         .filter(filter => filter.value !== '')
                         .map(filter => (
                             <FilterChip
@@ -70,7 +70,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<SearchResultsFilte
                 </div>
             </div>
         )}
-        {resultsFound && repoFilters && repoFilters.length > 0 && (
+        {searchSucceeded && repoFilters && repoFilters.length > 0 && (
             <div className="search-results-filter-bars__row" data-testid="repo-filters-bar">
                 Repositories:
                 <div className="search-results-filter-bars__filters">

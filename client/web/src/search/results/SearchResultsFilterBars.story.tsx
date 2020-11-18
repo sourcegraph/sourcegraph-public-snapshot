@@ -110,6 +110,27 @@ add('filters with quicklinks', () => {
     )
 })
 
+add('some filters selected', () => {
+    const genericFilters: DynamicSearchFilter[] = [{ value: 'lang:c' }, { value: 'repogroup:my', name: 'My Repos' }]
+    const repoFilters: DynamicSearchFilter[] = [
+        { value: 'archive:yes', count: 5, limitHit: true },
+        { value: 'repo:sourcegraph', count: 3, limitHit: false },
+    ]
+    return (
+        <WebStory>
+            {() => (
+                <SearchResultsFilterBars
+                    {...defaultProps}
+                    navbarSearchQuery="repo:sourcegraph lang:c"
+                    resultsLimitHit={true}
+                    genericFilters={genericFilters}
+                    repoFilters={repoFilters}
+                />
+            )}
+        </WebStory>
+    )
+})
+
 add('search error, display only quicklinks', () => {
     const genericFilters: DynamicSearchFilter[] = [{ value: 'lang:c' }]
     const repoFilters: DynamicSearchFilter[] = [{ value: 'archive:yes' }]
