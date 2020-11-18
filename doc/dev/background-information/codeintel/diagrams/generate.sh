@@ -4,13 +4,14 @@ set -ex
 
 declare mermaid_diagrams=(
   definitions
+  executor
+  extension-definitions
+  extension-hover
+  extension-references
+  hover
   references
   resolve-page
-  hover
   upload
-  extension-definitions
-  extension-references
-  extension-hover
 )
 
 # Install mermaid util
