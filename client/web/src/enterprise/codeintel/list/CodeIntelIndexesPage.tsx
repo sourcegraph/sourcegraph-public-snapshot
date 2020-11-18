@@ -22,7 +22,7 @@ const filters: FilteredConnectionFilter[] = [
     {
         label: 'All',
         id: 'all',
-        tooltip: 'Show all uploads',
+        tooltip: 'Show all indexes',
         args: {},
     },
     {
@@ -67,7 +67,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                 <FilteredConnection<LsifIndexFields, Omit<CodeIntelIndexNodeProps, 'node'>>
                     className="mt-2"
                     listComponent="div"
-                    listClassName="codeintel-uploads__grid mb-3"
+                    listClassName="codeintel-indexes__grid mb-3"
                     noun="index"
                     pluralNoun="indexes"
                     nodeComponent={CodeIntelIndexNode}
