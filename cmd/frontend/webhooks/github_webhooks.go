@@ -36,7 +36,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log15.Error("Error parsing github webhook event", "error", err)
-		http.Error(w, err.Error(), 400)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -44,7 +44,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	extSvc, err := h.getExternalService(r, body)
 	if err != nil {
 		log15.Error("Could not find valid external service for webhook", "error", err)
-		http.Error(w, "External service not found", 404)
+		http.Error(w, "External service not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -61,7 +61,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err = h.Dispatch(r.Context(), eventType, extSvc, e)
 	if err != nil {
 		log15.Error("Error handling github webhook event", "error", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
