@@ -239,17 +239,14 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 
 				// If it's errored we re-enqueue it.
 				if changeset.ReconcilerState == campaigns.ReconcilerStateErrored {
-					if err := r.updateAndReenqueue(ctx, changeset); err != nil {
-						return err
-					}
-				} else {
-					if err := r.tx.UpdateChangeset(ctx, changeset); err != nil {
-						return err
-					}
+					changeset.ResetQueued()
+				}
+				if err := r.tx.UpdateChangeset(ctx, changeset); err != nil {
+					return err
 				}
 				attachedChangesets[changeset.ID] = true
 			} else {
-				c, err := r.updateOrCreateTrackingChangeset(ctx, repo, spec.Spec.ExternalID)
+				c, err := r.createTrackingChangeset(ctx, repo, spec.Spec.ExternalID)
 				if err != nil {
 					return err
 				}
@@ -357,7 +354,9 @@ func (r *changesetRewirer) updateChangesetToNewSpec(ctx context.Context, c *camp
 	// We need to enqueue it for the changeset reconciler, so the
 	// reconciler wakes up, compares old and new spec and, if
 	// necessary, updates the changesets accordingly.
-	return r.updateAndReenqueue(ctx, c)
+	c.ResetQueued()
+
+	return r.tx.UpdateChangeset(ctx, c)
 }
 
 // loadAssociations populates the chagnesets, newChangesetSpecs and
@@ -409,7 +408,7 @@ func (r *changesetRewirer) loadAssociations(ctx context.Context) (
 	return accessibleReposByID, changesetsByID, changesetSpecsByID, changesetSpecMappings, nil
 }
 
-func (r *changesetRewirer) updateOrCreateTrackingChangeset(ctx context.Context, repo *types.Repo, externalID string) (*campaigns.Changeset, error) {
+func (r *changesetRewirer) createTrackingChangeset(ctx context.Context, repo *types.Repo, externalID string) (*campaigns.Changeset, error) {
 	newChangeset := &campaigns.Changeset{
 		RepoID:              repo.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
@@ -427,9 +426,4 @@ func (r *changesetRewirer) updateOrCreateTrackingChangeset(ctx context.Context, 
 	}
 
 	return newChangeset, r.tx.CreateChangeset(ctx, newChangeset)
-}
-
-func (r *changesetRewirer) updateAndReenqueue(ctx context.Context, ch *campaigns.Changeset) error {
-	ch.ResetQueued()
-	return r.tx.UpdateChangeset(ctx, ch)
 }
