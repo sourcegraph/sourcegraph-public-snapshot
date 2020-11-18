@@ -4,11 +4,12 @@ import { RegExpParser, visitRegExpAST } from 'regexpp'
 import {
     Alternative,
     Assertion,
+    CapturingGroup,
     Character,
     CharacterClass,
     CharacterClassRange,
     CharacterSet,
-    CapturingGroup,
+    Group,
     Quantifier,
 } from 'regexpp/ast'
 
@@ -71,6 +72,22 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                     range: { start: offset + node.start, end: offset + node.end },
                     value: node.raw,
                     kind: RegexpMetaKind.Assertion,
+                })
+            },
+            onGroupEnter(node: Group) {
+                // Push the leading '('
+                tokens.push({
+                    type: 'regexpMeta',
+                    range: { start: offset + node.start, end: offset + node.start + 1 },
+                    value: '(',
+                    kind: RegexpMetaKind.Delimited,
+                })
+                // Push the trailing ')'
+                tokens.push({
+                    type: 'regexpMeta',
+                    range: { start: offset + node.end - 1, end: offset + node.end },
+                    value: ')',
+                    kind: RegexpMetaKind.Delimited,
                 })
             },
             onCapturingGroupEnter(node: CapturingGroup) {

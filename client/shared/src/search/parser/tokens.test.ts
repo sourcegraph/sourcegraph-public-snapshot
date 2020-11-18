@@ -298,6 +298,38 @@ describe('getMonacoTokens()', () => {
         `)
     })
 
+    test('decorate non-capturing paren groups', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('(?:a(?:b))', false, SearchPatternType.regexp)), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "regexpMetaDelimited"
+              }
+            ]
+        `)
+    })
+
     test('decorate character classes', () => {
         expect(getMonacoTokens(toSuccess(scanSearchQuery('([a-z])', false, SearchPatternType.regexp)), true))
             .toMatchInlineSnapshot(`
