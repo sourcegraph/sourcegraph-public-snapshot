@@ -119,14 +119,6 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 
-		// Storybook coverage
-		pipeline.AddStep(":storybook::codecov: Code coverage",
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-storybook"),
-			bk.Cmd("yarn run cover-storybook"),
-			bk.Cmd("yarn nyc report -r json"),
-			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F storybook"))
-
 		// Upload storybook to Chromatic
 		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
 		if !c.isPR() {
@@ -239,6 +231,28 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 // Adds a Buildkite pipeline "Wait".
 func wait(pipeline *bk.Pipeline) {
 	pipeline.AddWait()
+}
+
+// Trigger the async pipeline to run.
+func triggerAsync(c Config) func(*bk.Pipeline) {
+	env := copyEnv(
+		"BUILDKITE_PULL_REQUEST",
+		"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
+		"BUILDKITE_PULL_REQUEST_REPO",
+	)
+
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddTrigger(":snail: Trigger Async",
+			bk.Trigger("sourcegraph-async"),
+			bk.Async(true),
+			bk.Build(bk.BuildOptions{
+				Message: os.Getenv("BUILDKITE_MESSAGE"),
+				Commit:  c.commit,
+				Branch:  c.branch,
+				Env:     env,
+			}),
+		)
+	}
 }
 
 func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
