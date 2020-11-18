@@ -73,6 +73,33 @@ add('loading', () => <WebStory>{() => <SearchResultsList {...defaultProps} resul
 
 add('single result', () => <WebStory>{() => <SearchResultsList {...defaultProps} />}</WebStory>)
 
+add('no results with quote tip in infobar', () => {
+    const resultsOrError: ISearchResults = {
+        ...(defaultProps.resultsOrError as ISearchResults),
+        results: [],
+        matchCount: 0,
+        approximateResultCount: '0',
+    }
+
+    const location = {
+        ...history.location,
+        search: 'q="test"',
+    }
+
+    return (
+        <WebStory>
+            {() => (
+                <SearchResultsList
+                    {...defaultProps}
+                    resultsOrError={resultsOrError}
+                    patternType={SearchPatternType.literal}
+                    location={location}
+                />
+            )}
+        </WebStory>
+    )
+})
+
 add('error', () => (
     <WebStory>
         {() => <SearchResultsList {...defaultProps} resultsOrError={{ message: 'test error', name: 'TestError' }} />}
