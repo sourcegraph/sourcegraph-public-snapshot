@@ -5,7 +5,7 @@ import { GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
 import { Driver } from '../../../shared/src/testing/driver'
 import { getConfig } from '../../../shared/src/testing/config'
 import { getTestTools } from './util/init'
-import { editSiteConfig, ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
+import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
 import { setUserEmailVerified } from './util/api'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
@@ -30,7 +30,6 @@ describe('Core functionality regression test suite', () => {
         'headless',
         'keepBrowser'
     )
-    const formattingOptions = { eol: '\n', insertSpaces: true, tabSize: 2 }
 
     let driver: Driver
     let gqlClient: GraphQLClient
@@ -149,70 +148,12 @@ describe('Core functionality regression test suite', () => {
         }
     })
 
-    test('2.2.2.1 User profile page with auth.enableUsernameChanges=false', async () => {
-        const aviURL =
-            'https://media2.giphy.com/media/26tPplGWjN0xLybiU/giphy.gif?cid=790b761127d52fa005ed23fdcb09d11a074671ac90146787&rid=giphy.gif'
-        const displayName = 'Test Display Name'
-        const username = testUsername + '-changed'
-
-        await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/profile`)
-        await driver.replaceText({
-            selector: '.test-UserProfileFormFields-username',
-            newText: username,
-        })
-        await driver.replaceText({
-            selector: '.test-UserProfileFormFields__displayName',
-            newText: displayName,
-        })
-        await driver.replaceText({
-            selector: '.test-UserProfileFormFields__avatarURL',
-            newText: aviURL,
-            enterTextMethod: 'paste',
-        })
-        await delay(1000)
-        await driver.page.click('#test-EditUserProfileForm__save')
-        await delay(1000)
-        await driver.page.reload()
-        await driver.page.waitForFunction(
-            username => {
-                const element = document.querySelector('.user-area-header__title-subtitle')
-                return element?.textContent && element.textContent.trim() === username
-            },
-            undefined,
-            testUsername
-        )
-        await driver.page.waitForFunction(
-            displayName => {
-                const element = document.querySelector('.test-user-area-header__display-name')
-                return element?.textContent && element.textContent.trim() === displayName
-            },
-            undefined,
-            displayName
-        )
-        await driver.page.waitForFunction(
-            aviURL => {
-                const element = document.querySelector('.user-area-header__avatar')
-                return element?.getAttribute('src') && element.getAttribute('src')?.trim() === aviURL
-            },
-            undefined,
-            aviURL
-        )
-    })
-
-    test('2.2.2.2 User profile page with auth.enableUsernameChanges=true', async () => {
+    test('2.2.2.1 User profile page', async () => {
         const aviURL =
             'https://media2.giphy.com/media/26tPplGWjN0xLybiU/giphy.gif?cid=790b761127d52fa005ed23fdcb09d11a074671ac90146787&rid=giphy.gif'
         const displayName = 'Test Display Name'
         const username = testUsername
 
-        await editSiteConfig(gqlClient, contents =>
-            setProperty(contents, ['auth.enableUsernameChanges'], true, formattingOptions)
-        )
-        alwaysCleanupManager.add('Global setting', 'usernamechanges', async () => {
-            await editSiteConfig(gqlClient, contents =>
-                setProperty(contents, ['auth.enableUsernameChanges'], false, formattingOptions)
-            )
-        })
         await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/profile`)
         await driver.replaceText({
             selector: '.test-UserProfileFormFields-username',
