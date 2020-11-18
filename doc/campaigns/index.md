@@ -75,6 +75,7 @@ Create a campaign by specifying a search query to get a list of repositories and
 
 - [Introduction to campaigns](explanations/introduction_to_campaigns.md)
 - [Permissions in campaigns](explanations/permissions_in_campaigns.md)
+- [Campaigns design](explanations/campaigns_design.md)
 
 ## How-tos
 

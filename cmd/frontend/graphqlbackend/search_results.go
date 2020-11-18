@@ -1750,8 +1750,8 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 	a.report(ctx, commitResults, commitCommon, errors.Wrap(err, "commit search failed"))
 }
 
-// isGlobalSearch returns true if the query contains the filters repo or
-// repogroup. For structural queries and queries with version context
+// isGlobalSearch returns true if the query does not contain repo, repogroup, or
+// repohasfile filters. For structural queries and queries with version context
 // isGlobalSearch always return false.
 func (r *searchResolver) isGlobalSearch() bool {
 	if r.patternType == query.SearchTypeStructural {
@@ -1760,7 +1760,7 @@ func (r *searchResolver) isGlobalSearch() bool {
 	if r.versionContext != nil && *r.versionContext != "" {
 		return false
 	}
-	return len(r.query.Values(query.FieldRepo)) == 0 && len(r.query.Values(query.FieldRepoGroup)) == 0
+	return len(r.query.Values(query.FieldRepo)) == 0 && len(r.query.Values(query.FieldRepoGroup)) == 0 && len(r.query.Values(query.FieldRepoHasFile)) == 0
 }
 
 // doResults is one of the highest level search functions that handles finding results.

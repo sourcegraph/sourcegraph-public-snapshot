@@ -1,4 +1,4 @@
-# Campaigns design doc
+# Campaigns design
 
 Why are [campaigns](../../../campaigns/index.md) designed the way they are?
 

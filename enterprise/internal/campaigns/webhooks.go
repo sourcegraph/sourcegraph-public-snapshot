@@ -215,7 +215,7 @@ func NewGitHubWebhook(store *Store, repos repos.Store, now func() time.Time) *Gi
 }
 
 // Register registers this webhook handler to handle events with the passed webhook router
-func (h *GitHubWebhook) Register(router *webhooks.GithubWebhook) {
+func (h *GitHubWebhook) Register(router *webhooks.GitHubWebhook) {
 	router.Register(
 		h.handleGitHubWebhook,
 		githubEvents...,

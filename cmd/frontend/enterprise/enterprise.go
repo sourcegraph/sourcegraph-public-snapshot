@@ -34,7 +34,7 @@ type NewExecutorProxyHandler func() http.Handler
 // DefaultServices creates a new Services value that has default implementations for all services.
 func DefaultServices() Services {
 	return Services{
-		GitHubWebhook:             registerFunc(func(webhook *webhooks.GithubWebhook) {}),
+		GitHubWebhook:             registerFunc(func(webhook *webhooks.GitHubWebhook) {}),
 		GitLabWebhook:             makeNotFoundHandler("gitlab webhook"),
 		BitbucketServerWebhook:    makeNotFoundHandler("bitbucket server webhook"),
 		NewCodeIntelUploadHandler: func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
@@ -53,8 +53,8 @@ func makeNotFoundHandler(handlerName string) http.Handler {
 	})
 }
 
-type registerFunc func(webhook *webhooks.GithubWebhook)
+type registerFunc func(webhook *webhooks.GitHubWebhook)
 
-func (fn registerFunc) Register(w *webhooks.GithubWebhook) {
+func (fn registerFunc) Register(w *webhooks.GitHubWebhook) {
 	fn(w)
 }

@@ -150,11 +150,11 @@ type GetIndexesOptions struct {
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
 func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Index, _ int, err error) {
 	ctx, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("opts.RepositoryID", opts.RepositoryID),
-		log.String("opts.State", opts.State),
-		log.String("opts.Term", opts.Term),
-		log.Int("opts.Limit", opts.Limit),
-		log.Int("opts.Offset", opts.Offset),
+		log.Int("repositoryID", opts.RepositoryID),
+		log.String("state", opts.State),
+		log.String("term", opts.Term),
+		log.Int("limit", opts.Limit),
+		log.Int("offset", opts.Offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -279,7 +279,7 @@ func (s *Store) IsQueued(ctx context.Context, repositoryID int, commit string) (
 // InsertIndex inserts a new index and returns its identifier.
 func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error) {
 	ctx, endObservation := s.operations.insertIndex.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("index.ID", index.ID),
+		log.Int("indexID", index.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 

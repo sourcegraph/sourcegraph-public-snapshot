@@ -2,9 +2,6 @@ package httpapi
 
 import (
 	"database/sql"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"log"
 	"net/http"
 	"reflect"
@@ -22,8 +19,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -54,9 +55,13 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook webhooks.Re
 
 	m.Get(apirouter.RepoRefresh).Handler(trace.TraceRoute(handler(serveRepoRefresh)))
 
-	gh := webhooks.GithubWebhook{
+	gh := webhooks.GitHubWebhook{
 		Repos: repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
 	}
+
+	webhookhandlers.Init(&gh)
+
+	m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(&gh))
 
 	githubWebhook.Register(&gh)
 
