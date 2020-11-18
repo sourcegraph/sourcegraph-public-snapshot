@@ -179,6 +179,13 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			hasNamespace: true,
 			wantErr:      `field "nameTransformations" is not allowed in a user-added external service`,
 		},
+		{
+			name:         "prevent disallowed rateLimit field",
+			kind:         extsvc.KindGitHub,
+			config:       `{"url": "https://github.com", "rateLimit": {} // comments}`,
+			hasNamespace: true,
+			wantErr:      `field "rateLimit" is not allowed in a user-added external service`,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
