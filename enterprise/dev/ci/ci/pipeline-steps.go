@@ -324,10 +324,6 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
 
-		// only build `sourcegraph/server` for release branch updates
-		case c.releaseBranch:
-			addDockerImage(c, "server", false)(pipeline)
-
 		// replicates `main` build but does not deploy `insiders` images
 		case c.isMasterDryRun:
 			for _, dockerImage := range allDockerImages {
