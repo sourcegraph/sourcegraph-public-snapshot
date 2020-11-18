@@ -54,6 +54,7 @@ const index: Omit<LsifIndexFields, 'state' | 'queuedAt' | 'startedAt' | 'finishe
     indexer: 'lsif-tsc',
     indexerArgs: ['-p', '.'],
     outfile: 'index.lsif',
+    logContents: 'Indexing\nUploading\nDone.\n',
     dockerSteps: [
         { root: '/', image: 'node:alpine', commands: ['yarn'] },
         { root: '/web', image: 'node:alpine', commands: ['yarn'] },
