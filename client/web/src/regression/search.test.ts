@@ -273,7 +273,7 @@ describe('Search regression test suite', () => {
         })
         test('Global text search, fork:only, few results', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=fork:only+router')
-            await driver.page.waitForFunction(() => document.querySelectorAll('.test-search-result').length >= 5)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.test-search-result').length >= 4)
         })
         test('Global text search, fork:only, 1 result', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=fork:only+FORK_SENTINEL')
