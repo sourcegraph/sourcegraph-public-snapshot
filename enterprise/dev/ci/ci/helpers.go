@@ -129,7 +129,7 @@ func (c Config) ensureCommit() error {
 	if !found {
 		fmt.Printf("This branch %q at commit %s does not include any of these commits: %s.\n", c.branch, c.commit, strings.Join(c.mustIncludeCommit, ", "))
 		fmt.Println("Rebase onto the latest main to get the latest CI fixes.")
-		fmt.Printf("Errors from `git merge-base --is-ancestor $COMMIT HEAD`: %s", errs.Error())
+		fmt.Printf("Errors from `git merge-base --is-ancestor $COMMIT HEAD`: %s", errs)
 		return errs
 	}
 	return nil
@@ -164,5 +164,5 @@ func (c Config) isGoOnly() bool {
 }
 
 func (c Config) shouldRunE2EandQA() bool {
-	return c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "main"
+	return c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "main" || c.branch == "distribution/qa"
 }

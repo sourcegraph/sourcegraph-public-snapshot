@@ -281,6 +281,8 @@ func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	// Test upgrades from mininum upgradeable Sourcegraph version
 	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.20.0"
 
+	env["DOCKER_IMAGES_TXT"] = strings.Join(allDockerImages, "\n")
+
 	return func(pipeline *bk.Pipeline) {
 		if !c.shouldRunE2EandQA() {
 			return
@@ -337,10 +339,6 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
-
-		// only build `sourcegraph/server` for release branch updates
-		case c.releaseBranch:
-			addDockerImage(c, "server", false)(pipeline)
 
 		// replicates `main` build but does not deploy `insiders` images
 		case c.isMasterDryRun:
