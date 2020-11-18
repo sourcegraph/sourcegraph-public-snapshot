@@ -62,9 +62,11 @@ The Sourcegraph extension creator generates a minimal and production ready `pack
 
 These are configuration files for linting and TypeScript compilation and will be sufficient for most extensions.
 
+## Debugging a Sourcegraph extension
+
+See [Debugging an extension](debugging.md). 
+
 ## Next steps
 
-- [Local development](local_development.md)
-- [Publishing an extension](publishing.md)
-- [Extension activation](activation.md)
-- [Extension manifest (configuration)](manifest.md)
+- [Local development](local_development.md) to test your extension locally
+- [Publishing an extension](publishing.md) to the Sourcegraph.com registry
