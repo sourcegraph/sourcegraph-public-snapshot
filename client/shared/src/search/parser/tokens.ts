@@ -19,7 +19,8 @@ export enum RegexpMetaKind {
     EscapedCharacter = 'EscapedCharacter', // like \(
     CharacterSet = 'CharacterSet', // like \s
     CharacterClass = 'CharacterClass', // like [a-z]
-    Quantifier = 'Quantifier', // like +
+    LazyQuantifier = 'LazyQuantifier', // the ? after a range quantifier
+    RangeQuantifier = 'RangeQuantifier', // like +
 }
 
 export interface RegexpMeta {
@@ -126,13 +127,25 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
             onQuantifierEnter(node: Quantifier) {
                 // the lazy quantifier ? adds one
                 const lazyQuantifierOffset = node.greedy ? 0 : 1
+                if (!node.greedy) {
+                    tokens.push({
+                        type: 'regexpMeta',
+                        range: { start: offset + node.end - 1, end: offset + node.end },
+                        value: '?',
+                        kind: RegexpMetaKind.LazyQuantifier,
+                    })
+                }
+
                 const quantifier = node.raw[node.raw.length - lazyQuantifierOffset - 1]
                 if (quantifier === '+' || quantifier === '*' || quantifier === '?') {
                     tokens.push({
                         type: 'regexpMeta',
-                        range: { start: offset + node.end - 1 - lazyQuantifierOffset, end: offset + node.end },
+                        range: {
+                            start: offset + node.end - 1 - lazyQuantifierOffset,
+                            end: offset + node.end - lazyQuantifierOffset,
+                        },
                         value: node.raw,
-                        kind: RegexpMetaKind.Quantifier,
+                        kind: RegexpMetaKind.RangeQuantifier,
                     })
                 } else {
                     // regexpp provides no easy way to tell whether the quantifier is a range '{number, number}',
@@ -147,8 +160,8 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                     tokens.push({
                         type: 'regexpMeta',
                         range: { start: offset + openBrace, end: offset + node.end },
-                        value: pattern.value.slice(offset + openBrace, offset + node.end),
-                        kind: RegexpMetaKind.Quantifier,
+                        value: pattern.value.slice(offset + openBrace, offset + node.end - lazyQuantifierOffset),
+                        kind: RegexpMetaKind.RangeQuantifier,
                     })
                 }
             },

@@ -40,10 +40,11 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
         // Regexp pattern highlighting
         { token: 'regexpMetaDelimited', foreground: '#ff6b6b' },
         { token: 'regexpMetaAssertion', foreground: '#ff6b6b' },
+        { token: 'regexpMetaLazyQuantifier', foreground: '#ff6b6b' },
         { token: 'regexpMetaEscapedCharacter', foreground: '#ffa8a8' },
         { token: 'regexpMetaCharacterSet', foreground: '#da77f2' },
         { token: 'regexpMetaCharacterClass', foreground: '#da77f2' },
-        { token: 'regexpMetaQuantifier', foreground: '#3bc9db' },
+        { token: 'regexpMetaRangeQuantifier', foreground: '#3bc9db' },
         { token: 'regexpMetaAlternative', foreground: '#3bc9db' },
     ],
 })
@@ -76,10 +77,11 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
         // Regexp pattern highlighting
         { token: 'regexpMetaDelimited', foreground: '#c92a2a' },
         { token: 'regexpMetaAssertion', foreground: '#c92a2a' },
+        { token: 'regexpMetaLazyQuantifier', foreground: '#c92a2a' },
         { token: 'regexpMetaEscapedCharacter', foreground: '#af5200' },
         { token: 'regexpMetaCharacterSet', foreground: '#ae3ec9' },
         { token: 'regexpMetaCharacterClass', foreground: '#ae3ec9' },
-        { token: 'regexpMetaQuantifier', foreground: '#1098ad' },
+        { token: 'regexpMetaRangeQuantifier', foreground: '#1098ad' },
         { token: 'regexpMetaAlternative', foreground: '#1098ad' },
     ],
 })
