@@ -209,7 +209,7 @@ An incremental sync is in fact a side effect of a complete sync because a user m
 
 ## Faster permissions syncing via GitHub webhooks
 
-Sourcegraph 3.22+ can speed up permissions syncing by receiving webhooks from GitHub for events related to user and repo permissions. In order to set up these webhooks you should follow the guide in the [GitHub Code Host Docs](/admin/external_service/github#webhooks). These events will enqueue permissions syncs for the repositories or users mentioned, meaning that things like publicising/privatising repos, or adding collaborators will be reflected in your Sourcegraph searches instantly. In order for this to work the user must have logged in via the [GitHub OAuth provider](https://docs.sourcegraph.com/admin/auth#github) 
+Sourcegraph 3.22+ can speed up permissions syncing by receiving webhooks from GitHub for events related to user and repo permissions. In order to set up these webhooks you should follow the guide in the [GitHub Code Host Docs](/admin/external_service/github#webhooks). These events will enqueue permissions syncs for the repositories or users mentioned, meaning that things like publicising/privatising repos, or adding collaborators will be reflected in your Sourcegraph searches more quickly. In order for this to work the user must have logged in via the [GitHub OAuth provider](https://docs.sourcegraph.com/admin/auth#github) 
 
 The events we consume are:
 * [public](https://developer.github.com/webhooks/event-payloads/#public)
