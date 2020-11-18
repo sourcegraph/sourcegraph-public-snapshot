@@ -3,7 +3,7 @@
 # shellcheck disable=SC1091
 source /root/.profile
 root_dir="$(dirname "${BASH_SOURCE[0]}")/../.."
-cd "$root_dir" || exit
+cd "$root_dir"
 
 set -ex
 
@@ -35,11 +35,11 @@ echo "TEST: Checking Sourcegraph instance is accessible"
 curl -f http://localhost:7080
 curl -f http://localhost:7080/healthz
 echo "TEST: Running tests"
-pushd internal/cmd/precise-code-intel-tester || exit
+pushd internal/cmd/precise-code-intel-tester
 go build
 ./precise-code-intel-tester addrepos
 ./scripts/download.sh
 ./precise-code-intel-tester upload
 sleep 10
 ./precise-code-intel-tester query
-popd || exit
+popd

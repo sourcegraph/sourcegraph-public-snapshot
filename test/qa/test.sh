@@ -3,7 +3,7 @@
 # shellcheck disable=SC1091
 source /root/.profile
 root_dir="$(dirname "${BASH_SOURCE[0]}")/../.."
-cd "$root_dir" || exit
+cd "$root_dir"
 
 set -ex
 
@@ -50,5 +50,5 @@ yarn run test:regression:codeintel || test_status=1
 yarn run test:regression:config-settings || test_status=1
 yarn run test:regression:integrations || test_status=1
 yarn run test:regression:search || test_status=1
-popd || exit
+popd
 exit $test_status
