@@ -2,7 +2,8 @@
 
 # shellcheck disable=SC1091
 source /root/.profile
-cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
+root_dir="$(dirname "${BASH_SOURCE[0]}")/../.."
+cd "$root_dir" || exit
 
 set -ex
 
@@ -10,6 +11,7 @@ test/setup-deps.sh
 test/setup-display.sh
 
 cleanup() {
+  cd "$root_dir"
   test/cleanup-display.sh
 }
 trap cleanup EXIT
