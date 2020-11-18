@@ -354,6 +354,26 @@ func (r *changesetRewirer) updateChangesetToNewSpec(ctx context.Context, c *camp
 	return r.tx.UpdateChangeset(ctx, c)
 }
 
+func (r *changesetRewirer) createTrackingChangeset(ctx context.Context, repo *types.Repo, externalID string) (*campaigns.Changeset, error) {
+	newChangeset := &campaigns.Changeset{
+		RepoID:              repo.ID,
+		ExternalServiceType: repo.ExternalRepo.ServiceType,
+
+		CampaignIDs:     []int64{r.campaign.ID},
+		ExternalID:      externalID,
+		AddedToCampaign: true,
+		// Note: no CurrentSpecID, because we merely track this one
+
+		PublicationState: campaigns.ChangesetPublicationStatePublished,
+
+		// Enqueue it so the reconciler syncs it.
+		ReconcilerState: campaigns.ReconcilerStateQueued,
+		Unsynced:        true,
+	}
+
+	return newChangeset, r.tx.CreateChangeset(ctx, newChangeset)
+}
+
 // loadAssociations populates the chagnesets, newChangesetSpecs and
 // accessibleReposByID on changesetRewirer.
 func (r *changesetRewirer) loadAssociations(ctx context.Context) (
@@ -401,24 +421,4 @@ func (r *changesetRewirer) loadAssociations(ctx context.Context) (
 	}
 
 	return accessibleReposByID, changesetsByID, changesetSpecsByID, changesetSpecMappings, nil
-}
-
-func (r *changesetRewirer) createTrackingChangeset(ctx context.Context, repo *types.Repo, externalID string) (*campaigns.Changeset, error) {
-	newChangeset := &campaigns.Changeset{
-		RepoID:              repo.ID,
-		ExternalServiceType: repo.ExternalRepo.ServiceType,
-
-		CampaignIDs:     []int64{r.campaign.ID},
-		ExternalID:      externalID,
-		AddedToCampaign: true,
-		// Note: no CurrentSpecID, because we merely track this one
-
-		PublicationState: campaigns.ChangesetPublicationStatePublished,
-
-		// Enqueue it so the reconciler syncs it.
-		ReconcilerState: campaigns.ReconcilerStateQueued,
-		Unsynced:        true,
-	}
-
-	return newChangeset, r.tx.CreateChangeset(ctx, newChangeset)
 }
