@@ -2,21 +2,23 @@ import * as Monaco from 'monaco-editor'
 import { Token, Pattern, CharacterRange, PatternKind } from './scanner'
 import { RegExpParser, visitRegExpAST } from 'regexpp'
 import {
+    Alternative,
+    Assertion,
     Character,
     CharacterClass,
     CharacterClassRange,
     CharacterSet,
     CapturingGroup,
-    Assertion,
     Quantifier,
 } from 'regexpp/ast'
 
 export enum RegexpMetaKind {
+    Assertion = 'Assertion', // like ^ or \b
+    Alternative = 'Alternative', // like |
     Delimited = 'Delimited', // like ( or )
     CharacterSet = 'CharacterSet', // like \s
     CharacterClass = 'CharacterClass', // like [a-z]
     Quantifier = 'Quantifier', // like +
-    Assertion = 'Assertion', // like ^ or \b
 }
 
 export interface RegexpMeta {
@@ -47,6 +49,20 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
         const ast = new RegExpParser().parsePattern(pattern.value)
         const offset = pattern.range.start
         visitRegExpAST(ast, {
+            onAlternativeEnter(node: Alternative) {
+                // regexpp doesn't tell us where a '|' operator is. We infer it by visiting any
+                // pattern of an Alternative node, and for a '|' directly after it. Based on
+                // regexpp's implementation, we know this is a true '|' operator, and _not_ an
+                // escaped \| or part of a character class like [abcd|].
+                if (pattern.value[node.end] && pattern.value[node.end] === '|') {
+                    tokens.push({
+                        type: 'regexpMeta',
+                        range: { start: offset + node.end, end: offset + node.end + 1 },
+                        value: '|',
+                        kind: RegexpMetaKind.Alternative,
+                    })
+                }
+            },
             onAssertionEnter(node: Assertion) {
                 tokens.push({
                     type: 'regexpMeta',

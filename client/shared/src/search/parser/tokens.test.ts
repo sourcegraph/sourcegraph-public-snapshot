@@ -398,4 +398,143 @@ describe('getMonacoTokens()', () => {
             ]
         `)
     })
+
+    test('decorate regexp | operator, single pattern', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('[|]\\|((a|b)|d)|e', false, SearchPatternType.regexp)), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 1,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "regexpMetaAlternative"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 11,
+                "scopes": "regexpMetaAlternative"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "regexpMetaAlternative"
+              },
+              {
+                "startIndex": 15,
+                "scopes": "identifier"
+              }
+            ]
+        `)
+    })
+
+    test('decorate regexp | operator, multiple patterns', () => {
+        expect(
+            getMonacoTokens(toSuccess(scanSearchQuery('repo:(a|b) (c|d) (e|f)', false, SearchPatternType.regexp)), true)
+        ).toMatchInlineSnapshot(
+            `
+            [
+              {
+                "startIndex": 0,
+                "scopes": "filterKeyword"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "closingParen"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 11,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "regexpMetaAlternative"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 15,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 16,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 17,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 18,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 19,
+                "scopes": "regexpMetaAlternative"
+              },
+              {
+                "startIndex": 20,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 21,
+                "scopes": "regexpMetaDelimited"
+              }
+            ]
+        `
+        )
+    })
 })
