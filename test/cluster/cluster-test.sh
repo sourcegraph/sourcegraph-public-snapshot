@@ -15,6 +15,8 @@ function cluster_setup() {
 
   export NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER"
   kubectl create ns "$NAMESPACE" -oyaml --dry-run | kubectl apply -f -
+  #shellcheck disable=SC2064
+  trap "kubectl delete namespace $NAMESPACE" EXIT
   kubectl apply -f "$DIR/storageClass.yaml"
   kubectl config set-context --current --namespace="$NAMESPACE"
   kubectl config current-context
@@ -29,8 +31,6 @@ function cluster_setup() {
 
   kubectl get pods
   time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=20m
-  #shellcheck disable=SC2064
-  trap "kubectl delete namespace $NAMESPACE" EXIT
 }
 
 function test_setup() {
