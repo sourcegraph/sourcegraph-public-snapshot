@@ -401,9 +401,11 @@ var getChangesetSpecRewireDataQueryFmtstr = `
 SELECT changeset_specs.id AS changeset_spec_id, changesets.id AS changeset_id, changeset_specs.repo_id
 FROM changeset_specs
 LEFT JOIN changesets ON changesets.repo_id = changeset_specs.repo_id AND changesets.external_id = changeset_specs.spec->>'externalID'
+INNER JOIN repo ON changeset_specs.repo_id = repo.id
 WHERE
 	changeset_specs.campaign_spec_id = %s AND
-	changeset_specs.spec->>'externalID' IS NOT NULL AND changeset_specs.spec->>'externalID' != ''
+	changeset_specs.spec->>'externalID' IS NOT NULL AND changeset_specs.spec->>'externalID' != '' AND
+	repo.deleted_at IS NULL
 UNION ALL
 SELECT changeset_specs.id AS changeset_spec_id, changesets.id AS changeset_id, changeset_specs.repo_id
 FROM changeset_specs
@@ -417,8 +419,10 @@ LEFT JOIN changesets
 			OR
 			(changesets.external_branch IS NULL AND (SELECT spec FROM changeset_specs WHERE changeset_specs.id = changesets.current_spec_id)->>'headRef' = changeset_specs.spec->>'headRef')
 		)
+INNER JOIN repo ON changeset_specs.repo_id = repo.id
 WHERE
 	changeset_specs.campaign_spec_id = %s AND
 	--- We look at a 'branch' changeset.
-	(changeset_specs.spec->>'externalID' IS NULL OR changeset_specs.spec->>'externalID' = '')
+	(changeset_specs.spec->>'externalID' IS NULL OR changeset_specs.spec->>'externalID' = '') AND
+	repo.deleted_at IS NULL
 `
