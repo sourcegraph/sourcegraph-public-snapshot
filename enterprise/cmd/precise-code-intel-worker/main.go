@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -58,11 +59,7 @@ func main() {
 	}
 
 	// Start debug server
-	debugServer, err := debugserver.NewServerRoutine()
-	if err != nil {
-		log.Fatalf("Failed to create listener: %s", err)
-	}
-	go debugServer.Start()
+	go debugserver.NewServerRoutine().Start()
 
 	// Connect to databases
 	db := mustInitializeDB()
@@ -81,6 +78,9 @@ func main() {
 		log.Fatalf("Failed to initialize upload store: %s", err)
 	}
 
+	// Initialize metrics
+	mustRegisterQueueMetric(observationContext, dbStore)
+
 	// Initialize worker
 	worker := worker.NewWorker(
 		&worker.DBStoreShim{dbStore},
@@ -94,13 +94,9 @@ func main() {
 	)
 
 	// Initialize health server
-	server, err := httpserver.NewFromAddr(addr, httpserver.NewHandler(nil), httpserver.Options{})
-	if err != nil {
-		log.Fatalf("Failed to create listener: %s", err)
-	}
+	server := httpserver.NewFromAddr(addr, &http.Server{Handler: httpserver.NewHandler(nil)})
 
 	// Go!
-	mustRegisterQueueMetric(observationContext, dbStore)
 	goroutine.MonitorBackgroundRoutines(context.Background(), worker, server)
 }
 

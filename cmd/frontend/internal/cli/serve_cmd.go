@@ -5,18 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
-	"syscall"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
 
@@ -35,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
@@ -219,55 +217,20 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 		return err
 	}
 
-	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler, enterprise.NewExecutorProxyHandler)
+	server, err := makeExternalAPI(schema, enterprise)
 	if err != nil {
 		return err
 	}
 
-	// The internal HTTP handler does not include the auth handlers.
-	internalHandler := newInternalHTTPHandler(schema, enterprise.NewCodeIntelUploadHandler)
-
-	// serve will serve externalHandler on l. It additionally handles graceful restarts.
-	srv := &httpServers{}
-
-	// Start HTTP server.
-	l, err := net.Listen("tcp", httpAddr)
+	internalAPI, err := makeInternalAPI(schema, enterprise)
 	if err != nil {
 		return err
 	}
-	log15.Debug("HTTP running", "on", httpAddr)
-	srv.GoServe(l, &http.Server{
-		Handler:      externalHandler,
-		ReadTimeout:  75 * time.Second,
-		WriteTimeout: 10 * time.Minute,
-	})
 
-	if httpAddrInternal != "" {
-		l, err := net.Listen("tcp", httpAddrInternal)
-		if err != nil {
-			return err
-		}
-
-		log15.Debug("HTTP (internal) running", "on", httpAddrInternal)
-		srv.GoServe(l, &http.Server{
-			Handler:     internalHandler,
-			ReadTimeout: 75 * time.Second,
-			// Higher since for internal RPCs which can have large responses
-			// (eg git archive). Should match the timeout used for git archive
-			// in gitserver.
-			WriteTimeout: time.Hour,
-		})
+	routines := []goroutine.BackgroundRoutine{server}
+	if internalAPI != nil {
+		routines = append(routines, internalAPI)
 	}
-
-	go func() {
-		// TODO(efritz) - replace with internal/httpserver package
-		signals := make(chan os.Signal, 1)
-		signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT)
-		<-signals
-
-		srv.Close()
-	}()
 
 	if printLogo {
 		fmt.Println(" ")
@@ -276,61 +239,56 @@ func Main(enterpriseSetupHook func() enterprise.Services) error {
 	}
 	fmt.Printf("✱ Sourcegraph is ready at: %s\n", globals.ExternalURL())
 
-	srv.Wait()
+	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 	return nil
 }
 
-type httpServers struct {
-	mu      sync.Mutex
-	wg      sync.WaitGroup
-	servers []*http.Server
-	wrapper func(http.Handler) http.Handler
-}
-
-// SetWrapper will set the wrapper for serve. All handlers served by are
-// passed through w.
-func (s *httpServers) SetWrapper(w func(http.Handler) http.Handler) {
-	s.mu.Lock()
-	s.wrapper = w
-	s.mu.Unlock()
-}
-
-// GoServe serves srv in a new goroutine. If serve returns an error other than
-// http.ErrServerClosed it will fatal.
-func (s *httpServers) GoServe(l net.Listener, srv *http.Server) {
-	s.addServer(srv)
-	s.wg.Add(1)
-	go func() {
-		defer s.wg.Done()
-		if err := srv.Serve(l); err != http.ErrServerClosed {
-			log.Fatal(err)
-		}
-	}()
-}
-
-func (s *httpServers) addServer(srv *http.Server) *http.Server {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.wrapper != nil {
-		srv.Handler = s.wrapper(srv.Handler)
+func makeExternalAPI(schema *graphql.Schema, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
+	// Create the external HTTP handler.
+	externalHandler, err := newExternalHTTPHandler(schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler, enterprise.NewExecutorProxyHandler)
+	if err != nil {
+		return nil, err
 	}
-	s.servers = append(s.servers, srv)
-	return srv
-}
 
-// Close closes all servers added
-func (s *httpServers) Close() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	for _, srv := range s.servers {
-		srv.Close()
+	listener, err := httpserver.NewListener(httpAddr)
+	if err != nil {
+		return nil, err
 	}
-	s.servers = nil
+
+	server := httpserver.New(listener, &http.Server{
+		Handler:      externalHandler,
+		ReadTimeout:  75 * time.Second,
+		WriteTimeout: 10 * time.Minute,
+	})
+
+	log15.Debug("HTTP running", "on", httpAddr)
+	return server, nil
 }
 
-// Wait waits until all servers are closed.
-func (s *httpServers) Wait() {
-	s.wg.Wait()
+func makeInternalAPI(schema *graphql.Schema, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
+	if httpAddrInternal == "" {
+		return nil, nil
+	}
+
+	listener, err := httpserver.NewListener(httpAddrInternal)
+	if err != nil {
+		return nil, err
+	}
+
+	// The internal HTTP handler does not include the auth handlers.
+	internalHandler := newInternalHTTPHandler(schema, enterprise.NewCodeIntelUploadHandler)
+
+	server := httpserver.New(listener, &http.Server{
+		Handler:     internalHandler,
+		ReadTimeout: 75 * time.Second,
+		// Higher since for internal RPCs which can have large responses
+		// (eg git archive). Should match the timeout used for git archive
+		// in gitserver.
+		WriteTimeout: time.Hour,
+	})
+
+	log15.Debug("HTTP (internal) running", "on", httpAddrInternal)
+	return server, nil
 }
 
 func isAllowedOrigin(origin string, allowedOrigins []string) bool {
