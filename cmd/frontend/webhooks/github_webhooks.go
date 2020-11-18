@@ -1,4 +1,4 @@
-package httpapi
+package webhooks
 
 import (
 	"context"
@@ -22,17 +22,17 @@ import (
 // for many event types, you should do a type switch within your handler
 type WebhookHandler func(ctx context.Context, extSvc *repos.ExternalService, event interface{}) error
 
-// GithubWebhook is responsible for handling incoming http requests for github webhooks
+// GitHubWebhook is responsible for handling incoming http requests for github webhooks
 // and routing to any registered WebhookHandlers, events are routed by their event type,
 // passed in the X-Github-Event header
-type GithubWebhook struct {
+type GitHubWebhook struct {
 	Repos repos.Store
 
 	mu       sync.RWMutex
 	handlers map[string][]WebhookHandler
 }
 
-func (h *GithubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log15.Error("Error parsing github webhook event", "error", err)
@@ -68,7 +68,7 @@ func (h *GithubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Dispatch accepts an event for a particular event type and dispatches it
 // to the appropriate stack of handlers, if any are configured.
-func (h *GithubWebhook) Dispatch(ctx context.Context, eventType string, extSvc *repos.ExternalService, e interface{}) error {
+func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, extSvc *repos.ExternalService, e interface{}) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	g := errgroup.Group{}
@@ -85,7 +85,7 @@ func (h *GithubWebhook) Dispatch(ctx context.Context, eventType string, extSvc *
 // Register associates a given event type(s) with the specified handler.
 // Handlers are organized into a stack and executed sequentially, so the order in
 // which they are provided is significant.
-func (h *GithubWebhook) Register(handler WebhookHandler, eventTypes ...string) {
+func (h *GitHubWebhook) Register(handler WebhookHandler, eventTypes ...string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if h.handlers == nil {
@@ -96,7 +96,7 @@ func (h *GithubWebhook) Register(handler WebhookHandler, eventTypes ...string) {
 	}
 }
 
-func (h *GithubWebhook) getExternalService(r *http.Request, body []byte) (*repos.ExternalService, error) {
+func (h *GitHubWebhook) getExternalService(r *http.Request, body []byte) (*repos.ExternalService, error) {
 	var (
 		sig   = r.Header.Get("X-Hub-Signature")
 		rawID = r.FormValue(extsvc.IDParam)
@@ -145,7 +145,7 @@ func (h *GithubWebhook) getExternalService(r *http.Request, body []byte) (*repos
 // external service, it iterates over all configured external services and attempts to match
 // the signature to the configured secret
 // TODO: delete this once old style webhooks are deprecated
-func (h *GithubWebhook) findAndValidateExternalService(ctx context.Context, sig string, body []byte) (*repos.ExternalService, error) {
+func (h *GitHubWebhook) findAndValidateExternalService(ctx context.Context, sig string, body []byte) (*repos.ExternalService, error) {
 	// 🚨 SECURITY: Try to authenticate the request with any of the stored secrets
 	// in GitHub external services config.
 	// If there are no secrets or no secret managed to authenticate the request,
