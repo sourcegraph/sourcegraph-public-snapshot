@@ -144,7 +144,7 @@ Environment variables to set in the environment when running this command.
 <span class="badge badge-experimental">Experimental</span> The value for each entry in <code>steps.env</code> can include <a href="campaign_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
 </aside>
 
-## [`steps.files`](#steps-env)
+## [`steps.files`](#steps-files)
 
 > NOTE: This feature is only available in Sourcegraph 3.22 and later.
 
