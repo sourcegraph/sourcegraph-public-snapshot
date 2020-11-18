@@ -393,6 +393,40 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```
 
 <br />
+## frontend: codeintel_resolvers_99th_percentile_duration
+
+<p class="subtitle">code-intel: 99th percentile successful resolvers operation duration over 5m</p>**Descriptions:**
+
+- _frontend: 20s+ 99th percentile successful resolvers operation duration over 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_codeintel_resolvers_99th_percentile_duration"
+]
+```
+
+<br />
+## frontend: codeintel_resolvers_errors
+
+<p class="subtitle">code-intel: resolvers errors every 5m</p>**Descriptions:**
+
+- _frontend: 20+ resolvers errors every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_codeintel_resolvers_errors"
+]
+```
+
+<br />
 ## frontend: codeintel_api_99th_percentile_duration
 
 <p class="subtitle">code-intel: 99th percentile successful api operation duration over 5m</p>**Descriptions:**
@@ -613,57 +647,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "warning_frontend_internal_api_error_responses"
-]
-```
-
-<br />
-## frontend: 99th_percentile_precise_code_intel_bundle_manager_query_duration
-
-<p class="subtitle">code-intel: 99th percentile successful precise-code-intel-bundle-manager query duration over 5m</p>**Descriptions:**
-
-- _frontend: 20s+ 99th percentile successful precise-code-intel-bundle-manager query duration over 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_99th_percentile_precise_code_intel_bundle_manager_query_duration"
-]
-```
-
-<br />
-## frontend: 99th_percentile_precise_code_intel_bundle_manager_transfer_duration
-
-<p class="subtitle">code-intel: 99th percentile successful precise-code-intel-bundle-manager data transfer duration over 5m</p>**Descriptions:**
-
-- _frontend: 300s+ 99th percentile successful precise-code-intel-bundle-manager data transfer duration over 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_99th_percentile_precise_code_intel_bundle_manager_transfer_duration"
-]
-```
-
-<br />
-## frontend: precise_code_intel_bundle_manager_error_responses
-
-<p class="subtitle">code-intel: precise-code-intel-bundle-manager error responses every 5m</p>**Descriptions:**
-
-- _frontend: 5%+ precise-code-intel-bundle-manager error responses every 5m for 15m0s_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_precise_code_intel_bundle_manager_error_responses"
 ]
 ```
 

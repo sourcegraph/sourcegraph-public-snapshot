@@ -25,7 +25,13 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		return err
 	}
 
-	resolver, err := newResolver(ctx)
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
+	resolver, err := newResolver(ctx, observationContext)
 	if err != nil {
 		return err
 	}
@@ -35,7 +41,7 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		return err
 	}
 
-	routines, err := newBackgroundRoutines()
+	routines, err := newBackgroundRoutines(observationContext)
 	if err != nil {
 		return err
 	}
@@ -56,7 +62,7 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 	return nil
 }
 
-func newResolver(ctx context.Context) (gql.CodeIntelResolver, error) {
+func newResolver(ctx context.Context, observationContext *observation.Context) (gql.CodeIntelResolver, error) {
 	hunkCache, err := codeintelresolvers.NewHunkCache(config.HunkCacheSize)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to initialize hunk cache: %s", err)
@@ -67,6 +73,7 @@ func newResolver(ctx context.Context) (gql.CodeIntelResolver, error) {
 		services.lsifStore,
 		services.api,
 		hunkCache,
+		observationContext,
 	)
 	resolver := codeintelgqlresolvers.NewResolver(innerResolver)
 
@@ -95,13 +102,7 @@ func newUploadHandler(ctx context.Context) (func(internal bool) http.Handler, er
 	return uploadHandler, nil
 }
 
-func newBackgroundRoutines() ([]goroutine.BackgroundRoutine, error) {
-	observationContext := &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-
+func newBackgroundRoutines(observationContext *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	dbStoreShim := &background.DBStoreShim{services.dbStore}
 	lsifStoreShim := services.lsifStore
 	gitserverClient := services.gitserverClient

@@ -2,12 +2,19 @@
 
 # shellcheck disable=SC1091
 source /root/.profile
-cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
+root_dir="$(dirname "${BASH_SOURCE[0]}")/../.."
+cd "$root_dir"
 
-set -x
+set -ex
 
 test/setup-deps.sh
 test/setup-display.sh
+
+cleanup() {
+  cd "$root_dir"
+  test/cleanup-display.sh
+}
+trap cleanup EXIT
 
 # ==========================
 
@@ -35,14 +42,13 @@ echo "TEST: Checking Sourcegraph instance is accessible"
 curl -f http://localhost:7080
 curl -f http://localhost:7080/healthz
 echo "TEST: Running tests"
-pushd client/web || exit
-yarn run test:regression:core
-yarn run test:regression:codeintel
-yarn run test:regression:config-settings
-yarn run test:regression:integrations
-yarn run test:regression:search
-popd || exit
-
-# ==========================
-
-test/cleanup-display.sh
+# Run all tests, and error if one fails
+test_status=0
+pushd client/web
+yarn run test:regression:core || test_status=1
+yarn run test:regression:codeintel || test_status=1
+yarn run test:regression:config-settings || test_status=1
+yarn run test:regression:integrations || test_status=1
+yarn run test:regression:search || test_status=1
+popd
+exit $test_status

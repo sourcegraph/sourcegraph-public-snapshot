@@ -234,6 +234,12 @@ const SiteSchemaJSON = `{
               ]
             }
           ]
+        },
+        "enablePermissionsWebhooks": {
+          "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": false }
         }
       },
       "examples": [

@@ -1625,6 +1625,10 @@ func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]st
 }
 
 type aggregator struct {
+	// resultChannel if non-nil will send all results we receive down it. See
+	// searchResolver.SetResultChannel
+	resultChannel chan<- []SearchResultResolver
+
 	mu       sync.Mutex
 	results  []SearchResultResolver
 	common   searchResultsCommon
@@ -1640,7 +1644,18 @@ func (a *aggregator) get() ([]SearchResultResolver, searchResultsCommon, *multie
 	return a.results, a.common, a.multiErr
 }
 
+// report sends results down resultChannel and collects the results.
 func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *searchResultsCommon, err error) {
+	if a.resultChannel != nil {
+		a.resultChannel <- results
+	}
+
+	a.collect(ctx, results, common, err)
+}
+
+// collect the results. This doesn't send down resultChannel. Should only be
+// used by non-streaming supported backends.
+func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver, common *searchResultsCommon, err error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	// Timeouts are reported through searchResultsCommon so don't report an error for them
@@ -1730,8 +1745,9 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 		return
 	}
 
-	diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, args)
-	a.report(ctx, diffResults, diffCommon, errors.Wrap(err, "diff search failed"))
+	// searchCommitDiffsInRepos supports streamings, so we use a.collect.
+	diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, args, a.resultChannel)
+	a.collect(ctx, diffResults, diffCommon, errors.Wrap(err, "diff search failed"))
 }
 
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) {
@@ -1750,8 +1766,8 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 	a.report(ctx, commitResults, commitCommon, errors.Wrap(err, "commit search failed"))
 }
 
-// isGlobalSearch returns true if the query contains the filters repo or
-// repogroup. For structural queries and queries with version context
+// isGlobalSearch returns true if the query does not contain repo, repogroup, or
+// repohasfile filters. For structural queries and queries with version context
 // isGlobalSearch always return false.
 func (r *searchResolver) isGlobalSearch() bool {
 	if r.patternType == query.SearchTypeStructural {
@@ -1760,7 +1776,7 @@ func (r *searchResolver) isGlobalSearch() bool {
 	if r.versionContext != nil && *r.versionContext != "" {
 		return false
 	}
-	return len(r.query.Values(query.FieldRepo)) == 0 && len(r.query.Values(query.FieldRepoGroup)) == 0
+	return len(r.query.Values(query.FieldRepo)) == 0 && len(r.query.Values(query.FieldRepoGroup)) == 0 && len(r.query.Values(query.FieldRepoHasFile)) == 0
 }
 
 // doResults is one of the highest level search functions that handles finding results.
@@ -1844,8 +1860,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	agg := aggregator{
-		common:      searchResultsCommon{maxResultsCount: r.maxResults()},
-		fileMatches: make(map[string]*FileMatchResolver),
+		resultChannel: r.resultChannel,
+		common:        searchResultsCommon{maxResultsCount: r.maxResults()},
+		fileMatches:   make(map[string]*FileMatchResolver),
 	}
 
 	isFileOrPath := func() bool {

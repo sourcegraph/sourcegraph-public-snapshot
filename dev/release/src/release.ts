@@ -237,7 +237,7 @@ If you have changes that should go into this patch release, <${patchRequestTempl
         argNames: ['changelogFile'],
         run: async (config, changelogFile = 'CHANGELOG.md') => {
             const { upcoming: release } = await releaseVersions(config)
-
+            const prMessage = `changelog: cut sourcegraph@${release.version}`
             await createChangesets({
                 requiredCommands: [],
                 changes: [
@@ -246,7 +246,8 @@ If you have changes that should go into this patch release, <${patchRequestTempl
                         repo: 'sourcegraph',
                         base: 'main',
                         head: `publish-${release.version}`,
-                        commitMessage: `release: sourcegraph@${release.version}`,
+                        title: prMessage,
+                        commitMessage: prMessage,
                         edits: [
                             (directory: string) => {
                                 console.log(`Updating '${changelogFile} for ${release.format()}'`)
@@ -268,7 +269,6 @@ If you have changes that should go into this patch release, <${patchRequestTempl
                                 writeFileSync(changelogPath, changelogContents)
                             },
                         ], // Changes already done
-                        title: `changelog: cut sourcegraph@${release.version}`,
                     },
                 ],
                 dryRun: config.dryRun.changesets,
