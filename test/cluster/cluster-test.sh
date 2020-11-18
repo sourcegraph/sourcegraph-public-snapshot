@@ -27,10 +27,9 @@ function cluster_setup() {
   pwd
   # see DOCKER_IMAGES_TXT in pipeline-steps.go for env var
   # replace all docker image tags with previously built candidate images
-  while IFS= read -r line
-  do
+  while IFS= read -r line; do
     echo "$line"
-    grep -lr '.'  -e "index.docker.io/sourcegraph/$line" --include \*.yaml |  xargs gsed -i -E "s#index.docker.io/sourcegraph/$line:.*#us.gcr.io/sourcegraph-dev/$line:$CANDIDATE_VERSION#g"
+    grep -lr '.' -e "index.docker.io/sourcegraph/$line" --include \*.yaml | xargs gsed -i -E "s#index.docker.io/sourcegraph/$line:.*#us.gcr.io/sourcegraph-dev/$line:$CANDIDATE_VERSION#g"
   done < <(printf '%s\n' "$DOCKER_IMAGES_TXT")
 
   ./create-new-cluster.sh
