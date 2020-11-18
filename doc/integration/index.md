@@ -20,6 +20,7 @@ Sourcegraph integrates with your other tools to help you search, navigate, and r
   - [View all "External services" extensions](https://sourcegraph.com/extensions?query=category%3A%22External+services%22)
 - [Editor plugins](editor.md): jump to Sourcegraph from your editor
 - [Search shortcuts](browser_search_engine.md): quickly search from your browser
+- [CLI](cli/index.md): search and manage Sourcegraph from your command line
 - [GraphQL API](../api/graphql/index.md): create custom tools using Sourcegraph data
 
 ![GitHub pull request integration](img/GitHubDiff.png)

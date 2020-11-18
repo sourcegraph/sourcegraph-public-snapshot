@@ -33,6 +33,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Browser extension](integration/browser_extension/index.md)
   - [Editors](integration/editor.md)
   - [Browser search engine](integration/browser_search_engine.md)
+  - [CLI](integration/cli/index.md)
 - [Extensions](extensions/index.md)
 - [Adopting](adopt/index.md)
 - [Administration](admin/index.md)
