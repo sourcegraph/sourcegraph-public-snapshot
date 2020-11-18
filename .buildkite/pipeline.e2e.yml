@@ -11,8 +11,7 @@ env:
 steps:
   - label: ':chromium: Sourcegraph E2E'
     artifact_paths: ./*.png;./*.mp4;./ffmpeg.log
-    # set commands to pass until tests are 100% confirmed as working, so as to avoid disruting dev workflow on main
     command:
-      - .buildkite/vagrant-run.sh sourcegraph-e2e || true
+      - .buildkite/vagrant-run.sh sourcegraph-e2e
     agents:
       queue: 'baremetal'
