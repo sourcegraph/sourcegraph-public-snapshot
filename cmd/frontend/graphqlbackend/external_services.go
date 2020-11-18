@@ -11,6 +11,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -238,7 +239,9 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *deleteEx
 	// The user doesn't care if triggering syncing failed when deleting a
 	// service, so kick off in the background.
 	go func() {
-		_ = syncExternalService(context.Background(), es)
+		if err := syncExternalService(context.Background(), es); err != nil {
+			log15.Error("Performing final sync after external service deletion", "err", err)
+		}
 	}()
 
 	return &EmptyResponse{}, nil
