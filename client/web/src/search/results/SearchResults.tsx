@@ -39,6 +39,7 @@ import { FlatExtensionHostAPI } from '../../../../shared/src/api/contract'
 import { DeployType } from '../../jscontext'
 import { AuthenticatedUser } from '../../auth'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
+import { shouldDisplayPerformanceWarning } from '../backend'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
@@ -341,6 +342,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     onSavedQueryModalClose={this.onModalClose}
                     onDidCreateSavedQuery={this.onDidCreateSavedQuery}
                     didSave={this.state.didSaveQuery}
+                    shouldDisplayPerformanceWarning={shouldDisplayPerformanceWarning}
                 />
             </div>
         )
