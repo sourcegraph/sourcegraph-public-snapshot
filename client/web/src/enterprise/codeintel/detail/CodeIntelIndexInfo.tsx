@@ -116,6 +116,17 @@ export const CodeIntelIndexInfo: FunctionComponent<CodeIntelIndexInfoProps> = ({
                         />
                     </td>
                 </tr>
+
+                <tr>
+                    <td>Log contents</td>
+                    <td>
+                        {index.logContents && (
+                            <pre className="bg-code rounded p-3">
+                                <code dangerouslySetInnerHTML={{ __html: index.logContents }} />
+                            </pre>
+                        )}
+                    </td>
+                </tr>
             </tbody>
         </table>
     </>
