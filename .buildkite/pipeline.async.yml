@@ -8,4 +8,4 @@ steps:
   - yarn run cover-storybook
   - yarn nyc report -r json
   - bash <(curl -s https://codecov.io/bash) -c -F typescript -F storybook
-  label: ':storybook::codecov: Code coverage'
+  label: ':storybook::codecov: Storybook coverage'
