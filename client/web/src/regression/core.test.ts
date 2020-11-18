@@ -148,57 +148,7 @@ describe('Core functionality regression test suite', () => {
         }
     })
 
-    test('2.2.2.1 User profile page', async () => {
-        const aviURL =
-            'https://media2.giphy.com/media/26tPplGWjN0xLybiU/giphy.gif?cid=790b761127d52fa005ed23fdcb09d11a074671ac90146787&rid=giphy.gif'
-        const displayName = 'Test Display Name'
-        const username = testUsername
-
-        await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/profile`)
-        await driver.replaceText({
-            selector: '.test-UserProfileFormFields-username',
-            newText: username,
-        })
-        await driver.replaceText({
-            selector: '.test-UserProfileFormFields__displayName',
-            newText: displayName,
-        })
-        await driver.replaceText({
-            selector: '.test-UserProfileFormFields__avatarURL',
-            newText: aviURL,
-            enterTextMethod: 'paste',
-        })
-        await delay(1000)
-        await driver.page.click('#test-EditUserProfileForm__save')
-        await delay(1000)
-        await driver.page.reload()
-        await driver.page.waitForFunction(
-            username => {
-                const element = document.querySelector('.user-area-header__title-subtitle')
-                return element?.textContent && element.textContent.trim() === username
-            },
-            undefined,
-            username
-        )
-        await driver.page.waitForFunction(
-            displayName => {
-                const element = document.querySelector('.test-user-area-header__display-name')
-                return element?.textContent && element.textContent.trim() === displayName
-            },
-            undefined,
-            displayName
-        )
-        await driver.page.waitForFunction(
-            aviURL => {
-                const element = document.querySelector('.user-area-header__avatar')
-                return element?.getAttribute('src') && element.getAttribute('src')?.trim() === aviURL
-            },
-            undefined,
-            aviURL
-        )
-    })
-
-    test('2.2.3 User emails page', async () => {
+    test('2.2.2 User emails page', async () => {
         const testEmail = 'sg-test-account@protonmail.com'
         await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/emails`)
         await driver.replaceText({ selector: '.test-user-email-add-input', newText: 'sg-test-account@protonmail.com' })
@@ -214,7 +164,7 @@ describe('Core functionality regression test suite', () => {
         await driver.findElementWithText('Verified', { wait: true })
     })
 
-    test('2.2.4 Access tokens work and invalid access tokens return "401 Unauthorized"', async () => {
+    test('2.2.3 Access tokens work and invalid access tokens return "401 Unauthorized"', async () => {
         await driver.page.goto(config.sourcegraphBaseUrl + `/users/${testUsername}/settings/tokens`)
         await driver.findElementWithText('Generate new token', { action: 'click', wait: { timeout: 5000 } })
         await driver.findElementWithText('New access token', { wait: { timeout: 1000 } })
@@ -269,7 +219,7 @@ describe('Core functionality regression test suite', () => {
         ).rejects.toThrowError('401 Unauthorized')
     })
 
-    test('2.5 Quicklinks: add a quicklink, test that it appears on the front page and works.', async () => {
+    test('2.3 Quicklinks: add a quicklink, test that it appears on the front page and works.', async () => {
         const quicklinkInfo = {
             name: 'Quicklink',
             url: config.sourcegraphBaseUrl + '/api/console',
