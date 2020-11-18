@@ -210,8 +210,27 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 	// Reset the attached changesets. We will add all we encounter while processing the mappings to this list again.
 	r.campaign.ChangesetIDs = []int64{}
 
-	attachedChangesets := map[int64]bool{}
 	for _, m := range changesetSpecMappings {
+		if m.ChangesetSpecID == 0 {
+			changeset, ok := changesetsByID[m.ChangesetID]
+			if !ok {
+				// This should never happen.
+				return errors.New("changeset not found")
+			}
+
+			// If we don't have access to a repository, we don't detach nor close the changeset.
+			_, ok = accessibleReposByID[m.RepoID]
+			if !ok {
+				continue
+			}
+
+			if err := r.closeChangeset(ctx, changeset); err != nil {
+				return err
+			}
+
+			continue
+		}
+
 		spec, ok := changesetSpecsByID[m.ChangesetSpecID]
 		if !ok {
 			// This should never happen.
@@ -252,44 +271,6 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 		}
 
 		r.campaign.ChangesetIDs = append(r.campaign.ChangesetIDs, changeset.ID)
-		attachedChangesets[changeset.ID] = true
-	}
-
-	// It's possible that changesets are now detached, like Changeset 3 in
-	// the example above.
-	// This we need to detach and close.
-	for _, c := range changesetsByID {
-		if _, ok := attachedChangesets[c.ID]; ok {
-			continue
-		}
-
-		// If we don't have access to a repository, we don't detach nor close the changeset.
-		_, ok := accessibleReposByID[c.RepoID]
-		if !ok {
-			continue
-		}
-
-		if c.CurrentSpecID != 0 && c.OwnedByCampaignID == r.campaign.ID {
-			// If we have a current spec ID and the changeset was created by
-			// _this_ campaign that means we should detach and close it.
-
-			// But only if it was created on the code host:
-			if c.Published() {
-				c.Closing = true
-				c.ResetQueued()
-			} else {
-				// otherwise we simply delete it.
-				if err := r.tx.DeleteChangeset(ctx, c.ID); err != nil {
-					return err
-				}
-				continue
-			}
-		}
-
-		c.RemoveCampaignID(r.campaign.ID)
-		if err := r.tx.UpdateChangeset(ctx, c); err != nil {
-			return err
-		}
 	}
 
 	return r.tx.UpdateCampaign(ctx, r.campaign)
@@ -367,6 +348,26 @@ func (r *changesetRewirer) attachTrackingChangeset(ctx context.Context, changese
 	return r.tx.UpdateChangeset(ctx, changeset)
 }
 
+func (r *changesetRewirer) closeChangeset(ctx context.Context, changeset *campaigns.Changeset) error {
+	if changeset.CurrentSpecID != 0 && changeset.OwnedByCampaignID == r.campaign.ID {
+		// If we have a current spec ID and the changeset was created by
+		// _this_ campaign that means we should detach and close it.
+
+		// But only if it was created on the code host:
+		if changeset.Published() {
+			changeset.Closing = true
+			changeset.ResetQueued()
+		} else {
+			// otherwise we simply delete it.
+			return r.tx.DeleteChangeset(ctx, changeset.ID)
+		}
+	}
+
+	// Disassociate the changeset with the campaign.
+	changeset.RemoveCampaignID(r.campaign.ID)
+	return r.tx.UpdateChangeset(ctx, changeset)
+}
+
 // loadAssociations populates the chagnesets, newChangesetSpecs and
 // accessibleReposByID on changesetRewirer.
 func (r *changesetRewirer) loadAssociations(ctx context.Context) (
@@ -384,8 +385,20 @@ func (r *changesetRewirer) loadAssociations(ctx context.Context) (
 		return accessibleReposByID, changesetsByID, changesetSpecsByID, changesetSpecMappings, err
 	}
 
-	// Load all Changesets attached to this campaign, or owned by this campaign but detached.
-	changesets, err := r.tx.ListChangesetsAttachedOrOwnedByCampaign(ctx, r.campaign.ID)
+	changesetSpecMappings, err = r.tx.GetChangesetSpecRewireData(ctx, r.campaign.CampaignSpecID, r.campaign.ID)
+	if err != nil {
+		return accessibleReposByID, changesetsByID, changesetSpecsByID, changesetSpecMappings, err
+	}
+
+	// Get all ids of changesets involved in the mapping.
+	ids := make([]int64, 0)
+	for _, m := range changesetSpecMappings {
+		if m.ChangesetID != 0 {
+			ids = append(ids, m.ChangesetID)
+		}
+	}
+
+	changesets, _, err := r.tx.ListChangesets(ctx, ListChangesetsOpts{IDs: ids})
 	if err != nil {
 		return accessibleReposByID, changesetsByID, changesetSpecsByID, changesetSpecMappings, err
 	}
@@ -406,29 +419,6 @@ func (r *changesetRewirer) loadAssociations(ctx context.Context) (
 	}
 	for _, c := range newChangesetSpecs {
 		changesetSpecsByID[c.ID] = c
-	}
-
-	changesetSpecMappings, err = r.tx.GetChangesetSpecRewireData(ctx, r.campaign.CampaignSpecID, r.campaign.ID)
-	if err != nil {
-		return accessibleReposByID, changesetsByID, changesetSpecsByID, changesetSpecMappings, err
-	}
-
-	// Get all ids of changesets involved in the mapping.
-	ids := make([]int64, 0)
-	for _, m := range changesetSpecMappings {
-		if m.ChangesetID != 0 {
-			if _, ok := changesetsByID[m.ChangesetID]; !ok {
-				ids = append(ids, m.ChangesetID)
-			}
-		}
-	}
-
-	mappedChangesets, _, err := r.tx.ListChangesets(ctx, ListChangesetsOpts{IDs: ids})
-	if err != nil {
-		return accessibleReposByID, changesetsByID, changesetSpecsByID, changesetSpecMappings, err
-	}
-	for _, c := range mappedChangesets {
-		changesetsByID[c.ID] = c
 	}
 
 	return accessibleReposByID, changesetsByID, changesetSpecsByID, changesetSpecMappings, nil

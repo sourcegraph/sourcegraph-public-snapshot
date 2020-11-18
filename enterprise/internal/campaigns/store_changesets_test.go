@@ -994,44 +994,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		}
 	})
 
-	t.Run("ListChangesetsAttachedOrOwnedByCampaign", func(t *testing.T) {
-		var campaignID int64 = 191918
-
-		baseOpts := testChangesetOpts{repo: repo.ID}
-
-		opts1 := baseOpts
-		opts1.campaign = campaignID
-		opts1.ownedByCampaign = campaignID
-		c1 := createChangeset(t, ctx, s, opts1)
-
-		opts2 := baseOpts
-		opts2.campaign = campaignID
-		opts2.ownedByCampaign = 0
-		c2 := createChangeset(t, ctx, s, opts2)
-
-		opts3 := baseOpts
-		opts3.campaign = campaignID + 999
-		opts3.ownedByCampaign = campaignID + 999
-		createChangeset(t, ctx, s, opts3)
-
-		opts4 := baseOpts
-		opts4.repo = deletedRepo.ID
-		opts4.campaign = campaignID
-		opts4.ownedByCampaign = 0
-		createChangeset(t, ctx, s, opts4)
-
-		cs, err := s.ListChangesetsAttachedOrOwnedByCampaign(ctx, campaignID)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		wantIDs := []int64{c1.ID, c2.ID}
-		haveIDs := cs.IDs()
-		if diff := cmp.Diff(wantIDs, haveIDs); diff != "" {
-			t.Fatalf("wrong changesets returned. diff=%s", diff)
-		}
-	})
-
 	t.Run("GetChangesetsStats", func(t *testing.T) {
 		currentStats, err := s.GetChangesetsStats(ctx, GetChangesetsStatsOpts{})
 		if err != nil {

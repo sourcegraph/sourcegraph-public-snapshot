@@ -383,7 +383,7 @@ func scanChangesetSpec(c *campaigns.ChangesetSpec, s scanner) error {
 
 // GetChangesetSpecRewireData returns ChangesetSpecRewire mappings from changeset specs to changesets.
 func (s *Store) GetChangesetSpecRewireData(ctx context.Context, campaignSpecID, campaignID int64) (csrd []*campaigns.ChangesetSpecRewire, err error) {
-	q := sqlf.Sprintf(getChangesetSpecRewireDataQueryFmtstr, campaignSpecID, campaignID, campaignID, campaignSpecID)
+	q := sqlf.Sprintf(getChangesetSpecRewireDataQueryFmtstr, campaignSpecID, campaignID, campaignID, campaignSpecID, campaignID, campaignID)
 
 	err = s.query(ctx, q, func(sc scanner) error {
 		var c campaigns.ChangesetSpecRewire
@@ -398,31 +398,54 @@ func (s *Store) GetChangesetSpecRewireData(ctx context.Context, campaignSpecID, 
 
 var getChangesetSpecRewireDataQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:GetChangesetSpecRewireData
-SELECT changeset_specs.id AS changeset_spec_id, changesets.id AS changeset_id, changeset_specs.repo_id
-FROM changeset_specs
-LEFT JOIN changesets ON changesets.repo_id = changeset_specs.repo_id AND changesets.external_id = changeset_specs.spec->>'externalID'
-INNER JOIN repo ON changeset_specs.repo_id = repo.id
-WHERE
-	changeset_specs.campaign_spec_id = %s AND
-	changeset_specs.spec->>'externalID' IS NOT NULL AND changeset_specs.spec->>'externalID' != '' AND
-	repo.deleted_at IS NULL
+WITH
+	tracked_mappings AS (
+		SELECT changeset_specs.id AS changeset_spec_id, changesets.id AS changeset_id, changeset_specs.repo_id AS repo_id
+		FROM changeset_specs
+		LEFT JOIN changesets ON changesets.repo_id = changeset_specs.repo_id AND changesets.external_id = changeset_specs.spec->>'externalID'
+		INNER JOIN repo ON changeset_specs.repo_id = repo.id
+		WHERE
+			changeset_specs.campaign_spec_id = %s AND
+			changeset_specs.spec->>'externalID' IS NOT NULL AND changeset_specs.spec->>'externalID' != '' AND
+			repo.deleted_at IS NULL
+	),
+	branch_mappings AS (
+		SELECT changeset_specs.id AS changeset_spec_id, changesets.id AS changeset_id, changeset_specs.repo_id AS repo_id
+		FROM changeset_specs
+		LEFT JOIN changesets ON
+			changesets.repo_id = changeset_specs.repo_id AND
+			changesets.current_spec_id IS NOT NULL AND
+			((changesets.campaign_ids ? %s) OR changesets.owned_by_campaign_id = %s) AND
+			(
+				(changesets.external_branch IS NOT NULL AND changesets.external_branch = changeset_specs.spec->>'headRef')
+				OR
+				(changesets.external_branch IS NULL AND (SELECT spec FROM changeset_specs WHERE changeset_specs.id = changesets.current_spec_id)->>'headRef' = changeset_specs.spec->>'headRef')
+			)
+		INNER JOIN repo ON changeset_specs.repo_id = repo.id
+		WHERE
+			changeset_specs.campaign_spec_id = %s AND
+			--- We look at a 'branch' changeset.
+			(changeset_specs.spec->>'externalID' IS NULL OR changeset_specs.spec->>'externalID' = '') AND
+			repo.deleted_at IS NULL
+)
+
+SELECT changeset_spec_id, changeset_id, repo_id FROM tracked_mappings
+
 UNION ALL
-SELECT changeset_specs.id AS changeset_spec_id, changesets.id AS changeset_id, changeset_specs.repo_id
-FROM changeset_specs
-LEFT JOIN changesets
-	ON
-		changesets.repo_id = changeset_specs.repo_id AND
-		changesets.current_spec_id IS NOT NULL AND
-		((changesets.campaign_ids ? %s) OR changesets.owned_by_campaign_id = %s) AND
-		(
-			(changesets.external_branch IS NOT NULL AND changesets.external_branch = changeset_specs.spec->>'headRef')
-			OR
-			(changesets.external_branch IS NULL AND (SELECT spec FROM changeset_specs WHERE changeset_specs.id = changesets.current_spec_id)->>'headRef' = changeset_specs.spec->>'headRef')
-		)
-INNER JOIN repo ON changeset_specs.repo_id = repo.id
+
+SELECT changeset_spec_id, changeset_id, repo_id FROM branch_mappings
+
+UNION ALL
+
+SELECT 0 as changeset_spec_id, changesets.id as changeset_id, changesets.repo_id as repo_id
+FROM changesets
+INNER JOIN repo ON changesets.repo_id = repo.id
 WHERE
-	changeset_specs.campaign_spec_id = %s AND
-	--- We look at a 'branch' changeset.
-	(changeset_specs.spec->>'externalID' IS NULL OR changeset_specs.spec->>'externalID' = '') AND
-	repo.deleted_at IS NULL
+	repo.deleted_at IS NULL AND
+ 	changesets.id NOT IN (
+		 SELECT changeset_id FROM tracked_mappings WHERE changeset_id IS NOT NULL
+		 UNION
+		 SELECT changeset_id FROM branch_mappings WHERE changeset_id IS NOT NULL
+ 	) AND
+ 	((changesets.campaign_ids ? %s) OR changesets.owned_by_campaign_id = %s)
 `
