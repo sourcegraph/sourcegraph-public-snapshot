@@ -305,6 +305,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		return m, nil
 	}
 	var emailID int64
+	var e graphqlbackend.MonitorEmailResolver
 	for i, action := range args.Actions {
 		if action.Email == nil {
 			return nil, fmt.Errorf("missing email object for action %d", i)
@@ -325,7 +326,6 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		if err != nil {
 			return nil, err
 		}
-		var e graphqlbackend.MonitorEmailResolver
 		e, err = r.runEmailQuery(ctx, q)
 		if err != nil {
 			return nil, err
@@ -345,6 +345,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 func (r *Resolver) createActions(ctx context.Context, args []*graphqlbackend.CreateActionArgs, monitorID int64) (err error) {
 	var q *sqlf.Query
 	for _, a := range args {
+		// Insert actions.
 		q, err = r.createActionEmailQuery(ctx, monitorID, a.Email)
 		if err != nil {
 			return err
@@ -353,7 +354,7 @@ func (r *Resolver) createActions(ctx context.Context, args []*graphqlbackend.Cre
 		if err != nil {
 			return err
 		}
-		// insert recipients
+		// Insert recipients.
 		q, err = r.createRecipientsQuery(ctx, a.Email.Recipients, e.(*monitorEmail).id)
 		if err != nil {
 			return err
