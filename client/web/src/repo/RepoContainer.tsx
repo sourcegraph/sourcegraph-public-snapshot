@@ -212,17 +212,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         RepoHeaderContributionsLifecycleProps
     >()
 
-    const repositoryBreadcrumbSetters = props.useBreadcrumb(
-        useMemo(
-            () => ({
-                key: 'repositories',
-                element: <>Repositories</>,
-            }),
-            []
-        )
-    )
-
-    const childBreadcrumbSetters = repositoryBreadcrumbSetters.useBreadcrumb(
+    const childBreadcrumbSetters = props.useBreadcrumb(
         useMemo(() => {
             if (isErrorLike(repoOrError) || !repoOrError) {
                 return
