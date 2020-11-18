@@ -212,14 +212,14 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 
 	attachedChangesets := map[int64]bool{}
 	for _, m := range changesetSpecMappings {
-		spec, specFound := changesetSpecsByID[m.ChangesetSpecID]
+		spec, ok := changesetSpecsByID[m.ChangesetSpecID]
 		// This should never happen.
-		if !specFound {
+		if !ok {
 			return errors.New("spec not found")
 		}
 
-		repo, repoFound := accessibleReposByID[m.RepoID]
-		if !repoFound {
+		repo, ok := accessibleReposByID[m.RepoID]
+		if !ok {
 			return &db.RepoNotFoundErr{ID: m.RepoID}
 		}
 
@@ -228,39 +228,28 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 		}
 
 		var changeset *campaigns.Changeset
-		if spec.Spec.IsImportingExisting() {
-			if m.ChangesetID != 0 {
-				var changesetFound bool
-				changeset, changesetFound = changesetsByID[m.ChangesetID]
-				if !changesetFound {
-					return errors.New("changeset not found")
-				}
-				if err := r.attachTrackingChangeset(ctx, changeset); err != nil {
-					return err
-				}
-			} else {
-				changeset, err = r.createTrackingChangeset(ctx, repo, spec.Spec.ExternalID)
-				if err != nil {
-					return err
-				}
+
+		if m.ChangesetID != 0 {
+			changeset, ok = changesetsByID[m.ChangesetID]
+			if !ok {
+				return errors.New("changeset not found")
 			}
-		} else if spec.Spec.IsBranch() {
-			if m.ChangesetID == 0 {
+			if spec.Spec.IsImportingExisting() {
+				err = r.attachTrackingChangeset(ctx, changeset)
+			} else if spec.Spec.IsBranch() {
+				err = r.updateChangesetToNewSpec(ctx, changeset, spec)
+			}
+		} else {
+			if spec.Spec.IsImportingExisting() {
+				changeset, err = r.createTrackingChangeset(ctx, repo, spec.Spec.ExternalID)
+			} else if spec.Spec.IsBranch() {
 				changeset, err = r.createChangesetForSpec(ctx, repo, spec)
-				if err != nil {
-					return err
-				}
-			} else {
-				var changesetFound bool
-				changeset, changesetFound = changesetsByID[m.ChangesetID]
-				if !changesetFound {
-					return errors.New("changeset not found")
-				}
-				if err := r.updateChangesetToNewSpec(ctx, changeset, spec); err != nil {
-					return err
-				}
 			}
 		}
+		if err != nil {
+			return err
+		}
+
 		r.campaign.ChangesetIDs = append(r.campaign.ChangesetIDs, changeset.ID)
 		attachedChangesets[changeset.ID] = true
 	}
