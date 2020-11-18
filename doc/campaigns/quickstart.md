@@ -37,7 +37,7 @@ See ["Code host interactions in campaigns"](explanations/permissions_in_campaign
 
 ## Install the Sourcegraph CLI
 
-In order to create campaigns we need to [install the Sourcegraph CLI](../integration/cli/index.md) (`src`).
+In order to create campaigns we need to [install the Sourcegraph CLI](../cli/index.md) (`src`).
 
 1. Install the version of `src` that's compatible with your Sourcegraph instance:
 
@@ -51,7 +51,7 @@ In order to create campaigns we need to [install the Sourcegraph CLI](../integra
     curl -L https://YOUR-SOURCEGRAPH-INSTANCE/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
     chmod +x /usr/local/bin/src
     ```
-    **Windows**: see ["Sourcegraph CLI for Windows"](../integration/cli/explanations/windows.md)
+    **Windows**: see ["Sourcegraph CLI for Windows"](../cli/explanations/windows.md)
 2. Authenticate `src` with your Sourcegraph instance by running **`src login`** and following the instructions:
 
     ```

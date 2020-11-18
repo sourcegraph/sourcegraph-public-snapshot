@@ -49,7 +49,7 @@ Once complete, you should have two new environment variables set: `SRC_ENDPOINT`
 
 ## Run a code search
 
-Searching is performed using the [`src search`](reference/search.md) command. For example, to search for `ResolveRepositories` in the `src` repository, you can run:
+Searching is performed using the [`src search`](references/search.md) command. For example, to search for `ResolveRepositories` in the `src` repository, you can run:
 
 ```sh
 src search 'r:github.com/sourcegraph/src-cli ResolveRepositories'
@@ -63,6 +63,6 @@ This should result in this output:
 
 You've run your first search from the command line! 🎉🎉
 
-You can now explore the [range of commands `src` provides](reference/index.md), including the extensive support for [campaigns](../../campaigns/index.md).
+You can now explore the [range of commands `src` provides](references/index.md), including the extensive support for [campaigns](../../campaigns/index.md).
 
 To learn what else you can do with `src`, see "[CLI](index.md)" in the Sourcegraph documentation.
