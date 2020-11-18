@@ -16,7 +16,7 @@ interface Props {
     user: GQL.ID
 
     /** Called after successfully adding an email to the user. */
-    onDidAdd: (email: string) => void
+    onDidAdd: () => void
 
     className?: string
     history: H.History

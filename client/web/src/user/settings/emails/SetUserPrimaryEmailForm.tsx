@@ -1,5 +1,4 @@
-/* eslint-disable react/jsx-no-bind */
-import React, { useState, FunctionComponent, useEffect } from 'react'
+import React, { useState, FunctionComponent, useEffect, useCallback } from 'react'
 import * as H from 'history'
 
 import { IUserEmail } from '../../../../../shared/src/graphql/schema'
@@ -40,7 +39,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
          *
          * 1. all emails that can be set as primary (not primary and verified)
          * 2. current primary email to be used as UI "placeholder" for disabled
-         *    select
+         * select
          */
         for (const email of emails) {
             // collect possible primary emails
@@ -79,32 +78,35 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
     const onPrimaryEmailSelect: React.ChangeEventHandler<HTMLSelectElement> = event =>
         setPrimaryEmail(event.target.value)
 
-    const onSubmit: React.FormEventHandler<HTMLFormElement> = async event => {
-        event.preventDefault()
-        setStatus({ loading: true, errorDescription: null })
+    const onSubmit: React.FormEventHandler<HTMLFormElement> = useCallback(
+        async event => {
+            event.preventDefault()
+            setStatus({ loading: true, errorDescription: null })
 
-        const { data, errors } = await mutateGraphQL(
-            gql`
-                mutation SetUserEmailPrimary($user: ID!, $email: String!) {
-                    setUserEmailPrimary(user: $user, email: $email) {
-                        alwaysNil
+            const { data, errors } = await mutateGraphQL(
+                gql`
+                    mutation SetUserEmailPrimary($user: ID!, $email: String!) {
+                        setUserEmailPrimary(user: $user, email: $email) {
+                            alwaysNil
+                        }
                     }
+                `,
+                { user, email: primaryEmail }
+            ).toPromise()
+
+            if (!data || (errors && errors.length > 0)) {
+                setStatus({ loading: false, errorDescription: createAggregateError(errors) })
+            } else {
+                eventLogger.log('UserEmailAddressSetAsPrimary')
+                setStatus({ loading: false, errorDescription: null })
+
+                if (onDidSet) {
+                    onDidSet(primaryEmail)
                 }
-            `,
-            { user, email: primaryEmail }
-        ).toPromise()
-
-        if (!data || (errors && errors.length > 0)) {
-            setStatus({ loading: false, errorDescription: createAggregateError(errors) })
-        } else {
-            eventLogger.log('UserEmailAddressSetAsPrimary')
-            setStatus({ loading: false, errorDescription: null })
-
-            if (onDidSet) {
-                onDidSet(primaryEmail)
             }
-        }
-    }
+        },
+        [user, primaryEmail, onDidSet]
+    )
 
     return (
         <div className={`add-user-email-form ${className || ''}`}>
