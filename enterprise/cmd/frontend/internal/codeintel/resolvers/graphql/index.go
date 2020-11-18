@@ -5,11 +5,10 @@ import (
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 type IndexResolver struct {
@@ -47,17 +46,12 @@ func (r *IndexResolver) DockerSteps() []gql.DockerStepResolver {
 }
 
 func (r *IndexResolver) LogContents(ctx context.Context) (*string, error) {
-	user, err := db.Users.GetByCurrentAuthUser(ctx)
-	if err != nil {
-		if errcode.IsNotFound(err) || err == db.ErrNoCurrentUser {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		if err == backend.ErrMustBeSiteAdmin {
 			return nil, nil
 		}
 
 		return nil, err
-	}
-
-	if !user.SiteAdmin {
-		return nil, nil
 	}
 
 	// 🚨 SECURITY: Only site admins can view executor log contents.
