@@ -55,11 +55,6 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: '/emails',
         exact: true,
-        render: lazyComponent(() => import('./emails/UserEmailSettings'), 'UserEmailSettings'),
-    },
-    {
-        path: '/emails-o',
-        exact: true,
         render: lazyComponent(() => import('./emails/UserSettingsEmailsPage'), 'UserSettingsEmailsPage'),
     },
     {

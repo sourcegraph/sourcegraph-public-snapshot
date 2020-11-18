@@ -1,272 +1,77 @@
-/* eslint rxjs/no-ignored-subscription: warn */
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import * as React from 'react'
+/* eslint-disable react/jsx-no-bind */
+import React, { FunctionComponent, useEffect, useState, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Observable, Subject, Subscription } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import * as H from 'history'
+import { Subscription } from 'rxjs'
+
+import { queryGraphQL } from '../../../backend/graphql'
+import { UserAreaUserFields } from '../../../graphql-operations'
 import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { createAggregateError, asError } from '../../../../../shared/src/util/errors'
-import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
-import { FilteredConnection } from '../../../components/FilteredConnection'
-import { PageTitle } from '../../../components/PageTitle'
+import { createAggregateError } from '../../../../../shared/src/util/errors'
 import { SiteFlags } from '../../../site'
 import { siteFlags } from '../../../site/backend'
+
 import { eventLogger } from '../../../tracking/eventLogger'
-import { setUserEmailVerified } from '../backend'
-import { AddUserEmailForm } from './AddUserEmailForm'
 import { ErrorAlert } from '../../../components/alerts'
-import * as H from 'history'
-import { UserAreaUserFields } from '../../../graphql-operations'
-
-interface UserEmailNodeProps {
-    node: GQL.IUserEmail
-    user: UserAreaUserFields
-
-    onDidUpdate: () => void
-    history: H.History
-}
-
-interface UserEmailNodeState {
-    loading: boolean
-    errorDescription?: string
-}
-
-class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNodeState> {
-    public state: UserEmailNodeState = {
-        loading: false,
-    }
-
-    public render(): JSX.Element | null {
-        let verifiedFragment: React.ReactFragment
-        if (this.props.node.verified) {
-            verifiedFragment = <span className="badge badge-success">Verified</span>
-        } else if (this.props.node.verificationPending) {
-            verifiedFragment = <span className="badge badge-info">Verification pending</span>
-        } else {
-            verifiedFragment = <span className="badge badge-secondary">Not verified</span>
-        }
-
-        return (
-            <li className="list-group-item py-2">
-                <div className="d-flex align-items-center justify-content-between">
-                    <div>
-                        <strong>{this.props.node.email}</strong> &nbsp;{verifiedFragment}&nbsp;
-                        {this.props.node.isPrimary && <span className="badge badge-primary">Primary</span>}
-                    </div>
-                    <div>
-                        <button
-                            type="button"
-                            className="btn btn-sm btn-danger"
-                            onClick={this.remove}
-                            disabled={this.state.loading}
-                            data-tooltip="Remove email address"
-                        >
-                            <DeleteIcon className="icon-inline" />
-                        </button>{' '}
-                        {this.props.node.verified && !this.props.node.isPrimary && (
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-secondary"
-                                onClick={this.setAsPrimary}
-                                disabled={this.state.loading}
-                            >
-                                Set as primary
-                            </button>
-                        )}{' '}
-                        {this.props.node.viewerCanManuallyVerify && (
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-secondary"
-                                onClick={this.props.node.verified ? this.setAsUnverified : this.setAsVerified}
-                                disabled={this.state.loading}
-                            >
-                                {this.props.node.verified ? 'Mark as unverified' : 'Mark as verified'}
-                            </button>
-                        )}
-                    </div>
-                </div>
-                {this.state.errorDescription && (
-                    <ErrorAlert className="mt-2" error={this.state.errorDescription} history={this.props.history} />
-                )}
-            </li>
-        )
-    }
-
-    private setAsPrimary = (): void => {
-        this.setState({
-            errorDescription: undefined,
-            loading: true,
-        })
-        mutateGraphQL(
-            gql`
-                mutation SetUserEmailPrimary($user: ID!, $email: String!) {
-                    setUserEmailPrimary(user: $user, email: $email) {
-                        alwaysNil
-                    }
-                }
-            `,
-            { user: this.props.user.id, email: this.props.node.email }
-        )
-            .pipe(
-                map(({ data, errors }) => {
-                    if (!data || (errors && errors.length > 0)) {
-                        throw createAggregateError(errors)
-                    }
-                })
-            )
-            .subscribe(
-                () => {
-                    this.setState({ loading: false })
-                    eventLogger.log('UserEmailAddressSetAsPrimary')
-                    if (this.props.onDidUpdate) {
-                        this.props.onDidUpdate()
-                    }
-                },
-                error => this.setState({ loading: false, errorDescription: asError(error).message })
-            )
-    }
-
-    private remove = (): void => {
-        if (!window.confirm(`Remove the email address ${this.props.node.email}?`)) {
-            return
-        }
-
-        this.setState({
-            errorDescription: undefined,
-            loading: true,
-        })
-
-        mutateGraphQL(
-            gql`
-                mutation RemoveUserEmail($user: ID!, $email: String!) {
-                    removeUserEmail(user: $user, email: $email) {
-                        alwaysNil
-                    }
-                }
-            `,
-            { user: this.props.user.id, email: this.props.node.email }
-        )
-            .pipe(
-                map(({ data, errors }) => {
-                    if (!data || (errors && errors.length > 0)) {
-                        throw createAggregateError(errors)
-                    }
-                })
-            )
-            .subscribe(
-                () => {
-                    this.setState({ loading: false })
-                    eventLogger.log('UserEmailAddressDeleted')
-                    if (this.props.onDidUpdate) {
-                        this.props.onDidUpdate()
-                    }
-                },
-                error => this.setState({ loading: false, errorDescription: asError(error).message })
-            )
-    }
-
-    private setAsVerified = (): void => this.setVerified(true)
-    private setAsUnverified = (): void => this.setVerified(false)
-
-    private setVerified(verified: boolean): void {
-        this.setState({
-            errorDescription: undefined,
-            loading: true,
-        })
-
-        // TODO this may call setState() after the component was unmounted
-        // eslint-disable-next-line rxjs/no-ignored-subscription
-        setUserEmailVerified(this.props.user.id, this.props.node.email, verified).subscribe(
-            () => {
-                this.setState({ loading: false })
-                if (verified) {
-                    eventLogger.log('UserEmailAddressMarkedVerified')
-                } else {
-                    eventLogger.log('UserEmailAddressMarkedUnverified')
-                }
-                if (this.props.onDidUpdate) {
-                    this.props.onDidUpdate()
-                }
-            },
-            error => this.setState({ loading: false, errorDescription: asError(error).message })
-        )
-    }
-}
+import { PageTitle } from '../../../components/PageTitle'
+import { UserEmail } from './UserEmail'
+import { AddUserEmailForm } from './AddUserEmailForm'
+import { SetUserPrimaryEmailForm } from './SetUserPrimaryEmailForm'
 
 interface Props extends RouteComponentProps<{}> {
     user: UserAreaUserFields
     history: H.History
 }
 
-interface State {
-    siteFlags?: SiteFlags
+interface LoadingState {
+    loading: boolean
+    errorDescription: Error | null
 }
 
-/** We fake a XyzConnection type because our GraphQL API doesn't have one (or need one) for user emails. */
-interface UserEmailConnection {
-    nodes: GQL.IUserEmail[]
-    totalCount: number
-}
+export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history }) => {
+    const [emails, setEmails] = useState<GQL.IUserEmail[]>([])
+    const [status, setStatus] = useState<LoadingState>({ loading: false, errorDescription: null })
+    const [flags, setFlags] = useState<SiteFlags>()
 
-export class UserSettingsEmailsPage extends React.Component<Props, State> {
-    public state: State = {}
+    const updateNewPrimaryEmail = (updatedEmail: string): GQL.IUserEmail[] =>
+        emails.map(email => {
+            if (email.isPrimary && email.email !== updatedEmail) {
+                email.isPrimary = false
+            }
 
-    private userEmailUpdates = new Subject<void>()
-    private subscriptions = new Subscription()
+            if (email.email === updatedEmail) {
+                email.isPrimary = true
+            }
 
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('UserSettingsEmails')
+            return email
+        })
 
-        this.subscriptions.add(siteFlags.subscribe(siteFlags => this.setState({ siteFlags })))
+    const onEmailVerify = ({ email: verifiedEmail, verified }: { email: string; verified: boolean }): void => {
+        const updatedEmails = emails.map(email => {
+            if (email.email === verifiedEmail) {
+                email.verified = verified
+            }
+
+            return email
+        })
+
+        setEmails(updatedEmails)
     }
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+    const onEmailRemove = (deletedEmail: string): void => {
+        setEmails(emails.filter(({ email }) => email !== deletedEmail))
     }
 
-    public render(): JSX.Element | null {
-        const nodeProps: Omit<UserEmailNodeProps, 'node'> = {
-            user: this.props.user,
-            onDidUpdate: this.onDidUpdateUserEmail,
-            history: this.props.history,
-        }
-
-        return (
-            <div className="user-settings-emails-page">
-                <PageTitle title="Emails" />
-                <h2>Emails</h2>
-                {this.state.siteFlags && !this.state.siteFlags.sendsEmailVerificationEmails && (
-                    <div className="alert alert-warning mt-2">
-                        Sourcegraph is not configured to send email verifications. Newly added email addresses must be
-                        manually verified by a site admin.
-                    </div>
-                )}
-                <FilteredConnection<GQL.IUserEmail, Omit<UserEmailNodeProps, 'node'>>
-                    className="list-group list-group-flush mt-3"
-                    noun="email address"
-                    pluralNoun="email addresses"
-                    queryConnection={this.queryUserEmails}
-                    nodeComponent={UserEmailNode}
-                    nodeComponentProps={nodeProps}
-                    updates={this.userEmailUpdates}
-                    hideSearch={true}
-                    noSummaryIfAllNodesVisible={true}
-                    history={this.props.history}
-                    location={this.props.location}
-                />
-                <AddUserEmailForm
-                    className="mt-4"
-                    user={this.props.user.id}
-                    onDidAdd={this.onDidUpdateUserEmail}
-                    history={this.props.history}
-                />
-            </div>
-        )
+    const onPrimaryEmailSet = (email: string): void => {
+        setEmails(updateNewPrimaryEmail(email))
     }
 
-    private queryUserEmails = (): Observable<UserEmailConnection> =>
-        queryGraphQL(
+    const fetchEmails = useCallback(async (): Promise<void> => {
+        setStatus({ errorDescription: null, loading: true })
+
+        const { data, errors } = await queryGraphQL(
             gql`
                 query UserEmails($user: ID!) {
                     node(id: $user) {
@@ -282,22 +87,83 @@ export class UserSettingsEmailsPage extends React.Component<Props, State> {
                     }
                 }
             `,
-            { user: this.props.user.id }
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.node) {
-                    throw createAggregateError(errors)
-                }
-                const user = data.node as GQL.IUser
-                if (!user.emails) {
-                    throw createAggregateError(errors)
-                }
-                return {
-                    nodes: user.emails,
-                    totalCount: user.emails.length,
-                }
-            })
-        )
+            { user: user.id }
+        ).toPromise()
 
-    private onDidUpdateUserEmail = (): void => this.userEmailUpdates.next()
+        if (!data || (errors && errors.length > 0)) {
+            setStatus({ loading: false, errorDescription: createAggregateError(errors) })
+        } else {
+            setStatus({ errorDescription: null, loading: false })
+            const userResult = data.node as GQL.IUser
+            setEmails(userResult.emails)
+        }
+    }, [user, setStatus, setEmails])
+
+    useEffect(() => {
+        eventLogger.logViewEvent('UserSettingsEmails')
+        const subscriptions = new Subscription()
+        subscriptions.add(siteFlags.subscribe(setFlags))
+
+        return () => {
+            subscriptions.unsubscribe()
+        }
+    }, [])
+
+    useEffect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        fetchEmails()
+    }, [fetchEmails])
+
+    return (
+        <div className="user-settings-emails-page">
+            <PageTitle title="Emails" />
+            <h2>Emails</h2>
+
+            {flags && !flags.sendsEmailVerificationEmails && (
+                <div className="alert alert-warning mt-2">
+                    Sourcegraph is not configured to send email verifications. Newly added email addresses must be
+                    manually verified by a site admin.
+                </div>
+            )}
+
+            {status.errorDescription && (
+                <ErrorAlert className="mt-2" error={status.errorDescription} history={history} />
+            )}
+
+            {status.loading ? (
+                <span className="filtered-connection__loader">
+                    <LoadingSpinner className="icon-inline" />
+                </span>
+            ) : (
+                <div className="list-group list-group-flush mt-3">
+                    <ul className="filtered-connection__nodes">
+                        {emails.map(email => (
+                            <li key={email.email} className="list-group-item py-2">
+                                <UserEmail
+                                    user={user.id}
+                                    email={email}
+                                    onEmailVerify={onEmailVerify}
+                                    onDidRemove={onEmailRemove}
+                                    history={history}
+                                />
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            {/* re-fetch emails when new emails are added to guarantee correct state */}
+            <AddUserEmailForm className="mt-4" user={user.id} onDidAdd={fetchEmails} history={history} />
+            <hr className="mt-4" />
+            {!status.loading && (
+                <SetUserPrimaryEmailForm
+                    className="mt-4"
+                    user={user.id}
+                    emails={emails}
+                    onDidSet={onPrimaryEmailSet}
+                    history={history}
+                />
+            )}
+        </div>
+    )
 }

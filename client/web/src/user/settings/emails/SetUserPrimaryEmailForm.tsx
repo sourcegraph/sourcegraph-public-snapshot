@@ -1,12 +1,15 @@
 /* eslint-disable react/jsx-no-bind */
 import React, { useState, FunctionComponent, useEffect } from 'react'
 import * as H from 'history'
-import { Form } from '../../../../../branded/src/components/Form'
+
 import { IUserEmail } from '../../../../../shared/src/graphql/schema'
 import { mutateGraphQL } from '../../../backend/graphql'
 import { gql } from '../../../../../shared/src/graphql/graphql'
 import { createAggregateError } from '../../../../../shared/src/util/errors'
 import { eventLogger } from '../../../tracking/eventLogger'
+
+import { Form } from '../../../../../branded/src/components/Form'
+import { LoaderButton } from '../../../components/LoaderButton'
 import { ErrorAlert } from '../../../components/alerts'
 
 interface Props {
@@ -24,14 +27,21 @@ interface UserEmailState {
 
 export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails, onDidSet, className, history }) => {
     const [primaryEmail, setPrimaryEmail] = useState<string>('')
-    const [disabled, setDisabled] = useState(false)
     const [emailOptions, setEmailOptions] = useState<string[]>([])
     const [status, setStatus] = useState<UserEmailState>({ loading: false, errorDescription: null })
+    const [disabled, setDisabled] = useState(false)
 
     useEffect(() => {
         const possibleEmails = []
         let placeholderPrimaryEmail = ''
 
+        /**
+         * Every time emails props changes, find:
+         *
+         * 1. all emails that can be set as primary (not primary and verified)
+         * 2. current primary email to be used as UI "placeholder" for disabled
+         *    select
+         */
         for (const email of emails) {
             // collect possible primary emails
             if (!email.isPrimary && email.verified) {
@@ -47,19 +57,23 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
         const shouldDisable = possibleEmails.length === 0
 
         let options
-        let currentPrimaryEmail
+        let selectValue
 
+        /**
+         * If possible primary emails were found, use them as select's options
+         * and set the first email as select's value
+         */
         if (possibleEmails.length !== 0) {
             options = possibleEmails
-            currentPrimaryEmail = possibleEmails[0]
+            selectValue = possibleEmails[0]
         } else {
             options = [placeholderPrimaryEmail]
-            currentPrimaryEmail = placeholderPrimaryEmail
+            selectValue = placeholderPrimaryEmail
         }
 
         setDisabled(shouldDisable)
         setEmailOptions(options)
-        setPrimaryEmail(currentPrimaryEmail)
+        setPrimaryEmail(selectValue)
     }, [emails])
 
     const onPrimaryEmailSelect: React.ChangeEventHandler<HTMLSelectElement> = event =>
@@ -67,6 +81,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
 
     const onSubmit: React.FormEventHandler<HTMLFormElement> = async event => {
         event.preventDefault()
+        setStatus({ loading: true, errorDescription: null })
 
         const { data, errors } = await mutateGraphQL(
             gql`
@@ -83,7 +98,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
             setStatus({ loading: false, errorDescription: createAggregateError(errors) })
         } else {
             eventLogger.log('UserEmailAddressSetAsPrimary')
-            setStatus({ ...status, loading: false })
+            setStatus({ loading: false, errorDescription: null })
 
             if (onDidSet) {
                 onDidSet(primaryEmail)
@@ -113,9 +128,13 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
                         </option>
                     ))}
                 </select>{' '}
-                <button type="submit" className="btn btn-primary" disabled={disabled}>
-                    Save
-                </button>
+                <LoaderButton
+                    loading={status.loading}
+                    label="Save"
+                    type="submit"
+                    disabled={disabled}
+                    className="btn btn-primary"
+                />
             </Form>
             {status.errorDescription && (
                 <ErrorAlert className="mt-2" error={status.errorDescription} history={history} />

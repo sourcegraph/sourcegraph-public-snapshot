@@ -8,6 +8,7 @@ import { mutateGraphQL } from '../../../backend/graphql'
 import { Form } from '../../../../../branded/src/components/Form'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { ErrorAlert } from '../../../components/alerts'
+import { LoaderButton } from '../../../components/LoaderButton'
 import * as H from 'history'
 
 interface Props {
@@ -83,9 +84,7 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
                         readOnly={loading}
                         placeholder="Email"
                     />{' '}
-                    <button type="submit" className="btn btn-primary" disabled={loading}>
-                        {loading ? 'Adding...' : 'Add'}
-                    </button>
+                    <LoaderButton loading={loading} label="Save" type="submit" className="btn btn-primary" />
                 </Form>
                 {this.state.error && (
                     <ErrorAlert className="mt-2" error={this.state.error} history={this.props.history} />

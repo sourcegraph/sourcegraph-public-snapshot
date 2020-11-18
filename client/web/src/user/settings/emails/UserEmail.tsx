@@ -1,4 +1,5 @@
-import React, { useState, FunctionComponent } from 'react'
+import React, { useState, useCallback, FunctionComponent } from 'react'
+import { Modal } from 'reactstrap'
 import * as H from 'history'
 
 import { mutateGraphQL } from '../../../backend/graphql'
@@ -8,6 +9,7 @@ import { gql } from '../../../../../shared/src/graphql/graphql'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { createAggregateError } from '../../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
+import { LoaderButton } from '../../../components/LoaderButton'
 
 interface VerificationUpdate {
     email: string
@@ -36,21 +38,11 @@ export const UserEmail: FunctionComponent<Props> = ({
     history,
 }) => {
     const [status, setStatus] = useState<LoadingState>({ loading: false, errorDescription: null })
+    const [modal, setModal] = useState(false)
 
-    let verifiedFragment: React.ReactFragment
-    if (verified) {
-        verifiedFragment = <span className="badge badge-success">Verified</span>
-    } else if (verificationPending) {
-        verifiedFragment = <span className="badge badge-info">Verification pending</span>
-    } else {
-        verifiedFragment = <span className="badge badge-secondary">Not verified</span>
-    }
+    const toggleModal = useCallback(() => setModal(!modal), [modal])
 
-    const removeEmail = async (): Promise<void> => {
-        if (!window.confirm(`Remove the email address ${email}?`)) {
-            return
-        }
-
+    const removeEmail = useCallback(async (): Promise<void> => {
         setStatus({ ...status, loading: true })
 
         const { data, errors } = await mutateGraphQL(
@@ -74,7 +66,9 @@ export const UserEmail: FunctionComponent<Props> = ({
                 onDidRemove(email)
             }
         }
-    }
+
+        setModal(false)
+    }, [email, status, user, onDidRemove])
 
     const updateEmailVerification = async (verified: boolean): Promise<void> => {
         setStatus({ ...status, loading: true })
@@ -107,28 +101,83 @@ export const UserEmail: FunctionComponent<Props> = ({
         }
     }
 
+    let verifiedLinkFragment: React.ReactFragment
+    if (verified) {
+        verifiedLinkFragment = <span className="badge badge-success">Verified</span>
+    } else if (verificationPending) {
+        verifiedLinkFragment = <span className="badge badge-info">Verification pending</span>
+    } else {
+        verifiedLinkFragment = <span className="badge badge-secondary">Not verified</span>
+    }
+
+    const removeLinkFragment: React.ReactFragment = isPrimary ? (
+        <a data-tooltip="Can't remove primary email" className="btn btn-link text-muted">
+            Remove
+        </a>
+    ) : (
+        <a className="btn btn-link text-danger" onClick={toggleModal}>
+            Remove
+        </a>
+    )
+
     return (
         <>
             <div className="d-flex align-items-center justify-content-between">
                 <div>
-                    <strong>{email}</strong> &nbsp;{verifiedFragment}&nbsp; &nbsp;
+                    <strong>{email}</strong> &nbsp;{verifiedLinkFragment}&nbsp; &nbsp;
                     {isPrimary && <span className="badge badge-primary">Primary</span>}
                 </div>
                 <div>
-                    {viewerCanManuallyVerify ? (
+                    {viewerCanManuallyVerify && (
                         <a className="btn btn-link text-primary" onClick={() => updateEmailVerification(!verified)}>
                             {verified ? 'Mark as unverified' : 'Mark as verified'}
                         </a>
-                    ) : null}
-                    {!isPrimary ? (
-                        <a className="btn btn-link text-danger" onClick={!status.loading ? removeEmail : () => {}}>
-                            Remove
-                        </a>
-                    ) : null}
+                    )}
+                    {removeLinkFragment}
                 </div>
             </div>
             {status.errorDescription && (
                 <ErrorAlert className="mt-2" error={status.errorDescription} history={history} />
+            )}
+            {modal && (
+                <Modal
+                    isOpen={modal}
+                    toggle={toggleModal}
+                    centered={true}
+                    autoFocus={true}
+                    keyboard={true}
+                    fade={false}
+                >
+                    <div className="modal-header">
+                        <h4 className="modal-title">Remove email</h4>
+                        <button
+                            type="button"
+                            className="btn btn-icon"
+                            data-dismiss="modal"
+                            aria-label="Close"
+                            onClick={toggleModal}
+                        >
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div className="modal-body">
+                        <p>
+                            Remove the email address <strong>{email}</strong>?
+                        </p>
+                    </div>
+                    <div className="modal-footer">
+                        <LoaderButton
+                            loading={status.loading}
+                            onClick={removeEmail}
+                            label="Remove"
+                            type="button"
+                            className="btn btn-danger"
+                        />
+                        <button type="button" className="btn btn-primary" onClick={toggleModal}>
+                            Cancel
+                        </button>
+                    </div>
+                </Modal>
             )}
         </>
     )
