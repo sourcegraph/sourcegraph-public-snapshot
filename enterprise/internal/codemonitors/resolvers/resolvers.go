@@ -263,7 +263,7 @@ func splitActionIDs(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorA
 			continue
 		}
 		if _, ok := aMap[*a.Email.Id]; !ok {
-			return nil, nil, fmt.Errorf("unknown ID=%s for action", a.Email.Id)
+			return nil, nil, fmt.Errorf("unknown ID=%s for action", *a.Email.Id)
 		}
 		toUpdateActions = append(toUpdateActions, a)
 		delete(aMap, *a.Email.Id)

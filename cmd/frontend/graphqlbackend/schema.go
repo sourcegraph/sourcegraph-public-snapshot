@@ -794,8 +794,9 @@ type Mutation {
         id: ID!
     ): EmptyResponse!
     """
-    Update a code monitor. We assume that the request contains a complete code monitor.
-    Existing actions which are missing from the request will be deleted from DB. Actions
+    Update a code monitor. We assume that the request contains a complete code monitor,
+    including its trigger and all actions. Actions which are stored in the db,
+    but are missing from the request will be deleted from the database. Actions
     without an ID will be created.
     """
     updateCodeMonitor(
