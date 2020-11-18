@@ -1,8 +1,6 @@
 package campaigns
 
-import (
-	"time"
-)
+import "time"
 
 type ChangesetSyncState struct {
 	BaseRefOid string
