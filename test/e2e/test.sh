@@ -9,6 +9,11 @@ set -ex
 test/setup-deps.sh
 test/setup-display.sh
 
+cleanup() {
+  test/cleanup-display.sh
+}
+trap cleanup EXIT
+
 # ==========================
 
 pushd enterprise || exit
@@ -19,7 +24,3 @@ popd || exit
 echo "TEST: Running E2E tests"
 ./dev/ci/e2e.sh
 docker image rm -f "${IMAGE}"
-
-# ==========================
-
-test/cleanup-display.sh

@@ -9,6 +9,11 @@ set -ex
 test/setup-deps.sh
 test/setup-display.sh
 
+cleanup() {
+  test/cleanup-display.sh
+}
+trap cleanup EXIT
+
 # ==========================
 
 # Run and initialize an old Sourcegraph release
@@ -45,7 +50,3 @@ echo "TEST: Running tests"
 pushd client/web || exit
 yarn run test:regression:core
 popd || exit
-
-# ==========================
-
-test/cleanup-display.sh

@@ -42,5 +42,3 @@ go build
 sleep 10
 ./precise-code-intel-tester query
 popd || exit
-
-# ==========================

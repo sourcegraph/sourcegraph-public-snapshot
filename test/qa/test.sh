@@ -9,6 +9,11 @@ set -ex
 test/setup-deps.sh
 test/setup-display.sh
 
+cleanup() {
+  test/cleanup-display.sh
+}
+trap cleanup EXIT
+
 # ==========================
 
 CONTAINER=sourcegraph-server
@@ -45,7 +50,3 @@ yarn run test:regression:integrations || test_status=1
 yarn run test:regression:search || test_status=1
 exit $test_status
 popd || exit
-
-# ==========================
-
-test/cleanup-display.sh
