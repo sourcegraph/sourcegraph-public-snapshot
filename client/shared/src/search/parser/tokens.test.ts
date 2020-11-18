@@ -184,7 +184,11 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 1,
-                "scopes": "regexpMetaQuantifier"
+                "scopes": "regexpMetaRangeQuantifier"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "regexpMetaLazyQuantifier"
               },
               {
                 "startIndex": 3,
@@ -200,7 +204,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 6,
-                "scopes": "regexpMetaQuantifier"
+                "scopes": "regexpMetaRangeQuantifier"
               }
             ]
         `)
@@ -216,7 +220,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 1,
-                "scopes": "regexpMetaQuantifier"
+                "scopes": "regexpMetaRangeQuantifier"
               },
               {
                 "startIndex": 4,
@@ -228,7 +232,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 6,
-                "scopes": "regexpMetaQuantifier"
+                "scopes": "regexpMetaRangeQuantifier"
               },
               {
                 "startIndex": 11,
@@ -240,17 +244,19 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 13,
-                "scopes": "regexpMetaQuantifier"
+                "scopes": "regexpMetaRangeQuantifier"
+              },
+              {
+                "startIndex": 17,
+                "scopes": "regexpMetaLazyQuantifier"
               }
             ]
         `)
     })
 
     test('decorate paren groups', () => {
-        expect(
-            getMonacoTokens(toSuccess(scanSearchQuery('((a) or b)', false, SearchPatternType.regexp)), true)
-        ).toMatchInlineSnapshot(
-            `
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('((a) or b)', false, SearchPatternType.regexp)), true))
+            .toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,
@@ -289,8 +295,7 @@ describe('getMonacoTokens()', () => {
                 "scopes": "closingParen"
               }
             ]
-        `
-        )
+        `)
     })
 
     test('decorate character classes', () => {
