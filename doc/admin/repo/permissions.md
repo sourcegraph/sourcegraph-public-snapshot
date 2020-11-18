@@ -201,23 +201,6 @@ Considerations when enabling for the first time:
 
 Please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) if you have any concerns/questions about enabling this feature for your Sourcegraph instance.
 
-## Faster permissions syncing via webhooks
-
-Sourcegraph {{VERSION GOES HERE}} can speed up permissions syncing by receiving webhooks from your code hosts for events related to user and repo permissions. These events include...
-
-#### GitHub:
-
-* [public](https://developer.github.com/webhooks/event-payloads/#public)
-* [repository](https://developer.github.com/webhooks/event-payloads/#repository)
-* [member](https://developer.github.com/webhooks/event-payloads/#member)
-* [membership](https://developer.github.com/webhooks/event-payloads/#membership)
-* [team_add](https://developer.github.com/webhooks/event-payloads/#team_add)
-* [organization](https://developer.github.com/webhooks/event-payloads/#organization)
-
-#### Gitlab:
-* tbd
-
-
 ### Complete sync vs incremental sync
 
 A complete sync means a repository or user has done a repository-centric or user-centric syncing respectively, which presists the most accurate permissions from code hosts to Sourcegraph.
