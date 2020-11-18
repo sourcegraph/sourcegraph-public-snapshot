@@ -1625,6 +1625,10 @@ func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]st
 }
 
 type aggregator struct {
+	// resultChannel if non-nil will send all results we receive down it. See
+	// searchResolver.SetResultChannel
+	resultChannel chan<- []SearchResultResolver
+
 	mu       sync.Mutex
 	results  []SearchResultResolver
 	common   searchResultsCommon
@@ -1641,6 +1645,10 @@ func (a *aggregator) get() ([]SearchResultResolver, searchResultsCommon, *multie
 }
 
 func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *searchResultsCommon, err error) {
+	if a.resultChannel != nil {
+		a.resultChannel <- results
+	}
+
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	// Timeouts are reported through searchResultsCommon so don't report an error for them
@@ -1844,8 +1852,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	agg := aggregator{
-		common:      searchResultsCommon{maxResultsCount: r.maxResults()},
-		fileMatches: make(map[string]*FileMatchResolver),
+		resultChannel: r.resultChannel,
+		common:        searchResultsCommon{maxResultsCount: r.maxResults()},
+		fileMatches:   make(map[string]*FileMatchResolver),
 	}
 
 	isFileOrPath := func() bool {
