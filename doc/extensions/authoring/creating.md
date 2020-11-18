@@ -52,7 +52,7 @@ For code layout, a single TypeScript/JavaScript file is usually all you'll need.
 
 #### README.md
 
-The `README.md` is the content for your extension page in the [extensions registry](https://sourcegraph.com/extensions). See the [Codecov extension](https://sourcegraph.com/extensions/sourcegraph/codecov) for a great example.
+The `README.md` is the content for your extension page in the [extension registry](https://sourcegraph.com/extensions). See the [Codecov extension](https://sourcegraph.com/extensions/sourcegraph/codecov) for a great example.
 
 #### package.json
 

@@ -17,19 +17,19 @@ Sourcegraph extensions are like editor extensions, but run anywhere you view cod
 
 <div class="getting-started">
    <a href="usage" class="btn">
-   <span>Using Extensions</span>
+   <span>Using extensions</span>
    </br>
    How to enable extensions on Sourcegraph.
   </a>
 
   <a href="https://sourcegraph.com/extensions" class="btn">
-   <span>Extensions Registry</span>
+   <span>Extension registry</span>
    </br>
    Browse popular extensions like git extras, link previews, open-in-editor, Codecov, or Sonarqube.
   </a>
 
   <a href="security" class="btn">
-   <span>Security and Privacy</span>
+   <span>Security and privacy</span>
    </br>
     All the ways we protect the privacy of your code. 
   </a>
