@@ -207,6 +207,9 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 	// Spec 4 should be attached to Changeset 4, since it tracks PR #333 in Repo C.
 	// Changeset 3 doesn't have a matching spec and should be detached from the campaign (and closed).
 
+	// Reset the attached changesets. We will add all we encounter while processing the mappings to this list again.
+	r.campaign.ChangesetIDs = []int64{}
+
 	attachedChangesets := map[int64]bool{}
 	for _, m := range changesetSpecMappings {
 		spec, specFound := changesetSpecsByID[m.ChangesetSpecID]
@@ -224,10 +227,11 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 			return err
 		}
 
+		var changeset *campaigns.Changeset
 		if spec.Spec.IsImportingExisting() {
 			if m.ChangesetID != 0 {
 				// TODO: We don't fetch imported changesets.
-				changeset, err := r.tx.GetChangeset(ctx, GetChangesetOpts{ID: m.ChangesetID})
+				changeset, err = r.tx.GetChangeset(ctx, GetChangesetOpts{ID: m.ChangesetID})
 				if err != nil {
 					return err
 				}
@@ -244,43 +248,34 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 				if err := r.tx.UpdateChangeset(ctx, changeset); err != nil {
 					return err
 				}
-				attachedChangesets[changeset.ID] = true
 			} else {
-				c, err := r.createTrackingChangeset(ctx, repo, spec.Spec.ExternalID)
+				changeset, err = r.createTrackingChangeset(ctx, repo, spec.Spec.ExternalID)
 				if err != nil {
 					return err
 				}
-				attachedChangesets[c.ID] = true
 			}
 		} else if spec.Spec.IsBranch() {
 			if m.ChangesetID == 0 {
-				c, err := r.createChangesetForSpec(ctx, repo, spec)
+				changeset, err = r.createChangesetForSpec(ctx, repo, spec)
 				if err != nil {
 					return err
 				}
-				attachedChangesets[c.ID] = true
 			} else {
-				changeset, changesetFound := changesetsByID[m.ChangesetID]
+				var changesetFound bool
+				changeset, changesetFound = changesetsByID[m.ChangesetID]
 				if !changesetFound {
 					return errors.New("changeset not found")
 				}
 				if err := r.updateChangesetToNewSpec(ctx, changeset, spec); err != nil {
 					return err
 				}
-				attachedChangesets[changeset.ID] = true
 			}
 		}
+		r.campaign.ChangesetIDs = append(r.campaign.ChangesetIDs, changeset.ID)
+		attachedChangesets[changeset.ID] = true
 	}
 
-	// We went through all the new changeset specs and either created or
-	// updated a changeset.
-	// Their IDs are all the IDs of changesets that should be in the campaign:
-	r.campaign.ChangesetIDs = []int64{}
-	for changesetID := range attachedChangesets {
-		r.campaign.ChangesetIDs = append(r.campaign.ChangesetIDs, changesetID)
-	}
-
-	// But it's possible that changesets are now detached, like Changeset 3 in
+	// It's possible that changesets are now detached, like Changeset 3 in
 	// the example above.
 	// This we need to detach and close.
 	for _, c := range changesetsByID {
