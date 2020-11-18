@@ -230,10 +230,10 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 		var changeset *campaigns.Changeset
 		if spec.Spec.IsImportingExisting() {
 			if m.ChangesetID != 0 {
-				// TODO: We don't fetch imported changesets.
-				changeset, err = r.tx.GetChangeset(ctx, GetChangesetOpts{ID: m.ChangesetID})
-				if err != nil {
-					return err
+				var changesetFound bool
+				changeset, changesetFound = changesetsByID[m.ChangesetID]
+				if !changesetFound {
+					return errors.New("changeset not found")
 				}
 				if err := r.attachTrackingChangeset(ctx, changeset); err != nil {
 					return err
@@ -421,6 +421,24 @@ func (r *changesetRewirer) loadAssociations(ctx context.Context) (
 	changesetSpecMappings, err = r.tx.GetChangesetSpecRewireData(ctx, r.campaign.CampaignSpecID, r.campaign.ID)
 	if err != nil {
 		return accessibleReposByID, changesetsByID, changesetSpecsByID, changesetSpecMappings, err
+	}
+
+	// Get all ids of changesets involved in the mapping.
+	ids := make([]int64, 0)
+	for _, m := range changesetSpecMappings {
+		if m.ChangesetID != 0 {
+			if _, ok := changesetsByID[m.ChangesetID]; !ok {
+				ids = append(ids, m.ChangesetID)
+			}
+		}
+	}
+
+	mappedChangesets, _, err := r.tx.ListChangesets(ctx, ListChangesetsOpts{IDs: ids})
+	if err != nil {
+		return accessibleReposByID, changesetsByID, changesetSpecsByID, changesetSpecMappings, err
+	}
+	for _, c := range mappedChangesets {
+		changesetsByID[c.ID] = c
 	}
 
 	return accessibleReposByID, changesetsByID, changesetSpecsByID, changesetSpecMappings, nil
