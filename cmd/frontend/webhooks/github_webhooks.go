@@ -17,6 +17,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+type Registerer interface {
+	Register(webhook *GitHubWebhook)
+}
+
 // WebhookHandler is a handler for a webhook event, the 'event' param could be any of the event types
 // permissible based on the event type(s) the handler was registered against. If you register a handler
 // for many event types, you should do a type switch within your handler

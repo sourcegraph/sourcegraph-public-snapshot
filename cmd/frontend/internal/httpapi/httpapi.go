@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"os"
 	"reflect"
 	"strconv"
 	"time"
@@ -38,7 +37,7 @@ import (
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, gitlabWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler) http.Handler {
+func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook webhooks.Registerer, gitlabWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -56,17 +55,17 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, gitlabWebh
 
 	m.Get(apirouter.RepoRefresh).Handler(trace.TraceRoute(handler(serveRepoRefresh)))
 
-	if os.Getenv("USE_NEW_WEBHOOKS") != "" {
-		gh := webhooks.GitHubWebhook{
-			Repos: repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
-		}
-
-		webhookhandlers.Init(&gh)
-
-		m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(&gh))
-	} else {
-		m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(githubWebhook))
+	gh := webhooks.GitHubWebhook{
+		Repos: repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
 	}
+
+	webhookhandlers.Init(&gh)
+
+	m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(&gh))
+
+	githubWebhook.Register(&gh)
+
+	m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(&gh))
 	m.Get(apirouter.GitLabWebhooks).Handler(trace.TraceRoute(gitlabWebhook))
 	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.TraceRoute(bitbucketServerWebhook))
 	m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(newCodeIntelUploadHandler(false)))
