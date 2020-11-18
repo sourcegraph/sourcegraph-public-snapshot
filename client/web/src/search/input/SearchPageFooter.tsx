@@ -4,7 +4,7 @@ import { Link } from '../../../../shared/src/components/Link'
 
 export const SearchPageFooter: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <footer className={classNames(className, 'd-flex flex-column flex-lg-row align-items-center')}>
-        <h4 className="mb-2 mb-lg-0">Explore and Extend</h4>
+        <h4 className="mb-2 mb-lg-0">Explore and extend</h4>
         <span className="d-flex flex-column flex-md-row align-items-center">
             <span className="d-flex flex-row mb-2 mb-md-0">
                 <Link
