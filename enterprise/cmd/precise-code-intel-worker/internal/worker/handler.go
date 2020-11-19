@@ -12,7 +12,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/correlation"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
@@ -258,7 +259,6 @@ func (h *handler) doPatchIndex(ctx context.Context, upload store.Upload, grouped
 	fileStatus, err := h.gitserverClient.DiffFileStatus(ctx, upload.RepositoryID, *upload.BaseCommit, upload.Commit)
 	if err != nil {
 		return nil, errors.Wrap(err, "gitserver.DiffFileStatus")
->>>>>>> e3ce8a35a1... factor out patch logic
 	}
 
 	var diffedPaths []string

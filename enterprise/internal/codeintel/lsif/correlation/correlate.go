@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/datastructures"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/existence"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/lsif"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/existence"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
 )
 
 // Correlate reads LSIF data from the given reader and returns a correlation state object with
