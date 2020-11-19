@@ -1,11 +1,7 @@
-<<<<<<< HEAD:enterprise/internal/codeintel/stores/lsifstore/ranges_test.go
 package lsifstore
-=======
-package util
->>>>>>> 2d6cff297c... prototeep:enterprise/internal/codeintel/bundles/util/ranges_test.go
 
 import (
-	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -47,15 +43,11 @@ func TestFindRanges(t *testing.T) {
 
 	m := map[ID]RangeData{}
 	for i, r := range ranges {
-<<<<<<< HEAD:enterprise/internal/codeintel/stores/lsifstore/ranges_test.go
 		m[ID(strconv.Itoa(i))] = r
-=======
-		m[types.ID(fmt.Sprintf("%d", i))] = r
->>>>>>> 2d6cff297c... prototeep:enterprise/internal/codeintel/bundles/util/ranges_test.go
 	}
 
 	for i, r := range ranges {
-		actual := findRanges(m, i, 4)
+		actual := FindRanges(m, i, 4)
 		expected := []RangeData{r}
 		if diff := cmp.Diff(expected, actual); diff != "" {
 			t.Errorf("unexpected findRanges result %d (-want +got):\n%s", i, diff)
@@ -99,14 +91,10 @@ func TestFindRangesOrder(t *testing.T) {
 
 	m := map[ID]RangeData{}
 	for i, r := range ranges {
-<<<<<<< HEAD:enterprise/internal/codeintel/stores/lsifstore/ranges_test.go
 		m[ID(strconv.Itoa(i))] = r
-=======
-		m[types.ID(fmt.Sprintf("%d", i))] = r
->>>>>>> 2d6cff297c... prototeep:enterprise/internal/codeintel/bundles/util/ranges_test.go
 	}
 
-	actual := findRanges(m, 2, 4)
+	actual := FindRanges(m, 2, 4)
 	expected := []RangeData{ranges[2], ranges[1], ranges[0]}
 	if diff := cmp.Diff(expected, actual); diff != "" {
 		t.Errorf("unexpected findRanges result (-want +got):\n%s", diff)
@@ -137,7 +125,7 @@ func TestComparePosition(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		if cmp := comparePosition(left, testCase.line, testCase.character); cmp != testCase.expected {
+		if cmp := ComparePosition(left, testCase.line, testCase.character); cmp != testCase.expected {
 			t.Errorf("unexpected comparisonPosition result for %d:%d. want=%d have=%d", testCase.line, testCase.character, testCase.expected, cmp)
 		}
 	}
@@ -158,7 +146,7 @@ func TestRangeIntersectsSpan(t *testing.T) {
 	r := RangeData{StartLine: 5, StartCharacter: 1, EndLine: 6, EndCharacter: 10}
 
 	for _, testCase := range testCases {
-		if val := rangeIntersectsSpan(r, testCase.startLine, testCase.endLine); val != testCase.expected {
+		if val := RangeIntersectsSpan(r, testCase.startLine, testCase.endLine); val != testCase.expected {
 			t.Errorf("unexpected result. want=%v have=%v", testCase.expected, val)
 		}
 	}

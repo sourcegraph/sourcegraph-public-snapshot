@@ -2,6 +2,8 @@ package correlation
 
 import (
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
@@ -33,4 +35,16 @@ func newID() (lsifstore.ID, error) {
 		return "", err
 	}
 	return lsifstore.ID(uuid.String()), nil
+}
+
+func makeKey(parts ...string) string {
+	return strings.Join(parts, ":")
+}
+
+func toID(id int) lsifstore.ID {
+	if id == 0 {
+		return lsifstore.ID("")
+	}
+
+	return lsifstore.ID(strconv.FormatInt(int64(id), 10))
 }

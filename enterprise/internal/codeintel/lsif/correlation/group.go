@@ -7,15 +7,17 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
 
-// GroupedBundleDataChans is a view of a correlation State that sorts data by it containing document
-// and shared data into shareded result chunks. The fields of this type are what is written to
-// persistent storage and what is read in the query path.
+// GroupedBundleData{Chans,Maps} is a view of a correlation State that sorts data by it's containing document
+// and shared data into sharded result chunks. The fields of this type are what is written to
+// persistent storage and what is read in the query path. The Chans version allows pipelining
+// and parallelizing the work, while the Maps version can be modified for e.g. local development
+// via the REPL or patching for incremental indexing.
 type GroupedBundleDataChans struct {
 	Meta              lsifstore.MetaData
 	Documents         chan lsifstore.KeyedDocumentData
@@ -377,19 +379,8 @@ func gatherPackageReferences(state *State, dumpID int) ([]lsifstore.PackageRefer
 	return packageReferences, nil
 }
 
-func makeKey(parts ...string) string {
-	return strings.Join(parts, ":")
-}
-
-func toID(id int) lsifstore.ID {
-	if id == 0 {
-		return lsifstore.ID("")
-	}
-
-	return lsifstore.ID(strconv.FormatInt(int64(id), 10))
-}
-
-func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMaps) (*GroupedBundleDataChans) {
+// CAUTION: Data is not deep copied.
+func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMaps) *GroupedBundleDataChans {
 	documentChan := make(chan lsifstore.KeyedDocumentData, len(maps.Documents))
 	go func() {
 		defer close(documentChan)
@@ -427,9 +418,9 @@ func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMa
 			for ident, locations := range identMap {
 				select {
 				case monikerDefsChan <- lsifstore.MonikerLocations{
-					Scheme: scheme,
+					Scheme:     scheme,
 					Identifier: ident,
-					Locations: locations,
+					Locations:  locations,
 				}:
 				case <-ctx.Done():
 					return
@@ -445,9 +436,9 @@ func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMa
 			for ident, locations := range identMap {
 				select {
 				case monikerRefsChan <- lsifstore.MonikerLocations{
-					Scheme: scheme,
+					Scheme:     scheme,
 					Identifier: ident,
-					Locations: locations,
+					Locations:  locations,
 				}:
 				case <-ctx.Done():
 					return
@@ -467,7 +458,8 @@ func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMa
 	}
 }
 
-func GroupedBundleDataChansToMaps(ctx context.Context, chans *GroupedBundleDataChans) (*GroupedBundleDataMaps) {
+// CAUTION: Data is not deep copied.
+func GroupedBundleDataChansToMaps(ctx context.Context, chans *GroupedBundleDataChans) *GroupedBundleDataMaps {
 	documentMap := make(map[string]lsifstore.DocumentData)
 	for keyedDocumentData := range chans.Documents {
 		documentMap[keyedDocumentData.Path] = keyedDocumentData.Document

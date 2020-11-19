@@ -64,8 +64,8 @@ func Resolve(bundle *GroupedBundleDataMaps, document lsifstore.DocumentData, rng
 
 	return QueryResult{
 		Definitions: definitions,
-		References: references,
-		Hover: hover,
-		Monikers: monikers,
+		References:  references,
+		Hover:       hover,
+		Monikers:    monikers,
 	}
 }
