@@ -4,8 +4,6 @@
 
 In order to [publish changesets with campaigns](publishing_changesets.md), you need to add a personal access token for each code host that your campaigns interact with. These tokens are used by Sourcegraph to create and manage changesets as you, and with your specific permissions, on the code host.
 
-> NOTE: The only type of user credential supported by Sourcegraph right now is a personal access token. Further credential types may be supported in the future.
-
 ## Requirements
 
 - Sourcegraph instance with repositories in it. See the "[Quickstart](../../index.md#quickstart)" guide on how to setup a Sourcegraph instance.
