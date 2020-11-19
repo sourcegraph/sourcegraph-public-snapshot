@@ -10,10 +10,10 @@ Creating an access token is done through your user settings. This video shows th
 </video>
 
 1. From any Sourcegraph page, click on your avatar at the top right of the page.
-1. Select "Settings" from the dropdown menu.
-1. Select "Access tokens" from the sidebar menu.
-1. Click "Generate new token".
-1. Enter a description, such as "src".
+1. Select **Settings** from the dropdown menu.
+1. Select **Access tokens** from the sidebar menu.
+1. Click **Generate new token**.
+1. Enter a description, such as `src`.
 
     > NOTE: The `user:all` scope that is selected by default is sufficient for all normal `src` usage, and most uses of the GraphQL API. If you're an admin, you should only enable `site-admin:sudo` if you intend to impersonate other users.
 1. Click "Generate token".
