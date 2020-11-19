@@ -138,7 +138,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         } else {
             onNavbarQueryChange({ query, cursorPosition: query.length })
         }
-    }, [interactiveSearchMode, isSearchRelatedPage, location, onFiltersInQueryChange, onNavbarQueryChange, query])
+    }, [interactiveSearchMode, isSearchRelatedPage, onFiltersInQueryChange, onNavbarQueryChange, query])
 
     const logo = (
         <LinkOrSpan to={authRequired ? undefined : '/search'} className="global-navbar__logo-link">
