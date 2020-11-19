@@ -381,9 +381,63 @@ func scanChangesetSpec(c *campaigns.ChangesetSpec, s scanner) error {
 	return nil
 }
 
-// GetChangesetSpecRewireData returns ChangesetSpecRewire mappings from changeset specs to changesets.
-func (s *Store) GetChangesetSpecRewireData(ctx context.Context, campaignSpecID, campaignID int64) (csrd []*campaigns.ChangesetSpecRewire, err error) {
-	q := sqlf.Sprintf(getChangesetSpecRewireDataQueryFmtstr, campaignSpecID, campaignID, campaignID, campaignSpecID, campaignID, campaignID)
+type GetChangesetSpecRewireDataOpts struct {
+	CampaignSpecID int64
+	CampaignID     int64
+}
+
+// GetChangesetSpecRewireData returns ChangesetSpecRewire mappings between changeset specs and changesets.
+//
+// We have two imaginary lists, the current changesets in the campaign and the new changeset specs:
+//
+// ┌───────────────────────────────────────┐   ┌───────────────────────────────┐
+// │Changeset 1 | Repo A | #111 | run-gofmt│   │  Spec 1 | Repo A | run-gofmt  │
+// └───────────────────────────────────────┘   └───────────────────────────────┘
+// ┌───────────────────────────────────────┐   ┌───────────────────────────────┐
+// │Changeset 2 | Repo B |      | run-gofmt│   │  Spec 2 | Repo B | run-gofmt  │
+// └───────────────────────────────────────┘   └───────────────────────────────┘
+// ┌───────────────────────────────────────┐   ┌───────────────────────────────────┐
+// │Changeset 3 | Repo C | #222 | run-gofmt│   │  Spec 3 | Repo C | run-goimports  │
+// └───────────────────────────────────────┘   └───────────────────────────────────┘
+// ┌───────────────────────────────────────┐   ┌───────────────────────────────┐
+// │Changeset 4 | Repo C | #333 | older-pr │   │    Spec 4 | Repo C | #333     │
+// └───────────────────────────────────────┘   └───────────────────────────────┘
+//
+// We need to:
+// 1. Find out whether our new specs should _update_ an existing
+//    changeset (ChangesetSpec != 0, Changeset != 0), or whether we need to create a new one (ChangesetSpec != 0, Changeset == 0).
+// 2. Since we can have multiple changesets per repository, we need to match
+//    based on repo and external ID for imported changesets and on repo and head_ref for 'branch' changesets.
+// 3. If a changeset wasn't published yet, it doesn't have an external ID nor does it have an external head_ref.
+//    In that case, we need to check whether the branch on which we _might_
+//    push the commit (because the changeset might not be published
+//    yet) is the same or compare the external IDs in the current and new specs.
+//
+// What we want:
+//
+// ┌───────────────────────────────────────┐    ┌───────────────────────────────┐
+// │Changeset 1 | Repo A | #111 | run-gofmt│───▶│  Spec 1 | Repo A | run-gofmt  │
+// └───────────────────────────────────────┘    └───────────────────────────────┘
+// ┌───────────────────────────────────────┐    ┌───────────────────────────────┐
+// │Changeset 2 | Repo B |      | run-gofmt│───▶│  Spec 2 | Repo B | run-gofmt  │
+// └───────────────────────────────────────┘    └───────────────────────────────┘
+// ┌───────────────────────────────────────┐
+// │Changeset 3 | Repo C | #222 | run-gofmt│
+// └───────────────────────────────────────┘
+// ┌───────────────────────────────────────┐    ┌───────────────────────────────┐
+// │Changeset 4 | Repo C | #333 | older-pr │───▶│    Spec 4 | Repo C | #333     │
+// └───────────────────────────────────────┘    └───────────────────────────────┘
+// ┌───────────────────────────────────────┐    ┌───────────────────────────────────┐
+// │Changeset 5 | Repo C | | run-goimports │───▶│  Spec 3 | Repo C | run-goimports  │
+// └───────────────────────────────────────┘    └───────────────────────────────────┘
+//
+// Spec 1 should be attached to Changeset 1 and (possibly) update its title/body/diff.
+// Spec 2 should be attached to Changeset 2 and publish it on the code host.
+// Spec 3 should get a new Changeset, since its branch doesn't match Changeset 3's branch.
+// Spec 4 should be attached to Changeset 4, since it tracks PR #333 in Repo C.
+// Changeset 3 doesn't have a matching spec and should be detached from the campaign (and closed) (ChangesetSpec == 0, Changeset != 0).
+func (s *Store) GetChangesetSpecRewireData(ctx context.Context, opts GetChangesetSpecRewireDataOpts) (csrd []*campaigns.ChangesetSpecRewire, err error) {
+	q := getChangesetSpecRewireDataQuery(opts)
 
 	err = s.query(ctx, q, func(sc scanner) error {
 		var c campaigns.ChangesetSpecRewire
@@ -394,6 +448,18 @@ func (s *Store) GetChangesetSpecRewireData(ctx context.Context, campaignSpecID, 
 		return nil
 	})
 	return csrd, err
+}
+
+func getChangesetSpecRewireDataQuery(opts GetChangesetSpecRewireDataOpts) *sqlf.Query {
+	return sqlf.Sprintf(
+		getChangesetSpecRewireDataQueryFmtstr,
+		opts.CampaignSpecID,
+		opts.CampaignID,
+		opts.CampaignID,
+		opts.CampaignSpecID,
+		opts.CampaignID,
+		opts.CampaignID,
+	)
 }
 
 var getChangesetSpecRewireDataQueryFmtstr = `
