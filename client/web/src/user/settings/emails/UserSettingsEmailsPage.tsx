@@ -1,16 +1,13 @@
-/* eslint-disable react/jsx-no-bind */
 import React, { FunctionComponent, useEffect, useState, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { Subscription } from 'rxjs'
 
-import { queryGraphQL } from '../../../backend/graphql'
-import { UserAreaUserFields } from '../../../graphql-operations'
-import { gql } from '../../../../../shared/src/graphql/graphql'
+import { requestGraphQL } from '../../../backend/graphql'
+import { UserAreaUserFields, UserEmailsResult, UserEmailsVariables } from '../../../graphql-operations'
+import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../../../shared/src/util/errors'
-import { SiteFlags } from '../../../site'
 import { siteFlags } from '../../../site/backend'
 
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -27,91 +24,118 @@ interface Props extends RouteComponentProps<{}> {
 
 interface LoadingState {
     loading: boolean
-    errorDescription: Error | null
+    errorDescription?: Error
 }
 
+type UserEmail = Omit<GQL.IUserEmail, '__typename' | 'user'>
+
 export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history }) => {
-    const [emails, setEmails] = useState<GQL.IUserEmail[]>([])
-    const [status, setStatus] = useState<LoadingState>({ loading: false, errorDescription: null })
-    const [flags, setFlags] = useState<SiteFlags>()
+    const [emails, setEmails] = useState<UserEmail[]>([])
+    const [status, setStatus] = useState<LoadingState>({ loading: false })
+    // const [flags, setFlags] = useState<SiteFlags>()
 
-    const updateNewPrimaryEmail = (updatedEmail: string): GQL.IUserEmail[] =>
-        emails.map(email => {
-            if (email.isPrimary && email.email !== updatedEmail) {
-                email.isPrimary = false
-            }
+    const onEmailVerify = useCallback(
+        ({ email: verifiedEmail, verified }: { email: string; verified: boolean }): void => {
+            const updatedEmails = emails.map(email => {
+                if (email.email === verifiedEmail) {
+                    email.verified = verified
+                }
 
-            if (email.email === updatedEmail) {
-                email.isPrimary = true
-            }
+                return email
+            })
 
-            return email
-        })
+            setEmails(updatedEmails)
+        },
+        [emails]
+    )
 
-    const onEmailVerify = ({ email: verifiedEmail, verified }: { email: string; verified: boolean }): void => {
-        const updatedEmails = emails.map(email => {
-            if (email.email === verifiedEmail) {
-                email.verified = verified
-            }
+    const onEmailRemove = useCallback(
+        (deletedEmail: string): void => {
+            setEmails(emails.filter(({ email }) => email !== deletedEmail))
+        },
+        [emails]
+    )
 
-            return email
-        })
+    const onPrimaryEmailSet = useCallback(
+        (email: string): void => {
+            const updateNewPrimaryEmail = (updatedEmail: string): UserEmail[] =>
+                emails.map(email => {
+                    if (email.isPrimary && email.email !== updatedEmail) {
+                        email.isPrimary = false
+                    }
 
-        setEmails(updatedEmails)
-    }
+                    if (email.email === updatedEmail) {
+                        email.isPrimary = true
+                    }
 
-    const onEmailRemove = (deletedEmail: string): void => {
-        setEmails(emails.filter(({ email }) => email !== deletedEmail))
-    }
+                    return email
+                })
 
-    const onPrimaryEmailSet = (email: string): void => {
-        setEmails(updateNewPrimaryEmail(email))
-    }
+            setEmails(updateNewPrimaryEmail(email))
+        },
+        [emails]
+    )
 
     const fetchEmails = useCallback(async (): Promise<void> => {
-        setStatus({ errorDescription: null, loading: true })
+        setStatus({ loading: true })
+        let fetchedEmails
 
-        const { data, errors } = await queryGraphQL(
-            gql`
-                query UserEmails($user: ID!) {
-                    node(id: $user) {
-                        ... on User {
-                            emails {
-                                email
-                                isPrimary
-                                verified
-                                verificationPending
-                                viewerCanManuallyVerify
+        try {
+            fetchedEmails = dataOrThrowErrors(
+                await requestGraphQL<UserEmailsResult, UserEmailsVariables>(
+                    gql`
+                        query UserEmails($user: ID!) {
+                            node(id: $user) {
+                                ... on User {
+                                    emails {
+                                        email
+                                        isPrimary
+                                        verified
+                                        verificationPending
+                                        viewerCanManuallyVerify
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-            `,
-            { user: user.id }
-        ).toPromise()
-
-        if (!data || (errors && errors.length > 0)) {
-            setStatus({ loading: false, errorDescription: createAggregateError(errors) })
-        } else {
-            setStatus({ errorDescription: null, loading: false })
-            const userResult = data.node as GQL.IUser
-            setEmails(userResult.emails)
+                    `,
+                    { user: user.id }
+                ).toPromise()
+            )
+        } catch (error) {
+            setStatus({ loading: false, errorDescription: error as Error })
         }
+
+        // TODO: check this logic
+        if (fetchedEmails?.node?.emails) {
+            setStatus({ loading: false })
+            setEmails(fetchedEmails.node.emails)
+        }
+
+        // if (!data || (errors && errors.length > 0)) {
+        //     setStatus({ loading: false, errorDescription: createAggregateError(errors) })
+        // } else {
+        //     setStatus({ errorDescription: null, loading: false })
+        //     const userResult = data.node as GQL.IUser
+        //     setEmails(userResult.emails)
+        // }
     }, [user, setStatus, setEmails])
 
-    useEffect(() => {
-        eventLogger.logViewEvent('UserSettingsEmails')
-        const subscriptions = new Subscription()
-        subscriptions.add(siteFlags.subscribe(setFlags))
+    const flags = useObservable(siteFlags)
 
-        return () => {
-            subscriptions.unsubscribe()
-        }
-    }, [])
+    // useEffect(() => {
+    //     eventLogger.logViewEvent('UserSettingsEmails')
+    //     const subscriptions = new Subscription()
+    //     subscriptions.add(siteFlags.subscribe(setFlags))
+
+    //     return () => {
+    //         subscriptions.unsubscribe()
+    //     }
+    // }, [])
 
     useEffect(() => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        fetchEmails()
+        fetchEmails().catch(error => {
+            setStatus({ loading: false, errorDescription: error })
+        })
     }, [fetchEmails])
 
     return (
@@ -135,10 +159,10 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
                     <LoadingSpinner className="icon-inline" />
                 </span>
             ) : (
-                <div className="list-group list-group-flush mt-3">
-                    <ul className="filtered-connection__nodes">
+                <div className="list-group list-group-flush mt-4">
+                    <ul className="user-settings-emails-page__list">
                         {emails.map(email => (
-                            <li key={email.email} className="list-group-item py-2">
+                            <li key={email.email} className="list-group-item p-3">
                                 <UserEmail
                                     user={user.id}
                                     email={email}
@@ -154,10 +178,9 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
 
             {/* re-fetch emails when new emails are added to guarantee correct state */}
             <AddUserEmailForm className="mt-4" user={user.id} onDidAdd={fetchEmails} history={history} />
-            <hr className="mt-4" />
+            <hr className="my-4" />
             {!status.loading && (
                 <SetUserPrimaryEmailForm
-                    className="mt-4"
                     user={user.id}
                     emails={emails}
                     onDidSet={onPrimaryEmailSet}

@@ -42,7 +42,7 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
                         merge(
                             of<Pick<State, 'error'>>({ error: undefined }),
                             this.addUserEmail(this.state.email).pipe(
-                                tap(() => this.props.onDidAdd(this.state.email)),
+                                tap(() => this.props.onDidAdd()),
                                 map(() => ({ error: null, email: '' })),
                                 catchError(error => [{ error, email: this.state.email }])
                             )
@@ -64,7 +64,7 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
         const loading = this.state.error === undefined
         return (
             <div className={`add-user-email-form ${this.props.className || ''}`}>
-                <h3>Add email address</h3>
+                <p className="mb-2">Add email address</p>
                 <Form className="form-inline" onSubmit={this.onSubmit}>
                     <label className="sr-only" htmlFor="AddUserEmailForm-email">
                         Email address
@@ -84,7 +84,7 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
                         readOnly={loading}
                         placeholder="Email"
                     />{' '}
-                    <LoaderButton loading={loading} label="Save" type="submit" className="btn btn-primary" />
+                    <LoaderButton loading={loading} label="Add" type="submit" className="btn btn-primary" />
                 </Form>
                 {this.state.error && (
                     <ErrorAlert className="mt-2" error={this.state.error} history={this.props.history} />

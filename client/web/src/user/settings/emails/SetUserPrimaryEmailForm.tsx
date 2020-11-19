@@ -2,18 +2,18 @@ import React, { useState, FunctionComponent, useEffect, useCallback } from 'reac
 import * as H from 'history'
 
 import { IUserEmail } from '../../../../../shared/src/graphql/schema'
-import { mutateGraphQL } from '../../../backend/graphql'
-import { gql } from '../../../../../shared/src/graphql/graphql'
-import { createAggregateError } from '../../../../../shared/src/util/errors'
+import { requestGraphQL } from '../../../backend/graphql'
+import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import { Form } from '../../../../../branded/src/components/Form'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ErrorAlert } from '../../../components/alerts'
+import { SetUserEmailPrimaryResult, SetUserEmailPrimaryVariables } from '../../../graphql-operations'
 
 interface Props {
     user: string
-    emails: IUserEmail[]
+    emails: Omit<IUserEmail, '__typename' | 'user'>[]
     onDidSet: (email: string) => void
     history: H.History
     className?: string
@@ -21,13 +21,13 @@ interface Props {
 
 interface UserEmailState {
     loading: boolean
-    errorDescription: Error | null
+    errorDescription?: Error
 }
 
 export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails, onDidSet, className, history }) => {
     const [primaryEmail, setPrimaryEmail] = useState<string>('')
     const [emailOptions, setEmailOptions] = useState<string[]>([])
-    const [status, setStatus] = useState<UserEmailState>({ loading: false, errorDescription: null })
+    const [status, setStatus] = useState<UserEmailState>({ loading: false })
     const [disabled, setDisabled] = useState(false)
 
     useEffect(() => {
@@ -81,28 +81,31 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
     const onSubmit: React.FormEventHandler<HTMLFormElement> = useCallback(
         async event => {
             event.preventDefault()
-            setStatus({ loading: true, errorDescription: null })
+            setStatus({ loading: true })
 
-            const { data, errors } = await mutateGraphQL(
-                gql`
-                    mutation SetUserEmailPrimary($user: ID!, $email: String!) {
-                        setUserEmailPrimary(user: $user, email: $email) {
-                            alwaysNil
-                        }
-                    }
-                `,
-                { user, email: primaryEmail }
-            ).toPromise()
+            try {
+                dataOrThrowErrors(
+                    await requestGraphQL<SetUserEmailPrimaryResult, SetUserEmailPrimaryVariables>(
+                        gql`
+                            mutation SetUserEmailPrimary($user: ID!, $email: String!) {
+                                setUserEmailPrimary(user: $user, email: $email) {
+                                    alwaysNil
+                                }
+                            }
+                        `,
+                        { user, email: primaryEmail }
+                    ).toPromise()
+                )
+            } catch (error) {
+                setStatus({ loading: false, errorDescription: error as Error })
+                return
+            }
 
-            if (!data || (errors && errors.length > 0)) {
-                setStatus({ loading: false, errorDescription: createAggregateError(errors) })
-            } else {
-                eventLogger.log('UserEmailAddressSetAsPrimary')
-                setStatus({ loading: false, errorDescription: null })
+            eventLogger.log('UserEmailAddressSetAsPrimary')
+            setStatus({ loading: false })
 
-                if (onDidSet) {
-                    onDidSet(primaryEmail)
-                }
+            if (onDidSet) {
+                onDidSet(primaryEmail)
             }
         },
         [user, primaryEmail, onDidSet]
@@ -110,7 +113,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
 
     return (
         <div className={`add-user-email-form ${className || ''}`}>
-            <h3>Set primary email address</h3>
+            <p className="mb-2">Primary email address</p>
             <Form className="form-inline" onSubmit={onSubmit}>
                 <label className="sr-only" htmlFor="setUserPrimaryEmailForm-email">
                     Email address
@@ -123,7 +126,6 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
                     required={true}
                     disabled={disabled}
                 >
-                    {' '}
                     {emailOptions.map(email => (
                         <option key={email} value={email}>
                             {email}
@@ -134,7 +136,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
                     loading={status.loading}
                     label="Save"
                     type="submit"
-                    disabled={disabled}
+                    disabled={disabled || status.loading}
                     className="btn btn-primary"
                 />
             </Form>
