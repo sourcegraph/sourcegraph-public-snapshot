@@ -114,6 +114,7 @@ func mustInitializeDB() *sql.DB {
 	//
 	// START FLAILING
 
+	ctx := context.Background()
 	go func() {
 		for range time.NewTicker(5 * time.Second).C {
 			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices)
