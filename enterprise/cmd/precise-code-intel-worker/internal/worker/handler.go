@@ -5,11 +5,9 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"sort"
 	"sync/atomic"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
@@ -99,7 +97,7 @@ func (h *handler) handle(ctx context.Context, dbStore DBStore, upload store.Uplo
 			return errors.Wrap(err, "correlation.Correlate")
 		}
 
-		if err := writeData(ctx, h.lsifStore, upload.ID, groupedBundleData); err != nil {
+		if err := h.writeData(ctx, upload, groupedBundleData); err != nil {
 			return err
 		}
 
@@ -214,422 +212,111 @@ func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, 
 }
 
 // writeData transactionally writes the given grouped bundle data into the given LSIF store.
-func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleData *correlation.GroupedBundleData) (err error) {
-	tx, err := lsifStore.Transact(ctx)
+func (h *handler) writeData(ctx context.Context, upload store.Upload, groupedBundleData *correlation.GroupedBundleDataChans) (err error) {
+	tx, err := h.lsifStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if err := tx.WriteMeta(ctx, id, groupedBundleData.Meta); err != nil {
+	if upload.BaseCommit != nil {
+		groupedBundleData, err = h.doPatchIndex(ctx, upload, groupedBundleData)
+		if err != nil {
+			return errors.Wrap(err, "handler.doPatchIndex")
+		}
+	}
+
+	if err := tx.WriteMeta(ctx, upload.ID, groupedBundleData.Meta); err != nil {
 		return errors.Wrap(err, "store.WriteMeta")
 	}
-	if err := tx.WriteDocuments(ctx, id, groupedBundleData.Documents); err != nil {
+	if err := tx.WriteDocuments(ctx, upload.ID, groupedBundleData.Documents); err != nil {
 		return errors.Wrap(err, "store.WriteDocuments")
 	}
-	if err := tx.WriteResultChunks(ctx, id, groupedBundleData.ResultChunks); err != nil {
+	if err := tx.WriteResultChunks(ctx, upload.ID, groupedBundleData.ResultChunks); err != nil {
 		return errors.Wrap(err, "store.WriteResultChunks")
 	}
-	if err := tx.WriteDefinitions(ctx, id, groupedBundleData.Definitions); err != nil {
+	if err := tx.WriteDefinitions(ctx, upload.ID, groupedBundleData.Definitions); err != nil {
 		return errors.Wrap(err, "store.WriteDefinitions")
 	}
-	if err := tx.WriteReferences(ctx, id, groupedBundleData.References); err != nil {
+	if err := tx.WriteReferences(ctx, upload.ID, groupedBundleData.References); err != nil {
 		return errors.Wrap(err, "store.WriteReferences")
 
 	return nil
 }
 
-func patchData(ctx context.Context, base persistence.Store, patch *correlation.GroupedBundleData, reindexedFiles []string, fileStatus map[string]gitserver.Status) (patched *correlation.GroupedBundleData, err error) {
-	log15.Warn("loading patch data...")
-
-	reindexed := make(map[string]struct{})
-	for _, file := range reindexedFiles {
-		reindexed[file] = struct{}{}
-	}
-
-	patchDocs := make(map[string]types.DocumentData)
-	for keyedDocument := range patch.Documents {
-		patchDocs[keyedDocument.Path] = keyedDocument.Document
-	}
-
-	patchChunks := make(map[int]types.ResultChunkData)
-	for indexedChunk := range patch.ResultChunks {
-		patchChunks[indexedChunk.Index] = indexedChunk.ResultChunk
-	}
-
-	basePathList, err := base.PathsWithPrefix(ctx, "")
-	baseMeta, err := base.ReadMeta(ctx)
-
-	log15.Warn("loading base documents...")
-	baseDocs := make(map[string]types.DocumentData)
-	for _, path := range basePathList {
-		document, _, _ := base.ReadDocument(ctx, path)
-		baseDocs[path] = document
-	}
-
-	log15.Warn("loading base result chunks...")
-	baseChunks := make(map[int]types.ResultChunkData)
-	for id := 0; id < baseMeta.NumResultChunks; id++ {
-		resultChunk, _, _ := base.ReadResultChunk(ctx, id)
-		baseChunks[id] = resultChunk
-	}
-
-	modifiedOrDeletedPaths := make(map[string]struct{})
-	for path, status := range fileStatus {
-		if status == gitserver.Modified || status == gitserver.Deleted {
-			modifiedOrDeletedPaths[path] = struct{}{}
-		}
-	}
-	removeRefsIn(modifiedOrDeletedPaths, baseMeta, baseDocs, baseChunks)
-
-	pathsToCopy := make(map[string]struct{})
-	unmodifiedReindexedPaths := make(map[string]struct{})
-	for path := range reindexed {
-		pathsToCopy[path] = struct{}{}
-		if fileStatus[path] == gitserver.Unchanged {
-			unmodifiedReindexedPaths[path] = struct{}{}
-		}
-	}
-	for path, status := range fileStatus {
-		if status == gitserver.Added {
-			pathsToCopy[path] = struct{}{}
-		}
-	}
-	unifyRangeIDs(baseDocs, patch.Meta, patchDocs, patchChunks, fileStatus)
-
-	log15.Warn("indexing new data...")
-	defResultsByPath := make(map[string]map[types.ID]types.RangeData)
-
-	for path := range pathsToCopy {
-		log15.Warn(fmt.Sprintf("finding all def results referenced in %v", path))
-		for _, rng := range patchDocs[path].Ranges {
-			if rng.DefinitionResultID == "" {
-				continue
-			}
-			defs, defChunk := getDefRef(rng.DefinitionResultID, patch.Meta, patchChunks)
-			for _, defLoc := range defs {
-				defPath := defChunk.DocumentPaths[defLoc.DocumentID]
-				def := patchDocs[defPath].Ranges[defLoc.RangeID]
-				defResults, exists := defResultsByPath[defPath]
-				if !exists {
-					defResults = make(map[types.ID]types.RangeData)
-					defResultsByPath[defPath] = defResults
-				}
-				if _, exists := defResults[defLoc.RangeID]; !exists {
-					defResults[defLoc.RangeID] = def
-				}
-			}
-		}
-	}
-
-	log15.Warn("merging data...")
-	for path, defsMap := range defResultsByPath {
-		baseDoc := baseDocs[path]
-		doLog := path == "cmd/frontend/internal/app/updatecheck/handler.go"
-		defIdxs := sortedRangeIDs(defsMap)
-		for _, defRngID := range defIdxs {
-			def := defsMap[defRngID]
-			if doLog {
-				log15.Warn(fmt.Sprintf("unifying def result defined in %v:%v:%v)", def.StartLine, def.StartCharacter, path))
-			}
-			var defID, refID types.ID
-			if fileStatus[path] == gitserver.Unchanged {
-				baseRng := baseDoc.Ranges[defRngID]
-
-				defID = baseRng.DefinitionResultID
-				refID = baseRng.ReferenceResultID
-				if doLog {
-					log15.Warn(fmt.Sprintf("unifying with existing result IDs %v, %v", defID, refID))
-				}
-			} else {
-				defID, err = newID()
-				if err != nil {
-					return nil, err
-				}
-				refID, err = newID()
-				if err != nil {
-					return nil, err
-				}
-				if doLog {
-					log15.Warn(fmt.Sprintf("using new result IDs %v, %v", defID, refID))
-				}
-			}
-
-			patchRefs, patchRefChunk := getDefRef(def.ReferenceResultID, patch.Meta, patchChunks)
-
-			patchDefs, patchDefChunk := getDefRef(def.DefinitionResultID, patch.Meta, patchChunks)
-			baseRefs, baseRefChunk := getDefRef(refID, baseMeta, baseChunks)
-			baseDefs, baseDefChunk := getDefRef(defID, baseMeta, baseChunks)
-
-			baseRefDocumentIDs := make(map[string]types.ID)
-			for id, path := range baseRefChunk.DocumentPaths {
-				baseRefDocumentIDs[path] = id
-			}
-			baseDefDocumentIDs := make(map[string]types.ID)
-			for id, path := range baseDefChunk.DocumentPaths {
-				baseDefDocumentIDs[path] = id
-			}
-			for _, patchRef := range patchRefs {
-				patchPath := patchRefChunk.DocumentPaths[patchRef.DocumentID]
-				patchRng := patchDocs[patchPath].Ranges[patchRef.RangeID]
-				if doLog {
-					log15.Warn(fmt.Sprintf("processing ref %v:%v:%v", patchPath, patchRng.StartLine, patchRng.StartCharacter))
-				}
-				if fileStatus[patchPath] != gitserver.Unchanged {
-					if doLog {
-						log15.Warn(fmt.Sprintf("adding ref"))
-					}
-					baseRefDocumentID, exists := baseRefDocumentIDs[path]
-					if !exists {
-						baseRefDocumentID, err = newID()
-						if err != nil {
-							return nil, err
-						}
-						baseRefDocumentIDs[path] = baseRefDocumentID
-						baseRefChunk.DocumentPaths[baseRefDocumentID] = path
-					}
-					patchRef.DocumentID = baseRefDocumentID
-					baseRefs = append(baseRefs, patchRef)
-
-				}
-
-				if len(baseDefs) == 0 {
-					var patchDef *types.DocumentIDRangeID
-					for _, tmpDef := range patchDefs {
-						patchDefPath := patchDefChunk.DocumentPaths[tmpDef.DocumentID]
-						if patchDefPath == patchPath && tmpDef.RangeID == patchRef.RangeID {
-							patchDef = &tmpDef
-						}
-					}
-					if patchDef != nil {
-						if doLog {
-							log15.Warn(fmt.Sprintf("adding def"))
-						}
-						baseDefDocumentID, exists := baseDefDocumentIDs[path]
-						if !exists {
-							baseDefDocumentID, err = newID()
-							if err != nil {
-								return nil, err
-							}
-							baseDefDocumentIDs[path] = baseDefDocumentID
-							baseDefChunk.DocumentPaths[baseDefDocumentID] = path
-						}
-						patchDef.DocumentID = baseDefDocumentID
-						baseDefs = append(baseDefs, *patchDef)
-					}
-				}
-
-				if _, exists := pathsToCopy[patchPath]; exists {
-					rng := patchDocs[patchPath].Ranges[patchRef.RangeID]
-					if doLog {
-						log15.Warn(fmt.Sprintf("updating result ID"))
-					}
-					patchDocs[patchPath].Ranges[patchRef.RangeID] = types.RangeData{
-						StartLine:          rng.StartLine,
-						StartCharacter:     rng.StartCharacter,
-						EndLine:            rng.EndLine,
-						EndCharacter:       rng.EndCharacter,
-						DefinitionResultID: defID,
-						ReferenceResultID:  refID,
-						HoverResultID:      rng.HoverResultID,
-						MonikerIDs:         rng.MonikerIDs,
-					}
-				}
-			}
-
-			baseRefChunk.DocumentIDRangeIDs[refID] = baseRefs
-			baseDefChunk.DocumentIDRangeIDs[defID] = baseDefs
-
-			if doLog {
-				log15.Warn("")
-			}
-		}
-	}
-
-	for path, status := range fileStatus {
-		if status == gitserver.Deleted {
-			log15.Warn(fmt.Sprintf("deleting path %v", path))
-			delete(baseDocs, path)
-		}
-	}
-	for path := range pathsToCopy {
-		log15.Warn(fmt.Sprintf("copying document %v", path))
-		baseDocs[path] = patchDocs[path]
-	}
-
-	log15.Warn("writing data...")
-	documentChan := make(chan persistence.KeyedDocumentData, len(baseDocs))
-	go func() {
-		defer close(documentChan)
-		for path, doc := range baseDocs {
-			select {
-			case documentChan <- persistence.KeyedDocumentData{
-				Path:     path,
-				Document: doc,
-			}:
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-	resultChunkChan := make(chan persistence.IndexedResultChunkData, len(baseChunks))
-	go func() {
-		defer close(resultChunkChan)
-
-		for idx, chunk := range baseChunks {
-			select {
-			case resultChunkChan <- persistence.IndexedResultChunkData{
-				Index:       idx,
-				ResultChunk: chunk,
-			}:
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-
-	patched = &correlation.GroupedBundleData{
-		Meta:              baseMeta,
-		Documents:         documentChan,
-		ResultChunks:      resultChunkChan,
-		Definitions:       patch.Definitions,
-		References:        patch.References,
-		Packages:          patch.Packages,
-		PackageReferences: patch.PackageReferences,
-	}
-
-	log15.Warn("done...")
-	return
-}
-
-func removeRefsIn(paths map[string]struct{}, meta types.MetaData, docs map[string]types.DocumentData, chunks map[int]types.ResultChunkData) {
-	deletedRefs := make(map[types.ID]struct{})
-
-	for path := range paths {
-		doc := docs[path]
-		for _, rng := range doc.Ranges {
-			if _, exists := deletedRefs[rng.ReferenceResultID]; exists {
-				continue
-			}
-
-			refs, refChunk := getDefRef(rng.ReferenceResultID, meta, chunks)
-			var filteredRefs []types.DocumentIDRangeID
-			for _, ref := range refs {
-				refPath := refChunk.DocumentPaths[ref.DocumentID]
-				if _, exists := paths[refPath]; !exists {
-					filteredRefs = append(filteredRefs, ref)
-				}
-			}
-			refChunk.DocumentIDRangeIDs[rng.ReferenceResultID] = filteredRefs
-			deletedRefs[rng.ReferenceResultID] = struct{}{}
-		}
-	}
-}
-
-var unequalUnmodifiedPathsErr = errors.New("The ranges of unmodified path in LSIF patch do not match ranges of the same path in the base LSIF dump.")
-
-func unifyRangeIDs(updateToDocs map[string]types.DocumentData, toUpdateMeta types.MetaData, toUpdateDocs map[string]types.DocumentData, toUpdateChunks map[int]types.ResultChunkData, fileStatus map[string]gitserver.Status) error {
-	updatedRngIDs := make(map[types.ID]types.ID)
-	resultsToUpdate := make(map[types.ID]struct{})
-
-	for path, toUpdateDoc := range toUpdateDocs {
-		pathUpdatedRngIDs := make(map[types.ID]types.ID)
-		if fileStatus[path] == gitserver.Unchanged {
-			updateToDoc := updateToDocs[path]
-
-			updateToRngIDs := sortedRangeIDs(updateToDoc.Ranges)
-			toUpdateRng := sortedRangeIDs(toUpdateDoc.Ranges)
-			if len(toUpdateRng) != len(updateToRngIDs) {
-				return unequalUnmodifiedPathsErr
-			}
-
-			for idx, updateToRngID := range updateToRngIDs {
-				updateToRng := updateToDoc.Ranges[updateToRngID]
-				toUpdateRngID := toUpdateRng[idx]
-				toUpdateRng := toUpdateDoc.Ranges[toUpdateRngID]
-
-				if util.CompareRanges(updateToRng, toUpdateRng) != 0 {
-					return unequalUnmodifiedPathsErr
-				}
-
-				pathUpdatedRngIDs[toUpdateRngID] = updateToRngID
-			}
-		} else {
-			for rngID := range toUpdateDoc.Ranges {
-				newRngID, err := newID()
-				if err != nil {
-					return err
-				}
-				updatedRngIDs[rngID] = newRngID
-			}
-		}
-
-		for oldID, newID := range pathUpdatedRngIDs {
-			rng := toUpdateDoc.Ranges[oldID]
-			toUpdateDoc.Ranges[newID] = rng
-			resultsToUpdate[rng.ReferenceResultID] = struct{}{}
-			resultsToUpdate[rng.DefinitionResultID] = struct{}{}
-			delete(toUpdateDoc.Ranges, oldID)
-		}
-	}
-
-	for resultID := range resultsToUpdate {
-		results, chunk := getDefRef(resultID, toUpdateMeta, toUpdateChunks)
-		var updated []types.DocumentIDRangeID
-		for _, result := range results {
-			if updatedID, exists := updatedRngIDs[result.RangeID]; exists {
-				updated = append(updated, types.DocumentIDRangeID{
-					RangeID: updatedID,
-					DocumentID: result.DocumentID,
-				})
-			} else {
-				updated = append(updated, types.DocumentIDRangeID{
-					RangeID: result.RangeID,
-					DocumentID: result.DocumentID,
-				})
-			}
-		}
-		chunk.DocumentIDRangeIDs[resultID] = updated
-	}
-
-	return nil
-}
-
-func sortedRangeIDs(ranges map[types.ID]types.RangeData) []types.ID {
-	var rngIDs []types.ID
-	for rngID := range ranges {
-		rngIDs = append(rngIDs, rngID)
-	}
-
-	sort.Slice(rngIDs, func(i, j int) bool {
-		return util.CompareRanges(ranges[rngIDs[i]], ranges[rngIDs[j]]) < 0
-	})
-
-	return rngIDs
-}
-
-func getDefRef(resultID types.ID, meta types.MetaData, resultChunks map[int]types.ResultChunkData) ([]types.DocumentIDRangeID, types.ResultChunkData) {
-	chunkID := types.HashKey(resultID, meta.NumResultChunks)
-	chunk := resultChunks[chunkID]
-	docRngIDs := chunk.DocumentIDRangeIDs[resultID]
-	return docRngIDs, chunk
-}
-
-func newID() (types.ID, error) {
-	uuid, err := uuid.NewRandom()
+func (h *handler) doPatchIndex(ctx context.Context, upload store.Upload, groupedBundleData *correlation.GroupedBundleDataChans) (_ *correlation.GroupedBundleDataChans, err error) {
+	baseDump, exists, err := h.dbStore.GetDumpForCommit(ctx, upload.RepositoryID, *upload.BaseCommit, upload.Indexer, upload.Root)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return types.ID(uuid.String()), nil
+
+	// TODO: garo
+	if !exists {
+		return nil, fmt.Errorf("come up withe rr strinasdlkja")
+	}
+
+	fileStatus, err := h.gitserverClient.DiffFileStatus(ctx, upload.RepositoryID, *upload.BaseCommit, upload.Commit)
+	if err != nil {
+		return nil, errors.Wrap(err, "gitserver.DiffFileStatus")
+>>>>>>> e3ce8a35a1... factor out patch logic
+	}
+
+	var diffedPaths []string
+	for path, status := range fileStatus {
+		if status != gitserver.Added && status != gitserver.Unchanged {
+			diffedPaths = append(diffedPaths, path)
+		}
+	}
+
+	reindexedFiles, err := h.lsifStore.DocumentsReferencing(ctx, baseDump.ID, diffedPaths)
+	if err != nil {
+		return nil, errors.Wrap(err, "lsifStore.DocumentsReferencing")
+	}
+
+	baseBundleData, err := loadIndex(ctx, h.lsifStore, baseDump.ID)
+
+	err = patchData(ctx, baseBundleData, correlation.GroupedBundleDataChansToMaps(ctx, groupedBundleData), reindexedFiles, fileStatus)
+	if err != nil {
+		return nil, errors.Wrap(err, "patchData")
+	}
+
+	return correlation.GroupedBundleDataMapsToChans(ctx, baseBundleData), nil
 }
 
-func (h *handler) sendDB(ctx context.Context, uploadID int, tempDir string) (err error) {
-	ctx, endOperation := h.metrics.SendDBOperation.With(ctx, &err, observation.Args{})
-	defer endOperation(1, observation.Args{})
-
-	if err := h.bundleManagerClient.SendDB(ctx, uploadID, tempDir); err != nil {
-		return errors.Wrap(err, "bundleManager.SendDB")
+func loadIndex(ctx context.Context, lsifStore LSIFStore, bundleID int) (_ *correlation.GroupedBundleDataMaps, err error) {
+	pathList, err := lsifStore.PathsWithPrefix(ctx, bundleID, "")
+	if err != nil {
+		return nil, err
+	}
+	meta, err := lsifStore.ReadMeta(ctx, bundleID)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	docs := make(map[string]lsifstore.DocumentData)
+	for _, path := range pathList {
+		document, _, err := lsifStore.ReadDocument(ctx, bundleID, path)
+		if err != nil {
+			return nil, err
+		}
+		docs[path] = document
+	}
+	chunks := make(map[int]lsifstore.ResultChunkData)
+	for id := 0; id < meta.NumResultChunks; id++ {
+		resultChunk, _, err := lsifStore.ReadResultChunk(ctx, bundleID, id)
+		if err != nil {
+			return nil, err
+		}
+		chunks[id] = resultChunk
+	}
+
+	return &correlation.GroupedBundleDataMaps{
+		Meta:              meta,
+		Documents:         docs,
+		ResultChunks:      chunks,
+		Definitions:       map[string]map[string][]lsifstore.LocationData{},
+		References:        map[string]map[string][]lsifstore.LocationData{},
+		Packages:          []lsifstore.Package{},
+		PackageReferences: []lsifstore.PackageReference{},
+	}, nil
 }
