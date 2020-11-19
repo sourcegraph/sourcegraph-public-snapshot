@@ -24,8 +24,10 @@ func newCampaignProgressPrinter(out *output.Output, numParallelism int) *campaig
 }
 
 type campaignProgressPrinter struct {
-	out      *output.Output
-	progress output.ProgressWithStatusBars
+	out *output.Output
+
+	progress      output.ProgressWithStatusBars
+	numStatusBars int
 
 	maxRepoName    int
 	numParallelism int
@@ -67,9 +69,8 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 		return
 	}
 
-	var numStatusBars int
 	if p.progress == nil {
-		numStatusBars = p.initProgressBar(statuses)
+		p.numStatusBars = p.initProgressBar(statuses)
 	}
 
 	newlyCompleted := []*campaigns.TaskStatus{}
@@ -120,7 +121,7 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 			_, ok = p.statusBarRepo[statusBarIndex]
 		}
 
-		if statusBarIndex >= numStatusBars {
+		if statusBarIndex >= p.numStatusBars {
 			// If the only free slot is past the number of status bars we
 			// have, there's a race condition going on where we have more tasks
 			// reporting as "currently executing" than could be executing, most

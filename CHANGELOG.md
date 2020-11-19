@@ -18,6 +18,7 @@ All notable changes to `src-cli` are documented in this file.
 ### Fixed
 
 - If `src campaign [validate|apply|preview]` was aborted while it was downloading repository archives it could leave behind partial ZIP files that would produce an error on the next run. This is now fixed by deleting partial files on abort. [#388](https://github.com/sourcegraph/src-cli/pull/388)
+- A bug in `src campaign [apply|preview]` that would cause status bars in the TUI to not update has been fixed. [#389](https://github.com/sourcegraph/src-cli/pull/389)
 
 ### Removed
 
