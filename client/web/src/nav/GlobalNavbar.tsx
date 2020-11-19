@@ -128,10 +128,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         if (!query) {
             return
         }
-        // Do nothing if the query input contains a user-edited query
-        if (navbarSearchQueryState.fromUserInput) {
-            return
-        }
         // If the URL contains a query, update the query state to reflect it
         if (interactiveSearchMode) {
             let filtersInQuery: FiltersToTypeAndValue = {}
@@ -142,15 +138,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         } else {
             onNavbarQueryChange({ query, cursorPosition: query.length })
         }
-    }, [
-        interactiveSearchMode,
-        isSearchRelatedPage,
-        location,
-        onFiltersInQueryChange,
-        onNavbarQueryChange,
-        query,
-        navbarSearchQueryState.fromUserInput,
-    ])
+    }, [interactiveSearchMode, isSearchRelatedPage, location, onFiltersInQueryChange, onNavbarQueryChange, query])
 
     const logo = (
         <LinkOrSpan to={authRequired ? undefined : '/search'} className="global-navbar__logo-link">
