@@ -36,9 +36,9 @@ func Resolve(bundle *GroupedBundleDataMaps, document lsifstore.DocumentData, rng
 
 	return QueryResult{
 		Definitions: resolveLocations(bundle, rng.DefinitionResultID),
-		References: resolveLocations(bundle, rng.ReferenceResultID),
-		Hover: hover,
-		Monikers: monikers,
+		References:  resolveLocations(bundle, rng.ReferenceResultID),
+		Hover:       hover,
+		Monikers:    monikers,
 	}
 }
 

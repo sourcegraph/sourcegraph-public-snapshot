@@ -3,13 +3,12 @@ package correlation
 import (
 	"context"
 	"math"
-	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
 
@@ -380,7 +379,7 @@ func gatherPackageReferences(state *State, dumpID int) ([]lsifstore.PackageRefer
 }
 
 // CAUTION: Data is not deep copied.
-func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMaps) (*GroupedBundleDataChans) {
+func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMaps) *GroupedBundleDataChans {
 	documentChan := make(chan lsifstore.KeyedDocumentData, len(maps.Documents))
 	go func() {
 		defer close(documentChan)
@@ -418,9 +417,9 @@ func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMa
 			for ident, locations := range identMap {
 				select {
 				case monikerDefsChan <- lsifstore.MonikerLocations{
-					Scheme: scheme,
+					Scheme:     scheme,
 					Identifier: ident,
-					Locations: locations,
+					Locations:  locations,
 				}:
 				case <-ctx.Done():
 					return
@@ -436,9 +435,9 @@ func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMa
 			for ident, locations := range identMap {
 				select {
 				case monikerRefsChan <- lsifstore.MonikerLocations{
-					Scheme: scheme,
+					Scheme:     scheme,
 					Identifier: ident,
-					Locations: locations,
+					Locations:  locations,
 				}:
 				case <-ctx.Done():
 					return
@@ -459,7 +458,7 @@ func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMa
 }
 
 // CAUTION: Data is not deep copied.
-func GroupedBundleDataChansToMaps(ctx context.Context, chans *GroupedBundleDataChans) (*GroupedBundleDataMaps) {
+func GroupedBundleDataChansToMaps(ctx context.Context, chans *GroupedBundleDataChans) *GroupedBundleDataMaps {
 	documentMap := make(map[string]lsifstore.DocumentData)
 	for keyedDocumentData := range chans.Documents {
 		documentMap[keyedDocumentData.Path] = keyedDocumentData.Document

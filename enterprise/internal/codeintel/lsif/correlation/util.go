@@ -2,6 +2,8 @@ package correlation
 
 import (
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
