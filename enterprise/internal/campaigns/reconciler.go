@@ -102,19 +102,7 @@ func (r *Reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 		delta: plan.delta,
 	}
 
-	err = e.ExecutePlan(ctx, plan)
-	if errcode.IsNonRetryable(err) {
-		// We don't want to retry on terminal error so we don't return an error
-		// from this function and set the NumFailures so high that the changeset is
-		// not dequeued up again.
-		msg := err.Error()
-		e.ch.FailureMessage = &msg
-		e.ch.ReconcilerState = campaigns.ReconcilerStateErrored
-		e.ch.NumFailures = ReconcilerMaxNumRetries + 999
-		return tx.UpdateChangeset(ctx, ch)
-	}
-
-	return err
+	return e.ExecutePlan(ctx, plan)
 }
 
 // ErrPublishSameBranch is returned by publish changeset if a changeset with
