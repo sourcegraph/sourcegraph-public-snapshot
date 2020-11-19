@@ -208,6 +208,7 @@ func readBundle(dumpID int, root string) (*correlation.GroupedBundleDataMaps, er
 	return correlation.GroupedBundleDataChansToMaps(context.Background(), bundle), nil
 }
 
+// finds all documents which have definition edges pointing into the argument list
 func documentsReferencing(bundle *correlation.GroupedBundleDataMaps, paths []string) (_ []string, err error) {
 	pathMap := map[string]struct{}{}
 	for _, path := range paths {
