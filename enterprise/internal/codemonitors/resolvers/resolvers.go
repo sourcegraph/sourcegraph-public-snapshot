@@ -9,17 +9,19 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 // NewResolver returns a new Resolver that uses the given db
 func NewResolver(db dbutil.DB) graphqlbackend.CodeMonitorsResolver {
-	return &Resolver{db: basestore.NewWithDB(db, sql.TxOptions{}), clock: func() time.Time { return time.Now().UTC().Truncate(time.Microsecond) }}
+	return &Resolver{db: basestore.NewWithDB(db, sql.TxOptions{}), clock: timeutil.Now}
 }
 
 // newResolverWithClock is used in tests to set the clock manually.
@@ -424,7 +426,7 @@ var monitorColumns = []*sqlf.Query{
 
 func monitorsQuery(userID int32, args *graphqlbackend.ListMonitorsArgs) (*sqlf.Query, error) {
 	const SelectMonitorsByOwner = `
-SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id, namespace_org_id 
+SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id, namespace_org_id
 FROM cm_monitors
 WHERE namespace_user_id = %s
 AND id > %s
@@ -446,8 +448,8 @@ LIMIT %s
 
 func (r *Resolver) createCodeMonitorQuery(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (*sqlf.Query, error) {
 	const InsertCodeMonitorQuery = `
-INSERT INTO cm_monitors 
-(created_at, created_by, changed_at, changed_by, description, enabled, namespace_user_id, namespace_org_id) 
+INSERT INTO cm_monitors
+(created_at, created_by, changed_at, changed_by, description, enabled, namespace_user_id, namespace_org_id)
 VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
