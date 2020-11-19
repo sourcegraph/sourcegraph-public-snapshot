@@ -127,7 +127,6 @@ describe('SearchResultsList', () => {
         versionContext: undefined,
 
         navbarSearchQueryState: { query: '', cursorPosition: 0 },
-        searchStreaming: false,
 
         shouldDisplayPerformanceWarning: () => of(false),
     }

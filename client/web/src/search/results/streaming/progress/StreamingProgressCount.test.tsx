@@ -1,6 +1,6 @@
 import { mount } from 'enzyme'
 import React from 'react'
-import { Progress } from '../../stream'
+import { Progress } from '../../../stream'
 import { StreamingProgressCount } from './StreamingProgressCount'
 
 describe('StreamingProgressCount', () => {

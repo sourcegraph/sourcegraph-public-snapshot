@@ -3,7 +3,7 @@ import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useCallback, useState } from 'react'
 import { Alert, Button, Form, FormGroup, Input, Label } from 'reactstrap'
-import { SyntaxHighlightedSearchQuery } from '../../../components/SyntaxHighlightedSearchQuery'
+import { SyntaxHighlightedSearchQuery } from '../../../../components/SyntaxHighlightedSearchQuery'
 import { defaultProgress, StreamingProgressProps } from './StreamingProgress'
 
 export const StreamingProgressSkippedPopover: React.FunctionComponent<StreamingProgressProps> = ({

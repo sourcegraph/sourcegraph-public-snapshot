@@ -1,11 +1,11 @@
 import * as React from 'react'
 import { storiesOf } from '@storybook/react'
-import { WebStory } from '../../../components/WebStory'
-import { Progress } from '../../stream'
+import { WebStory } from '../../../../components/WebStory'
+import { Progress } from '../../../stream'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
 const { add } = storiesOf(
-    'web/search/results/streaming-progress/StreamingProgressSkippedPopover',
+    'web/search/results/streaming/progress/StreamingProgressSkippedPopover',
     module
 ).addParameters({
     design: {
