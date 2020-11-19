@@ -13,10 +13,10 @@ import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifIndexFields } from '../../../graphql-operations'
-import { CodeIntelIndexNode } from '../shared/CodeIntelIndexNode'
 import { CodeIntelStateBanner } from '../shared/CodeIntelStateBanner'
 import { CodeIntelUploadOrIndexTimeline } from '../shared/CodeIntelUploadOrIndexTimeline'
 import { deleteLsifIndex, fetchLsifIndex as defaultFetchLsifIndex } from './backend'
+import { CodeIntelIndexMeta } from './CodeIntelIndexMeta'
 import { DockerSteps } from './DockerSteps'
 import { ExecutorLogs } from './ExecutorLogs'
 
@@ -113,7 +113,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
                     />
                     <div className="card mb-3">
                         <div className="card-body">
-                            <CodeIntelIndexNode node={indexOrError} now={now} summaryView={true} />
+                            <CodeIntelIndexMeta node={indexOrError} now={now} />
                         </div>
                     </div>
                     <CodeIntelUploadOrIndexTimeline node={indexOrError} now={now} className="mb-3" />
@@ -166,7 +166,7 @@ interface CodeIntelDeleteIndexProps {
 const CodeIntelDeleteIndex: FunctionComponent<CodeIntelDeleteIndexProps> = ({ deleteIndex, deletionOrError }) => (
     <button
         type="button"
-        className="btn btn-danger"
+        className="btn btn-outline-danger"
         onClick={deleteIndex}
         disabled={deletionOrError === 'loading'}
         aria-describedby="upload-delete-button-help"

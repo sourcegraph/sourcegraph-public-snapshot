@@ -1,8 +1,8 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import classNames from 'classnames'
 import * as H from 'history'
-import CheckIcon from 'mdi-react/CheckIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
+import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React, { FunctionComponent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { SchedulerLike, timer } from 'rxjs'
@@ -15,9 +15,9 @@ import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifUploadFields } from '../../../graphql-operations'
 import { CodeIntelStateBanner } from '../shared/CodeIntelStateBanner'
-import { CodeIntelUploadNode } from '../shared/CodeIntelUploadNode'
 import { CodeIntelUploadOrIndexTimeline } from '../shared/CodeIntelUploadOrIndexTimeline'
 import { deleteLsifUpload, fetchLsifUpload as defaultFetchUpload } from './backend'
+import { CodeIntelUploadMeta } from './CodeIntelUploadMeta'
 
 export interface CodeIntelUploadPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
     fetchLsifUpload?: typeof defaultFetchUpload
@@ -118,17 +118,17 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                         history={history}
                         className={classNamesByState.get(uploadOrError.state)}
                     />
-                    <div className="card mb-3">
-                        <div className="card-body">
-                            <CodeIntelUploadNode node={uploadOrError} now={now} summaryView={true} />
-                        </div>
-                    </div>
                     {uploadOrError.isLatestForRepo && (
-                        <div className="alert alert-success action-container__alert">
-                            <CheckIcon className="icon-inline" /> This upload can answer queries for the tip of the
-                            default branch and are targets of cross-repository find reference operations.
+                        <div className="mb-3">
+                            <InformationOutlineIcon className="icon-inline" /> This upload can answer queries for the
+                            tip of the default branch and are targets of cross-repository find reference operations.
                         </div>
                     )}
+                    <div className="card mb-3">
+                        <div className="card-body">
+                            <CodeIntelUploadMeta node={uploadOrError} now={now} />
+                        </div>
+                    </div>
                     <CodeIntelUploadOrIndexTimeline node={uploadOrError} className="mb-3" />
                 </>
             )}
@@ -172,7 +172,7 @@ interface CodeIntelDeleteUploadProps {
 const CodeIntelDeleteUpload: FunctionComponent<CodeIntelDeleteUploadProps> = ({ deleteUpload, deletionOrError }) => (
     <button
         type="button"
-        className="btn btn-danger"
+        className="btn btn-outline-danger"
         onClick={deleteUpload}
         disabled={deletionOrError === 'loading'}
         aria-describedby="upload-delete-button-help"

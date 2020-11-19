@@ -1,7 +1,8 @@
 import CheckIcon from 'mdi-react/CheckIcon'
-import ClockFastIcon from 'mdi-react/ClockFastIcon'
-import ClockStartIcon from 'mdi-react/ClockStartIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
+import ErrorIcon from 'mdi-react/ErrorIcon'
+import FileUploadIcon from 'mdi-react/FileUploadIcon'
+import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
+import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { FunctionComponent } from 'react'
 import { Timeline } from '../../../components/Timeline'
 import { LsifIndexFields, LSIFIndexState, LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
@@ -30,11 +31,11 @@ export const CodeIntelUploadOrIndexTimeline: FunctionComponent<CodeIntelUploadOr
 }) => (
     <Timeline
         stages={[
-            { icon: <ClockStartIcon />, text: 'Queued', date: node.queuedAt, className: 'success' },
-            { icon: <ClockStartIcon />, text: 'Uploaded', date: node.uploadedAt, className: 'success' },
-            { icon: <ClockFastIcon />, text: 'Began processing', date: node.startedAt, className: 'success' },
+            { icon: <FileUploadIcon />, text: 'Uploaded', date: node.uploadedAt, className: 'success' },
+            { icon: <TimerSandIcon />, text: 'Queued', date: node.queuedAt, className: 'success' },
+            { icon: <ProgressClockIcon />, text: 'Began processing', date: node.startedAt, className: 'success' },
             {
-                icon: isCompleted(node) ? <CheckIcon /> : <CloseIcon />,
+                icon: isCompleted(node) ? <CheckIcon /> : <ErrorIcon />,
                 text: isCompleted(node) ? 'Finished' : 'Failed',
                 date: node.finishedAt,
                 className: isCompleted(node) ? 'success' : 'failure',

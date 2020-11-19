@@ -9,8 +9,8 @@ import {
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
-import { CodeIntelUploadNode, CodeIntelUploadNodeProps } from '../shared/CodeIntelUploadNode'
 import { fetchLsifUploads as defaultFetchLsifUploads } from './backend'
+import { CodeIntelUploadNode, CodeIntelUploadNodeProps } from './CodeIntelUploadNode'
 
 export interface CodeIntelUploadsPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: GQL.IRepository

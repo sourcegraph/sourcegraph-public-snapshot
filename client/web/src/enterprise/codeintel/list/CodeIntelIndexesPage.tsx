@@ -9,8 +9,8 @@ import {
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
-import { CodeIntelIndexNode, CodeIntelIndexNodeProps } from '../shared/CodeIntelIndexNode'
 import { fetchLsifIndexes as defaultFetchLsifIndexes } from './backend'
+import { CodeIntelIndexNode, CodeIntelIndexNodeProps } from './CodeIntelIndexNode'
 
 export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: GQL.IRepository
