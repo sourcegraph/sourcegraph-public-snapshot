@@ -17,7 +17,11 @@ cleanup() {
 trap cleanup EXIT
 
 # ==========================
-
+if [ "$VAGRANT_RUN_ENV" = "CI" ]; then
+  IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION
+else
+  IMAGE=sourcegraph/server:insiders
+fi
 CONTAINER=sourcegraph-server
 
 docker_logs() {
@@ -26,13 +30,7 @@ docker_logs() {
   chmod 744 $CONTAINER.log
 }
 
-if [ $VAGRANT_RUN_ENV = "CI" ]; then
-  IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION
-else
-  IMAGE=sourcegraph/server:insiders
-fi
-
-./dev/run-server-image.sh -d --name $CONTAINER
+$IMAGE ./dev/run-server-image.sh -d --name $CONTAINER
 trap docker_logs exit
 sleep 15
 
