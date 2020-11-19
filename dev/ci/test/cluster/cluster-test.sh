@@ -45,7 +45,7 @@ function test_setup() {
   # shellcheck disable=SC1091
   source /root/.profile
 
-  test/setup-deps.sh
+  dev/ci/test/setup-deps.sh
 
   sleep 15
   export SOURCEGRAPH_BASE_URL="http://sourcegraph-frontend.$NAMESPACE.svc.cluster.local:30080"

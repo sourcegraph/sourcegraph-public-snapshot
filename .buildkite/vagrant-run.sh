@@ -4,7 +4,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 set -euxo pipefail
 
 box="$1"
-pushd "test"
+pushd "dev/ci/test"
 
 cleanup() {
   vagrant destroy -f "$box"
