@@ -56,9 +56,6 @@ func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, e
 	return code, nil
 }
 
-// mockPasswordExpiration can be supplied by tests to control link expiry.
-var mockPasswordExpiration int
-
 // SetPassword sets the user's password given a new password and a password reset code
 func (u *users) SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error) {
 	// 🚨 SECURITY: no empty passwords
@@ -66,12 +63,7 @@ func (u *users) SetPassword(ctx context.Context, id int32, resetCode, newPasswor
 		return false, errors.New("new password was empty")
 	}
 
-	var resetLinkExpiryDuration int
-	if mockPasswordExpiration != 0 {
-		resetLinkExpiryDuration = mockPasswordExpiration
-	} else {
-		resetLinkExpiryDuration = conf.AuthPasswordResetLinkExpiry()
-	}
+	resetLinkExpiryDuration := conf.AuthPasswordResetLinkExpiry()
 
 	// 🚨 SECURITY: check resetCode against what's in the DB and that it's not expired
 	r := dbconn.Global.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE id=$1 AND deleted_at IS NULL AND passwd_reset_code=$2 AND passwd_reset_time + interval '"+strconv.Itoa(resetLinkExpiryDuration)+" seconds' > now()", id, resetCode)
