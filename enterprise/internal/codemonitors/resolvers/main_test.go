@@ -8,8 +8,10 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
@@ -37,22 +39,66 @@ func addUserToOrg(t *testing.T, db *sql.DB, userID int32, orgID int32) {
 	}
 }
 
-func (r *Resolver) insertTestMonitor(ctx context.Context, t *testing.T, owner graphql.ID) (graphqlbackend.MonitorResolver, error) {
+type Option interface {
+	apply(*options)
+}
+
+type options struct {
+	actions []*graphqlbackend.CreateActionArgs
+	owner   graphql.ID
+}
+
+type actionOption struct {
+	actions []*graphqlbackend.CreateActionArgs
+}
+
+func (a actionOption) apply(opts *options) {
+	opts.actions = a.actions
+}
+
+func WithActions(actions []*graphqlbackend.CreateActionArgs) Option {
+	return actionOption{actions: actions}
+}
+
+type ownerOption struct {
+	owner graphql.ID
+}
+
+func (o ownerOption) apply(opts *options) {
+	opts.owner = o.owner
+}
+
+func WithOwner(owner graphql.ID) Option {
+	return ownerOption{owner: owner}
+}
+
+// insertTestMonitorWithOpts is a test helper that creates monitors for test
+// purposes with sensible defaults. You can override the defaults by providing
+// (optional) opts.
+func (r *Resolver) insertTestMonitorWithOpts(ctx context.Context, t *testing.T, opts ...Option) (graphqlbackend.MonitorResolver, error) {
 	t.Helper()
 
+	defaultOwner := relay.MarshalID("User", actor.FromContext(ctx).UID)
+	defaultAction := []*graphqlbackend.CreateActionArgs{
+		{Email: &graphqlbackend.CreateActionEmailArgs{
+			Enabled:    true,
+			Priority:   "NORMAL",
+			Recipients: []graphql.ID{defaultOwner},
+			Header:     "test header"}}}
+
+	options := options{
+		actions: defaultAction,
+		owner:   defaultOwner,
+	}
+	for _, opt := range opts {
+		opt.apply(&options)
+	}
 	return r.CreateCodeMonitor(ctx, &graphqlbackend.CreateCodeMonitorArgs{
-		Namespace:   owner,
+		Namespace:   options.owner,
 		Description: "test monitor",
 		Enabled:     true,
 		Trigger:     &graphqlbackend.CreateTriggerArgs{Query: "repo:foo"},
-		Actions: []*graphqlbackend.CreateActionArgs{
-			{Email: &graphqlbackend.CreateActionEmailArgs{
-				Enabled:    true,
-				Priority:   "NORMAL",
-				Recipients: []graphql.ID{owner},
-				Header:     "test header",
-			}},
-		},
+		Actions:     options.actions,
 	})
 }
 
