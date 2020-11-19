@@ -35,7 +35,7 @@ export interface FlatExtensionHostAPI {
     ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
 
     // Tree
-    getFileDecorations: (files: FileDecorationContext[]) => ProxySubscribable<FileDecorationsByPath>
+    getFileDecorations: (parameters: FileDecorationContext) => ProxySubscribable<FileDecorationsByPath>
 }
 
 /**

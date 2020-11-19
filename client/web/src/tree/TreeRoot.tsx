@@ -81,42 +81,81 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         // Set this row as a childNode of its TreeLayer parent
         this.props.setChildNodes(this.node, this.node.index)
 
+        // this.subscriptions.add(
+        //     this.componentUpdates
+        //         .pipe(
+        //             distinctUntilChanged(
+        //                 (a, b) =>
+        //                     a.repoName === b.repoName &&
+        //                     a.revision === b.revision &&
+        //                     a.commitID === b.commitID &&
+        //                     a.parentPath === b.parentPath &&
+        //                     a.isExpanded === b.isExpanded &&
+        //                     a.location === b.location
+        //             ),
+        //             filter(props => props.isExpanded),
+        //             switchMap(props => {
+        //                 const treeFetch = fetchTreeEntries({
+        //                     repoName: props.repoName,
+        //                     revision: props.revision,
+        //                     commitID: props.commitID,
+        //                     filePath: props.parentPath || '',
+        //                     first: maxEntries,
+        //                 }).pipe(
+        //                     catchError(error => [asError(error)]),
+        //                     share()
+        //                 )
+        //                 return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
+        //             })
+        //         )
+        //         .subscribe(
+        //             treeOrError => {
+        //                 // Get file decorations once treeOrError loads
+        //                 this.getFileDecorations(treeOrError)
+        //                 console.log('new treeOrError in tree root', treeOrError)
+        //                 this.setState({ treeOrError })
+        //             },
+        //             error => console.error(error)
+        //         )
+        // )
+
+        // two subs: one to switch map to tree node decs, one to set tree or error state
+        const treeOrErrors = this.componentUpdates.pipe(
+            distinctUntilChanged(
+                (a, b) =>
+                    a.repoName === b.repoName &&
+                    a.revision === b.revision &&
+                    a.commitID === b.commitID &&
+                    a.parentPath === b.parentPath &&
+                    a.isExpanded === b.isExpanded &&
+                    a.location === b.location
+            ),
+            filter(props => props.isExpanded),
+            switchMap(props => {
+                const treeFetch = fetchTreeEntries({
+                    repoName: props.repoName,
+                    revision: props.revision,
+                    commitID: props.commitID,
+                    filePath: props.parentPath || '',
+                    first: maxEntries,
+                }).pipe(
+                    catchError(error => [asError(error)]),
+                    share()
+                )
+                return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
+            })
+        )
+
         this.subscriptions.add(
-            this.componentUpdates
-                .pipe(
-                    distinctUntilChanged(
-                        (a, b) =>
-                            a.repoName === b.repoName &&
-                            a.revision === b.revision &&
-                            a.commitID === b.commitID &&
-                            a.parentPath === b.parentPath &&
-                            a.isExpanded === b.isExpanded &&
-                            a.location === b.location
-                    ),
-                    filter(props => props.isExpanded),
-                    switchMap(props => {
-                        const treeFetch = fetchTreeEntries({
-                            repoName: props.repoName,
-                            revision: props.revision,
-                            commitID: props.commitID,
-                            filePath: props.parentPath || '',
-                            first: maxEntries,
-                        }).pipe(
-                            catchError(error => [asError(error)]),
-                            share()
-                        )
-                        return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
-                    })
-                )
-                .subscribe(
-                    treeOrError => {
-                        // Get file decorations once treeOrError loads
-                        this.getFileDecorations(treeOrError)
-                        console.log('new treeOrError in tree root', treeOrError)
-                        this.setState({ treeOrError })
-                    },
-                    error => console.error(error)
-                )
+            treeOrErrors.subscribe(
+                treeOrError => {
+                    // Get file decorations once treeOrError loads
+                    this.getFileDecorations(treeOrError)
+                    console.log('new treeOrError in tree root', treeOrError)
+                    this.setState({ treeOrError })
+                },
+                error => console.error(error)
+            )
         )
 
         // This handles pre-fetching when a user
@@ -219,16 +258,37 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         this.node.childNodes[index] = node
     }
 
-    // TODO(tj): explain
+    // Only
+    private previousFileDecorationsSubscription: Subscription | null = null
+
+    // TODO(tj): explain, and limit to one sub. unsub old sub on treeOrError change. prob wont ever bee a problem since it seems like tree roots dont change
+    // and tree layers r keyed
     private getFileDecorations(treeOrError: TreeFields | ErrorLike | 'loading'): void {
         if (treeOrError !== 'loading' && !isErrorLike(treeOrError)) {
+            if (this.previousFileDecorationsSubscription) {
+                this.previousFileDecorationsSubscription.unsubscribe()
+            }
+
+            const subscription = getFileDecorations({
+                files: treeOrError.entries,
+                repoName: this.props.repoName,
+                commitID: this.props.commitID,
+                extensionsController: this.props.extensionsController,
+                nodeUrl: treeOrError.url,
+            }).subscribe(fileDecorationsByPath => {
+                this.setState({ fileDecorationsByPath })
+            })
+
+            this.previousFileDecorationsSubscription = subscription
+            this.subscriptions.add(subscription)
+
             this.subscriptions.add(
                 getFileDecorations({
                     files: treeOrError.entries,
-                    nodeUrl: treeOrError.url,
                     repoName: this.props.repoName,
                     commitID: this.props.commitID,
                     extensionsController: this.props.extensionsController,
+                    nodeUrl: treeOrError.url,
                 }).subscribe(fileDecorationsByPath => {
                     this.setState({ fileDecorationsByPath })
                 })

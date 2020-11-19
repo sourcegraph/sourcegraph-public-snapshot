@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { TreeLayerProps } from './TreeLayer'
-import { maxEntries, treePadding } from './util'
+import { maxEntries, renderFileDecorations, treePadding } from './util'
 
 interface FileProps extends TreeLayerProps {
     className: string
@@ -39,10 +39,7 @@ export const File: React.FunctionComponent<FileProps> = props => (
                             <span className="tree__row-label">
                                 {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
                             </span>
-                            {/* File Decorations */}
-                            {props.fileDecorations?.map(fileDecoration => (
-                                <span style={{ color: fileDecoration.color, fontSize: 12 }}>{fileDecoration.text}</span>
-                            ))}
+                            {renderFileDecorations(props.fileDecorations)}
                         </div>
                     </Link>
                 ) : (
@@ -60,9 +57,7 @@ export const File: React.FunctionComponent<FileProps> = props => (
                                 {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
                             </span>
                             {/* File Decorations (TODO(tj): submodules in integration test) */}
-                            {props.fileDecorations?.map(fileDecoration => (
-                                <span style={{ color: fileDecoration.color, fontSize: 12 }}>{fileDecoration.text}</span>
-                            ))}
+                            {renderFileDecorations(props.fileDecorations)}
                         </div>
                     </div>
                 )
@@ -78,13 +73,9 @@ export const File: React.FunctionComponent<FileProps> = props => (
                     style={treePadding(props.depth, false)}
                     tabIndex={-1}
                 >
-                    <div className="tree__row-contents-text">
-                        {props.entryInfo.name}
-
-                        {/* File Decorations */}
-                        {props.fileDecorations?.map(fileDecoration => (
-                            <span style={{ color: fileDecoration.color, fontSize: 12 }}>{fileDecoration.text}</span>
-                        ))}
+                    <div className="tree__row-contents-text d-flex flex-row justify-content-between">
+                        <span>{props.entryInfo.name}</span>
+                        {renderFileDecorations(props.fileDecorations)}
                     </div>
                 </Link>
             )}

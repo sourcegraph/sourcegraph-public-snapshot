@@ -187,7 +187,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
         )
     )
 
-    // TODO(tj): Should probably send decorations by filePath by workspace root from ext host
     const fileDecorationsByPath =
         useObservable<FileDecorationsByPath>(
             useMemo(

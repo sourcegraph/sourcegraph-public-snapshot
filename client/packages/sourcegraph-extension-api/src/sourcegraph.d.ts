@@ -1548,43 +1548,90 @@ declare module 'sourcegraph' {
         ): Unsubscribable
     }
 
+    /**
+     * A file decoration adds text content and/or a progress bar to files in a tree view
+     */
     export interface FileDecoration {
-        uri: string
-
-        name: string
-
+        /** File path relative to repo root uri */
         path: string
 
-        text: string
+        /** An optional object that describes the text content contributed by the decoration */
+        text?: {
+            /** Text value to be displayed. This should value should be very short to prevent truncation */
+            value: string
 
-        color?: string
+            color?: string
 
-        // TODO(tj): ThemableDecorationStyle for light and dark
+            /** Overwrite color for light themes. */
+            light?: string
+
+            /** Overwrite color for dark themes. */
+            dark?: string
+
+            /** Overwrite color for when the node is selected. Should be the same for both light and dark themes */
+            selected?: string
+
+            /** Tooltip text to display when hovering over the text content. */
+            hoverMessage?: string
+        }
+
+        /** An optional object that describes a progress bar contributed by the decoration */
+        percentage?: {
+            /** Integer from 0 to 100. */
+            value: number
+
+            /** The CSS background-color property value for the progress bar. */
+            color?: string
+
+            /** Overwrite color for light themes. */
+            light?: string
+
+            /** Overwrite color for dark themes. */
+            dark?: string
+
+            /** Overwrite color for when the node is selected. Should be the same for both light and dark themes */
+            selected?: string
+
+            /** Tooltip text to display when hovering over the progress bar. */
+            hoverMessage?: string
+        }
     }
 
+    /**
+     * Context passed to file decoration providers.
+     *
+     * The schema of these parameters is experimental and subject to change without notice.
+     */
     export interface FileDecorationContext {
+        /** The uri of the file's parent */
         uri: string
-        isDirectory: boolean
-        // repo, name, and path are temporary vars until we implement parse repo uri.. or maybe not? would be wasteful to parse + unparse back n forth
-        // repo: string
-        name: string
-        path: string
+
+        files: {
+            /** The uri of the file */
+            uri: string
+
+            /** Whether this file is a directory */
+            isDirectory: boolean
+
+            // TODO: path is temporary, remove when we implement parseUri util
+            /** File path relative to repo root uri  */
+            path: string
+        }[]
     }
 
-    // TODO: multiple decorations per path
-    /** Record of path relative to repo root and file decorations */
+    /** Object of array of file decorations indexed by path relative to repo root uri */
     export type FileDecorationsByPath = Record<string, FileDecoration[] | undefined>
 
-    // TODO(tj): move these somewhere more reasonable
     export interface FileDecorationProvider {
-        // TODO (tj): docs
-        provideFileDecorations: (files: FileDecorationContext[]) => ProviderResult<FileDecoration[]>
+        provideFileDecorations: (fileDecorationContext: FileDecorationContext) => ProviderResult<FileDecoration[]>
     }
 
-    // TODO(tj): Explain tree namespace
+    /**
+     * Contains all APIs related to tree views
+     */
     export namespace tree {
         /**
-         * Register a directory-level decoration provider
+         * Register a file decoration provider
          */
         export function registerFileDecorationProvider(provider: FileDecorationProvider): Unsubscribable
     }

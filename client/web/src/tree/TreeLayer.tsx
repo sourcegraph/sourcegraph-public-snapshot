@@ -89,40 +89,76 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         // Set this row as a childNode of its TreeLayer parent
         this.props.setChildNodes(this.node, this.node.index)
 
+        // this.subscriptions.add(
+        //     this.componentUpdates
+        //         .pipe(
+        //             distinctUntilChanged(
+        //                 (a, b) =>
+        //                     a.repoName === b.repoName &&
+        //                     a.revision === b.revision &&
+        //                     a.commitID === b.commitID &&
+        //                     a.parentPath === b.parentPath &&
+        //                     a.isExpanded === b.isExpanded
+        //             ),
+        //             filter(props => props.isExpanded),
+        //             switchMap(props => {
+        //                 const treeFetch = fetchTreeEntries({
+        //                     repoName: props.repoName,
+        //                     revision: props.revision,
+        //                     commitID: props.commitID,
+        //                     filePath: props.parentPath || '',
+        //                     first: maxEntries,
+        //                 }).pipe(
+        //                     catchError(error => [asError(error)]),
+        //                     share()
+        //                 )
+        //                 return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
+        //             })
+        //         )
+        //         .subscribe(
+        //             treeOrError => {
+        //                 this.getFileDecorations(treeOrError)
+        //                 console.log('new treeOrError in treeLayer', treeOrError)
+        //                 this.setState({ treeOrError })
+        //             },
+        //             error => console.error(error)
+        //         )
+        // )
+
+        const treeOrErrors = this.componentUpdates.pipe(
+            distinctUntilChanged(
+                (a, b) =>
+                    a.repoName === b.repoName &&
+                    a.revision === b.revision &&
+                    a.commitID === b.commitID &&
+                    a.parentPath === b.parentPath &&
+                    a.isExpanded === b.isExpanded
+            ),
+            filter(props => props.isExpanded),
+            switchMap(props => {
+                const treeFetch = fetchTreeEntries({
+                    repoName: props.repoName,
+                    revision: props.revision,
+                    commitID: props.commitID,
+                    filePath: props.parentPath || '',
+                    first: maxEntries,
+                }).pipe(
+                    catchError(error => [asError(error)]),
+                    share()
+                )
+                return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
+            })
+        )
+
         this.subscriptions.add(
-            this.componentUpdates
-                .pipe(
-                    distinctUntilChanged(
-                        (a, b) =>
-                            a.repoName === b.repoName &&
-                            a.revision === b.revision &&
-                            a.commitID === b.commitID &&
-                            a.parentPath === b.parentPath &&
-                            a.isExpanded === b.isExpanded
-                    ),
-                    filter(props => props.isExpanded),
-                    switchMap(props => {
-                        const treeFetch = fetchTreeEntries({
-                            repoName: props.repoName,
-                            revision: props.revision,
-                            commitID: props.commitID,
-                            filePath: props.parentPath || '',
-                            first: maxEntries,
-                        }).pipe(
-                            catchError(error => [asError(error)]),
-                            share()
-                        )
-                        return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
-                    })
-                )
-                .subscribe(
-                    treeOrError => {
-                        this.getFileDecorations(treeOrError)
-                        console.log('new treeOrError in treeLayer', treeOrError)
-                        this.setState({ treeOrError })
-                    },
-                    error => console.error(error)
-                )
+            treeOrErrors.subscribe(
+                treeOrError => {
+                    this.getFileDecorations(treeOrError)
+                    console.log('new treeOrError in treeLayer', treeOrError)
+                    this.setState({ treeOrError })
+                },
+                error => console.error(error)
+            )
         )
 
         // If the layer is already expanded, fetch contents.
@@ -365,17 +401,17 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         this.node.childNodes[index] = node
     }
 
-    // TODO(tj): explain
+    // TODO(tj): explain, and limit to one sub
     private getFileDecorations(treeOrError: TreeFields | ErrorLike | 'loading'): void {
         if (treeOrError !== 'loading' && !isErrorLike(treeOrError)) {
             console.log('url in layer', treeOrError.url)
             this.subscriptions.add(
                 getFileDecorations({
                     files: treeOrError.entries,
-                    nodeUrl: treeOrError.url,
                     repoName: this.props.repoName,
                     commitID: this.props.commitID,
                     extensionsController: this.props.extensionsController,
+                    nodeUrl: treeOrError.url,
                 }).subscribe(fileDecorationsByPath => {
                     this.setState({ fileDecorationsByPath })
                 })

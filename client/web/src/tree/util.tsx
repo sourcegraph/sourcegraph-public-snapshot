@@ -1,3 +1,5 @@
+import React from 'react'
+import { FileDecoration } from 'sourcegraph'
 import { TreeEntryFields } from '../graphql-operations'
 
 /** TreeEntryInfo is the information we need to render an entry in the file tree */
@@ -81,4 +83,45 @@ function gitTreeToTreeObject(entry: TreeEntryInfo): SingleChildGitTree {
 /** Determines whether a Tree has single-child directories as children, in order to determine whether to render a SingleChildTreeLayer or TreeLayer */
 export function hasSingleChild(tree: TreeEntryInfo[]): boolean {
     return tree[0]?.isSingleChild
+}
+
+// TODO(tj): impl get style by theme
+export function renderFileDecorations(fileDecorations?: FileDecoration[]): React.ReactNode {
+    // TODO(tj): key
+    // TODO(tj): margin logic
+    return (
+        <div className="d-flex align-items-center">
+            {fileDecorations?.map(
+                fileDecoration =>
+                    (fileDecoration.percentage || fileDecoration.text) && (
+                        <>
+                            {fileDecoration.text && (
+                                <span style={{ color: fileDecoration.text.color, fontSize: 12 }}>
+                                    {fileDecoration.text.value}
+                                </span>
+                            )}
+                            {fileDecoration.percentage && (
+                                // <progress
+                                //     value={fileDecoration.percentage.value}
+                                //     max="100"
+                                //     style={{ width: 24, color: fileDecoration.percentage.color }}
+                                // />
+                                <div className="progress" style={{ width: 24, borderRadius: 4, marginLeft: 8 }}>
+                                    <div
+                                        className="progress-bar"
+                                        // eslint-disable-next-line react/forbid-dom-props
+                                        style={{
+                                            width: `${fileDecoration.percentage.value}%`,
+                                            height: 4,
+                                            backgroundColor: fileDecoration.percentage.color,
+                                        }}
+                                        // TODO: aria-value
+                                    />
+                                </div>
+                            )}
+                        </>
+                    )
+            )}
+        </div>
+    )
 }

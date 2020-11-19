@@ -1,7 +1,14 @@
 import { Observable, from, concat } from 'rxjs'
 import { HoverMerged } from '../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { FileSpec, UIPositionSpec, RepoSpec, ResolvedRevisionSpec, toURIWithPath } from '../../../shared/src/util/url'
+import {
+    FileSpec,
+    UIPositionSpec,
+    RepoSpec,
+    ResolvedRevisionSpec,
+    toURIWithPath,
+    toRootURI,
+} from '../../../shared/src/util/url'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { switchMap } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
@@ -82,6 +89,7 @@ export const getFileDecorations = memoizeObservable(
         repoName,
     }: {
         files: { url: string; isDirectory: boolean; name: string; path: string }[]
+        // TODO(tj): explain nodeUrl
         nodeUrl: string
     } & ExtensionsControllerProps &
         RepoSpec &
@@ -89,12 +97,13 @@ export const getFileDecorations = memoizeObservable(
         from(extensionsController.extHostAPI).pipe(
             switchMap(extensionHost =>
                 wrapRemoteObservable(
-                    extensionHost.getFileDecorations(
-                        files.map(file => ({
+                    extensionHost.getFileDecorations({
+                        uri: toRootURI({ repoName, commitID }),
+                        files: files.map(file => ({
                             ...file,
                             uri: toURIWithPath({ repoName, filePath: file.path, commitID }),
-                        }))
-                    )
+                        })),
+                    })
                 )
             )
         ),

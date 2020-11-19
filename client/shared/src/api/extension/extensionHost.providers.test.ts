@@ -151,3 +151,5 @@ describe('callProviders()', () => {
         })
     })
 })
+
+describe.skip('file decoration providers', () => {})

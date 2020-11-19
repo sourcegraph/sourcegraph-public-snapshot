@@ -5,7 +5,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { FileDecoration } from 'sourcegraph'
 import { TreeLayerProps } from './TreeLayer'
-import { treePadding } from './util'
+import { renderFileDecorations, treePadding } from './util'
 
 interface TreeChildProps extends TreeLayerProps {
     className: string
@@ -32,35 +32,34 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                 data-tree-path={props.entryInfo.path}
             >
                 <div className="tree__row-contents-text">
-                    <a
-                        // needed because of dynamic styling
-                        // eslint-disable-next-line react/forbid-dom-props
-                        style={treePadding(props.depth, true)}
-                        className="tree__row-icon"
-                        href={props.entryInfo.url}
-                        onClick={props.noopRowClick}
-                        tabIndex={-1}
-                    >
-                        {props.isExpanded ? (
-                            <ChevronDownIcon className="icon-inline" />
-                        ) : (
-                            <ChevronRightIcon className="icon-inline" />
-                        )}
-                    </a>
-                    <Link
-                        to={props.entryInfo.url}
-                        onClick={props.linkRowClick}
-                        className="tree__row-label"
-                        draggable={false}
-                        title={props.entryInfo.path}
-                        tabIndex={-1}
-                    >
-                        {props.entryInfo.name}
-                    </Link>
-                    {/* File Decoration */}
-                    {props.fileDecorations?.map(fileDecoration => (
-                        <span style={{ color: fileDecoration.color, fontSize: 12 }}>{fileDecoration.text}</span>
-                    ))}
+                    <div className="d-flex align-items-center">
+                        <a
+                            // needed because of dynamic styling
+                            // eslint-disable-next-line react/forbid-dom-props
+                            style={treePadding(props.depth, true)}
+                            className="tree__row-icon"
+                            href={props.entryInfo.url}
+                            onClick={props.noopRowClick}
+                            tabIndex={-1}
+                        >
+                            {props.isExpanded ? (
+                                <ChevronDownIcon className="icon-inline" />
+                            ) : (
+                                <ChevronRightIcon className="icon-inline" />
+                            )}
+                        </a>
+                        <Link
+                            to={props.entryInfo.url}
+                            onClick={props.linkRowClick}
+                            className="tree__row-label"
+                            draggable={false}
+                            title={props.entryInfo.path}
+                            tabIndex={-1}
+                        >
+                            {props.entryInfo.name}
+                        </Link>
+                    </div>
+                    {renderFileDecorations(props.fileDecorations)}
                 </div>
                 {props.loading && (
                     <div className="tree__row-loader">

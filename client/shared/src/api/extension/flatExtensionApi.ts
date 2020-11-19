@@ -104,8 +104,6 @@ export const initNewExtensionAPI = (
 
     const versionContextChanges = new Subject<string | undefined>()
 
-    const files = new Subject<{ uri: string }>()
-
     const exposedToMain: FlatExtensionHostAPI = {
         // Configuration
         syncSettingsData: data => {
@@ -188,27 +186,33 @@ export const initNewExtensionAPI = (
         },
 
         // Tree
-        getFileDecorations: (files: sourcegraph.FileDecorationContext[]) =>
-            proxySubscribable(
-                state.fileDecorationProviders.pipe(
-                    map(providers => providers.map(provider => provider.provideFileDecorations)),
-                    switchMap(providers =>
-                        combineLatestOrDefault(
-                            providers.map(provider =>
-                                providerResultToObservable(provider(files)).pipe(
-                                    catchError(error => {
-                                        // TODO(tj): conditional log errors
-                                        console.error('Provider errored:', error)
+        getFileDecorations: (parameters: sourcegraph.FileDecorationContext) => {
+            console.log('got file dec req')
 
-                                        return EMPTY
-                                    })
-                                )
-                            )
-                            // TODO(tj): profile
-                        ).pipe(map(decorationsDecorations => groupBy(decorationsDecorations.flat(), 'path')))
-                    )
-                )
-            ),
+            return proxySubscribable(
+                parameters.files.length === 0
+                    ? EMPTY
+                    : state.fileDecorationProviders.pipe(
+                          map(providers => providers.map(provider => provider.provideFileDecorations)),
+                          switchMap(providers =>
+                              combineLatestOrDefault(
+                                  providers.map(provider =>
+                                      providerResultToObservable(provider(parameters)).pipe(
+                                          catchError(error => {
+                                              // TODO(tj): conditional log errors
+                                              console.error('Provider errored:', error)
+                                              // TODO: validate (w/ zod?) decoration structure. all information that comes from an extension should be parsed to prevent breaking our UI
+                                              // This will be more common as third-parties start to write more extensions.
+                                              return EMPTY
+                                          })
+                                      )
+                                  )
+                                  // TODO(tj): profile
+                              ).pipe(map(decorationsDecorations => groupBy(decorationsDecorations.flat(), 'path')))
+                          )
+                      )
+            )
+        },
     }
 
     // Configuration

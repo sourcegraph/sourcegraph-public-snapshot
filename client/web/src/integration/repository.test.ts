@@ -751,18 +751,25 @@ describe('Repository', () => {
                         function activate(context: sourcegraph.ExtensionContext): void {
                             context.subscriptions.add(
                                 sourcegraph.tree.registerFileDecorationProvider({
-                                    provideFileDecorations: files => {
-                                        console.log('file context in ext', files)
-                                        return [...files, ...files].map(file => ({
-                                            uri: file.uri,
-                                            path: file.path,
-                                            name: file.name,
-                                            text: `${
-                                                file.name.split('').filter(char => vowels.includes(char)).length
-                                            } vowels`,
-                                            color: file.isDirectory ? 'red' : 'blue',
-                                        }))
-                                    },
+                                    provideFileDecorations: ({ files }) =>
+                                        files.map(file => {
+                                            const fragments = file.path.split('/')
+                                            const name = fragments[fragments.length - 1]
+                                            return {
+                                                uri: file.uri,
+                                                path: file.path,
+                                                text: {
+                                                    value: `${
+                                                        name.split('').filter(char => vowels.includes(char)).length
+                                                    } vowels`,
+                                                    color: file.isDirectory ? 'red' : 'blue',
+                                                },
+                                                percentage: {
+                                                    value: Math.random() * 100,
+                                                    color: file.isDirectory ? 'red' : 'blue',
+                                                },
+                                            }
+                                        }),
                                 })
                             )
                         }
