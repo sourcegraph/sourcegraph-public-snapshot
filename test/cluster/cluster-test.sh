@@ -29,7 +29,7 @@ function cluster_setup() {
   # replace all docker image tags with previously built candidate images
   while IFS= read -r line; do
     echo "$line"
-    grep -lr '.' -e "index.docker.io/sourcegraph/$line" --include \*.yaml | xargs gsed -i -E "s#index.docker.io/sourcegraph/$line:.*#us.gcr.io/sourcegraph-dev/$line:$CANDIDATE_VERSION#g"
+    grep -lr '.' -e "index.docker.io/sourcegraph/$line" --include \*.yaml | xargs sed -i -E "s#index.docker.io/sourcegraph/$line:.*#us.gcr.io/sourcegraph-dev/$line:$CANDIDATE_VERSION#g"
   done < <(printf '%s\n' "$DOCKER_IMAGES_TXT")
 
   ./create-new-cluster.sh
