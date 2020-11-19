@@ -327,18 +327,10 @@ func (r *changesetRewirer) loadAssociations(ctx context.Context) (
 	accessibleReposByID map[api.RepoID]*types.Repo,
 	changesetsByID map[int64]*campaigns.Changeset,
 	changesetSpecsByID map[int64]*campaigns.ChangesetSpec,
-	mappings []*campaigns.RewirerMapping,
+	mappings campaigns.RewirerMappings,
 	err error,
 ) {
-	// Load all of the new ChangesetSpecs.
-	newChangesetSpecs, _, err := r.tx.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{
-		CampaignSpecID: r.campaign.CampaignSpecID,
-	})
-	if err != nil {
-		return accessibleReposByID, changesetsByID, changesetSpecsByID, mappings, err
-	}
-
-	// Then load the mapping between changeset specs and existing changesets in the target campaign.
+	// Load the mapping between changeset specs and existing changesets in the target campaign.
 	mappings, err = r.tx.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
 		CampaignSpecID: r.campaign.CampaignSpecID,
 		CampaignID:     r.campaign.ID,
@@ -347,25 +339,26 @@ func (r *changesetRewirer) loadAssociations(ctx context.Context) (
 		return accessibleReposByID, changesetsByID, changesetSpecsByID, mappings, err
 	}
 
-	// Collect IDs of changesets involved in the mapping.
-	ids := make([]int64, 0)
-	for _, m := range mappings {
-		if m.ChangesetID != 0 {
-			ids = append(ids, m.ChangesetID)
-		}
+	// Then fetch the changeset specs involved in this rewiring.
+	changesetSpecs, _, err := r.tx.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{
+		CampaignSpecID: r.campaign.CampaignSpecID,
+		IDs:            mappings.ChangesetSpecIDs(),
+	})
+	if err != nil {
+		return accessibleReposByID, changesetsByID, changesetSpecsByID, mappings, err
 	}
 
 	// Then fetch the changesets involved in this rewiring.
-	changesets, _, err := r.tx.ListChangesets(ctx, ListChangesetsOpts{IDs: ids})
+	changesets, _, err := r.tx.ListChangesets(ctx, ListChangesetsOpts{IDs: mappings.ChangesetIDs()})
 	if err != nil {
 		return accessibleReposByID, changesetsByID, changesetSpecsByID, mappings, err
 	}
 
 	// Fetch all repos involved. We use them later to enforce repo permissions.
-	repoIDs := append(newChangesetSpecs.RepoIDs(), changesets.RepoIDs()...)
+	//
 	// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
-	accessibleReposByID, err = db.Repos.GetReposSetByIDs(ctx, repoIDs...)
+	accessibleReposByID, err = db.Repos.GetReposSetByIDs(ctx, mappings.RepoIDs()...)
 	if err != nil {
 		return accessibleReposByID, changesetsByID, changesetSpecsByID, mappings, err
 	}
@@ -376,7 +369,7 @@ func (r *changesetRewirer) loadAssociations(ctx context.Context) (
 	for _, c := range changesets {
 		changesetsByID[c.ID] = c
 	}
-	for _, c := range newChangesetSpecs {
+	for _, c := range changesetSpecs {
 		changesetSpecsByID[c.ID] = c
 	}
 
