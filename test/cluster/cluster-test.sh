@@ -33,7 +33,7 @@ function cluster_setup() {
   while IFS= read -r line; do
     echo "$line"
     grep -lr '.' -e "index.docker.io/sourcegraph/$line" --include \*.yaml | xargs sed -i -E "s#index.docker.io/sourcegraph/$line:.*#us.gcr.io/sourcegraph-dev/$line:$CANDIDATE_VERSION#g"
-  done < <(printf '%s\n' "$DOCKER_IMAGES_TXT")
+  done < <(printf '%s\n' "$DOCKER_CLUSTER_IMAGES_TXT")
   popd
   ./create-new-cluster.sh
   popd

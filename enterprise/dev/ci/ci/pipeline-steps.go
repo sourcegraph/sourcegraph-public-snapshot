@@ -223,6 +223,19 @@ func triggerAsync(c Config) func(*bk.Pipeline) {
 	}
 }
 
+// images used by cluster-qa test
+func clusterDockerImages(images []string) string {
+	var clusterImages []string
+	imagesToRemove := map[string]bool{"server": true, "ignite-ubuntu": true}
+	for _, image := range SourcegraphDockerImages {
+		if _, exists := imagesToRemove[image]; !exists {
+			// clusterImages = clusterImages + image + "\n"
+			clusterImages = append(clusterImages, image)
+		}
+	}
+	return strings.Join(clusterImages, "\n")
+}
+
 func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	var async bool
 	if c.branch == "main" {
@@ -249,7 +262,7 @@ func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	// Test upgrades from mininum upgradeable Sourcegraph version
 	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.20.0"
 
-	env["DOCKER_IMAGES_TXT"] = strings.Join(SourcegraphDockerImages, "\n")
+	env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(SourcegraphDockerImages)
 
 	return func(pipeline *bk.Pipeline) {
 		if !c.shouldRunE2EandQA() {
