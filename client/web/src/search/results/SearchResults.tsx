@@ -95,7 +95,7 @@ export type SearchType = 'diff' | 'commit' | 'symbol' | 'repo' | 'path' | null
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
 // The version is set based on the release tag of the instance. Anything before 3.9.0 will not pass a version parameter,
 // and will therefore default to V1.
-const LATEST_VERSION = 'V2'
+export const LATEST_VERSION = 'V2'
 
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {

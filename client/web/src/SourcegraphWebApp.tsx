@@ -70,7 +70,7 @@ import {
 import { SearchPatternType } from '../../shared/src/graphql-operations'
 import { HTTPStatusError } from '../../shared/src/backend/fetch'
 import { listUserCodeMonitors } from './enterprise/code-monitoring/backend'
-import { search as streamSearch } from './search/stream'
+import { aggregateStreamingSearch } from './search/stream'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
@@ -458,7 +458,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     fetchRecentSearches={fetchRecentSearches}
                                     fetchRecentFileViews={fetchRecentFileViews}
                                     fetchUserCodeMonitors={listUserCodeMonitors}
-                                    streamSearch={streamSearch}
+                                    streamSearch={aggregateStreamingSearch}
                                 />
                             )}
                         />
