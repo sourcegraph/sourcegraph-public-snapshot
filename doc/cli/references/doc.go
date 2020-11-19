@@ -97,14 +97,10 @@ replace github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.202007141
 		return errors.Wrap(err, "setting up go.mod")
 	}
 
-	goGet := exec.Command("go", "get", "github.com/sourcegraph/src-cli/cmd/src@f48121db893806baafca894692fe35c00c0174e0")
+	goGet := exec.Command("go", "get", "github.com/sourcegraph/src-cli/cmd/src")
+	goGet.Env = append(os.Environ(), "GOBIN="+dir)
 	if out, err := goGet.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "getting src-cli:\n%s\n", string(out))
-	}
-
-	goBuild := exec.Command("go", "build", "github.com/sourcegraph/src-cli/cmd/src")
-	if out, err := goBuild.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "building src-cli:\n%s\n", string(out))
 	}
 
 	if err := os.Chdir(base); err != nil {
