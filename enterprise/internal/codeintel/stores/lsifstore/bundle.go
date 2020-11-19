@@ -57,7 +57,7 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 
 	var rangeIDs []ID
 	for id, r := range documentData.Ranges {
-		if rangeIntersectsSpan(r, startLine, endLine) {
+		if RangeIntersectsSpan(r, startLine, endLine) {
 			rangeIDs = append(rangeIDs, id)
 		}
 	}
@@ -412,7 +412,7 @@ func (s *Store) getRangeByPosition(ctx context.Context, bundleID int, path strin
 		return DocumentData{}, nil, false, nil
 	}
 
-	return documentData, findRanges(documentData.Ranges, line, character), true, nil
+	return documentData, FindRanges(documentData.Ranges, line, character), true, nil
 }
 
 // locations returns the locations for the given definition or reference identifiers.
