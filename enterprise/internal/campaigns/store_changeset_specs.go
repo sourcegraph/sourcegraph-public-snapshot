@@ -261,6 +261,7 @@ type ListChangesetSpecsOpts struct {
 
 	CampaignSpecID int64
 	RandIDs        []string
+	IDs            []int64
 }
 
 // ListChangesetSpecs lists ChangesetSpecs with the given filters.
@@ -311,6 +312,16 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 			}
 		}
 		preds = append(preds, sqlf.Sprintf("changeset_specs.rand_id IN (%s)", sqlf.Join(ids, ",")))
+	}
+
+	if len(opts.IDs) != 0 {
+		ids := make([]*sqlf.Query, 0, len(opts.IDs))
+		for _, id := range opts.IDs {
+			if id != 0 {
+				ids = append(ids, sqlf.Sprintf("%s", id))
+			}
+		}
+		preds = append(preds, sqlf.Sprintf("changeset_specs.id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
 	return sqlf.Sprintf(
@@ -381,12 +392,12 @@ func scanChangesetSpec(c *campaigns.ChangesetSpec, s scanner) error {
 	return nil
 }
 
-type GetChangesetSpecRewireDataOpts struct {
+type GetRewirerMappingsOpts struct {
 	CampaignSpecID int64
 	CampaignID     int64
 }
 
-// GetChangesetSpecRewireData returns ChangesetSpecRewire mappings between changeset specs and changesets.
+// GetRewirerMappings returns RewirerMappings between changeset specs and changesets.
 //
 // We have two imaginary lists, the current changesets in the campaign and the new changeset specs:
 //
@@ -436,23 +447,23 @@ type GetChangesetSpecRewireDataOpts struct {
 // Spec 3 should get a new Changeset, since its branch doesn't match Changeset 3's branch.
 // Spec 4 should be attached to Changeset 4, since it tracks PR #333 in Repo C.
 // Changeset 3 doesn't have a matching spec and should be detached from the campaign (and closed) (ChangesetSpec == 0, Changeset != 0).
-func (s *Store) GetChangesetSpecRewireData(ctx context.Context, opts GetChangesetSpecRewireDataOpts) (csrd []*campaigns.ChangesetSpecRewire, err error) {
-	q := getChangesetSpecRewireDataQuery(opts)
+func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsOpts) (mappings campaigns.RewirerMappings, err error) {
+	q := getRewirerMappingsQuery(opts)
 
 	err = s.query(ctx, q, func(sc scanner) error {
-		var c campaigns.ChangesetSpecRewire
+		var c campaigns.RewirerMapping
 		if err := sc.Scan(&c.ChangesetSpecID, &c.ChangesetID, &c.RepoID); err != nil {
 			return err
 		}
-		csrd = append(csrd, &c)
+		mappings = append(mappings, &c)
 		return nil
 	})
-	return csrd, err
+	return mappings, err
 }
 
-func getChangesetSpecRewireDataQuery(opts GetChangesetSpecRewireDataOpts) *sqlf.Query {
+func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) *sqlf.Query {
 	return sqlf.Sprintf(
-		getChangesetSpecRewireDataQueryFmtstr,
+		getRewirerMappingsQueryFmtstr,
 		opts.CampaignSpecID,
 		opts.CampaignID,
 		opts.CampaignID,
@@ -462,8 +473,8 @@ func getChangesetSpecRewireDataQuery(opts GetChangesetSpecRewireDataOpts) *sqlf.
 	)
 }
 
-var getChangesetSpecRewireDataQueryFmtstr = `
--- source: enterprise/internal/campaigns/store_changeset_specs.go:GetChangesetSpecRewireData
+var getRewirerMappingsQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store_changeset_specs.go:GetRewirerMappings
 WITH
 	-- Fetch all changeset specs in the campaign spec that are of type 'existing'.
 	-- Match the entries to changesets in the target campaign by external ID and repo.
