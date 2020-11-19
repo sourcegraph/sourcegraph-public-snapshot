@@ -103,7 +103,7 @@ func (r *Reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 	}
 
 	err = e.ExecutePlan(ctx, plan)
-	if errcode.IsTerminal(err) {
+	if errcode.IsNonRetryable(err) {
 		// We don't want to retry on terminal error so we don't return an error
 		// from this function and set the NumFailures so high that the changeset is
 		// not dequeued up again.
@@ -128,7 +128,7 @@ func (e ErrPublishSameBranch) Error() string {
 	return "cannot create changeset on the same branch in multiple campaigns"
 }
 
-func (e ErrPublishSameBranch) Terminal() bool { return true }
+func (e ErrPublishSameBranch) NonRetryable() bool { return true }
 
 type executor struct {
 	gitserverClient   GitserverClient
@@ -321,7 +321,7 @@ func (e ErrMissingCredentials) Error() string {
 	return fmt.Sprintf("user does not have a valid credential for repository %q", e.repo)
 }
 
-func (e ErrMissingCredentials) Terminal() bool { return true }
+func (e ErrMissingCredentials) NonRetryable() bool { return true }
 
 // pushChangesetPatch creates the commits for the changeset on its codehost.
 func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
@@ -640,7 +640,7 @@ func (e ErrNoPushCredentials) Error() string {
 	return fmt.Sprintf("cannot use credentials of type %T to push commits", e.credentialsType)
 }
 
-func (e ErrNoPushCredentials) Terminal() bool { return true }
+func (e ErrNoPushCredentials) NonRetryable() bool { return true }
 
 // operation is an enum to distinguish between different reconciler operations.
 type operation string
