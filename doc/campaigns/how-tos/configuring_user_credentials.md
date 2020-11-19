@@ -31,7 +31,7 @@ To add a token for a code host, click on the **Add token** button next to its na
 
 To create a personal access token for a specific code host provider, please refer to the relevant section for "[GitHub](#github)", "[GitLab](#gitlab)", or "[Bitbucket Server](#bitbucket-server)". Once you have a token, you should paste it into the Sourcegraph input shown above, and click **Add token**.
 
-> NOTE: See ["Code host interactions in campaigns"](explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns) for details on what the permissions are used for.
+> NOTE: See ["Code host interactions in campaigns"](../explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns) for details on what the permissions are used for.
 
 Once this is done, Sourcegraph should indicate that you have a token with a green tick:
 
