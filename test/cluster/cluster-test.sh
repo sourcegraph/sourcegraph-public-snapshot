@@ -27,6 +27,8 @@ function cluster_setup() {
   pwd
   # see $DOCKER_CLUSTER_IMAGES_TXT in pipeline-steps.go for env var
   # replace all docker image tags with previously built candidate images
+  set +e
+  set +o pipefail
   pushd base
   while IFS= read -r line; do
     echo "$line"
@@ -38,6 +40,8 @@ function cluster_setup() {
 
   kubectl get pods
   time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=20m
+  set -e
+  set -o pipefail
 }
 
 function test_setup() {
