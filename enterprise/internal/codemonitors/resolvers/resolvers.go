@@ -71,7 +71,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 
 	// create code monitor
 	var q *sqlf.Query
-	q, err = tx.createCodeMonitorQuery(ctx, args)
+	q, err = tx.createCodeMonitorQuery(ctx, args.Monitor)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	}
 
 	// create trigger
-	q, err = tx.createTriggerQueryQuery(ctx, m.(*monitor).id, args)
+	q, err = tx.createTriggerQueryQuery(ctx, m.(*monitor).id, args.Trigger)
 	if err != nil {
 		return nil, err
 	}
@@ -604,7 +604,7 @@ LIMIT %s
 	return query, nil
 }
 
-func (r *Resolver) createCodeMonitorQuery(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (*sqlf.Query, error) {
+func (r *Resolver) createCodeMonitorQuery(ctx context.Context, args *graphqlbackend.CreateMonitorArgs) (*sqlf.Query, error) {
 	const InsertCodeMonitorQuery = `
 INSERT INTO cm_monitors 
 (created_at, created_by, changed_at, changed_by, description, enabled, namespace_user_id, namespace_org_id) 
@@ -681,25 +681,19 @@ var queryColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_queries.changed_at"),
 }
 
-func (r *Resolver) createTriggerQueryQuery(ctx context.Context, monitorId int64, args *graphqlbackend.CreateCodeMonitorArgs) (*sqlf.Query, error) {
+func (r *Resolver) createTriggerQueryQuery(ctx context.Context, monitorId int64, args *graphqlbackend.CreateTriggerArgs) (*sqlf.Query, error) {
 	const insertQueryQuery = `
 INSERT INTO cm_queries
 (monitor, query, created_by, created_at, changed_by, changed_at)
 VALUES (%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
-	var userID int32
-	var orgID int32
-	err := graphqlbackend.UnmarshalNamespaceID(args.Namespace, &userID, &orgID)
-	if err != nil {
-		return nil, err
-	}
 	now := r.clock()
 	a := actor.FromContext(ctx)
 	return sqlf.Sprintf(
 		insertQueryQuery,
 		monitorId,
-		args.Trigger.Query,
+		args.Query,
 		a.UID,
 		now,
 		a.UID,

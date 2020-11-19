@@ -94,11 +94,13 @@ func (r *Resolver) insertTestMonitorWithOpts(ctx context.Context, t *testing.T, 
 		opt.apply(&options)
 	}
 	return r.CreateCodeMonitor(ctx, &graphqlbackend.CreateCodeMonitorArgs{
-		Namespace:   options.owner,
-		Description: "test monitor",
-		Enabled:     true,
-		Trigger:     &graphqlbackend.CreateTriggerArgs{Query: "repo:foo"},
-		Actions:     options.actions,
+		Monitor: &graphqlbackend.CreateMonitorArgs{
+			Namespace:   options.owner,
+			Description: "test monitor",
+			Enabled:     true,
+		},
+		Trigger: &graphqlbackend.CreateTriggerArgs{Query: "repo:foo"},
+		Actions: options.actions,
 	})
 }
 

@@ -98,9 +98,11 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                     tap(event => event.preventDefault()),
                     mergeMap(() =>
                         createCodeMonitor({
-                            namespace: props.authenticatedUser.id,
-                            description: codeMonitor.description,
-                            enabled: codeMonitor.enabled,
+                            monitor: {
+                                namespace: props.authenticatedUser.id,
+                                description: codeMonitor.description,
+                                enabled: codeMonitor.enabled,
+                            },
                             trigger: { query: codeMonitor.query },
                             actions: [
                                 {
