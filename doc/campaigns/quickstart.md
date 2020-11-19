@@ -12,7 +12,7 @@ For more information about campaigns see the ["Campaigns"](index.md) documentati
 
 ## Configure code host credentials
 
-Campaigns need write permissions for the repositories in which you want to make changes. You'll need to add a personal access token for each code host you'll be creating changesets on.
+Campaigns need write permissions for the repositories in which you want to make changes. You'll need to add a personal access token for each code host you'll be publishing changesets on.
 
 See "[Configuring user credentials](how-tos/configuring_user_credentials.md)" for more detail on adding and removing user tokens beyond the quickstart below, or ["Code host interactions in campaigns"](explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns) for details on what the permissions are used for.
 
