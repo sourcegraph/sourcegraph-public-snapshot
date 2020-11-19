@@ -221,7 +221,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                     </ButtonLink>
                 </div>
             )}
-            <ul className="navbar-nav">
+            <ul className="navbar-nav test-action-items" data-menu={ContributableMenu.EditorTitle}>
                 <WebActionsNavItems
                     {...props}
                     listItemClass="repo-header__action-list-item"
