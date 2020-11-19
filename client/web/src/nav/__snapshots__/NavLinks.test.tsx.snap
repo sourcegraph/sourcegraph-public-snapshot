@@ -19,6 +19,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="extensions"
       href="/extensions"
     >
       <svg
@@ -56,6 +57,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
@@ -442,6 +444,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="extensions"
       href="/extensions"
     >
       <svg
@@ -479,6 +482,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
@@ -875,6 +879,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="extensions"
       href="/extensions"
     >
       <svg
@@ -912,6 +917,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
@@ -1279,6 +1285,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="extensions"
       href="/extensions"
     >
       <svg
@@ -1316,6 +1323,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
@@ -1693,6 +1701,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="extensions"
       href="/extensions"
     >
       <svg
@@ -1730,6 +1739,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
@@ -1871,6 +1881,7 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="extensions"
       href="/extensions"
     >
       <svg
@@ -1908,6 +1919,7 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
@@ -2059,6 +2071,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="extensions"
       href="/extensions"
     >
       <svg
@@ -2096,6 +2109,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
@@ -2225,6 +2239,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="extensions"
       href="/extensions"
     >
       <svg
@@ -2262,6 +2277,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
