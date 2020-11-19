@@ -245,6 +245,37 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 				t.Fatalf("opts: %+v, diff: %s", opts, diff)
 			}
 		})
+
+		t.Run("WithIDs", func(t *testing.T) {
+			for _, c := range changesetSpecs {
+				opts := ListChangesetSpecsOpts{IDs: []int64{c.ID}}
+				have, _, err := s.ListChangesetSpecs(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				want := cmpgn.ChangesetSpecs{c}
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+
+			opts := ListChangesetSpecsOpts{}
+			for _, c := range changesetSpecs {
+				opts.IDs = append(opts.IDs, c.ID)
+			}
+
+			have, _, err := s.ListChangesetSpecs(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// ListChangesetSpecs should not return ChangesetSpecs whose
+			// repository was (soft-)deleted.
+			if diff := cmp.Diff(have, changesetSpecs); diff != "" {
+				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			}
+		})
 	})
 
 	t.Run("Update", func(t *testing.T) {
