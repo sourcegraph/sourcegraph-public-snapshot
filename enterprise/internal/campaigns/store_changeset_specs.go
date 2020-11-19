@@ -399,16 +399,20 @@ func (s *Store) GetChangesetSpecRewireData(ctx context.Context, campaignSpecID, 
 var getChangesetSpecRewireDataQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:GetChangesetSpecRewireData
 WITH
+	-- Fetch all changeset specs in the campaign spec that are of type 'existing'.
+	-- Match the entries to changesets in the target campaign by external ID and repo.
 	tracked_mappings AS (
 		SELECT changeset_specs.id AS changeset_spec_id, COALESCE(changesets.id, 0) AS changeset_id, changeset_specs.repo_id AS repo_id
 		FROM changeset_specs
 		LEFT JOIN changesets ON changesets.repo_id = changeset_specs.repo_id AND changesets.external_id = changeset_specs.spec->>'externalID'
 		INNER JOIN repo ON changeset_specs.repo_id = repo.id
 		WHERE
-			changeset_specs.campaign_spec_id = %s AND
-			changeset_specs.spec->>'externalID' IS NOT NULL AND changeset_specs.spec->>'externalID' != '' AND
-			repo.deleted_at IS NULL
+		changeset_specs.campaign_spec_id = %s AND
+		changeset_specs.spec->>'externalID' IS NOT NULL AND changeset_specs.spec->>'externalID' != '' AND
+		repo.deleted_at IS NULL
 	),
+	-- Fetch all changeset specs in the campaign spec that are of type 'branch'.
+	-- Match the entries to changesets in the target campaign by head ref and repo.
 	branch_mappings AS (
 		SELECT changeset_specs.id AS changeset_spec_id, COALESCE(changesets.id, 0) AS changeset_id, changeset_specs.repo_id AS repo_id
 		FROM changeset_specs
@@ -437,6 +441,7 @@ SELECT changeset_spec_id, changeset_id, repo_id FROM branch_mappings
 
 UNION ALL
 
+-- Finally, fetch all changesets mapped to no spec in the campaign spec that aren't part of tracked_mappings and branch_mappings. Those are to be closed.
 SELECT 0 as changeset_spec_id, changesets.id as changeset_id, changesets.repo_id as repo_id
 FROM changesets
 INNER JOIN repo ON changesets.repo_id = repo.id
