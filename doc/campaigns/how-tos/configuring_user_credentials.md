@@ -12,7 +12,7 @@ In order to [publish changesets with campaigns](publishing_changesets.md), you n
 
 ## Adding a personal access token
 
-Adding personal access tokens is done through the the Campaigns section of your user settings. To access this page, follow these instructions (also shown in the video below):
+Adding personal access tokens is done through the the Campaigns section of your user settings:
 
 1. From any Sourcegraph page, click on your avatar at the top right of the page.
 1. Select **Settings** from the dropdown menu.
