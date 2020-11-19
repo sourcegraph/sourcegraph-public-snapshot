@@ -59,7 +59,7 @@ See these code host specific pages for which permissions and scopes the tokens r
 
 > NOTE: Site admins will fall back to using the Sourcegraph token for the code host if they have not added a personal access token. This makes it easier to try out campaigns, but be aware that this may result in changesets being created or changed with different permissions to your normal code host user.
 >
-> This does not affect non-admin users, who are unable to apply campaigns without configuring access tokens.
+> Non-admin users are unable to apply campaigns without configuring access tokens.
 
 ## Repository permissions for campaigns
 
