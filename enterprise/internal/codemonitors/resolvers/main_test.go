@@ -116,10 +116,10 @@ func newTestResolver(t *testing.T) *Resolver {
 	return newResolverWithClock(dbconn.Global, clock).(*Resolver)
 }
 
-func (r *Resolver) monitorForIDInt32(ctx context.Context, t *testing.T, monitorId int64) (graphqlbackend.MonitorResolver, error) {
+func (r *Resolver) monitorForIDInt32(ctx context.Context, t *testing.T, monitorID int64) (graphqlbackend.MonitorResolver, error) {
 	t.Helper()
 
-	q := sqlf.Sprintf("SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id, namespace_org_id FROM cm_monitors WHERE id = %s", monitorId)
+	q := sqlf.Sprintf("SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id, namespace_org_id FROM cm_monitors WHERE id = %s", monitorID)
 	return r.runMonitorQuery(ctx, q)
 }
 
