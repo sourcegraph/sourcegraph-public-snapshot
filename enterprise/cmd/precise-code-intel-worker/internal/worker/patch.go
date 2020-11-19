@@ -2,10 +2,12 @@ package worker
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
@@ -37,9 +39,11 @@ func patchData(base, patch *correlation.GroupedBundleDataMaps, reindexedFiles []
 			pathsToCopy[path] = struct{}{}
 		}
 	}
-	unifyRangeIDs(base.Documents, patch.Meta, patch.Documents, patch.ResultChunks, fileStatus)
-
-	mergeData(pathsToCopy, fileStatus, base, patch)
+	unifyRangeIDs(base, patch, fileStatus)
+	unifyMonikerVersions(base, patch)
+	unifyDefsRefs(base, patch, pathsToCopy, fileStatus)
+	unifyMonikers(base.Definitions, patch.Definitions, pathsToCopy, fileStatus)
+	unifyMonikers(base.References, patch.References, pathsToCopy, fileStatus)
 
 	for path := range pathsToCopy {
 		base.Documents[path] = patch.Documents[path]
@@ -51,10 +55,12 @@ func patchData(base, patch *correlation.GroupedBundleDataMaps, reindexedFiles []
 		}
 	}
 
+	recreatePackageData(base)
+
 	return nil
 }
 
-func mergeData(pathsToCopy map[string]struct{}, fileStatus map[string]gitserver.Status, base, patch *correlation.GroupedBundleDataMaps) (err error) {
+func unifyDefsRefs(base, patch *correlation.GroupedBundleDataMaps, pathsToCopy map[string]struct{}, fileStatus map[string]gitserver.Status) (err error) {
 	defResultsByPath := make(map[string]map[lsifstore.ID]lsifstore.RangeData)
 
 	for path := range pathsToCopy {
@@ -170,6 +176,40 @@ func mergeData(pathsToCopy map[string]struct{}, fileStatus map[string]gitserver.
 	return nil
 }
 
+func unifyMonikers(base, patch map[string]map[string][]lsifstore.LocationData, pathsToCopy map[string]struct{}, fileStatus map[string]gitserver.Status) {
+	for _, identMap := range base {
+		for ident, locations := range identMap {
+			var filteredLocations []lsifstore.LocationData
+			for _, location := range locations {
+				if fileStatus[location.URI] != gitserver.Deleted && fileStatus[location.URI] != gitserver.Modified {
+					filteredLocations = append(filteredLocations, location)
+				}
+			}
+			if len(filteredLocations) == 0 {
+				delete(identMap, ident)
+			} else {
+				identMap[ident] = filteredLocations
+			}
+		}
+	}
+
+	for scheme, identMap := range patch {
+		baseIdentMap, exists := base[scheme]
+		if !exists {
+			base[scheme] = make(map[string][]lsifstore.LocationData)
+			baseIdentMap = base[scheme]
+		}
+
+		for ident, locations := range identMap {
+			baseLocations := baseIdentMap[ident]
+			for _, location := range locations {
+				baseLocations = append(baseLocations, location)
+			}
+			baseIdentMap[ident] = baseLocations
+		}
+	}
+}
+
 func removeRefsIn(paths map[string]struct{}, data *correlation.GroupedBundleDataMaps) {
 	deletedRefs := make(map[lsifstore.ID]struct{})
 
@@ -196,14 +236,14 @@ func removeRefsIn(paths map[string]struct{}, data *correlation.GroupedBundleData
 
 var unequalUnmodifiedPathsErr = errors.New("The ranges of unmodified path in LSIF patch do not match ranges of the same path in the base LSIF dump.")
 
-func unifyRangeIDs(updateToDocs map[string]lsifstore.DocumentData, toUpdateMeta lsifstore.MetaData, toUpdateDocs map[string]lsifstore.DocumentData, toUpdateChunks map[int]lsifstore.ResultChunkData, fileStatus map[string]gitserver.Status) error {
+func unifyRangeIDs(updateTo, toUpdate *correlation.GroupedBundleDataMaps, fileStatus map[string]gitserver.Status) error {
 	updatedRngIDs := make(map[lsifstore.ID]lsifstore.ID)
 	resultsToUpdate := make(map[lsifstore.ID]struct{})
 
-	for path, toUpdateDoc := range toUpdateDocs {
+	for path, toUpdateDoc := range toUpdate.Documents {
 		pathUpdatedRngIDs := make(map[lsifstore.ID]lsifstore.ID)
 		if fileStatus[path] == gitserver.Unchanged {
-			updateToDoc := updateToDocs[path]
+			updateToDoc := updateTo.Documents[path]
 
 			updateToRngIDs := sortedRangeIDs(updateToDoc.Ranges)
 			toUpdateRng := sortedRangeIDs(toUpdateDoc.Ranges)
@@ -242,7 +282,7 @@ func unifyRangeIDs(updateToDocs map[string]lsifstore.DocumentData, toUpdateMeta 
 	}
 
 	for resultID := range resultsToUpdate {
-		results, chunk := getDefRef(resultID, toUpdateMeta, toUpdateChunks)
+		results, chunk := getDefRef(resultID, toUpdate.Meta, toUpdate.ResultChunks)
 		var updated []lsifstore.DocumentIDRangeID
 		for _, result := range results {
 			if updatedID, exists := updatedRngIDs[result.RangeID]; exists {
@@ -259,6 +299,111 @@ func unifyRangeIDs(updateToDocs map[string]lsifstore.DocumentData, toUpdateMeta 
 		}
 		chunk.DocumentIDRangeIDs[resultID] = updated
 	}
+
+	return nil
+}
+
+func unifyMonikerVersions(base, patch *correlation.GroupedBundleDataMaps) {
+	schemeNameVersionMap := make(map[string]map[string]string)
+
+	for _, document := range patch.Documents {
+		for _, moniker := range document.Monikers {
+			packageInfo, exists := document.PackageInformation[moniker.PackageInformationID]
+			if !exists {
+				continue
+			}
+
+			nameVersionMap, exists := schemeNameVersionMap[moniker.Scheme]
+			if !exists {
+				schemeNameVersionMap[moniker.Scheme] = make(map[string]string)
+				nameVersionMap = schemeNameVersionMap[moniker.Scheme]
+			}
+			nameVersionMap[packageInfo.Name] = packageInfo.Version
+		}
+	}
+
+	for _, document := range base.Documents {
+		for _, moniker := range document.Monikers {
+			nameVersionMap, exists := schemeNameVersionMap[moniker.Scheme]
+			if !exists {
+				continue
+			}
+			packageInfo, exists := document.PackageInformation[moniker.PackageInformationID]
+			if !exists {
+				continue
+			}
+
+			version, exists := nameVersionMap[packageInfo.Name]
+			if !exists {
+				continue
+			}
+
+			packageInfo.Version = version
+			document.PackageInformation[moniker.PackageInformationID] = packageInfo
+		}
+	}
+}
+
+func recreatePackageData(base *correlation.GroupedBundleDataMaps) error {
+	type ExpandedPackageReference struct {
+		Scheme      string
+		Name        string
+		Version     string
+		Identifiers []string
+	}
+
+	exports := make(map[string]lsifstore.Package)
+	imports := make(map[string]ExpandedPackageReference)
+
+	for _, document := range base.Documents {
+		for _, moniker := range document.Monikers {
+			packageInfo, exists := document.PackageInformation[moniker.PackageInformationID]
+			if !exists {
+				continue
+			}
+
+			key := makeKey(moniker.Scheme, packageInfo.Name, packageInfo.Version)
+			if moniker.Kind == "import" {
+				imports[key] = ExpandedPackageReference{
+					Scheme:      moniker.Scheme,
+					Name:        packageInfo.Name,
+					Version:     packageInfo.Version,
+					Identifiers: append(imports[key].Identifiers, moniker.Identifier),
+				}
+			} else if moniker.Kind == "export" {
+				exports[key] = lsifstore.Package{
+					DumpID:  0, // TODO
+					Scheme:  moniker.Scheme,
+					Name:    packageInfo.Name,
+					Version: packageInfo.Version,
+				}
+			}
+		}
+	}
+
+	exportList := make([]lsifstore.Package, 0, len(exports))
+	for _, export := range exports {
+		exportList = append(exportList, export)
+	}
+
+	importList := make([]lsifstore.PackageReference, 0, len(imports))
+	for _, imp := range imports {
+		filter, err := bloomfilter.CreateFilter(imp.Identifiers)
+		if err != nil {
+			return errors.Wrap(err, "bloomfilter.CreateFilter")
+		}
+
+		importList = append(importList, lsifstore.PackageReference{
+			DumpID:  0, // TODO
+			Scheme:  imp.Scheme,
+			Name:    imp.Name,
+			Version: imp.Version,
+			Filter:  filter,
+		})
+	}
+
+	base.Packages = exportList
+	base.PackageReferences = importList
 
 	return nil
 }
@@ -289,4 +434,8 @@ func newID() (lsifstore.ID, error) {
 		return "", err
 	}
 	return lsifstore.ID(uuid.String()), nil
+}
+
+func makeKey(parts ...string) string {
+	return strings.Join(parts, ":")
 }
