@@ -41,7 +41,6 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                 }
                 icon={VideoInputAntennaIcon}
             />
-            <div>Hello world</div>
             <div className="d-flex flex-column">
                 <div className="code-monitoring-page-tabs border-bottom mb-4">
                     <div className="nav nav-tabs border-bottom-0">
