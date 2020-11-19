@@ -1,21 +1,16 @@
 package worker
 
 import (
-	"context"
-	"fmt"
 	"sort"
 
 	"github.com/google/uuid"
-	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
 
-func patchData(ctx context.Context, base *correlation.GroupedBundleDataMaps, patch *correlation.GroupedBundleDataMaps, reindexedFiles []string, fileStatus map[string]gitserver.Status) (err error) {
-	log15.Warn("loading patch data...")
-
+func patchData(base *correlation.GroupedBundleDataMaps, patch *correlation.GroupedBundleDataMaps, reindexedFiles []string, fileStatus map[string]gitserver.Status) (err error) {
 	reindexed := make(map[string]struct{})
 	for _, file := range reindexedFiles {
 		reindexed[file] = struct{}{}
@@ -27,7 +22,7 @@ func patchData(ctx context.Context, base *correlation.GroupedBundleDataMaps, pat
 			modifiedOrDeletedPaths[path] = struct{}{}
 		}
 	}
-	removeRefsIn(modifiedOrDeletedPaths, base.Meta, base.Documents, base.ResultChunks)
+	removeRefsIn(modifiedOrDeletedPaths, base)
 
 	pathsToCopy := make(map[string]struct{})
 	unmodifiedReindexedPaths := make(map[string]struct{})
@@ -44,11 +39,25 @@ func patchData(ctx context.Context, base *correlation.GroupedBundleDataMaps, pat
 	}
 	unifyRangeIDs(base.Documents, patch.Meta, patch.Documents, patch.ResultChunks, fileStatus)
 
-	log15.Warn("indexing new data...")
+	mergeData(pathsToCopy, fileStatus, base, patch)
+
+	for path := range pathsToCopy {
+		base.Documents[path] = patch.Documents[path]
+	}
+
+	for path, status := range fileStatus {
+		if status == gitserver.Deleted {
+			delete(base.Documents, path)
+		}
+	}
+
+	return nil
+}
+
+func mergeData(pathsToCopy map[string]struct{}, fileStatus map[string]gitserver.Status, base, patch *correlation.GroupedBundleDataMaps) (err error) {
 	defResultsByPath := make(map[string]map[lsifstore.ID]lsifstore.RangeData)
 
 	for path := range pathsToCopy {
-		log15.Warn(fmt.Sprintf("finding all def results referenced in %v", path))
 		for _, rng := range patch.Documents[path].Ranges {
 			if rng.DefinitionResultID == "" {
 				continue
@@ -69,25 +78,17 @@ func patchData(ctx context.Context, base *correlation.GroupedBundleDataMaps, pat
 		}
 	}
 
-	log15.Warn("merging data...")
 	for path, defsMap := range defResultsByPath {
 		baseDoc := base.Documents[path]
-		doLog := path == "cmd/frontend/internal/app/updatecheck/handler.go"
 		defIdxs := sortedRangeIDs(defsMap)
 		for _, defRngID := range defIdxs {
 			def := defsMap[defRngID]
-			if doLog {
-				log15.Warn(fmt.Sprintf("unifying def result defined in %v:%v:%v)", def.StartLine, def.StartCharacter, path))
-			}
 			var defID, refID lsifstore.ID
 			if fileStatus[path] == gitserver.Unchanged {
 				baseRng := baseDoc.Ranges[defRngID]
 
 				defID = baseRng.DefinitionResultID
 				refID = baseRng.ReferenceResultID
-				if doLog {
-					log15.Warn(fmt.Sprintf("unifying with existing result IDs %v, %v", defID, refID))
-				}
 			} else {
 				defID, err = newID()
 				if err != nil {
@@ -96,9 +97,6 @@ func patchData(ctx context.Context, base *correlation.GroupedBundleDataMaps, pat
 				refID, err = newID()
 				if err != nil {
 					return err
-				}
-				if doLog {
-					log15.Warn(fmt.Sprintf("using new result IDs %v, %v", defID, refID))
 				}
 			}
 
@@ -118,14 +116,7 @@ func patchData(ctx context.Context, base *correlation.GroupedBundleDataMaps, pat
 			}
 			for _, patchRef := range patchRefs {
 				patchPath := patchRefChunk.DocumentPaths[patchRef.DocumentID]
-				patchRng := patch.Documents[patchPath].Ranges[patchRef.RangeID]
-				if doLog {
-					log15.Warn(fmt.Sprintf("processing ref %v:%v:%v", patchPath, patchRng.StartLine, patchRng.StartCharacter))
-				}
 				if fileStatus[patchPath] != gitserver.Unchanged {
-					if doLog {
-						log15.Warn(fmt.Sprintf("adding ref"))
-					}
 					baseRefDocumentID, exists := baseRefDocumentIDs[path]
 					if !exists {
 						baseRefDocumentID, err = newID()
@@ -149,9 +140,6 @@ func patchData(ctx context.Context, base *correlation.GroupedBundleDataMaps, pat
 						}
 					}
 					if patchDef != nil {
-						if doLog {
-							log15.Warn(fmt.Sprintf("adding def"))
-						}
 						baseDefDocumentID, exists := baseDefDocumentIDs[path]
 						if !exists {
 							baseDefDocumentID, err = newID()
@@ -168,9 +156,6 @@ func patchData(ctx context.Context, base *correlation.GroupedBundleDataMaps, pat
 
 				if _, exists := pathsToCopy[patchPath]; exists {
 					rng := patch.Documents[patchPath].Ranges[patchRef.RangeID]
-					if doLog {
-						log15.Warn(fmt.Sprintf("updating result ID"))
-					}
 					patch.Documents[patchPath].Ranges[patchRef.RangeID] = lsifstore.RangeData{
 						StartLine:          rng.StartLine,
 						StartCharacter:     rng.StartCharacter,
@@ -186,38 +171,23 @@ func patchData(ctx context.Context, base *correlation.GroupedBundleDataMaps, pat
 
 			baseRefChunk.DocumentIDRangeIDs[refID] = baseRefs
 			baseDefChunk.DocumentIDRangeIDs[defID] = baseDefs
-
-			if doLog {
-				log15.Warn("")
-			}
 		}
-	}
-
-	for path, status := range fileStatus {
-		if status == gitserver.Deleted {
-			log15.Warn(fmt.Sprintf("deleting path %v", path))
-			delete(base.Documents, path)
-		}
-	}
-	for path := range pathsToCopy {
-		log15.Warn(fmt.Sprintf("copying document %v", path))
-		base.Documents[path] = patch.Documents[path]
 	}
 
 	return nil
 }
 
-func removeRefsIn(paths map[string]struct{}, meta lsifstore.MetaData, docs map[string]lsifstore.DocumentData, chunks map[int]lsifstore.ResultChunkData) {
+func removeRefsIn(paths map[string]struct{}, data *correlation.GroupedBundleDataMaps) {
 	deletedRefs := make(map[lsifstore.ID]struct{})
 
 	for path := range paths {
-		doc := docs[path]
+		doc := data.Documents[path]
 		for _, rng := range doc.Ranges {
 			if _, exists := deletedRefs[rng.ReferenceResultID]; exists {
 				continue
 			}
 
-			refs, refChunk := getDefRef(rng.ReferenceResultID, meta, chunks)
+			refs, refChunk := getDefRef(rng.ReferenceResultID, data.Meta, data.ResultChunks)
 			var filteredRefs []lsifstore.DocumentIDRangeID
 			for _, ref := range refs {
 				refPath := refChunk.DocumentPaths[ref.DocumentID]
