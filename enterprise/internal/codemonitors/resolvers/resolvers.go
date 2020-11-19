@@ -970,12 +970,12 @@ func (r *Resolver) deleteCodeMonitorQuery(ctx context.Context, args *graphqlback
 // - she is a member of the organization which is the owner of the monitor
 // - she is a site-admin
 func (r *Resolver) isAllowedToEdit(ctx context.Context, id graphql.ID) error {
-	var monitorId int32
+	var monitorId int64
 	err := relay.UnmarshalSpec(id, &monitorId)
 	if err != nil {
 		return err
 	}
-	userId, orgID, err := r.ownerForId32(ctx, monitorId)
+	userId, orgID, err := r.ownerForId64(ctx, monitorId)
 	if err != nil {
 		return err
 	}
@@ -994,12 +994,12 @@ func (r *Resolver) isAllowedToEdit(ctx context.Context, id graphql.ID) error {
 	return nil
 }
 
-func (r *Resolver) ownerForId32(ctx context.Context, monitorId int32) (userId *int32, orgId *int32, err error) {
+func (r *Resolver) ownerForId64(ctx context.Context, monitorId int64) (userId *int32, orgId *int32, err error) {
 	var (
 		q    *sqlf.Query
 		rows *sql.Rows
 	)
-	q, err = ownerForId32Query(ctx, monitorId)
+	q, err = ownerForId64Query(ctx, monitorId)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1029,7 +1029,7 @@ func (r *Resolver) ownerForId32(ctx context.Context, monitorId int32) (userId *i
 	return userId, orgId, nil
 }
 
-func ownerForId32Query(ctx context.Context, monitorId int32) (*sqlf.Query, error) {
+func ownerForId64Query(ctx context.Context, monitorId int64) (*sqlf.Query, error) {
 	const ownerForId32Query = `SELECT namespace_user_id, namespace_org_id FROM cm_monitors WHERE id = %s`
 	return sqlf.Sprintf(
 		ownerForId32Query,
