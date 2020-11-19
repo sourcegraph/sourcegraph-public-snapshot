@@ -1,10 +1,10 @@
 import * as React from 'react'
 import { storiesOf } from '@storybook/react'
 import { StreamingProgress } from './StreamingProgress'
-import { WebStory } from '../../../components/WebStory'
-import { Progress } from '../../stream'
+import { WebStory } from '../../../../components/WebStory'
+import { Progress } from '../../../stream'
 
-const { add } = storiesOf('web/search/results/streaming-progress/StreamingProgress', module).addParameters({
+const { add } = storiesOf('web/search/results/streaming/progress/StreamingProgress', module).addParameters({
     design: {
         type: 'figma',
         url: 'https://www.figma.com/file/IyiXZIbPHK447NCXov0AvK/13928-Streaming-search?node-id=280%3A17768',

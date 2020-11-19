@@ -1,7 +1,7 @@
 import { mount } from 'enzyme'
 import React from 'react'
 import { Popover } from 'reactstrap'
-import { Progress } from '../../stream'
+import { Progress } from '../../../stream'
 import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton'
 
 describe('StreamingProgressSkippedButton', () => {

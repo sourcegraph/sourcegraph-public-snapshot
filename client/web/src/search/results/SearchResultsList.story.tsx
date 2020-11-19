@@ -60,7 +60,6 @@ const defaultProps: SearchResultsListProps = {
     versionContext: undefined,
 
     navbarSearchQueryState: { query: '', cursorPosition: 0 },
-    searchStreaming: false,
 
     shouldDisplayPerformanceWarning: () => of(false),
 }
