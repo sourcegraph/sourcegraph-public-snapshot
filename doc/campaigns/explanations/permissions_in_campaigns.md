@@ -57,9 +57,11 @@ See these code host specific pages for which permissions and scopes the tokens r
 - [GitLab](../../../admin/external_service/gitlab.md#access-token-scopes)
 - [Bitbucket Server](../../../admin/external_service/gitlab.md#access-token-permissions)
 
-> NOTE: Site admins will fall back to using the Sourcegraph token for the code host if they have not added a personal access token. This makes it easier to try out campaigns, but be aware that this may result in changesets being created or changed with different permissions to your normal code host user.
->
-> Non-admin users are unable to apply campaigns without configuring access tokens.
+### Site admins
+
+Site admins will fall back to using the Sourcegraph token for the code host if they have not added a personal access token. This makes it easier to try out campaigns, but be aware that this may result in changesets being created or changed with different permissions to your normal code host user.
+
+Non-admin users are unable to apply campaigns without configuring access tokens.
 
 ## Repository permissions for campaigns
 
