@@ -10,6 +10,8 @@ In order to create these changesets on the code hosts, you need to publish them.
 
 To publish a changeset, you need [admin permissions for the campaign](../explanations/permissions_in_campaigns.md#permission-levels-for-campaigns) and write access to the changeset's repository (on the code host). For more information, see [Code host interactions in campaigns](../explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns).
 
+You also need a personal access token configured in Sourcegraph for your code host(s). For more information, see "[Configuring user credentials](configuring_user_credentials.md)".
+
 [Forking the repository](../explanations/introduction_to_campaigns.md#known-issues) is not yet supported.
 
 ## Publishing changesets

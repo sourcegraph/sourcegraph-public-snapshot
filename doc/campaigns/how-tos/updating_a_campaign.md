@@ -10,6 +10,8 @@ When a new campaign spec is applied to an existing campaign the existing campaig
 
 To update a campaign, you need [admin access to the campaign](../explanations/permissions_in_campaigns.md#campaign-access-for-each-permission-level), and, if you want to [publish changesets](publishing_changesets.md) in the campaign, [write access to all affected repositories](../explanations/permissions_in_campaigns.md#repository-permissions-for-campaigns) with published changesets.
 
+You also need a personal access token configured in Sourcegraph for your code host(s). For more information, see "[Configuring user credentials](configuring_user_credentials.md)".
+
 ## Preview and apply a new campaign spec
 
 In order to update a campaign after previewing the changes, do the following:
