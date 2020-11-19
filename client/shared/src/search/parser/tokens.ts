@@ -252,6 +252,21 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
     while (pattern.value[start] !== undefined) {
         current = nextChar()
         switch (current) {
+            case '.':
+                // Look ahead and see if this is a ... hole alias.
+                if (pattern.value.slice(start, start + 2) === '..') {
+                    // It is a ... hole.
+                    if (token.length > 0) {
+                        // Append the value before this '...'.
+                        appendDecoratedToken(start - 1, PatternKind.Literal)
+                    }
+                    start = start + 2
+                    // Append the value of '...' after advancing.
+                    appendDecoratedToken(start - 3, StructuralMetaKind.Hole)
+                    continue
+                }
+                token.push('.')
+                break
             case ':':
                 if (open > 0) {
                     // ':' inside a hole, likely part of a regexp pattern.
@@ -274,8 +289,9 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                         token.push(':[')
                         continue
                     }
-                    // Something else, push the ':' we saw and the look ahead char.
-                    token.push(':', current)
+                    // Something else, push the ':' we saw, backtrack, and continue.
+                    token.push(':')
+                    start = start - 1
                     continue
                 }
                 // Trailing ':'.

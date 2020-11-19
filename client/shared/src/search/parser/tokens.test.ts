@@ -772,4 +772,103 @@ describe('getMonacoTokens()', () => {
             ]
         `)
     })
+
+    test('decorate structural hole ... alias', () => {
+        expect(
+            getMonacoTokens(
+                toSuccess(scanSearchQuery('r:foo a...b...c....', false, SearchPatternType.structural)),
+                true
+            )
+        ).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "filterKeyword"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 11,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 15,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 18,
+                "scopes": "identifier"
+              }
+            ]
+        `)
+    })
+    test('decorate structural hole ... alias', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:foo ...:...', false, SearchPatternType.structural)), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "filterKeyword"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "structuralMetaHole"
+              }
+            ]
+        `)
+    })
 })
