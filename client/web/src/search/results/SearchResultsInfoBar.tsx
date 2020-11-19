@@ -16,7 +16,6 @@ import { AuthenticatedUser } from '../../auth'
 import { ContributableMenu } from '../../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PatternTypeProps, SearchStreamingProps } from '..'
-import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { pluralize } from '../../../../shared/src/util/strings'
 import { SearchPatternType } from '../../graphql-operations'
@@ -49,8 +48,6 @@ interface SearchResultsInfoBarProps
     onSaveQueryClick: () => void
     didSave: boolean
 
-    displayPerformanceWarning: boolean
-
     location: H.Location
 
     className?: string
@@ -65,9 +62,7 @@ interface SearchResultsInfoBarProps
 const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInfoBarProps> = props =>
     props.patternType === SearchPatternType.literal && props.query && props.query.includes('"') ? (
         <div
-            className={`search-results-info-bar__notice${
-                props.results.results.length === 0 ? ' search-results-info-bar__notice--no-results' : ''
-            }`}
+            className="search-results-info-bar__notice"
             data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
         >
             <span>
@@ -88,167 +83,151 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
     const excludedArchivedCount = excludeArchivedFilter?.count || 0
     return (
         <div className={classNames(props.className, 'search-results-info-bar')} data-testid="results-info-bar">
-            {props.results.results.length === 0 && (
-                <small className="search-results-info-bar__row">
+            <small className="search-results-info-bar__row">
+                {!props.searchStreaming && (
                     <div className="search-results-info-bar__row-left">
+                        <div className="search-results-info-bar__notice test-search-results-stats">
+                            <span>
+                                <CalculatorIcon className="icon-inline" /> {props.results.approximateResultCount}{' '}
+                                {pluralize('result', props.results.matchCount)} in{' '}
+                                {(props.results.elapsedMilliseconds / 1000).toFixed(2)} seconds
+                                {props.results.indexUnavailable && ' (index unavailable)'}
+                                {props.results.limitHit && String.fromCharCode(160)}
+                            </span>
+
+                            {props.results.limitHit && props.onShowMoreResultsClick && (
+                                <button
+                                    type="button"
+                                    className="btn btn-link btn-sm p-0"
+                                    onClick={props.onShowMoreResultsClick}
+                                >
+                                    (show more)
+                                </button>
+                            )}
+                        </div>
+
+                        {excludedForksCount > 0 && (
+                            <div
+                                className="search-results-info-bar__notice"
+                                data-tooltip="add fork:yes to include forks"
+                            >
+                                <span>
+                                    <AlertCircleIcon className="icon-inline" /> {excludedForksCount} forked{' '}
+                                    {pluralize('repository', excludedForksCount, 'repositories')} excluded
+                                </span>
+                            </div>
+                        )}
+
+                        {excludedArchivedCount > 0 && (
+                            <div
+                                className="search-results-info-bar__notice"
+                                data-tooltip="add archived:yes to include archives"
+                            >
+                                <span>
+                                    <AlertCircleIcon className="icon-inline" /> {excludedArchivedCount} archived{' '}
+                                    {pluralize('repository', excludedArchivedCount, 'repositories')} excluded
+                                </span>
+                            </div>
+                        )}
+
+                        {props.results.missing.length > 0 && (
+                            <div
+                                className="search-results-info-bar__notice"
+                                data-tooltip={props.results.missing.map(repo => repo.name).join('\n')}
+                            >
+                                <span>
+                                    <MapSearchIcon className="icon-inline" /> {props.results.missing.length}{' '}
+                                    {pluralize('repository', props.results.missing.length, 'repositories')} not found
+                                </span>
+                            </div>
+                        )}
+
+                        {props.results.timedout.length > 0 && (
+                            <div
+                                className="search-results-info-bar__notice"
+                                data-tooltip={props.results.timedout.map(repo => repo.name).join('\n')}
+                            >
+                                <span>
+                                    <TimerSandIcon className="icon-inline" /> {props.results.timedout.length}{' '}
+                                    {pluralize('repository', props.results.timedout.length, 'repositories')} timed out
+                                    (reload to try again, or specify a longer "timeout:" in your query)
+                                </span>
+                            </div>
+                        )}
+
+                        {props.results.cloning.length > 0 && (
+                            <div
+                                className="search-results-info-bar__notice"
+                                data-tooltip={props.results.cloning.map(repo => repo.name).join('\n')}
+                            >
+                                <span>
+                                    <CloudDownloadIcon className="icon-inline" /> {props.results.cloning.length}{' '}
+                                    {pluralize('repository', props.results.cloning.length, 'repositories')} cloning
+                                    (reload to try again)
+                                </span>
+                            </div>
+                        )}
+
                         <QuotesInterpretedLiterallyNotice {...props} />
                     </div>
-                    <ul className="search-results-info-bar__row-right nav align-items-center justify-content-end" />
-                </small>
-            )}
-            {(props.results.timedout.length > 0 ||
-                props.results.cloning.length > 0 ||
-                props.results.results.length > 0 ||
-                props.results.missing.length > 0 ||
-                excludedForksCount > 0 ||
-                excludedArchivedCount > 0) && (
-                <small className="search-results-info-bar__row">
-                    {!props.searchStreaming && (
-                        <div className="search-results-info-bar__row-left">
-                            <div className="search-results-info-bar__notice test-search-results-stats">
-                                <span>
-                                    <CalculatorIcon className="icon-inline" /> {props.results.approximateResultCount}{' '}
-                                    {pluralize('result', props.results.matchCount)} in{' '}
-                                    {(props.results.elapsedMilliseconds / 1000).toFixed(2)} seconds
-                                    {props.results.indexUnavailable && ' (index unavailable)'}
-                                    {props.results.limitHit && String.fromCharCode(160)}
-                                </span>
+                )}
 
-                                {props.results.limitHit && props.onShowMoreResultsClick && (
-                                    <button
-                                        type="button"
-                                        className="btn btn-link btn-sm p-0"
-                                        onClick={props.onShowMoreResultsClick}
-                                    >
-                                        (show more)
-                                    </button>
+                {props.searchStreaming && <StreamingProgress />}
+
+                <ul className="search-results-info-bar__row-right nav align-items-center justify-content-end">
+                    <ActionsNavItems
+                        {...props}
+                        extraContext={{ searchQuery: props.query || null }}
+                        menu={ContributableMenu.SearchResultsToolbar}
+                        wrapInList={false}
+                        showLoadingSpinnerDuringExecution={true}
+                        actionItemClass="btn btn-link nav-link text-decoration-none"
+                    />
+
+                    {props.results.results.length > 0 && (
+                        <li className="nav-item">
+                            <button
+                                type="button"
+                                onClick={props.onExpandAllResultsToggle}
+                                className="btn btn-link nav-link text-decoration-none"
+                                data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
+                            >
+                                {props.allExpanded ? (
+                                    <>
+                                        <ArrowCollapseVerticalIcon className="icon-inline" /> Collapse all
+                                    </>
+                                ) : (
+                                    <>
+                                        <ArrowExpandVerticalIcon className="icon-inline" /> Expand all
+                                    </>
                                 )}
-                            </div>
-
-                            {excludedForksCount > 0 && (
-                                <div
-                                    className="search-results-info-bar__notice"
-                                    data-tooltip="add fork:yes to include forks"
-                                >
-                                    <span>
-                                        <AlertCircleIcon className="icon-inline" /> {excludedForksCount} forked{' '}
-                                        {pluralize('repository', excludedForksCount, 'repositories')} excluded
-                                    </span>
-                                </div>
-                            )}
-
-                            {excludedArchivedCount > 0 && (
-                                <div
-                                    className="search-results-info-bar__notice"
-                                    data-tooltip="add archived:yes to include archives"
-                                >
-                                    <span>
-                                        <AlertCircleIcon className="icon-inline" /> {excludedArchivedCount} archived{' '}
-                                        {pluralize('repository', excludedArchivedCount, 'repositories')} excluded
-                                    </span>
-                                </div>
-                            )}
-
-                            {props.results.missing.length > 0 && (
-                                <div
-                                    className="search-results-info-bar__notice"
-                                    data-tooltip={props.results.missing.map(repo => repo.name).join('\n')}
-                                >
-                                    <span>
-                                        <MapSearchIcon className="icon-inline" /> {props.results.missing.length}{' '}
-                                        {pluralize('repository', props.results.missing.length, 'repositories')} not
-                                        found
-                                    </span>
-                                </div>
-                            )}
-
-                            {props.results.timedout.length > 0 && (
-                                <div
-                                    className="search-results-info-bar__notice"
-                                    data-tooltip={props.results.timedout.map(repo => repo.name).join('\n')}
-                                >
-                                    <span>
-                                        <TimerSandIcon className="icon-inline" /> {props.results.timedout.length}{' '}
-                                        {pluralize('repository', props.results.timedout.length, 'repositories')} timed
-                                        out (reload to try again, or specify a longer "timeout:" in your query)
-                                    </span>
-                                </div>
-                            )}
-
-                            {props.results.cloning.length > 0 && (
-                                <div
-                                    className="search-results-info-bar__notice"
-                                    data-tooltip={props.results.cloning.map(repo => repo.name).join('\n')}
-                                >
-                                    <span>
-                                        <CloudDownloadIcon className="icon-inline" /> {props.results.cloning.length}{' '}
-                                        {pluralize('repository', props.results.cloning.length, 'repositories')} cloning
-                                        (reload to try again)
-                                    </span>
-                                </div>
-                            )}
-                            <QuotesInterpretedLiterallyNotice {...props} />
-                        </div>
+                            </button>
+                        </li>
                     )}
 
-                    {props.searchStreaming && <StreamingProgress />}
-
-                    <ul className="search-results-info-bar__row-right nav align-items-center justify-content-end">
-                        <ActionsNavItems
-                            {...props}
-                            extraContext={{ searchQuery: props.query || null }}
-                            menu={ContributableMenu.SearchResultsToolbar}
-                            wrapInList={false}
-                            showLoadingSpinnerDuringExecution={true}
-                            actionItemClass="btn btn-link nav-link text-decoration-none"
-                        />
-
-                        {props.results.results.length > 0 && (
-                            <li className="nav-item">
-                                <button
-                                    type="button"
-                                    onClick={props.onExpandAllResultsToggle}
-                                    className="btn btn-link nav-link text-decoration-none"
-                                    data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
-                                >
-                                    {props.allExpanded ? (
-                                        <>
-                                            <ArrowCollapseVerticalIcon className="icon-inline" /> Collapse all
-                                        </>
-                                    ) : (
-                                        <>
-                                            <ArrowExpandVerticalIcon className="icon-inline" /> Expand all
-                                        </>
-                                    )}
-                                </button>
-                            </li>
-                        )}
-
-                        {props.showSavedQueryButton !== false && props.authenticatedUser && (
-                            <li className="nav-item">
-                                <button
-                                    type="button"
-                                    onClick={props.onSaveQueryClick}
-                                    className="btn btn-link nav-link text-decoration-none"
-                                    disabled={props.didSave}
-                                >
-                                    {props.didSave ? (
-                                        <>
-                                            <CheckIcon className="icon-inline" /> Query saved
-                                        </>
-                                    ) : (
-                                        <>
-                                            <DownloadIcon className="icon-inline test-save-search-link" /> Save this
-                                            search query
-                                        </>
-                                    )}
-                                </button>
-                            </li>
-                        )}
-                    </ul>
-                </small>
-            )}
-            {!props.results.alert && props.displayPerformanceWarning && <PerformanceWarningAlert />}
+                    {props.showSavedQueryButton !== false && props.authenticatedUser && (
+                        <li className="nav-item">
+                            <button
+                                type="button"
+                                onClick={props.onSaveQueryClick}
+                                className="btn btn-link nav-link text-decoration-none"
+                                disabled={props.didSave}
+                            >
+                                {props.didSave ? (
+                                    <>
+                                        <CheckIcon className="icon-inline" /> Query saved
+                                    </>
+                                ) : (
+                                    <>
+                                        <DownloadIcon className="icon-inline test-save-search-link" /> Save this search
+                                        query
+                                    </>
+                                )}
+                            </button>
+                        </li>
+                    )}
+                </ul>
+            </small>
         </div>
     )
 }

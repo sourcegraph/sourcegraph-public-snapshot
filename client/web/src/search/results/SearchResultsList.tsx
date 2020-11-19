@@ -32,7 +32,6 @@ import { SearchResult } from '../../components/SearchResult'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { eventLogger } from '../../tracking/eventLogger'
-import { shouldDisplayPerformanceWarning } from '../backend'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { ErrorAlert } from '../../components/alerts'
 import { VersionContextProps } from '../../../../shared/src/search/util'
@@ -40,6 +39,7 @@ import { DeployType } from '../../jscontext'
 import { AuthenticatedUser } from '../../auth'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { QueryState } from '../helpers'
+import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
 
 const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     typeof value === 'object' &&
@@ -84,6 +84,7 @@ export interface SearchResultsListProps
     interactiveSearchMode: boolean
 
     fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    shouldDisplayPerformanceWarning: (deployType: DeployType) => Observable<boolean>
 }
 
 interface State {
@@ -304,9 +305,9 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         this.componentUpdates.next(this.props)
 
         this.subscriptions.add(
-            shouldDisplayPerformanceWarning(this.props.deployType).subscribe(displayPerformanceWarning =>
-                this.setState({ displayPerformanceWarning })
-            )
+            this.props
+                .shouldDisplayPerformanceWarning(this.props.deployType)
+                .subscribe(displayPerformanceWarning => this.setState({ displayPerformanceWarning }))
         )
     }
 
@@ -378,10 +379,13 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                             query={parsedQuery}
                                             results={results}
                                             showDotComMarketing={this.props.isSourcegraphDotCom}
-                                            displayPerformanceWarning={this.state.displayPerformanceWarning}
                                             className="border-bottom flex-grow-1"
                                         />
                                     </div>
+
+                                    {!results.alert && this.state.displayPerformanceWarning && (
+                                        <PerformanceWarningAlert />
+                                    )}
 
                                     {/* Server-provided help message */}
                                     {results.alert && (
