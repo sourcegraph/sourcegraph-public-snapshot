@@ -2,7 +2,7 @@ package lsifstore
 
 import "sort"
 
-// findRanges filters the given ranges and returns those that contain the position constructed
+// FindRanges filters the given ranges and returns those that contain the position constructed
 // from line and character. The order of the output slice is "outside-in", so that earlier
 // ranges properly enclose later ranges.
 func FindRanges(ranges map[ID]RangeData, line, character int) []RangeData {
@@ -59,7 +59,7 @@ func CompareRanges(a RangeData, b RangeData) int {
 	return 0
 }
 
-// comparePosition compres the range r with the position constructed from line and character.
+// ComparePosition compres the range r with the position constructed from line and character.
 // Returns -1 if the position occurs before the range, +1 if it occurs after, and 0 if the
 // position is inside of the range.
 func ComparePosition(r RangeData, line, character int) int {
@@ -82,7 +82,7 @@ func ComparePosition(r RangeData, line, character int) int {
 	return 0
 }
 
-// rangeIntersectsSpan determines fi the given range falls within the window denoted by the
+// RangeIntersectsSpan determines fi the given range falls within the window denoted by the
 // given start and end lines.
 func RangeIntersectsSpan(r RangeData, startLine, endLine int) bool {
 	return (startLine <= r.StartLine && r.StartLine < endLine) || (startLine <= r.EndLine && r.EndLine < endLine)

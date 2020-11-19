@@ -34,3 +34,15 @@ func newID() (lsifstore.ID, error) {
 	}
 	return lsifstore.ID(uuid.String()), nil
 }
+
+func makeKey(parts ...string) string {
+	return strings.Join(parts, ":")
+}
+
+func toID(id int) lsifstore.ID {
+	if id == 0 {
+		return lsifstore.ID("")
+	}
+
+	return lsifstore.ID(strconv.FormatInt(int64(id), 10))
+}

@@ -34,38 +34,27 @@ func Resolve(bundle *GroupedBundleDataMaps, document lsifstore.DocumentData, rng
 		monikers = append(monikers, document.Monikers[monikerID])
 	}
 
-	var definitions []lsifstore.LocationData
-	docIDRngIDs, chunk := getDefRef(rng.DefinitionResultID, bundle.Meta, bundle.ResultChunks)
-	for _, docIDRngID := range docIDRngIDs {
-		path := chunk.DocumentPaths[docIDRngID.DocumentID]
-		def := bundle.Documents[path].Ranges[docIDRngID.RangeID]
-		definitions = append(definitions, lsifstore.LocationData{
-			URI:            path,
-			StartLine:      def.StartLine,
-			StartCharacter: def.StartCharacter,
-			EndLine:        def.EndLine,
-			EndCharacter:   def.EndCharacter,
-		})
-	}
-
-	var references []lsifstore.LocationData
-	docIDRngIDs, chunk = getDefRef(rng.ReferenceResultID, bundle.Meta, bundle.ResultChunks)
-	for _, docIDRngID := range docIDRngIDs {
-		path := chunk.DocumentPaths[docIDRngID.DocumentID]
-		ref := bundle.Documents[path].Ranges[docIDRngID.RangeID]
-		references = append(references, lsifstore.LocationData{
-			URI:            path,
-			StartLine:      ref.StartLine,
-			StartCharacter: ref.StartCharacter,
-			EndLine:        ref.EndLine,
-			EndCharacter:   ref.EndCharacter,
-		})
-	}
-
 	return QueryResult{
-		Definitions: definitions,
-		References: references,
+		Definitions: resolveLocations(bundle, rng.DefinitionResultID),
+		References: resolveLocations(bundle, rng.ReferenceResultID),
 		Hover: hover,
 		Monikers: monikers,
 	}
+}
+
+func resolveLocations(bundle *GroupedBundleDataMaps, resultID lsifstore.ID) []lsifstore.LocationData {
+	var locations []lsifstore.LocationData
+	docIDRngIDs, chunk := getDefRef(resultID, bundle.Meta, bundle.ResultChunks)
+	for _, docIDRngID := range docIDRngIDs {
+		path := chunk.DocumentPaths[docIDRngID.DocumentID]
+		rng := bundle.Documents[path].Ranges[docIDRngID.RangeID]
+		locations = append(locations, lsifstore.LocationData{
+			URI:            path,
+			StartLine:      rng.StartLine,
+			StartCharacter: rng.StartCharacter,
+			EndLine:        rng.EndLine,
+			EndCharacter:   rng.EndCharacter,
+		})
+	}
+	return locations
 }
