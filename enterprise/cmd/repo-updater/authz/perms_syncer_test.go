@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func TestPermsSyncer_ScheduleUsers(t *testing.T) {
@@ -137,11 +138,8 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 			return []*repos.Repo{{ID: 1}}, nil
 		},
 	}
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
-	permsStore := edb.NewPermsStore(nil, clock)
-	s := NewPermsSyncer(reposStore, permsStore, clock, nil)
+	permsStore := edb.NewPermsStore(nil, timeutil.Now)
+	s := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
 
 	tests := []struct {
 		name     string
@@ -173,11 +171,8 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 }
 
 func TestPermsSyncer_syncRepoPerms(t *testing.T) {
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
 	newPermsSyncer := func(reposStore repos.Store) *PermsSyncer {
-		return NewPermsSyncer(reposStore, edb.NewPermsStore(nil, clock), clock, nil)
+		return NewPermsSyncer(reposStore, edb.NewPermsStore(nil, timeutil.Now), timeutil.Now, nil)
 	}
 
 	t.Run("TouchRepoPermissions is called when no authz provider", func(t *testing.T) {

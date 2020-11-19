@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -23,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func init() {
@@ -195,7 +197,7 @@ func TestService(t *testing.T) {
 		t.Fatal("user is admin, want non-admin")
 	}
 
-	now := time.Now().UTC().Truncate(time.Microsecond)
+	now := timeutil.Now()
 	clock := func() time.Time { return now }
 
 	store := NewStoreWithClock(dbconn.Global, clock)

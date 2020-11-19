@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func cleanupPermsTables(t *testing.T, s *PermsStore) {
@@ -52,10 +53,10 @@ func toBitmap(ids ...uint32) *roaring.Bitmap {
 	return bm
 }
 
-var now = time.Now().Truncate(time.Microsecond).UnixNano()
+var now = timeutil.Now().UnixNano()
 
 func clock() time.Time {
-	return time.Unix(0, atomic.LoadInt64(&now)).Truncate(time.Microsecond)
+	return time.Unix(0, atomic.LoadInt64(&now))
 }
 
 func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
@@ -648,9 +649,9 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 
 func testPermsStore_TouchRepoPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		now := time.Now().Truncate(time.Microsecond).Unix()
+		now := timeutil.Now().Unix()
 		s := NewPermsStore(db, func() time.Time {
-			return time.Unix(atomic.LoadInt64(&now), 0).Truncate(time.Microsecond)
+			return time.Unix(atomic.LoadInt64(&now), 0)
 		})
 		t.Cleanup(func() {
 			cleanupPermsTables(t, s)
