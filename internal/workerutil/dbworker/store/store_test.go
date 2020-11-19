@@ -527,6 +527,48 @@ func TestStoreMarkErrored(t *testing.T) {
 	}
 }
 
+func TestStoreMarkFailed(t *testing.T) {
+	setupStoreTest(t)
+
+	if _, err := dbconn.Global.Exec(`
+		INSERT INTO workerutil_test (id, state)
+		VALUES
+			(1, 'processing')
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	marked, err := testStore(defaultTestStoreOptions).MarkFailed(context.Background(), 1, "new message")
+	if err != nil {
+		t.Fatalf("unexpected error marking upload as completed: %s", err)
+	}
+	if !marked {
+		t.Fatalf("expected record to be marked")
+	}
+
+	rows, err := dbconn.Global.Query(`SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
+	if err != nil {
+		t.Fatalf("unexpected error querying record: %s", err)
+	}
+	defer func() { _ = basestore.CloseRows(rows, nil) }()
+
+	if !rows.Next() {
+		t.Fatal("expected record to exist")
+	}
+
+	var state string
+	var failureMessage *string
+	if err := rows.Scan(&state, &failureMessage); err != nil {
+		t.Fatalf("unexpected error scanning record: %s", err)
+	}
+	if state != "failed" {
+		t.Errorf("unexpected state. want=%q have=%q", "failed", state)
+	}
+	if failureMessage == nil || *failureMessage != "new message" {
+		t.Errorf("unexpected failure message. want=%v have=%v", "new message", failureMessage)
+	}
+}
+
 func TestStoreMarkErroredAlreadyCompleted(t *testing.T) {
 	setupStoreTest(t)
 

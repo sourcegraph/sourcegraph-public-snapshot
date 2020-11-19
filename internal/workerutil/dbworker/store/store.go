@@ -56,6 +56,11 @@ type Store interface {
 	// with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
 	MarkErrored(ctx context.Context, id int, failureMessage string) (bool, error)
 
+	// MarkFailed attempts to update the state of the record to failed. This method will only have an effect
+	// if the current state of the record is processing or completed. A requeued record or a record already marked
+	// with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
+	MarkFailed(ctx context.Context, id int, failureMessage string) (bool, error)
+
 	// ResetStalled moves all unlocked records in the processing state for more than `StalledMaxAge` back to the queued
 	// state. In order to prevent input that continually crashes worker instances, records that have been reset more
 	// than `MaxNumResets` times will be marked as errored. This method returns a list of record identifiers that have
@@ -451,17 +456,27 @@ RETURNING {id}
 // if the current state of the record is processing or completed. A requeued record or a record already marked
 // with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
 func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string) (bool, error) {
-	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(markErroredQuery, quote(s.options.TableName), failureMessage, id)))
+	q := s.formatQuery(markErroredOrFailedQuery, quote(s.options.TableName), "errored", failureMessage, id)
+	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return ok, err
 }
 
-const markErroredQuery = `
--- source: internal/workerutil/store.go:MarkErrored
+const markErroredOrFailedQuery = `
+-- source: internal/workerutil/store.go:MarkErrored|MarkFailed
 UPDATE %s
-SET {state} = 'errored', {finished_at} = clock_timestamp(), {failure_message} = %s, {num_failures} = {num_failures} + 1
+SET {state} = %s, {finished_at} = clock_timestamp(), {failure_message} = %s, {num_failures} = {num_failures} + 1
 WHERE {id} = %s AND ({state} = 'processing' OR {state} = 'completed')
 RETURNING {id}
 `
+
+// MarkFailed attempts to update the state of the record to failed. This method will only have an effect
+// if the current state of the record is processing or completed. A requeued record or a record already marked
+// with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
+func (s *store) MarkFailed(ctx context.Context, id int, failureMessage string) (bool, error) {
+	q := s.formatQuery(markErroredOrFailedQuery, quote(s.options.TableName), "failed", failureMessage, id)
+	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
+	return ok, err
+}
 
 // ResetStalled moves all unlocked records in the processing state for more than `StalledMaxAge` back to the queued
 // state. In order to prevent input that continually crashes worker instances, records that have been reset more
