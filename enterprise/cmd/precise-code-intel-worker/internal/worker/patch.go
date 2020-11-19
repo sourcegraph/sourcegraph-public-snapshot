@@ -156,16 +156,9 @@ func mergeData(pathsToCopy map[string]struct{}, fileStatus map[string]gitserver.
 
 				if _, exists := pathsToCopy[patchPath]; exists {
 					rng := patch.Documents[patchPath].Ranges[patchRef.RangeID]
-					patch.Documents[patchPath].Ranges[patchRef.RangeID] = lsifstore.RangeData{
-						StartLine:          rng.StartLine,
-						StartCharacter:     rng.StartCharacter,
-						EndLine:            rng.EndLine,
-						EndCharacter:       rng.EndCharacter,
-						DefinitionResultID: defID,
-						ReferenceResultID:  refID,
-						HoverResultID:      rng.HoverResultID,
-						MonikerIDs:         rng.MonikerIDs,
-					}
+					rng.DefinitionResultID = defID
+					rng.ReferenceResultID = refID
+					patch.Documents[patchPath].Ranges[patchRef.RangeID] = rng
 				}
 			}
 
