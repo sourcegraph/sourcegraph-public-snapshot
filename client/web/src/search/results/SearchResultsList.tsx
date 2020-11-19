@@ -40,6 +40,7 @@ import { AuthenticatedUser } from '../../auth'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { QueryState } from '../helpers'
 import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
+import { SearchResultsStats } from './SearchResultsStats'
 
 const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     typeof value === 'object' &&
@@ -377,9 +378,14 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         <SearchResultsInfoBar
                                             {...this.props}
                                             query={parsedQuery}
-                                            results={results}
-                                            showDotComMarketing={this.props.isSourcegraphDotCom}
+                                            resultsFound={results.results.length > 0}
                                             className="border-bottom flex-grow-1"
+                                            stats={
+                                                <SearchResultsStats
+                                                    results={results}
+                                                    onShowMoreResultsClick={this.props.onShowMoreResultsClick}
+                                                />
+                                            }
                                         />
                                     </div>
 
