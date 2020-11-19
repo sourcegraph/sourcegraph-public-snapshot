@@ -7,7 +7,7 @@
 |------|-------------|---------------|
 | `-allow-unsupported` | Allow unsupported code hosts. | `false` |
 | `-apply` | Ignored. | `false` |
-| `-cache` | Directory for caching results and repository archives. | `/home/adam/.cache/sourcegraph/campaigns` |
+| `-cache` | Directory for caching results and repository archives. | `~/.cache/sourcegraph/campaigns` |
 | `-clean-archives` | If true, deletes downloaded repository archives after executing campaign steps. | `true` |
 | `-clear-cache` | If true, clears the execution cache and executes all steps anew. | `false` |
 | `-dump-requests` | Log GraphQL requests and responses to stdout | `false` |
@@ -31,7 +31,7 @@ Usage of 'src campaigns apply':
   -apply
     	Ignored.
   -cache string
-    	Directory for caching results and repository archives. (default "/home/adam/.cache/sourcegraph/campaigns")
+    	Directory for caching results and repository archives. (default "~/.cache/sourcegraph/campaigns")
   -clean-archives
     	If true, deletes downloaded repository archives after executing campaign steps. (default true)
   -clear-cache

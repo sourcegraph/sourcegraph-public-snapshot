@@ -97,7 +97,7 @@ replace github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.202007141
 		return errors.Wrap(err, "setting up go.mod")
 	}
 
-	goGet := exec.Command("go", "get", "github.com/sourcegraph/src-cli/cmd/src@581f9f532d890e6c2dc2ec2a130ab0d3d857e715")
+	goGet := exec.Command("go", "get", "github.com/sourcegraph/src-cli/cmd/src@f48121db893806baafca894692fe35c00c0174e0")
 	if out, err := goGet.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "getting src-cli:\n%s\n", string(out))
 	}
@@ -112,7 +112,7 @@ replace github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.202007141
 	}
 
 	src := path.Join(dir, "src")
-	srcDoc := exec.Command(src, "doc")
+	srcDoc := exec.Command(src, "doc", "-o", ".")
 	if out, err := srcDoc.CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "running src doc:\n%s\n", string(out))
 	}
