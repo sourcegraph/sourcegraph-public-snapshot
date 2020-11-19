@@ -52,7 +52,7 @@ Code intelligence provides advanced code navigation features that let developers
 - [Adding LSIF to CI workflows](how-to/adding_lsif_to_workflows.md)
 - [Index a Go repository](how-to/index_a_go_repository.md)
 - [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md)
-- [Index a C++ repository](index_a_cpp_repository.md)
+- [Index a C++ repository](how-to/index_a_cpp_repository.md)
 
 ## [Tutorials](tutorials/index.md)
 
