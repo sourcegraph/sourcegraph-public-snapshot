@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Observable } from 'rxjs'
+import { CodeMonitoringProps } from '..'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
@@ -8,7 +8,6 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { BreadcrumbsProps, BreadcrumbSetters, Breadcrumbs } from '../../../components/Breadcrumbs'
-import { ListUserCodeMonitorsVariables, ListCodeMonitors } from '../../../graphql-operations'
 import { lazyComponent } from '../../../util/lazyComponent'
 import { CodeMonitoringPageProps } from '../CodeMonitoringPage'
 import { CreateCodeMonitorPageProps } from '../CreateCodeMonitorPage'
@@ -20,10 +19,10 @@ interface Props
         TelemetryProps,
         PlatformContextProps,
         BreadcrumbsProps,
-        BreadcrumbSetters {
+        BreadcrumbSetters,
+        CodeMonitoringProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
-    userCodeMonitorsRequest: ({ id, first, after }: ListUserCodeMonitorsVariables) => Observable<ListCodeMonitors>
 }
 
 const CodeMonitoringPage = lazyComponent<CodeMonitoringPageProps, 'CodeMonitoringPage'>(
