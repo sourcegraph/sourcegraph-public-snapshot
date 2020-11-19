@@ -169,7 +169,7 @@ func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 			return errors.New("users are only allowed to add external service for https://github.com/, https://gitlab.com/ and https://bitbucket.org/")
 		}
 
-		disallowedFields := []string{"repositoryPathPattern", "nameTransformations"}
+		disallowedFields := []string{"repositoryPathPattern", "nameTransformations", "rateLimit"}
 		results := gjson.GetMany(opt.Config, disallowedFields...)
 		for i, r := range results {
 			if r.Exists() {
