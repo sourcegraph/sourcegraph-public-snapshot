@@ -229,7 +229,6 @@ func clusterDockerImages(images []string) string {
 	imagesToRemove := map[string]bool{"server": true, "ignite-ubuntu": true}
 	for _, image := range SourcegraphDockerImages {
 		if _, exists := imagesToRemove[image]; !exists {
-			// clusterImages = clusterImages + image + "\n"
 			clusterImages = append(clusterImages, image)
 		}
 	}
