@@ -198,18 +198,20 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 
 func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) (actionIDs []graphql.ID, err error) {
 	limit := 50
-	var ids []graphql.ID
-	var after *string
-	var q *sqlf.Query
-	q, err = r.readActionEmailQuery(ctx, monitorID, &graphqlbackend.ListActionArgs{
-		First: int32(limit),
-		After: after,
-	})
-	if err != nil {
-		return nil, err
-	}
+	var (
+		ids   []graphql.ID
+		after *string
+		q     *sqlf.Query
+	)
 	// Paging.
 	for {
+		q, err = r.readActionEmailQuery(ctx, monitorID, &graphqlbackend.ListActionArgs{
+			First: int32(limit),
+			After: after,
+		})
+		if err != nil {
+			return nil, err
+		}
 		es, cur, err := r.actionIDsForMonitorIDINT64SinglePage(ctx, q, limit)
 		if err != nil {
 			return nil, err
