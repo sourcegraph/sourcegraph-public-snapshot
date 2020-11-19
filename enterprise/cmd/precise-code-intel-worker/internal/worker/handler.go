@@ -275,7 +275,7 @@ func (h *handler) doPatchIndex(ctx context.Context, upload store.Upload, grouped
 
 	baseBundleData, err := loadIndex(ctx, h.lsifStore, baseDump.ID)
 
-	err = patchData(ctx, baseBundleData, correlation.GroupedBundleDataChansToMaps(ctx, groupedBundleData), reindexedFiles, fileStatus)
+	err = patchData(baseBundleData, correlation.GroupedBundleDataChansToMaps(ctx, groupedBundleData), reindexedFiles, fileStatus)
 	if err != nil {
 		return nil, errors.Wrap(err, "patchData")
 	}

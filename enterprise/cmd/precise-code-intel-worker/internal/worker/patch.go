@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
 
-func patchData(base *correlation.GroupedBundleDataMaps, patch *correlation.GroupedBundleDataMaps, reindexedFiles []string, fileStatus map[string]gitserver.Status) (err error) {
+func patchData(base, patch *correlation.GroupedBundleDataMaps, reindexedFiles []string, fileStatus map[string]gitserver.Status) (err error) {
 	reindexed := make(map[string]struct{})
 	for _, file := range reindexedFiles {
 		reindexed[file] = struct{}{}
