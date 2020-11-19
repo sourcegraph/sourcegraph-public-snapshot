@@ -1,11 +1,162 @@
 package campaigns
 
 import (
+	"bytes"
+	"context"
 	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/src-cli/internal/api"
+	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
 )
+
+func TestWorkspaceCreator_Create(t *testing.T) {
+	workspaceTmpDir := func(t *testing.T) string {
+		testTempDir, err := ioutil.TempDir("", "executor-integration-test-*")
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { os.Remove(testTempDir) })
+
+		return testTempDir
+	}
+
+	repo := &graphql.Repository{
+		ID:            "src-cli",
+		Name:          "github.com/sourcegraph/src-cli",
+		DefaultBranch: &graphql.Branch{Name: "main", Target: struct{ OID string }{OID: "d34db33f"}},
+	}
+
+	archive := mockRepoArchive{
+		repo: repo,
+		files: map[string]string{
+			"README.md": "# Welcome to the README\n",
+		},
+	}
+
+	t.Run("success", func(t *testing.T) {
+		requestsReceived := 0
+		callback := func(_ http.ResponseWriter, _ *http.Request) {
+			requestsReceived += 1
+		}
+
+		ts := httptest.NewServer(newZipArchivesMux(t, callback, archive))
+		defer ts.Close()
+
+		var clientBuffer bytes.Buffer
+		client := api.NewClient(api.ClientOpts{Endpoint: ts.URL, Out: &clientBuffer})
+
+		testTempDir := workspaceTmpDir(t)
+
+		creator := &WorkspaceCreator{dir: testTempDir, client: client}
+		workspace, err := creator.Create(context.Background(), repo)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		wantZipFile := "github.com-sourcegraph-src-cli-d34db33f.zip"
+		ok, err := dirContains(creator.dir, wantZipFile)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			t.Fatalf("temp dir doesnt contain zip file")
+		}
+
+		haveUnzippedFiles, err := readWorkspaceFiles(workspace)
+		if err != nil {
+			t.Fatalf("error walking workspace: %s", err)
+		}
+
+		if !cmp.Equal(archive.files, haveUnzippedFiles) {
+			t.Fatalf("wrong files in workspace:\n%s", cmp.Diff(archive.files, haveUnzippedFiles))
+		}
+
+		// Create it a second time and make sure that the server wasn't called
+		_, err = creator.Create(context.Background(), repo)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if requestsReceived != 1 {
+			t.Fatalf("wrong number of requests received: %d", requestsReceived)
+		}
+
+		// Third time, but this time with cleanup, _after_ unzipping
+		creator.deleteZips = true
+		_, err = creator.Create(context.Background(), repo)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if requestsReceived != 1 {
+			t.Fatalf("wrong number of requests received: %d", requestsReceived)
+		}
+
+		ok, err = dirContains(creator.dir, wantZipFile)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ok {
+			t.Fatalf("temp dir contains zip file but should not")
+		}
+	})
+
+	t.Run("canceled", func(t *testing.T) {
+		// We create a context that is canceled after the server sent down the
+		// first file to simulate a slow download that's aborted by the user hitting Ctrl-C.
+
+		firstFileWritten := make(chan struct{})
+		callback := func(w http.ResponseWriter, r *http.Request) {
+			// We flush the headers and the first file
+			w.(http.Flusher).Flush()
+
+			// Wait a bit for the client to start writing the file
+			time.Sleep(50 * time.Millisecond)
+
+			// Cancel the context to simulate the Ctrl-C
+			firstFileWritten <- struct{}{}
+
+			<-r.Context().Done()
+		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		go func() {
+			<-firstFileWritten
+			cancel()
+		}()
+
+		ts := httptest.NewServer(newZipArchivesMux(t, callback, archive))
+		defer ts.Close()
+
+		var clientBuffer bytes.Buffer
+		client := api.NewClient(api.ClientOpts{Endpoint: ts.URL, Out: &clientBuffer})
+
+		testTempDir := workspaceTmpDir(t)
+
+		creator := &WorkspaceCreator{dir: testTempDir, client: client}
+
+		_, err := creator.Create(ctx, repo)
+		if err == nil {
+			t.Fatalf("error is nil")
+		}
+
+		zipFile := "github.com-sourcegraph-src-cli-d34db33f.zip"
+		ok, err := dirContains(creator.dir, zipFile)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ok {
+			t.Fatalf("zip file in temp dir was not cleaned up")
+		}
+	})
+}
 
 func TestMkdirAll(t *testing.T) {
 	// TestEnsureAll does most of the heavy lifting here; we're just testing the
@@ -138,4 +289,47 @@ func isDir(t *testing.T, path string) bool {
 	}
 
 	return st.IsDir()
+}
+
+func readWorkspaceFiles(workspace string) (map[string]string, error) {
+	files := map[string]string{}
+
+	err := filepath.Walk(workspace, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+
+		content, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		rel, err := filepath.Rel(workspace, path)
+		if err != nil {
+			return err
+		}
+
+		files[rel] = string(content)
+		return nil
+	})
+
+	return files, err
+}
+
+func dirContains(dir, filename string) (bool, error) {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return false, err
+	}
+
+	for _, f := range files {
+		if f.Name() == filename {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

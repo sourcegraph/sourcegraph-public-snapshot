@@ -120,7 +120,7 @@ func TestExecutor_Integration(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			ts := httptest.NewServer(newZipArchivesMux(t, tc.archives))
+			ts := httptest.NewServer(newZipArchivesMux(t, nil, tc.archives...))
 			defer ts.Close()
 
 			var clientBuffer bytes.Buffer
@@ -215,7 +215,7 @@ func addToPath(t *testing.T, relPath string) {
 	os.Setenv("PATH", fmt.Sprintf("%s%c%s", dummyDockerPath, os.PathListSeparator, os.Getenv("PATH")))
 }
 
-func newZipArchivesMux(t *testing.T, archives []mockRepoArchive) *http.ServeMux {
+func newZipArchivesMux(t *testing.T, callback http.HandlerFunc, archives ...mockRepoArchive) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	for _, archive := range archives {
@@ -240,6 +240,10 @@ func newZipArchivesMux(t *testing.T, archives []mockRepoArchive) *http.ServeMux 
 				}
 				if _, err := f.Write([]byte(body)); err != nil {
 					t.Errorf("failed to write body for %s to zip: %s", name, err)
+				}
+
+				if callback != nil {
+					callback(w, r)
 				}
 			}
 			if err := zipWriter.Close(); err != nil {
