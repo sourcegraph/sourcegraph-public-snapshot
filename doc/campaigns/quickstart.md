@@ -10,23 +10,6 @@ The only requirement is a Sourcegraph instance with a some repositories in it. S
 
 For more information about campaigns see the ["Campaigns"](index.md) documentation and watch the [campaigns demo video](https://www.youtube.com/watch?v=EfKwKFzOs3E).
 
-## Configure code host credentials
-
-Campaigns need write permissions for the repositories in which you want to make changes. You'll need to add a personal access token for each code host you'll be publishing changesets on.
-
-See "[Configuring user credentials](how-tos/configuring_user_credentials.md)" for more detail on adding and removing user tokens beyond the quickstart below, or ["Code host interactions in campaigns"](explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns) for details on what the permissions are used for.
-
-To add a personal access token:
-
-1. From any Sourcegraph page, click on your avatar at the top right of the page.
-1. Select **Settings** from the dropdown menu.
-1. Click **Campaigns** on the sidebar menu.
-1. Click **Add token** next to the code host you want to configure.
-1. Go to the code host and create a personal access token with the exact scopes or permissions required, which are noted below the token text field. For more provider-specific detail, please refer to "[GitHub](how-tos/configuring_user_credentials.md#github)", "[GitLab](how-tos/configuring_user_credentials.md#gitlab)", or "[Bitbucket Server](how-tos/configuring_user_credentials.md#bitbucket-server)".
-1. Click **Add token** to save the token.
-
-The red circle next to the code host will now change to a green tick. Sourcegraph has everything it needs to publish changesets to that code host!
-
 ## Install the Sourcegraph CLI
 
 In order to create campaigns we need to [install the Sourcegraph CLI](https://github.com/sourcegraph/src-cli) (`src`).
@@ -114,7 +97,26 @@ Publishing causes commits, branches, and pull requests/merge requests to be crea
 
 _You probably don't want to publish these toy "Hello World" changesets to actively developed repositories, because that might confuse people ("Why did you add this line to our READMEs?")._
 
-On a real campaign, you would do the following:
+### Configure code host credentials
+
+Since campaigns need write permissions to open changesets, you'll need to add a personal access token for each code host you'll be publishing changesets on. This is a one time operation that you don't need to do for each campaign.
+
+See "[Configuring user credentials](how-tos/configuring_user_credentials.md)" for more detail on adding and removing user tokens beyond the quickstart below, or ["Code host interactions in campaigns"](explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns) for details on what the permissions are used for.
+
+To add a personal access token:
+
+1. From any Sourcegraph page, click on your avatar at the top right of the page.
+1. Select **Settings** from the dropdown menu.
+1. Click **Campaigns** on the sidebar menu.
+1. Click **Add token** next to the code host you want to configure.
+1. Go to the code host and create a personal access token with the exact scopes or permissions required, which are noted below the token text field. For more provider-specific detail, please refer to "[GitHub](how-tos/configuring_user_credentials.md#github)", "[GitLab](how-tos/configuring_user_credentials.md#gitlab)", or "[Bitbucket Server](how-tos/configuring_user_credentials.md#bitbucket-server)".
+1. Click **Add token** to save the token.
+
+The red circle next to the code host will now change to a green tick. Sourcegraph has everything it needs to publish changesets to that code host!
+
+### Publishing a campaign
+
+Now that you have credentials set up, you can publish the campaign. On a real campaign, you would do the following:
 
 1. Change the `published: false` in `hello-world.campaign.yaml` to `published: true`.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/campaign_publish_true.png" class="screenshot">
