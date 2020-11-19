@@ -377,6 +377,12 @@ func newEventStreamWriter(w http.ResponseWriter) (*eventStreamWriter, error) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Transfer-Encoding", "chunked")
+
+	// This informs nginx to not buffer. With buffering search responses will
+	// be delayed until buffers get full, leading to worst case latency of the
+	// full time a search takes to complete.
+	w.Header().Set("X-Accel-Buffering", "no")
 
 	return &eventStreamWriter{
 		w:     w,
