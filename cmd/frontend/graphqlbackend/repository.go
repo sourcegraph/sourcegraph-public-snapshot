@@ -162,12 +162,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 }
 
 func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
-	commit, err := backend.Repos.GetCommit(ctx, r.repo, commitID)
-	if commit == nil || err != nil {
-		return nil, err
-	}
-
-	resolver := toGitCommitResolver(r, commitID, commit)
+	resolver := toGitCommitResolver(r, commitID, nil)
 	if args.InputRevspec != nil {
 		resolver.inputRev = args.InputRevspec
 	} else {
