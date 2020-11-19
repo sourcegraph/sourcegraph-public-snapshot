@@ -4,27 +4,30 @@ import VideoInputAntennaIcon from 'mdi-react/VideoInputAntennaIcon'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../../components/Breadcrumbs'
 import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
-import { listUserCodeMonitors } from './backend'
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { CodeMonitorFields, ListUserCodeMonitorsVariables } from '../../graphql-operations'
 import { Toggle } from '../../../../branded/src/components/Toggle'
+import { Link } from '../../../../shared/src/components/Link'
+import { CodeMonitoringProps } from '.'
 
-export interface CodeMonitoringPageProps extends BreadcrumbsProps, BreadcrumbSetters {
+export interface CodeMonitoringPageProps extends BreadcrumbsProps, BreadcrumbSetters, CodeMonitoringProps {
     authenticatedUser: AuthenticatedUser
     location: H.Location
     history: H.History
 }
 
 export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps> = props => {
+    const { authenticatedUser, fetchUserCodeMonitors } = props
+
     const queryConnection = useCallback(
         (args: Partial<ListUserCodeMonitorsVariables>) =>
-            listUserCodeMonitors({
-                id: props.authenticatedUser.id,
+            fetchUserCodeMonitors({
+                id: authenticatedUser.id,
                 first: args.first ?? null,
                 after: args.after ?? null,
             }),
-        [props.authenticatedUser]
+        [authenticatedUser, fetchUserCodeMonitors]
     )
 
     return (
@@ -65,6 +68,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     />
                 </div>
             </div>
+            <Link to="/code-monitoring/new">Add new code monitor</Link>
         </div>
     )
 }

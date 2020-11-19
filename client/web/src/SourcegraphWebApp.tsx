@@ -69,6 +69,7 @@ import {
 } from './util/settings'
 import { SearchPatternType } from '../../shared/src/graphql-operations'
 import { HTTPStatusError } from '../../shared/src/backend/fetch'
+import { listUserCodeMonitors } from './enterprise/code-monitoring/backend'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
@@ -462,6 +463,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     fetchSavedSearches={fetchSavedSearches}
                                     fetchRecentSearches={fetchRecentSearches}
                                     fetchRecentFileViews={fetchRecentFileViews}
+                                    fetchUserCodeMonitors={listUserCodeMonitors}
                                 />
                             )}
                         />
