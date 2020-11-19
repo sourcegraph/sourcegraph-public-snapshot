@@ -16,7 +16,7 @@ type QueryResult struct {
 func Query(bundle *GroupedBundleDataMaps, path string, line, character int) ([]QueryResult, error) {
 	document, exists := bundle.Documents[path]
 	if !exists {
-		return nil, errors.New("Path does not exist in bundle.")
+		return nil, errors.New("path does not exist in bundle")
 	}
 
 	var result []QueryResult
