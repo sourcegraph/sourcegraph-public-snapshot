@@ -115,11 +115,6 @@ func mustInitializeDB() *sql.DB {
 	//
 	// START FLAILING
 
-	// TODO(efritz) - rearrange the authz packages so we don't have to import from frontend
-	ctx := context.Background()
-	var msResolutionClock = func() time.Time { return time.Now().UTC().Truncate(time.Microsecond) }
-	eauthz.Init(dbconn.Global, msResolutionClock)
-
 	go func() {
 		for range time.NewTicker(5 * time.Second).C {
 			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices)
