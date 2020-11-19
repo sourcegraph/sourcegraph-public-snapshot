@@ -85,8 +85,8 @@ export function hasSingleChild(tree: TreeEntryInfo[]): boolean {
     return tree[0]?.isSingleChild
 }
 
-// TODO(tj): impl get style by theme
-export function renderFileDecorations(fileDecorations?: FileDecoration[]): React.ReactNode {
+// TODO(tj): impl get style by theme + directory vs file
+export function renderFileDecorations(fileDecorations?: FileDecoration[], isDirectory?: boolean): React.ReactNode {
     // TODO(tj): key
     // TODO(tj): margin logic
     // early return if no decorations
@@ -96,7 +96,7 @@ export function renderFileDecorations(fileDecorations?: FileDecoration[]): React
 
     // after checking decorations, early return if no percentage or texts
     return (
-        <div className="d-flex align-items-center">
+        <div className="d-flex align-items-center" style={{ marginRight: isDirectory ? 16 : 0 }}>
             {fileDecorations.map(
                 fileDecoration =>
                     (fileDecoration.percentage || fileDecoration.text) && (

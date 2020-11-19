@@ -17,13 +17,15 @@ const TreeEntry: React.FunctionComponent<{
     parentPath: string
     url: string
     fileDecorationsByPath: FileDecorationsByPath
-}> = ({ isDir, name, parentPath, url, fileDecorationsByPath }) => {
+    isColumnLayout: boolean
+}> = ({ isDir, name, parentPath, url, fileDecorationsByPath, isColumnLayout }) => {
     const filePath = parentPath ? parentPath + '/' + name : name
     // TODO(tj): the parent knows the path already (entry), refactor
     const fileDecorations = fileDecorationsByPath[filePath]
 
     return (
-        <div className="w-100 d-flex align-items-center justify-between">
+        // TODO(tj): Limit width when not column layout
+        <div className={classNames('d-flex align-items-center justify-content-between', { 'w-25': !isColumnLayout })}>
             <Link
                 to={url}
                 className={classNames(
@@ -50,12 +52,13 @@ export const TreeEntriesSection: React.FunctionComponent<{
         return null
     }
 
+    const isColumnLayout = directChildren.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT
+
+    // TODO(tj): render file decorations for all files in parent so we know how many total file decorations exist,
+    // so we can decide whether or not to render dividers
+
     return (
-        <div
-            className={
-                directChildren.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT ? 'tree-entries-section--columns' : undefined
-            }
-        >
+        <div className={isColumnLayout ? 'tree-entries-section--columns' : undefined}>
             {directChildren.map((entry, index) => (
                 <TreeEntry
                     key={entry.name + String(index)}
@@ -64,6 +67,7 @@ export const TreeEntriesSection: React.FunctionComponent<{
                     parentPath={parentPath}
                     url={entry.url}
                     fileDecorationsByPath={fileDecorationsByPath}
+                    isColumnLayout={isColumnLayout}
                 />
             ))}
         </div>

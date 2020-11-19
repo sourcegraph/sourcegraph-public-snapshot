@@ -59,7 +59,7 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                             {props.entryInfo.name}
                         </Link>
                     </div>
-                    {renderFileDecorations(props.fileDecorations)}
+                    {renderFileDecorations(props.fileDecorations, true)}
                 </div>
                 {props.loading && (
                     <div className="tree__row-loader">
