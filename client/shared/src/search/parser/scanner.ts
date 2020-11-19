@@ -283,6 +283,113 @@ const scanToken = <T extends Term = Literal>(
     }
 }
 
+/**
+ * ScanBalancedLiteral attempts to scan balanced parentheses as literal strings. This
+ * ensures that we interpret patterns containing parentheses _as patterns_ and not
+ * groups. For example, it accepts these patterns:
+ *
+ * ((a|b)|c)              - a regular expression with balanced parentheses for grouping
+ * myFunction(arg1, arg2) - a literal string with parens that should be literally interpreted
+ * foo(...)               - a structural search pattern
+ *
+ * If it weren't for this scanner, the above parentheses would have to be
+ * interpreted as part of the query language group syntax, like these:
+ *
+ * (foo or (bar and baz))
+ *
+ * So, this scanner detects parentheses as patterns without needing the user to
+ * explicitly escape them. As such, there are cases where this scanner should
+ * not succeed:
+ *
+ * (foo or (bar and baz)) - a valid query with and/or expression groups in the query langugae
+ * (repo:foo bar baz)     - a valid query containing a recognized repo: field. Here parentheses are interpreted as a group, not a pattern.
+ */
+export const scanBalancedLiteral: Scanner<Literal> = (input, start) => {
+    let adjustedStart = start
+    let balanced = 0
+    let current = ''
+    const result: string[] = []
+
+    const nextChar = (): void => {
+        current = input[adjustedStart]
+        adjustedStart += 1
+    }
+
+    if (!keepScanning(input, start)) {
+        return {
+            type: 'error',
+            expected: 'no recognized filter or keyword',
+            at: start,
+        }
+    }
+
+    while (input[adjustedStart] !== undefined) {
+        nextChar()
+        if (current.match(/\s/) && balanced === 0) {
+            // Stop scanning a potential pattern when we see whitespace in a balanced state.
+            adjustedStart -= 1 // Backtrack.
+            break
+        } else if (current === '(') {
+            if (!keepScanning(input, adjustedStart)) {
+                return {
+                    type: 'error',
+                    expected: 'no recognized filter or keyword',
+                    at: adjustedStart,
+                }
+            }
+            balanced += 1
+            result.push(current)
+        } else if (current === ')') {
+            balanced -= 1
+            if (balanced < 0) {
+                // This paren is an unmatched closing paren, so we stop treating it as a potential
+                // pattern here--it might be closing a group.
+                adjustedStart -= 1 // Backtrack.
+                balanced = 0 // Pattern is balanced up to this point
+                break
+            }
+            result.push(current)
+        } else if (current === ' ') {
+            if (!keepScanning(input, adjustedStart)) {
+                return {
+                    type: 'error',
+                    expected: 'no recognized filter or keyword',
+                    at: adjustedStart,
+                }
+            }
+            result.push(current)
+        } else if (current === '\\') {
+            if (input[adjustedStart] !== undefined) {
+                nextChar()
+                // Accept anything anything escaped. The point is to consume escaped spaces like "\ "
+                // so that we don't recognize it as terminating a pattern.
+                result.push('\\', current)
+                continue
+            }
+            result.push(current)
+        } else {
+            result.push(current)
+        }
+    }
+
+    if (balanced !== 0) {
+        return {
+            type: 'error',
+            expected: 'no unbalanced parentheses',
+            at: adjustedStart,
+        }
+    }
+
+    return {
+        type: 'success',
+        term: {
+            type: 'literal',
+            value: result.join(''),
+            range: { start, end: adjustedStart },
+        },
+    }
+}
+
 const whitespace = scanToken(/\s+/, (_input, range) => ({
     type: 'whitespace',
     range,
@@ -322,7 +429,7 @@ const filterKeyword = scanToken(new RegExp(`-?(${filterTypeKeysWithAliases.join(
 
 const filterDelimiter = character(':')
 
-const filterValue = oneOf<Quoted | Literal>(quoted('"'), quoted("'"), literal)
+const filterValue = oneOf<Quoted | Literal>(quoted('"'), quoted("'"), scanBalancedLiteral, literal)
 
 const openingParen = scanToken(/\(/, (_input, range): OpeningParen => ({ type: 'openingParen', range }))
 
@@ -399,113 +506,6 @@ const createPattern = (value: string, range: CharacterRange, kind: PatternKind):
 
 const scanFilterOrKeyword = oneOf<Literal | Token[]>(filterKeyword, followedBy(keyword, whitespace))
 const keepScanning = (input: string, start: number): boolean => scanFilterOrKeyword(input, start).type !== 'success'
-
-/**
- * ScanBalancedLiteral attempts to scan balanced parentheses as literal strings. This
- * ensures that we interpret patterns containing parentheses _as patterns_ and not
- * groups. For example, it accepts these patterns:
- *
- * ((a|b)|c)              - a regular expression with balanced parentheses for grouping
- * myFunction(arg1, arg2) - a literal string with parens that should be literally interpreted
- * foo(...)               - a structural search pattern
- *
- * If it weren't for this scanner, the above parentheses would have to be
- * interpreted as part of the query language group syntax, like these:
- *
- * (foo or (bar and baz))
- *
- * So, this scanner detects parentheses as patterns without needing the user to
- * explicitly escape them. As such, there are cases where this scanner should
- * not succeed:
- *
- * (foo or (bar and baz)) - a valid query with and/or expression groups in the query langugae
- * (repo:foo bar baz)     - a valid query containing a recognized repo: field. Here parentheses are interpreted as a group, not a pattern.
- */
-export const scanBalancedLiteral: Scanner<Literal> = (input, start) => {
-    let adjustedStart = start
-    let balanced = 0
-    let current = ''
-    const result: string[] = []
-
-    const nextChar = (): void => {
-        current = input[adjustedStart]
-        adjustedStart += 1
-    }
-
-    if (!keepScanning(input, start)) {
-        return {
-            type: 'error',
-            expected: 'no recognized filter or keyword',
-            at: start,
-        }
-    }
-
-    while (input[adjustedStart] !== undefined) {
-        nextChar()
-        if (current === ' ' && balanced === 0) {
-            // Stop scanning a potential pattern when we see whitespace in a balanced state.
-            adjustedStart -= 1 // Backtrack.
-            break
-        } else if (current === '(') {
-            if (!keepScanning(input, adjustedStart)) {
-                return {
-                    type: 'error',
-                    expected: 'no recognized filter or keyword',
-                    at: adjustedStart,
-                }
-            }
-            balanced += 1
-            result.push(current)
-        } else if (current === ')') {
-            balanced -= 1
-            if (balanced < 0) {
-                // This paren is an unmatched closing paren, so we stop treating it as a potential
-                // pattern here--it might be closing a group.
-                adjustedStart -= 1 // Backtrack.
-                balanced = 0 // Pattern is balanced up to this point
-                break
-            }
-            result.push(current)
-        } else if (current === ' ') {
-            if (!keepScanning(input, adjustedStart)) {
-                return {
-                    type: 'error',
-                    expected: 'no recognized filter or keyword',
-                    at: adjustedStart,
-                }
-            }
-            result.push(current)
-        } else if (current === '\\') {
-            if (input[adjustedStart] !== undefined) {
-                nextChar()
-                // Accept anything anything escaped. The point is to consume escaped spaces like "\ "
-                // so that we don't recognize it as terminating a pattern.
-                result.push('\\', current)
-                continue
-            }
-            result.push(current)
-        } else {
-            result.push(current)
-        }
-    }
-
-    if (balanced !== 0) {
-        return {
-            type: 'error',
-            expected: 'no unbalanced parentheses',
-            at: adjustedStart,
-        }
-    }
-
-    return {
-        type: 'success',
-        term: {
-            type: 'literal',
-            value: result.join(''),
-            range: { start, end: adjustedStart },
-        },
-    }
-}
 
 /**
  * A helper function that maps a {@link Literal} scanner result to a {@link Pattern} scanner.

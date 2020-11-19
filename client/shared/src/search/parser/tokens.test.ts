@@ -558,11 +558,23 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 5,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "regexpMetaAlternative"
+              },
+              {
+                "startIndex": 8,
                 "scopes": "identifier"
               },
               {
                 "startIndex": 9,
-                "scopes": "closingParen"
+                "scopes": "regexpMetaDelimited"
               },
               {
                 "startIndex": 10,
