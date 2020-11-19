@@ -550,7 +550,18 @@ export const scanSearchQuery = (
     interpretComments?: boolean,
     searchPatternType = SearchPatternType.literal
 ): ScanResult<Token[]> => {
-    const patternKind = searchPatternType === SearchPatternType.regexp ? PatternKind.Regexp : PatternKind.Literal
+    let patternKind
+    switch (searchPatternType) {
+        case SearchPatternType.literal:
+            patternKind = PatternKind.Literal
+            break
+        case SearchPatternType.regexp:
+            patternKind = PatternKind.Regexp
+            break
+        case SearchPatternType.structural:
+            patternKind = PatternKind.Structural
+            break
+    }
     const scanner = createScanner(patternKind, interpretComments)
     return scanner(query, 0)
 }
