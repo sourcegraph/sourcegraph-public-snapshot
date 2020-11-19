@@ -6,7 +6,7 @@ import { FileDecorationsByPath } from 'sourcegraph'
 import { renderFileDecorations } from '../../tree/util'
 
 /**
- * Use a multi-column layout for tree entries when there are at least this many. See TreePage.scss
+ * Use a multi-column layout for tree entries when there are at least this many. See TreeEntriesSection.scss
  * for more information.
  */
 const MIN_ENTRIES_FOR_COLUMN_LAYOUT = 6
@@ -23,7 +23,7 @@ const TreeEntry: React.FunctionComponent<{
     const fileDecorations = fileDecorationsByPath[filePath]
 
     return (
-        <>
+        <div className="w-100 d-flex align-items-center justify-between">
             <Link
                 to={url}
                 className={classNames(
@@ -37,7 +37,7 @@ const TreeEntry: React.FunctionComponent<{
                 {isDir && '/'}
             </Link>
             {renderFileDecorations(fileDecorations)}
-        </>
+        </div>
     )
 }
 export const TreeEntriesSection: React.FunctionComponent<{

@@ -89,14 +89,22 @@ export function hasSingleChild(tree: TreeEntryInfo[]): boolean {
 export function renderFileDecorations(fileDecorations?: FileDecoration[]): React.ReactNode {
     // TODO(tj): key
     // TODO(tj): margin logic
+    // early return if no decorations
+    if (!fileDecorations || fileDecorations.length === 0) {
+        return null
+    }
+
+    // after checking decorations, early return if no percentage or texts
     return (
         <div className="d-flex align-items-center">
-            {fileDecorations?.map(
+            {fileDecorations.map(
                 fileDecoration =>
                     (fileDecoration.percentage || fileDecoration.text) && (
                         <>
                             {fileDecoration.text && (
-                                <span style={{ color: fileDecoration.text.color, fontSize: 12 }}>
+                                <span
+                                    style={{ color: fileDecoration.text.color, fontSize: 12, textDecoration: 'none' }}
+                                >
                                     {fileDecoration.text.value}
                                 </span>
                             )}
