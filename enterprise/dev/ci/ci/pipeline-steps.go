@@ -227,7 +227,7 @@ func triggerAsync(c Config) func(*bk.Pipeline) {
 func clusterDockerImages(images []string) string {
 	var clusterImages []string
 	imagesToRemove := map[string]bool{"server": true, "ignite-ubuntu": true}
-	for _, image := range SourcegraphDockerImages {
+	for _, image := range images {
 		if _, exists := imagesToRemove[image]; !exists {
 			clusterImages = append(clusterImages, image)
 		}
