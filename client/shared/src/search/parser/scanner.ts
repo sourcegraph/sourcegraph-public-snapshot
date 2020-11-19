@@ -401,7 +401,7 @@ const scanFilterOrKeyword = oneOf<Literal | Token[]>(filterKeyword, followedBy(k
 const keepScanning = (input: string, start: number): boolean => scanFilterOrKeyword(input, start).type !== 'success'
 
 /**
- * ScanBalancedPattern attempts to scan balanced parentheses as literal patterns. This
+ * ScanBalancedLiteral attempts to scan balanced parentheses as literal strings. This
  * ensures that we interpret patterns containing parentheses _as patterns_ and not
  * groups. For example, it accepts these patterns:
  *
@@ -421,7 +421,7 @@ const keepScanning = (input: string, start: number): boolean => scanFilterOrKeyw
  * (foo or (bar and baz)) - a valid query with and/or expression groups in the query langugae
  * (repo:foo bar baz)     - a valid query containing a recognized repo: field. Here parentheses are interpreted as a group, not a pattern.
  */
-export const scanBalancedPattern = (kind = PatternKind.Literal): Scanner<Pattern> => (input, start) => {
+export const scanBalancedLiteral: Scanner<Literal> = (input, start) => {
     let adjustedStart = start
     let balanced = 0
     let current = ''
@@ -497,22 +497,32 @@ export const scanBalancedPattern = (kind = PatternKind.Literal): Scanner<Pattern
         }
     }
 
-    return createPattern(result.join(''), { start, end: adjustedStart }, kind)
+    return {
+        type: 'success',
+        term: {
+            type: 'literal',
+            value: result.join(''),
+            range: { start, end: adjustedStart },
+        },
+    }
 }
 
-const scanPattern = (kind: PatternKind): Scanner<Pattern> => (input, start) => {
-    const balancedPattern = scanBalancedPattern(kind)(input, start)
-    if (balancedPattern.type === 'success') {
-        return createPattern(balancedPattern.term.value, balancedPattern.term.range, kind)
+/**
+ * A helper function that maps a {@link Literal} scanner result to a {@link Pattern} scanner.
+ *
+ * @param scanner The literal scanner.
+ * @param kind The {@link PatternKind} label to apply to the resulting pattern scanner.
+ */
+export const toPatternResult = (scanner: Scanner<Literal>, kind: PatternKind): Scanner<Pattern> => (input, start) => {
+    const result = scanner(input, start)
+    if (result.type === 'success') {
+        return createPattern(result.term.value, result.term.range, kind)
     }
-
-    const anyPattern = literal(input, start)
-    if (anyPattern.type === 'success') {
-        return createPattern(anyPattern.term.value, anyPattern.term.range, kind)
-    }
-
-    return anyPattern
+    return result
 }
+
+const scanPattern = (kind: PatternKind): Scanner<Pattern> =>
+    toPatternResult(oneOf<Literal>(scanBalancedLiteral, literal), kind)
 
 const whitespaceOrClosingParen = oneOf<Whitespace | ClosingParen>(whitespace, closingParen)
 
@@ -528,7 +538,7 @@ const createScanner = (kind: PatternKind, interpretComments?: boolean): Scanner<
     const baseScanner = [keyword, filter, ...quotedScanner, scanPattern(kind)]
     const tokenScanner: Scanner<Token>[] = interpretComments ? [comment, ...baseScanner] : baseScanner
 
-    const baseEarlyPatternScanner = [...quotedScanner, scanBalancedPattern(kind)]
+    const baseEarlyPatternScanner = [...quotedScanner, toPatternResult(scanBalancedLiteral, kind)]
     const earlyPatternScanner = interpretComments ? [comment, ...baseEarlyPatternScanner] : baseEarlyPatternScanner
 
     return zeroOrMore(
