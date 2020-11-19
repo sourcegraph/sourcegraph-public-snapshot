@@ -199,57 +199,6 @@ describe('Search regression test suite', () => {
             await driver.page.waitForFunction(() => document.querySelectorAll('.test-search-result').length > 0)
         })
 
-        test('Search suggestions', async () => {
-            const getSearchFieldValue = (): Promise<string | undefined> =>
-                driver.page.evaluate(
-                    () => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value
-                )
-            // Repo autocomplete from homepage
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search')
-            // Using id selector rather than `test-` classes as Monaco doesn't allow customizing classes
-            await driver.page.waitForSelector('#monaco-query-input')
-            await driver.replaceText({
-                selector: '#monaco-query-input',
-                newText: 'go-jwt-middlew',
-                enterTextMethod: 'type',
-            })
-            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
-            await driver.findElementWithText('github.com/auth0/go-jwt-middleware', {
-                action: 'click',
-                wait: { timeout: 5000 },
-                selector: '.monaco-query-input-container .suggest-widget.visible span',
-            })
-            assert.strictEqual(await getSearchFieldValue(), 'repo:^github\\.com/auth0/go-jwt-middleware$ ')
-
-            // Submit search
-            await driver.page.keyboard.press(Key.Enter)
-
-            // File autocomplete from repo search bar
-            await driver.page.waitForSelector('#monaco-query-input')
-            await driver.page.focus('#monaco-query-input')
-            await driver.page.keyboard.type('jwtmi')
-            await delay(2000)
-            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
-            await driver.findElementWithText('jwtmiddleware.go', {
-                selector: '.monaco-query-input-container .suggest-widget.visible span',
-                wait: { timeout: 5000 },
-            })
-            await driver.page.keyboard.press(Key.ArrowDown)
-            await driver.page.keyboard.press(Key.Tab)
-            assert.strictEqual(
-                await getSearchFieldValue(),
-                'repo:^github\\.com/auth0/go-jwt-middleware$ file:^jwtmiddleware\\.go$ '
-            )
-
-            // Symbol autocomplete in top search bar
-            await driver.page.keyboard.type('On')
-            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
-            await driver.findElementWithText('OnError', {
-                selector: '.monaco-query-input-container .suggest-widget.visible span',
-                wait: { timeout: 5000 },
-            })
-        })
-
         test('Search filters', async () => {
             const filterToToken = [
                 ['lang:go', 'lang:go'],
