@@ -40,6 +40,7 @@ yarn run test:regression:core
 yarn run test:regression:codeintel
 yarn run test:regression:config-settings
 yarn run test:regression:integrations
+yarn run test:regression:extensions
 yarn run test:regression:search
 popd || exit
 
