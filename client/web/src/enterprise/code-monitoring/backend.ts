@@ -11,36 +11,24 @@ import {
 } from '../../graphql-operations'
 
 export const createCodeMonitor = ({
-    namespace,
-    description,
-    enabled,
+    monitor,
     trigger,
     actions,
 }: CreateCodeMonitorVariables): Observable<CreateCodeMonitorResult['createCodeMonitor']> => {
     const query = gql`
         mutation CreateCodeMonitor(
-            $namespace: ID!
-            $description: String!
-            $enabled: Boolean!
+            $monitor: MonitorInput!
             $trigger: MonitorTriggerInput!
             $actions: [MonitorActionInput!]!
         ) {
-            createCodeMonitor(
-                namespace: $namespace
-                description: $description
-                enabled: $enabled
-                trigger: $trigger
-                actions: $actions
-            ) {
+            createCodeMonitor(monitor: $monitor, trigger: $trigger, actions: $actions) {
                 description
             }
         }
     `
 
     return requestGraphQL<CreateCodeMonitorResult, CreateCodeMonitorVariables>(query, {
-        namespace,
-        description,
-        enabled,
+        monitor,
         trigger,
         actions,
     }).pipe(

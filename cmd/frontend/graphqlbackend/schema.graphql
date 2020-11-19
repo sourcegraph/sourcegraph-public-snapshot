@@ -743,18 +743,9 @@ type Mutation {
     """
     createCodeMonitor(
         """
-        The namespace represents the owner of the code monitor.
-        Owners can either be users or organizations.
+        A monitor.
         """
-        namespace: ID!
-        """
-        A meaningful description of the code monitor.
-        """
-        description: String!
-        """
-        Whether the code monitor is enabled or not.
-        """
-        enabled: Boolean!
+        monitor: MonitorInput!
         """
         A trigger.
         """

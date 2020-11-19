@@ -123,11 +123,9 @@ type ListRecipientsArgs struct {
 }
 
 type CreateCodeMonitorArgs struct {
-	Namespace   graphql.ID
-	Description string
-	Enabled     bool
-	Trigger     *CreateTriggerArgs
-	Actions     []*CreateActionArgs
+	Monitor *CreateMonitorArgs
+	Trigger *CreateTriggerArgs
+	Actions []*CreateActionArgs
 }
 
 type CreateTriggerArgs struct {
@@ -154,7 +152,7 @@ type DeleteCodeMonitorArgs struct {
 	Id graphql.ID
 }
 
-type MonitorArgs struct {
+type CreateMonitorArgs struct {
 	Namespace   graphql.ID
 	Description string
 	Enabled     bool
@@ -176,7 +174,7 @@ type EditTriggerArgs struct {
 
 type EditMonitorArgs struct {
 	Id     graphql.ID
-	Update *MonitorArgs
+	Update *CreateMonitorArgs
 }
 
 type UpdateCodeMonitorArgs struct {
