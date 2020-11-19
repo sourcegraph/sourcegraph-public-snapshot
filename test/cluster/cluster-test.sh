@@ -28,6 +28,8 @@ function cluster_setup() {
   # see DOCKER_IMAGES_TXT in pipeline-steps.go for env var
   # replace all docker image tags with previously built candidate images
   pushd base
+  set +o pipefail
+  set +e
   while IFS= read -r line; do
     echo "$line"
     grep -lr '.' -e "index.docker.io/sourcegraph/$line" --include \*.yaml | xargs sed -i -E "s#index.docker.io/sourcegraph/$line:.*#us.gcr.io/sourcegraph-dev/$line:$CANDIDATE_VERSION#g"
@@ -38,6 +40,8 @@ function cluster_setup() {
 
   kubectl get pods
   time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=20m
+  set -o pipefail
+  set -e
 }
 
 function test_setup() {
