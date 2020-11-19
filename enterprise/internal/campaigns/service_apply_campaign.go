@@ -123,15 +123,27 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	}
 
 	rstore := repos.NewDBStore(tx.DB(), sql.TxOptions{})
+
 	// Now we need to wire up the ChangesetSpecs of the new CampaignSpec
 	// correctly with the Changesets so that the reconciler can create/update
 	// them.
+
+	// Load the mapping between changeset specs and existing changesets in the target campaign.
+	mappings, err := tx.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
+		CampaignSpecID: campaign.CampaignSpecID,
+		CampaignID:     campaign.ID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// And execute the mapping.
 	rewirer := &changesetRewirer{
 		tx:       tx,
 		rstore:   rstore,
 		campaign: campaign,
+		mappings: mappings,
 	}
-
 	if err := rewirer.Rewire(ctx); err != nil {
 		return nil, err
 	}
@@ -140,6 +152,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 }
 
 type changesetRewirer struct {
+	mappings campaigns.RewirerMappings
 	campaign *campaigns.Campaign
 	tx       *Store
 	rstore   repos.Store
@@ -151,7 +164,7 @@ type changesetRewirer struct {
 // It also updates the ChangesetIDs on the campaign.
 func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 	// First we need to load the associations.
-	accessibleReposByID, changesetsByID, changesetSpecsByID, changesetSpecMappings, err := r.loadAssociations(ctx)
+	accessibleReposByID, changesetsByID, changesetSpecsByID, err := r.loadAssociations(ctx)
 	if err != nil {
 		return err
 	}
@@ -159,7 +172,7 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 	// Reset the attached changesets. We will add all we encounter while processing the mappings to this list again.
 	r.campaign.ChangesetIDs = []int64{}
 
-	for _, m := range changesetSpecMappings {
+	for _, m := range r.mappings {
 		// If no changeset spec matched, a changeset must have matched, and it needs to be closed/detached.
 		if m.ChangesetSpecID == 0 {
 			changeset, ok := changesetsByID[m.ChangesetID]
@@ -327,40 +340,30 @@ func (r *changesetRewirer) loadAssociations(ctx context.Context) (
 	accessibleReposByID map[api.RepoID]*types.Repo,
 	changesetsByID map[int64]*campaigns.Changeset,
 	changesetSpecsByID map[int64]*campaigns.ChangesetSpec,
-	mappings campaigns.RewirerMappings,
 	err error,
 ) {
-	// Load the mapping between changeset specs and existing changesets in the target campaign.
-	mappings, err = r.tx.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
-		CampaignSpecID: r.campaign.CampaignSpecID,
-		CampaignID:     r.campaign.ID,
-	})
-	if err != nil {
-		return accessibleReposByID, changesetsByID, changesetSpecsByID, mappings, err
-	}
-
-	// Then fetch the changeset specs involved in this rewiring.
+	// Fetch the changeset specs involved in this rewiring.
 	changesetSpecs, _, err := r.tx.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{
 		CampaignSpecID: r.campaign.CampaignSpecID,
-		IDs:            mappings.ChangesetSpecIDs(),
+		IDs:            r.mappings.ChangesetSpecIDs(),
 	})
 	if err != nil {
-		return accessibleReposByID, changesetsByID, changesetSpecsByID, mappings, err
+		return accessibleReposByID, changesetsByID, changesetSpecsByID, err
 	}
 
 	// Then fetch the changesets involved in this rewiring.
-	changesets, _, err := r.tx.ListChangesets(ctx, ListChangesetsOpts{IDs: mappings.ChangesetIDs()})
+	changesets, _, err := r.tx.ListChangesets(ctx, ListChangesetsOpts{IDs: r.mappings.ChangesetIDs()})
 	if err != nil {
-		return accessibleReposByID, changesetsByID, changesetSpecsByID, mappings, err
+		return accessibleReposByID, changesetsByID, changesetSpecsByID, err
 	}
 
 	// Fetch all repos involved. We use them later to enforce repo permissions.
 	//
 	// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
-	accessibleReposByID, err = db.Repos.GetReposSetByIDs(ctx, mappings.RepoIDs()...)
+	accessibleReposByID, err = db.Repos.GetReposSetByIDs(ctx, r.mappings.RepoIDs()...)
 	if err != nil {
-		return accessibleReposByID, changesetsByID, changesetSpecsByID, mappings, err
+		return accessibleReposByID, changesetsByID, changesetSpecsByID, err
 	}
 
 	changesetsByID = map[int64]*campaigns.Changeset{}
@@ -373,5 +376,5 @@ func (r *changesetRewirer) loadAssociations(ctx context.Context) (
 		changesetSpecsByID[c.ID] = c
 	}
 
-	return accessibleReposByID, changesetsByID, changesetSpecsByID, mappings, nil
+	return accessibleReposByID, changesetsByID, changesetSpecsByID, nil
 }
