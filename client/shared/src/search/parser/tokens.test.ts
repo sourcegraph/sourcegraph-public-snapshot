@@ -679,4 +679,97 @@ describe('getMonacoTokens()', () => {
             ]
         `)
     })
+
+    test('decorate structural holes', () => {
+        expect(
+            getMonacoTokens(
+                toSuccess(scanSearchQuery('r:foo Search(thing::[x], :[y])', false, SearchPatternType.structural)),
+                true
+            )
+        ).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "filterKeyword"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 19,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 23,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 25,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 29,
+                "scopes": "identifier"
+              }
+            ]
+        `)
+    })
+
+    test('decorate structural holes with valid inlined regexp', () => {
+        expect(
+            getMonacoTokens(toSuccess(scanSearchQuery('r:foo a:[x~[\\]]]b', false, SearchPatternType.structural)), true)
+        ).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "filterKeyword"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 16,
+                "scopes": "identifier"
+              }
+            ]
+        `)
+    })
 })

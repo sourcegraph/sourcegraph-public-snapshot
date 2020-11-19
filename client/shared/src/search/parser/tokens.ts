@@ -215,7 +215,116 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
     return tokens
 }
 
-const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => [pattern]
+const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
+    const offset = pattern.range.start
+
+    const decorated: DecoratedToken[] = []
+    let current = ''
+    let start = 0
+    let token: string[] = []
+
+    // Track context of whether we are inside an opening hole, e.g., after
+    // ':['. Value is greater than 1 when inside.
+    let open = 0
+    // Track whether we are balanced inside a regular expression character
+    // set like '[a]' inside an open hole, e.g., :[foo~[a]]. Value is greater
+    // than 1 when inside.
+    let inside = 0
+
+    const nextChar = (): string => {
+        current = pattern.value[start]
+        start = start + 1
+        return current
+    }
+
+    // Appends a decorated token to the list of tokens, and resets the current token to be empty.
+    const appendDecoratedToken = (endIndex: number, kind: PatternKind.Literal | StructuralMetaKind): void => {
+        const value = token.join('')
+        const range = { start: offset + endIndex - value.length, end: offset + endIndex }
+        if (kind === PatternKind.Literal) {
+            decorated.push({ type: 'pattern', kind, value, range })
+        } else {
+            decorated.push({ type: 'structuralMeta', kind, value, range })
+        }
+        token = []
+    }
+
+    while (pattern.value[start] !== undefined) {
+        current = nextChar()
+        switch (current) {
+            case ':':
+                if (open > 0) {
+                    // ':' inside a hole, likely part of a regexp pattern.
+                    token.push(':')
+                    continue
+                }
+                if (pattern.value[start] !== undefined) {
+                    if (pattern.value[start] === ':') {
+                        // '::' case, so push the first ':' and continue.
+                        token.push(':')
+                        continue
+                    }
+                    // Look ahead and see if this is the start of a hole.
+                    current = nextChar()
+                    if (current === '[') {
+                        // It is the start of a hole.
+                        open = open + 1
+                        // Persist the literal token scanned up to this point.
+                        appendDecoratedToken(start - 2, PatternKind.Literal)
+                        token.push(':[')
+                        continue
+                    }
+                    // Something else, push the ':' we saw and the look ahead char.
+                    token.push(':', current)
+                    continue
+                }
+                // Trailing ':'.
+                token.push(current)
+                break
+            case '\\':
+                if (pattern.value[start] !== undefined && open > 0) {
+                    // Assume this is an escape sequence inside a regexp hole.
+                    current = nextChar()
+                    token.push('\\', current)
+                    continue
+                }
+                token.push('\\')
+                break
+            case '[':
+                if (open > 0) {
+                    // Assume this is a character set inside a regexp hole.
+                    inside = inside + 1
+                    token.push('[')
+                    continue
+                }
+                token.push('[')
+                break
+            case ']':
+                if (open > 0 && inside > 0) {
+                    // This ']' closes a regular expression inside a hole.
+                    inside = inside - 1
+                    token.push(current)
+                    continue
+                }
+                if (open > 0) {
+                    // This ']' closes a hole.
+                    open = open - 1
+                    token.push(']')
+                    appendDecoratedToken(start, StructuralMetaKind.Hole)
+                    continue
+                }
+                token.push(current)
+                break
+            default:
+                token.push(current)
+        }
+    }
+    if (token.length > 0) {
+        // Append any left over literal at the end.
+        appendDecoratedToken(start, PatternKind.Literal)
+    }
+    return decorated
+}
 
 /**
  * Returns true for filter values that have regexp values, e.g., repo, file.
