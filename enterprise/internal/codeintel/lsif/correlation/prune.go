@@ -3,8 +3,8 @@ package correlation
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/datastructures"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/existence"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/existence"
 )
 
 // prune removes references to documents in the given correlation state that do not exist in

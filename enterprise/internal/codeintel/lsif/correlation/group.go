@@ -3,25 +3,36 @@ package correlation
 import (
 	"context"
 	"math"
-	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/datastructures"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/lsif"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
 
-// GroupedBundleData is a view of a correlation State that sorts data by it containing document
-// and shared data into shareded result chunks. The fields of this type are what is written to
-// persistent storage and what is read in the query path.
-type GroupedBundleData struct {
+// GroupedBundleData{Chans,Maps} is a view of a correlation State that sorts data by it's containing document
+// and shared data into sharded result chunks. The fields of this type are what is written to
+// persistent storage and what is read in the query path. The Chans version allows pipelining
+// and parallelizing the work, while the Maps version can be modified for e.g. local development
+// via the REPL or patching for incremental indexing.
+type GroupedBundleDataChans struct {
 	Meta              lsifstore.MetaData
 	Documents         chan lsifstore.KeyedDocumentData
 	ResultChunks      chan lsifstore.IndexedResultChunkData
 	Definitions       chan lsifstore.MonikerLocations
 	References        chan lsifstore.MonikerLocations
+	Packages          []lsifstore.Package
+	PackageReferences []lsifstore.PackageReference
+}
+
+type GroupedBundleDataMaps struct {
+	Meta              lsifstore.MetaData
+	Documents         map[string]lsifstore.DocumentData
+	ResultChunks      map[int]lsifstore.ResultChunkData
+	Definitions       map[string]map[string][]lsifstore.LocationData
+	References        map[string]map[string][]lsifstore.LocationData
 	Packages          []lsifstore.Package
 	PackageReferences []lsifstore.PackageReference
 }
@@ -33,7 +44,7 @@ func getDefinitionResultID(r lsif.Range) int { return r.DefinitionResultID }
 func getReferenceResultID(r lsif.Range) int  { return r.ReferenceResultID }
 
 // groupBundleData converts a raw (but canonicalized) correlation State into a GroupedBundleData.
-func groupBundleData(ctx context.Context, state *State, dumpID int) (*GroupedBundleData, error) {
+func groupBundleData(ctx context.Context, state *State, dumpID int) (*GroupedBundleDataChans, error) {
 	numResults := len(state.DefinitionData) + len(state.ReferenceData)
 	numResultChunks := int(math.Min(
 		MaxNumResultChunks,
@@ -54,7 +65,7 @@ func groupBundleData(ctx context.Context, state *State, dumpID int) (*GroupedBun
 		return nil, err
 	}
 
-	return &GroupedBundleData{
+	return &GroupedBundleDataChans{
 		Meta:              meta,
 		Documents:         documents,
 		ResultChunks:      resultChunks,
@@ -367,14 +378,119 @@ func gatherPackageReferences(state *State, dumpID int) ([]lsifstore.PackageRefer
 	return packageReferences, nil
 }
 
-func makeKey(parts ...string) string {
-	return strings.Join(parts, ":")
+// CAUTION: Data is not deep copied.
+func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMaps) *GroupedBundleDataChans {
+	documentChan := make(chan lsifstore.KeyedDocumentData, len(maps.Documents))
+	go func() {
+		defer close(documentChan)
+		for path, doc := range maps.Documents {
+			select {
+			case documentChan <- lsifstore.KeyedDocumentData{
+				Path:     path,
+				Document: doc,
+			}:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	resultChunkChan := make(chan lsifstore.IndexedResultChunkData, len(maps.ResultChunks))
+	go func() {
+		defer close(resultChunkChan)
+
+		for idx, chunk := range maps.ResultChunks {
+			select {
+			case resultChunkChan <- lsifstore.IndexedResultChunkData{
+				Index:       idx,
+				ResultChunk: chunk,
+			}:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	monikerDefsChan := make(chan lsifstore.MonikerLocations)
+	go func() {
+		defer close(monikerDefsChan)
+
+		for scheme, identMap := range maps.Definitions {
+			for ident, locations := range identMap {
+				select {
+				case monikerDefsChan <- lsifstore.MonikerLocations{
+					Scheme:     scheme,
+					Identifier: ident,
+					Locations:  locations,
+				}:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+	}()
+	monikerRefsChan := make(chan lsifstore.MonikerLocations)
+	go func() {
+		defer close(monikerRefsChan)
+
+		for scheme, identMap := range maps.References {
+			for ident, locations := range identMap {
+				select {
+				case monikerRefsChan <- lsifstore.MonikerLocations{
+					Scheme:     scheme,
+					Identifier: ident,
+					Locations:  locations,
+				}:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+	}()
+
+	return &GroupedBundleDataChans{
+		Meta:              maps.Meta,
+		Documents:         documentChan,
+		ResultChunks:      resultChunkChan,
+		Definitions:       monikerDefsChan,
+		References:        monikerRefsChan,
+		Packages:          maps.Packages,
+		PackageReferences: maps.PackageReferences,
+	}
 }
 
-func toID(id int) lsifstore.ID {
-	if id == 0 {
-		return lsifstore.ID("")
+// CAUTION: Data is not deep copied.
+func GroupedBundleDataChansToMaps(ctx context.Context, chans *GroupedBundleDataChans) *GroupedBundleDataMaps {
+	documentMap := make(map[string]lsifstore.DocumentData)
+	for keyedDocumentData := range chans.Documents {
+		documentMap[keyedDocumentData.Path] = keyedDocumentData.Document
+	}
+	resultChunkMap := make(map[int]lsifstore.ResultChunkData)
+	for indexedResultChunk := range chans.ResultChunks {
+		resultChunkMap[indexedResultChunk.Index] = indexedResultChunk.ResultChunk
+	}
+	monikerDefsMap := make(map[string]map[string][]lsifstore.LocationData)
+	for monikerDefs := range chans.Definitions {
+		identMap, exists := monikerDefsMap[monikerDefs.Scheme]
+		if !exists {
+			identMap = make(map[string][]lsifstore.LocationData)
+		}
+		identMap[monikerDefs.Identifier] = monikerDefs.Locations
+	}
+	monikerRefsMap := make(map[string]map[string][]lsifstore.LocationData)
+	for monikerRefs := range chans.References {
+		identMap, exists := monikerRefsMap[monikerRefs.Scheme]
+		if !exists {
+			identMap = make(map[string][]lsifstore.LocationData)
+		}
+		identMap[monikerRefs.Identifier] = monikerRefs.Locations
 	}
 
-	return lsifstore.ID(strconv.FormatInt(int64(id), 10))
+	return &GroupedBundleDataMaps{
+		Meta:              chans.Meta,
+		Documents:         documentMap,
+		ResultChunks:      resultChunkMap,
+		Definitions:       monikerDefsMap,
+		References:        monikerRefsMap,
+		Packages:          chans.Packages,
+		PackageReferences: chans.PackageReferences,
+	}
 }
