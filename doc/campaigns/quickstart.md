@@ -114,9 +114,9 @@ To add a personal access token:
 
 The red circle next to the code host will now change to a green tick. Sourcegraph has everything it needs to publish changesets to that code host!
 
-### Publishing a campaign
+### Publishing changesets
 
-Now that you have credentials set up, you can publish the campaign. On a real campaign, you would do the following:
+Now that you have credentials set up, you can publish the changesets in the campaign. On a real campaign, you would do the following:
 
 1. Change the `published: false` in `hello-world.campaign.yaml` to `published: true`.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/campaign_publish_true.png" class="screenshot">
