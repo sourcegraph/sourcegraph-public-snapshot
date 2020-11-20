@@ -6,6 +6,7 @@ Campaigns are created by writing a [campaign spec](../references/campaign_spec_y
 
 - Sourcegraph instance with repositories in it. See the "[Quickstart](../../index.md#quickstart)" guide on how to setup a Sourcegraph instance.
 - Installed and configured [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) (see "[Install the Sourcegraph CLI](../quickstart.md#install-the-sourcegraph-cli)" in the campaigns quickstart for detailed instructions).
+- Configured user credentials for the code host(s) that you'll be creating changesets on. See "[Configuring user credentials](configuring_user_credentials.md)" for a guide on how to add and manage your user credentials.
 
 ## Writing a campaign spec
 
