@@ -11,87 +11,92 @@ const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSucce
 
 describe('getMonacoTokens()', () => {
     test('returns the tokens for a parsed search query', () => {
-        expect(
-            getMonacoTokens(toSuccess(scanSearchQuery('r:^github.com/sourcegraph f:code_intelligence trackViews')))
-        ).toStrictEqual([
-            {
-                scopes: 'field',
-                startIndex: 0,
-            },
-            {
-                scopes: 'identifier',
-                startIndex: 2,
-            },
-            {
-                scopes: 'whitespace',
-                startIndex: 25,
-            },
-            {
-                scopes: 'field',
-                startIndex: 26,
-            },
-            {
-                scopes: 'identifier',
-                startIndex: 28,
-            },
-            {
-                scopes: 'whitespace',
-                startIndex: 45,
-            },
-            {
-                scopes: 'identifier',
-                startIndex: 46,
-            },
-        ])
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:^github.com/sourcegraph f:code_intelligence trackViews'))))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 25,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 26,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 28,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 45,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 46,
+                "scopes": "identifier"
+              }
+            ]
+        `)
     })
 
     test('search query containing parenthesized parameters', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:a (f:b and c)')))).toStrictEqual([
-            {
-                scopes: 'field',
-                startIndex: 0,
-            },
-            {
-                scopes: 'identifier',
-                startIndex: 2,
-            },
-            {
-                scopes: 'whitespace',
-                startIndex: 3,
-            },
-            {
-                scopes: 'identifier',
-                startIndex: 4,
-            },
-            {
-                scopes: 'field',
-                startIndex: 5,
-            },
-            {
-                scopes: 'identifier',
-                startIndex: 7,
-            },
-            {
-                scopes: 'whitespace',
-                startIndex: 8,
-            },
-            {
-                scopes: 'keyword',
-                startIndex: 9,
-            },
-            {
-                scopes: 'whitespace',
-                startIndex: 12,
-            },
-            {
-                scopes: 'identifier',
-                startIndex: 13,
-            },
-            {
-                scopes: 'identifier',
-                startIndex: 14,
-            },
-        ])
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:a (f:b and c)')))).toMatchInlineSnapshot(
+            `
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "keyword"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "identifier"
+              }
+            ]
+        `
+        )
     })
 
     test('no decoration for literal', () => {
