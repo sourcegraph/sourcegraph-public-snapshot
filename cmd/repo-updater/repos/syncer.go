@@ -353,7 +353,7 @@ func (s *Syncer) validateSourcedRepo(r *Repo) error {
 			s.Logger.Error("Repo validation failed", "ExternalRepo.ID", r.ExternalRepo.ID, "ExternalRepo.ServiceID", r.ExternalRepo.ServiceID, "ExternalRepo.ServiceType", r.ExternalRepo.ServiceType)
 		}
 
-		return fmt.Errorf("incomplete external repo information")
+		return fmt.Errorf("incomplete sourced repo information: %v", r)
 	}
 
 	return nil
