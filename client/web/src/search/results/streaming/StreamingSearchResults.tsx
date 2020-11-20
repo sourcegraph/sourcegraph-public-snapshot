@@ -97,7 +97,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         onSaveQueryClick={onSaveQueryClick}
                         onDidCreateSavedQuery={onDidCreateSavedQuery}
                         didSave={didSave}
-                        stats={<StreamingProgress />}
+                        stats={<StreamingProgress progress={results?.progress} />}
                     />
                 </div>
             </div>

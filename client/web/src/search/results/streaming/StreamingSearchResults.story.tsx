@@ -53,4 +53,72 @@ const { add } = storiesOf('web/search/results/streaming/StreamingSearchResults',
     chromatic: { viewports: [769, 993] },
 })
 
-add('render', () => <WebStory>{() => <StreamingSearchResults {...defaultProps} />}</WebStory>)
+add('standard render', () => <WebStory>{() => <StreamingSearchResults {...defaultProps} />}</WebStory>)
+
+add('diffs tab selected', () => {
+    const history = createBrowserHistory()
+    history.replace({ search: 'q=r:golang/oauth2+test+f:travis+type:diff' })
+
+    return (
+        <WebStory>
+            {() => <StreamingSearchResults {...defaultProps} history={history} location={history.location} />}
+        </WebStory>
+    )
+})
+
+add('search with quotes', () => {
+    const history = createBrowserHistory()
+    history.replace({ search: 'q=r:golang/oauth2+test+f:travis+"test"' })
+
+    return (
+        <WebStory>
+            {() => <StreamingSearchResults {...defaultProps} history={history} location={history.location} />}
+        </WebStory>
+    )
+})
+
+add('progress with warnings', () => {
+    const result: AggregateStreamingSearchResults = {
+        results: MULTIPLE_SEARCH_RESULT.results,
+        filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
+        progress: {
+            done: true,
+            durationMs: 500,
+            matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
+            skipped: [
+                {
+                    reason: 'excluded-fork',
+                    message: '10k forked repositories excluded',
+                    severity: 'info',
+                    title: '10k forked repositories excluded',
+                    suggested: {
+                        title: 'forked:yes',
+                        queryExpression: 'forked:yes',
+                    },
+                },
+                {
+                    reason: 'excluded-archive',
+                    message: '60k archived repositories excluded',
+                    severity: 'info',
+                    title: '60k archived repositories excluded',
+                    suggested: {
+                        title: 'archived:yes',
+                        queryExpression: 'archived:yes',
+                    },
+                },
+                {
+                    reason: 'shard-timedout',
+                    message: 'Search timed out',
+                    severity: 'warn',
+                    title: 'Search timed out',
+                    suggested: {
+                        title: 'timeout:2m',
+                        queryExpression: 'timeout:2m',
+                    },
+                },
+            ],
+        },
+    }
+
+    return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
+})
