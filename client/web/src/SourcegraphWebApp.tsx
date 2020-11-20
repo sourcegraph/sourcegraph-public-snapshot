@@ -250,7 +250,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         const availableVersionContexts = window.context.experimentalFeatures.versionContexts
         const previousVersionContext = localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
         const resolvedVersionContext = availableVersionContexts
-            ? parseSearchURLVersionContext(window.location.search) ||
+            ? resolveVersionContext(
+                  parseSearchURLVersionContext(window.location.search) || undefined,
+                  availableVersionContexts
+              ) ||
               resolveVersionContext(previousVersionContext || undefined, availableVersionContexts) ||
               undefined
             : undefined
