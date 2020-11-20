@@ -13,7 +13,9 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 ## 3.21 -> 3.22
 
-TODO
+No manual migration required.
+
+Please upgrade to the [`v3.22.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.22.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
 ## 3.21.0 -> 3.21.1
 
@@ -73,19 +75,19 @@ Please upgrade to the [`v3.18.0` tag of deploy-sourcegraph-docker](https://githu
 
 ## v3.16.0 -> v3.17.2
 
-No manual migration is required. 
+No manual migration is required.
 
 Please upgrade to the [`v3.17.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.16.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
 ## v3.15.1 -> v3.16.0
 
-No manual migration is required. 
+No manual migration is required.
 
 Please upgrade to the [`v3.16.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.16.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
 ## (v3.14.2, v3.14.4) -> v3.15.1
 
-No manual migration is required. 
+No manual migration is required.
 
 Please upgrade to the [`v3.15.1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.15.1/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
@@ -106,13 +108,13 @@ docker restart precise-code-intel-bundle-manager
 
 ## v3.14.2 -> v3.14.4
 
-No manual migration is required. 
+No manual migration is required.
 
 Please upgrade to the [`v3.14.4` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.14.4/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
 ## v3.14.0 -> v3.14.2
 
-No manual migration is required. 
+No manual migration is required.
 
 Please upgrade to the [`v3.14.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.14.2/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
