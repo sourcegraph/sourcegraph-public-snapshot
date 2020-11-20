@@ -5,6 +5,7 @@ import * as tasks from './tasks'
 
 const buildChrome = tasks.buildChrome('prod')
 const buildFirefox = tasks.buildFirefox('prod')
+const buildSafari = tasks.buildSafari('prod')
 
 tasks.copyAssets()
 
@@ -23,6 +24,7 @@ compiler.run((error, stats) => {
 
     buildChrome()
     buildFirefox()
+    buildSafari()
     tasks.copyIntegrationAssets()
     signale.success('Build done')
 })

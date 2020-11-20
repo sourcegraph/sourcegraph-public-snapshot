@@ -121,8 +121,6 @@ const requestGraphQL = <T, V = object>({
         )
     )
 
-initializeOmniboxInterface(requestGraphQL)
-
 async function main(): Promise<void> {
     const subscriptions = new Subscription()
 
@@ -144,12 +142,17 @@ async function main(): Promise<void> {
             )
             .subscribe()
     )
-    // Configure the omnibox when the sourcegraphURL changes.
-    subscriptions.add(
-        observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
-            configureOmnibox(sourcegraphURL)
-        })
-    )
+
+    if (browser.omnibox) {
+        initializeOmniboxInterface(requestGraphQL)
+
+        // Configure the omnibox when the sourcegraphURL changes.
+        subscriptions.add(
+            observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
+                configureOmnibox(sourcegraphURL)
+            })
+        )
+    }
 
     // Update the browserAction icon based on the state of the extension
     subscriptions.add(
