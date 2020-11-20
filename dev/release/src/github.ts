@@ -424,12 +424,12 @@ async function createBranchWithChanges(
         git --no-pager diff;`
         await execa('bash', ['-c', showChangesScript], { stdio: 'inherit', cwd: workdir })
     } else {
-        // Publish changes
+        // Publish changes. We force push to ensure that the generated changes are applied.
         const publishScript = `set -ex
 
         git add :/;
         git commit -a -m ${JSON.stringify(commitMessage)};
-        git push origin HEAD:${headBranch};`
+        git push --force origin HEAD:${headBranch};`
         await execa('bash', ['-c', publishScript], { stdio: 'inherit', cwd: workdir })
     }
 }
