@@ -1,4 +1,4 @@
-import React, { useState, FunctionComponent, useEffect, useCallback } from 'react'
+import React, { useState, FunctionComponent, useCallback } from 'react'
 import * as H from 'history'
 
 import { IUserEmail } from '../../../../../shared/src/graphql/schema'
@@ -21,59 +21,22 @@ interface Props {
 
 interface UserEmailState {
     loading: boolean
-    errorDescription?: Error
+    error?: Error
 }
 
 export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails, onDidSet, className, history }) => {
-    const [primaryEmail, setPrimaryEmail] = useState<string>('')
-    const [emailOptions, setEmailOptions] = useState<string[]>([])
+    const [primaryEmail, setPrimaryEmail] = useState<string>()
     const [status, setStatus] = useState<UserEmailState>({ loading: false })
-    const [disabled, setDisabled] = useState(false)
 
-    useEffect(() => {
-        const possibleEmails = []
-        let placeholderPrimaryEmail = ''
-
-        /**
-         * Every time emails props changes, find:
-         *
-         * 1. all emails that can be set as primary (not primary and verified)
-         * 2. current primary email to be used as UI "placeholder" for disabled
-         * select
-         */
-        for (const email of emails) {
-            // collect possible primary emails
-            if (!email.isPrimary && email.verified) {
-                possibleEmails.push(email.email)
-            }
-
-            if (email.isPrimary) {
-                // there can be only one
-                placeholderPrimaryEmail = email.email
-            }
+    const options = emails.reduce((accumulator: string[], email) => {
+        if (!email.isPrimary && email.verified) {
+            accumulator.push(email.email)
         }
+        return accumulator
+    }, [])
 
-        const shouldDisable = possibleEmails.length === 0
-
-        let options
-        let selectValue
-
-        /**
-         * If possible primary emails were found, use them as select's options
-         * and set the first email as select's value
-         */
-        if (possibleEmails.length !== 0) {
-            options = possibleEmails
-            selectValue = possibleEmails[0]
-        } else {
-            options = [placeholderPrimaryEmail]
-            selectValue = placeholderPrimaryEmail
-        }
-
-        setDisabled(shouldDisable)
-        setEmailOptions(options)
-        setPrimaryEmail(selectValue)
-    }, [emails])
+    const defaultOption = emails.find(email => email.isPrimary)?.email
+    const disabled = options.length === 0
 
     const onPrimaryEmailSelect: React.ChangeEventHandler<HTMLSelectElement> = event =>
         setPrimaryEmail(event.target.value)
@@ -125,12 +88,17 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
                     onChange={onPrimaryEmailSelect}
                     required={true}
                     disabled={disabled}
+                    defaultValue={defaultOption}
                 >
-                    {emailOptions.map(email => (
-                        <option key={email} value={email}>
-                            {email}
-                        </option>
-                    ))}
+                    {disabled ? (
+                        <option value={defaultOption}>{defaultOption}</option>
+                    ) : (
+                        options.map(email => (
+                            <option key={email} value={email}>
+                                {email}
+                            </option>
+                        ))
+                    )}
                 </select>{' '}
                 <LoaderButton
                     loading={status.loading}
@@ -140,9 +108,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
                     className="btn btn-primary"
                 />
             </Form>
-            {status.errorDescription && (
-                <ErrorAlert className="mt-2" error={status.errorDescription} history={history} />
-            )}
+            {status.error && <ErrorAlert className="mt-2" error={status.error} history={history} />}
         </div>
     )
 }

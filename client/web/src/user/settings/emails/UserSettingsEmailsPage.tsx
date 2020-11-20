@@ -139,7 +139,7 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
             {status.error && <ErrorAlert className="mt-2" error={status.error} history={history} />}
 
             {status.loading ? (
-                <span className="filtered-connection__loader">
+                <span className="user-settings-emails-page__loader">
                     <LoadingSpinner className="icon-inline" />
                 </span>
             ) : (

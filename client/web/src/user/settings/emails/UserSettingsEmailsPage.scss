@@ -14,4 +14,8 @@
         display: inline-block;
         margin-right: 0.25rem;
     }
+    &__loader {
+        display: flex;
+        justify-content: center;
+    }
 }

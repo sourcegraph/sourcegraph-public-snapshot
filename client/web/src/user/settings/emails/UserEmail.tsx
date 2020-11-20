@@ -129,6 +129,7 @@ export const UserEmail: FunctionComponent<Props> = ({
                             type="button"
                             className="btn btn-link text-primary user-settings-emails-page__btn"
                             onClick={() => updateEmailVerification(!verified)}
+                            disabled={status.loading}
                         >
                             {verified ? 'Mark as unverified' : 'Mark as verified'}
                         </button>
@@ -138,6 +139,7 @@ export const UserEmail: FunctionComponent<Props> = ({
                             type="button"
                             className="btn btn-link text-danger user-settings-emails-page__btn"
                             onClick={removeEmail}
+                            disabled={status.loading}
                         >
                             Remove
                         </button>

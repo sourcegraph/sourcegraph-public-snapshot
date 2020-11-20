@@ -1,24 +1,21 @@
 import React, { FunctionComponent, useMemo, useState } from 'react'
 import classNames from 'classnames'
+import * as H from 'history'
 
+import { AddUserEmailResult, AddUserEmailVariables } from '../../../graphql-operations'
 import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { requestGraphQL } from '../../../backend/graphql'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
-
 import { useInputValidation, deriveInputClassName } from '../../../../../shared/src/util/useInputValidation'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { ErrorAlert } from '../../../components/alerts'
 import { LoaderButton } from '../../../components/LoaderButton'
-import * as H from 'history'
-import { AddUserEmailResult, AddUserEmailVariables } from '../../../graphql-operations'
+import { LoaderInput } from '../../../../../branded/src/components/LoaderInput'
 
 interface Props {
-    /** The GraphQL ID of the user with whom the new emails are associated. */
     user: GQL.ID
-
-    /** Called after successfully adding an email to the user. */
     onDidAdd: () => void
 
     className?: string
@@ -68,7 +65,6 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
 
             eventLogger.log('NewUserEmailAddressAdded')
             setStatus({})
-
             if (onDidAdd) {
                 onDidAdd()
             }
@@ -87,26 +83,28 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
             </label>
             {/* eslint-disable-next-line react/forbid-elements */}
             <form className="form-inline" onSubmit={onSubmit} noValidate={true}>
-                <input
-                    id="AddUserEmailForm-email"
-                    type="email"
-                    name="email"
-                    className={classNames(
-                        'form-control mr-sm-2 test-user-email-add-input',
-                        deriveInputClassName(emailState)
-                    )}
-                    onChange={nextEmailFieldChange}
-                    size={32}
-                    value={emailState.value}
-                    ref={emailInputReference}
-                    required={true}
-                    placeholder="Email"
-                    autoComplete="email"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                    readOnly={false}
-                />{' '}
+                <LoaderInput className={deriveInputClassName(emailState)} loading={emailState.kind === 'LOADING'}>
+                    <input
+                        id="AddUserEmailForm-email"
+                        type="email"
+                        name="email"
+                        className={classNames(
+                            'form-control mr-sm-2 test-user-email-add-input',
+                            deriveInputClassName(emailState)
+                        )}
+                        onChange={nextEmailFieldChange}
+                        size={32}
+                        value={emailState.value}
+                        ref={emailInputReference}
+                        required={true}
+                        placeholder="Email"
+                        autoComplete="email"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        readOnly={false}
+                    />
+                </LoaderInput>{' '}
                 <LoaderButton
                     loading={typeof status.loadingOrError === 'boolean' ? status.loadingOrError : false}
                     label="Add"
