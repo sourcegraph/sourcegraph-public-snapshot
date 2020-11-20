@@ -134,6 +134,8 @@
 // 1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql (188B)
 // 1528395750_repair_view.down.sql (536B)
 // 1528395750_repair_view.up.sql (348B)
+// 1528395751_add_not_null_constraint_to_repo_external.down.sql (206B)
+// 1528395751_add_not_null_constraint_to_repo_external.up.sql (203B)
 
 package migrations
 
@@ -2882,6 +2884,46 @@ func _1528395750_repair_viewUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395751_add_not_null_constraint_to_repo_externalDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x80\x08\x38\xfb\xfb\x84\xfa\xfa\x29\xa4\x56\x94\xa4\x16\xe5\x25\xe6\xc4\x67\xa6\x28\xb8\x04\xf9\x07\x28\xf8\xf9\x87\x28\xf8\x85\xfa\xf8\x58\x13\xab\xb1\x38\xb5\xa8\x2c\x33\x39\x35\xbe\xa4\xb2\x20\x95\x42\x23\x30\xdd\xc0\xe5\xec\xef\xeb\xeb\x19\x62\xcd\x05\x08\x00\x00\xff\xff\x9c\x5c\x0e\x27\xce\x00\x00\x00")
+
+func _1528395751_add_not_null_constraint_to_repo_externalDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395751_add_not_null_constraint_to_repo_externalDownSql,
+		"1528395751_add_not_null_constraint_to_repo_external.down.sql",
+	)
+}
+
+func _1528395751_add_not_null_constraint_to_repo_externalDownSql() (*asset, error) {
+	bytes, err := _1528395751_add_not_null_constraint_to_repo_externalDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395751_add_not_null_constraint_to_repo_external.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x30, 0x8e, 0x27, 0x2, 0x6f, 0xe1, 0xa9, 0x9f, 0x25, 0x2c, 0xa0, 0x68, 0x64, 0x17, 0xb5, 0x53, 0x76, 0xdd, 0xaa, 0x21, 0xb7, 0x1, 0xf7, 0x61, 0xa2, 0xbe, 0x68, 0xff, 0x13, 0x73, 0x50, 0x20}}
+	return a, nil
+}
+
+var __1528395751_add_not_null_constraint_to_repo_externalUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x80\x08\x38\xfb\xfb\x84\xfa\xfa\x29\xa4\x56\x94\xa4\x16\xe5\x25\xe6\xc4\x67\xa6\x28\x04\xbb\x86\x28\xf8\xf9\x87\x28\xf8\x85\xfa\xf8\x58\x13\xab\xaf\x38\xb5\xa8\x2c\x33\x39\x35\xbe\xa4\xb2\x20\x95\x32\x13\x30\x5c\xc0\xe5\xec\xef\xeb\xeb\x19\x62\xcd\x05\x08\x00\x00\xff\xff\x2b\x70\x88\x33\xcb\x00\x00\x00")
+
+func _1528395751_add_not_null_constraint_to_repo_externalUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395751_add_not_null_constraint_to_repo_externalUpSql,
+		"1528395751_add_not_null_constraint_to_repo_external.up.sql",
+	)
+}
+
+func _1528395751_add_not_null_constraint_to_repo_externalUpSql() (*asset, error) {
+	bytes, err := _1528395751_add_not_null_constraint_to_repo_externalUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395751_add_not_null_constraint_to_repo_external.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xe7, 0x64, 0x4, 0x2e, 0x98, 0x2c, 0x79, 0x60, 0x4c, 0x8c, 0xa0, 0x17, 0xf3, 0xbc, 0x9e, 0x30, 0xe9, 0xfa, 0x64, 0x3f, 0xb6, 0xb1, 0x2e, 0xda, 0xcc, 0x5e, 0x1f, 0xad, 0x21, 0xcc, 0x73, 0x57}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3107,6 +3149,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql":   _1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSql,
 	"1528395750_repair_view.down.sql":                                                        _1528395750_repair_viewDownSql,
 	"1528395750_repair_view.up.sql":                                                          _1528395750_repair_viewUpSql,
+	"1528395751_add_not_null_constraint_to_repo_external.down.sql":                           _1528395751_add_not_null_constraint_to_repo_externalDownSql,
+	"1528395751_add_not_null_constraint_to_repo_external.up.sql":                             _1528395751_add_not_null_constraint_to_repo_externalUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3287,6 +3331,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql":   {_1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSql, map[string]*bintree{}},
 	"1528395750_repair_view.down.sql":                                                        {_1528395750_repair_viewDownSql, map[string]*bintree{}},
 	"1528395750_repair_view.up.sql":                                                          {_1528395750_repair_viewUpSql, map[string]*bintree{}},
+	"1528395751_add_not_null_constraint_to_repo_external.down.sql":                           {_1528395751_add_not_null_constraint_to_repo_externalDownSql, map[string]*bintree{}},
+	"1528395751_add_not_null_constraint_to_repo_external.up.sql":                             {_1528395751_add_not_null_constraint_to_repo_externalUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

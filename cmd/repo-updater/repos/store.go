@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -152,10 +151,6 @@ func newRepoRecord(r *Repo) (*repoRecord, error) {
 	sources, err := sourcesColumn(r.ID, r.Sources)
 	if err != nil {
 		return nil, errors.Wrapf(err, "newRecord: sources marshalling failed")
-	}
-
-	if r.ExternalRepo.ID == "" || r.ExternalRepo.ServiceID == "" || r.ExternalRepo.ServiceType == "" {
-		return nil, fmt.Errorf("newRecord: missing ExternalRepo details: %v", r.ExternalRepo)
 	}
 
 	return &repoRecord{
@@ -741,9 +736,6 @@ SELECT
 FROM repo
 WHERE
 	deleted_at IS NULL
-AND	external_id IS NOT NULL
-AND	external_service_type IS NOT NULL
-AND	external_service_id IS NOT NULL
 AND	id > %s
 ORDER BY id ASC LIMIT %s
 `

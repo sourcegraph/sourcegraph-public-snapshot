@@ -1807,11 +1807,8 @@ func testStoreListExternalRepoSpecs(db *sql.DB) func(t *testing.T, repoStore rep
 			_, err := db.ExecContext(ctx, `
 INSERT INTO repo (id, name, description, fork, external_id, external_service_type, external_service_id, deleted_at)
 VALUES
-	(1, 'github.com/user/repo1', '', FALSE, NULL, 'github', 'https://github.com/', NULL),
-	(2, 'github.com/user/repo2', '', FALSE, 'MDEwOlJlcG9zaXRvcnky', NULL, 'https://github.com/', NULL),
-	(3, 'github.com/user/repo3', '', FALSE, 'MDEwOlJlcG9zaXRvcnkz', 'github', NULL, NULL),
-	(4, 'github.com/user/repo4', '', FALSE, 'MDEwOlJlcG9zaXRvcnk0', 'github', 'https://github.com/', NOW()),
-	(5, 'github.com/user/repo5', '', FALSE, 'MDEwOlJlcG9zaXRvcnk1', 'github', 'https://github.com/', NULL)
+(1, 'github.com/user/repo1', '', FALSE, 'MDEwOlJlcG9zaXRvcnk0', 'github', 'https://github.com/', NULL),
+(2, 'github.com/user/repo2', '', FALSE, 'MDEwOlJlcG9zaXRvcnk1', 'github', 'https://github.com/', NOW())
 `)
 			if err != nil {
 				t.Fatal(err)
@@ -1823,7 +1820,7 @@ VALUES
 			}
 			want := map[api.ExternalRepoSpec]struct{}{
 				{
-					ID:          "MDEwOlJlcG9zaXRvcnk1",
+					ID:          "MDEwOlJlcG9zaXRvcnk0",
 					ServiceType: "github",
 					ServiceID:   "https://github.com/",
 				}: {},

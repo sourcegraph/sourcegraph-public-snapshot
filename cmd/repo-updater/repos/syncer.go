@@ -191,7 +191,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	svc := svcs[0]
 	isUserOwned := svc.NamespaceUserID > 0
 
-	onSourced := []func(*Repo) error{validateSourcedRepo}
+	onSourced := []func(*Repo) error{s.validateSourcedRepo}
 
 	if isUserOwned {
 		// If we are over our limit for user added repos we abort the sync
@@ -347,9 +347,13 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 }
 
 // ensure repository returned by sources is always valid.
-func validateSourcedRepo(r *Repo) error {
+func (s *Syncer) validateSourcedRepo(r *Repo) error {
 	if r.ExternalRepo.ID == "" || r.ExternalRepo.ServiceID == "" || r.ExternalRepo.ServiceType == "" {
-		return fmt.Errorf("incomplete external repo information: ID(%v) ServiceID(%q) ServiceType(%q)", r.ExternalRepo.ID, r.ExternalRepo.ServiceID, r.ExternalRepo.ServiceType)
+		if s.Logger != nil {
+			s.Logger.Error("Repo validation failed", "ExternalRepo.ID", r.ExternalRepo.ID, "ExternalRepo.ServiceID", r.ExternalRepo.ServiceID, "ExternalRepo.ServiceType", r.ExternalRepo.ServiceType)
+		}
+
+		return fmt.Errorf("incomplete external repo information")
 	}
 
 	return nil

@@ -1,0 +1,7 @@
+BEGIN;
+
+ALTER TABLE repo ALTER COLUMN external_id SET NOT NULL;
+ALTER TABLE repo ALTER COLUMN external_service_type SET NOT NULL;
+ALTER TABLE repo ALTER COLUMN external_service_id SET NOT NULL;
+
+COMMIT;

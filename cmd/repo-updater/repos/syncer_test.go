@@ -517,7 +517,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				store: s,
 				now:   clock.Now,
 				svcs:  []*repos.ExternalService{tc.svc},
-				err:   fmt.Sprintf("syncer.sync.sourced: 1 error occurred:\n\t* incomplete external repo information: ID() ServiceID(%q) ServiceType(%q)\n\n", tc.repo.ExternalRepo.ServiceID, tc.repo.ExternalRepo.ServiceType),
+				err:   "syncer.sync.sourced: 1 error occurred:\n\t* incomplete external repo information\n\n",
 			},
 			func() testCase {
 				var update interface{}
