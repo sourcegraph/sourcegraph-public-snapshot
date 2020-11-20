@@ -77,8 +77,8 @@ export interface Literal extends BaseToken {
  */
 export interface Filter extends BaseToken {
     type: 'filter'
-    filterType: Literal
-    filterValue: Quoted | Literal | undefined
+    field: Literal
+    value: Quoted | Literal | undefined
     negated: boolean
 }
 
@@ -487,8 +487,8 @@ const filter: Scanner<Filter> = (input, start) => {
         term: {
             type: 'filter',
             range: { start, end: scannedValue ? scannedValue.term.range.end : scannedDelimiter.term.range.end },
-            filterType: scannedKeyword.term,
-            filterValue: scannedValue?.term,
+            field: scannedKeyword.term,
+            value: scannedValue?.term,
             negated: scannedKeyword.term.value.startsWith('-'),
         },
     }

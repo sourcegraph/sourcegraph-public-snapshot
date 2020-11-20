@@ -392,26 +392,22 @@ const decorateTokens = (tokens: Token[]): DecoratedToken[] => {
                 decorated.push({
                     type: 'field',
                     range: token.range,
-                    value: token.filterType.value,
+                    value: token.field.value,
                 })
-                if (
-                    token.filterValue &&
-                    token.filterValue.type === 'literal' &&
-                    hasRegexpValue(token.filterType.value)
-                ) {
+                if (token.value && token.value.type === 'literal' && hasRegexpValue(token.field.value)) {
                     // Highlight fields with regexp values.
                     decorated.push(
                         ...decorateTokens([
                             {
                                 type: 'pattern',
                                 kind: PatternKind.Regexp,
-                                value: token.filterValue.value,
-                                range: token.filterValue.range,
+                                value: token.value.value,
+                                range: token.value.range,
                             },
                         ])
                     )
-                } else if (token.filterValue) {
-                    decorated.push(token.filterValue)
+                } else if (token.value) {
+                    decorated.push(token.value)
                 }
                 break
             }
@@ -465,12 +461,12 @@ const fromTokens = (tokens: Token[]): Monaco.languages.IToken[] => {
             case 'filter':
                 {
                     monacoTokens.push({
-                        startIndex: token.filterType.range.start,
+                        startIndex: token.field.range.start,
                         scopes: 'field',
                     })
-                    if (token.filterValue) {
+                    if (token.value) {
                         monacoTokens.push({
-                            startIndex: token.filterValue.range.start,
+                            startIndex: token.value.range.start,
                             scopes: 'identifier',
                         })
                     }
