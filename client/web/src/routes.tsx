@@ -14,6 +14,7 @@ import { stanford } from './repogroups/Stanford'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import { cncf } from './repogroups/cncf'
 import { ExtensionAlertProps } from './repo/RepoContainer'
+import { StreamingSearchResults } from './search/results/streaming/StreamingSearchResults'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -71,7 +72,12 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: '/search',
         render: props =>
             parseSearchURLQuery(props.location.search) ? (
-                <SearchResults {...props} deployType={window.context.deployType} />
+                !isErrorLike(props.settingsCascade.final) &&
+                props.settingsCascade.final?.experimentalFeatures?.searchStreaming ? (
+                    <StreamingSearchResults {...props} />
+                ) : (
+                    <SearchResults {...props} deployType={window.context.deployType} />
+                )
             ) : (
                 <SearchPage {...props} />
             ),

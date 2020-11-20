@@ -152,7 +152,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 3,
-                "scopes": "identifier"
+                "scopes": "regexpMetaEscapedCharacter"
               },
               {
                 "startIndex": 5,
@@ -184,7 +184,11 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 1,
-                "scopes": "regexpMetaQuantifier"
+                "scopes": "regexpMetaRangeQuantifier"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "regexpMetaLazyQuantifier"
               },
               {
                 "startIndex": 3,
@@ -200,7 +204,51 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 6,
-                "scopes": "regexpMetaQuantifier"
+                "scopes": "regexpMetaRangeQuantifier"
+              }
+            ]
+        `)
+    })
+
+    test('decorate range quantifier', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('b{1} c{1,2} d{3,}?', false, SearchPatternType.regexp)), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 1,
+                "scopes": "regexpMetaRangeQuantifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "regexpMetaRangeQuantifier"
+              },
+              {
+                "startIndex": 11,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "regexpMetaRangeQuantifier"
+              },
+              {
+                "startIndex": 17,
+                "scopes": "regexpMetaLazyQuantifier"
               }
             ]
         `)
@@ -245,6 +293,38 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 9,
                 "scopes": "closingParen"
+              }
+            ]
+        `)
+    })
+
+    test('decorate non-capturing paren groups', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('(?:a(?:b))', false, SearchPatternType.regexp)), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "regexpMetaDelimited"
               }
             ]
         `)
@@ -394,6 +474,411 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 17,
                 "scopes": "identifier"
+              }
+            ]
+        `)
+    })
+
+    test('decorate regexp | operator, single pattern', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('[|]\\|((a|b)|d)|e', false, SearchPatternType.regexp)), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 1,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "regexpMetaEscapedCharacter"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "regexpMetaAlternative"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 11,
+                "scopes": "regexpMetaAlternative"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "regexpMetaAlternative"
+              },
+              {
+                "startIndex": 15,
+                "scopes": "identifier"
+              }
+            ]
+        `)
+    })
+
+    test('decorate regexp | operator, multiple patterns', () => {
+        expect(
+            getMonacoTokens(toSuccess(scanSearchQuery('repo:(a|b) (c|d) (e|f)', false, SearchPatternType.regexp)), true)
+        ).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "filterKeyword"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "regexpMetaAlternative"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 11,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "regexpMetaAlternative"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 15,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 16,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 17,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 18,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 19,
+                "scopes": "regexpMetaAlternative"
+              },
+              {
+                "startIndex": 20,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 21,
+                "scopes": "regexpMetaDelimited"
+              }
+            ]
+        `)
+    })
+
+    test('decorate escaped characters', () => {
+        expect(
+            getMonacoTokens(
+                toSuccess(scanSearchQuery('[\\--\\abc] \\|\\.|\\(\\)', false, SearchPatternType.regexp)),
+                true
+            )
+        ).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 1,
+                "scopes": "regexpMetaEscapedCharacter"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "regexpMetaEscapedCharacter"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "regexpMetaCharacterClass"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "regexpMetaEscapedCharacter"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "regexpMetaEscapedCharacter"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "regexpMetaAlternative"
+              },
+              {
+                "startIndex": 15,
+                "scopes": "regexpMetaEscapedCharacter"
+              },
+              {
+                "startIndex": 17,
+                "scopes": "regexpMetaEscapedCharacter"
+              }
+            ]
+        `)
+    })
+
+    test('decorate structural holes', () => {
+        expect(
+            getMonacoTokens(
+                toSuccess(scanSearchQuery('r:foo Search(thing::[x], :[y])', false, SearchPatternType.structural)),
+                true
+            )
+        ).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "filterKeyword"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 19,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 23,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 25,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 29,
+                "scopes": "identifier"
+              }
+            ]
+        `)
+    })
+
+    test('decorate structural holes with valid inlined regexp', () => {
+        expect(
+            getMonacoTokens(toSuccess(scanSearchQuery('r:foo a:[x~[\\]]]b', false, SearchPatternType.structural)), true)
+        ).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "filterKeyword"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 16,
+                "scopes": "identifier"
+              }
+            ]
+        `)
+    })
+
+    test('decorate structural hole ... alias', () => {
+        expect(
+            getMonacoTokens(
+                toSuccess(scanSearchQuery('r:foo a...b...c....', false, SearchPatternType.structural)),
+                true
+            )
+        ).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "filterKeyword"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 11,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 15,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 18,
+                "scopes": "identifier"
+              }
+            ]
+        `)
+    })
+    test('decorate structural hole ... alias', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:foo ...:...', false, SearchPatternType.structural)), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "filterKeyword"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "structuralMetaHole"
               }
             ]
         `)

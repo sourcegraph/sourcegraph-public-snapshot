@@ -21,6 +21,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -28,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -36,7 +39,7 @@ var update = flag.Bool("update", false, "update testdata")
 // Run from integration_test.go
 func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 	return func(t *testing.T) {
-		now := time.Now().UTC().Truncate(time.Microsecond)
+		now := timeutil.Now()
 		clock := func() time.Time { return now }
 
 		ctx := context.Background()
@@ -151,6 +154,11 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
+						handler := webhooks.GitHubWebhook{
+							Repos: repoStore,
+						}
+						hook.Register(&handler)
+
 						u := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, "https://example.com/")
 
 						req, err := http.NewRequest("POST", u, bytes.NewReader(event.Data))
@@ -161,7 +169,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 						req.Header.Set("X-Hub-Signature", sign(t, event.Data, []byte(secret)))
 
 						rec := httptest.NewRecorder()
-						hook.ServeHTTP(rec, req)
+						handler.ServeHTTP(rec, req)
 						resp := rec.Result()
 
 						if resp.StatusCode != http.StatusOK {
@@ -204,7 +212,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 // Run from integration_test.go
 func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 	return func(t *testing.T) {
-		now := time.Now().UTC().Truncate(time.Microsecond)
+		now := timeutil.Now()
 		clock := func() time.Time { return now }
 
 		ctx := context.Background()

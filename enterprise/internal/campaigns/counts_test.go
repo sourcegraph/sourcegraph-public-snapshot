@@ -5,16 +5,18 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func TestCalcCounts(t *testing.T) {
-	now := time.Now().UTC().Truncate(time.Microsecond)
+	now := timeutil.Now()
 	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
 
 	tests := []struct {

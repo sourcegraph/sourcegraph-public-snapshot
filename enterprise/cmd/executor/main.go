@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
@@ -35,22 +36,13 @@ func main() {
 		log.Fatalf("failed to read config: %s", err)
 	}
 
-	debugServer, err := debugserver.NewServerRoutine()
-	if err != nil {
-		log.Fatalf("Failed to create listener: %s", err)
-	}
-	go debugServer.Start()
+	go debugserver.NewServerRoutine().Start()
 
 	routines := []goroutine.BackgroundRoutine{
 		apiworker.NewWorker(config.APIWorkerOptions(nil)),
 	}
 	if !config.DisableHealthServer {
-		server, err := httpserver.NewFromAddr(addr, httpserver.NewHandler(nil), httpserver.Options{})
-		if err != nil {
-			log.Fatalf("Failed to create listener: %s", err)
-		}
-
-		routines = append(routines, server)
+		routines = append(routines, httpserver.NewFromAddr(addr, &http.Server{Handler: httpserver.NewHandler(nil)}))
 	}
 
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)

@@ -610,18 +610,31 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 	return commitSearchResultsToSearchResults(flattened), common, nil
 }
 
-func commitDiffSearcher(ctx context.Context, repoRev *search.RepositoryRevisions, args *search.TextParametersForCommitParameters) ([]*CommitSearchResultResolver, bool, bool, error) {
-	commitParams := search.CommitParameters{
-		RepoRevs:    repoRev,
-		PatternInfo: args.PatternInfo,
-		Query:       args.Query,
-		Diff:        true,
-	}
-	return searchCommitsInRepo(ctx, commitParams)
-}
-
 // searchCommitDiffsInRepos searches a set of repos for matching commit diffs.
-func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
+func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, resultChannel chan<- []SearchResultResolver) ([]SearchResultResolver, *searchResultsCommon, error) {
+	commitDiffSearcher := func(ctx context.Context, repoRev *search.RepositoryRevisions, args *search.TextParametersForCommitParameters) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
+		commitParams := search.CommitParameters{
+			RepoRevs:    repoRev,
+			PatternInfo: args.PatternInfo,
+			Query:       args.Query,
+			Diff:        true,
+		}
+
+		// We use the stream so we can optionally send down resultChannel.
+		for event := range searchCommitsInRepoStream(ctx, commitParams) {
+			if len(event.Results) > 0 && resultChannel != nil {
+				resultChannel <- commitSearchResultsToSearchResults(event.Results)
+			}
+
+			results = append(results, event.Results...)
+			limitHit = event.LimitHit
+			timedOut = event.TimedOut
+			err = event.Error
+		}
+
+		return
+	}
+
 	return searchCommitsInRepos(ctx, args, searchCommitsInReposParameters{
 		TraceName: "searchCommitDiffsInRepos",
 		ErrorName: "diffs",

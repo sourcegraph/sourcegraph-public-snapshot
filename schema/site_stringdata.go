@@ -234,6 +234,12 @@ const SiteSchemaJSON = `{
               ]
             }
           ]
+        },
+        "enablePermissionsWebhooks": {
+          "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": false }
         }
       },
       "examples": [
@@ -816,6 +822,12 @@ const SiteSchemaJSON = `{
       "description": "The minimum number of Unicode code points that a password must contain.",
       "type": "integer",
       "default": 12,
+      "group": "Authentication"
+    },
+    "auth.passwordResetLinkExpiry": {
+      "description": "The duration (in seconds) that a password reset link is considered valid.",
+      "type": "integer",
+      "default": 14400,
       "group": "Authentication"
     },
     "update.channel": {

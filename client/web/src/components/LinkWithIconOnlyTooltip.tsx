@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import { kebabCase } from 'lodash'
 
 /**
  * A link that shows a tooltipped icon on narrow screens and a non-tooltipped icon label on wider
@@ -18,7 +19,7 @@ export const LinkWithIconOnlyTooltip: React.FunctionComponent<{
     const LinkComponent = activeClassName ? NavLink : Link
     const linkProps = { to, className: `${className} d-flex align-items-center`, activeClassName }
     return (
-        <LinkComponent {...linkProps}>
+        <LinkComponent {...linkProps} data-testid={kebabCase(text)}>
             <Icon className="icon-inline d-lg-none" data-tooltip={tooltip} />
             <Icon className="icon-inline d-none d-lg-inline-block" />
             <span className="d-none d-lg-inline-block ml-1">{text}</span>

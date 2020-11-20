@@ -9,7 +9,10 @@ import (
 )
 
 type CodeMonitorsResolver interface {
+	// Query
 	Monitors(ctx context.Context, userID int32, args *ListMonitorsArgs) (MonitorConnectionResolver, error)
+
+	// Mutations
 	CreateCodeMonitor(ctx context.Context, args *CreateCodeMonitorArgs) (MonitorResolver, error)
 	ToggleCodeMonitor(ctx context.Context, args *ToggleCodeMonitorArgs) (MonitorResolver, error)
 	DeleteCodeMonitor(ctx context.Context, args *DeleteCodeMonitorArgs) (*EmptyResponse, error)
@@ -120,11 +123,9 @@ type ListRecipientsArgs struct {
 }
 
 type CreateCodeMonitorArgs struct {
-	Namespace   graphql.ID
-	Description string
-	Enabled     bool
-	Trigger     *CreateTriggerArgs
-	Actions     []*CreateActionArgs
+	Monitor *CreateMonitorArgs
+	Trigger *CreateTriggerArgs
+	Actions []*CreateActionArgs
 }
 
 type CreateTriggerArgs struct {
@@ -151,14 +152,14 @@ type DeleteCodeMonitorArgs struct {
 	Id graphql.ID
 }
 
-type MonitorArgs struct {
+type CreateMonitorArgs struct {
 	Namespace   graphql.ID
 	Description string
 	Enabled     bool
 }
 
 type EditActionEmailArgs struct {
-	Id     graphql.ID
+	Id     *graphql.ID
 	Update *CreateActionEmailArgs
 }
 
@@ -173,7 +174,7 @@ type EditTriggerArgs struct {
 
 type EditMonitorArgs struct {
 	Id     graphql.ID
-	Update *MonitorArgs
+	Update *CreateMonitorArgs
 }
 
 type UpdateCodeMonitorArgs struct {

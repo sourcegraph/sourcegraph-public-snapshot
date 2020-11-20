@@ -1,4 +1,4 @@
 # Tutorials
 
-- [Index a popular public repository for Go](indexing_go_repo.md)
-- TODO: Index a popular public repository for TypeScript
+- [Index a popular Go repository](indexing_go_repo.md)
+- [Index a popular TypeScript repository](indexing_ts_repo.md)

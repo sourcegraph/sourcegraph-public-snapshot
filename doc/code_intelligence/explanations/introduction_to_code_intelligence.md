@@ -1,6 +1,6 @@
 # Introduction to code intelligence
 
-Code intelligence is enabled by [Sourcegraph extensions](../../../extensions/index.md) and provides users with two different types of code intelligence; basic and precise.
+Code intelligence is enabled by [Sourcegraph extensions](../../../extensions/index.md) and provides users with two different types of code intelligence: basic and precise.
 
 **Basic** is [search-based code intelligence](./basic_code_intelligence.md) that works out of the box with all of the most popular programming languages via [extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22).
 
@@ -11,10 +11,10 @@ Code intelligence is enabled by [Sourcegraph extensions](../../../extensions/ind
 - On diffs in your code review tool, via integrations
 - Via the [Sourcegraph API](https://docs.sourcegraph.com/api/graphql)
 
-## Basic vs Precise
+## Basic vs. precise
 
 [Basic code intelligence](basic_code_intelligence.md) is available by default on all Sourcegraph instances and provides fuzzy code intelligence using a combination of ctags and search. It is great for immediate access to code intelligence features, but due to its dependence on text-based search its results are considered imprecise.
 
 [Precise code intelligence](precise_code_intelligence.md) returns metadata from a knowledge graph that is generated through code analysis. The precomputation step is used to generate the graph results in lookups that are fast and have a high degree of accuracy.
 
-To learn more about how to work with each type of code intelligence visit the [basic](./basic_code_intelligence.md) and [precise](./precise_code_intelligence.md) sections
+To learn more about how to work with each type of code intelligence, visit the [basic](./basic_code_intelligence.md) and [precise](./precise_code_intelligence.md) sections

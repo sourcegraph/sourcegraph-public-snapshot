@@ -39,6 +39,7 @@ export const lsifIndexFieldsFragment = gql`
         indexer
         indexerArgs
         outfile
+        logContents
         dockerSteps {
             root
             image
