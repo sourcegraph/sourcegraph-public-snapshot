@@ -16,7 +16,13 @@ const additionalProps = {
             nodes: [
                 {
                     id: 'foobar',
-                    description: 'test code monitor',
+                    description: 'Test code monitor',
+                    enabled: true,
+                    actions: { nodes: [{ enabled: true, recipients: { nodes: [{ id: 'baz' }] } }] },
+                },
+                {
+                    id: 'foo',
+                    description: 'Second test code monitor',
                     enabled: true,
                     actions: { nodes: [{ enabled: true, recipients: { nodes: [{ id: 'baz' }] } }] },
                 },
