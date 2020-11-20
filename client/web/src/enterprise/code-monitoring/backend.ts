@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs'
-import { map, tap } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import { requestGraphQL } from '../../backend/graphql'
 import {
