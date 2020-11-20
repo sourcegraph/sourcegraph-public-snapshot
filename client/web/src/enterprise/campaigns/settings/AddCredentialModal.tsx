@@ -130,11 +130,6 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                             onChange={onChangeCredential}
                         />
                         <p className="form-text">{helpTexts[externalServiceKind]}</p>
-                        <p className="form-text">
-                            <i>
-                                <LockIcon className="icon-inline" /> Access tokens are encrypted before storing.
-                            </i>
-                        </p>
                     </div>
                     <div className="d-flex justify-content-end">
                         <button
