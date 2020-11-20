@@ -509,6 +509,16 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				svcs:   []*repos.ExternalService{tc.svc},
 				err:    "<nil>",
 			},
+			testCase{
+				name: tc.repo.Name + "/incomplete external service information",
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil,
+					tc.repo.With(func(r *repos.Repo) { r.ExternalRepo.ID = "" }),
+				)),
+				store: s,
+				now:   clock.Now,
+				svcs:  []*repos.ExternalService{tc.svc},
+				err:   fmt.Sprintf("syncer.sync.sourced: 1 error occurred:\n\t* incomplete external repo information: ID() ServiceID(%q) ServiceType(%q)\n\n", tc.repo.ExternalRepo.ServiceID, tc.repo.ExternalRepo.ServiceType),
+			},
 			func() testCase {
 				var update interface{}
 				typ, ok := extsvc.ParseServiceType(tc.repo.ExternalRepo.ServiceType)
@@ -606,7 +616,6 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 
 				for _, svc := range tc.svcs {
 					err := syncer.SyncExternalService(ctx, st, svc.ID, time.Millisecond)
-
 					if have, want := fmt.Sprint(err), tc.err; have != want {
 						t.Errorf("have error %q, want %q", have, want)
 					}

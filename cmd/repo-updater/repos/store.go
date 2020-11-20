@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -132,9 +133,9 @@ type repoRecord struct {
 	CreatedAt           time.Time       `json:"created_at"`
 	UpdatedAt           *time.Time      `json:"updated_at,omitempty"`
 	DeletedAt           *time.Time      `json:"deleted_at,omitempty"`
-	ExternalServiceType *string         `json:"external_service_type,omitempty"`
-	ExternalServiceID   *string         `json:"external_service_id,omitempty"`
-	ExternalID          *string         `json:"external_id,omitempty"`
+	ExternalServiceType string          `json:"external_service_type"`
+	ExternalServiceID   string          `json:"external_service_id"`
+	ExternalID          string          `json:"external_id"`
 	Archived            bool            `json:"archived"`
 	Fork                bool            `json:"fork"`
 	Private             bool            `json:"private"`
@@ -153,6 +154,10 @@ func newRepoRecord(r *Repo) (*repoRecord, error) {
 		return nil, errors.Wrapf(err, "newRecord: sources marshalling failed")
 	}
 
+	if r.ExternalRepo.ID == "" || r.ExternalRepo.ServiceID == "" || r.ExternalRepo.ServiceType == "" {
+		return nil, fmt.Errorf("newRecord: missing ExternalRepo details: %v", r.ExternalRepo)
+	}
+
 	return &repoRecord{
 		ID:                  r.ID,
 		Name:                r.Name,
@@ -161,9 +166,9 @@ func newRepoRecord(r *Repo) (*repoRecord, error) {
 		CreatedAt:           r.CreatedAt.UTC(),
 		UpdatedAt:           nullTimeColumn(r.UpdatedAt.UTC()),
 		DeletedAt:           nullTimeColumn(r.DeletedAt.UTC()),
-		ExternalServiceType: nullStringColumn(r.ExternalRepo.ServiceType),
-		ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
-		ExternalID:          nullStringColumn(r.ExternalRepo.ID),
+		ExternalServiceType: r.ExternalRepo.ServiceType,
+		ExternalServiceID:   r.ExternalRepo.ServiceID,
+		ExternalID:          r.ExternalRepo.ID,
 		Archived:            r.Archived,
 		Fork:                r.Fork,
 		Private:             r.Private,

@@ -191,7 +191,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	svc := svcs[0]
 	isUserOwned := svc.NamespaceUserID > 0
 
-	onSourced := func(*Repo) error { return nil } //noop
+	onSourced := []func(*Repo) error{validateSourcedRepo}
 
 	if isUserOwned {
 		// If we are over our limit for user added repos we abort the sync
@@ -214,26 +214,27 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 		if maxAllowed == 0 {
 			maxAllowed = ConfUserReposMaxPerUser()
 		}
-		onSourced = func(r *Repo) error {
+		onSourced = append(onSourced, func(r *Repo) error {
 			newCount := atomic.AddInt64(&sourcedRepoCount, 1)
 			if newCount >= int64(maxAllowed) {
 				return fmt.Errorf("per user repo count has exceeded allowed limit: %d", maxAllowed)
 			}
 			return nil
-		}
+		})
 	} else if s.SubsetSynced != nil {
 		// This is a site admin owned external service so we should stream inserts ASAP.
 		// It should insert outside of our transaction so that repos are visible to the rest of our
 		// system immediately.
-		onSourced, err = s.makeNewRepoInserter(ctx, s.Store, isUserOwned)
+		fn, err := s.makeNewRepoInserter(ctx, s.Store, isUserOwned)
 		if err != nil {
 			return errors.Wrap(err, "syncer.sync.streaming")
 		}
+		onSourced = append(onSourced, fn)
 	}
 
 	// Fetch repos from the source
 	var sourced Repos
-	if sourced, err = s.sourced(ctx, svcs, onSourced); err != nil {
+	if sourced, err = s.sourced(ctx, svcs, onSourced...); err != nil {
 		return errors.Wrap(err, "syncer.sync.sourced")
 	}
 
@@ -340,6 +341,15 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 		case s.Synced <- diff:
 		case <-ctx.Done():
 		}
+	}
+
+	return nil
+}
+
+// ensure repository returned by sources is always valid.
+func validateSourcedRepo(r *Repo) error {
+	if r.ExternalRepo.ID == "" || r.ExternalRepo.ServiceID == "" || r.ExternalRepo.ServiceType == "" {
+		return fmt.Errorf("incomplete external repo information: ID(%v) ServiceID(%q) ServiceType(%q)", r.ExternalRepo.ID, r.ExternalRepo.ServiceID, r.ExternalRepo.ServiceType)
 	}
 
 	return nil
