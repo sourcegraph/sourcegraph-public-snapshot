@@ -18,10 +18,7 @@ trap cleanup EXIT
 
 # ==========================
 
-pushd enterprise
-./cmd/server/pre-build.sh
-./cmd/server/build.sh
-popd
+IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION
 
 echo "TEST: Running E2E tests"
 ./dev/ci/e2e.sh
