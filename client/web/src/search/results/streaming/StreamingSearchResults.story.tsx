@@ -1,7 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import { createBrowserHistory } from 'history'
 import React from 'react'
-import { of } from 'rxjs'
+import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 import { SearchPatternType } from '../../../../../shared/src/graphql-operations'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
@@ -36,6 +36,7 @@ const defaultProps: StreamingSearchResultsProps = {
 
     history,
     location: history.location,
+    authenticatedUser: null,
 
     navbarSearchQueryState: { query: '', cursorPosition: 0 },
 
@@ -43,6 +44,7 @@ const defaultProps: StreamingSearchResultsProps = {
         subjects: null,
         final: null,
     },
+    platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER },
 
     streamSearch: () => of(streamingSearchResult),
 }
