@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -364,7 +363,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 
 	type sourceInfo struct {
 		ID       int64
-		CloneURL secret.StringValue
+		CloneURL string
 		Kind     string
 	}
 	r.Sources = make(map[string]*types.SourceInfo)
@@ -378,7 +377,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 			urn := extsvc.URN(src.Kind, src.ID)
 			r.Sources[urn] = &types.SourceInfo{
 				ID:       urn,
-				CloneURL: *src.CloneURL.S,
+				CloneURL: src.CloneURL,
 			}
 		}
 	}
@@ -713,7 +712,7 @@ func sourcesColumn(repoID api.RepoID, sources map[string]*types.SourceInfo) (jso
 		records = append(records, externalServiceRepo{
 			ExternalServiceID: src.ExternalServiceID(),
 			RepoID:            int64(repoID),
-			CloneURL:          secret.StringValue{S: &src.CloneURL},
+			CloneURL:          src.CloneURL,
 		})
 	}
 
@@ -721,9 +720,9 @@ func sourcesColumn(repoID api.RepoID, sources map[string]*types.SourceInfo) (jso
 }
 
 type externalServiceRepo struct {
-	ExternalServiceID int64              `json:"external_service_id"`
-	RepoID            int64              `json:"repo_id"`
-	CloneURL          secret.StringValue `json:"clone_url"`
+	ExternalServiceID int64  `json:"external_service_id"`
+	RepoID            int64  `json:"repo_id"`
+	CloneURL          string `json:"clone_url"`
 }
 
 var insertReposQuery = `
