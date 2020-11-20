@@ -378,7 +378,7 @@ async function cloneRepo(
             await octokit.repos.getBranch({ branch: checkout.revision, owner, repo })
         } catch (error) {
             if (error.status === 404) {
-                console.log(`Target revision ${checkout.revision} does not exist`)
+                console.log(`Target revision ${checkout.revision} does not exist, this branch will be created`)
                 revisionExists = false
             } else {
                 throw error
