@@ -122,7 +122,6 @@ export const toggleCodeMonitorEnabled = (
     id: string,
     enabled: boolean
 ): Observable<ToggleCodeMonitorEnabledResult['toggleCodeMonitor']> => {
-    console.log('querying', id, enabled)
     const query = gql`
         mutation ToggleCodeMonitorEnabled($id: ID!, $enabled: Boolean!) {
             toggleCodeMonitor(id: $id, enabled: $enabled) {
@@ -137,9 +136,6 @@ export const toggleCodeMonitorEnabled = (
         enabled,
     }).pipe(
         map(dataOrThrowErrors),
-        map(data => data.toggleCodeMonitor),
-        tap(data => {
-            console.log('DSTA', data)
-        })
+        map(data => data.toggleCodeMonitor)
     )
 }

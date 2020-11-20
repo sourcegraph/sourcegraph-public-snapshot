@@ -7,16 +7,21 @@ import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
-import { CodeMonitorFields, ListUserCodeMonitorsVariables } from '../../graphql-operations'
+import {
+    CodeMonitorFields,
+    ListUserCodeMonitorsVariables,
+    ToggleCodeMonitorEnabledResult,
+} from '../../graphql-operations'
 import { Toggle } from '../../../../branded/src/components/Toggle'
 import { Link } from '../../../../shared/src/components/Link'
 import { CodeMonitoringProps } from '.'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { toggleCodeMonitorEnabled } from './backend'
-import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { Observable } from 'rxjs'
+import { catchError, delay, map, mergeAll, startWith, switchMap, takeUntil, tap } from 'rxjs/operators'
+import { concat, merge, Observable, of } from 'rxjs'
 import { useEventObservable, useObservable } from '../../../../shared/src/util/useObservable'
-import { asError, isErrorLike } from '../../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 export interface CodeMonitoringPageProps extends BreadcrumbsProps, BreadcrumbSetters, CodeMonitoringProps {
     authenticatedUser: AuthenticatedUser
@@ -131,20 +136,37 @@ interface CodeMonitorNodeProps {
     node: CodeMonitorFields
 }
 
+const LOADING = 'LOADING' as const
+
 const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({ node }: CodeMonitorNodeProps) => {
-    const [enabled, setEnabled] = useState(node.enabled)
+    const [enabled, setEnabled] = useState<boolean>(node.enabled)
 
     const [toggleMonitor, toggleMonitorOrError] = useEventObservable(
         useCallback(
             (click: Observable<React.MouseEvent>) =>
                 click.pipe(
                     tap(event => event.preventDefault()),
-                    switchMap(() =>
-                        toggleCodeMonitorEnabled(node.id, !enabled).pipe(
-                            tap(idAndEnabled => setEnabled(idAndEnabled.enabled)),
+                    switchMap(() => {
+                        const toggleMonitor = toggleCodeMonitorEnabled(node.id, !enabled).pipe(
+                            tap(
+                                (
+                                    idAndEnabled:
+                                        | typeof LOADING
+                                        | ErrorLike
+                                        | ToggleCodeMonitorEnabledResult['toggleCodeMonitor']
+                                ) => {
+                                    if (idAndEnabled !== LOADING && !isErrorLike(idAndEnabled)) {
+                                        setEnabled(idAndEnabled.enabled)
+                                    }
+                                }
+                            ),
                             catchError(error => [asError(error)])
                         )
-                    )
+                        return concat(
+                            of(LOADING).pipe(startWith(enabled), delay(300), takeUntil(toggleMonitor)),
+                            toggleMonitor
+                        )
+                    })
                 ),
             [node, enabled, setEnabled]
         )
@@ -159,13 +181,19 @@ const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({ node }
                         <div className="text-muted">New search result → Sends email notifications</div>
                     )}
                 </div>
-                <div>
-                    <div onClick={toggleMonitor}>
-                        <Toggle value={enabled} className="mr-3" />
+                <div className="d-flex flex-column">
+                    <div className="d-flex">
+                        {toggleMonitorOrError === LOADING && <LoadingSpinner className="icon-inline mr-2" />}
+                        <div onClick={toggleMonitor}>
+                            <Toggle value={enabled} className="mr-3" />
+                        </div>
+                        <Link to="/">Edit</Link>
                     </div>
-                    <Link to="/">Edit</Link>
                 </div>
             </div>
+            {isErrorLike(toggleMonitorOrError) && (
+                <div className="alert alert-danger">Failed to toggle monitor: {toggleMonitorOrError.message}</div>
+            )}
         </div>
     )
 }
