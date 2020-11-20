@@ -175,45 +175,27 @@ func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 	added := roaring.AndNot(p.IDs, oldIDs)
 	removed := roaring.AndNot(oldIDs, p.IDs)
 
-	// Load stored object IDs of both added and removed.
-	changedIDs := roaring.Or(added, removed).ToArray()
-
 	updatedAt := txs.clock()
-	if len(changedIDs) > 0 {
-		q := loadRepoPermissionsBatchQuery(changedIDs, p.Perm, "FOR UPDATE")
-		loadedIDs, err := txs.batchLoadIDs(ctx, q)
-		if err != nil {
-			return errors.Wrap(err, "batch load repo permissions")
-		}
-
-		// We have two sets of IDs that one needs to add, and the other needs to remove.
-		updatedPerms := make([]*authz.RepoPermissions, 0, len(changedIDs))
-		for _, id := range changedIDs {
-			repoID := int32(id)
-			userIDs := loadedIDs[repoID]
-			if userIDs == nil {
-				userIDs = roaring.NewBitmap()
-			}
-
-			switch {
-			case added.Contains(id):
-				userIDs.Add(uint32(p.UserID))
-			case removed.Contains(id):
-				userIDs.Remove(uint32(p.UserID))
-			}
-
-			updatedPerms = append(updatedPerms, &authz.RepoPermissions{
-				RepoID:    repoID,
-				Perm:      p.Perm,
-				UserIDs:   userIDs,
-				UpdatedAt: updatedAt,
-			})
-		}
-
-		if q, err = upsertRepoPermissionsBatchQuery(updatedPerms...); err != nil {
+	if !added.IsEmpty() {
+		if q, err := upsertRepoPermissionsBatchQuery(added.ToArray(), []uint32{uint32(p.UserID)}, p.Perm, updatedAt); err != nil {
 			return err
 		} else if err = txs.execute(ctx, q); err != nil {
 			return errors.Wrap(err, "execute upsert repo permissions batch query")
+		}
+	}
+	if !removed.IsEmpty() {
+		q := sqlf.Sprintf(`
+-- source: enterprise/internal/db/perms_store.go:SetUserPermissions
+UPDATE repo_permissions
+SET
+	user_ids_ints = user_ids_ints - %s::INT,
+	updated_at = %s
+WHERE
+	repo_id = ANY (%s)
+AND permission = %s
+`, p.UserID, updatedAt.UTC(), pq.Array(removed.ToArray()), p.Perm.String())
+		if err = txs.execute(ctx, q); err != nil {
+			return errors.Wrap(err, "execute update removed repo permissions query")
 		}
 	}
 
@@ -331,46 +313,27 @@ func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 	added := roaring.AndNot(p.UserIDs, oldIDs)
 	removed := roaring.AndNot(oldIDs, p.UserIDs)
 
-	// Load stored user IDs of both added and removed.
-	changedIDs := roaring.Or(added, removed).ToArray()
-
 	updatedAt := txs.clock()
-	if len(changedIDs) > 0 {
-		q := loadUserPermissionsBatchQuery(changedIDs, p.Perm, authz.PermRepos, "FOR UPDATE")
-		loadedIDs, err := txs.batchLoadIDs(ctx, q)
-		if err != nil {
-			return errors.Wrap(err, "batch load user permissions")
-		}
-
-		// We have two sets of IDs that one needs to add, and the other needs to remove.
-		updatedPerms := make([]*authz.UserPermissions, 0, len(changedIDs))
-		for _, id := range changedIDs {
-			userID := int32(id)
-			repoIDs := loadedIDs[userID]
-			if repoIDs == nil {
-				repoIDs = roaring.NewBitmap()
-			}
-
-			switch {
-			case added.Contains(id):
-				repoIDs.Add(uint32(p.RepoID))
-			case removed.Contains(id):
-				repoIDs.Remove(uint32(p.RepoID))
-			}
-
-			updatedPerms = append(updatedPerms, &authz.UserPermissions{
-				UserID:    userID,
-				Perm:      p.Perm,
-				Type:      authz.PermRepos,
-				IDs:       repoIDs,
-				UpdatedAt: updatedAt,
-			})
-		}
-
-		if q, err = upsertUserPermissionsBatchQuery(updatedPerms...); err != nil {
+	if !added.IsEmpty() {
+		if q, err := upsertUserPermissionsBatchQuery(added.ToArray(), []uint32{uint32(p.RepoID)}, p.Perm, authz.PermRepos, updatedAt); err != nil {
 			return err
 		} else if err = txs.execute(ctx, q); err != nil {
 			return errors.Wrap(err, "execute upsert user permissions batch query")
+		}
+	}
+	if !removed.IsEmpty() {
+		q := sqlf.Sprintf(`
+-- source: enterprise/internal/db/perms_store.go:SetRepoPermissions
+UPDATE user_permissions
+SET
+	object_ids_ints = object_ids_ints - %s::INT,
+	updated_at = %s
+WHERE
+	user_id = ANY (%s) AND permission = %s
+AND object_type = %s
+`, p.RepoID, updatedAt.UTC(), pq.Array(removed.ToArray()), p.Perm.String(), authz.PermRepos)
+		if err = txs.execute(ctx, q); err != nil {
+			return errors.Wrap(err, "execute update removed user permissions query")
 		}
 	}
 
@@ -388,34 +351,7 @@ func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 	return nil
 }
 
-func loadUserPermissionsBatchQuery(
-	userIDs []uint32,
-	perm authz.Perms,
-	typ authz.PermType,
-	lock string,
-) *sqlf.Query {
-	const format = `
--- source: enterprise/internal/db/perms_store.go:loadUserPermissionsBatchQuery
-SELECT user_id, object_ids_ints
-FROM user_permissions
-WHERE user_id IN (%s)
-AND permission = %s
-AND object_type = %s
-`
-
-	items := make([]*sqlf.Query, len(userIDs))
-	for i := range userIDs {
-		items[i] = sqlf.Sprintf("%d", userIDs[i])
-	}
-	return sqlf.Sprintf(
-		format+lock,
-		sqlf.Join(items, ","),
-		perm.String(),
-		typ,
-	)
-}
-
-func upsertUserPermissionsBatchQuery(ps ...*authz.UserPermissions) (*sqlf.Query, error) {
+func upsertUserPermissionsBatchQuery(userIDs, objectIDs []uint32, perm authz.Perms, permType authz.PermType, updatedAt time.Time) (*sqlf.Query, error) {
 	const format = `
 -- source: enterprise/internal/db/perms_store.go:upsertUserPermissionsBatchQuery
 INSERT INTO user_permissions
@@ -425,24 +361,22 @@ VALUES
 ON CONFLICT ON CONSTRAINT
   user_permissions_perm_object_unique
 DO UPDATE SET
-  object_ids_ints = excluded.object_ids_ints,
+  object_ids_ints = user_permissions.object_ids_ints | excluded.object_ids_ints,
   updated_at = excluded.updated_at
 `
+	if updatedAt.IsZero() {
+		return nil, ErrPermsUpdatedAtNotSet
+	}
 
-	items := make([]*sqlf.Query, len(ps))
-	for i := range ps {
-		ps[i].IDs.RunOptimize()
-		if ps[i].UpdatedAt.IsZero() {
-			return nil, ErrPermsUpdatedAtNotSet
-		}
-
-		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s)",
-			ps[i].UserID,
-			ps[i].Perm.String(),
-			ps[i].Type,
-			pq.Array(ps[i].IDs.ToArray()),
-			ps[i].UpdatedAt.UTC(),
-		)
+	items := make([]*sqlf.Query, 0, len(userIDs))
+	for _, userID := range userIDs {
+		items = append(items, sqlf.Sprintf("(%s, %s, %s, %s, %s)",
+			userID,
+			perm.String(),
+			permType,
+			pq.Array(objectIDs),
+			updatedAt.UTC(),
+		))
 	}
 
 	return sqlf.Sprintf(
@@ -580,15 +514,15 @@ AND bind_id = %s
 //
 // Table states for input:
 // 	"user_pending_permissions":
-//   id | service_type |        service_id        | bind_id | permission | object_type | object_ids | updated_at
-//  ----+--------------+--------------------------+---------+------------+-------------+------------+-----------
-//    1 | sourcegraph  | https://sourcegraph.com/ |   alice |       read |       repos |  bitmap{1} | <DateTime>
-//    2 | sourcegraph  | https://sourcegraph.com/ |     bob |       read |       repos |  bitmap{1} | <DateTime>
+//   id | service_type |        service_id        | bind_id | permission | object_type | object_ids_ints | updated_at
+//  ----+--------------+--------------------------+---------+------------+-------------+-----------------+-----------
+//    1 | sourcegraph  | https://sourcegraph.com/ |   alice |       read |       repos |             {1} | <DateTime>
+//    2 | sourcegraph  | https://sourcegraph.com/ |     bob |       read |       repos |             {1} | <DateTime>
 //
 //  "repo_pending_permissions":
-//   repo_id | permission |   user_ids   | updated_at
-//  ---------+------------+--------------+------------
-//         1 |       read | bitmap{1, 2} | <DateTime>
+//   repo_id | permission | user_ids_ints | updated_at
+//  ---------+------------+---------------+------------
+//         1 |       read |        {1, 2} | <DateTime>
 func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *extsvc.Accounts, p *authz.RepoPermissions) (err error) {
 	if Mocks.Perms.SetRepoPendingPermissions != nil {
 		return Mocks.Perms.SetRepoPendingPermissions(ctx, accounts, p)
@@ -923,66 +857,19 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	p.IDs = vals.ids
 
 	// NOTE: We currently only have "repos" type, so avoid unnecessary type checking for now.
-	ids := p.IDs.ToArray()
-	if len(ids) == 0 {
+	repoIDs := p.IDs.ToArray()
+	if len(repoIDs) == 0 {
 		return nil
 	}
 
-	// Batch query all repository permissions object IDs in one go.
-	// NOTE: It is critical to always acquire row-level locks in the same order as SetRepoPermissions
-	// (i.e. repo -> user) to prevent deadlocks.
-	q := loadRepoPermissionsBatchQuery(ids, p.Perm, "FOR UPDATE")
-	loadedIDs, err := txs.batchLoadIDs(ctx, q)
-	if err != nil {
-		return errors.Wrap(err, "batch load repo permissions")
-	}
-
 	updatedAt := txs.clock()
-	updatedPerms := make([]*authz.RepoPermissions, 0, len(ids))
-	for i := range ids {
-		repoID := int32(ids[i])
-		oldIDs := loadedIDs[repoID]
-		if oldIDs == nil {
-			oldIDs = roaring.NewBitmap()
-		}
-
-		oldIDs.Add(uint32(userID))
-		updatedPerms = append(updatedPerms, &authz.RepoPermissions{
-			RepoID:    repoID,
-			Perm:      p.Perm,
-			UserIDs:   oldIDs,
-			UpdatedAt: updatedAt,
-		})
-	}
-
-	if q, err = upsertRepoPermissionsBatchQuery(updatedPerms...); err != nil {
+	if q, err := upsertRepoPermissionsBatchQuery(repoIDs, []uint32{uint32(userID)}, p.Perm, updatedAt); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
 		return errors.Wrap(err, "execute upsert repo permissions batch query")
 	}
 
-	// Load existing user permissions to be merged if any. Since we're doing union of permissions,
-	// whatever we have already in the "repo_permissions" table is all valid thus we don't
-	// need to do any clean up.
-	up := &authz.UserPermissions{
-		UserID: userID,
-		Perm:   p.Perm,
-		Type:   p.Type,
-	}
-	var oldIDs *roaring.Bitmap
-	vals, err = txs.load(ctx, loadUserPermissionsQuery(up, "FOR UPDATE"))
-	if err != nil {
-		if err != authz.ErrPermsNotFound {
-			return errors.Wrap(err, "load user permissions")
-		}
-		oldIDs = roaring.NewBitmap()
-	} else {
-		oldIDs = vals.ids
-	}
-	up.IDs = roaring.Or(oldIDs, p.IDs)
-
-	up.UpdatedAt = txs.clock()
-	if q, err = upsertUserPermissionsBatchQuery(up); err != nil {
+	if q, err := upsertUserPermissionsBatchQuery([]uint32{uint32(userID)}, repoIDs, p.Perm, authz.PermRepos, updatedAt); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
 		return errors.Wrap(err, "execute upsert user permissions query")
@@ -998,27 +885,7 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	return nil
 }
 
-func loadRepoPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, lock string) *sqlf.Query {
-	const format = `
--- source: enterprise/internal/db/perms_store.go:loadRepoPermissionsBatchQuery
-SELECT repo_id, user_ids_ints
-FROM repo_permissions
-WHERE repo_id IN (%s)
-AND permission = %s
-`
-
-	items := make([]*sqlf.Query, len(repoIDs))
-	for i := range repoIDs {
-		items[i] = sqlf.Sprintf("%d", repoIDs[i])
-	}
-	return sqlf.Sprintf(
-		format+lock,
-		sqlf.Join(items, ","),
-		perm.String(),
-	)
-}
-
-func upsertRepoPermissionsBatchQuery(ps ...*authz.RepoPermissions) (*sqlf.Query, error) {
+func upsertRepoPermissionsBatchQuery(repoIDs, userIDs []uint32, perm authz.Perms, updatedAt time.Time) (*sqlf.Query, error) {
 	const format = `
 -- source: enterprise/internal/db/perms_store.go:upsertRepoPermissionsBatchQuery
 INSERT INTO repo_permissions
@@ -1028,23 +895,21 @@ VALUES
 ON CONFLICT ON CONSTRAINT
   repo_permissions_perm_unique
 DO UPDATE SET
-  user_ids_ints = excluded.user_ids_ints,
+  user_ids_ints = repo_permissions.user_ids_ints | excluded.user_ids_ints,
   updated_at = excluded.updated_at
 `
+	if updatedAt.IsZero() {
+		return nil, ErrPermsUpdatedAtNotSet
+	}
 
-	items := make([]*sqlf.Query, len(ps))
-	for i := range ps {
-		ps[i].UserIDs.RunOptimize()
-		if ps[i].UpdatedAt.IsZero() {
-			return nil, ErrPermsUpdatedAtNotSet
-		}
-
-		items[i] = sqlf.Sprintf("(%s, %s, %s, %s)",
-			ps[i].RepoID,
-			ps[i].Perm.String(),
-			pq.Array(ps[i].UserIDs.ToArray()),
-			ps[i].UpdatedAt.UTC(),
-		)
+	items := make([]*sqlf.Query, 0, len(repoIDs))
+	for _, repoID := range repoIDs {
+		items = append(items, sqlf.Sprintf("(%s, %s, %s, %s)",
+			repoID,
+			perm.String(),
+			pq.Array(userIDs),
+			updatedAt.UTC(),
+		))
 	}
 
 	return sqlf.Sprintf(
