@@ -46,7 +46,8 @@ func TestStoreQueuedCountFailed(t *testing.T) {
 			(2, 'errored', NOW() - '2 minute'::interval, 2),
 			(3, 'state2', NOW() - '3 minute'::interval, 0),
 			(4, 'errored', NOW() - '4 minute'::interval, 3),
-			(5, 'state2', NOW() - '5 minute'::interval, 0)
+			(5, 'state2', NOW() - '5 minute'::interval, 0),
+			(6, 'failed', NOW() - '6 minute'::interval, 1)
 	`); err != nil {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
