@@ -30,6 +30,9 @@ const defaultProps: StreamingSearchResultsProps = {
     patternType: SearchPatternType.literal,
     setPatternType: sinon.spy(),
     versionContext: undefined,
+    setVersionContext: sinon.spy(),
+    availableVersionContexts: [],
+    previousVersionContext: null,
 
     extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
@@ -121,4 +124,26 @@ add('progress with warnings', () => {
     }
 
     return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
+})
+
+add('show version context warning', () => {
+    const history = createBrowserHistory()
+    history.replace({ search: 'q=r:golang/oauth2+test+f:travis&c=test' })
+
+    return (
+        <WebStory>
+            {() => (
+                <StreamingSearchResults
+                    {...defaultProps}
+                    history={history}
+                    location={history.location}
+                    previousVersionContext={null}
+                    availableVersionContexts={[
+                        { name: 'test', revisions: [] },
+                        { name: 'other', revisions: [] },
+                    ]}
+                />
+            )}
+        </WebStory>
+    )
 })

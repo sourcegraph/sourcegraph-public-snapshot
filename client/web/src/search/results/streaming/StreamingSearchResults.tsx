@@ -74,10 +74,11 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     }, [caseSensitive, currentCaseSensitive, setCaseSensitivity])
 
     useEffect(() => {
-        if (versionContext !== currentVersionContext) {
-            setVersionContext(versionContext)
+        const resolvedContext = resolveVersionContext(versionContext, availableVersionContexts)
+        if (resolvedContext !== currentVersionContext) {
+            setVersionContext(resolvedContext)
         }
-    }, [versionContext, currentVersionContext, setVersionContext])
+    }, [versionContext, currentVersionContext, setVersionContext, availableVersionContexts])
 
     const results = useObservable(
         useMemo(
