@@ -683,7 +683,7 @@ var queryColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_queries.changed_at"),
 }
 
-func (r *Resolver) createTriggerQueryQuery(ctx context.Context, monitorId int64, args *graphqlbackend.CreateTriggerArgs) (*sqlf.Query, error) {
+func (r *Resolver) createTriggerQueryQuery(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) (*sqlf.Query, error) {
 	const insertQueryQuery = `
 INSERT INTO cm_queries
 (monitor, query, created_by, created_at, changed_by, changed_at)
@@ -694,7 +694,7 @@ RETURNING %s;
 	a := actor.FromContext(ctx)
 	return sqlf.Sprintf(
 		insertQueryQuery,
-		monitorId,
+		monitorID,
 		args.Query,
 		a.UID,
 		now,
@@ -764,7 +764,7 @@ var emailsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_emails.changed_at"),
 }
 
-func (r *Resolver) createActionEmailQuery(ctx context.Context, monitorId int64, args *graphqlbackend.CreateActionEmailArgs) (*sqlf.Query, error) {
+func (r *Resolver) createActionEmailQuery(ctx context.Context, monitorID int64, args *graphqlbackend.CreateActionEmailArgs) (*sqlf.Query, error) {
 	const insertEmailQuery = `
 INSERT INTO cm_emails
 (monitor, enabled, priority, header, created_by, created_at, changed_by, changed_at)
@@ -775,7 +775,7 @@ RETURNING %s;
 	a := actor.FromContext(ctx)
 	return sqlf.Sprintf(
 		insertEmailQuery,
-		monitorId,
+		monitorID,
 		args.Enabled,
 		args.Priority,
 		args.Header,
@@ -829,7 +829,7 @@ RETURNING %s;
 	), nil
 }
 
-func (r *Resolver) readActionEmailQuery(ctx context.Context, monitorId int64, args *graphqlbackend.ListActionArgs) (*sqlf.Query, error) {
+func (r *Resolver) readActionEmailQuery(ctx context.Context, monitorID int64, args *graphqlbackend.ListActionArgs) (*sqlf.Query, error) {
 	const readActionEmailQuery = `
 SELECT id, monitor, enabled, priority, header, created_by, created_at, changed_by, changed_at
 FROM cm_emails
@@ -844,7 +844,7 @@ LIMIT %s;
 	}
 	return sqlf.Sprintf(
 		readActionEmailQuery,
-		monitorId,
+		monitorID,
 		after,
 		args.First,
 	), nil
@@ -970,12 +970,12 @@ func (r *Resolver) deleteCodeMonitorQuery(ctx context.Context, args *graphqlback
 // - she is a member of the organization which is the owner of the monitor
 // - she is a site-admin
 func (r *Resolver) isAllowedToEdit(ctx context.Context, id graphql.ID) error {
-	var monitorId int32
-	err := relay.UnmarshalSpec(id, &monitorId)
+	var monitorID int64
+	err := relay.UnmarshalSpec(id, &monitorID)
 	if err != nil {
 		return err
 	}
-	userId, orgID, err := r.ownerForId32(ctx, monitorId)
+	userId, orgID, err := r.ownerForId64(ctx, monitorID)
 	if err != nil {
 		return err
 	}
@@ -994,12 +994,12 @@ func (r *Resolver) isAllowedToEdit(ctx context.Context, id graphql.ID) error {
 	return nil
 }
 
-func (r *Resolver) ownerForId32(ctx context.Context, monitorId int32) (userId *int32, orgId *int32, err error) {
+func (r *Resolver) ownerForId64(ctx context.Context, monitorID int64) (userId *int32, orgId *int32, err error) {
 	var (
 		q    *sqlf.Query
 		rows *sql.Rows
 	)
-	q, err = ownerForId32Query(ctx, monitorId)
+	q, err = ownerForID64Query(ctx, monitorID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1029,11 +1029,11 @@ func (r *Resolver) ownerForId32(ctx context.Context, monitorId int32) (userId *i
 	return userId, orgId, nil
 }
 
-func ownerForId32Query(ctx context.Context, monitorId int32) (*sqlf.Query, error) {
+func ownerForID64Query(ctx context.Context, monitorID int64) (*sqlf.Query, error) {
 	const ownerForId32Query = `SELECT namespace_user_id, namespace_org_id FROM cm_monitors WHERE id = %s`
 	return sqlf.Sprintf(
 		ownerForId32Query,
-		monitorId,
+		monitorID,
 	), nil
 }
 
