@@ -8,7 +8,6 @@ cd "$root_dir"
 set -ex
 
 test/setup-deps.sh
-test/setup-display.sh
 
 cleanup() {
   cd "$root_dir"
@@ -18,8 +17,5 @@ trap cleanup EXIT
 
 # ==========================
 
-IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION
-
 echo "TEST: Running E2E tests"
-./dev/ci/e2e.sh
-docker image rm -f "${IMAGE}"
+IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION ./dev/ci/e2e.sh
