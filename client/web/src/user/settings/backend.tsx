@@ -71,7 +71,7 @@ export function logUserEvent(event: UserEvent): void {
                 }
             }
         `,
-        { event, userCookieID: eventLogger.getAnonUserID() }
+        { event, userCookieID: eventLogger.getAnonymousUserID() }
     )
         .pipe(
             map(({ data, errors }) => {
@@ -109,7 +109,7 @@ export function logEvent(event: string, eventProperties?: any): void {
         `,
         {
             event,
-            userCookieID: eventLogger.getAnonUserID(),
+            userCookieID: eventLogger.getAnonymousUserID(),
             url: window.location.href,
             source: EventSource.WEB,
             argument: eventProperties && JSON.stringify(eventProperties),
