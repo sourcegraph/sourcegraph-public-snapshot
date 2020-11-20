@@ -10,4 +10,8 @@
     &__btn:not(:first-of-type) {
         padding-left: 0.5rem;
     }
+    &__email {
+        display: inline-block;
+        margin-right: 0.25rem;
+    }
 }

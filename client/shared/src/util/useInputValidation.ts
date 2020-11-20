@@ -38,7 +38,7 @@ export type InputValidationState = { value: string } & (
 
 /**
  * React hook to manage validation of a single form input field.
- * `useInputValidation` helps with coodinating the constraint validation API
+ * `useInputValidation` helps with coordinating the constraint validation API
  * and custom synchronous and asynchronous validators.
  *
  * @param options Config object that declares sync + async validators

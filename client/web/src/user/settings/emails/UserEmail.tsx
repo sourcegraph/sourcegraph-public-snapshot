@@ -4,6 +4,7 @@ import * as H from 'history'
 import { requestGraphQL } from '../../../backend/graphql'
 import { IUserEmail } from '../../../../../shared/src/graphql/schema'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
+import { asError } from '../../../../../shared/src/util/errors'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { ErrorAlert } from '../../../components/alerts'
@@ -31,7 +32,7 @@ interface Props {
 
 interface LoadingState {
     loading: boolean
-    errorDescription?: Error
+    error?: Error
 }
 
 export const UserEmail: FunctionComponent<Props> = ({
@@ -60,7 +61,7 @@ export const UserEmail: FunctionComponent<Props> = ({
                 ).toPromise()
             )
         } catch (error) {
-            setStatus({ loading: false, errorDescription: error as Error })
+            setStatus({ loading: false, error: asError(error) })
             return
         }
 
@@ -89,7 +90,7 @@ export const UserEmail: FunctionComponent<Props> = ({
                 ).toPromise()
             )
         } catch (error) {
-            setStatus({ loading: false, errorDescription: error as Error })
+            setStatus({ loading: false, error: asError(error) })
             return
         }
 
@@ -119,7 +120,8 @@ export const UserEmail: FunctionComponent<Props> = ({
         <>
             <div className="d-flex align-items-center justify-content-between">
                 <div>
-                    {email} {verifiedLinkFragment} {isPrimary && <span className="badge badge-primary">Primary</span>}
+                    <span className="user-settings-emails-page__email">{email}</span> {verifiedLinkFragment}{' '}
+                    {isPrimary && <span className="badge badge-primary">Primary</span>}
                 </div>
                 <div>
                     {viewerCanManuallyVerify && (
@@ -142,9 +144,7 @@ export const UserEmail: FunctionComponent<Props> = ({
                     )}
                 </div>
             </div>
-            {status.errorDescription && (
-                <ErrorAlert className="mt-2" error={status.errorDescription} history={history} />
-            )}
+            {status.error && <ErrorAlert className="mt-2" error={status.error} history={history} />}
         </>
     )
 }

@@ -9,6 +9,7 @@ import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphq
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { siteFlags } from '../../../site/backend'
+import { asError } from '../../../../../shared/src/util/errors'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { ErrorAlert } from '../../../components/alerts'
@@ -24,7 +25,7 @@ interface Props extends RouteComponentProps<{}> {
 
 interface LoadingState {
     loading: boolean
-    errorDescription?: Error
+    error?: Error
 }
 
 type UserEmail = Omit<GQL.IUserEmail, '__typename' | 'user'>
@@ -32,7 +33,6 @@ type UserEmail = Omit<GQL.IUserEmail, '__typename' | 'user'>
 export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history }) => {
     const [emails, setEmails] = useState<UserEmail[]>([])
     const [status, setStatus] = useState<LoadingState>({ loading: false })
-    // const [flags, setFlags] = useState<SiteFlags>()
 
     const onEmailVerify = useCallback(
         ({ email: verifiedEmail, verified }: { email: string; verified: boolean }): void => {
@@ -102,7 +102,7 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
                 ).toPromise()
             )
         } catch (error) {
-            setStatus({ loading: false, errorDescription: error as Error })
+            setStatus({ loading: false, error: asError(error) })
         }
 
         // TODO: check this logic
@@ -110,31 +110,17 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
             setStatus({ loading: false })
             setEmails(fetchedEmails.node.emails)
         }
-
-        // if (!data || (errors && errors.length > 0)) {
-        //     setStatus({ loading: false, errorDescription: createAggregateError(errors) })
-        // } else {
-        //     setStatus({ errorDescription: null, loading: false })
-        //     const userResult = data.node as GQL.IUser
-        //     setEmails(userResult.emails)
-        // }
     }, [user, setStatus, setEmails])
 
     const flags = useObservable(siteFlags)
 
-    // useEffect(() => {
-    //     eventLogger.logViewEvent('UserSettingsEmails')
-    //     const subscriptions = new Subscription()
-    //     subscriptions.add(siteFlags.subscribe(setFlags))
-
-    //     return () => {
-    //         subscriptions.unsubscribe()
-    //     }
-    // }, [])
+    useEffect(() => {
+        eventLogger.logViewEvent('UserSettingsEmails')
+    }, [])
 
     useEffect(() => {
         fetchEmails().catch(error => {
-            setStatus({ loading: false, errorDescription: error })
+            setStatus({ loading: false, error: asError(error) })
         })
     }, [fetchEmails])
 
@@ -150,9 +136,7 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
                 </div>
             )}
 
-            {status.errorDescription && (
-                <ErrorAlert className="mt-2" error={status.errorDescription} history={history} />
-            )}
+            {status.error && <ErrorAlert className="mt-2" error={status.error} history={history} />}
 
             {status.loading ? (
                 <span className="filtered-connection__loader">

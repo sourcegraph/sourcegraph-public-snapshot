@@ -1,15 +1,18 @@
-import * as React from 'react'
-import { merge, Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, map, switchMap, tap } from 'rxjs/operators'
-import { gql } from '../../../../../shared/src/graphql/graphql'
+import React, { FunctionComponent, useMemo, useState } from 'react'
+import classNames from 'classnames'
+
+import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { createAggregateError, ErrorLike } from '../../../../../shared/src/util/errors'
-import { mutateGraphQL } from '../../../backend/graphql'
-import { Form } from '../../../../../branded/src/components/Form'
+import { requestGraphQL } from '../../../backend/graphql'
+import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
+
+import { useInputValidation, deriveInputClassName } from '../../../../../shared/src/util/useInputValidation'
+
 import { eventLogger } from '../../../tracking/eventLogger'
 import { ErrorAlert } from '../../../components/alerts'
 import { LoaderButton } from '../../../components/LoaderButton'
 import * as H from 'history'
+import { AddUserEmailResult, AddUserEmailVariables } from '../../../graphql-operations'
 
 interface Props {
     /** The GraphQL ID of the user with whom the new emails are associated. */
@@ -23,96 +26,103 @@ interface Props {
 }
 
 interface State {
-    email: string
-    error?: ErrorLike | null
+    loadingOrError?: boolean | Error
 }
 
-export class AddUserEmailForm extends React.PureComponent<Props, State> {
-    public state: State = { email: '', error: null }
+export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, onDidAdd, history }) => {
+    const [status, setStatus] = useState<State>({})
 
-    private submits = new Subject<React.FormEvent<HTMLFormElement>>()
-    private subscriptions = new Subscription()
-
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            this.submits
-                .pipe(
-                    tap(event => event.preventDefault()),
-                    switchMap(() =>
-                        merge(
-                            of<Pick<State, 'error'>>({ error: undefined }),
-                            this.addUserEmail(this.state.email).pipe(
-                                tap(() => this.props.onDidAdd()),
-                                map(() => ({ error: null, email: '' })),
-                                catchError(error => [{ error, email: this.state.email }])
-                            )
-                        )
-                    )
-                )
-                .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
-                )
+    const [emailState, nextEmailFieldChange, emailInputReference] = useInputValidation(
+        useMemo(
+            () => ({
+                synchronousValidators: [],
+                asynchronousValidators: [],
+            }),
+            []
         )
+    )
+
+    const onSubmit: React.FormEventHandler<HTMLFormElement> = async event => {
+        event.preventDefault()
+
+        if (emailState.kind === 'VALID') {
+            setStatus({ loadingOrError: true })
+
+            try {
+                dataOrThrowErrors(
+                    await requestGraphQL<AddUserEmailResult, AddUserEmailVariables>(
+                        gql`
+                            mutation AddUserEmail($user: ID!, $email: String!) {
+                                addUserEmail(user: $user, email: $email) {
+                                    alwaysNil
+                                }
+                            }
+                        `,
+                        { user, email: emailState.value }
+                    ).toPromise()
+                )
+            } catch (error) {
+                setStatus({ loadingOrError: asError(error) })
+                return
+            }
+
+            eventLogger.log('NewUserEmailAddressAdded')
+            setStatus({})
+
+            if (onDidAdd) {
+                onDidAdd()
+            }
+        }
     }
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        const loading = this.state.error === undefined
-        return (
-            <div className={`add-user-email-form ${this.props.className || ''}`}>
-                <p className="mb-2">Add email address</p>
-                <Form className="form-inline" onSubmit={this.onSubmit}>
-                    <label className="sr-only" htmlFor="AddUserEmailForm-email">
-                        Email address
-                    </label>
-                    <input
-                        type="email"
-                        name="email"
-                        className="form-control mr-sm-2 test-user-email-add-input"
-                        id="AddUserEmailForm-email"
-                        onChange={this.onChange}
-                        size={32}
-                        value={this.state.email}
-                        required={true}
-                        autoCorrect="off"
-                        spellCheck={false}
-                        autoCapitalize="off"
-                        readOnly={loading}
-                        placeholder="Email"
-                    />{' '}
-                    <LoaderButton loading={loading} label="Add" type="submit" className="btn btn-primary" />
-                </Form>
-                {this.state.error && (
-                    <ErrorAlert className="mt-2" error={this.state.error} history={this.props.history} />
+    return (
+        <div className={`add-user-email-form ${className || ''}`}>
+            <label
+                htmlFor="AddUserEmailForm-email"
+                className={classNames('align-self-start', {
+                    'text-danger font-weight-bold': emailState.kind === 'INVALID',
+                })}
+            >
+                Email address
+            </label>
+            {/* eslint-disable-next-line react/forbid-elements */}
+            <form className="form-inline" onSubmit={onSubmit} noValidate={true}>
+                <input
+                    id="AddUserEmailForm-email"
+                    type="email"
+                    name="email"
+                    className={classNames(
+                        'form-control mr-sm-2 test-user-email-add-input',
+                        deriveInputClassName(emailState)
+                    )}
+                    onChange={nextEmailFieldChange}
+                    size={32}
+                    value={emailState.value}
+                    ref={emailInputReference}
+                    required={true}
+                    placeholder="Email"
+                    autoComplete="email"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    readOnly={false}
+                />{' '}
+                <LoaderButton
+                    loading={typeof status.loadingOrError === 'boolean' ? status.loadingOrError : false}
+                    label="Add"
+                    type="submit"
+                    disabled={typeof status.loadingOrError === 'boolean' ? status.loadingOrError : false}
+                    className="btn btn-primary"
+                />
+                {emailState.kind === 'INVALID' && (
+                    <small className="invalid-feedback" role="alert">
+                        {emailState.reason}
+                    </small>
                 )}
-            </div>
-        )
-    }
-
-    private onChange: React.ChangeEventHandler<HTMLInputElement> = event =>
-        this.setState({ email: event.currentTarget.value })
-    private onSubmit: React.FormEventHandler<HTMLFormElement> = event => this.submits.next(event)
-
-    private addUserEmail = (email: string): Observable<void> =>
-        mutateGraphQL(
-            gql`
-                mutation AddUserEmail($user: ID!, $email: String!) {
-                    addUserEmail(user: $user, email: $email) {
-                        alwaysNil
-                    }
-                }
-            `,
-            { user: this.props.user, email }
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data || (errors && errors.length > 0)) {
-                    throw createAggregateError(errors)
-                }
-                eventLogger.log('NewUserEmailAddressAdded')
-            })
-        )
+            </form>
+            {isErrorLike(status.loadingOrError) && (
+                <ErrorAlert className="mt-2" error={status.loadingOrError} history={history} />
+            )}
+        </div>
+    )
 }
