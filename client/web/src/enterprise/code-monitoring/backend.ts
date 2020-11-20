@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { map, tap } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import { requestGraphQL } from '../../backend/graphql'
 import {
@@ -8,6 +8,8 @@ import {
     ListCodeMonitors,
     ListUserCodeMonitorsResult,
     ListUserCodeMonitorsVariables,
+    ToggleCodeMonitorEnabledResult,
+    ToggleCodeMonitorEnabledVariables,
 } from '../../graphql-operations'
 
 export const createCodeMonitor = ({
@@ -112,6 +114,32 @@ export const listUserCodeMonitors = ({
             return {
                 nodes: data.node.monitors.nodes,
             }
+        })
+    )
+}
+
+export const toggleCodeMonitorEnabled = (
+    id: string,
+    enabled: boolean
+): Observable<ToggleCodeMonitorEnabledResult['toggleCodeMonitor']> => {
+    console.log('querying', id, enabled)
+    const query = gql`
+        mutation ToggleCodeMonitorEnabled($id: ID!, $enabled: Boolean!) {
+            toggleCodeMonitor(id: $id, enabled: $enabled) {
+                id
+                enabled
+            }
+        }
+    `
+
+    return requestGraphQL<ToggleCodeMonitorEnabledResult, ToggleCodeMonitorEnabledVariables>(query, {
+        id,
+        enabled,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.toggleCodeMonitor),
+        tap(data => {
+            console.log('DSTA', data)
         })
     )
 }

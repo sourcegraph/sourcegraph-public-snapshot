@@ -1,6 +1,6 @@
 import * as H from 'history'
 import classnames from 'classnames'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import VideoInputAntennaIcon from 'mdi-react/VideoInputAntennaIcon'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../../components/Breadcrumbs'
 import { PageHeader } from '../../components/PageHeader'
@@ -12,6 +12,11 @@ import { Toggle } from '../../../../branded/src/components/Toggle'
 import { Link } from '../../../../shared/src/components/Link'
 import { CodeMonitoringProps } from '.'
 import PlusIcon from 'mdi-react/PlusIcon'
+import { toggleCodeMonitorEnabled } from './backend'
+import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { Observable } from 'rxjs'
+import { useEventObservable, useObservable } from '../../../../shared/src/util/useObservable'
+import { asError, isErrorLike } from '../../../../shared/src/util/errors'
 
 export interface CodeMonitoringPageProps extends BreadcrumbsProps, BreadcrumbSetters, CodeMonitoringProps {
     authenticatedUser: AuthenticatedUser
@@ -126,19 +131,41 @@ interface CodeMonitorNodeProps {
     node: CodeMonitorFields
 }
 
-const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({ node }: CodeMonitorNodeProps) => (
-    <div className="card p-3 mb-2">
-        <div className="d-flex justify-content-between align-items-center">
-            <div className="d-flex flex-column">
-                <div className="font-weight-bold">{node.description}</div>
-                {node.actions.nodes.length > 0 && (
-                    <div className="text-muted">New search result → Sends email notifications</div>
-                )}
-            </div>
-            <div>
-                <Toggle value={node.enabled} className="mr-3" />
-                <Link to="/">Edit</Link>
+const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({ node }: CodeMonitorNodeProps) => {
+    const [enabled, setEnabled] = useState(node.enabled)
+
+    const [toggleMonitor, toggleMonitorOrError] = useEventObservable(
+        useCallback(
+            (click: Observable<React.MouseEvent>) =>
+                click.pipe(
+                    tap(event => event.preventDefault()),
+                    switchMap(() =>
+                        toggleCodeMonitorEnabled(node.id, !enabled).pipe(
+                            tap(idAndEnabled => setEnabled(idAndEnabled.enabled)),
+                            catchError(error => [asError(error)])
+                        )
+                    )
+                ),
+            [node, enabled, setEnabled]
+        )
+    )
+
+    return (
+        <div className="card p-3 mb-2">
+            <div className="d-flex justify-content-between align-items-center">
+                <div className="d-flex flex-column">
+                    <div className="font-weight-bold">{node.description}</div>
+                    {node.actions.nodes.length > 0 && (
+                        <div className="text-muted">New search result → Sends email notifications</div>
+                    )}
+                </div>
+                <div>
+                    <div onClick={toggleMonitor}>
+                        <Toggle value={enabled} className="mr-3" />
+                    </div>
+                    <Link to="/">Edit</Link>
+                </div>
             </div>
         </div>
-    </div>
-)
+    )
+}
