@@ -314,18 +314,27 @@ export async function createChangesets(options: ChangesetsOptions): Promise<Crea
         }
     }
     const octokit = await getAuthenticatedGitHubClient()
+    if (options.dryRun) {
+        console.log('Changesets dry run enabled - diffs and pull requests will be printed instead')
+    } else {
+        console.log('Generating changes and publishing as pull requests')
+    }
 
-    // Generate changes
+    // Generate and push changes
+    for (const change of options.changes) {
+        const repository = `${change.owner}/${change.repo}`
+        console.log(`${repository}: Preparing change for on '${change.base}' to '${change.head}'`)
+        await createBranchWithChanges(octokit, { ...change, dryRun: options.dryRun })
+    }
+
+    // Publish changes as pull requests only if all changes are successfully created
     const results: CreatedChangeset[] = []
     for (const change of options.changes) {
         const repository = `${change.owner}/${change.repo}`
-        console.log(`Preparing change for ${repository} on '${change.base}' to '${change.head}'
+        console.log(`${repository}: Preparing pull request for change from '${change.base}' to '${change.head}':
 
 Title: ${change.title}
-Body: ${change.body || 'none'}
-Dryrun: ${options.dryRun || false}`)
-        await createBranchWithChanges(octokit, { ...change, dryRun: options.dryRun })
-
+Body: ${change.body || 'none'}`)
         let pullRequest: { url: string; number: number } = { url: '', number: -1 }
         if (!options.dryRun) {
             pullRequest = await createPR(octokit, change)
