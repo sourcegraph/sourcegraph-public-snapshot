@@ -25,11 +25,15 @@ const TreeEntry: React.FunctionComponent<{
 
     return (
         // TODO(tj): Limit width when not column layout
-        <div className={classNames('d-flex align-items-center justify-content-between', { 'w-25': !isColumnLayout })}>
+        <div
+            className={classNames('d-flex align-items-center justify-content-between test-page-file-decorable', {
+                'w-25': !isColumnLayout,
+            })}
+        >
             <Link
                 to={url}
                 className={classNames(
-                    'tree-entry',
+                    'tree-entry test-file-decorable-name',
                     isDir && 'font-weight-bold',
                     `test-tree-entry-${isDir ? 'directory' : 'file'}`
                 )}

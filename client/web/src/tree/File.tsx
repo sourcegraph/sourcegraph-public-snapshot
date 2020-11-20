@@ -14,7 +14,7 @@ interface FileProps extends TreeLayerProps {
 
 export const File: React.FunctionComponent<FileProps> = props => (
     <tr key={props.entryInfo.path} className={props.className}>
-        <td className="tree__cell">
+        <td className="tree__cell test-panel-file-decorable">
             {props.entryInfo.submodule ? (
                 props.entryInfo.url ? (
                     <Link
@@ -36,7 +36,7 @@ export const File: React.FunctionComponent<FileProps> = props => (
                             >
                                 <SourceRepositoryIcon className="icon-inline" />
                             </span>
-                            <span className="tree__row-label">
+                            <span className="tree__row-label test-file-decorable-name">
                                 {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
                             </span>
                             {renderFileDecorations(props.fileDecorations)}
@@ -53,7 +53,7 @@ export const File: React.FunctionComponent<FileProps> = props => (
                             >
                                 <SourceRepositoryIcon className="icon-inline" />
                             </span>
-                            <span className="tree__row-label">
+                            <span className="tree__row-label test-file-decorable-name">
                                 {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
                             </span>
                             {renderFileDecorations(props.fileDecorations)}
@@ -73,7 +73,7 @@ export const File: React.FunctionComponent<FileProps> = props => (
                     tabIndex={-1}
                 >
                     <div className="tree__row-contents-text d-flex flex-row justify-content-between">
-                        <span>{props.entryInfo.name}</span>
+                        <span className="test-file-decorable-name">{props.entryInfo.name}</span>
                         {renderFileDecorations(props.fileDecorations)}
                     </div>
                 </Link>

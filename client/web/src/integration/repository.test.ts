@@ -542,12 +542,10 @@ describe('Repository', () => {
         })
     })
 
-    // Describes the ways the directory viewer can be extended through Sourcegraph extensions.
+    // Describes the ways the directory viewer and tree panel can be extended through Sourcegraph extensions.
     describe('extensibility', () => {
-        // This also tests a lot of tree view functionality
         const repoName = 'github.com/sourcegraph/file-decs'
 
-        // tests both text content and progress bar, tests multiple decorations per file
         beforeEach(() => {
             const userSettings: Settings = {
                 extensions: {
@@ -765,7 +763,7 @@ describe('Repository', () => {
                                                     color: file.isDirectory ? 'red' : 'blue',
                                                 },
                                                 percentage: {
-                                                    value: Math.random() * 100,
+                                                    value: file.isDirectory ? 50 : 100,
                                                     color: file.isDirectory ? 'red' : 'blue',
                                                 },
                                             }
@@ -781,14 +779,173 @@ describe('Repository', () => {
                     response.type('application/javascript; charset=utf-8').send(extensionBundleString)
                 })
         })
+        async function getDecorationsByFilename(
+            pageOrPanel: 'page' | 'panel',
+            filename: string
+        ): Promise<{ textContent?: string | null; percentage?: string | null } | null> {
+            return driver.page.evaluate(
+                ({ pageOrPanel, filename }) => {
+                    const decorable = [
+                        ...document.querySelectorAll(`.test-${pageOrPanel}-file-decorable`),
+                    ].find(decorable =>
+                        decorable?.querySelector('.test-file-decorable-name')?.textContent?.includes(filename)
+                    )
 
-        it('file decorations work on ', async () => {
-            // await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repoName}/-/tree/nested`)
+                    if (!decorable) {
+                        return null
+                    }
+
+                    return {
+                        textContent: decorable.querySelector('.test-file-decoration-text')?.textContent,
+                        percentage: decorable
+                            .querySelector('.test-file-decoration-progress')
+                            ?.getAttribute('aria-valuenow'),
+                    }
+                },
+                { pageOrPanel, filename }
+            )
+        }
+
+        it('file decorations work on tree page and panel', async () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repoName}`)
 
-            // data-tooltip content
+            try {
+                await driver.page.waitForSelector('.test-file-decoration-container', { timeout: 5000 })
+            } catch {
+                throw new Error('Expected to see file decorations')
+            }
 
-            await new Promise(() => {})
+            // TREE PANEL ASSERTIONS
+
+            const nestedDecorations = await getDecorationsByFilename('panel', 'nested')
+
+            assert.deepStrictEqual(
+                nestedDecorations,
+                {
+                    textContent: '2 vowels',
+                    percentage: '50', // dirs are 50% in mock extension
+                },
+                'Incorrect decorations for nested on tree panel'
+            )
+
+            // Since nested is a single child, its children should be visible and decorated as well
+
+            const testDecorations = await getDecorationsByFilename('panel', 'test.ts')
+
+            assert.deepStrictEqual(
+                testDecorations,
+                {
+                    textContent: '1 vowels',
+                    percentage: '100', // files are 100% in mock extension
+                },
+                'Incorrect decorations for test.ts on tree panel'
+            )
+
+            const doublyNestedDecorations = await getDecorationsByFilename('panel', 'doubly-nested')
+
+            assert.deepStrictEqual(
+                doublyNestedDecorations,
+                {
+                    textContent: '4 vowels',
+                    percentage: '50',
+                },
+                'Incorrect decorations for doubly-nested on tree panel'
+            )
+
+            // Expand directory. we want to trigger "noopRowClick" handler in order to not navigate to new tree page
+            await driver.page.evaluate(() =>
+                ([...document.querySelectorAll('.test-panel-file-decorable')]
+                    .find(directory => directory.textContent?.includes('doubly-nested'))
+                    ?.querySelector('.test-tree-noop-link') as HTMLAnchorElement | undefined)?.click()
+            )
+
+            // Wait for file decorations to be sent from extension host
+            await driver.page.waitForFunction(
+                () =>
+                    !![...document.querySelectorAll('.test-panel-file-decorable')]
+                        .find(file =>
+                            file.querySelector('.test-file-decorable-name')?.textContent?.includes('triply-nested')
+                        )
+                        ?.querySelector('.test-file-decoration-container'),
+                { timeout: 5000 }
+            )
+            const triplyNestedDecorations = await getDecorationsByFilename('panel', 'triply-nested')
+
+            assert.deepStrictEqual(
+                triplyNestedDecorations,
+                {
+                    textContent: '3 vowels',
+                    percentage: '100',
+                },
+                'Incorrect decorations for triply-nested.ts on tree panel'
+            )
+
+            // TREE PAGE ASSERTIONS
+
+            await driver.page.evaluate(() =>
+                ([...document.querySelectorAll('.test-page-file-decorable .test-file-decorable-name')].find(name =>
+                    name?.textContent?.includes('nested')
+                ) as HTMLAnchorElement | undefined)?.click()
+            )
+
+            // Wait for new tree entries and file decorations
+            await driver.findElementWithText('nested', {
+                selector: '.test-tree-page-title',
+                fuzziness: 'contains',
+                wait: {
+                    timeout: 3000,
+                },
+            })
+            await driver.page.waitForSelector('.test-page-file-decorable .test-file-decoration-container')
+
+            const reactDecorations = await getDecorationsByFilename('page', 'ReactComponent.tsx')
+
+            assert.deepStrictEqual(
+                reactDecorations,
+                {
+                    textContent: '5 vowels',
+                    percentage: '100',
+                },
+                'Incorrect decorations for ReactComponent.tsx on tree page'
+            )
+
+            const doublyNestedPageDecorations = await getDecorationsByFilename('page', 'doubly-nested')
+            // This should be equal to its panel decorations
+            assert.deepStrictEqual(
+                doublyNestedPageDecorations,
+                {
+                    textContent: '4 vowels',
+                    percentage: '50',
+                },
+                'Incorrect decorations for doubly-nested on tree page'
+            )
+
+            await driver.page.evaluate(() =>
+                ([...document.querySelectorAll('.test-page-file-decorable .test-file-decorable-name')].find(name =>
+                    name?.textContent?.includes('doubly-nested')
+                ) as HTMLAnchorElement | undefined)?.click()
+            )
+
+            // Wait for new tree page
+            await driver.findElementWithText('doubly-nested', {
+                selector: '.test-tree-page-title',
+                fuzziness: 'contains',
+                wait: {
+                    timeout: 3000,
+                },
+            })
+            await driver.page.waitForSelector('.test-page-file-decorable .test-file-decoration-container')
+
+            const triplyNestedPageDecorations = await getDecorationsByFilename('page', 'triply-nested.ts')
+            // This should be equal to its panel decorations
+            assert.deepStrictEqual(
+                triplyNestedPageDecorations,
+                {
+                    textContent: '3 vowels',
+                    percentage: '100',
+                },
+                'Incorrect decorations for triply-nested.ts on tree page'
+            )
         })
         // TODO(tj): need to implement overrideExtensions() to add tests for these cases,
         // which are slighly less important than the existing tests, and would significantly
@@ -797,7 +954,4 @@ describe('Repository', () => {
         // - multiple decorations of the same type
         // - invalid decorations don't cause blob errors
     })
-
-    // TODO(tj): test stacked file decs
-    // two different extensions, one that adds label with first 4 chars of filename, one that has progress bar with percentage of characters in filenames that are vowels (hard to debug tho...)
 })

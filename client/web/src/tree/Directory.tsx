@@ -25,7 +25,7 @@ interface TreeChildProps extends TreeLayerProps {
  */
 export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeChildProps): JSX.Element => (
     <tr key={props.entryInfo.path} className={props.className} onClick={props.handleTreeClick}>
-        <td className="tree__cell">
+        <td className="tree__cell test-panel-file-decorable">
             <div
                 className="tree__row-contents tree__row-contents-new"
                 data-tree-is-directory="true"
@@ -37,7 +37,7 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                             // needed because of dynamic styling
                             // eslint-disable-next-line react/forbid-dom-props
                             style={treePadding(props.depth, true)}
-                            className="tree__row-icon"
+                            className="tree__row-icon test-tree-noop-link"
                             href={props.entryInfo.url}
                             onClick={props.noopRowClick}
                             tabIndex={-1}
@@ -51,7 +51,7 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                         <Link
                             to={props.entryInfo.url}
                             onClick={props.linkRowClick}
-                            className="tree__row-label"
+                            className="tree__row-label test-file-decorable-name"
                             draggable={false}
                             title={props.entryInfo.path}
                             tabIndex={-1}

@@ -102,7 +102,11 @@ export function renderFileDecorations(fileDecorations?: FileDecoration[], isDire
     }
 
     return (
-        <div className={classNames('d-flex align-items-center text-nowrap', { 'mr-3': isDirectory })}>
+        <div
+            className={classNames('d-flex align-items-center text-nowrap test-file-decoration-container', {
+                'mr-3': isDirectory,
+            })}
+        >
             {validFileDecorations.map(
                 (fileDecoration, index) =>
                     (fileDecoration.percentage || fileDecoration.text) && (
@@ -118,7 +122,7 @@ export function renderFileDecorations(fileDecorations?: FileDecoration[], isDire
                                     style={{ color: fileDecoration.text.color }}
                                     data-tooltip={fileDecoration.text.hoverMessage}
                                     data-placement="bottom"
-                                    className="text-monospace text-decoration-none"
+                                    className="text-monospace text-decoration-none test-file-decoration-text"
                                 >
                                     {fileDecoration.text.value}
                                 </small>
@@ -132,7 +136,7 @@ export function renderFileDecorations(fileDecorations?: FileDecoration[], isDire
                                     data-placement="bottom"
                                 >
                                     <div
-                                        className="progress-bar"
+                                        className="progress-bar test-file-decoration-progress"
                                         // eslint-disable-next-line react/forbid-dom-props
                                         style={{
                                             width: `${fileDecoration.percentage.value}%`,
