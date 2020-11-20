@@ -135,6 +135,74 @@ func TestIsAllowedToEdit(t *testing.T) {
 	}
 }
 
+func TestIsAllowedToCreate(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	dbtesting.SetupGlobalTestDB(t)
+
+	// Setup users and org
+	member := insertTestUser(t, dbconn.Global, "cm-user1", false)
+	notMember := insertTestUser(t, dbconn.Global, "cm-user2", false)
+	siteAdmin := insertTestUser(t, dbconn.Global, "cm-user3", true)
+
+	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin))
+	org, err := db.Orgs.Create(admContext, "cm-test-org", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	addUserToOrg(t, dbconn.Global, member, org.ID)
+
+	r := newTestResolver(t)
+
+	tests := []struct {
+		user    int32
+		owner   graphql.ID
+		allowed bool
+	}{
+		{
+			user:    member,
+			owner:   relay.MarshalID("Org", org.ID),
+			allowed: true,
+		},
+		{
+			user:    member,
+			owner:   relay.MarshalID("User", notMember),
+			allowed: false,
+		},
+
+		{
+			user:    notMember,
+			owner:   relay.MarshalID("Org", org.ID),
+			allowed: false,
+		},
+		{
+			user:    siteAdmin,
+			owner:   relay.MarshalID("Org", org.ID),
+			allowed: true,
+		},
+		{
+			user:    siteAdmin,
+			owner:   relay.MarshalID("User", member),
+			allowed: true,
+		},
+		{
+			user:    siteAdmin,
+			owner:   relay.MarshalID("User", notMember),
+			allowed: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("user %d", tt.user), func(t *testing.T) {
+			ctx := actor.WithActor(context.Background(), actor.FromUser(tt.user))
+			if err := r.isAllowedToCreate(ctx, tt.owner); (err != nil) == tt.allowed {
+				t.Fatalf("unexpected permissions for user %d", tt.user)
+			}
+		})
+	}
+}
+
 func TestQueryMonitor(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

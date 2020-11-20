@@ -10,7 +10,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -58,7 +57,11 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 }
 
 func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (m graphqlbackend.MonitorResolver, err error) {
-	// TODO: check actor is the owner, or site-admin, or part of the owner-org
+	err = r.isAllowedToCreate(ctx, args.Monitor.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
 	// start transaction
 	var txStore *basestore.Store
 	txStore, err = r.db.Transact(ctx)
@@ -963,70 +966,83 @@ func (r *Resolver) deleteCodeMonitorQuery(ctx context.Context, args *graphqlback
 	return query, nil
 }
 
-// isAllowedToEdit compares the owner of a monitor (user or org) to the actor of
-// the request. A user can edit a monitor if either of the following statements
+// isAllowedToEdit checks whether an actor is allowed to edit a given monitor.
+func (r *Resolver) isAllowedToEdit(ctx context.Context, monitorID graphql.ID) error {
+	var monitorIDInt64 int64
+	err := relay.UnmarshalSpec(monitorID, &monitorIDInt64)
+	if err != nil {
+		return err
+	}
+	owner, err := r.ownerForID64(ctx, monitorIDInt64)
+	if err != nil {
+		return err
+	}
+	return r.isAllowedToCreate(ctx, owner)
+}
+
+// isAllowedToCreate compares the owner of a monitor (user or org) to the actor of
+// the request. A user can create a monitor if either of the following statements
 // is true:
 // - she is the owner
 // - she is a member of the organization which is the owner of the monitor
 // - she is a site-admin
-func (r *Resolver) isAllowedToEdit(ctx context.Context, id graphql.ID) error {
-	var monitorID int64
-	err := relay.UnmarshalSpec(id, &monitorID)
+func (r *Resolver) isAllowedToCreate(ctx context.Context, owner graphql.ID) error {
+	var ownerInt32 int32
+	err := relay.UnmarshalSpec(owner, &ownerInt32)
 	if err != nil {
 		return err
 	}
-	userId, orgID, err := r.ownerForId64(ctx, monitorID)
-	if err != nil {
-		return err
+	switch kind := relay.UnmarshalKind(owner); kind {
+	case "User":
+		return backend.CheckSiteAdminOrSameUser(ctx, ownerInt32)
+	case "Org":
+		return backend.CheckOrgAccess(ctx, ownerInt32)
+	default:
+		return fmt.Errorf("provided ID is not a namespace")
 	}
-	if userId == nil && orgID == nil {
-		return fmt.Errorf("monitor does not exist")
-	}
-	if orgID != nil {
-		if err := backend.CheckOrgAccess(ctx, *orgID); err != nil {
-			return fmt.Errorf("user is not a member of the organization which owns the code monitor")
-		}
-		return nil
-	}
-	if err := backend.CheckSiteAdminOrSameUser(ctx, *userId); err != nil {
-		return fmt.Errorf("user not allowed to edit")
-	}
-	return nil
 }
 
-func (r *Resolver) ownerForId64(ctx context.Context, monitorID int64) (userId *int32, orgId *int32, err error) {
+func (r *Resolver) ownerForID64(ctx context.Context, monitorID int64) (owner graphql.ID, err error) {
 	var (
-		q    *sqlf.Query
-		rows *sql.Rows
+		q      *sqlf.Query
+		rows   *sql.Rows
+		userID *int32
+		orgID  *int32
 	)
 	q, err = ownerForID64Query(ctx, monitorID)
 	if err != nil {
-		return nil, nil, err
+		return "", err
 	}
 	rows, err = r.db.Query(ctx, q)
 	if err != nil {
-		return nil, nil, err
+		return "", err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		if err = rows.Scan(
-			&userId,
-			&orgId,
+			&userID,
+			&orgID,
 		); err != nil {
-			return nil, nil, err
+			return "", err
 		}
 	}
 	err = rows.Close()
 	if err != nil {
-		return nil, nil, err
+		return "", err
 	}
-
 	// Rows.Err will report the last error encountered by Rows.Scan.
 	if err = rows.Err(); err != nil {
-		return nil, nil, err
+		return "", err
 	}
-	return userId, orgId, nil
+	if (userID == nil && orgID == nil) || (userID != nil && orgID != nil) {
+		return "", fmt.Errorf("invalid owner")
+	}
+	if orgID != nil {
+		return graphqlbackend.MarshalOrgID(*orgID), nil
+	} else {
+		return graphqlbackend.MarshalUserID(*userID), nil
+	}
 }
 
 func ownerForID64Query(ctx context.Context, monitorID int64) (*sqlf.Query, error) {
