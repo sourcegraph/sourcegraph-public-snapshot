@@ -363,25 +363,25 @@ async function cloneRepo(
     const fetchFlags = '--depth 10'
 
     // Determine whether or not to create the base branch, or use the existing one
-    let baseExists = true
+    let revisionExists = true
     if (!checkout.revisionMustExist) {
         try {
             await octokit.repos.getBranch({ branch: checkout.revision, owner, repo })
         } catch (error) {
             if (error.status === 404) {
                 console.log(`Target revision ${checkout.revision} does not exist`)
-                baseExists = false
+                revisionExists = false
             } else {
                 throw error
             }
         }
     }
     const checkoutCommand =
-        baseExists === true
+        revisionExists === true
             ? // for an existing branch - fetch fails if we are already checked out, so ignore errors optimistically
               `git fetch ${fetchFlags} origin ${checkout.revision}:${checkout.revision} || true ; git checkout ${checkout.revision}`
-            : // create and publish base branch if it does not yet exist
-              `git checkout -b ${checkout.revision}`
+            : // create from HEAD and publish base branch if it does not yet exist
+              `git checkout -b ${checkout.revision} ; git push origin ${checkout.revision}:${checkout.revision}`
 
     // Set up repository
     const setupScript = `set -ex
@@ -424,12 +424,12 @@ async function createBranchWithChanges(
         git --no-pager diff;`
         await execa('bash', ['-c', showChangesScript], { stdio: 'inherit', cwd: workdir })
     } else {
-        // Publish changes
+        // Publish changes. We force push to ensure that the generated changes are applied.
         const publishScript = `set -ex
 
         git add :/;
         git commit -a -m ${JSON.stringify(commitMessage)};
-        git push origin HEAD:${headBranch};`
+        git push --force origin HEAD:${headBranch};`
         await execa('bash', ['-c', publishScript], { stdio: 'inherit', cwd: workdir })
     }
 }
