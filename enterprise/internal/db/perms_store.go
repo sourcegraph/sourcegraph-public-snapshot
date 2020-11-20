@@ -581,54 +581,32 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 	added := roaring.AndNot(p.UserIDs, oldIDs)
 	removed := roaring.AndNot(oldIDs, p.UserIDs)
 
-	// Load stored user IDs of both added and removed.
-	changedIDs := roaring.Or(added, removed).ToArray()
-
-	// In case there is nothing to add or remove.
-	if len(changedIDs) == 0 {
+	// In case there is nothing added or removed.
+	if added.IsEmpty() && removed.IsEmpty() {
 		return nil
 	}
 
-	q = loadUserPendingPermissionsByIDBatchQuery(changedIDs, p.Perm, authz.PermRepos, "FOR UPDATE")
-	loadedIDs, err := txs.batchLoadIDs(ctx, q)
-	if err != nil {
-		return errors.Wrap(err, "batch load user pending permissions")
-	}
-
-	updatedPerms := make([]*authz.UserPendingPermissions, 0, len(loadedIDs))
-	for _, id := range changedIDs {
-		userID := int32(id)
-
-		// NOTE: We could have missing records because the permissions of pending user has been granted
-		// (i.e. moved from `user_pending_permissions` to `user_permissions` table), therefore the record
-		// in `user_pending_permissions` table no longer exists. The reason we still have references to
-		// these missing records is because we do not clean up `repo_pending_permissions` table after
-		// granting a user's pending permissions to avoid database deadlock, given the fact that once the
-		// record is removed from `user_pending_permissions` table, the user ID becomes invalid automatically.
-		repoIDs, ok := loadedIDs[userID]
-		if !ok {
-			continue
-		}
-
-		switch {
-		case added.Contains(id):
-			repoIDs.Add(uint32(p.RepoID))
-		case removed.Contains(id):
-			repoIDs.Remove(uint32(p.RepoID))
-		}
-
-		updatedPerms = append(updatedPerms, &authz.UserPendingPermissions{
-			ID:        userID,
-			IDs:       repoIDs,
-			UpdatedAt: updatedAt,
-		})
-	}
-
-	if len(updatedPerms) > 0 {
-		if q, err = updateUserPendingPermissionsBatchQuery(updatedPerms...); err != nil {
+	if !added.IsEmpty() {
+		if q, err = appendUserPendingPermissionsBatchQuery(added.ToArray(), []uint32{uint32(p.RepoID)}, p.Perm, authz.PermRepos, updatedAt); err != nil {
 			return err
 		} else if err = txs.execute(ctx, q); err != nil {
-			return errors.Wrap(err, "execute update user pending permissions batch query")
+			return errors.Wrap(err, "execute append user pending permissions batch query")
+		}
+	}
+	if !removed.IsEmpty() {
+		q := sqlf.Sprintf(`
+-- source: enterprise/internal/db/perms_store.go:SetRepoPendingPermissions
+UPDATE user_pending_permissions
+SET
+	object_ids_ints = object_ids_ints - %s::INT,
+	updated_at = %s
+WHERE
+	id = ANY (%s)
+AND permission = %s
+AND object_type = %s
+`, p.RepoID, updatedAt.UTC(), pq.Array(removed.ToArray()), p.Perm.String(), authz.PermRepos)
+		if err = txs.execute(ctx, q); err != nil {
+			return errors.Wrap(err, "execute update removed user pending permissions query")
 		}
 	}
 
@@ -725,56 +703,37 @@ AND permission = %s
 	)
 }
 
-func loadUserPendingPermissionsByIDBatchQuery(ids []uint32, perm authz.Perms, typ authz.PermType, lock string) *sqlf.Query {
+func appendUserPendingPermissionsBatchQuery(userIDs, objectIDs []uint32, perm authz.Perms, permType authz.PermType, updatedAt time.Time) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/internal/db/perms_store.go:loadUserPendingPermissionsByIDBatchQuery
-SELECT id, object_ids_ints
-FROM user_pending_permissions
-WHERE id IN (%s)
+-- source: enterprise/internal/db/perms_store.go:appendUserPendingPermissionsBatchQuery
+UPDATE user_pending_permissions
+SET
+	object_ids_ints = user_pending_permissions.object_ids_ints | update.object_ids_ints,
+	updated_at = update.updated_at
+FROM (VALUES %s) AS update (id, object_ids_ints, updated_at)
+WHERE
+	user_pending_permissions.id = update.id
 AND permission = %s
 AND object_type = %s
 `
-
-	items := make([]*sqlf.Query, len(ids))
-	for i := range ids {
-		items[i] = sqlf.Sprintf("%d", ids[i])
+	if updatedAt.IsZero() {
+		return nil, ErrPermsUpdatedAtNotSet
 	}
-	return sqlf.Sprintf(
-		format+lock,
-		sqlf.Join(items, ","),
-		perm.String(),
-		typ,
-	)
-}
 
-func updateUserPendingPermissionsBatchQuery(ps ...*authz.UserPendingPermissions) (*sqlf.Query, error) {
-	const format = `
--- source: enterprise/internal/db/perms_store.go:updateUserPendingPermissionsBatchQuery
-UPDATE user_pending_permissions
-SET
-	object_ids_ints = update.object_ids_ints,
-	updated_at = update.updated_at
-FROM (VALUES %s) AS update (id, object_ids_ints, updated_at)
-WHERE user_pending_permissions.id = update.id
-`
-
-	items := make([]*sqlf.Query, len(ps))
-	for i := range ps {
-		ps[i].IDs.RunOptimize()
-		if ps[i].UpdatedAt.IsZero() {
-			return nil, ErrPermsUpdatedAtNotSet
-		}
-
-		items[i] = sqlf.Sprintf("(%s::INT, %s::INT[], %s::TIMESTAMP WITH TIME ZONE)",
-			ps[i].ID,
-			pq.Array(ps[i].IDs.ToArray()),
-			ps[i].UpdatedAt.UTC(),
-		)
+	items := make([]*sqlf.Query, 0, len(userIDs))
+	for _, userID := range userIDs {
+		items = append(items, sqlf.Sprintf("(%s::INT, %s::INT[], %s::TIMESTAMP WITH TIME ZONE)",
+			userID,
+			pq.Array(objectIDs),
+			updatedAt.UTC(),
+		))
 	}
 
 	return sqlf.Sprintf(
 		format,
 		sqlf.Join(items, ","),
+		perm.String(),
+		permType,
 	), nil
 }
 
@@ -1115,45 +1074,6 @@ func (s *PermsStore) load(ctx context.Context, q *sqlf.Query) (*permsLoadValues,
 		vals.ids.Add(uint32(id))
 	}
 	return vals, nil
-}
-
-// batchLoadIDs runs the query and returns unmarshalled IDs with their corresponding object ID value.
-func (s *PermsStore) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32]*roaring.Bitmap, error) {
-	var err error
-	ctx, save := s.observe(ctx, "batchLoadIDs", "")
-	defer func() {
-		save(&err,
-			otlog.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
-			otlog.Object("Query.Args", q.Args()),
-		)
-	}()
-
-	var rows *sql.Rows
-	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	loaded := make(map[int32]*roaring.Bitmap)
-	for rows.Next() {
-		var id int32
-		var ids []int64
-		if err = rows.Scan(&id, pq.Array(&ids)); err != nil {
-			return nil, err
-		}
-
-		bm := roaring.NewBitmap()
-		for _, id := range ids {
-			bm.Add(uint32(id))
-		}
-		loaded[id] = bm
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return loaded, nil
 }
 
 // ListExternalAccounts returns all external accounts that are associated with given user.
