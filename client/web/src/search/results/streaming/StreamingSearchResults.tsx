@@ -9,21 +9,13 @@ import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetrySer
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { AuthenticatedUser } from '../../../auth'
 import { PageTitle } from '../../../components/PageTitle'
-import { VersionContext } from '../../../schema/site.schema'
 import { QueryState } from '../../helpers'
 import { LATEST_VERSION } from '../SearchResults'
 import { SearchResultsInfoBar } from '../SearchResultsInfoBar'
 import { SearchResultTypeTabs } from '../SearchResultTypeTabs'
-import { VersionContextWarning } from '../VersionContextWarning'
 import { StreamingProgress } from './progress/StreamingProgress'
 import { StreamingSearchResultsFilterBars } from './StreamingSearchResultsFilterBars'
-import {
-    CaseSensitivityProps,
-    parseSearchURL,
-    PatternTypeProps,
-    resolveVersionContext,
-    SearchStreamingProps,
-} from '../..'
+import { CaseSensitivityProps, parseSearchURL, PatternTypeProps, SearchStreamingProps } from '../..'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
@@ -38,10 +30,6 @@ export interface StreamingSearchResultsProps
     location: H.Location
     history: H.History
     navbarSearchQueryState: QueryState
-
-    setVersionContext: (versionContext: string | undefined) => void
-    availableVersionContexts: VersionContext[] | undefined
-    previousVersionContext: string | null
 }
 
 export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResultsProps> = props => {
@@ -50,13 +38,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         setPatternType,
         caseSensitive: currentCaseSensitive,
         setCaseSensitivity,
-        versionContext: currentVersionContext,
-        setVersionContext,
         streamSearch,
-        location,
-        history,
-        availableVersionContexts,
-        previousVersionContext,
     } = props
 
     const { query = '', patternType, caseSensitive, versionContext } = parseSearchURL(props.location.search)
@@ -73,12 +55,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         }
     }, [caseSensitive, currentCaseSensitive, setCaseSensitivity])
 
-    useEffect(() => {
-        if (versionContext !== currentVersionContext) {
-            setVersionContext(versionContext)
-        }
-    }, [versionContext, currentVersionContext, setVersionContext])
-
     const results = useObservable(
         useMemo(
             () =>
@@ -86,9 +62,9 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     caseSensitive ? `${query} case:yes` : query,
                     LATEST_VERSION,
                     patternType ?? SearchPatternType.literal,
-                    resolveVersionContext(versionContext, availableVersionContexts)
+                    versionContext
                 ),
-            [streamSearch, caseSensitive, query, patternType, versionContext, availableVersionContexts]
+            [streamSearch, caseSensitive, query, patternType, versionContext]
         )
     )
 
@@ -98,36 +74,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     const onDidCreateSavedQuery = useCallback(() => {}, [])
     const onSaveQueryClick = useCallback(() => {}, [])
     const didSave = false
-
-    const [showVersionContextWarning, setShowVersionContextWarning] = useState(false)
-    useEffect(
-        () => {
-            const searchParameters = new URLSearchParams(location.search)
-            const versionFromURL = searchParameters.get('c')
-
-            if (searchParameters.has('from-context-toggle')) {
-                // The query param `from-context-toggle` indicates that the version context
-                // changed from the version context toggle. In this case, we don't warn
-                // users that the version context has changed.
-                searchParameters.delete('from-context-toggle')
-                history.replace({
-                    search: searchParameters.toString(),
-                    hash: history.location.hash,
-                })
-                setShowVersionContextWarning(false)
-            } else {
-                setShowVersionContextWarning(
-                    (availableVersionContexts && versionFromURL !== previousVersionContext) || false
-                )
-            }
-        },
-        // Only show warning when URL changes
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [location.search]
-    )
-    const onDismissVersionContextWarning = useCallback(() => setShowVersionContextWarning(false), [
-        setShowVersionContextWarning,
-    ])
 
     return (
         <div className="test-search-results search-results d-flex flex-column w-100">
@@ -154,13 +100,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         stats={<StreamingProgress />}
                     />
                 </div>
-
-                {showVersionContextWarning && (
-                    <VersionContextWarning
-                        versionContext={currentVersionContext}
-                        onDismissWarning={onDismissVersionContextWarning}
-                    />
-                )}
             </div>
         </div>
     )
