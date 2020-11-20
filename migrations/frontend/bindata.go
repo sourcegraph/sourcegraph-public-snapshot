@@ -134,6 +134,8 @@
 // 1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql (188B)
 // 1528395750_repair_view.down.sql (536B)
 // 1528395750_repair_view.up.sql (348B)
+// 1528395751_add_unique_constraint_to_external_service_repos.down.sql (137B)
+// 1528395751_add_unique_constraint_to_external_service_repos.up.sql (1.335kB)
 
 package migrations
 
@@ -2882,6 +2884,46 @@ func _1528395750_repair_viewUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395751_add_unique_constraint_to_external_service_reposDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x8d\x2f\x4a\x2d\xc8\x2f\xe6\x72\x09\xf2\x0f\x50\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x51\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\xc6\xa1\x01\x4c\xc6\x67\xa6\xc4\x63\x48\x67\xa6\xc4\x97\xe6\x65\x16\x96\xa6\x5a\x73\x71\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\xfe\xa4\x09\x11\x89\x00\x00\x00")
+
+func _1528395751_add_unique_constraint_to_external_service_reposDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395751_add_unique_constraint_to_external_service_reposDownSql,
+		"1528395751_add_unique_constraint_to_external_service_repos.down.sql",
+	)
+}
+
+func _1528395751_add_unique_constraint_to_external_service_reposDownSql() (*asset, error) {
+	bytes, err := _1528395751_add_unique_constraint_to_external_service_reposDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395751_add_unique_constraint_to_external_service_repos.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6a, 0xc, 0x54, 0xe6, 0x99, 0xc4, 0x3, 0x47, 0x23, 0x5c, 0x88, 0xe6, 0xef, 0x8, 0xd2, 0x4a, 0x7, 0xe2, 0x87, 0x6e, 0x8d, 0x7b, 0xcc, 0x48, 0x28, 0xa1, 0xd5, 0xda, 0x2f, 0x1a, 0xe0, 0x25}}
+	return a, nil
+}
+
+var __1528395751_add_unique_constraint_to_external_service_reposUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\x94\x51\x6f\xda\x3e\x14\xc5\xdf\xfd\x29\xce\xdb\x9f\x56\xf4\xe1\xff\x5c\x69\x52\x48\x4c\x88\x04\x09\x33\x66\x6d\x9f\xa2\x90\xdc\x66\xd6\x32\x3b\xb3\x9d\x41\xbf\xfd\x04\xc9\x3a\xaa\x02\x6d\xa7\xf1\x88\x1d\xdf\xdf\xbd\xf7\x9c\x33\xe1\x71\x92\xde\x32\x76\x73\x83\xc8\x9a\x16\xde\xaa\xba\x26\x8b\xc2\x61\x4b\xa8\x8c\xfe\xcf\x63\x5b\x68\x0f\xe5\xe1\x0d\x1e\x95\x25\x16\x89\x6c\x09\x29\x92\x38\xe6\x02\xc9\x14\xfc\x3e\x59\xc9\xd5\xe1\xd3\xdc\x99\x47\x9f\x57\xd4\x90\xa7\xdc\xd8\xf6\x6b\xa1\x73\x4b\xad\xc9\x37\x4f\x39\xed\x3c\x59\x5d\x34\xb9\x23\xfb\x53\x95\x74\x38\x60\x00\x90\xa5\x38\x79\xe8\x7a\xb0\xd0\x52\xe1\x09\x9e\xbe\xb7\xc6\x16\xf6\x09\xbe\xd8\x34\xb4\xc7\x71\xde\x58\x42\xd5\xb5\x8d\x2a\x0b\x4f\x8e\x85\x82\x07\x92\x43\xf2\xc5\x32\x13\x81\x78\x80\x0c\x26\x73\x8e\x8a\xaa\xae\xa5\xea\x34\x82\xc3\x88\xe1\x35\x80\xaa\xb0\x51\xb5\xd2\x7e\xcc\x80\x43\x0f\xaa\x82\xd2\x9e\x6a\xb2\xfb\xbf\xca\xc6\x68\xca\x3b\xdb\xc0\xd3\xce\xb3\xab\x9e\x35\x26\x8f\xa2\x69\x40\x3b\xe5\xbc\xd2\xf5\x31\x5c\x92\xae\xb8\x90\x48\x52\x99\xbd\x41\xc4\x56\x7c\xce\x43\xf9\xbb\xec\xf8\x14\xdd\xf8\x0f\x01\x9b\x8a\x6c\x71\x66\x84\x2c\x16\xd9\x7a\x89\xc9\x03\x46\xef\x7c\xed\x8a\xcd\x82\x2f\x49\x1a\xa3\x34\x9d\xf6\xa3\xeb\x2b\x7c\xc2\xff\x83\x44\x0e\x8b\x3d\xee\x29\xe2\x73\x2e\x39\x2e\x01\xdc\xcd\xb8\xe0\x1f\xa8\x8e\xe7\x5f\x92\x62\x34\x4c\xe2\xba\x2f\x71\x79\x6c\xc3\x0e\x82\xaa\x42\xa7\xd5\x8f\x8e\x50\x1a\xed\xbc\x2d\x94\xf6\x2c\x98\x4b\x2e\x06\x3d\x9c\x21\x0d\xa2\x08\x61\x96\xae\xa4\x08\x92\x54\x9e\xb9\x95\x0f\x8d\xbc\x66\x50\x55\xde\x97\x65\xeb\x34\xf9\xbc\x7e\xa3\xe7\x23\x58\xa7\x74\xdd\x10\xac\xd9\x3a\x6c\x8a\xf2\xdb\x0b\xa5\xfc\x43\x85\x5c\x9e\xde\x71\x0a\xbc\xb4\xda\xe0\xf8\x77\x58\xa9\x7f\x43\x50\x39\x58\xb6\x4f\x93\x67\x5b\x0e\x99\xf1\xf7\x49\x11\x4c\xf7\x4b\x1c\x44\x77\x36\x36\x0e\x57\xa7\x99\x00\x0f\xc2\x19\x44\x76\x07\x7e\xcf\xc3\xb5\xe4\x58\x8a\x2c\xe4\xd1\x5a\x70\x7c\xb4\xbc\x1b\xed\x17\x16\x66\x8b\x45\x22\x6f\xd9\xaf\x00\x00\x00\xff\xff\x41\x3f\xf4\x6c\x37\x05\x00\x00")
+
+func _1528395751_add_unique_constraint_to_external_service_reposUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395751_add_unique_constraint_to_external_service_reposUpSql,
+		"1528395751_add_unique_constraint_to_external_service_repos.up.sql",
+	)
+}
+
+func _1528395751_add_unique_constraint_to_external_service_reposUpSql() (*asset, error) {
+	bytes, err := _1528395751_add_unique_constraint_to_external_service_reposUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395751_add_unique_constraint_to_external_service_repos.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x50, 0x9c, 0xc3, 0xc7, 0x22, 0xe2, 0x6d, 0x34, 0x30, 0x11, 0x5d, 0x90, 0xfd, 0x90, 0x71, 0xda, 0x31, 0x6a, 0x47, 0x41, 0x5c, 0x68, 0x5a, 0xe7, 0xfe, 0xff, 0xf8, 0xac, 0x4b, 0x44, 0x1b, 0x11}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3107,6 +3149,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql":   _1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSql,
 	"1528395750_repair_view.down.sql":                                                        _1528395750_repair_viewDownSql,
 	"1528395750_repair_view.up.sql":                                                          _1528395750_repair_viewUpSql,
+	"1528395751_add_unique_constraint_to_external_service_repos.down.sql":                    _1528395751_add_unique_constraint_to_external_service_reposDownSql,
+	"1528395751_add_unique_constraint_to_external_service_repos.up.sql":                      _1528395751_add_unique_constraint_to_external_service_reposUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3287,6 +3331,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accounts.up.sql":   {_1528395749_add_expired_at_and_last_valid_at_columns_to_user_external_accountsUpSql, map[string]*bintree{}},
 	"1528395750_repair_view.down.sql":                                                        {_1528395750_repair_viewDownSql, map[string]*bintree{}},
 	"1528395750_repair_view.up.sql":                                                          {_1528395750_repair_viewUpSql, map[string]*bintree{}},
+	"1528395751_add_unique_constraint_to_external_service_repos.down.sql":                    {_1528395751_add_unique_constraint_to_external_service_reposDownSql, map[string]*bintree{}},
+	"1528395751_add_unique_constraint_to_external_service_repos.up.sql":                      {_1528395751_add_unique_constraint_to_external_service_reposUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
