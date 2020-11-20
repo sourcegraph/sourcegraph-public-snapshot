@@ -5,12 +5,23 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"time"
+
+	otlog "github.com/opentracing/opentracing-go/log"
 )
+
+type eventStreamWriterStat struct {
+	Event    string
+	Bytes    int
+	Duration time.Duration
+	Error    error
+}
 
 type eventStreamWriter struct {
 	w     io.Writer
-	enc   *json.Encoder
 	flush func()
+
+	StatHook func(eventStreamWriterStat)
 }
 
 func newEventStreamWriter(w http.ResponseWriter) (*eventStreamWriter, error) {
@@ -31,38 +42,68 @@ func newEventStreamWriter(w http.ResponseWriter) (*eventStreamWriter, error) {
 
 	return &eventStreamWriter{
 		w:     w,
-		enc:   json.NewEncoder(w),
 		flush: flusher.Flush,
 	}, nil
 }
 
-func (e *eventStreamWriter) Event(event string, data interface{}) error {
-	if event != "" {
-		// event: $event\n
-		if _, err := e.w.Write([]byte("event: ")); err != nil {
-			return err
+func (e *eventStreamWriter) Event(event string, data interface{}) (err error) {
+	// write is a helper to avoid error handling. Additionally it counts the
+	// number of bytes written.
+	start := time.Now()
+	bytes := 0
+	write := func(b []byte) {
+		if err != nil {
+			return
 		}
-		if _, err := e.w.Write([]byte(event)); err != nil {
-			return err
-		}
-		if _, err := e.w.Write([]byte("\n")); err != nil {
-			return err
-		}
+		var n int
+		n, err = e.w.Write(b)
+		bytes += n
 	}
 
-	// data: json(data)\n\n
-	if _, err := e.w.Write([]byte("data: ")); err != nil {
+	defer func() {
+		if hook := e.StatHook; hook != nil {
+			hook(eventStreamWriterStat{
+				Event:    event,
+				Bytes:    bytes,
+				Duration: time.Since(start),
+				Error:    err,
+			})
+		}
+	}()
+
+	encoded, err := json.Marshal(data)
+	if err != nil {
 		return err
 	}
-	if err := e.enc.Encode(data); err != nil {
-		return err
+
+	if event != "" {
+		// event: $event\n
+		write([]byte("event: "))
+		write([]byte(event))
+		write([]byte("\n"))
 	}
-	// Encode writes a newline, so only need to write one newline.
-	if _, err := e.w.Write([]byte("\n")); err != nil {
-		return err
-	}
+
+	// data: json($data)\n\n
+	write([]byte("data: "))
+	write(encoded)
+	write([]byte("\n\n"))
 
 	e.flush()
 
-	return nil
+	return err
+}
+
+// eventStreamOTHook returns a StatHook which logs to log.
+func eventStreamOTHook(log func(...otlog.Field)) func(eventStreamWriterStat) {
+	return func(stat eventStreamWriterStat) {
+		fields := []otlog.Field{
+			otlog.String("event", stat.Event),
+			otlog.Int("bytes", stat.Bytes),
+			otlog.Int64("duration_ms", stat.Duration.Milliseconds()),
+		}
+		if stat.Error != nil {
+			fields = append(fields, otlog.Error(stat.Error))
+		}
+		log(fields...)
+	}
 }

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // ServeStream is an http handler which streams back search results.
@@ -24,11 +25,24 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tr, ctx := trace.New(ctx, "search.ServeStream", args.Query,
+		trace.Tag{Key: "version", Value: args.Version},
+		trace.Tag{Key: "pattern_type", Value: args.PatternType},
+		trace.Tag{Key: "version_context", Value: args.VersionContext},
+	)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	eventWriter, err := newEventStreamWriter(w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// Log events to trace
+	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
 	search, err := graphqlbackend.NewSearchImplementer(ctx, &graphqlbackend.SearchArgs{
 		Query:          args.Query,
