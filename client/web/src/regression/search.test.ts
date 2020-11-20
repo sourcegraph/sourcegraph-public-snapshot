@@ -193,32 +193,5 @@ describe('Search regression test suite', () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.test-search-result').length > 0)
         })
-
-        test('Search filters', async () => {
-            const filterToToken = [
-                ['lang:go', 'lang:go'],
-                ['-file:_test\\.go$', '-file:_test\\.go$'],
-            ]
-            const origQuery = 'jwtmiddleware'
-            for (const [filter, token] of filterToToken) {
-                await driver.page.goto(
-                    `${config.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal`
-                )
-                await driver.findElementWithText(filter, {
-                    action: 'click',
-                    selector: 'button',
-                    wait: { timeout: 5000 },
-                })
-                await driver.page.waitForFunction(
-                    expectedQuery => {
-                        const url = new URL(document.location.href)
-                        const query = url.searchParams.get('q')
-                        return query && query.trim() === expectedQuery
-                    },
-                    { timeout: 5000 },
-                    `${origQuery} ${token}`
-                )
-            }
-        })
     })
 })
