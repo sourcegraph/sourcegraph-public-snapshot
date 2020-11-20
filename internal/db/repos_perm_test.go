@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -21,108 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-func Benchmark_authzFilter(b *testing.B) {
-	user := &types.User{
-		ID:        42,
-		Username:  "john.doe",
-		SiteAdmin: false,
-	}
-
-	Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-		return user, nil
-	}
-	defer func() { Mocks.Users.GetByCurrentAuthUser = nil }()
-
-	providers := []authz.Provider{
-		func() authz.Provider {
-			baseURL, _ := url.Parse("http://fake.provider")
-			codeHost := extsvc.NewCodeHost(baseURL, "fake")
-			return &fakeProvider{
-				codeHost: codeHost,
-				extAcct: &extsvc.Account{
-					UserID: user.ID,
-					AccountSpec: extsvc.AccountSpec{
-						ServiceType: codeHost.ServiceType,
-						ServiceID:   codeHost.ServiceID,
-						AccountID:   "42_ext",
-					},
-					AccountData: extsvc.AccountData{Data: nil},
-				},
-			}
-		}(),
-		func() authz.Provider {
-			baseURL, _ := url.Parse("https://github.com")
-			codeHost := extsvc.NewCodeHost(baseURL, extsvc.TypeGitHub)
-			return &fakeProvider{
-				codeHost: codeHost,
-				extAcct: &extsvc.Account{
-					UserID: user.ID,
-					AccountSpec: extsvc.AccountSpec{
-						ServiceType: codeHost.ServiceType,
-						ServiceID:   codeHost.ServiceID,
-						AccountID:   "42_ext",
-					},
-					AccountData: extsvc.AccountData{Data: nil},
-				},
-			}
-		}(),
-	}
-
-	{
-		authzAllowByDefault, providers := authz.GetProviders()
-		defer authz.SetProviders(authzAllowByDefault, providers)
-	}
-
-	authz.SetProviders(false, providers)
-
-	serviceIDs := make([]string, 0, len(providers))
-	for _, p := range providers {
-		serviceIDs = append(serviceIDs, p.ServiceID())
-	}
-
-	rs := make([]types.Repo, 30000)
-	for i := range rs {
-		id := i + 1
-		serviceID := serviceIDs[i%len(serviceIDs)]
-		rs[i] = types.Repo{
-			ID:           api.RepoID(id),
-			ExternalRepo: api.ExternalRepoSpec{ServiceID: serviceID},
-		}
-	}
-
-	repos := make([][]*types.Repo, b.N)
-	for i := range repos {
-		repos[i] = make([]*types.Repo, len(rs))
-		for j := range repos[i] {
-			repos[i][j] = &rs[j]
-		}
-	}
-
-	ctx := context.Background()
-
-	Mocks.ExternalAccounts.List = func(opt ExternalAccountsListOptions) (
-		accts []*extsvc.Account,
-		err error,
-	) {
-		for _, p := range providers {
-			acct, _ := p.FetchAccount(ctx, user, nil)
-			accts = append(accts, acct)
-		}
-		return accts, nil
-	}
-	defer func() { Mocks.ExternalAccounts.List = nil }()
-
-	b.ReportAllocs()
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		_, err := authzFilter(ctx, repos[i], authz.Read)
-		if err != nil {
-			b.Fatal(err)
-		}
-	}
-}
 
 type fakeProvider struct {
 	codeHost *extsvc.CodeHost
