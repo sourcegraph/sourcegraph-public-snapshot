@@ -15,7 +15,10 @@ go install ./cmd/src
 4.  GitHub will automatically perform the release via the [goreleaser action](https://github.com/sourcegraph/src-cli/actions?query=workflow%3AGoreleaser). Once it has finished, **you need to confirm**:
     1. The [curl commands in the README](README.markdown#installation) fetch the latest version above.
     2. The [releases section of the repo sidebar](https://github.com/sourcegraph/src-cli) shows the correct version.
-5.  Update the `MinimumVersion` constant in the [src-cli package](https://github.com/sourcegraph/sourcegraph/tree/main/internal/src-cli/consts.go).
+5.  Make the necessary updates to the main Sourcegraph repo:
+    1. Update the `MinimumVersion` constant in the [src-cli package](https://github.com/sourcegraph/sourcegraph/tree/main/internal/src-cli/consts.go).
+    2. Update the reference documentation by running `go generate ./doc/cli/references`.
+    3. Commit the changes, and open a PR.
 
 ### Patch releases
 
