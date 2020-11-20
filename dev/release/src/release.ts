@@ -557,7 +557,7 @@ Campaign: ${campaignURL}`,
             const campaignURL = campaigns.campaignURL(
                 campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphCLIConfig())
             )
-            const releaseMessage = `*${release.version} has been published*
+            const releaseMessage = `*Sourcegraph ${release.version} has been published*
 
 * Changelog: https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}
 * Release campaign: ${campaignURL}`
