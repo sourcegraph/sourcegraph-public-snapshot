@@ -15,7 +15,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -1011,25 +1010,37 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 	return conds, nil
 }
 
-// GetUserAddedRepoNames will fetch all repos added by the given user
+// GetUserAddedRepoNames returns name of all repositories added by the given user.
 func (s *RepoStore) GetUserAddedRepoNames(ctx context.Context, userID int32) ([]api.RepoName, error) {
 	s.ensureStore()
 
 	columns := minimalColumns(getBySQLColumns)
-	fmtString := fmt.Sprintf(`
-SELECT %s from repo
+
+	authzConds, err := authzQueryConds(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(jchen): Only select name
+	const fmtString = `
+SELECT %s FROM repo
 JOIN external_service_repos esr ON repo.id = esr.repo_id
-WHERE esr.external_service_id IN (
-    SELECT id from external_services
-    WHERE namespace_user_id = %%s
-    AND deleted_at IS NULL
-)
+WHERE
+	esr.external_service_id IN (
+		SELECT id from external_services
+		WHERE namespace_user_id = %%s
+		AND deleted_at IS NULL
+	)
+AND (%%s) -- Populates "authzConds"
 AND repo.deleted_at IS NULL
-`, strings.Join(columns, ","))
-	q := sqlf.Sprintf(fmtString, userID)
+`
+	q := sqlf.Sprintf(
+		fmt.Sprintf(fmtString, strings.Join(columns, ",")),
+		userID,
+		authzConds, // 🚨 SECURITY: Enforce repository permissions
+	)
 
 	rows, err := s.Query(ctx, q)
-
 	if err != nil {
 		return nil, errors.Wrap(err, "getting user repos")
 	}
@@ -1047,11 +1058,6 @@ AND repo.deleted_at IS NULL
 		return nil, err
 	}
 
-	// 🚨 SECURITY: This enforces repository permissions
-	repos, err = authzFilter(ctx, repos, authz.Read)
-	if err != nil {
-		return nil, errors.Wrap(err, "performing authz filter")
-	}
 	names := make([]api.RepoName, 0, len(repos))
 	for _, r := range repos {
 		names = append(names, r.Name)

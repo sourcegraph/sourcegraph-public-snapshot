@@ -267,16 +267,6 @@ func RepoUpdater() *Container {
 					},
 					{
 						Observable{
-							Name:              "authz_filter_duration",
-							Description:       "95th authorization duration",
-							Query:             `histogram_quantile(0.95, sum by (le) (rate(src_frontend_authz_filter_duration_seconds_bucket{success="true"}[1m])))`,
-							DataMayNotExist:   true,
-							Critical:          Alert().GreaterOrEqual(1).For(time.Minute),
-							PanelOptions:      PanelOptions().Unit(Seconds),
-							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "Check if database is overloaded.",
-						},
-						Observable{
 							Name:            "perms_syncer_sync_errors",
 							Description:     "permissions sync error rate",
 							Query:           `sum by (type) (rate(src_repoupdater_perms_syncer_sync_errors_total[1m])) / sum by (type) (rate(src_repoupdater_perms_syncer_sync_duration_seconds_count[1m]))`,
