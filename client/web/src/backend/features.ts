@@ -14,6 +14,8 @@ import { switchMap } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
 import { DocumentHighlight, FileDecorationsByPath } from 'sourcegraph'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
+import { Remote } from 'comlink'
+import { FlatExtensionHostAPI } from '../../../shared/src/api/contract'
 
 /**
  * Fetches hover information for the given location.
@@ -77,36 +79,44 @@ export function getDocumentHighlights(
 
 /**
  * Fetches file decorations
- *
- * Will sometimes ask for decorations for the same files, but is that an important enough problem
- * to solve (single child, then user clicks on its child)?
  */
-export const getFileDecorations = memoizeObservable(
+export const getFileDecorations = ({
+    extensionsController,
+    ...parameters
+}: {
+    files: { url: string; isDirectory: boolean; name: string; path: string }[]
+    /** uri of node from which this request is made. Used to construct cache key  */
+    parentNodeUri: string
+} & ExtensionsControllerProps &
+    RepoSpec &
+    ResolvedRevisionSpec): Observable<FileDecorationsByPath> =>
+    from(extensionsController.extHostAPI).pipe(
+        switchMap(extensionHost => getFileDecorationsFromHost({ ...parameters, extensionHost }))
+    )
+
+const getFileDecorationsFromHost = memoizeObservable(
     ({
         files,
-        extensionsController,
+        extensionHost,
         commitID,
         repoName,
     }: {
         files: { url: string; isDirectory: boolean; name: string; path: string }[]
-        // TODO(tj): explain nodeUrl
-        nodeUrl: string
-    } & ExtensionsControllerProps &
-        RepoSpec &
-        ResolvedRevisionSpec): Observable<FileDecorationsByPath> =>
-        from(extensionsController.extHostAPI).pipe(
-            switchMap(extensionHost =>
-                wrapRemoteObservable(
-                    extensionHost.getFileDecorations({
-                        uri: toRootURI({ repoName, commitID }),
-                        files: files.map(file => ({
-                            ...file,
-                            uri: toURIWithPath({ repoName, filePath: file.path, commitID }),
-                        })),
-                    })
-                )
-            )
-        ),
-
-    ({ nodeUrl, files }) => `nodeUrl:${nodeUrl} files:${files.length}`
+        /** uri of node from which this request is made. Used to construct cache key  */
+        parentNodeUri: string
+        extensionHost: Remote<FlatExtensionHostAPI>
+    } & RepoSpec &
+        ResolvedRevisionSpec) => {
+        console.log('making new file dec req to ext host??', { files })
+        return wrapRemoteObservable(
+            extensionHost.getFileDecorations({
+                uri: toRootURI({ repoName, commitID }),
+                files: files.map(file => ({
+                    ...file,
+                    uri: toURIWithPath({ repoName, filePath: file.path, commitID }),
+                })),
+            })
+        )
+    },
+    ({ parentNodeUri, files }) => `parentNodeUri:${parentNodeUri} files:${files.length}`
 )

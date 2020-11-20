@@ -18,6 +18,7 @@ import { Hover, Location } from '@sourcegraph/extension-api-types'
 import { castArray, groupBy, isEqual } from 'lodash'
 import { fromHoverMerged, HoverMerged } from '../client/types/hover'
 import { isNot, isExactly, isDefined } from '../../util/types'
+import { validateFileDecoration } from './api/decorations'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -186,10 +187,8 @@ export const initNewExtensionAPI = (
         },
 
         // Tree
-        getFileDecorations: (parameters: sourcegraph.FileDecorationContext) => {
-            console.log('got file dec req')
-
-            return proxySubscribable(
+        getFileDecorations: (parameters: sourcegraph.FileDecorationContext, logErrors: boolean = true) =>
+            proxySubscribable(
                 parameters.files.length === 0
                     ? EMPTY
                     : state.fileDecorationProviders.pipe(
@@ -198,21 +197,20 @@ export const initNewExtensionAPI = (
                               combineLatestOrDefault(
                                   providers.map(provider =>
                                       providerResultToObservable(provider(parameters)).pipe(
+                                          map(fileDecorations => fileDecorations.filter(validateFileDecoration)),
                                           catchError(error => {
-                                              // TODO(tj): conditional log errors
-                                              console.error('Provider errored:', error)
-                                              // TODO: validate (w/ zod?) decoration structure. all information that comes from an extension should be parsed to prevent breaking our UI
-                                              // This will be more common as third-parties start to write more extensions.
+                                              if (logErrors) {
+                                                  console.error('Provider errored:', error)
+                                              }
+
                                               return EMPTY
                                           })
                                       )
                                   )
-                                  // TODO(tj): profile
                               ).pipe(map(decorationsDecorations => groupBy(decorationsDecorations.flat(), 'path')))
                           )
                       )
-            )
-        },
+            ),
     }
 
     // Configuration

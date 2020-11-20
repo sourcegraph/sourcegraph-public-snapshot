@@ -1555,6 +1555,9 @@ declare module 'sourcegraph' {
         /** File path relative to repo root uri */
         path: string
 
+        /** Whether to display the decoration on the file tree panel or tree page. If omitted, it will be displayed in both locations  */
+        component?: 'panel' | 'page'
+
         /** An optional object that describes the text content contributed by the decoration */
         text?: {
             /** Text value to be displayed. This should value should be very short to prevent truncation */
@@ -1573,6 +1576,9 @@ declare module 'sourcegraph' {
 
             /** Tooltip text to display when hovering over the text content. */
             hoverMessage?: string
+
+            /** If set, the text becomes a link with this destination URL. */
+            linkUrl?: string
         }
 
         /** An optional object that describes a progress bar contributed by the decoration */
@@ -1594,6 +1600,9 @@ declare module 'sourcegraph' {
 
             /** Tooltip text to display when hovering over the progress bar. */
             hoverMessage?: string
+
+            /** If set, the progress bar becomes a link with this destination URL. */
+            linkUrl?: string
         }
     }
 

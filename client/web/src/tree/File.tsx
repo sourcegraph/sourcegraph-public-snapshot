@@ -56,7 +56,6 @@ export const File: React.FunctionComponent<FileProps> = props => (
                             <span className="tree__row-label">
                                 {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
                             </span>
-                            {/* File Decorations (TODO(tj): submodules in integration test) */}
                             {renderFileDecorations(props.fileDecorations)}
                         </div>
                     </div>

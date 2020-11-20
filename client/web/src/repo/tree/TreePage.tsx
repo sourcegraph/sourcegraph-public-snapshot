@@ -197,7 +197,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                               extensionsController: props.extensionsController,
                               repoName,
                               commitID,
-                              nodeUrl: treeOrError.url,
+                              parentNodeUri: treeOrError.url,
                           })
                         : EMPTY,
                 [treeOrError, repoName, commitID, props.extensionsController]

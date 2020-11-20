@@ -10,7 +10,6 @@ import { FileDecoration, FileDecorationsByPath } from 'sourcegraph'
 interface SingleChildTreeLayerProps extends TreeLayerProps {
     childrenEntries: SingleChildGitTree[]
 
-    /** TODO(tj): explain */
     fileDecorationsByPath: FileDecorationsByPath
 
     fileDecorations?: FileDecoration[]

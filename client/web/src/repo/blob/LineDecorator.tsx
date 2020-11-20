@@ -66,29 +66,31 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
             // Code view ref should always be set at this point
             if (codeViewReference.current) {
                 const codeCell = getCodeElementFromLineNumber(codeViewReference.current, line)
-                const row = codeCell?.parentElement as HTMLTableRowElement
+                const row = codeCell?.parentElement as HTMLTableRowElement | undefined
 
-                for (const decoration of decorations) {
-                    let decorated = false
-                    const style = decorationStyleForTheme(decoration, isLightTheme)
-                    if (style.backgroundColor) {
-                        row.style.backgroundColor = style.backgroundColor
-                        decorated = true
-                    }
-                    if (style.border) {
-                        row.style.border = style.border
-                        decorated = true
-                    }
-                    if (style.borderColor) {
-                        row.style.borderColor = style.borderColor
-                        decorated = true
-                    }
-                    if (style.borderWidth) {
-                        row.style.borderWidth = style.borderWidth
-                        decorated = true
-                    }
-                    if (decorated) {
-                        decoratedElements.push(row)
+                if (row) {
+                    for (const decoration of decorations) {
+                        let decorated = false
+                        const style = decorationStyleForTheme(decoration, isLightTheme)
+                        if (style.backgroundColor) {
+                            row.style.backgroundColor = style.backgroundColor
+                            decorated = true
+                        }
+                        if (style.border) {
+                            row.style.border = style.border
+                            decorated = true
+                        }
+                        if (style.borderColor) {
+                            row.style.borderColor = style.borderColor
+                            decorated = true
+                        }
+                        if (style.borderWidth) {
+                            row.style.borderWidth = style.borderWidth
+                            decorated = true
+                        }
+                        if (decorated) {
+                            decoratedElements.push(row)
+                        }
                     }
                 }
             } else {

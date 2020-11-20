@@ -1,6 +1,7 @@
 import React from 'react'
 import { FileDecoration } from 'sourcegraph'
 import { TreeEntryFields } from '../graphql-operations'
+import classNames from 'classnames'
 
 /** TreeEntryInfo is the information we need to render an entry in the file tree */
 export interface TreeEntryInfo {
@@ -85,36 +86,51 @@ export function hasSingleChild(tree: TreeEntryInfo[]): boolean {
     return tree[0]?.isSingleChild
 }
 
-// TODO(tj): impl get style by theme + directory vs file
 export function renderFileDecorations(fileDecorations?: FileDecoration[], isDirectory?: boolean): React.ReactNode {
-    // TODO(tj): key
-    // TODO(tj): margin logic
-    // early return if no decorations
     if (!fileDecorations || fileDecorations.length === 0) {
         return null
     }
 
-    // after checking decorations, early return if no percentage or texts
+    // Only try to render decorations with some type of content
+    // Don't need to validate types since that's done in the extension host
+    const validFileDecorations = fileDecorations.filter(
+        fileDecoration => fileDecoration.text || fileDecoration.percentage
+    )
+
+    if (validFileDecorations.length === 0) {
+        return null
+    }
+
     return (
-        <div className="d-flex align-items-center" style={{ marginRight: isDirectory ? 16 : 0 }}>
-            {fileDecorations.map(
-                fileDecoration =>
+        <div className={classNames('d-flex align-items-center text-nowrap', { 'mr-3': isDirectory })}>
+            {validFileDecorations.map(
+                (fileDecoration, index) =>
                     (fileDecoration.percentage || fileDecoration.text) && (
-                        <>
+                        <div
+                            className="d-flex align-items-center"
+                            // We want some margin right if this isn't the last decoration for this file
+                            // eslint-disable-next-line react/forbid-dom-props
+                            style={{ marginRight: index === validFileDecorations.length - 1 ? 0 : 12 }}
+                        >
                             {fileDecoration.text && (
-                                <span
-                                    style={{ color: fileDecoration.text.color, fontSize: 12, textDecoration: 'none' }}
+                                <small
+                                    // eslint-disable-next-line react/forbid-dom-props
+                                    style={{ color: fileDecoration.text.color }}
+                                    data-tooltip={fileDecoration.text.hoverMessage}
+                                    data-placement="bottom"
+                                    className="text-monospace text-decoration-none"
                                 >
                                     {fileDecoration.text.value}
-                                </span>
+                                </small>
                             )}
                             {fileDecoration.percentage && (
-                                // <progress
-                                //     value={fileDecoration.percentage.value}
-                                //     max="100"
-                                //     style={{ width: 24, color: fileDecoration.percentage.color }}
-                                // />
-                                <div className="progress" style={{ width: 24, borderRadius: 4, marginLeft: 8 }}>
+                                <div
+                                    className="progress rounded ml-2"
+                                    // eslint-disable-next-line react/forbid-dom-props
+                                    style={{ width: 24 }}
+                                    data-tooltip={fileDecoration.percentage.hoverMessage}
+                                    data-placement="bottom"
+                                >
                                     <div
                                         className="progress-bar"
                                         // eslint-disable-next-line react/forbid-dom-props
@@ -123,11 +139,13 @@ export function renderFileDecorations(fileDecorations?: FileDecoration[], isDire
                                             height: 4,
                                             backgroundColor: fileDecoration.percentage.color,
                                         }}
-                                        // TODO: aria-value
+                                        aria-valuemin={0}
+                                        aria-valuemax={100}
+                                        aria-valuenow={fileDecoration.percentage.value}
                                     />
                                 </div>
                             )}
-                        </>
+                        </div>
                     )
             )}
         </div>

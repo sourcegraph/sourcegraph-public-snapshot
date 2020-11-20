@@ -545,9 +545,10 @@ describe('Repository', () => {
     // Describes the ways the directory viewer can be extended through Sourcegraph extensions.
     describe('extensibility', () => {
         // This also tests a lot of tree view functionality
-        it('works with file decoration providers', async () => {
-            const repoName = 'github.com/sourcegraph/file-decs'
+        const repoName = 'github.com/sourcegraph/file-decs'
 
+        // tests both text content and progress bar, tests multiple decorations per file
+        beforeEach(() => {
             const userSettings: Settings = {
                 extensions: {
                     'test/test': true,
@@ -697,7 +698,6 @@ describe('Repository', () => {
                             },
                         }
                     }
-                    // TODO: repo root
 
                     // unknown
                     return {
@@ -780,13 +780,24 @@ describe('Repository', () => {
                     const extensionBundleString = `(${extensionBundle.toString()})()`
                     response.type('application/javascript; charset=utf-8').send(extensionBundleString)
                 })
+        })
 
+        it('file decorations work on ', async () => {
             // await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repoName}/-/tree/nested`)
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repoName}`)
 
+            // data-tooltip content
+
             await new Promise(() => {})
         })
+        // TODO(tj): need to implement overrideExtensions() to add tests for these cases,
+        // which are slighly less important than the existing tests, and would significantly
+        // lengthen this file atm
+        // - test conditional decorations (tree page and/or tree view)
+        // - multiple decorations of the same type
+        // - invalid decorations don't cause blob errors
     })
 
     // TODO(tj): test stacked file decs
+    // two different extensions, one that adds label with first 4 chars of filename, one that has progress bar with percentage of characters in filenames that are vowels (hard to debug tho...)
 })
