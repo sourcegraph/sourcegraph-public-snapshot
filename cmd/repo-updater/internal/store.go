@@ -646,6 +646,7 @@ FROM inserted_sources_list
 ON CONFLICT ON CONSTRAINT external_service_repos_repo_id_external_service_id_unique
 DO
   UPDATE SET clone_url = EXCLUDED.clone_url
+  WHERE external_service_repos.clone_url != EXCLUDED.clone_url
 `
 
 func (s *Store) SetClonedRepos(ctx context.Context, repoNames ...string) (err error) {
