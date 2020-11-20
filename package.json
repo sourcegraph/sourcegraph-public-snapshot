@@ -261,7 +261,7 @@
     "@reach/menu-button": "0.10.2",
     "@sentry/browser": "^5.19.0",
     "@slimsag/react-shortcuts": "^1.2.1",
-    "@sourcegraph/codeintellify": "^7.1.0",
+    "@sourcegraph/codeintellify": "^7.2.0",
     "@sourcegraph/extension-api-classes": "^1.1.0",
     "@sourcegraph/extension-api-types": "link:client/packages/@sourcegraph/extension-api-types",
     "@sourcegraph/react-loading-spinner": "0.0.7",
