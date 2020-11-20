@@ -8,6 +8,7 @@ cd "$root_dir"
 set -ex
 
 test/setup-deps.sh
+test/setup-display.sh
 
 cleanup() {
   cd "$root_dir"
