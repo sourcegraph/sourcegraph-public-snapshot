@@ -355,7 +355,7 @@ If you have changes that should go into this patch release, <${patchRequestTempl
                 const defaultBody = `This pull request is part of the Sourcegraph ${release.version} release.
 
 * [Release campaign](${campaignURL})
-* ${trackingIssue ? `[Tracking issue](${trackingIssue.url}` : 'No tracking issue exists for this release'}`
+* ${trackingIssue ? `[Tracking issue](${trackingIssue.url})` : 'No tracking issue exists for this release'}`
                 if (!actionItems || actionItems.length === 0) {
                     return { draft: false, body: defaultBody }
                 }
