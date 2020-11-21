@@ -364,7 +364,7 @@ func validatePureLiteralPattern(nodes []Node, balanced bool) error {
 	return nil
 }
 
-func validate(nodes []Node) error {
+func validateParameters(nodes []Node) error {
 	var err error
 	seen := map[string]struct{}{}
 	VisitParameter(nodes, func(field, value string, negated bool, _ Annotation) {
@@ -374,6 +374,11 @@ func validate(nodes []Node) error {
 		err = validateField(field, value, negated, seen)
 		seen[field] = struct{}{}
 	})
+	return err
+}
+
+func validatePattern(nodes []Node) error {
+	var err error
 	VisitPattern(nodes, func(value string, negated bool, annotation Annotation) {
 		if annotation.Labels.isSet(Regexp) {
 			if err != nil {
@@ -388,17 +393,24 @@ func validate(nodes []Node) error {
 			err = errors.New("the query contains a negated search pattern. Structural search does not support negated search patterns at the moment")
 		}
 	})
-	if err != nil {
-		return err
-	}
-	err = validateRepoRevPair(nodes)
-	if err != nil {
-		return err
-	}
-	err = validateRepoHasFile(nodes)
-	if err != nil {
-		return err
-	}
-	err = validateCommitParameters(nodes)
 	return err
+}
+
+func validate(nodes []Node) error {
+	succeeds := func(fns ...func([]Node) error) error {
+		for _, fn := range fns {
+			if err := fn(nodes); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	return succeeds(
+		validateParameters,
+		validatePattern,
+		validateRepoRevPair,
+		validateRepoHasFile,
+		validateCommitParameters,
+	)
 }
