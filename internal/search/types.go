@@ -1,10 +1,8 @@
 package search
 
 import (
-	"context"
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -18,10 +16,10 @@ type TypeParameters interface {
 	typeParametersValue()
 }
 
-func (c CommitParameters) typeParametersValue()  {}
-func (d DiffParameters) typeParametersValue()    {}
-func (s SymbolsParameters) typeParametersValue() {}
-func (t TextParameters) typeParametersValue()    {}
+func (CommitParameters) typeParametersValue()  {}
+func (DiffParameters) typeParametersValue()    {}
+func (SymbolsParameters) typeParametersValue() {}
+func (TextParameters) typeParametersValue()    {}
 
 type CommitParameters struct {
 	RepoRevs           *RepositoryRevisions
@@ -34,6 +32,21 @@ type CommitParameters struct {
 type DiffParameters struct {
 	Repo    gitserver.Repo
 	Options git.RawLogDiffSearchOptions
+}
+
+// CommitPatternInfo is the data type that describes the properties of
+// a pattern used for commit search.
+type CommitPatternInfo struct {
+	Pattern         string
+	IsRegExp        bool
+	IsCaseSensitive bool
+	FileMatchLimit  int32
+
+	IncludePatterns []string
+	ExcludePattern  string
+
+	PathPatternsAreRegExps       bool
+	PathPatternsAreCaseSensitive bool
 }
 
 type SymbolsParameters struct {
@@ -77,48 +90,6 @@ const (
 	SearcherOnly
 	NoFilePath
 )
-
-type Promise struct {
-	getOnce sync.Once
-	err     error
-
-	initOnce sync.Once
-	done     chan struct{}
-
-	valueOnce sync.Once
-	value     interface{}
-}
-
-func (p *Promise) init() {
-	p.initOnce.Do(func() { p.done = make(chan struct{}) })
-}
-
-// Resolve returns a promise that is resolved with a given value.
-func (p *Promise) Resolve(v interface{}) *Promise {
-	p.valueOnce.Do(func() {
-		p.init()
-		p.value = v
-		close(p.done)
-	})
-	return p
-}
-
-// Get returns the value. It blocks until the promise resolves or the context is
-// canceled. Further calls to Get will always return the original results, IE err
-// will stay nil even if the context expired between the first and the second
-// call. Vice versa, if ctx finishes while resolving, then we will always return
-// ctx.Err()
-func (p *Promise) Get(ctx context.Context) (interface{}, error) {
-	p.getOnce.Do(func() {
-		p.init()
-		select {
-		case <-ctx.Done():
-			p.err = ctx.Err()
-		case <-p.done:
-		}
-	})
-	return p.value, p.err
-}
 
 // TextParameters are the parameters passed to a search backend. It contains the Pattern
 // to search for, as well as the hydrated list of repository revisions to
@@ -237,19 +208,4 @@ func (p *TextPatternInfo) String() string {
 	}
 
 	return fmt.Sprintf("TextPatternInfo{%s}", strings.Join(args, ","))
-}
-
-// CommitPatternInfo is the data type that describes the properties of
-// a pattern used for commit search.
-type CommitPatternInfo struct {
-	Pattern         string
-	IsRegExp        bool
-	IsCaseSensitive bool
-	FileMatchLimit  int32
-
-	IncludePatterns []string
-	ExcludePattern  string
-
-	PathPatternsAreRegExps       bool
-	PathPatternsAreCaseSensitive bool
 }
