@@ -132,20 +132,13 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
             for (const token of scannedQuery.term) {
                 if (
                     token.type === 'filter' &&
-                    (token.filterType.value === FilterType.repo ||
-                        token.filterType.value === FILTERS[FilterType.repo].alias)
+                    (token.field.value === FilterType.repo || token.field.value === FILTERS[FilterType.repo].alias)
                 ) {
-                    if (
-                        token.filterValue?.type === 'literal' &&
-                        !recentlySearchedRepos.includes(token.filterValue.value)
-                    ) {
-                        recentlySearchedRepos.push(token.filterValue.value)
+                    if (token.value?.type === 'literal' && !recentlySearchedRepos.includes(token.value.value)) {
+                        recentlySearchedRepos.push(token.value.value)
                     }
-                    if (
-                        token.filterValue?.type === 'quoted' &&
-                        !recentlySearchedRepos.includes(token.filterValue.quotedValue)
-                    ) {
-                        recentlySearchedRepos.push(token.filterValue.quotedValue)
+                    if (token.value?.type === 'quoted' && !recentlySearchedRepos.includes(token.value.quotedValue)) {
+                        recentlySearchedRepos.push(token.value.quotedValue)
                     }
                 }
             }

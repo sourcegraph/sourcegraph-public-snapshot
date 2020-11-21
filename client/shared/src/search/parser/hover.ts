@@ -18,7 +18,7 @@ export const getHoverResult = (
     tokensAtCursor.map(token => {
         switch (token.type) {
             case 'filter': {
-                const resolvedFilter = resolveFilter(token.filterType.value)
+                const resolvedFilter = resolveFilter(token.field.value)
                 if (resolvedFilter) {
                     values.push(
                         'negated' in resolvedFilter
