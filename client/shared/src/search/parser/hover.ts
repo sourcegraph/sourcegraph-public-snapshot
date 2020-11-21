@@ -9,24 +9,34 @@ export const getHoverResult = (
     tokens: Token[],
     { column }: Pick<Monaco.Position, 'column'>
 ): Monaco.languages.Hover | null => {
-    const tokenAtColumn = tokens.find(({ range }) => range.start + 1 <= column && range.end >= column)
-    if (!tokenAtColumn || tokenAtColumn.type !== 'filter') {
+    const tokensAtCursor = tokens.filter(({ range }) => range.start + 1 <= column && range.end >= column)
+    if (tokensAtCursor.length === 0) {
         return null
     }
-    const token = tokenAtColumn
-    const resolvedFilter = resolveFilter(token.filterType.value)
-    if (!resolvedFilter) {
-        return null
-    }
+    const values: string[] = []
+    let range: Monaco.IRange | undefined
+    tokensAtCursor.map(token => {
+        switch (token.type) {
+            case 'filter': {
+                const resolvedFilter = resolveFilter(token.filterType.value)
+                if (resolvedFilter) {
+                    values.push(
+                        'negated' in resolvedFilter
+                            ? resolvedFilter.definition.description(resolvedFilter.negated)
+                            : resolvedFilter.definition.description
+                    )
+                    range = toMonacoRange(token.range)
+                }
+                break
+            }
+        }
+    })
     return {
-        contents: [
-            {
-                value:
-                    'negated' in resolvedFilter
-                        ? resolvedFilter.definition.description(resolvedFilter.negated)
-                        : resolvedFilter.definition.description,
-            },
-        ],
-        range: toMonacoRange(tokenAtColumn.range),
+        contents: values.map<Monaco.IMarkdownString>(
+            (value): Monaco.IMarkdownString => ({
+                value,
+            })
+        ),
+        range,
     }
 }
