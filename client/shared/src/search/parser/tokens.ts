@@ -280,24 +280,18 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                     continue
                 }
                 if (pattern.value[start] !== undefined) {
-                    if (pattern.value[start] === ':') {
-                        // '::' case, so push the first ':' and continue.
-                        token.push(':')
-                        continue
-                    }
                     // Look ahead and see if this is the start of a hole.
-                    current = nextChar()
-                    if (current === '[') {
-                        // It is the start of a hole.
+                    if (pattern.value[start] === '[') {
+                        // It is the start of a hole, consume the '['.
+                        current = nextChar()
                         open = open + 1
                         // Persist the literal token scanned up to this point.
                         appendDecoratedToken(start - 2, PatternKind.Literal)
                         token.push(':[')
                         continue
                     }
-                    // Something else, push the ':' we saw, backtrack, and continue.
+                    // Something else, push the ':' we saw and continue.
                     token.push(':')
-                    start = start - 1
                     continue
                 }
                 // Trailing ':'.

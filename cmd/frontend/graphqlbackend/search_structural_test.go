@@ -188,7 +188,7 @@ func TestStructuralPatToRegexpQuery(t *testing.T) {
 		{
 			Name:    "Not well-formed is undefined",
 			Pattern: ":[[",
-			Want:    `(.|\s)*?`,
+			Want:    `(:\[\[)`,
 		},
 		{
 			Name:    "Complex regex with character class",
