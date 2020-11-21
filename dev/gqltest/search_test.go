@@ -281,16 +281,16 @@ func TestSearch(t *testing.T) {
 				query: `repo:^github\.com/sgtest/mux$`,
 			},
 			{
-				name:  `Structural search returns repo results if pattern is empty`,
-				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ patterntype:structural`,
-			},
-			{
 				name:  `exclude counts for fork and archive`,
 				query: `repo:mux|archived|go-diff`,
 				wantMissing: []string{
 					"github.com/sgtest/archived",
 					"github.com/sgtest/mux",
 				},
+			},
+			{
+				name:  `Structural search returns repo results if patterntype set but pattern is empty`,
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ patterntype:structural`,
 			},
 		}
 		for _, test := range tests {
