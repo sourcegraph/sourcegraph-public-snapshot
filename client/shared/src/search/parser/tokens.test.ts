@@ -15,7 +15,7 @@ describe('getMonacoTokens()', () => {
             getMonacoTokens(toSuccess(scanSearchQuery('r:^github.com/sourcegraph f:code_intelligence trackViews')))
         ).toStrictEqual([
             {
-                scopes: 'filterKeyword',
+                scopes: 'field',
                 startIndex: 0,
             },
             {
@@ -27,7 +27,7 @@ describe('getMonacoTokens()', () => {
                 startIndex: 25,
             },
             {
-                scopes: 'filterKeyword',
+                scopes: 'field',
                 startIndex: 26,
             },
             {
@@ -48,7 +48,7 @@ describe('getMonacoTokens()', () => {
     test('search query containing parenthesized parameters', () => {
         expect(getMonacoTokens(toSuccess(scanSearchQuery('r:a (f:b and c)')))).toStrictEqual([
             {
-                scopes: 'filterKeyword',
+                scopes: 'field',
                 startIndex: 0,
             },
             {
@@ -64,7 +64,7 @@ describe('getMonacoTokens()', () => {
                 startIndex: 4,
             },
             {
-                scopes: 'filterKeyword',
+                scopes: 'field',
                 startIndex: 5,
             },
             {
@@ -436,12 +436,15 @@ describe('getMonacoTokens()', () => {
 
     test('decorate regexp field values', () => {
         expect(
-            getMonacoTokens(toSuccess(scanSearchQuery('repo:^foo$ count:.*', false, SearchPatternType.regexp)), true)
+            getMonacoTokens(
+                toSuccess(scanSearchQuery('repo:^foo$ count:10 file:.* fork:yes', false, SearchPatternType.regexp)),
+                true
+            )
         ).toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,
-                "scopes": "filterKeyword"
+                "scopes": "field"
               },
               {
                 "startIndex": 5,
@@ -469,10 +472,38 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 11,
-                "scopes": "filterKeyword"
+                "scopes": "field"
               },
               {
                 "startIndex": 17,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 19,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 20,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 25,
+                "scopes": "regexpMetaCharacterSet"
+              },
+              {
+                "startIndex": 26,
+                "scopes": "regexpMetaRangeQuantifier"
+              },
+              {
+                "startIndex": 27,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 28,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 33,
                 "scopes": "identifier"
               }
             ]
@@ -554,7 +585,7 @@ describe('getMonacoTokens()', () => {
             [
               {
                 "startIndex": 0,
-                "scopes": "filterKeyword"
+                "scopes": "field"
               },
               {
                 "startIndex": 5,
@@ -702,7 +733,7 @@ describe('getMonacoTokens()', () => {
             [
               {
                 "startIndex": 0,
-                "scopes": "filterKeyword"
+                "scopes": "field"
               },
               {
                 "startIndex": 2,
@@ -751,7 +782,7 @@ describe('getMonacoTokens()', () => {
             [
               {
                 "startIndex": 0,
-                "scopes": "filterKeyword"
+                "scopes": "field"
               },
               {
                 "startIndex": 2,
@@ -795,7 +826,7 @@ describe('getMonacoTokens()', () => {
             [
               {
                 "startIndex": 0,
-                "scopes": "filterKeyword"
+                "scopes": "field"
               },
               {
                 "startIndex": 2,
@@ -850,7 +881,7 @@ describe('getMonacoTokens()', () => {
             [
               {
                 "startIndex": 0,
-                "scopes": "filterKeyword"
+                "scopes": "field"
               },
               {
                 "startIndex": 2,
