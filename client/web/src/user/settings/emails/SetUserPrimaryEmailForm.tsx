@@ -1,15 +1,16 @@
-import React, { useState, FunctionComponent, useCallback } from 'react'
+import React, { useState, FunctionComponent, useCallback, useEffect } from 'react'
 import * as H from 'history'
 
 import { IUserEmail } from '../../../../../shared/src/graphql/schema'
 import { requestGraphQL } from '../../../backend/graphql'
 import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
+import { SetUserEmailPrimaryResult, SetUserEmailPrimaryVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { asError } from '../../../../../shared/src/util/errors'
 
 import { Form } from '../../../../../branded/src/components/Form'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ErrorAlert } from '../../../components/alerts'
-import { SetUserEmailPrimaryResult, SetUserEmailPrimaryVariables } from '../../../graphql-operations'
 
 interface Props {
     user: string
@@ -25,18 +26,27 @@ interface UserEmailState {
 }
 
 export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails, onDidSet, className, history }) => {
-    const [primaryEmail, setPrimaryEmail] = useState<string>()
+    const [primaryEmail, setPrimaryEmail] = useState<string>('')
+    const [options, setOptions] = useState<string[]>([])
     const [status, setStatus] = useState<UserEmailState>({ loading: false })
 
-    const options = emails.reduce((accumulator: string[], email) => {
-        if (!email.isPrimary && email.verified) {
-            accumulator.push(email.email)
-        }
-        return accumulator
-    }, [])
+    useEffect(() => {
+        const options = emails.reduce((accumulator: string[], email) => {
+            if (!email.isPrimary && email.verified) {
+                accumulator.push(email.email)
+            }
+            return accumulator
+        }, [])
 
-    const defaultOption = emails.find(email => email.isPrimary)?.email
-    const disabled = options.length === 0
+        setOptions(options)
+
+        const defaultOption = emails.find(email => email.isPrimary)?.email
+        /**
+         * If there are options, non-primary and verified emails
+         * Use the first value as default value on the initial render
+         */
+        setPrimaryEmail(options[0] || defaultOption || '')
+    }, [emails])
 
     const onPrimaryEmailSelect: React.ChangeEventHandler<HTMLSelectElement> = event =>
         setPrimaryEmail(event.target.value)
@@ -60,7 +70,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
                     ).toPromise()
                 )
             } catch (error) {
-                setStatus({ loading: false, errorDescription: error as Error })
+                setStatus({ loading: false, error: asError(error) })
                 return
             }
 
@@ -87,11 +97,10 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
                     value={primaryEmail}
                     onChange={onPrimaryEmailSelect}
                     required={true}
-                    disabled={disabled}
-                    defaultValue={defaultOption}
+                    disabled={options.length === 0}
                 >
-                    {disabled ? (
-                        <option value={defaultOption}>{defaultOption}</option>
+                    {options.length === 0 ? (
+                        <option value={primaryEmail}>{primaryEmail}</option>
                     ) : (
                         options.map(email => (
                             <option key={email} value={email}>
@@ -99,12 +108,12 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
                             </option>
                         ))
                     )}
-                </select>{' '}
+                </select>
                 <LoaderButton
                     loading={status.loading}
                     label="Save"
                     type="submit"
-                    disabled={disabled || status.loading}
+                    disabled={options.length === 0 || status.loading}
                     className="btn btn-primary"
                 />
             </Form>

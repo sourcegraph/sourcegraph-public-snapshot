@@ -105,7 +105,6 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
             setStatus({ loading: false, error: asError(error) })
         }
 
-        // TODO: check this logic
         if (fetchedEmails?.node?.emails) {
             setStatus({ loading: false })
             setEmails(fetchedEmails.node.emails)
@@ -160,8 +159,15 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
                 </div>
             )}
 
-            {/* re-fetch emails when new emails are added to guarantee correct state */}
-            <AddUserEmailForm className="mt-4" user={user.id} onDidAdd={fetchEmails} history={history} />
+            {/* re-fetch emails on onDidAdd to guarantee correct state */}
+            {/* Note: key - is a workaround to clear state in useInputValidation hook when the email is added */}
+            <AddUserEmailForm
+                key={emails.length}
+                className="mt-4"
+                user={user.id}
+                onDidAdd={fetchEmails}
+                history={history}
+            />
             <hr className="my-4" />
             {!status.loading && (
                 <SetUserPrimaryEmailForm
