@@ -322,6 +322,25 @@ func validateCommitParameters(nodes []Node) error {
 	return nil
 }
 
+// validateRepoHasFile validates that the repohasfile parameter can be executed.
+// A query like `repohasfile:foo type:symbol patter-to-match-symbols` is
+// currently not supported.
+func validateRepoHasFile(nodes []Node) error {
+	var seenRepoHasFile, seenTypeSymbol bool
+	VisitParameter(nodes, func(field, value string, _ bool, _ Annotation) {
+		if field == FieldRepoHasFile {
+			seenRepoHasFile = true
+		}
+		if field == FieldType && strings.ToLower(value) == "symbol" {
+			seenTypeSymbol = true
+		}
+	})
+	if seenRepoHasFile && seenTypeSymbol {
+		return errors.New("repohasfile is not compatible for type:symbol. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4610 for updates")
+	}
+	return nil
+}
+
 // validatePureLiteralPattern checks that no pattern expression contains and/or
 // operators nested inside concat. It may happen that we interpret a query this
 // way due to ambiguity. If this happens, return an error message.
@@ -373,6 +392,10 @@ func validate(nodes []Node) error {
 		return err
 	}
 	err = validateRepoRevPair(nodes)
+	if err != nil {
+		return err
+	}
+	err = validateRepoHasFile(nodes)
 	if err != nil {
 		return err
 	}
