@@ -4069,10 +4069,10 @@
   resolved "https://registry.npmjs.org/@types/prop-types/-/prop-types-15.5.6.tgz#9c03d3fed70a8d517c191b7734da2879b50ca26c"
   integrity sha512-ZBFR7TROLVzCkswA3Fmqq+IIJt62/T7aY/Dmz+QkU7CaW2QFqAitCE8Ups7IzmGhcN1YWMBT4Qcoc07jU9hOJQ==
 
-"@types/puppeteer@3.0.3":
-  version "3.0.3"
-  resolved "https://registry.npmjs.org/@types/puppeteer/-/puppeteer-3.0.3.tgz#db0066e294cb9a1572d8e25fc68705e6d270ee8b"
-  integrity sha512-JDrg4N5hzKvtZsD62DV6i5h5hxKtZF+Q79YmGIacAVyJNcG1OWR0ty+e6LwqGWaoEt5lPeTtA2Z7OuTjUg6rag==
+"@types/puppeteer@5.4.0":
+  version "5.4.0"
+  resolved "https://registry.npmjs.org/@types/puppeteer/-/puppeteer-5.4.0.tgz#1ef860bd7a9dcf0c4633aac8c0ec21f75b431868"
+  integrity sha512-zTYDLjnHjgzokrwKt7N0rgn7oZPYo1J0m8Ghu+gXqzLCEn8RWbELa2uprE2UFJ0jU/Sk0x9jXXdOH/5QQLFHhQ==
   dependencies:
     "@types/node" "*"
 
@@ -8756,10 +8756,10 @@ detect-port@^1.3.0:
     address "^1.0.1"
     debug "^2.6.0"
 
-devtools-protocol@0.0.781568:
-  version "0.0.781568"
-  resolved "https://registry.npmjs.org/devtools-protocol/-/devtools-protocol-0.0.781568.tgz#4cdca90a952d2c77831096ff6cd32695d8715a04"
-  integrity sha512-9Uqnzy6m6zEStluH9iyJ3iHyaQziFnMnLeC8vK0eN6smiJmIx7+yB64d67C2lH/LZra+5cGscJAJsNXO+MdPMg==
+devtools-protocol@0.0.818844:
+  version "0.0.818844"
+  resolved "https://registry.npmjs.org/devtools-protocol/-/devtools-protocol-0.0.818844.tgz#d1947278ec85b53e4c8ca598f607a28fa785ba9e"
+  integrity sha512-AD1hi7iVJ8OD0aMLQU5VK0XH9LDlA1+BcPIgrAxPfaibx2DbWucuyOhc4oyQCbnvDDO68nN6/LcKfqTP343Jjg==
 
 dezalgo@^1.0.0, dezalgo@~1.0.3:
   version "1.0.3"
@@ -18399,16 +18399,16 @@ puppeteer-firefox@^0.5.1:
     rimraf "^2.6.1"
     ws "^6.1.0"
 
-puppeteer@5.2.1, puppeteer@^5.0.0:
-  version "5.2.1"
-  resolved "https://registry.npmjs.org/puppeteer/-/puppeteer-5.2.1.tgz#7f0564f0a5384f352a38c8cc42af875cd87f4ea6"
-  integrity sha512-PZoZG7u+T6N1GFWBQmGVG162Ak5MAy8nYSVpeeQrwJK2oYUlDWpHEJPcd/zopyuEMTv7DiztS1blgny1txR2qw==
+puppeteer@5.5.0, puppeteer@^5.0.0:
+  version "5.5.0"
+  resolved "https://registry.npmjs.org/puppeteer/-/puppeteer-5.5.0.tgz#331a7edd212ca06b4a556156435f58cbae08af00"
+  integrity sha512-OM8ZvTXAhfgFA7wBIIGlPQzvyEETzDjeRa4mZRCRHxYL+GNH5WAuYUQdja3rpWZvkX/JKqmuVgbsxDNsDFjMEg==
   dependencies:
     debug "^4.1.0"
-    devtools-protocol "0.0.781568"
+    devtools-protocol "0.0.818844"
     extract-zip "^2.0.0"
     https-proxy-agent "^4.0.0"
-    mime "^2.0.3"
+    node-fetch "^2.6.1"
     pkg-dir "^4.2.0"
     progress "^2.0.1"
     proxy-from-env "^1.0.0"
