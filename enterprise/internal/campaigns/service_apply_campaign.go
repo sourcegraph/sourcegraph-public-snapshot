@@ -144,7 +144,19 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		campaign: campaign,
 		mappings: mappings,
 	}
-	if err := rewirer.Rewire(ctx); err != nil {
+	changesets, err := rewirer.Rewire(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, changeset := range changesets {
+		if err := tx.UpsertChangeset(ctx, changeset); err != nil {
+			return nil, err
+		}
+		campaign.ChangesetIDs = append(campaign.ChangesetIDs, changeset.ID)
+	}
+
+	if err := tx.UpdateCampaign(ctx, campaign); err != nil {
 		return nil, err
 	}
 
@@ -162,15 +174,17 @@ type changesetRewirer struct {
 // for consumption by the background reconciler.
 //
 // It also updates the ChangesetIDs on the campaign.
-func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
+func (r *changesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.Changeset, err error) {
 	// First we need to load the associations.
 	accessibleReposByID, changesetsByID, changesetSpecsByID, err := r.loadAssociations(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Reset the attached changesets. We will add all we encounter while processing the mappings to this list again.
 	r.campaign.ChangesetIDs = []int64{}
+
+	changesets = []*campaigns.Changeset{}
 
 	for _, m := range r.mappings {
 		// If no changeset spec matched, a changeset must have matched, and it needs to be closed/detached.
@@ -178,7 +192,7 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 			changeset, ok := changesetsByID[m.ChangesetID]
 			if !ok {
 				// This should never happen.
-				return errors.New("changeset not found")
+				return nil, errors.New("changeset not found")
 			}
 
 			// If we don't have access to a repository, we don't detach nor close the changeset.
@@ -188,7 +202,7 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 			}
 
 			if err := r.closeChangeset(ctx, changeset); err != nil {
-				return err
+				return nil, err
 			}
 
 			continue
@@ -197,7 +211,7 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 		spec, ok := changesetSpecsByID[m.ChangesetSpecID]
 		if !ok {
 			// This should never happen.
-			return errors.New("spec not found")
+			return nil, errors.New("spec not found")
 		}
 
 		// If we don't have access to a repository, we return an error. Why not
@@ -206,11 +220,11 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 		// would require a new spec.
 		repo, ok := accessibleReposByID[m.RepoID]
 		if !ok {
-			return &db.RepoNotFoundErr{ID: m.RepoID}
+			return nil, &db.RepoNotFoundErr{ID: m.RepoID}
 		}
 
 		if err := checkRepoSupported(repo); err != nil {
-			return err
+			return nil, err
 		}
 
 		var changeset *campaigns.Changeset
@@ -219,31 +233,27 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (err error) {
 			changeset, ok = changesetsByID[m.ChangesetID]
 			if !ok {
 				// This should never happen.
-				return errors.New("changeset not found")
+				return nil, errors.New("changeset not found")
 			}
 			if spec.Spec.IsImportingExisting() {
-				err = r.attachTrackingChangeset(ctx, changeset)
+				r.attachTrackingChangeset(changeset)
 			} else if spec.Spec.IsBranch() {
-				err = r.updateChangesetToNewSpec(ctx, changeset, spec)
+				r.updateChangesetToNewSpec(changeset, spec)
 			}
 		} else {
 			if spec.Spec.IsImportingExisting() {
-				changeset, err = r.createTrackingChangeset(ctx, repo, spec.Spec.ExternalID)
+				changeset = r.createTrackingChangeset(repo, spec.Spec.ExternalID)
 			} else if spec.Spec.IsBranch() {
-				changeset, err = r.createChangesetForSpec(ctx, repo, spec)
+				changeset = r.createChangesetForSpec(repo, spec)
 			}
 		}
-		if err != nil {
-			return err
-		}
-
-		r.campaign.ChangesetIDs = append(r.campaign.ChangesetIDs, changeset.ID)
+		changesets = append(changesets, changeset)
 	}
 
-	return r.tx.UpdateCampaign(ctx, r.campaign)
+	return changesets, nil
 }
 
-func (r *changesetRewirer) createChangesetForSpec(ctx context.Context, repo *types.Repo, spec *campaigns.ChangesetSpec) (*campaigns.Changeset, error) {
+func (r *changesetRewirer) createChangesetForSpec(repo *types.Repo, spec *campaigns.ChangesetSpec) *campaigns.Changeset {
 	newChangeset := &campaigns.Changeset{
 		RepoID:              spec.RepoID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
@@ -260,10 +270,10 @@ func (r *changesetRewirer) createChangesetForSpec(ctx context.Context, repo *typ
 	diffStat := spec.DiffStat()
 	newChangeset.SetDiffStat(&diffStat)
 
-	return newChangeset, r.tx.CreateChangeset(ctx, newChangeset)
+	return newChangeset
 }
 
-func (r *changesetRewirer) updateChangesetToNewSpec(ctx context.Context, c *campaigns.Changeset, spec *campaigns.ChangesetSpec) error {
+func (r *changesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec *campaigns.ChangesetSpec) {
 	c.PreviousSpecID = c.CurrentSpecID
 	c.CurrentSpecID = spec.ID
 
@@ -278,11 +288,9 @@ func (r *changesetRewirer) updateChangesetToNewSpec(ctx context.Context, c *camp
 	// reconciler wakes up, compares old and new spec and, if
 	// necessary, updates the changesets accordingly.
 	c.ResetQueued()
-
-	return r.tx.UpdateChangeset(ctx, c)
 }
 
-func (r *changesetRewirer) createTrackingChangeset(ctx context.Context, repo *types.Repo, externalID string) (*campaigns.Changeset, error) {
+func (r *changesetRewirer) createTrackingChangeset(repo *types.Repo, externalID string) *campaigns.Changeset {
 	newChangeset := &campaigns.Changeset{
 		RepoID:              repo.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
@@ -299,10 +307,10 @@ func (r *changesetRewirer) createTrackingChangeset(ctx context.Context, repo *ty
 		Unsynced:        true,
 	}
 
-	return newChangeset, r.tx.CreateChangeset(ctx, newChangeset)
+	return newChangeset
 }
 
-func (r *changesetRewirer) attachTrackingChangeset(ctx context.Context, changeset *campaigns.Changeset) error {
+func (r *changesetRewirer) attachTrackingChangeset(changeset *campaigns.Changeset) {
 	// We already have a changeset with the given repoID and
 	// externalID, so we can track it.
 	changeset.AddedToCampaign = true
@@ -312,7 +320,6 @@ func (r *changesetRewirer) attachTrackingChangeset(ctx context.Context, changese
 	if changeset.OwnedByCampaignID == 0 && changeset.ReconcilerState == campaigns.ReconcilerStateErrored {
 		changeset.ResetQueued()
 	}
-	return r.tx.UpdateChangeset(ctx, changeset)
 }
 
 func (r *changesetRewirer) closeChangeset(ctx context.Context, changeset *campaigns.Changeset) error {

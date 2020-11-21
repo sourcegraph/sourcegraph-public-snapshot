@@ -152,6 +152,14 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 	return sqlf.Sprintf(q, vars...), nil
 }
 
+// UpsertChangeset creates or updates the given Changeset.
+func (s *Store) UpsertChangeset(ctx context.Context, c *campaigns.Changeset) error {
+	if c.ID == 0 {
+		return s.CreateChangeset(ctx, c)
+	}
+	return s.UpdateChangeset(ctx, c)
+}
+
 // CreateChangeset creates the given Changeset.
 func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) error {
 	if c.CreatedAt.IsZero() {
