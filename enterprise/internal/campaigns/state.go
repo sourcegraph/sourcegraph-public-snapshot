@@ -333,6 +333,10 @@ func parseGithubCheckState(s string) campaigns.ChangesetCheckState {
 }
 
 func parseGithubCheckSuiteState(status, conclusion string) campaigns.ChangesetCheckState {
+	// Schema Changes for 2020-02-05
+	// Enum value STALE was added to enum CheckConclusionState
+	// Enum value SKIPPED was added to enum CheckConclusionState
+
 	status = strings.ToUpper(status)
 	conclusion = strings.ToUpper(conclusion)
 	switch status {

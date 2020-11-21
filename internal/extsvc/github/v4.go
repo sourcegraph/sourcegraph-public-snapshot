@@ -46,6 +46,8 @@ type V4Client struct {
 
 	// rateLimit is our self imposed rate limiter.
 	rateLimit *rate.Limiter
+
+	EnterpriseVersion string
 }
 
 // NewV4Client creates a new GitHub GraphQL API client with an optional default
@@ -95,7 +97,9 @@ func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Cli
 // the current V4Client, except authenticated as the GitHub user with the given
 // authenticator instance (most likely a token).
 func (c *V4Client) WithAuthenticator(a auth.Authenticator) *V4Client {
-	return NewV4Client(c.apiURL, a, c.httpClient)
+	newC := NewV4Client(c.apiURL, a, c.httpClient)
+	newC.EnterpriseVersion = c.EnterpriseVersion
+	return newC
 }
 
 func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[string]interface{}, result interface{}) (err error) {

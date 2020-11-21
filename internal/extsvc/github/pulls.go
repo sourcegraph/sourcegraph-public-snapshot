@@ -8,13 +8,33 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
+// Schema Changes for 2020-04-15
+// Enum value CONVERT_TO_DRAFT_EVENT was added to enum PullRequestTimelineItemsItemType
 // timelineItemTypes contains all the types requested via GraphQL from the timelineItems connection on a pull request.
-const timelineItemTypes = `ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT, READY_FOR_REVIEW_EVENT, CONVERT_TO_DRAFT_EVENT`
+const timelineItemTypes = `ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT, READY_FOR_REVIEW_EVENT`
+
+var ghe220Semver, _ = semver.NewConstraint("~2.20.0")
+var ghe221PlusSemver, _ = semver.NewConstraint("^2.21.0")
+
+func timelineItemTypesForGH(isDotCom bool, gheVersion string) (string, error) {
+	if isDotCom {
+		return timelineItemTypes + `, CONVERT_TO_DRAFT_EVENT`, nil
+	}
+	version := semver.MustParse(gheVersion)
+	if ghe220Semver.Check(version) {
+		return timelineItemTypes, nil
+	}
+	if ghe221PlusSemver.Check(version) {
+		return timelineItemTypes + `, CONVERT_TO_DRAFT_EVENT`, nil
+	}
+	return "", errors.New("unsupported version of GitHub enterprise")
+}
 
 // PageInfo contains the paging information based on the Redux conventions.
 type PageInfo struct {
@@ -508,13 +528,17 @@ type CreatePullRequestInput struct {
 	// The body of the pull request (optional).
 	Body string `json:"body"`
 	// When true the PR will be in draft mode initially.
-	Draft bool `json:"draft"`
+	Draft bool `json:"-"`
 }
 
 // CreatePullRequest creates a PullRequest on Github.
 func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInput) (*PullRequest, error) {
+	prFragment, err := pullRequestFragments(c.githubDotCom, c.EnterpriseVersion)
+	if err != nil {
+		return nil, err
+	}
 	var q strings.Builder
-	q.WriteString(pullRequestFragments)
+	q.WriteString(prFragment)
 	q.WriteString(`mutation	CreatePullRequest($input:CreatePullRequestInput!) {
   createPullRequest(input:$input) {
     pullRequest {
@@ -533,8 +557,22 @@ func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestI
 		} `json:"createPullRequest"`
 	}
 
-	input := map[string]interface{}{"input": in}
-	err := c.requestGraphQL(ctx, q.String(), input, &result)
+	compatibleInput := map[string]interface{}{
+		"repositoryId": in.RepositoryID,
+		"baseRefName":  in.BaseRefName,
+		"headRefName":  in.HeadRefName,
+		"title":        in.Title,
+		"body":         in.Body,
+	}
+
+	if c.githubDotCom || ghe221PlusSemver.Check(semver.MustParse(c.EnterpriseVersion)) {
+		compatibleInput["draft"] = in.Draft
+	} else if in.Draft {
+		return nil, errors.New("draft PRs not supported by this version of GitHub enterprise. GitHub Enterprise v3.21 is the first version to support draft PRs.\nPotential fix: set `published: true` in your campaign spec.")
+	}
+
+	input := map[string]interface{}{"input": compatibleInput}
+	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		if gqlErrs, ok := err.(graphqlErrors); ok && len(gqlErrs) == 1 {
 			e := gqlErrs[0]
@@ -573,8 +611,12 @@ type UpdatePullRequestInput struct {
 
 // UpdatePullRequest creates a PullRequest on Github.
 func (c *V4Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error) {
+	prFragment, err := pullRequestFragments(c.githubDotCom, c.EnterpriseVersion)
+	if err != nil {
+		return nil, err
+	}
 	var q strings.Builder
-	q.WriteString(pullRequestFragments)
+	q.WriteString(prFragment)
 	q.WriteString(`mutation	UpdatePullRequest($input:UpdatePullRequestInput!) {
   updatePullRequest(input:$input) {
     pullRequest {
@@ -594,7 +636,7 @@ func (c *V4Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestI
 	}
 
 	input := map[string]interface{}{"input": in}
-	err := c.requestGraphQL(ctx, q.String(), input, &result)
+	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		if gqlErrs, ok := err.(graphqlErrors); ok && len(gqlErrs) == 1 {
 			e := gqlErrs[0]
@@ -621,8 +663,12 @@ func (c *V4Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestI
 
 // MarkPullRequestReadyForReview marks the PullRequest on Github as ready for review.
 func (c *V4Client) MarkPullRequestReadyForReview(ctx context.Context, pr *PullRequest) error {
+	prFragment, err := pullRequestFragments(c.githubDotCom, c.EnterpriseVersion)
+	if err != nil {
+		return err
+	}
 	var q strings.Builder
-	q.WriteString(pullRequestFragments)
+	q.WriteString(prFragment)
 	q.WriteString(`mutation	MarkPullRequestReadyForReview($input:MarkPullRequestReadyForReviewInput!) {
   markPullRequestReadyForReview(input:$input) {
     pullRequest {
@@ -644,7 +690,7 @@ func (c *V4Client) MarkPullRequestReadyForReview(ctx context.Context, pr *PullRe
 	input := map[string]interface{}{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
-	err := c.requestGraphQL(ctx, q.String(), input, &result)
+	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		return err
 	}
@@ -665,8 +711,12 @@ func (c *V4Client) MarkPullRequestReadyForReview(ctx context.Context, pr *PullRe
 
 // ClosePullRequest closes the PullRequest on Github.
 func (c *V4Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
+	prFragment, err := pullRequestFragments(c.githubDotCom, c.EnterpriseVersion)
+	if err != nil {
+		return err
+	}
 	var q strings.Builder
-	q.WriteString(pullRequestFragments)
+	q.WriteString(prFragment)
 	q.WriteString(`mutation	ClosePullRequest($input:ClosePullRequestInput!) {
   closePullRequest(input:$input) {
     pullRequest {
@@ -688,7 +738,7 @@ func (c *V4Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error 
 	input := map[string]interface{}{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
-	err := c.requestGraphQL(ctx, q.String(), input, &result)
+	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		return err
 	}
@@ -709,8 +759,12 @@ func (c *V4Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error 
 
 // ReopenPullRequest reopens the PullRequest on Github.
 func (c *V4Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
+	prFragment, err := pullRequestFragments(c.githubDotCom, c.EnterpriseVersion)
+	if err != nil {
+		return err
+	}
 	var q strings.Builder
-	q.WriteString(pullRequestFragments)
+	q.WriteString(prFragment)
 	q.WriteString(`mutation	ReopenPullRequest($input:ReopenPullRequestInput!) {
   reopenPullRequest(input:$input) {
     pullRequest {
@@ -732,7 +786,7 @@ func (c *V4Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error
 	input := map[string]interface{}{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
-	err := c.requestGraphQL(ctx, q.String(), input, &result)
+	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		return err
 	}
@@ -758,7 +812,12 @@ func (c *V4Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 		return err
 	}
 
-	q := pullRequestFragments + `
+	prFragment, err := pullRequestFragments(c.githubDotCom, c.EnterpriseVersion)
+	if err != nil {
+		return err
+	}
+
+	q := prFragment + `
 query($owner: String!, $name: String!, $number: Int!) {
 	repository(owner: $owner, name: $name) {
 		pullRequest(number: $number) { ...pr }
@@ -814,8 +873,12 @@ query($owner: String!, $name: String!, $number: Int!) {
 // refs. GitHub only allows one open PR by ref at a time.
 // If nothing is found an error is returned.
 func (c *V4Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, baseRef, headRef string) (*PullRequest, error) {
+	prFragment, err := pullRequestFragments(c.githubDotCom, c.EnterpriseVersion)
+	if err != nil {
+		return nil, err
+	}
 	var q strings.Builder
-	q.WriteString(pullRequestFragments)
+	q.WriteString(prFragment)
 	q.WriteString("query {\n")
 	q.WriteString(fmt.Sprintf("repository(owner: %q, name: %q) {\n",
 		owner, name))
@@ -836,7 +899,7 @@ func (c *V4Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, ba
 		}
 	}
 
-	err := c.requestGraphQL(ctx, q.String(), nil, &results)
+	err = c.requestGraphQL(ctx, q.String(), nil, &results)
 	if err != nil {
 		return nil, err
 	}
@@ -859,6 +922,14 @@ func (c *V4Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, ba
 }
 
 func (c *V4Client) loadRemainingTimelineItems(ctx context.Context, prID string, pageInfo PageInfo) (items []TimelineItem, err error) {
+	timelineItemTypes, err := timelineItemTypesForGH(c.githubDotCom, c.EnterpriseVersion)
+	if err != nil {
+		return nil, err
+	}
+	timelineItemsFragment, err := timelineItemsFragment2(c.githubDotCom, c.EnterpriseVersion)
+	if err != nil {
+		return nil, err
+	}
 	pi := pageInfo
 	for pi.HasNextPage {
 		var q strings.Builder
@@ -927,7 +998,7 @@ fragment label on Label {
 
 // This fragment was formatted using the "prettify" button in the GitHub API explorer:
 // https://developer.github.com/v4/explorer/
-const timelineItemsFragment = `
+const timelineItemsFragmentFmtstr = `
 fragment commit on Commit {
   oid
   message
@@ -1094,12 +1165,6 @@ fragment timelineItems on PullRequestTimelineItems {
     }
     createdAt
   }
-  ... on ConvertToDraftEvent {
-    actor {
-      ...actor
-    }
-    createdAt
-  }
   ... on UnassignedEvent {
     actor {
       ...actor
@@ -1132,12 +1197,37 @@ fragment timelineItems on PullRequestTimelineItems {
       ...commit
     }
   }
+  %s
 }
 `
 
+const convertToDraftEventFmtstr = `
+  ... on ConvertToDraftEvent {
+    actor {
+	  ...actor
+	}
+	createdAt
+  }
+`
+
+func timelineItemsFragment2(isDotCom bool, gheVersion string) (string, error) {
+	if isDotCom {
+		return fmt.Sprintf(timelineItemsFragmentFmtstr, convertToDraftEventFmtstr), nil
+	}
+	version := semver.MustParse(gheVersion)
+	if ghe220Semver.Check(version) {
+		// Don't ask for isDraft for ghe 220
+		return fmt.Sprintf(timelineItemsFragmentFmtstr, ""), nil
+	}
+	if ghe221PlusSemver.Check(version) {
+		return fmt.Sprintf(timelineItemsFragmentFmtstr, convertToDraftEventFmtstr), nil
+	}
+	return "", errors.New("unsupported version of GitHub enterprise")
+}
+
 // This fragment was formatted using the "prettify" button in the GitHub API explorer:
 // https://developer.github.com/v4/explorer/
-const pullRequestFragments = prCommonFragments + timelineItemsFragment + `
+const pullRequestFragmentsFmtstr = prCommonFragments + `
 fragment commitWithChecks on Commit {
   oid
   status {
@@ -1185,7 +1275,7 @@ fragment pr on PullRequest {
   baseRefOid
   headRefName
   baseRefName
-  isDraft
+  %s
   author {
     ...actor
   }
@@ -1204,7 +1294,7 @@ fragment pr on PullRequest {
       ...prCommit
     }
   }
-  timelineItems(first: 250, itemTypes: [` + timelineItemTypes + `]) {
+  timelineItems(first: 250, itemTypes: [%s]) {
     pageInfo {
       hasNextPage
       endCursor
@@ -1216,3 +1306,26 @@ fragment pr on PullRequest {
   }
 }
 `
+
+func pullRequestFragments(isDotCom bool, gheVersion string) (string, error) {
+	timelineItemTypes, err := timelineItemTypesForGH(isDotCom, gheVersion)
+	if err != nil {
+		return "", err
+	}
+	timelineItemsFragment, err := timelineItemsFragment2(isDotCom, gheVersion)
+	if err != nil {
+		return "", err
+	}
+	if isDotCom {
+		return fmt.Sprintf(timelineItemsFragment+pullRequestFragmentsFmtstr, "isDraft", timelineItemTypes), nil
+	}
+	version := semver.MustParse(gheVersion)
+	if ghe220Semver.Check(version) {
+		// Don't ask for isDraft for ghe 220
+		return fmt.Sprintf(timelineItemsFragment+pullRequestFragmentsFmtstr, "", timelineItemTypes), nil
+	}
+	if ghe221PlusSemver.Check(version) {
+		return fmt.Sprintf(timelineItemsFragment+pullRequestFragmentsFmtstr, "isDraft", timelineItemTypes), nil
+	}
+	return "", errors.New("unsupported version of GitHub enterprise")
+}
