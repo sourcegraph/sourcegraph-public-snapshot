@@ -1263,8 +1263,8 @@ type SiteConfiguration struct {
 type Step struct {
 	// Container description: The Docker image used to launch the Docker container in which the shell command is run.
 	Container string `json:"container"`
-	// Env description: Environment variables to set in the environment when running this command.
-	Env map[string]string `json:"env,omitempty"`
+	// Env description: Environment variables to set in the step environment.
+	Env interface{} `json:"env,omitempty"`
 	// Files description: Files that should be mounted into or be created inside the Docker container.
 	Files map[string]string `json:"files,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
