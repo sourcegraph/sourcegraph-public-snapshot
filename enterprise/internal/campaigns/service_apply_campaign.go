@@ -342,6 +342,7 @@ func (r *ChangesetRewirer) closeChangeset(ctx context.Context, changeset *campai
 		// _this_ campaign that means we should detach and close it.
 
 		// But only if it was created on the code host:
+		// TODO: Determine if this makes sense. We'll have to close a lot of changesets all the time otherwise.
 		if changeset.Published() && changeset.ExternalState == campaigns.ChangesetExternalStateOpen {
 			// Store the current spec also as the previous spec.
 			// Reason:

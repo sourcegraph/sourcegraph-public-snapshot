@@ -169,6 +169,15 @@ func (r *changesetSpecResolver) Changeset(ctx context.Context) (graphqlbackend.C
 		return nil, err
 	}
 	for _, m := range mappings {
+		if m.ChangesetSpecID == 0 {
+			changeset, err := r.store.GetChangeset(ctx, ee.GetChangesetOpts{ID: m.ChangesetID})
+			if err != nil {
+				return nil, err
+			}
+			fmt.Printf("Will close changeset %s\n", changeset.ExternalID)
+		}
+	}
+	for _, m := range mappings {
 		if m.ChangesetSpecID == r.changesetSpec.ID {
 			if m.ChangesetID == 0 {
 				return nil, nil

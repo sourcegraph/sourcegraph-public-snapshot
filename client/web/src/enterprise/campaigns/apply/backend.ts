@@ -108,6 +108,12 @@ export const changesetSpecFieldsFragment = gql`
         id
         expiresAt
         type
+        operations
+        changeset {
+            ... on ExternalChangeset {
+                title
+            }
+        }
     }
 
     fragment VisibleChangesetSpecFields on VisibleChangesetSpec {
@@ -115,6 +121,12 @@ export const changesetSpecFieldsFragment = gql`
         id
         expiresAt
         type
+        operations
+        changeset {
+            ... on ExternalChangeset {
+                title
+            }
+        }
         description {
             __typename
             ...ExistingChangesetReferenceFields
