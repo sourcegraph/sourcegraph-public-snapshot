@@ -21,7 +21,7 @@ trap cleanup EXIT
 # Run and initialize an old Sourcegraph release
 IMAGE=sourcegraph/server:$MINIMUM_UPGRADEABLE_VERSION ./dev/run-server-image.sh -d --name sourcegraph-old
 sleep 15
-go run test/init-server.go
+go run dev/ci/test/init-server.go
 
 # Load variables set up by init-server, disabling `-x` to avoid printing variables
 set +x

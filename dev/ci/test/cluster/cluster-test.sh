@@ -57,7 +57,7 @@ function test_setup() {
   curl "$SOURCEGRAPH_BASE_URL"
 
   # setup admin users, etc
-  go run test/init-server.go -base-url="$SOURCEGRAPH_BASE_URL"
+  go run dev/ci/test/init-server.go -base-url="$SOURCEGRAPH_BASE_URL"
 
   # Load variables set up by init-server, disabling `-x` to avoid printing variables, setting +u to avoid blowing up on ubound ones
   set +x +u
