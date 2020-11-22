@@ -40,6 +40,7 @@ type StepID =
     | 'release:create-candidate'
     | 'release:stage'
     | 'release:add-to-campaign'
+    | 'release:finalize'
     | 'release:close'
     // testing
     | '_test:google-calendar'
@@ -416,7 +417,8 @@ cc @${config.captainGitHubUsername}
                                     )
                                 }
                                 items.push(
-                                    'Ensure all other pull requests in the campaign has been merged before merging this pull request'
+                                    'Ensure all other pull requests in the campaign has been merged before merging this pull request',
+                                    'Run `yarn run release:finalize` to generate the tags required, and re-run Buildkite on this pull request'
                                 )
                                 return items
                             })()
@@ -520,12 +522,10 @@ Campaign: ${campaignURL}`,
         },
     },
     {
-        id: 'release:close',
-        description: 'Mark a release as closed',
+        id: 'release:finalize',
+        description: 'Run final tasks for the sourcegraph/sourcegraph release pull request',
         run: async config => {
-            const { slackAnnounceChannel } = config
             const { upcoming: release } = await releaseVersions(config)
-            const githubClient = await getAuthenticatedGitHubClient()
 
             // Push final tags
             const branch = `${release.major}.${release.minor}`
@@ -542,17 +542,22 @@ Campaign: ${campaignURL}`,
                     config.dryRun.tags || false
                 )
             }
-            if (config.dryRun.tags) {
-                console.error('Do not close release with dry run! Aborting')
-                return
-            }
+        },
+    },
+    {
+        id: 'release:close',
+        description: 'Mark a release as closed',
+        run: async config => {
+            const { slackAnnounceChannel } = config
+            const { upcoming: release } = await releaseVersions(config)
+            const githubClient = await getAuthenticatedGitHubClient()
 
             // Set up announcement message
-            const versionAnchor = release.version.replace('.', '-')
+            const versionAnchor = release.version.replaceAll('.', '-')
             const campaignURL = campaigns.campaignURL(
                 campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphCLIConfig())
             )
-            const releaseMessage = `*${release.version} has been published*
+            const releaseMessage = `*Sourcegraph ${release.version} has been published*
 
 * Changelog: https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}
 * Release campaign: ${campaignURL}`
