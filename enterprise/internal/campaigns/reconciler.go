@@ -784,6 +784,10 @@ func DeterminePlan(previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campa
 		}
 
 	case campaigns.ChangesetPublicationStatePublished:
+		// Don't take any actions for merged changesets.
+		if ch.ExternalState == campaigns.ChangesetExternalStateMerged {
+			return pl, nil
+		}
 		if reopenAfterDetach(ch) {
 			pl.SetOp(OperationReopen)
 		}

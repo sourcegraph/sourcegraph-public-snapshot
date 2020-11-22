@@ -154,7 +154,7 @@ func (r *changesetSpecResolver) Changeset(ctx context.Context) (graphqlbackend.C
 		return nil, err
 	}
 	svc := ee.NewService(r.store, r.httpFactory)
-	campaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, r.store, campaignSpec)
+	campaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, campaignSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -193,17 +193,14 @@ func (r *changesetSpecResolver) Operations(ctx context.Context) ([]string, error
 		return nil, err
 	}
 	svc := ee.NewService(r.store, r.httpFactory)
-	campaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, r.store, campaignSpec)
+	campaign, err := svc.ReconcileCampaign(ctx, campaignSpec)
 	if err != nil {
 		return nil, err
 	}
-	var campaignID int64 = -1
-	// If a matching campaign exists, join that one.
-	if campaign != nil {
-		campaignID = campaign.ID
-	}
 
-	mappings, err := r.store.GetRewirerMappings(ctx, ee.GetRewirerMappingsOpts{CampaignID: campaignID, CampaignSpecID: campaignSpec.ID})
+	mappings, err := r.store.GetRewirerMappings(ctx, ee.GetRewirerMappingsOpts{
+		// TODO: This can be null but it is fine, because a campaign is not required for the query. Prob just need to document it.
+		CampaignID: campaign.ID, CampaignSpecID: campaignSpec.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -227,33 +224,21 @@ func (r *changesetSpecResolver) Operations(ctx context.Context) ([]string, error
 				}
 			}
 			if changeset == nil {
-				if campaign == nil {
-					campaign = &campaigns.Campaign{
-						ID: -1,
-					}
-				}
 				rewirer := ee.ChangesetRewirer{
-					Mappings: mappings,
+					Mappings: campaigns.RewirerMappings{m},
 					Campaign: campaign,
 					RStore:   repos.NewDBStore(r.store.DB(), sql.TxOptions{}),
 					TX:       r.store,
 				}
-				repo, err := r.computeRepo()
-				if err != nil {
-					return nil, err
-				}
-				tx, err := r.store.Transact(ctx)
-				if err != nil {
-					return nil, err
-				}
-				defer func() { err = tx.Done(err) }()
 
-				if r.changesetSpec.Spec.IsBranch() {
-					changeset, _ = rewirer.CreateChangesetForSpec(ctx, repo.Type(), r.changesetSpec)
-				} else {
-					changeset, _ = rewirer.CreateTrackingChangeset(ctx, repo.Type(), r.changesetSpec.Spec.ExternalID)
+				changesets, err := rewirer.Rewire(ctx)
+				if err != nil {
+					return nil, err
 				}
-				tx.Done(errors.New("rollback"))
+				if len(changesets) != 1 {
+					return nil, errors.New("invalid changesets len, want 1")
+				}
+				changeset = changesets[0]
 			}
 			plan, err := ee.DeterminePlan(previousSpec, r.changesetSpec, changeset)
 			if err != nil {

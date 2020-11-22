@@ -63,13 +63,12 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		return nil, err
 	}
 
-	campaign, err = s.GetCampaignMatchingCampaignSpec(ctx, s.store, campaignSpec)
+	campaign, err = s.ReconcileCampaign(ctx, campaignSpec)
 	if err != nil {
 		return nil, err
 	}
-	if campaign == nil {
-		campaign = &campaigns.Campaign{}
-	} else if opts.FailIfCampaignExists {
+
+	if campaign.ID != 0 && opts.FailIfCampaignExists {
 		return nil, ErrMatchingCampaignExists
 	}
 
@@ -81,9 +80,9 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		return nil, ErrApplyClosedCampaign
 	}
 
-	if campaign.CampaignSpecID == campaignSpec.ID {
-		return campaign, nil
-	}
+	// if campaign.CampaignSpecID == campaignSpec.ID {
+	// 	return campaign, nil
+	// }
 
 	// Before we write to the database in a transaction, we cancel all
 	// currently enqueued/errored-and-retryable changesets the campaign might
@@ -101,19 +100,6 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
-
-	// Populate the campaign with the values from the campaign spec.
-	campaign.CampaignSpecID = campaignSpec.ID
-	campaign.NamespaceOrgID = campaignSpec.NamespaceOrgID
-	campaign.NamespaceUserID = campaignSpec.NamespaceUserID
-	campaign.Name = campaignSpec.Spec.Name
-	actor := actor.FromContext(ctx)
-	if campaign.InitialApplierID == 0 {
-		campaign.InitialApplierID = actor.UID
-	}
-	campaign.LastApplierID = actor.UID
-	campaign.LastAppliedAt = s.clock()
-	campaign.Description = campaignSpec.Spec.Description
 
 	if campaign.ID == 0 {
 		err := tx.CreateCampaign(ctx, campaign)
@@ -163,6 +149,29 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	return campaign, nil
 }
 
+func (s *Service) ReconcileCampaign(ctx context.Context, campaignSpec *campaigns.CampaignSpec) (*campaigns.Campaign, error) {
+	campaign, err := s.GetCampaignMatchingCampaignSpec(ctx, campaignSpec)
+	if err != nil {
+		return nil, err
+	}
+	if campaign == nil {
+		campaign = &campaigns.Campaign{}
+	}
+	// Populate the campaign with the values from the campaign spec.
+	campaign.CampaignSpecID = campaignSpec.ID
+	campaign.NamespaceOrgID = campaignSpec.NamespaceOrgID
+	campaign.NamespaceUserID = campaignSpec.NamespaceUserID
+	campaign.Name = campaignSpec.Spec.Name
+	actor := actor.FromContext(ctx)
+	if campaign.InitialApplierID == 0 {
+		campaign.InitialApplierID = actor.UID
+	}
+	campaign.LastApplierID = actor.UID
+	campaign.LastAppliedAt = s.clock()
+	campaign.Description = campaignSpec.Spec.Description
+	return campaign, nil
+}
+
 type ChangesetRewirer struct {
 	Mappings campaigns.RewirerMappings
 	Campaign *campaigns.Campaign
@@ -201,8 +210,10 @@ func (r *ChangesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 				continue
 			}
 
-			if err := r.closeChangeset(ctx, changeset); err != nil {
+			if c, err := r.closeChangeset(ctx, changeset); err != nil {
 				return nil, err
+			} else if c != nil {
+				changesets = append(changesets, c)
 			}
 
 			continue
@@ -325,13 +336,13 @@ func (r *ChangesetRewirer) attachTrackingChangeset(changeset *campaigns.Changese
 	}
 }
 
-func (r *ChangesetRewirer) closeChangeset(ctx context.Context, changeset *campaigns.Changeset) error {
+func (r *ChangesetRewirer) closeChangeset(ctx context.Context, changeset *campaigns.Changeset) (*campaigns.Changeset, error) {
 	if changeset.CurrentSpecID != 0 && changeset.OwnedByCampaignID == r.Campaign.ID {
 		// If we have a current spec ID and the changeset was created by
 		// _this_ campaign that means we should detach and close it.
 
 		// But only if it was created on the code host:
-		if changeset.Published() {
+		if changeset.Published() && changeset.ExternalState == campaigns.ChangesetExternalStateOpen {
 			// Store the current spec also as the previous spec.
 			// Reason:
 			// When a changeset with (prev: 0, curr: 1) should be closed but closing failed, it will still have (0, 1) set.
@@ -343,13 +354,13 @@ func (r *ChangesetRewirer) closeChangeset(ctx context.Context, changeset *campai
 			changeset.ResetQueued()
 		} else {
 			// otherwise we simply delete it.
-			return r.TX.DeleteChangeset(ctx, changeset.ID)
+			return nil, r.TX.DeleteChangeset(ctx, changeset.ID)
 		}
 	}
 
 	// Disassociate the changeset with the campaign.
 	changeset.RemoveCampaignID(r.Campaign.ID)
-	return r.TX.UpdateChangeset(ctx, changeset)
+	return changeset, nil
 }
 
 // loadAssociations retrieves all entities required to rewire a campaign.
