@@ -842,7 +842,7 @@ func TestDeterminePlan(t *testing.T) {
 		previousSpec   testSpecOpts
 		currentSpec    testSpecOpts
 		changeset      testChangesetOpts
-		wantOperations operations
+		wantOperations Operations
 	}{
 		{
 			name: "GitHub publish",
@@ -854,7 +854,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPush, operationPublish},
+			wantOperations: Operations{OperationPush, OperationPublish},
 		},
 		{
 			name: "GitHub publish as draft",
@@ -866,7 +866,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPush, operationPublishDraft},
+			wantOperations: Operations{OperationPush, OperationPublishDraft},
 		},
 		{
 			name: "GitHub publish false",
@@ -878,7 +878,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{},
+			wantOperations: Operations{},
 		},
 		{
 			name: "set to draft but unsupported",
@@ -891,7 +891,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState:    campaigns.ChangesetPublicationStateUnpublished,
 				repo:                bbsRepo.ID,
 			},
-			wantOperations: operations{},
+			wantOperations: Operations{},
 		},
 		{
 			name: "set from draft to publish true",
@@ -907,7 +907,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationUndraft},
+			wantOperations: Operations{OperationUndraft},
 		},
 		{
 			name: "set from draft to publish true on unpublished",
@@ -923,7 +923,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPush, operationPublish},
+			wantOperations: Operations{OperationPush, OperationPublish},
 		},
 		{
 			name: "changeset spec changed attribute, needs update",
@@ -941,7 +941,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationUpdate},
+			wantOperations: Operations{OperationUpdate},
 		},
 		{
 			name: "changeset spec changed, needs new commit but no update",
@@ -959,7 +959,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPush, operationSleep, operationSync},
+			wantOperations: Operations{OperationPush, OperationSleep, OperationSync},
 		},
 	}
 
@@ -979,11 +979,11 @@ func TestDeterminePlan(t *testing.T) {
 			currentSpec := createChangesetSpec(t, ctx, tx, tc.currentSpec)
 			tc.changeset.currentSpec = currentSpec.ID
 			cs := createChangeset(t, ctx, tx, tc.changeset)
-			plan, err := determinePlan(previousSpec, currentSpec, cs)
+			plan, err := DeterminePlan(previousSpec, currentSpec, cs)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if have, want := plan.ops, tc.wantOperations; !have.Equal(want) {
+			if have, want := plan.Ops, tc.wantOperations; !have.Equal(want) {
 				t.Fatalf("incorrect plan determined, want=%v have=%v", want, have)
 			}
 		})
@@ -1455,8 +1455,8 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	fakeSource := &ct.FakeChangesetSource{Svc: extSvc}
 	sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
-	plan := &plan{}
-	plan.AddOp(operationPush)
+	plan := &Plan{}
+	plan.AddOp(OperationPush)
 
 	tests := []struct {
 		name           string

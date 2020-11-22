@@ -2,14 +2,19 @@ package resolvers
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -141,6 +146,129 @@ func (r *changesetSpecResolver) ToVisibleChangesetSpec() (graphqlbackend.Visible
 	}
 
 	return r, true
+}
+
+func (r *changesetSpecResolver) Changeset(ctx context.Context) (graphqlbackend.ChangesetResolver, error) {
+	campaignSpec, err := r.store.GetCampaignSpec(ctx, ee.GetCampaignSpecOpts{ID: r.changesetSpec.CampaignSpecID})
+	if err != nil {
+		return nil, err
+	}
+	svc := ee.NewService(r.store, r.httpFactory)
+	campaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, r.store, campaignSpec)
+	if err != nil {
+		return nil, err
+	}
+	// If we don't have a matching campaign, no changesets exist yet to match against.
+	// TODO: This is not 100% correct, for importing changesets this could still be true.
+	if campaign == nil {
+		return nil, nil
+	}
+
+	mappings, err := r.store.GetRewirerMappings(ctx, ee.GetRewirerMappingsOpts{CampaignID: campaign.ID, CampaignSpecID: campaignSpec.ID})
+	if err != nil {
+		return nil, err
+	}
+	for _, m := range mappings {
+		if m.ChangesetSpecID == r.changesetSpec.ID {
+			if m.ChangesetID == 0 {
+				return nil, nil
+			}
+			changeset, err := r.store.GetChangeset(ctx, ee.GetChangesetOpts{ID: m.ChangesetID})
+			if err != nil {
+				return nil, err
+			}
+			repo, err := r.computeRepo()
+			if err != nil {
+				return nil, err
+			}
+			return NewChangesetResolver(r.store, r.httpFactory, changeset, repo.Type()), nil
+		}
+	}
+	return nil, nil
+}
+
+func (r *changesetSpecResolver) Operations(ctx context.Context) ([]string, error) {
+	campaignSpec, err := r.store.GetCampaignSpec(ctx, ee.GetCampaignSpecOpts{ID: r.changesetSpec.CampaignSpecID})
+	if err != nil {
+		return nil, err
+	}
+	svc := ee.NewService(r.store, r.httpFactory)
+	campaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, r.store, campaignSpec)
+	if err != nil {
+		return nil, err
+	}
+	var campaignID int64 = -1
+	// If a matching campaign exists, join that one.
+	if campaign != nil {
+		campaignID = campaign.ID
+	}
+
+	mappings, err := r.store.GetRewirerMappings(ctx, ee.GetRewirerMappingsOpts{CampaignID: campaignID, CampaignSpecID: campaignSpec.ID})
+	if err != nil {
+		return nil, err
+	}
+	j, _ := json.Marshal(mappings)
+	log15.Warn("Retrieved mappings", "mappings", string(j))
+
+	for _, m := range mappings {
+		if m.ChangesetSpecID == r.changesetSpec.ID {
+			var previousSpec *campaigns.ChangesetSpec
+			var changeset *campaigns.Changeset
+			if m.ChangesetID != 0 {
+				changeset, err = r.store.GetChangeset(ctx, ee.GetChangesetOpts{ID: m.ChangesetID})
+				if err != nil {
+					return nil, err
+				}
+				if changeset.CurrentSpecID != 0 {
+					previousSpec, err = r.store.GetChangesetSpec(ctx, ee.GetChangesetSpecOpts{ID: changeset.CurrentSpecID})
+					if err != nil {
+						return nil, err
+					}
+				}
+			}
+			if changeset == nil {
+				if campaign == nil {
+					campaign = &campaigns.Campaign{
+						ID: -1,
+					}
+				}
+				rewirer := ee.ChangesetRewirer{
+					Mappings: mappings,
+					Campaign: campaign,
+					RStore:   repos.NewDBStore(r.store.DB(), sql.TxOptions{}),
+					TX:       r.store,
+				}
+				repo, err := r.computeRepo()
+				if err != nil {
+					return nil, err
+				}
+				tx, err := r.store.Transact(ctx)
+				if err != nil {
+					return nil, err
+				}
+				defer func() { err = tx.Done(err) }()
+
+				if r.changesetSpec.Spec.IsBranch() {
+					changeset, _ = rewirer.CreateChangesetForSpec(ctx, repo.Type(), r.changesetSpec)
+				} else {
+					changeset, _ = rewirer.CreateTrackingChangeset(ctx, repo.Type(), r.changesetSpec.Spec.ExternalID)
+				}
+				tx.Done(errors.New("rollback"))
+			}
+			plan, err := ee.DeterminePlan(previousSpec, r.changesetSpec, changeset)
+			if err != nil {
+				return nil, err
+			}
+
+			eo := plan.Ops.ExecutionOrder()
+			operations := make([]string, len(eo))
+			for i, e := range eo {
+				operations[i] = string(e)
+			}
+			return operations, nil
+		}
+	}
+	return nil, nil
 }
 
 var _ graphqlbackend.ChangesetDescription = &changesetDescriptionResolver{}

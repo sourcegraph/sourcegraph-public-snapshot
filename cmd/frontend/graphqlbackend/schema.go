@@ -903,6 +903,9 @@ interface ChangesetSpec {
     spec never expires (and this field is null) if its campaign spec has been applied.
     """
     expiresAt: DateTime
+
+    changeset: Changeset
+    operations: [String!]!
 }
 
 """
@@ -932,6 +935,9 @@ type HiddenChangesetSpec implements ChangesetSpec & Node {
     spec never expires (and this field is null) if its campaign spec has been applied.
     """
     expiresAt: DateTime
+
+    changeset: Changeset
+    operations: [String!]!
 }
 
 """
@@ -966,6 +972,9 @@ type VisibleChangesetSpec implements ChangesetSpec & Node {
     spec never expires (and this field is null) if its campaign spec has been applied.
     """
     expiresAt: DateTime
+
+    changeset: Changeset
+    operations: [String!]!
 }
 
 """
