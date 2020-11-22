@@ -21,12 +21,6 @@ import commandExists from 'command-exists'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
-/**
- * Convenience function for getting relevant configured releases as semver.SemVer
- *
- * It prompts for a confirmation of the `upcomingRelease` that is cached for a week.
- */
-
 type StepID =
     | 'help'
     // release tracking
@@ -341,7 +335,7 @@ If you have changes that should go into this patch release, <${patchRequestTempl
             const campaign = campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphCLIConfig())
 
             // default values
-            const isPatchRelease = release.patch === 0
+            const notPatchRelease = release.patch === 0
             const versionRegex = '[0-9]+\\.[0-9]+\\.[0-9]+'
             const campaignURL = campaigns.campaignURL(campaign)
             const trackingIssue = await getTrackingIssue(await getAuthenticatedGitHubClient(), release)
@@ -382,7 +376,7 @@ cc @${config.captainGitHubUsername}
                         repo: 'sourcegraph',
                         base: 'main',
                         head: `publish-${release.version}`,
-                        commitMessage: isPatchRelease
+                        commitMessage: notPatchRelease
                             ? `draft sourcegraph@${release.version} release`
                             : defaultPRMessage,
                         title: defaultPRMessage,
@@ -391,7 +385,7 @@ cc @${config.captainGitHubUsername}
                             `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' {} +`,
                             `${sed} -i -E 's/version \`${versionRegex}\`/version \`${release.version}\`/g' doc/index.md`,
                             `${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version}"/g' doc/admin/install/docker-compose/index.md`,
-                            isPatchRelease
+                            notPatchRelease
                                 ? `comby -in-place '{{$previousReleaseRevspec := ":[1]"}} {{$previousReleaseVersion := ":[2]"}} {{$currentReleaseRevspec := ":[3]"}} {{$currentReleaseVersion := ":[4]"}}' '{{$previousReleaseRevspec := ":[3]"}} {{$previousReleaseVersion := ":[4]"}} {{$currentReleaseRevspec := "v${release.version}"}} {{$currentReleaseVersion := "${release.major}.${release.minor}"}}' doc/_resources/templates/document.html`
                                 : `comby -in-place 'currentReleaseRevspec := ":[1]"' 'currentReleaseRevspec := "v${release.version}"' doc/_resources/templates/document.html`,
 
@@ -401,14 +395,14 @@ cc @${config.captainGitHubUsername}
                             `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newBuild(":[1]")' "latestReleaseDockerComposeOrPureDocker = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
 
                             // Add a stub to add upgrade guide entries
-                            isPatchRelease
+                            notPatchRelease
                                 ? `${sed} -i -E '/GENERATE UPGRADE GUIDE ON RELEASE/a \\\n\\n## ${previous.major}.${previous.minor} -> ${release.major}.${release.minor}\\n\\nTODO' doc/admin/updates/*.md`
                                 : 'echo "Skipping upgrade guide entries"',
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
                                 const items: string[] = []
-                                if (isPatchRelease) {
+                                if (notPatchRelease) {
                                     items.push('Update the upgrade guides in `doc/admin/updates`')
                                 } else {
                                     items.push(
@@ -444,7 +438,7 @@ cc @${config.captainGitHubUsername}
                         edits: [`tools/update-docker-tags.sh ${release.version}`],
                         ...prBodyAndDraftState([
                             `Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md) to complete this PR ${
-                                isPatchRelease ? '(note: `pure-docker` release is optional for patch releases)' : ''
+                                notPatchRelease ? '' : '(note: `pure-docker` release is optional for patch releases)'
                             }`,
                         ]),
                     },
