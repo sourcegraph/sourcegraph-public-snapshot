@@ -4,7 +4,8 @@ set -euxo pipefail
 # setup DIR for easier pathing /Users/dax/work/sourcegraph/test/cluster
 DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)""
 # cd to repo root
-cd "$(dirname "${BASH_SOURCE[0]}")/../.."
+root_dir="$(dirname "${BASH_SOURCE[0]}")/../../../.."
+cd "$root_dir"
 
 function cluster_setup() {
   git clone --depth 1 \

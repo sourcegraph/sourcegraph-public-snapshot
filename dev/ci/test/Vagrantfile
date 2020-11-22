@@ -15,7 +15,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.env.enable
     config.vm.define server['name'] do |srv|
       srv.vm.box = server['box']
-      srv.vm.synced_folder '../', '/sourcegraph', type: "rsync", rsync__args: ["--verbose", "--archive", "--delete", "-z"]
+      srv.vm.synced_folder '../../../', '/sourcegraph', type: "rsync", rsync__args: ["--verbose", "--archive", "--delete", "-z"]
       srv.vm.boot_timeout = 600
 
       # Setup for CI or Local
