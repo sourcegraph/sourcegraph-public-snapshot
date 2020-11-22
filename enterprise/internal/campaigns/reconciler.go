@@ -843,16 +843,15 @@ func reopenAfterDetach(ch *campaigns.Changeset) bool {
 	}
 
 	// Check if it's (re-)attached to the campaign that created it.
-	attachedToOwner := false
 	for _, campaignID := range ch.CampaignIDs {
 		if campaignID == ch.OwnedByCampaignID {
-			attachedToOwner = true
+			// At this point the changeset is closed and not marked as to-be-closed and
+			// attached to the owning campaign.
+			return true
 		}
 	}
 
-	// At this point the changeset is closed and not marked as to-be-closed and
-	// attached to the owning campaign.
-	return attachedToOwner
+	return false
 
 	// TODO: What if somebody closed the changeset on purpose on the codehost?
 }
