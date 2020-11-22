@@ -135,6 +135,8 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		return nil, err
 	}
 
+	// Reset the attached changesets.
+	campaign.ChangesetIDs = []int64{}
 	for _, changeset := range changesets {
 		if err := tx.UpsertChangeset(ctx, changeset); err != nil {
 			return nil, err
@@ -190,9 +192,6 @@ func (r *ChangesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 		return nil, err
 	}
 
-	// Reset the attached changesets. We will add all we encounter while processing the mappings to this list again.
-	r.Campaign.ChangesetIDs = []int64{}
-
 	changesets = []*campaigns.Changeset{}
 
 	for _, m := range r.Mappings {
@@ -213,6 +212,7 @@ func (r *ChangesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 			if c, err := r.closeChangeset(ctx, changeset); err != nil {
 				return nil, err
 			} else if c != nil {
+				// TODO: Don't keep changeset in campaign. (This doesn't happen but I don't know why.)
 				changesets = append(changesets, c)
 			}
 
