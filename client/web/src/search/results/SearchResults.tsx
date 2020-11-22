@@ -11,7 +11,6 @@ import {
     CaseSensitivityProps,
     parseSearchURL,
     resolveVersionContext,
-    SearchStreamingProps,
 } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileParameters } from '../../../../shared/src/components/CodeExcerpt'
@@ -39,6 +38,7 @@ import { FlatExtensionHostAPI } from '../../../../shared/src/api/contract'
 import { DeployType } from '../../jscontext'
 import { AuthenticatedUser } from '../../auth'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
+import { shouldDisplayPerformanceWarning } from '../backend'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
@@ -49,8 +49,7 @@ export interface SearchResultsProps
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
-        VersionContextProps,
-        SearchStreamingProps {
+        VersionContextProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -96,7 +95,7 @@ export type SearchType = 'diff' | 'commit' | 'symbol' | 'repo' | 'path' | null
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
 // The version is set based on the release tag of the instance. Anything before 3.9.0 will not pass a version parameter,
 // and will therefore default to V1.
-const LATEST_VERSION = 'V2'
+export const LATEST_VERSION = 'V2'
 
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {
@@ -341,6 +340,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     onSavedQueryModalClose={this.onModalClose}
                     onDidCreateSavedQuery={this.onDidCreateSavedQuery}
                     didSave={this.state.didSaveQuery}
+                    shouldDisplayPerformanceWarning={shouldDisplayPerformanceWarning}
                 />
             </div>
         )

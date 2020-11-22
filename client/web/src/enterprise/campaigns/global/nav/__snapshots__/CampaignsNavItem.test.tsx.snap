@@ -18,11 +18,13 @@ exports[`CampaignsNavItem renders 1`] = `
         <NavLink
           activeClassName="active"
           className="nav-link btn btn-link px-1 text-decoration-none 123 d-flex align-items-center"
+          data-testid="campaigns"
           to="/campaigns"
         >
           <Link
             aria-current={null}
             className="nav-link btn btn-link px-1 text-decoration-none 123 d-flex align-items-center"
+            data-testid="campaigns"
             to={
               Object {
                 "hash": "",
@@ -36,12 +38,14 @@ exports[`CampaignsNavItem renders 1`] = `
             <LinkAnchor
               aria-current={null}
               className="nav-link btn btn-link px-1 text-decoration-none 123 d-flex align-items-center"
+              data-testid="campaigns"
               href="/campaigns"
               navigate={[Function]}
             >
               <a
                 aria-current={null}
                 className="nav-link btn btn-link px-1 text-decoration-none 123 d-flex align-items-center"
+                data-testid="campaigns"
                 href="/campaigns"
                 onClick={[Function]}
               >

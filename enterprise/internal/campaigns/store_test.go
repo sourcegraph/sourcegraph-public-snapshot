@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 type clock interface {
@@ -28,7 +29,7 @@ type storeTestFunc func(*testing.T, context.Context, *Store, repos.Store, clock)
 // dependencies are set up and injected into the storeTestFunc.
 func storeTest(db *sql.DB, f storeTestFunc) func(*testing.T) {
 	return func(t *testing.T) {
-		c := &testClock{t: time.Now().UTC().Truncate(time.Microsecond)}
+		c := &testClock{t: timeutil.Now()}
 
 		// Store tests all run in a transaction that's rolled back at the end
 		// of the tests, so that foreign key constraints can be deferred and we

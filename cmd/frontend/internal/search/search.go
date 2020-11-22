@@ -5,14 +5,13 @@ package search
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // ServeStream is an http handler which streams back search results.
@@ -26,11 +25,24 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tr, ctx := trace.New(ctx, "search.ServeStream", args.Query,
+		trace.Tag{Key: "version", Value: args.Version},
+		trace.Tag{Key: "pattern_type", Value: args.PatternType},
+		trace.Tag{Key: "version_context", Value: args.VersionContext},
+	)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	eventWriter, err := newEventStreamWriter(w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// Log events to trace
+	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
 	search, err := graphqlbackend.NewSearchImplementer(ctx, &graphqlbackend.SearchArgs{
 		Query:          args.Query,
@@ -360,60 +372,6 @@ func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) eventCommitMa
 		Content: content,
 		Ranges:  ranges,
 	}
-}
-
-type eventStreamWriter struct {
-	w     io.Writer
-	enc   *json.Encoder
-	flush func()
-}
-
-func newEventStreamWriter(w http.ResponseWriter) (*eventStreamWriter, error) {
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		return nil, errors.New("http flushing not supported")
-	}
-
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-
-	return &eventStreamWriter{
-		w:     w,
-		enc:   json.NewEncoder(w),
-		flush: flusher.Flush,
-	}, nil
-}
-
-func (e *eventStreamWriter) Event(event string, data interface{}) error {
-	if event != "" {
-		// event: $event\n
-		if _, err := e.w.Write([]byte("event: ")); err != nil {
-			return err
-		}
-		if _, err := e.w.Write([]byte(event)); err != nil {
-			return err
-		}
-		if _, err := e.w.Write([]byte("\n")); err != nil {
-			return err
-		}
-	}
-
-	// data: json(data)\n\n
-	if _, err := e.w.Write([]byte("data: ")); err != nil {
-		return err
-	}
-	if err := e.enc.Encode(data); err != nil {
-		return err
-	}
-	// Encode writes a newline, so only need to write one newline.
-	if _, err := e.w.Write([]byte("\n")); err != nil {
-		return err
-	}
-
-	e.flush()
-
-	return nil
 }
 
 // eventFileMatch is a subset of zoekt.FileMatch for our event API.

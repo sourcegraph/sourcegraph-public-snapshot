@@ -10,8 +10,10 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 // seededRand is used to populate the RandID fields on CampaignSpec and
@@ -30,9 +32,7 @@ type Store struct {
 
 // NewStore returns a new Store backed by the given db.
 func NewStore(db dbutil.DB) *Store {
-	return NewStoreWithClock(db, func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	})
+	return NewStoreWithClock(db, timeutil.Now)
 }
 
 // NewStoreWithClock returns a new Store backed by the given db and

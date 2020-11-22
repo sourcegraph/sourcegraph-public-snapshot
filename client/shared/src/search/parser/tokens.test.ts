@@ -11,87 +11,92 @@ const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSucce
 
 describe('getMonacoTokens()', () => {
     test('returns the tokens for a parsed search query', () => {
-        expect(
-            getMonacoTokens(toSuccess(scanSearchQuery('r:^github.com/sourcegraph f:code_intelligence trackViews')))
-        ).toStrictEqual([
-            {
-                scopes: 'filterKeyword',
-                startIndex: 0,
-            },
-            {
-                scopes: 'identifier',
-                startIndex: 2,
-            },
-            {
-                scopes: 'whitespace',
-                startIndex: 25,
-            },
-            {
-                scopes: 'filterKeyword',
-                startIndex: 26,
-            },
-            {
-                scopes: 'identifier',
-                startIndex: 28,
-            },
-            {
-                scopes: 'whitespace',
-                startIndex: 45,
-            },
-            {
-                scopes: 'identifier',
-                startIndex: 46,
-            },
-        ])
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:^github.com/sourcegraph f:code_intelligence trackViews'))))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 25,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 26,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 28,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 45,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 46,
+                "scopes": "identifier"
+              }
+            ]
+        `)
     })
 
     test('search query containing parenthesized parameters', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:a (f:b and c)')))).toStrictEqual([
-            {
-                scopes: 'filterKeyword',
-                startIndex: 0,
-            },
-            {
-                scopes: 'identifier',
-                startIndex: 2,
-            },
-            {
-                scopes: 'whitespace',
-                startIndex: 3,
-            },
-            {
-                scopes: 'identifier',
-                startIndex: 4,
-            },
-            {
-                scopes: 'filterKeyword',
-                startIndex: 5,
-            },
-            {
-                scopes: 'identifier',
-                startIndex: 7,
-            },
-            {
-                scopes: 'whitespace',
-                startIndex: 8,
-            },
-            {
-                scopes: 'keyword',
-                startIndex: 9,
-            },
-            {
-                scopes: 'whitespace',
-                startIndex: 12,
-            },
-            {
-                scopes: 'identifier',
-                startIndex: 13,
-            },
-            {
-                scopes: 'identifier',
-                startIndex: 14,
-            },
-        ])
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:a (f:b and c)')))).toMatchInlineSnapshot(
+            `
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "keyword"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "identifier"
+              }
+            ]
+        `
+        )
     })
 
     test('no decoration for literal', () => {
@@ -436,12 +441,15 @@ describe('getMonacoTokens()', () => {
 
     test('decorate regexp field values', () => {
         expect(
-            getMonacoTokens(toSuccess(scanSearchQuery('repo:^foo$ count:.*', false, SearchPatternType.regexp)), true)
+            getMonacoTokens(
+                toSuccess(scanSearchQuery('repo:^foo$ count:10 file:.* fork:yes', false, SearchPatternType.regexp)),
+                true
+            )
         ).toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,
-                "scopes": "filterKeyword"
+                "scopes": "field"
               },
               {
                 "startIndex": 5,
@@ -469,10 +477,38 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 11,
-                "scopes": "filterKeyword"
+                "scopes": "field"
               },
               {
                 "startIndex": 17,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 19,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 20,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 25,
+                "scopes": "regexpMetaCharacterSet"
+              },
+              {
+                "startIndex": 26,
+                "scopes": "regexpMetaRangeQuantifier"
+              },
+              {
+                "startIndex": 27,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 28,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 33,
                 "scopes": "identifier"
               }
             ]
@@ -554,15 +590,27 @@ describe('getMonacoTokens()', () => {
             [
               {
                 "startIndex": 0,
-                "scopes": "filterKeyword"
+                "scopes": "field"
               },
               {
                 "startIndex": 5,
+                "scopes": "regexpMetaDelimited"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "regexpMetaAlternative"
+              },
+              {
+                "startIndex": 8,
                 "scopes": "identifier"
               },
               {
                 "startIndex": 9,
-                "scopes": "closingParen"
+                "scopes": "regexpMetaDelimited"
               },
               {
                 "startIndex": 10,
@@ -675,6 +723,198 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 17,
                 "scopes": "regexpMetaEscapedCharacter"
+              }
+            ]
+        `)
+    })
+
+    test('decorate structural holes', () => {
+        expect(
+            getMonacoTokens(
+                toSuccess(scanSearchQuery('r:foo Search(thing::[x], :[y])', false, SearchPatternType.structural)),
+                true
+            )
+        ).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 19,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 23,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 25,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 29,
+                "scopes": "identifier"
+              }
+            ]
+        `)
+    })
+
+    test('decorate structural holes with valid inlined regexp', () => {
+        expect(
+            getMonacoTokens(toSuccess(scanSearchQuery('r:foo a:[x~[\\]]]b', false, SearchPatternType.structural)), true)
+        ).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 16,
+                "scopes": "identifier"
+              }
+            ]
+        `)
+    })
+
+    test('decorate structural hole ... alias', () => {
+        expect(
+            getMonacoTokens(
+                toSuccess(scanSearchQuery('r:foo a...b...c....', false, SearchPatternType.structural)),
+                true
+            )
+        ).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 11,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 15,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 18,
+                "scopes": "identifier"
+              }
+            ]
+        `)
+    })
+    test('decorate structural hole ... alias', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:foo ...:...', false, SearchPatternType.structural)), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "structuralMetaHole"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "structuralMetaHole"
               }
             ]
         `)

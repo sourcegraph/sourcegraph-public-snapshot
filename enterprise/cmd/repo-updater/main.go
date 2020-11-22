@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func main() {
@@ -47,11 +48,8 @@ func enterpriseInit(
 	server *repoupdater.Server,
 ) (debugDumpers []debugserver.Dumper) {
 	ctx := context.Background()
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
 
-	campaignsStore := campaigns.NewStoreWithClock(db, clock)
+	campaignsStore := campaigns.NewStoreWithClock(db, timeutil.Now)
 
 	syncRegistry := campaigns.NewSyncRegistry(ctx, campaignsStore, repoStore, cf)
 	if server != nil {
@@ -62,8 +60,8 @@ func enterpriseInit(
 
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db
-	permsStore := edb.NewPermsStore(db, clock)
-	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, clock, ratelimit.DefaultRegistry)
+	permsStore := edb.NewPermsStore(db, timeutil.Now)
+	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
 	go startBackgroundPermsSync(ctx, permsSyncer, db)
 	debugDumpers = append(debugDumpers, permsSyncer)
 	if server != nil {

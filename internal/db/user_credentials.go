@@ -9,11 +9,11 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/secret"
 )
 
 // UserCredential represents a row in the `user_credentials` table.
@@ -76,7 +76,7 @@ func (*userCredentials) Create(ctx context.Context, scope UserCredentialScope, c
 		scope.UserID,
 		scope.ExternalServiceType,
 		scope.ExternalServiceID,
-		secret.StringValue{S: &raw},
+		raw,
 		sqlf.Join(userCredentialsColumns, ", "),
 	)
 
@@ -316,7 +316,7 @@ func scanUserCredential(cred *UserCredential, s interface {
 		&cred.UserID,
 		&cred.ExternalServiceType,
 		&cred.ExternalServiceID,
-		&secret.StringValue{S: &raw},
+		&raw,
 		&cred.CreatedAt,
 		&cred.UpdatedAt,
 	); err != nil {

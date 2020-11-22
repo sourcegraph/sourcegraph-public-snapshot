@@ -13,13 +13,13 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	internaldb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
-	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -549,7 +549,7 @@ func (s *Store) UpsertSources(ctx context.Context, inserts, updates, deletes map
 				srcs = append(srcs, externalServiceRepo{
 					ExternalServiceID: info.ExternalServiceID(),
 					RepoID:            int64(rid),
-					CloneURL:          secret.StringValue{S: &info.CloneURL},
+					CloneURL:          info.CloneURL,
 				})
 			}
 		}
@@ -860,9 +860,9 @@ func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
 }
 
 type externalServiceRepo struct {
-	ExternalServiceID int64              `json:"external_service_id"`
-	RepoID            int64              `json:"repo_id"`
-	CloneURL          secret.StringValue `json:"clone_url"`
+	ExternalServiceID int64  `json:"external_service_id"`
+	RepoID            int64  `json:"repo_id"`
+	CloneURL          string `json:"clone_url"`
 }
 
 func sourcesColumn(repoID api.RepoID, sources map[string]*types.SourceInfo) (json.RawMessage, error) {
@@ -871,7 +871,7 @@ func sourcesColumn(repoID api.RepoID, sources map[string]*types.SourceInfo) (jso
 		records = append(records, externalServiceRepo{
 			ExternalServiceID: src.ExternalServiceID(),
 			RepoID:            int64(repoID),
-			CloneURL:          secret.StringValue{S: &src.CloneURL},
+			CloneURL:          src.CloneURL,
 		})
 	}
 
