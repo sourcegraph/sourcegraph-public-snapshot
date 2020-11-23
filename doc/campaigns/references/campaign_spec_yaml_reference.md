@@ -167,7 +167,7 @@ steps:
 In this case, `steps.env` is an array. Each array item is either:
 
 1. An object with a single property, in which case the key is used as the environment variable name and the value the value, or
-2. A string that defines an environment variable to include from the environment `src` is being run within. This is useful to define secrets that you don't want to include in the spec file, but this makes the spec dependent on your environment and means that the campaign spec file is no longer [the sole source of truth intended by the campaigns design](../explanations/campaigns_design.md).
+2. A string that defines an environment variable to include from the environment `src` is being run within. This is useful to define secrets that you don't want to include in the spec file, but this makes the spec dependent on your environment, means that the local execution cache will be invalidated each time the environment variable changes, and means that the campaign spec file is no longer [the sole source of truth intended by the campaigns design](../explanations/campaigns_design.md).
 
 #### Examples
 
