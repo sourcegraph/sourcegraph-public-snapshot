@@ -141,7 +141,7 @@ describe('StreamingSearchResults', () => {
         element.unmount()
     })
 
-    it('should not update patternType if same between URL and context', () => {
+    it('should not update patternType if URL and context are the same', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=r:golang/oauth2+test+f:travis&patternType=regexp' })
 
@@ -188,9 +188,9 @@ describe('StreamingSearchResults', () => {
         element.unmount()
     })
 
-    it('should not update caseSensitive if same between URL and context', () => {
+    it('should not update caseSensitive if URL and context are the same', () => {
         const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis case:yes' })
+        history.replace({ search: 'q=r:golang/oauth2+test+f:travis+case:yes' })
 
         const setCaseSensitivitySpy = sinon.spy()
 
