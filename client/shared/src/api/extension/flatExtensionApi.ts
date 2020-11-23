@@ -190,7 +190,8 @@ export const initNewExtensionAPI = (
                     ? EMPTY // Don't call providers when there are no files in the directory
                     : callProviders(
                           state.fileDecorationProviders,
-                          identity, // No need to filter
+                          identity,
+                          // No need to filter
                           provider => provider.provideFileDecorations(parameters),
                           mergeProviderResults
                       ).pipe(map(({ result }) => groupBy(result, 'path')))
