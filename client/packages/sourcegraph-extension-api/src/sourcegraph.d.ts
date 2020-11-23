@@ -930,6 +930,29 @@ declare module 'sourcegraph' {
         provideView(context: DirectoryViewContext): ProviderResult<View>
     }
 
+    export interface ThemableFileDecorationStyle {
+        /** The CSS color property value for the text contet */
+        color?: string
+
+        /** Overwrite style for when the file is selected */
+        selectedColor?: string
+    }
+
+    /** A decoration attachment adds content after a {@link FileDecoration}. */
+    export interface FileDecorationAttachmentRenderOptions extends ThemableFileDecorationStyle {
+        /** Text value to be displayed. This value should be very short to prevent truncation */
+        value: string
+
+        /** Tooltip text to display when hovering over the text content. */
+        hoverMessage?: string
+
+        /** Overwrite style for light themes. */
+        light?: ThemableFileDecorationStyle
+
+        /** Overwrite color for dark themes. */
+        dark?: ThemableFileDecorationStyle
+    }
+
     /**
      * A file decoration adds text content and/or a progress bar to files in a tree view
      */
@@ -941,24 +964,7 @@ declare module 'sourcegraph' {
         component?: 'sidebar' | 'page'
 
         /** An optional object that describes the text content contributed by the decoration */
-        after?: {
-            /** Text value to be displayed. This should value should be very short to prevent truncation */
-            value: string
-
-            color?: string
-
-            /** Overwrite color for light themes. */
-            light?: string
-
-            /** Overwrite color for dark themes. */
-            dark?: string
-
-            /** Overwrite color for when the node is selected. Should be the same for both light and dark themes */
-            selected?: string
-
-            /** Tooltip text to display when hovering over the text content. */
-            hoverMessage?: string
-        }
+        after?: FileDecorationAttachmentRenderOptions
 
         /** An optional object that describes a progress bar contributed by the decoration */
         percentage?: {

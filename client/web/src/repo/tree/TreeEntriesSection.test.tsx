@@ -35,9 +35,10 @@ describe('TreeEntriesSection', () => {
                         },
                     ]}
                     fileDecorationsByPath={{
-                        src: [{ path: 'src', text: { value: 'src decoration' } }],
-                        testdata: [{ path: 'testdata', text: { value: 'testdata decoration' } }],
+                        src: [{ path: 'src', after: { value: 'src decoration' } }],
+                        testdata: [{ path: 'testdata', after: { value: 'testdata decoration' } }],
                     }}
+                    isLightTheme={true}
                 />
             )
         ).toMatchSnapshot()
@@ -74,12 +75,13 @@ describe('TreeEntriesSection', () => {
                         },
                     ]}
                     fileDecorationsByPath={{
-                        'src/testutils': [{ path: 'src/testutils', text: { value: 'testutils decoration' } }],
-                        'src/typings': [{ path: 'src/typings', text: { value: 'typings decoration' } }],
+                        'src/testutils': [{ path: 'src/testutils', after: { value: 'testutils decoration' } }],
+                        'src/typings': [{ path: 'src/typings', after: { value: 'typings decoration' } }],
                         'src/errors.ts': [
-                            { path: 'src/errors.ts', component: 'sidebar', text: { value: 'errors decoration' } }, // This shouldn't be rendered
+                            { path: 'src/errors.ts', component: 'sidebar', after: { value: 'errors decoration' } }, // This shouldn't be rendered
                         ],
                     }}
+                    isLightTheme={true}
                 />
             )
         ).toMatchSnapshot()
@@ -122,9 +124,10 @@ describe('TreeEntriesSection', () => {
                         },
                     ]}
                     fileDecorationsByPath={{
-                        'x/ref': [{ path: 'x/ref', text: { value: 'ref decoration' } }],
-                        'x/ref/cmd': [{ path: 'x/ref/cmd', text: { value: 'cmd decoration' } }],
+                        'x/ref': [{ path: 'x/ref', after: { value: 'ref decoration' } }],
+                        'x/ref/cmd': [{ path: 'x/ref/cmd', after: { value: 'cmd decoration' } }],
                     }}
+                    isLightTheme={true}
                 />
             )
         ).toMatchSnapshot()

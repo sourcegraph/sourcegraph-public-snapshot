@@ -33,8 +33,9 @@ import { TreeFields } from '../graphql-operations'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { FileDecoration, FileDecorationsByPath } from 'sourcegraph'
 import { getFileDecorations } from '../backend/features'
+import { ThemeProps } from '../../../shared/src/theme'
 
-export interface TreeLayerProps extends AbsoluteRepo, ExtensionsControllerProps {
+export interface TreeLayerProps extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps {
     history: H.History
     location: H.Location
     activeNode: TreeNode
@@ -261,11 +262,12 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
 
     public render(): JSX.Element | null {
         const entryInfo = this.props.entryInfo
+        const isSelectedNode = this.node === this.props.selectedNode
         const className = classNames(
             'tree__row',
             this.props.isExpanded && 'tree__row--expanded',
             this.node === this.props.activeNode && 'tree__row--active',
-            this.node === this.props.selectedNode && 'tree__row--selected'
+            isSelectedNode && 'tree__row--selected'
         )
         const { treeOrError } = this.state
 
@@ -297,6 +299,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                     handleTreeClick={this.handleTreeClick}
                                     noopRowClick={this.noopRowClick}
                                     linkRowClick={this.linkRowClick}
+                                    isSelected={isSelectedNode}
                                 />
                                 {this.props.isExpanded && treeOrError !== LOADING && (
                                     <tr>
@@ -336,6 +339,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                 handleTreeClick={this.handleTreeClick}
                                 noopRowClick={this.noopRowClick}
                                 linkRowClick={this.linkRowClick}
+                                isSelected={isSelectedNode}
                             />
                         )}
                     </tbody>

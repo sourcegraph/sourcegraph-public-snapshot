@@ -384,6 +384,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             parentPath={filePath}
                             entries={treeOrError.entries}
                             fileDecorationsByPath={fileDecorationsByPath}
+                            isLightTheme={props.isLightTheme}
                         />
                     </section>
                     {/* eslint-disable react/jsx-no-bind */}

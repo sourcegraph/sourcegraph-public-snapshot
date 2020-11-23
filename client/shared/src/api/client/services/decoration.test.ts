@@ -5,6 +5,7 @@ import { TextDocumentIdentifier } from '../types/textDocument'
 import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
+    fileDecorationColorForTheme,
     getDecorations,
     ProvideTextDocumentDecorationSignature,
 } from './decoration'
@@ -182,4 +183,79 @@ describe('decorationAttachmentStyleForTheme', () => {
         ).toEqual({
             color: 'green',
         }))
+})
+
+describe('fileDecorationColorForTheme', () => {
+    test('supports no theme overrides', () => {
+        expect(
+            fileDecorationColorForTheme(
+                {
+                    value: '',
+                    color: 'red',
+                },
+                false
+            )
+        ).toEqual('red')
+    })
+
+    test('applies light theme overrides', () => {
+        expect(
+            fileDecorationColorForTheme(
+                {
+                    value: '',
+                    color: 'red',
+                    light: {
+                        color: 'blue',
+                    },
+                },
+                true
+            )
+        ).toEqual('blue')
+    })
+
+    test('applies dark theme overrides', () => {
+        expect(
+            fileDecorationColorForTheme(
+                {
+                    value: '',
+                    color: 'red',
+                    dark: {
+                        color: 'green',
+                    },
+                },
+                false
+            )
+        ).toEqual('green')
+    })
+
+    test('applies selected color overrides', () => {
+        expect(
+            fileDecorationColorForTheme(
+                {
+                    value: '',
+                    color: 'red',
+                    selectedColor: 'orange',
+                },
+                false,
+                true
+            )
+        ).toEqual('orange')
+    })
+
+    test('applies selected color for themes', () => {
+        expect(
+            fileDecorationColorForTheme(
+                {
+                    value: '',
+                    color: 'red',
+                    selectedColor: 'orange',
+                    dark: {
+                        selectedColor: 'teal',
+                    },
+                },
+                false,
+                true
+            )
+        ).toEqual('teal')
+    })
 })

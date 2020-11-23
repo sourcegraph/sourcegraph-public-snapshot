@@ -2,6 +2,7 @@ import React from 'react'
 import { FileDecoration } from 'sourcegraph'
 import { TreeEntryFields } from '../graphql-operations'
 import classNames from 'classnames'
+import { fileDecorationColorForTheme } from '../../../shared/src/api/client/services/decoration'
 
 /** TreeEntryInfo is the information we need to render an entry in the file tree */
 export interface TreeEntryInfo {
@@ -88,10 +89,14 @@ export function hasSingleChild(tree: TreeEntryInfo[]): boolean {
 
 export function renderFileDecorations({
     fileDecorations,
+    isLightTheme,
     isDirectory,
+    isSelected,
 }: {
     fileDecorations?: FileDecoration[]
+    isLightTheme: boolean
     isDirectory?: boolean
+    isSelected?: boolean
 }): React.ReactNode {
     // Only need to check for number of decorations, other validation (like whether the decoration specifies at
     // least one of `text` or `percentage`) is done in the extension host
@@ -119,7 +124,13 @@ export function renderFileDecorations({
                                 // link or span?
                                 <small
                                     // eslint-disable-next-line react/forbid-dom-props
-                                    style={{ color: fileDecoration.after.color }}
+                                    style={{
+                                        color: fileDecorationColorForTheme(
+                                            fileDecoration.after,
+                                            isLightTheme,
+                                            isSelected
+                                        ),
+                                    }}
                                     data-tooltip={fileDecoration.after.hoverMessage}
                                     data-placement="bottom"
                                     className="text-monospace d-inline-block font-weight-normal test-file-decoration-text"

@@ -24,6 +24,7 @@ import { TreeFields } from '../graphql-operations'
 import { getFileDecorations } from '../backend/features'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { FileDecorationsByPath } from 'sourcegraph'
+import { ThemeProps } from '../../../shared/src/theme'
 
 const maxEntries = 2500
 
@@ -31,7 +32,7 @@ const errorWidth = (width?: string): { width: string } => ({
     width: width ? `${width}px` : 'auto',
 })
 
-export interface TreeRootProps extends AbsoluteRepo, ExtensionsControllerProps {
+export interface TreeRootProps extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps {
     history: H.History
     location: H.Location
     activeNode: TreeNode

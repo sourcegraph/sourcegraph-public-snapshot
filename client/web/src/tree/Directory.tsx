@@ -4,6 +4,7 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { FileDecoration } from 'sourcegraph'
+import { TreeNode } from './Tree'
 import { TreeLayerProps } from './TreeLayer'
 import { renderFileDecorations, treePadding } from './util'
 
@@ -16,6 +17,8 @@ interface TreeChildProps extends TreeLayerProps {
     linkRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
 
     fileDecorations?: FileDecoration[]
+
+    isSelected: boolean
 }
 
 /**
@@ -25,7 +28,7 @@ interface TreeChildProps extends TreeLayerProps {
  */
 export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeChildProps): JSX.Element => (
     <tr key={props.entryInfo.path} className={props.className} onClick={props.handleTreeClick}>
-        <td className="tree__cell test-panel-file-decorable">
+        <td className="tree__cell test-sidebar-file-decorable">
             <div
                 className="tree__row-contents tree__row-contents-new"
                 data-tree-is-directory="true"
@@ -63,6 +66,7 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                     {renderFileDecorations({
                         fileDecorations: props.fileDecorations?.filter(decoration => decoration?.component !== 'page'),
                         isDirectory: true,
+                        isLightTheme: props.isLightTheme,
                     })}
                 </div>
                 {props.loading && (

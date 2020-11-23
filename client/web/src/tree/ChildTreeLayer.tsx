@@ -38,6 +38,7 @@ export const ChildTreeLayer: React.FunctionComponent<ChildTreeLayerProps> = (pro
         onSelect: props.onSelect,
         commitID: props.commitID,
         extensionsController: props.extensionsController,
+        isLightTheme: props.isLightTheme,
     }
 
     return (

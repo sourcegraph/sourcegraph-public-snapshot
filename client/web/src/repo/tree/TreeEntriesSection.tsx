@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { Link } from '../../../../shared/src/components/Link'
 import { FileDecorationsByPath } from 'sourcegraph'
 import { renderFileDecorations } from '../../tree/util'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 /**
  * Use a multi-column layout for tree entries when there are at least this many. See TreeEntriesSection.scss
@@ -47,11 +48,18 @@ const TreeEntry: React.FunctionComponent<{
     </Link>
 )
 
-export const TreeEntriesSection: React.FunctionComponent<{
+interface TreeEntriesSectionProps extends ThemeProps {
     parentPath: string
     entries: Pick<GQL.ITreeEntry, 'name' | 'isDirectory' | 'url' | 'path'>[]
     fileDecorationsByPath: FileDecorationsByPath
-}> = ({ parentPath, entries, fileDecorationsByPath }) => {
+}
+
+export const TreeEntriesSection: React.FunctionComponent<TreeEntriesSectionProps> = ({
+    parentPath,
+    entries,
+    fileDecorationsByPath,
+    isLightTheme,
+}) => {
     const directChildren = entries.filter(entry => entry.path === [parentPath, entry.name].filter(Boolean).join('/'))
     if (directChildren.length === 0) {
         return null
@@ -66,6 +74,7 @@ export const TreeEntriesSection: React.FunctionComponent<{
             fileDecorations: fileDecorationsByPath[entry.path]?.filter(
                 decoration => decoration?.component !== 'sidebar'
             ),
+            isLightTheme,
         })
     )
     // If no ReactNode is truthy, we want to hide column-rule

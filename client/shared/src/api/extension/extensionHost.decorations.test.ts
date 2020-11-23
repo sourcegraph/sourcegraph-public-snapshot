@@ -36,7 +36,7 @@ describe('getFileDecorations from ExtensionHost API, it aims to have more e2e fe
 
         let counter = 0
         registerFileDecorationProvider({
-            provideFileDecorations: ({ files }) => [{ path: files[0]?.path, text: { value: `a${++counter}` } }],
+            provideFileDecorations: ({ files }) => [{ path: files[0]?.path, after: { value: `a${++counter}` } }],
         })
 
         let results: FileDecorationsByPath[] = []
@@ -61,7 +61,7 @@ describe('getFileDecorations from ExtensionHost API, it aims to have more e2e fe
                 'typescript/src/package.ts': [
                     {
                         path: 'typescript/src/package.ts',
-                        text: {
+                        after: {
                             value: 'a1',
                         },
                     },
@@ -71,7 +71,7 @@ describe('getFileDecorations from ExtensionHost API, it aims to have more e2e fe
         results = []
 
         const subscription = registerFileDecorationProvider({
-            provideFileDecorations: ({ files }) => [{ path: files[0]?.path, text: { value: 'b' } }],
+            provideFileDecorations: ({ files }) => [{ path: files[0]?.path, after: { value: 'b' } }],
         })
 
         // second and first
@@ -80,7 +80,7 @@ describe('getFileDecorations from ExtensionHost API, it aims to have more e2e fe
                 'typescript/src/package.ts': [
                     {
                         path: 'typescript/src/package.ts',
-                        text: {
+                        after: {
                             value: 'a2',
                         },
                     },
@@ -90,13 +90,13 @@ describe('getFileDecorations from ExtensionHost API, it aims to have more e2e fe
                 'typescript/src/package.ts': [
                     {
                         path: 'typescript/src/package.ts',
-                        text: {
+                        after: {
                             value: 'a2',
                         },
                     },
                     {
                         path: 'typescript/src/package.ts',
-                        text: {
+                        after: {
                             value: 'b',
                         },
                     },
@@ -114,7 +114,7 @@ describe('getFileDecorations from ExtensionHost API, it aims to have more e2e fe
                 'typescript/src/package.ts': [
                     {
                         path: 'typescript/src/package.ts',
-                        text: {
+                        after: {
                             value: 'a3',
                         },
                     },

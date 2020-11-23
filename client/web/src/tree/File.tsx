@@ -10,17 +10,20 @@ interface FileProps extends TreeLayerProps {
     handleTreeClick: () => void
     noopRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
     linkRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
+    isSelected: boolean
 }
 
 export const File: React.FunctionComponent<FileProps> = props => {
     const renderedFileDecorations = renderFileDecorations({
         // If component is not specified, or it is 'sidebar', render it.
         fileDecorations: props.fileDecorations?.filter(decoration => decoration?.component !== 'page'),
+        isLightTheme: props.isLightTheme,
+        isSelected: props.isSelected,
     })
 
     return (
         <tr key={props.entryInfo.path} className={props.className}>
-            <td className="tree__cell test-panel-file-decorable">
+            <td className="tree__cell test-sidebar-file-decorable">
                 {props.entryInfo.submodule ? (
                     props.entryInfo.url ? (
                         <Link
