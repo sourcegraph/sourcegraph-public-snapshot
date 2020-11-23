@@ -92,7 +92,6 @@ export function renderFileDecorations(fileDecorations?: FileDecoration[], isDire
     if (!fileDecorations || fileDecorations.length === 0) {
         return null
     }
-    // TODO(tj): this can be css
 
     return (
         <div

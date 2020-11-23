@@ -34,6 +34,10 @@ describe('TreeEntriesSection', () => {
                             url: '/github.com/sourcegraph/codeintellify/-/blob/.eslintrc.json',
                         },
                     ]}
+                    fileDecorationsByPath={{
+                        src: [{ path: 'src', text: { value: 'src decoration' } }],
+                        testdata: [{ path: 'testdata', text: { value: 'testdata decoration' } }],
+                    }}
                 />
             )
         ).toMatchSnapshot()
@@ -69,6 +73,10 @@ describe('TreeEntriesSection', () => {
                             url: '/github.com/sourcegraph/codeintellify/-/blob/src/helpers.ts',
                         },
                     ]}
+                    fileDecorationsByPath={{
+                        'src/testutils': [{ path: 'src/testutils', text: { value: 'testutils decoration' } }],
+                        'src/typings': [{ path: 'src/typings', text: { value: 'typings decoration' } }],
+                    }}
                 />
             )
         ).toMatchSnapshot()
@@ -110,6 +118,10 @@ describe('TreeEntriesSection', () => {
                             url: '/github.com/vanadium/core/-/blob/x/ref/envvar.go',
                         },
                     ]}
+                    fileDecorationsByPath={{
+                        'x/ref': [{ path: 'x/ref', text: { value: 'ref decoration' } }],
+                        'x/ref/cmd': [{ path: 'x/ref/cmd', text: { value: 'cmd decoration' } }],
+                    }}
                 />
             )
         ).toMatchSnapshot()

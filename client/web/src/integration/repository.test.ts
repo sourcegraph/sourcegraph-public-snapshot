@@ -56,7 +56,7 @@ describe('Repository', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
-                ResolveRev: () => createResolveRevisionResult(repositorySourcegraphUrl),
+                ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
                 FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
                 TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, fileEntries),
                 Blob: () => createBlobContentResult('mock file blob'),
@@ -359,7 +359,7 @@ describe('Repository', () => {
                 Date.now = () => mockMs
             })
 
-            await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/' + repositoryName)
 
             await driver.page.waitForSelector('h2.tree-page__title')
 
@@ -381,7 +381,7 @@ describe('Repository', () => {
             }, 'Blob')
 
             await driver.page.waitForSelector('.test-repo-blob')
-            await driver.assertWindowLocation(`${repositorySourcegraphUrl}/-/blob/${clickedFileName}`)
+            await driver.assertWindowLocation(`/${repositoryName}/-/blob/${clickedFileName}`)
 
             // Assert breadcrumb order
             await driver.page.waitForSelector('.test-breadcrumb')
@@ -399,6 +399,7 @@ describe('Repository', () => {
             // Return to repo page
             await driver.page.waitForSelector('a.repo-header__repo')
             await driver.page.click('a.repo-header__repo')
+
             await driver.page.waitForSelector('h2.tree-page__title')
             await assertSelectorHasText('h2.tree-page__title', ' ' + shortRepositoryName)
             await driver.assertWindowLocation(repositorySourcegraphUrl)
@@ -827,7 +828,7 @@ describe('Repository', () => {
                 },
                 'Incorrect decorations for nested on tree panel'
             )
-
+            await new Promise(() => {})
             // Since nested is a single child, its children should be visible and decorated as well
 
             const testDecorations = await getDecorationsByFilename('panel', 'test.ts')

@@ -106,9 +106,8 @@ const getFileDecorationsFromHost = memoizeObservable(
         parentNodeUri: string
         extensionHost: Remote<FlatExtensionHostAPI>
     } & RepoSpec &
-        ResolvedRevisionSpec) => {
-        console.log('making new file dec req to ext host??', { files })
-        return wrapRemoteObservable(
+        ResolvedRevisionSpec) =>
+        wrapRemoteObservable(
             extensionHost.getFileDecorations({
                 uri: toRootURI({ repoName, commitID }),
                 files: files.map(file => ({
@@ -116,7 +115,6 @@ const getFileDecorationsFromHost = memoizeObservable(
                     uri: toURIWithPath({ repoName, filePath: file.path, commitID }),
                 })),
             })
-        )
-    },
+        ),
     ({ parentNodeUri, files }) => `parentNodeUri:${parentNodeUri} files:${files.length}`
 )
