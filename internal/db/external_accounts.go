@@ -52,8 +52,19 @@ func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec extsv
 	}
 
 	err = dbconn.Global.QueryRowContext(ctx, `
-UPDATE user_external_accounts SET auth_data=$5, account_data=$6, updated_at=now()
-WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND deleted_at IS NULL
+-- source: internal/db/external_accounts.go:userExternalAccounts.LookupUserAndSave
+UPDATE user_external_accounts
+SET
+	auth_data = $5,
+	account_data = $6,
+	updated_at = now(),
+	expired_at = NULL
+WHERE
+	service_type = $1
+AND service_id = $2
+AND client_id = $3
+AND account_id = $4
+AND deleted_at IS NULL
 RETURNING user_id
 `, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data).Scan(&userID)
 	if err == sql.ErrNoRows {
@@ -96,8 +107,15 @@ func (s *userExternalAccounts) AssociateUserAndSave(ctx context.Context, userID 
 	var exists bool
 	var existingID, associatedUserID int32
 	err = tx.QueryRowContext(ctx, `
-SELECT id, user_id FROM user_external_accounts
-WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND deleted_at IS NULL
+-- source: internal/db/external_accounts.go:userExternalAccounts.AssociateUserAndSave
+SELECT id, user_id
+FROM user_external_accounts
+WHERE
+	service_type = $1
+AND service_id = $2
+AND client_id = $3
+AND account_id = $4
+AND deleted_at IS NULL
 `, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID).Scan(&existingID, &associatedUserID)
 	if err != nil && err != sql.ErrNoRows {
 		return err
@@ -117,8 +135,20 @@ WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND d
 
 	// Update the external account (it exists).
 	res, err := tx.ExecContext(ctx, `
-UPDATE user_external_accounts SET auth_data=$6, account_data=$7, updated_at=now()
-WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND user_id=$5 AND deleted_at IS NULL
+-- source: internal/db/external_accounts.go:userExternalAccounts.AssociateUserAndSave
+UPDATE user_external_accounts
+SET
+	auth_data = $6,
+	account_data = $7,
+	updated_at = now(),
+	expired_at = NULL
+WHERE
+	service_type = $1
+AND service_id = $2
+AND client_id = $3
+AND account_id = $4
+AND user_id = $5
+AND deleted_at IS NULL
 `, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID, data.AuthData, data.Data)
 	if err != nil {
 		return err
@@ -170,10 +200,34 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 
 func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
 	_, err := tx.ExecContext(ctx, `
-INSERT INTO user_external_accounts(user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
-VALUES($1, $2, $3, $4, $5, $6, $7)
+-- source: internal/db/external_accounts.go:userExternalAccounts.insert
+INSERT INTO user_external_accounts (user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
 `, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data)
+	return err
+}
 
+// SetExpired sets the given user external account to be expired now.
+func (*userExternalAccounts) SetExpired(ctx context.Context, id int32) error {
+	_, err := dbconn.Global.ExecContext(ctx, `
+-- source: internal/db/external_accounts.go:userExternalAccounts.SetExpired
+UPDATE user_external_accounts
+SET expired_at = now()
+WHERE id = $1
+`, id)
+	return err
+}
+
+// SetLastValid sets last valid time of the given user external account to be now.
+func (*userExternalAccounts) SetLastValid(ctx context.Context, id int32) error {
+	_, err := dbconn.Global.ExecContext(ctx, `
+-- source: internal/db/external_accounts.go:userExternalAccounts.SetLastValid
+UPDATE user_external_accounts
+SET
+	expired_at = NULL,
+	last_valid_at = now()
+WHERE id = $1
+`, id)
 	return err
 }
 
@@ -202,6 +256,7 @@ type ExternalAccountsListOptions struct {
 	UserID                           int32
 	ServiceType, ServiceID, ClientID string
 	AccountID                        int64
+	ExcludeExpired                   bool
 	*LimitOffset
 }
 
@@ -337,6 +392,9 @@ func (*userExternalAccounts) listSQL(opt ExternalAccountsListOptions) (conds []*
 	}
 	if opt.AccountID != 0 {
 		conds = append(conds, sqlf.Sprintf("account_id=%d", opt.AccountID))
+	}
+	if opt.ExcludeExpired {
+		conds = append(conds, sqlf.Sprintf("expired_at IS NULL"))
 	}
 	return conds
 }

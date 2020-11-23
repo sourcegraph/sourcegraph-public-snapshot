@@ -20,8 +20,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -246,11 +248,36 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 		extIDs, err := provider.FetchUserPerms(ctx, acct)
 		if err != nil {
+			isBadCredentials := func(err error) bool {
+				// TODO: Implements errcode.IsUnauthorized for GitHub and GitLab errors
+				err = errors.Cause(err)
+				switch e := err.(type) {
+				case *github.APIError:
+					return e.Code == http.StatusUnauthorized
+				case gitlab.HTTPError:
+					return gitlab.HTTPErrorCode(e) == http.StatusUnauthorized
+				}
+				return errcode.IsUnauthorized(err)
+			}
+			if isBadCredentials(err) {
+				err = db.ExternalAccounts.SetExpired(ctx, acct.ID)
+				if err != nil {
+					return errors.Wrapf(err, "set expired for external account %d", acct.ID)
+				}
+				log15.Debug("PermsSyncer.syncUserPerms.setExternalAccountExpired", "userID", user.ID, "id", acct.ID)
+				continue
+			}
+
 			// Process partial results if this is an initial fetch.
 			if !noPerms {
 				return errors.Wrap(err, "fetch user permissions")
 			}
 			log15.Warn("PermsSyncer.syncUserPerms.proceedWithPartialResults", "userID", user.ID, "error", err)
+		} else {
+			err = db.ExternalAccounts.SetLastValid(ctx, acct.ID)
+			if err != nil {
+				return errors.Wrapf(err, "set last valid for external account %d", acct.ID)
+			}
 		}
 
 		for i := range extIDs {
