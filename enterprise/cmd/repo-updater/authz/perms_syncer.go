@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -248,18 +247,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 		extIDs, err := provider.FetchUserPerms(ctx, acct)
 		if err != nil {
-			isBadCredentials := func(err error) bool {
-				// TODO: Implements errcode.IsUnauthorized for GitHub and GitLab errors
-				err = errors.Cause(err)
-				switch e := err.(type) {
-				case *github.APIError:
-					return e.Code == http.StatusUnauthorized
-				case gitlab.HTTPError:
-					return gitlab.HTTPErrorCode(e) == http.StatusUnauthorized
-				}
-				return errcode.IsUnauthorized(err)
-			}
-			if isBadCredentials(err) {
+			// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
+			if errcode.IsUnauthorized(errors.Cause(err)) {
 				err = db.ExternalAccounts.SetExpired(ctx, acct.ID)
 				if err != nil {
 					return errors.Wrapf(err, "set expired for external account %d", acct.ID)
