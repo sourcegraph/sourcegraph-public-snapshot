@@ -34,7 +34,7 @@ Code intelligence provides advanced code navigation features that let developers
 
 ## [Explanations](explanations/index.md)
 
-- [Basic code intelligence](explanations/basic_code_intelligence.md)
+- [Search-based code intelligence](explanations/search_based_code_intelligence.md)
 - [Precise code intelligence](explanations/precise_code_intelligence.md)
 - [Features](explanations/features.md)
   - [Hover tooltips](explanations/features.md#hover-tooltips-with-documentation-and-type-signatures)
