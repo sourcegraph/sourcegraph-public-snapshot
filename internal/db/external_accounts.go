@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 
@@ -238,42 +237,6 @@ func (s *userExternalAccounts) Count(ctx context.Context, opt ExternalAccountsLi
 	var count int
 	err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count)
 	return count, err
-}
-
-// TmpMigrate implements the migration described in bg.MigrateExternalAccounts (which is the only
-// func that should call this).
-func (*userExternalAccounts) TmpMigrate(ctx context.Context, serviceType string) error {
-	// TEMP: Delete all external accounts associated with deleted users. Due to a bug in this
-	// migration code, it was possible for deleted users to be associated with non-deleted external
-	// accounts. This caused unexpected behavior in the UI (although did not pose a security
-	// threat). So, run this cleanup task upon each server startup.
-	if err := (userExternalAccounts{}).deleteForDeletedUsers(ctx); err != nil {
-		log15.Warn("Unable to clean up external user accounts.", "err", err)
-	}
-
-	const needsMigrationSentinel = "migration_in_progress"
-
-	// Avoid running UPDATE (which takes a lock) if it's not needed. The UPDATE only needs to run
-	// once ever, and we are guaranteed that the DB migration has run by the time we arrive here, so
-	// this is safe and not racy.
-	var needsMigration bool
-	if err := dbconn.Global.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM user_external_accounts WHERE service_type=$1 AND deleted_at IS NULL)`, needsMigrationSentinel).Scan(&needsMigration); err != nil && err != sql.ErrNoRows {
-		return err
-	}
-	if !needsMigration {
-		return nil
-	}
-
-	var err error
-	if serviceType == "" {
-		_, err = dbconn.Global.ExecContext(ctx, `UPDATE user_external_accounts SET deleted_at=now(), service_type='not_configured_at_migration_time' WHERE service_type=$1`, needsMigrationSentinel)
-	} else {
-		_, err = dbconn.Global.ExecContext(ctx, `UPDATE user_external_accounts SET service_type=$2, account_id=SUBSTR(account_id, CHAR_LENGTH(service_id)+2) WHERE service_type=$1 AND service_id!='override'`, needsMigrationSentinel, serviceType)
-		if err == nil {
-			_, err = dbconn.Global.ExecContext(ctx, `UPDATE user_external_accounts SET service_type='override', service_id='' WHERE service_type=$1 AND service_id='override'`, needsMigrationSentinel)
-		}
-	}
-	return err
 }
 
 func (userExternalAccounts) deleteForDeletedUsers(ctx context.Context) error {
