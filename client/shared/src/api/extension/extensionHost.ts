@@ -148,7 +148,7 @@ function createExtensionAPI(
         commands,
         search,
         languages: { registerHoverProvider, registerDocumentHighlightProvider, registerDefinitionProvider },
-        tree,
+        registerFileDecorationProvider,
         graphQL,
     } = initNewExtensionAPI(proxy, initData.initialSettings, documents)
 
@@ -195,6 +195,7 @@ function createExtensionAPI(
             createPanelView: (id: string) => views.createPanelView(id),
             createDecorationType,
             registerViewProvider: (id, provider) => views.registerViewProvider(id, provider),
+            registerFileDecorationProvider,
         },
 
         workspace: {
@@ -253,7 +254,7 @@ function createExtensionAPI(
                 provider: sourcegraph.CompletionItemProvider
             ) => languageFeatures.registerCompletionItemProvider(selector, provider),
         },
-        tree,
+
         search,
         commands,
         graphQL,

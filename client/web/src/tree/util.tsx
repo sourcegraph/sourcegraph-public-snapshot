@@ -87,19 +87,12 @@ export function hasSingleChild(tree: TreeEntryInfo[]): boolean {
 }
 
 export function renderFileDecorations(fileDecorations?: FileDecoration[], isDirectory?: boolean): React.ReactNode {
+    // Only need to check for number of decorations, other validation (like whether the decoration specifies at
+    // least one of `text` or `percentage`) is done in the extension host
     if (!fileDecorations || fileDecorations.length === 0) {
         return null
     }
-
-    // Only try to render decorations with some type of content
-    // Don't need to validate types since that's done in the extension host
-    const validFileDecorations = fileDecorations.filter(
-        fileDecoration => fileDecoration.text || fileDecoration.percentage
-    )
-
-    if (validFileDecorations.length === 0) {
-        return null
-    }
+    // TODO(tj): this can be css
 
     return (
         <div
@@ -107,22 +100,24 @@ export function renderFileDecorations(fileDecorations?: FileDecoration[], isDire
                 'mr-3': isDirectory,
             })}
         >
-            {validFileDecorations.map(
+            {fileDecorations.map(
                 (fileDecoration, index) =>
                     (fileDecoration.percentage || fileDecoration.text) && (
                         <div
                             className="d-flex align-items-center"
                             // We want some margin right if this isn't the last decoration for this file
                             // eslint-disable-next-line react/forbid-dom-props
-                            style={{ marginRight: index === validFileDecorations.length - 1 ? 0 : 12 }}
+                            style={{ marginRight: index === fileDecorations.length - 1 ? 0 : 12 }}
+                            key={fileDecoration.path + String(index)}
                         >
                             {fileDecoration.text && (
+                                // link or span?
                                 <small
                                     // eslint-disable-next-line react/forbid-dom-props
                                     style={{ color: fileDecoration.text.color }}
                                     data-tooltip={fileDecoration.text.hoverMessage}
                                     data-placement="bottom"
-                                    className="text-monospace text-decoration-none test-file-decoration-text"
+                                    className="text-monospace d-inline-block font-weight-normal test-file-decoration-text"
                                 >
                                     {fileDecoration.text.value}
                                 </small>

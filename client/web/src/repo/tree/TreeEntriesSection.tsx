@@ -12,40 +12,41 @@ import { renderFileDecorations } from '../../tree/util'
 const MIN_ENTRIES_FOR_COLUMN_LAYOUT = 6
 
 const TreeEntry: React.FunctionComponent<{
-    isDir: boolean
+    isDirectory: boolean
     name: string
     parentPath: string
     url: string
-    fileDecorationsByPath: FileDecorationsByPath
     isColumnLayout: boolean
-}> = ({ isDir, name, parentPath, url, fileDecorationsByPath, isColumnLayout }) => {
-    const filePath = parentPath ? parentPath + '/' + name : name
-    // TODO(tj): the parent knows the path already (entry), refactor
-    const fileDecorations = fileDecorationsByPath[filePath]
-
-    return (
-        // TODO(tj): Limit width when not column layout
+    renderedFileDecorations: React.ReactNode
+    path: string
+}> = ({ isDirectory, name, url, isColumnLayout, renderedFileDecorations, path }) => (
+    // TODO(tj): Limit width when not column layout
+    // {
+    //     'w-25': !isColumnLayout,
+    // }
+    <Link
+        to={url}
+        className={classNames(
+            'tree-entry test-file-decorable-name',
+            isDirectory && 'font-weight-bold',
+            `test-tree-entry-${isDirectory ? 'directory' : 'file'}`
+        )}
+        title={path}
+    >
         <div
-            className={classNames('d-flex align-items-center justify-content-between test-page-file-decorable', {
-                'w-25': !isColumnLayout,
-            })}
+            className={classNames(
+                'd-flex align-items-center justify-content-between test-page-file-decorable overflow-hidden'
+            )}
         >
-            <Link
-                to={url}
-                className={classNames(
-                    'tree-entry test-file-decorable-name',
-                    isDir && 'font-weight-bold',
-                    `test-tree-entry-${isDir ? 'directory' : 'file'}`
-                )}
-                title={filePath}
-            >
+            <span>
                 {name}
-                {isDir && '/'}
-            </Link>
-            {renderFileDecorations(fileDecorations)}
+                {isDirectory && '/'}
+            </span>
+            {renderedFileDecorations}
         </div>
-    )
-}
+    </Link>
+)
+
 export const TreeEntriesSection: React.FunctionComponent<{
     parentPath: string
     entries: Pick<GQL.ITreeEntry, 'name' | 'isDirectory' | 'url' | 'path'>[]
@@ -56,22 +57,34 @@ export const TreeEntriesSection: React.FunctionComponent<{
         return null
     }
 
+    // Render file decorations for all files in parent so we know how many total file decorations exist
+    // and can decide whether or not to render dividers
+    // No need to memoize decorations, since this component should only rerender when entries change
+    const renderedDecorationsByIndex = directChildren.map(entry =>
+        renderFileDecorations(fileDecorationsByPath[entry.path])
+    )
+    // If no ReactNode is truthy, we want to hide column-rule
+    const noDecorations = !renderedDecorationsByIndex.some(decoration => !!decoration)
+
     const isColumnLayout = directChildren.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT
 
-    // TODO(tj): render file decorations for all files in parent so we know how many total file decorations exist,
-    // so we can decide whether or not to render dividers
-
     return (
-        <div className={isColumnLayout ? 'tree-entries-section--columns' : undefined}>
+        <div
+            className={
+                isColumnLayout
+                    ? classNames('tree-entries-section--columns', {
+                          'tree-entries-section--no-decorations': noDecorations,
+                      })
+                    : undefined
+            }
+        >
             {directChildren.map((entry, index) => (
                 <TreeEntry
                     key={entry.name + String(index)}
-                    isDir={entry.isDirectory}
-                    name={entry.name}
                     parentPath={parentPath}
-                    url={entry.url}
-                    fileDecorationsByPath={fileDecorationsByPath}
                     isColumnLayout={isColumnLayout}
+                    renderedFileDecorations={renderedDecorationsByIndex[index]}
+                    {...entry}
                 />
             ))}
         </div>

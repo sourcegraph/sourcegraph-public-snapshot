@@ -14,11 +14,9 @@ import { fromLocation, toPosition } from './api/types'
 import { TextDocumentPositionParameters } from '../protocol'
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
-import { Hover, Location } from '@sourcegraph/extension-api-types'
-import { castArray, groupBy, isEqual } from 'lodash'
-import { fromHoverMerged, HoverMerged } from '../client/types/hover'
+import { castArray, groupBy, identity, isEqual } from 'lodash'
+import { fromHoverMerged } from '../client/types/hover'
 import { isNot, isExactly, isDefined } from '../../util/types'
-import { validateFileDecoration } from './api/decorations'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -39,7 +37,7 @@ export interface ExtensionHostState {
     documentHighlightProviders: BehaviorSubject<RegisteredProvider<sourcegraph.DocumentHighlightProvider>[]>
     definitionProviders: BehaviorSubject<RegisteredProvider<sourcegraph.DefinitionProvider>[]>
 
-    // Tree
+    // Decorations
     fileDecorationProviders: BehaviorSubject<sourcegraph.FileDecorationProvider[]>
 }
 
@@ -48,7 +46,7 @@ export interface RegisteredProvider<T> {
     provider: T
 }
 
-export interface InitResult {
+export interface InitResult extends Pick<typeof sourcegraph['app'], 'registerFileDecorationProvider'> {
     configuration: sourcegraph.ConfigurationService
     workspace: PartialWorkspaceNamespace
     exposedToMain: FlatExtensionHostAPI
@@ -60,7 +58,6 @@ export interface InitResult {
         typeof sourcegraph['languages'],
         'registerHoverProvider' | 'registerDocumentHighlightProvider' | 'registerDefinitionProvider'
     >
-    tree: typeof sourcegraph['tree']
     graphQL: typeof sourcegraph['graphQL']
 }
 
@@ -153,9 +150,9 @@ export const initNewExtensionAPI = (
             return proxySubscribable(
                 callProviders(
                     state.hoverProviders,
-                    document,
-                    provider => provider.provideHover(document, position),
-                    mergeHoverResults
+                    providers => providersForDocument(document, providers, ({ selector }) => selector),
+                    ({ provider }) => provider.provideHover(document, position),
+                    results => fromHoverMerged(mergeProviderResults(results))
                 )
             )
         },
@@ -166,9 +163,9 @@ export const initNewExtensionAPI = (
             return proxySubscribable(
                 callProviders(
                     state.documentHighlightProviders,
-                    document,
-                    provider => provider.provideDocumentHighlights(document, position),
-                    mergeDocumentHighlightResults
+                    providers => providersForDocument(document, providers, ({ selector }) => selector),
+                    ({ provider }) => provider.provideDocumentHighlights(document, position),
+                    mergeProviderResults
                 ).pipe(map(result => (result.isLoading ? [] : result.result)))
             )
         },
@@ -179,37 +176,24 @@ export const initNewExtensionAPI = (
             return proxySubscribable(
                 callProviders(
                     state.definitionProviders,
-                    document,
-                    provider => provider.provideDefinition(document, position),
-                    mergeDefinition
+                    providers => providersForDocument(document, providers, ({ selector }) => selector),
+                    ({ provider }) => provider.provideDefinition(document, position),
+                    results => mergeProviderResults(results).map(fromLocation)
                 )
             )
         },
 
-        // Tree
-        getFileDecorations: (parameters: sourcegraph.FileDecorationContext, logErrors: boolean = true) =>
+        // Decorations
+        getFileDecorations: (parameters: sourcegraph.FileDecorationContext) =>
             proxySubscribable(
                 parameters.files.length === 0
-                    ? EMPTY
-                    : state.fileDecorationProviders.pipe(
-                          map(providers => providers.map(provider => provider.provideFileDecorations)),
-                          switchMap(providers =>
-                              combineLatestOrDefault(
-                                  providers.map(provider =>
-                                      providerResultToObservable(provider(parameters)).pipe(
-                                          map(fileDecorations => fileDecorations.filter(validateFileDecoration)),
-                                          catchError(error => {
-                                              if (logErrors) {
-                                                  console.error('Provider errored:', error)
-                                              }
-
-                                              return EMPTY
-                                          })
-                                      )
-                                  )
-                              ).pipe(map(decorationsDecorations => groupBy(decorationsDecorations.flat(), 'path')))
-                          )
-                      )
+                    ? EMPTY // Don't call providers when there are no files in the directory
+                    : callProviders(
+                          state.fileDecorationProviders,
+                          identity, // No need to filter
+                          provider => provider.provideFileDecorations(parameters),
+                          mergeProviderResults
+                      ).pipe(map(({ result }) => groupBy(result, 'path')))
             ),
     }
 
@@ -282,9 +266,7 @@ export const initNewExtensionAPI = (
             registerDocumentHighlightProvider,
             registerDefinitionProvider,
         },
-        tree: {
-            registerFileDecorationProvider,
-        },
+        registerFileDecorationProvider,
         graphQL,
     }
 }
@@ -298,7 +280,7 @@ export const initNewExtensionAPI = (
  * @param selector a way to get a selector from a Provider
  * @returns a filtered array of providers
  */
-function providersForDocument<P>(
+export function providersForDocument<P>(
     document: TextDocumentIdentifier,
     entries: P[],
     selector: (p: P) => sourcegraph.DocumentSelector
@@ -328,35 +310,36 @@ function addWithRollback<T>(behaviorSubject: BehaviorSubject<T[]>, value: T): so
 /**
  * Helper function to abstract common logic of invoking language providers.
  *
- * 1. filters providers based on document
+ * 1. filters providers
  * 2. invokes filtered providers via invokeProvider function
  * 3. adds [LOADING] state for each provider result stream
  * 4. omits errors from provider results with potential logging
  * 5. aggregates latests results from providers based on mergeResult function
  *
  * @param providersObservable observable of provider collection (expected to emit if a provider was added or removed)
- * @param document used for filtering providers
+ * @param filterProviders specifies which providers should be invoked
  * @param invokeProvider specifies how to get results from a provider (usually a closure over provider arguments)
  * @param mergeResult specifies how providers results should be aggregated
  * @param logErrors if console.error should be used for reporting errors from providers
- * @returns observable of aggregated results from all providers based on mergeResults function
+ * @returns observable of aggregated results from all providers based on mergeProviderResults function
  */
-export function callProviders<TProvider, TProviderResult, TMergedResult>(
-    providersObservable: Observable<RegisteredProvider<TProvider>[]>,
-    document: TextDocumentIdentifier,
-    invokeProvider: (provider: TProvider) => sourcegraph.ProviderResult<TProviderResult>,
+export function callProviders<TRegisteredProvider, TProviderResult, TMergedResult>(
+    providersObservable: Observable<TRegisteredProvider[]>,
+    filterProviders: (providers: TRegisteredProvider[]) => TRegisteredProvider[],
+    invokeProvider: (provider: TRegisteredProvider) => sourcegraph.ProviderResult<TProviderResult>,
     mergeResult: (providerResults: (TProviderResult | 'loading' | null | undefined)[]) => TMergedResult,
     logErrors: boolean = true
 ): Observable<MaybeLoadingResult<TMergedResult>> {
     return providersObservable
         .pipe(
-            map(providers => providersForDocument(document, providers, ({ selector }) => selector)),
+            map(providers => filterProviders(providers)),
+
             switchMap(providers =>
                 combineLatestOrDefault(
                     providers.map(provider =>
                         concat(
                             [LOADING],
-                            providerResultToObservable(invokeProvider(provider.provider)).pipe(
+                            providerResultToObservable(invokeProvider(provider)).pipe(
                                 defaultIfEmpty<typeof LOADING | TProviderResult | null | undefined>(null),
                                 catchError(error => {
                                     if (logErrors) {
@@ -381,33 +364,16 @@ export function callProviders<TProvider, TProviderResult, TMergedResult>(
 }
 
 /**
- * merges latest results from hover providers into a form that is convenient to show
+ * Merges provider results
  *
- * @param results latests results from hover providers
- * @returns a {@link HoverMerged} results if there are any actual Hover results or null in case of no results or loading
+ * @param results latest results from providers
+ * @template TProviderResultElement Type of an element of the provider result array
  */
-export function mergeHoverResults(results: (typeof LOADING | Hover | null | undefined)[]): HoverMerged | null {
-    return fromHoverMerged(results.filter(isNot(isExactly(LOADING))))
-}
-
-/**
- * Merges definition result and converts it to client types for sending it to the main thread.
- *
- * @param results Results from all definition providers.
- */
-export function mergeDefinition(results: (typeof LOADING | sourcegraph.Definition | null | undefined)[]): Location[] {
+export function mergeProviderResults<TProviderResultElement>(
+    results: (typeof LOADING | TProviderResultElement | TProviderResultElement[] | null | undefined)[]
+): TProviderResultElement[] {
     return results
         .filter(isNot(isExactly(LOADING)))
         .flatMap(castArray)
         .filter(isDefined)
-        .map(fromLocation)
-}
-
-/**
- * @param results latests results from document highlight providers
- */
-export function mergeDocumentHighlightResults(
-    results: (typeof LOADING | sourcegraph.DocumentHighlight[] | null | undefined)[]
-): sourcegraph.DocumentHighlight[] {
-    return results.filter(isNot(isExactly(LOADING))).flatMap(highlights => highlights || [])
 }
