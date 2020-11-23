@@ -21,7 +21,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sourcegraph/campaignutils v0.0.0-20201016010611-63eb2bca27ad
 	github.com/sourcegraph/codeintelutils v0.0.0-20201118031531-b82ba3167b30
-	github.com/sourcegraph/go-diff v0.6.0
+	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect

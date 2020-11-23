@@ -16,6 +16,7 @@ All notable changes to `src-cli` are documented in this file.
 ### Changed
 
 - `src campaign [apply|preview]` now prints more detailed information about the diffs produced in each repository when run in verbose mode with `-v`. [#390](https://github.com/sourcegraph/src-cli/pull/390)
+- The dependency `go-diff` has been upgraded to 0.6.1 to include https://github.com/sourcegraph/go-diff/pull/55.
 
 ### Fixed
 

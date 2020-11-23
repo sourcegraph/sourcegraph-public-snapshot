@@ -52,14 +52,10 @@ github.com/shurcooL/go v0.0.0-20180423040247-9e1955d9fb6e/go.mod h1:TDJrrUr11Vxr
 github.com/shurcooL/go-goon v0.0.0-20170922171312-37c2f522c041/go.mod h1:N5mDOmsrJOB+vfqUK+7DmDyjhSLIIBnXo9lvZJj3MWQ=
 github.com/sourcegraph/campaignutils v0.0.0-20201016010611-63eb2bca27ad h1:HeSWFpxau4Jqk0s4yEhOdep+KYrJDm0497uhb/hnsgU=
 github.com/sourcegraph/campaignutils v0.0.0-20201016010611-63eb2bca27ad/go.mod h1:xm6i78Mk2t4DBLQDqEFc/3x6IPf7yYZCgbNaTQGhJHA=
-github.com/sourcegraph/codeintelutils v0.0.0-20201021190916-9622286ad906 h1:QrFRo45noesSAPUWDaE2KWJvtzM4KKLYzkbK7QkpLUA=
-github.com/sourcegraph/codeintelutils v0.0.0-20201021190916-9622286ad906/go.mod h1:HplI8gRslTrTUUsSYwu28hSOderix7m5dHNca7xBzeo=
-github.com/sourcegraph/codeintelutils v0.0.0-20201021234242-00a82702de0d h1:C+cLrOgPEluecyFz28u9AqP+/4Zp2YxpOI7EAnhK5Zo=
-github.com/sourcegraph/codeintelutils v0.0.0-20201021234242-00a82702de0d/go.mod h1:HplI8gRslTrTUUsSYwu28hSOderix7m5dHNca7xBzeo=
 github.com/sourcegraph/codeintelutils v0.0.0-20201118031531-b82ba3167b30 h1:HrRrPyskdkHc6MqQS3ehH+DSraFnOhtvBWQ6AzEJC1o=
 github.com/sourcegraph/codeintelutils v0.0.0-20201118031531-b82ba3167b30/go.mod h1:HplI8gRslTrTUUsSYwu28hSOderix7m5dHNca7xBzeo=
-github.com/sourcegraph/go-diff v0.6.0 h1:WbN9e/jD8ujU+o0vd9IFN5AEwtfB0rn/zM/AANaClqQ=
-github.com/sourcegraph/go-diff v0.6.0/go.mod h1:iBszgVvyxdc8SFZ7gm69go2KDdt3ag071iBaWPF6cjs=
+github.com/sourcegraph/go-diff v0.6.1 h1:hmA1LzxW0n1c3Q4YbrFgg4P99GSnebYa3x8gr0HZqLQ=
+github.com/sourcegraph/go-diff v0.6.1/go.mod h1:iBszgVvyxdc8SFZ7gm69go2KDdt3ag071iBaWPF6cjs=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWiiMP/vkkHiMXqFXzl1XfUNOdxKJbd6bI=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf/go.mod h1:ppFaPm6kpcHnZGqQTFhUIAQRIEhdQDWP1PCv4/ON354=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
