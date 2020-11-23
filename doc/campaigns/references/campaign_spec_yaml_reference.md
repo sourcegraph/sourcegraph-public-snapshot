@@ -75,7 +75,7 @@ on:
 
 A specific repository (and branch) that is added to the list of repositories that the campaign will be run on.
 
-A `branch` attribute specifies the branch on the repository to propose changes to. If unset, the repository's default branch is used.
+A `branch` attribute specifies the branch on the repository to propose changes to. If unset, the repository's default branch is used. If set, it overwrites earlier values to be used for the repository's branch.
 
 ### Examples
 
@@ -90,6 +90,27 @@ on:
     branch: 3.19-beta
   - repository: github.com/sourcegraph/src-cli
 ```
+
+In the following example, the `repositoriesMatchingQuery` returns both repositories with their default branch, but the `3.23` branch is used for `github.com/sourcegraph/sourcegraph`, since it is more specific:
+
+```yaml
+on:
+  - repositoriesMatchingQuery: repo:sourcegraph\/(sourcegraph|src-cli)$
+  - repository: github.com/sourcegraph/sourcegraph
+    branch: 3.23
+```
+
+In this example, `3.19-beta` branch is used, since it was named last:
+
+```yaml
+on:
+  - repositoriesMatchingQuery: repo:sourcegraph\/(sourcegraph|src-cli)$
+  - repository: github.com/sourcegraph/sourcegraph
+    branch: 3.23
+  - repository: github.com/sourcegraph/sourcegraph
+    branch: 3.19-beta
+```
+
 
 ## [`steps`](#steps)
 
