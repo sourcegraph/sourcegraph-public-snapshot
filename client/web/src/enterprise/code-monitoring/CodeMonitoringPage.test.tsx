@@ -6,7 +6,7 @@ import { of } from 'rxjs'
 import { AuthenticatedUser } from '../../auth'
 import { ListCodeMonitors, ListUserCodeMonitorsVariables } from '../../graphql-operations'
 import sinon from 'sinon'
-import { nodeList } from './testing/util'
+import { mockCodeMonitorNodes } from './testing/util'
 
 const history = H.createBrowserHistory()
 
@@ -19,7 +19,7 @@ const additionalProps = {
     useBreadcrumb: sinon.spy(),
     fetchUserCodeMonitors: ({ id, first, after }: ListUserCodeMonitorsVariables) =>
         of({
-            nodes: nodeList,
+            nodes: mockCodeMonitorNodes,
             pageInfo: {
                 endCursor: 'foo10',
                 hasNextPage: true,
@@ -30,7 +30,7 @@ const additionalProps = {
 
 const generateMockFetchMonitors = (count: number) => ({ id, first, after }: ListUserCodeMonitorsVariables) => {
     const result: ListCodeMonitors = {
-        nodes: nodeList.slice(0, count),
+        nodes: mockCodeMonitorNodes.slice(0, count),
         pageInfo: {
             endCursor: `foo${count}`,
             hasNextPage: count > 10,

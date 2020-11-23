@@ -6,7 +6,7 @@ import { AuthenticatedUser } from '../../auth'
 
 import { ListUserCodeMonitorsVariables } from '../../graphql-operations'
 import { of } from 'rxjs'
-import { nodeList } from './testing/util'
+import { mockCodeMonitorNodes } from './testing/util'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/CodeMonitoringPage', module)
 
@@ -14,7 +14,7 @@ const additionalProps = {
     authenticatedUser: { id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser,
     fetchUserCodeMonitors: ({ id, first, after }: ListUserCodeMonitorsVariables) =>
         of({
-            nodes: nodeList,
+            nodes: mockCodeMonitorNodes,
             pageInfo: {
                 endCursor: 'foo10',
                 hasNextPage: true,

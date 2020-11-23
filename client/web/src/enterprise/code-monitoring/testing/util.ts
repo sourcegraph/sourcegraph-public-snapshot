@@ -1,4 +1,4 @@
-export const nodeList = [
+export const mockCodeMonitorNodes = [
     {
         id: 'foo0',
         description: 'Test code monitor',

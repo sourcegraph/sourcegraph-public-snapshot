@@ -7,21 +7,11 @@ import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
-import {
-    CodeMonitorFields,
-    ListUserCodeMonitorsVariables,
-    ToggleCodeMonitorEnabledResult,
-} from '../../graphql-operations'
-import { Toggle } from '../../../../branded/src/components/Toggle'
+import { CodeMonitorFields, ListUserCodeMonitorsVariables } from '../../graphql-operations'
 import { Link } from '../../../../shared/src/components/Link'
 import { CodeMonitoringProps } from '.'
 import PlusIcon from 'mdi-react/PlusIcon'
-import { toggleCodeMonitorEnabled } from './backend'
-import { catchError, delay, startWith, switchMap, takeUntil, tap } from 'rxjs/operators'
-import { concat, Observable, of } from 'rxjs'
-import { useEventObservable } from '../../../../shared/src/util/useObservable'
-import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { CodeMonitorNode } from './CodeMonitoringNode'
 
 export interface CodeMonitoringPageProps extends BreadcrumbsProps, BreadcrumbSetters, CodeMonitoringProps {
     authenticatedUser: AuthenticatedUser
@@ -46,13 +36,11 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
 
     const [monitorListFilter, setMonitorListFilter] = useState<CodeMonitorFilter>('all')
 
-    const setAllFilter = useCallback<React.MouseEventHandler>((event: React.MouseEvent<HTMLButtonElement>) => {
-        event.preventDefault()
+    const setAllFilter = useCallback<React.MouseEventHandler>(() => {
         setMonitorListFilter('all')
     }, [])
 
-    const setUserFilter = useCallback<React.MouseEventHandler>((event: React.MouseEvent<HTMLButtonElement>) => {
-        event.preventDefault()
+    const setUserFilter = useCallback<React.MouseEventHandler>(() => {
         setMonitorListFilter('user')
     }, [])
 
@@ -108,7 +96,9 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         </button>
                     </div>
                     <div className="d-flex flex-column w-100 col">
-                        <h3 className="mb-2">Your code monitors</h3>
+                        <h3 className="mb-2">
+                            {`${monitorListFilter === 'all' ? 'All code monitors' : 'Your code monitors'}`}
+                        </h3>
                         <FilteredConnection<CodeMonitorFields>
                             location={props.location}
                             history={props.history}
@@ -128,72 +118,6 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     We want to hear your feedback! <a href="/">Share your thoughts</a>
                 </div>
             </div>
-        </div>
-    )
-}
-
-interface CodeMonitorNodeProps {
-    node: CodeMonitorFields
-}
-
-const LOADING = 'LOADING' as const
-
-const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({ node }: CodeMonitorNodeProps) => {
-    const [enabled, setEnabled] = useState<boolean>(node.enabled)
-
-    const [toggleMonitor, toggleMonitorOrError] = useEventObservable(
-        useCallback(
-            (click: Observable<React.MouseEvent>) =>
-                click.pipe(
-                    tap(event => event.preventDefault()),
-                    switchMap(() => {
-                        const toggleMonitor = toggleCodeMonitorEnabled(node.id, !enabled).pipe(
-                            tap(
-                                (
-                                    idAndEnabled:
-                                        | typeof LOADING
-                                        | ErrorLike
-                                        | ToggleCodeMonitorEnabledResult['toggleCodeMonitor']
-                                ) => {
-                                    if (idAndEnabled !== LOADING && !isErrorLike(idAndEnabled)) {
-                                        setEnabled(idAndEnabled.enabled)
-                                    }
-                                }
-                            ),
-                            catchError(error => [asError(error)])
-                        )
-                        return concat(
-                            of(LOADING).pipe(startWith(enabled), delay(300), takeUntil(toggleMonitor)),
-                            toggleMonitor
-                        )
-                    })
-                ),
-            [node, enabled, setEnabled]
-        )
-    )
-
-    return (
-        <div className="card p-3 mb-2">
-            <div className="d-flex justify-content-between align-items-center">
-                <div className="d-flex flex-column">
-                    <div className="font-weight-bold">{node.description}</div>
-                    {node.actions.nodes.length > 0 && (
-                        <div className="text-muted">New search result → Sends email notifications</div>
-                    )}
-                </div>
-                <div className="d-flex flex-column">
-                    <div className="d-flex">
-                        {toggleMonitorOrError === LOADING && <LoadingSpinner className="icon-inline mr-2" />}
-                        <div onClick={toggleMonitor}>
-                            <Toggle value={enabled} className="mr-3" />
-                        </div>
-                        <Link to="/">Edit</Link>
-                    </div>
-                </div>
-            </div>
-            {isErrorLike(toggleMonitorOrError) && (
-                <div className="alert alert-danger">Failed to toggle monitor: {toggleMonitorOrError.message}</div>
-            )}
         </div>
     )
 }
