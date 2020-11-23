@@ -1020,7 +1020,7 @@ func (s *RepoStore) GetUserAddedRepoNames(ctx context.Context, userID int32) ([]
 	}
 
 	const fmtString = `
-SELECT repo.name FROM repo
+SELECT DISTINCT(repo.name) FROM repo
 JOIN external_service_repos esr ON repo.id = esr.repo_id
 WHERE
 	esr.external_service_id IN (
