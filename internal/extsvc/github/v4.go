@@ -15,6 +15,7 @@ import (
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/visitor"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -159,9 +160,11 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 	return err
 }
 
-func (c *V4Client) determineGitHubVersion(ctx context.Context) (*semver.Version, error) {
+var allMatchingSemver = semver.MustParse("99.99.99")
+
+func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
 	if c.githubDotCom {
-		return nil, nil
+		return allMatchingSemver
 	}
 
 	var resp struct {
@@ -169,12 +172,19 @@ func (c *V4Client) determineGitHubVersion(ctx context.Context) (*semver.Version,
 	}
 	req, err := http.NewRequest("GET", "/meta", nil)
 	if err != nil {
-		return nil, err
+		log15.Warn("Failed to fetch GitHub enterprise version", "build request", "apiURL", c.apiURL, "err", err)
+		return allMatchingSemver
 	}
 	if err = doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &resp); err != nil {
-		return nil, err
+		log15.Warn("Failed to fetch GitHub enterprise version", "doRequest", "apiURL", c.apiURL, "err", err)
+		return allMatchingSemver
 	}
-	return semver.NewVersion(resp.InstalledVersion)
+	version, err := semver.NewVersion(resp.InstalledVersion)
+	if err == nil {
+		return version
+	}
+	log15.Warn("Failed to fetch GitHub enterprise version", "parse version", "apiURL", c.apiURL, "resp.InstalledVersion", resp.InstalledVersion, "err", err)
+	return allMatchingSemver
 }
 
 // estimateGraphQLCost estimates the cost of the query as described here:

@@ -14,18 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-// Schema Changes for 2020-04-15
-// Enum value CONVERT_TO_DRAFT_EVENT was added to enum PullRequestTimelineItemsItemType
 // timelineItemTypes contains all the types requested via GraphQL from the timelineItems connection on a pull request.
 const timelineItemTypes = `ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT, READY_FOR_REVIEW_EVENT`
 
 var ghe220Semver, _ = semver.NewConstraint("~2.20.0")
-var ghe221PlusSemver, _ = semver.NewConstraint("^2.21.0")
+var ghe221PlusSemver, _ = semver.NewConstraint(">= 2.21.0")
 
-func timelineItemTypesForGH(isDotCom bool, version *semver.Version) (string, error) {
-	if isDotCom {
-		return timelineItemTypes + `, CONVERT_TO_DRAFT_EVENT`, nil
-	}
+func timelineItemTypesForGH(version *semver.Version) (string, error) {
 	if ghe220Semver.Check(version) {
 		return timelineItemTypes, nil
 	}
@@ -532,12 +527,9 @@ type CreatePullRequestInput struct {
 
 // CreatePullRequest creates a PullRequest on Github.
 func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInput) (*PullRequest, error) {
-	version, err := c.determineGitHubVersion(ctx)
-	if err != nil {
-		return nil, err
-	}
+	version := c.determineGitHubVersion(ctx)
 
-	prFragment, err := pullRequestFragments(c.githubDotCom, version)
+	prFragment, err := pullRequestFragments(version)
 	if err != nil {
 		return nil, err
 	}
@@ -569,7 +561,7 @@ func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestI
 		"body":         in.Body,
 	}
 
-	if version == nil || ghe221PlusSemver.Check(version) {
+	if ghe221PlusSemver.Check(version) {
 		compatibleInput["draft"] = in.Draft
 	} else if in.Draft {
 		return nil, errors.New("draft PRs not supported by this version of GitHub enterprise. GitHub Enterprise v3.21 is the first version to support draft PRs.\nPotential fix: set `published: true` in your campaign spec.")
@@ -615,11 +607,8 @@ type UpdatePullRequestInput struct {
 
 // UpdatePullRequest creates a PullRequest on Github.
 func (c *V4Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error) {
-	version, err := c.determineGitHubVersion(ctx)
-	if err != nil {
-		return nil, err
-	}
-	prFragment, err := pullRequestFragments(c.githubDotCom, version)
+	version := c.determineGitHubVersion(ctx)
+	prFragment, err := pullRequestFragments(version)
 	if err != nil {
 		return nil, err
 	}
@@ -671,11 +660,8 @@ func (c *V4Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestI
 
 // MarkPullRequestReadyForReview marks the PullRequest on Github as ready for review.
 func (c *V4Client) MarkPullRequestReadyForReview(ctx context.Context, pr *PullRequest) error {
-	version, err := c.determineGitHubVersion(ctx)
-	if err != nil {
-		return err
-	}
-	prFragment, err := pullRequestFragments(c.githubDotCom, version)
+	version := c.determineGitHubVersion(ctx)
+	prFragment, err := pullRequestFragments(version)
 	if err != nil {
 		return err
 	}
@@ -723,11 +709,8 @@ func (c *V4Client) MarkPullRequestReadyForReview(ctx context.Context, pr *PullRe
 
 // ClosePullRequest closes the PullRequest on Github.
 func (c *V4Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
-	version, err := c.determineGitHubVersion(ctx)
-	if err != nil {
-		return err
-	}
-	prFragment, err := pullRequestFragments(c.githubDotCom, version)
+	version := c.determineGitHubVersion(ctx)
+	prFragment, err := pullRequestFragments(version)
 	if err != nil {
 		return err
 	}
@@ -775,11 +758,8 @@ func (c *V4Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error 
 
 // ReopenPullRequest reopens the PullRequest on Github.
 func (c *V4Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
-	version, err := c.determineGitHubVersion(ctx)
-	if err != nil {
-		return err
-	}
-	prFragment, err := pullRequestFragments(c.githubDotCom, version)
+	version := c.determineGitHubVersion(ctx)
+	prFragment, err := pullRequestFragments(version)
 	if err != nil {
 		return err
 	}
@@ -832,12 +812,9 @@ func (c *V4Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 		return err
 	}
 
-	version, err := c.determineGitHubVersion(ctx)
-	if err != nil {
-		return err
-	}
+	version := c.determineGitHubVersion(ctx)
 
-	prFragment, err := pullRequestFragments(c.githubDotCom, version)
+	prFragment, err := pullRequestFragments(version)
 	if err != nil {
 		return err
 	}
@@ -898,11 +875,8 @@ query($owner: String!, $name: String!, $number: Int!) {
 // refs. GitHub only allows one open PR by ref at a time.
 // If nothing is found an error is returned.
 func (c *V4Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, baseRef, headRef string) (*PullRequest, error) {
-	version, err := c.determineGitHubVersion(ctx)
-	if err != nil {
-		return nil, err
-	}
-	prFragment, err := pullRequestFragments(c.githubDotCom, version)
+	version := c.determineGitHubVersion(ctx)
+	prFragment, err := pullRequestFragments(version)
 	if err != nil {
 		return nil, err
 	}
@@ -951,15 +925,12 @@ func (c *V4Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, ba
 }
 
 func (c *V4Client) loadRemainingTimelineItems(ctx context.Context, prID string, pageInfo PageInfo) (items []TimelineItem, err error) {
-	version, err := c.determineGitHubVersion(ctx)
+	version := c.determineGitHubVersion(ctx)
+	timelineItemTypes, err := timelineItemTypesForGH(version)
 	if err != nil {
 		return nil, err
 	}
-	timelineItemTypes, err := timelineItemTypesForGH(c.githubDotCom, version)
-	if err != nil {
-		return nil, err
-	}
-	timelineItemsFragment, err := timelineItemsFragment2(c.githubDotCom, version)
+	timelineItemsFragment, err := timelineItemsFragment2(version)
 	if err != nil {
 		return nil, err
 	}
@@ -1243,10 +1214,7 @@ const convertToDraftEventFmtstr = `
   }
 `
 
-func timelineItemsFragment2(isDotCom bool, version *semver.Version) (string, error) {
-	if isDotCom {
-		return fmt.Sprintf(timelineItemsFragmentFmtstr, convertToDraftEventFmtstr), nil
-	}
+func timelineItemsFragment2(version *semver.Version) (string, error) {
 	if ghe220Semver.Check(version) {
 		// Don't ask for isDraft for ghe 220
 		return fmt.Sprintf(timelineItemsFragmentFmtstr, ""), nil
@@ -1339,17 +1307,14 @@ fragment pr on PullRequest {
 }
 `
 
-func pullRequestFragments(isDotCom bool, version *semver.Version) (string, error) {
-	timelineItemTypes, err := timelineItemTypesForGH(isDotCom, version)
+func pullRequestFragments(version *semver.Version) (string, error) {
+	timelineItemTypes, err := timelineItemTypesForGH(version)
 	if err != nil {
 		return "", err
 	}
-	timelineItemsFragment, err := timelineItemsFragment2(isDotCom, version)
+	timelineItemsFragment, err := timelineItemsFragment2(version)
 	if err != nil {
 		return "", err
-	}
-	if isDotCom {
-		return fmt.Sprintf(timelineItemsFragment+pullRequestFragmentsFmtstr, "isDraft", timelineItemTypes), nil
 	}
 	if ghe220Semver.Check(version) {
 		// Don't ask for isDraft for ghe 220
