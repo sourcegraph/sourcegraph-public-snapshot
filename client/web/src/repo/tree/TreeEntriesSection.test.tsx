@@ -76,6 +76,9 @@ describe('TreeEntriesSection', () => {
                     fileDecorationsByPath={{
                         'src/testutils': [{ path: 'src/testutils', text: { value: 'testutils decoration' } }],
                         'src/typings': [{ path: 'src/typings', text: { value: 'typings decoration' } }],
+                        'src/errors.ts': [
+                            { path: 'src/errors.ts', component: 'sidebar', text: { value: 'errors decoration' } }, // This shouldn't be rendered
+                        ],
                     }}
                 />
             )
