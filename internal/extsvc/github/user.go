@@ -97,14 +97,3 @@ func (c *V3Client) ListRepositoryCollaborators(ctx context.Context, owner, repo 
 	}
 	return users, len(users) > 0, nil
 }
-
-func (c *V3Client) GetEnterpriseVersion(ctx context.Context) (string, error) {
-	var resp struct {
-		InstalledVersion string `json:"installed_version"`
-	}
-	err := c.requestGet(ctx, "/meta", &resp)
-	if err != nil {
-		return "", err
-	}
-	return resp.InstalledVersion, nil
-}

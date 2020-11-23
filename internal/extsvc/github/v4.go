@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/visitor"
@@ -46,8 +47,6 @@ type V4Client struct {
 
 	// rateLimit is our self imposed rate limiter.
 	rateLimit *rate.Limiter
-
-	EnterpriseVersion string
 }
 
 // NewV4Client creates a new GitHub GraphQL API client with an optional default
@@ -97,9 +96,7 @@ func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Cli
 // the current V4Client, except authenticated as the GitHub user with the given
 // authenticator instance (most likely a token).
 func (c *V4Client) WithAuthenticator(a auth.Authenticator) *V4Client {
-	newC := NewV4Client(c.apiURL, a, c.httpClient)
-	newC.EnterpriseVersion = c.EnterpriseVersion
-	return newC
+	return NewV4Client(c.apiURL, a, c.httpClient)
 }
 
 func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[string]interface{}, result interface{}) (err error) {
@@ -160,6 +157,24 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 		}
 	}
 	return err
+}
+
+func (c *V4Client) determineGitHubVersion(ctx context.Context) (*semver.Version, error) {
+	if c.githubDotCom {
+		return nil, nil
+	}
+
+	var resp struct {
+		InstalledVersion string `json:"installed_version"`
+	}
+	req, err := http.NewRequest("GET", "/meta", nil)
+	if err != nil {
+		return nil, err
+	}
+	if err = doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &resp); err != nil {
+		return nil, err
+	}
+	return semver.NewVersion(resp.InstalledVersion)
 }
 
 // estimateGraphQLCost estimates the cost of the query as described here:

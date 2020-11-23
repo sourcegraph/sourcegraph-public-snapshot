@@ -115,17 +115,6 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 
 	token := &auth.OAuthBearerToken{Token: c.Token}
 
-	v3Client := github.NewV3Client(apiURL, token, cli)
-	v4Client := github.NewV4Client(apiURL, token, cli)
-
-	if !githubDotCom {
-		enterpriseVersion, err := v3Client.GetEnterpriseVersion(context.Background())
-		if err != nil {
-			return nil, err
-		}
-		v4Client.EnterpriseVersion = enterpriseVersion
-	}
-
 	return &GithubSource{
 		svc:              svc,
 		config:           c,
@@ -134,8 +123,8 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 		excludeForks:     excludeForks,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
-		v3Client:         v3Client,
-		v4Client:         v4Client,
+		v3Client:         github.NewV3Client(apiURL, token, cli),
+		v4Client:         github.NewV4Client(apiURL, token, cli),
 		searchClient:     github.NewV3Client(apiURL, token, cli).WithSeparateRateLimitMonitor(),
 		originalHostname: originalHostname,
 	}, nil
