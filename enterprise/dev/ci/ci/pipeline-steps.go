@@ -9,9 +9,27 @@ import (
 	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
 )
 
+type annotationOptions struct {
+	Style  string
+	Append bool
+}
+
+func addAnnotation(pipeline *bk.Pipeline, context, message string, opts annotationOptions) {
+	if opts.Style == "" {
+		opts.Style = "info"
+	}
+	annotate := fmt.Sprintf(`buildkite-agent annotate "%s" --context %s --style %s`,
+		message, context, opts.Style)
+	if opts.Append {
+		annotate = fmt.Sprintf("%s --append", annotate)
+	}
+	pipeline.AddStep(fmt.Sprintf(":memo: %s", context),
+		bk.Cmd(annotate))
+}
+
 // Verifies the docs formatting and builds the `docsite` command.
 func addDocs(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":memo: Check and build docsite",
+	pipeline.AddStep(":books: Check and build docsite",
 		bk.Cmd("./dev/ci/yarn-run.sh prettier-check"),
 		bk.Cmd("./dev/check/docsite.sh"))
 }
