@@ -14,22 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-// timelineItemTypes contains all the types requested via GraphQL from the timelineItems connection on a pull request.
-const timelineItemTypes = `ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT, READY_FOR_REVIEW_EVENT`
-
-var ghe220Semver, _ = semver.NewConstraint("~2.20.0")
-var ghe221PlusSemver, _ = semver.NewConstraint(">= 2.21.0")
-
-func timelineItemTypesForGH(version *semver.Version) (string, error) {
-	if ghe220Semver.Check(version) {
-		return timelineItemTypes, nil
-	}
-	if ghe221PlusSemver.Check(version) {
-		return timelineItemTypes + `, CONVERT_TO_DRAFT_EVENT`, nil
-	}
-	return "", errors.New("unsupported version of GitHub enterprise")
-}
-
 // PageInfo contains the paging information based on the Redux conventions.
 type PageInfo struct {
 	HasNextPage bool
@@ -561,7 +545,7 @@ func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestI
 		"body":         in.Body,
 	}
 
-	if ghe221PlusSemver.Check(version) {
+	if ghe221PlusOrDotComSemver.Check(version) {
 		compatibleInput["draft"] = in.Draft
 	} else if in.Draft {
 		return nil, errors.New("draft PRs not supported by this version of GitHub enterprise. GitHub Enterprise v3.21 is the first version to support draft PRs.\nPotential fix: set `published: true` in your campaign spec.")
@@ -926,11 +910,11 @@ func (c *V4Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, ba
 
 func (c *V4Client) loadRemainingTimelineItems(ctx context.Context, prID string, pageInfo PageInfo) (items []TimelineItem, err error) {
 	version := c.determineGitHubVersion(ctx)
-	timelineItemTypes, err := timelineItemTypesForGH(version)
+	timelineItemTypes, err := timelineItemTypes(version)
 	if err != nil {
 		return nil, err
 	}
-	timelineItemsFragment, err := timelineItemsFragment2(version)
+	timelineItemsFragment, err := timelineItemsFragment(version)
 	if err != nil {
 		return nil, err
 	}
@@ -981,6 +965,22 @@ func (c *V4Client) loadRemainingTimelineItems(ctx context.Context, prID string, 
 		pi = results.Node.TimelineItems.PageInfo
 	}
 	return
+}
+
+// timelineItemTypes contains all the types requested via GraphQL from the timelineItems connection on a pull request.
+const timelineItemTypesFmtStr = `ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT, READY_FOR_REVIEW_EVENT`
+
+var ghe220Semver, _ = semver.NewConstraint("~2.20.0")
+var ghe221PlusOrDotComSemver, _ = semver.NewConstraint(">= 2.21.0")
+
+func timelineItemTypes(version *semver.Version) (string, error) {
+	if ghe220Semver.Check(version) {
+		return timelineItemTypesFmtStr, nil
+	}
+	if ghe221PlusOrDotComSemver.Check(version) {
+		return timelineItemTypesFmtStr + `, CONVERT_TO_DRAFT_EVENT`, nil
+	}
+	return "", errors.New("unsupported version of GitHub")
 }
 
 // This fragment was formatted using the "prettify" button in the GitHub API explorer:
@@ -1214,15 +1214,15 @@ const convertToDraftEventFmtstr = `
   }
 `
 
-func timelineItemsFragment2(version *semver.Version) (string, error) {
+func timelineItemsFragment(version *semver.Version) (string, error) {
 	if ghe220Semver.Check(version) {
-		// Don't ask for isDraft for ghe 220
+		// GHE 2.20 doesn't know about the ConvertToDraftEvent type.
 		return fmt.Sprintf(timelineItemsFragmentFmtstr, ""), nil
 	}
-	if ghe221PlusSemver.Check(version) {
+	if ghe221PlusOrDotComSemver.Check(version) {
 		return fmt.Sprintf(timelineItemsFragmentFmtstr, convertToDraftEventFmtstr), nil
 	}
-	return "", errors.New("unsupported version of GitHub enterprise")
+	return "", errors.New("unsupported version of GitHub")
 }
 
 // This fragment was formatted using the "prettify" button in the GitHub API explorer:
@@ -1308,20 +1308,20 @@ fragment pr on PullRequest {
 `
 
 func pullRequestFragments(version *semver.Version) (string, error) {
-	timelineItemTypes, err := timelineItemTypesForGH(version)
+	timelineItemTypes, err := timelineItemTypes(version)
 	if err != nil {
 		return "", err
 	}
-	timelineItemsFragment, err := timelineItemsFragment2(version)
+	timelineItemsFragment, err := timelineItemsFragment(version)
 	if err != nil {
 		return "", err
 	}
 	if ghe220Semver.Check(version) {
-		// Don't ask for isDraft for ghe 220
+		// Don't ask for isDraft for ghe 2.20.
 		return fmt.Sprintf(timelineItemsFragment+pullRequestFragmentsFmtstr, "", timelineItemTypes), nil
 	}
-	if ghe221PlusSemver.Check(version) {
+	if ghe221PlusOrDotComSemver.Check(version) {
 		return fmt.Sprintf(timelineItemsFragment+pullRequestFragmentsFmtstr, "isDraft", timelineItemTypes), nil
 	}
-	return "", errors.New("unsupported version of GitHub enterprise")
+	return "", errors.New("unsupported version of GitHub")
 }

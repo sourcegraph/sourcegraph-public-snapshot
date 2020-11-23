@@ -160,8 +160,12 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 	return err
 }
 
+// allMatchingSemver is a *semver.Version that will always match for the latest GitHub, which is either the
+// latest GHE or the current deployment on GitHub.com.
 var allMatchingSemver = semver.MustParse("99.99.99")
 
+// determineGitHubVersion returns a *semver.Version for the targetted GitHub instance by this client. When an
+// error occurs, we print a warning to the logs but don't fail and return the allMatchingSemver.
 func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
 	if c.githubDotCom {
 		return allMatchingSemver
