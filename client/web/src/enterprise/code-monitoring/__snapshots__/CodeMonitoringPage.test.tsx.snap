@@ -159,7 +159,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
           <h3
             className="mb-2"
           >
-            Your code monitors
+            All code monitors
           </h3>
           <FilteredConnection
             cursorPaging={true}
@@ -448,11 +448,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -539,11 +541,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -630,11 +634,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -721,11 +727,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -812,11 +820,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -903,11 +913,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -994,11 +1006,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -1085,11 +1099,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -1176,11 +1192,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -1267,11 +1285,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -1483,7 +1503,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
           <h3
             className="mb-2"
           >
-            Your code monitors
+            All code monitors
           </h3>
           <FilteredConnection
             cursorPaging={true}
@@ -1639,11 +1659,13 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -1730,11 +1752,13 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -1821,11 +1845,13 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -2037,7 +2063,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
           <h3
             className="mb-2"
           >
-            Your code monitors
+            All code monitors
           </h3>
           <FilteredConnection
             cursorPaging={true}
@@ -2364,11 +2390,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -2455,11 +2483,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -2546,11 +2576,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -2637,11 +2669,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -2728,11 +2762,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -2819,11 +2855,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -2910,11 +2948,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -3001,11 +3041,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -3092,11 +3134,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -3183,11 +3227,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -3274,11 +3320,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
@@ -3365,11 +3413,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             >
                               <Toggle
                                 className="mr-3"
+                                disabled={false}
                                 value={true}
                               >
                                 <button
                                   aria-checked={true}
                                   className="toggle mr-3"
+                                  disabled={false}
                                   onClick={[Function]}
                                   role="switch"
                                   type="button"
