@@ -869,7 +869,7 @@ func (r *Resolver) deleteActionsEmailQuery(ctx context.Context, actionIDs []int6
 // createRecipientsQuery returns a query that inserts several recipients at once.
 func (r *Resolver) createRecipientsQuery(ctx context.Context, namespaces []graphql.ID, emailID int64) (*sqlf.Query, error) {
 	const header = `
-INSERT INTO cm_recipients (email, namespace_user_id, namespace_org_id) 
+INSERT INTO cm_recipients (email, namespace_user_id, namespace_org_id)
 VALUES`
 	const values = `
 (%s,%s,%s),`

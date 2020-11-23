@@ -8,6 +8,8 @@ import {
     ListCodeMonitors,
     ListUserCodeMonitorsResult,
     ListUserCodeMonitorsVariables,
+    ToggleCodeMonitorEnabledResult,
+    ToggleCodeMonitorEnabledVariables,
 } from '../../graphql-operations'
 
 export const createCodeMonitor = ({
@@ -62,6 +64,11 @@ const ListCodeMonitorsFragment = gql`
         nodes {
             ...CodeMonitorFields
         }
+        totalCount
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
     }
     ${CodeMonitorFragment}
 `
@@ -74,7 +81,7 @@ export const listUserCodeMonitors = ({
     id,
     first,
     after,
-}: ListUserCodeMonitorsVariables): Observable<ListCodeMonitorsResult['monitors']> => {
+}: ListUserCodeMonitorsVariables): Observable<ListCodeMonitors> => {
     const query = gql`
         query ListUserCodeMonitors($id: ID!, $first: Int, $after: String) {
             node(id: $id) {
@@ -82,11 +89,6 @@ export const listUserCodeMonitors = ({
                 ... on User {
                     monitors(first: $first, after: $after) {
                         ...ListCodeMonitors
-                        totalCount
-                        pageInfo {
-                            endCursor
-                            hasNextPage
-                        }
                     }
                 }
             }
@@ -109,9 +111,29 @@ export const listUserCodeMonitors = ({
                 throw new Error(`Requested node is a ${data.node.__typename}, not a User or Org`)
             }
 
-            return {
-                nodes: data.node.monitors.nodes,
-            }
+            return data.node.monitors
         })
+    )
+}
+
+export const toggleCodeMonitorEnabled = (
+    id: string,
+    enabled: boolean
+): Observable<ToggleCodeMonitorEnabledResult['toggleCodeMonitor']> => {
+    const query = gql`
+        mutation ToggleCodeMonitorEnabled($id: ID!, $enabled: Boolean!) {
+            toggleCodeMonitor(id: $id, enabled: $enabled) {
+                id
+                enabled
+            }
+        }
+    `
+
+    return requestGraphQL<ToggleCodeMonitorEnabledResult, ToggleCodeMonitorEnabledVariables>(query, {
+        id,
+        enabled,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.toggleCodeMonitor)
     )
 }
