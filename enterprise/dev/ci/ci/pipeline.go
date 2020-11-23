@@ -150,9 +150,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	// Construct pipeline
 	pipeline := &bk.Pipeline{}
-	addAnnotation(pipeline, "hello-world", `# Hello world! :rocket:`, annotationOptions{
-		Style: "info",
-	})
 	for _, p := range pipelineOperations {
 		p(pipeline)
 	}
