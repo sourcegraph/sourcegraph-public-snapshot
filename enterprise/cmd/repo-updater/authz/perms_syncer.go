@@ -254,6 +254,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 					return errors.Wrapf(err, "set expired for external account %d", acct.ID)
 				}
 				log15.Debug("PermsSyncer.syncUserPerms.setExternalAccountExpired", "userID", user.ID, "id", acct.ID)
+
+				// We still want to continue processing other external accounts
 				continue
 			}
 
