@@ -9,9 +9,11 @@ import (
 	"github.com/sourcegraph/src-cli/internal/output"
 )
 
-func newCampaignProgressPrinter(out *output.Output, numParallelism int) *campaignProgressPrinter {
+func newCampaignProgressPrinter(out *output.Output, verbose bool, numParallelism int) *campaignProgressPrinter {
 	return &campaignProgressPrinter{
 		out: out,
+
+		verbose: verbose,
 
 		numParallelism: numParallelism,
 
@@ -25,6 +27,8 @@ func newCampaignProgressPrinter(out *output.Output, numParallelism int) *campaig
 
 type campaignProgressPrinter struct {
 	out *output.Output
+
+	verbose bool
 
 	progress      output.ProgressWithStatusBars
 	numStatusBars int
@@ -134,18 +138,47 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 	}
 
 	for _, ts := range newlyCompleted {
-		statusText, err := taskStatusText(ts)
-		if err != nil {
-			p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.RepoName, err)
-			continue
+		var fileDiffs []*diff.FileDiff
+
+		if ts.ChangesetSpec != nil {
+			var err error
+			fileDiffs, err = diff.ParseMultiFileDiff([]byte(ts.ChangesetSpec.Commits[0].Diff))
+			if err != nil {
+				p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.RepoName, err)
+				continue
+			}
 		}
 
-		p.progress.Verbosef("%-*s %s", p.maxRepoName, ts.RepoName, statusText)
+		if p.verbose {
+			p.progress.WriteLine(output.Linef("", output.StylePending, "%s", ts.RepoName))
+
+			if ts.ChangesetSpec == nil {
+				p.progress.Verbosef("  No changes")
+			} else {
+				lines, err := verboseDiffSummary(fileDiffs)
+				if err != nil {
+					p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.RepoName, err)
+					continue
+				}
+
+				for _, line := range lines {
+					p.progress.Verbose(line)
+				}
+			}
+
+			p.progress.Verbose("")
+		}
 
 		if idx, ok := p.repoStatusBar[ts.RepoName]; ok {
 			// Log that this task completed, but only if there is no
 			// currently executing one in this bar, to avoid flicker.
 			if _, ok := p.statusBarRepo[idx]; !ok {
+				statusText, err := taskStatusBarText(ts)
+				if err != nil {
+					p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.RepoName, err)
+					continue
+				}
+
 				if ts.Err != nil {
 					p.progress.StatusBarFailf(idx, statusText)
 				} else {
@@ -163,7 +196,7 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 			continue
 		}
 
-		statusText, err := taskStatusText(ts)
+		statusText, err := taskStatusBarText(ts)
 		if err != nil {
 			p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.RepoName, err)
 			continue
@@ -181,7 +214,7 @@ type statusTexter interface {
 	StatusText() string
 }
 
-func taskStatusText(ts *campaigns.TaskStatus) (string, error) {
+func taskStatusBarText(ts *campaigns.TaskStatus) (string, error) {
 	var statusText string
 
 	if ts.IsCompleted() {
@@ -222,4 +255,58 @@ func taskStatusText(ts *campaigns.TaskStatus) (string, error) {
 	}
 
 	return statusText, nil
+}
+
+func verboseDiffSummary(fileDiffs []*diff.FileDiff) ([]string, error) {
+	var (
+		lines []string
+
+		maxFilenameLen int
+		sumInsertions  int
+		sumDeletions   int
+	)
+
+	fileStats := make(map[string]string, len(fileDiffs))
+
+	for _, f := range fileDiffs {
+		name := f.NewName
+		if name == "/dev/null" {
+			name = f.OrigName
+		}
+
+		if len(name) > maxFilenameLen {
+			maxFilenameLen = len(name)
+		}
+
+		stat := f.Stat()
+
+		sumInsertions += int(stat.Added) + int(stat.Changed)
+		sumDeletions += int(stat.Deleted) + int(stat.Changed)
+
+		num := stat.Added + 2*stat.Changed + stat.Deleted
+
+		fileStats[name] = fmt.Sprintf("%d %s", num, diffStatDiagram(stat))
+	}
+
+	for file, stats := range fileStats {
+		lines = append(lines, fmt.Sprintf("\t%-*s | %s", maxFilenameLen, file, stats))
+	}
+
+	var insertionsPlural string
+	if sumInsertions != 0 {
+		insertionsPlural = "s"
+	}
+
+	var deletionsPlural string
+	if sumDeletions != 1 {
+		deletionsPlural = "s"
+	}
+
+	lines = append(lines, fmt.Sprintf("  %s, %s, %s",
+		diffStatDescription(fileDiffs),
+		fmt.Sprintf("%d insertion%s", sumInsertions, insertionsPlural),
+		fmt.Sprintf("%d deletion%s", sumDeletions, deletionsPlural),
+	))
+
+	return lines, nil
 }

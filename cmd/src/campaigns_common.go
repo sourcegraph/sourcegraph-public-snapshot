@@ -232,7 +232,7 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 		campaignsCompletePending(pending, "Resolved repositories")
 	}
 
-	p := newCampaignProgressPrinter(out, opts.Parallelism)
+	p := newCampaignProgressPrinter(out, *verbose, opts.Parallelism)
 	specs, err := svc.ExecuteCampaignSpec(ctx, repos, executor, campaignSpec, p.PrintStatuses)
 	if err != nil {
 		return "", "", err

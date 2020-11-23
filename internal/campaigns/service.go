@@ -188,11 +188,10 @@ type ExecutorOpts struct {
 	Parallelism int
 	Timeout     time.Duration
 
-	ClearCache    bool
-	KeepLogs      bool
-	VerboseLogger bool
-	TempDir       string
-	CacheDir      string
+	ClearCache bool
+	KeepLogs   bool
+	TempDir    string
+	CacheDir   string
 }
 
 func (svc *Service) NewExecutor(opts ExecutorOpts) Executor {
