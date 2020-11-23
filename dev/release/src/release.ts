@@ -411,8 +411,7 @@ cc @${config.captainGitHubUsername}
                                     )
                                 }
                                 items.push(
-                                    'Ensure all other pull requests in the campaign has been merged before merging this pull request',
-                                    'Run `yarn run release:finalize` to generate the tags required, and re-run Buildkite on this pull request'
+                                    'Ensure all other pull requests in the campaign have been merged - then run `yarn run release release:finalize` to generate the tags required, re-run Buildkite on this branch, and ensure the build passes before merging this pull request'
                                 )
                                 return items
                             })()
