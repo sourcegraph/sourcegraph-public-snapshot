@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -164,31 +165,68 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 // latest GHE or the current deployment on GitHub.com.
 var allMatchingSemver = semver.MustParse("99.99.99")
 
+var versionCache struct {
+	mu       sync.RWMutex
+	versions map[string]*semver.Version
+} = struct {
+	mu       sync.RWMutex
+	versions map[string]*semver.Version
+}{
+	versions: make(map[string]*semver.Version),
+}
+
+// normaliseURL will attempt to normalise rawURL.
+// If there is an error parsing it, we'll just return rawURL lower cased.
+func normaliseURL(rawURL string) string {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return strings.ToLower(rawURL)
+	}
+	parsed.Host = strings.ToLower(parsed.Host)
+	if !strings.HasSuffix(parsed.Path, "/") {
+		parsed.Path += "/"
+	}
+	return parsed.String()
+}
+
 // determineGitHubVersion returns a *semver.Version for the targetted GitHub instance by this client. When an
 // error occurs, we print a warning to the logs but don't fail and return the allMatchingSemver.
 func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
-	if c.githubDotCom {
-		return allMatchingSemver
-	}
-
-	var resp struct {
-		InstalledVersion string `json:"installed_version"`
-	}
-	req, err := http.NewRequest("GET", "/meta", nil)
-	if err != nil {
-		log15.Warn("Failed to fetch GitHub enterprise version", "build request", "apiURL", c.apiURL, "err", err)
-		return allMatchingSemver
-	}
-	if err = doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &resp); err != nil {
-		log15.Warn("Failed to fetch GitHub enterprise version", "doRequest", "apiURL", c.apiURL, "err", err)
-		return allMatchingSemver
-	}
-	version, err := semver.NewVersion(resp.InstalledVersion)
-	if err == nil {
+	versionCache.mu.RLock()
+	if version, ok := versionCache.versions[normaliseURL(c.apiURL.String())]; ok {
+		versionCache.mu.RUnlock()
 		return version
 	}
-	log15.Warn("Failed to fetch GitHub enterprise version", "parse version", "apiURL", c.apiURL, "resp.InstalledVersion", resp.InstalledVersion, "err", err)
-	return allMatchingSemver
+	versionCache.mu.RUnlock()
+	versionCache.mu.Lock()
+	defer versionCache.mu.Unlock()
+	version := (func() *semver.Version {
+		if c.githubDotCom {
+			return allMatchingSemver
+		}
+
+		var resp struct {
+			InstalledVersion string `json:"installed_version"`
+		}
+		req, err := http.NewRequest("GET", "/meta", nil)
+		if err != nil {
+			log15.Warn("Failed to fetch GitHub enterprise version", "build request", "apiURL", c.apiURL, "err", err)
+			return allMatchingSemver
+		}
+		if err = doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &resp); err != nil {
+			log15.Warn("Failed to fetch GitHub enterprise version", "doRequest", "apiURL", c.apiURL, "err", err)
+			return allMatchingSemver
+		}
+		version, err := semver.NewVersion(resp.InstalledVersion)
+		if err == nil {
+			return version
+		}
+		log15.Warn("Failed to fetch GitHub enterprise version", "parse version", "apiURL", c.apiURL, "resp.InstalledVersion", resp.InstalledVersion, "err", err)
+		return allMatchingSemver
+
+	}())
+	versionCache.versions[normaliseURL(c.apiURL.String())] = version
+	return version
 }
 
 // estimateGraphQLCost estimates the cost of the query as described here:
