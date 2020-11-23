@@ -318,7 +318,7 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 				if !candidatesAnnotationCreated {
 					candidatesAnnotationCreated = true
 					pipeline.AddStep(":docker::memo: Creating annotation for candidate images",
-						bk.Annotate("candidate-images", "### Candidate images\n\n| | |\n|-|-|\n", bk.AnnotationOptions{
+						bk.Annotate("candidate-images", "### Candidate images\n\n| App | Published |\n|-|-|\n", bk.AnnotationOptions{
 							Style: "info",
 						}))
 				}
@@ -329,7 +329,7 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 			if !finalAnnotationCreated {
 				finalAnnotationCreated = true
 				pipeline.AddStep(":docker::memo: Creating annotation for final images",
-					bk.Annotate("final-images", "### Final images\n\n| | |\n|-|-|\n", bk.AnnotationOptions{
+					bk.Annotate("final-images", "### Final images\n\n| App | Published |\n|-|-|\n", bk.AnnotationOptions{
 						Style: "info",
 					}))
 			}
@@ -413,7 +413,7 @@ func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 			bk.Cmd(fmt.Sprintf("docker push %s", devPublishImage)),
 			// Report published image
 			bk.Annotate("candidate-images",
-				fmt.Sprintf("| %s | %s |\n", app, devPublishImage),
+				fmt.Sprintf("| %s | `%s` |\n", app, devPublishImage),
 				bk.AnnotationOptions{
 					Append: true,
 				}),
@@ -455,7 +455,7 @@ func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline)
 			bk.Cmd(fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(images, " "))),
 			// Report published images
 			bk.Annotate("final-images",
-				fmt.Sprintf("| %s | %s |\n", app, strings.Join(images, ", ")),
+				fmt.Sprintf("| %s | `%s` |\n", app, strings.Join(images, "`, `")),
 				bk.AnnotationOptions{
 					Append: true,
 				}),

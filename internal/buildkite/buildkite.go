@@ -183,7 +183,7 @@ func Annotate(context, message string, opts AnnotationOptions) StepOpt {
 	if opts.Style == "" {
 		opts.Style = "info"
 	}
-	annotateCmd := fmt.Sprintf(`buildkite-agent annotate "%s" --context %s --style %s`,
+	annotateCmd := fmt.Sprintf(`buildkite-agent annotate '%s' --context %s --style %s`,
 		message, context, opts.Style)
 	if opts.Append {
 		annotateCmd = fmt.Sprintf("%s --append", annotateCmd)
