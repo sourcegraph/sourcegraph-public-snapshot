@@ -61,7 +61,12 @@ export const TreeEntriesSection: React.FunctionComponent<{
     // and can decide whether or not to render dividers
     // No need to memoize decorations, since this component should only rerender when entries change
     const renderedDecorationsByIndex = directChildren.map(entry =>
-        renderFileDecorations(fileDecorationsByPath[entry.path])
+        renderFileDecorations({
+            // If component is not specified, or it is 'page', render it.
+            fileDecorations: fileDecorationsByPath[entry.path]?.filter(
+                decoration => decoration?.component !== 'sidebar'
+            ),
+        })
     )
     // If no ReactNode is truthy, we want to hide column-rule
     const noDecorations = !renderedDecorationsByIndex.some(decoration => !!decoration)

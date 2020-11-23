@@ -937,8 +937,8 @@ declare module 'sourcegraph' {
         /** File path relative to repo root uri */
         path: string
 
-        /** Whether to display the decoration on the file tree panel or tree page. If omitted, it will be displayed in both locations  */
-        component?: 'panel' | 'page'
+        /** Whether to display the decoration on the sidebar file tree or tree page. If omitted, it will be displayed in both locations  */
+        component?: 'sidebar' | 'page'
 
         /** An optional object that describes the text content contributed by the decoration */
         text?: {

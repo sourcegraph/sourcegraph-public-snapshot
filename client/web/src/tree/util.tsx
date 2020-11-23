@@ -86,7 +86,13 @@ export function hasSingleChild(tree: TreeEntryInfo[]): boolean {
     return tree[0]?.isSingleChild
 }
 
-export function renderFileDecorations(fileDecorations?: FileDecoration[], isDirectory?: boolean): React.ReactNode {
+export function renderFileDecorations({
+    fileDecorations,
+    isDirectory,
+}: {
+    fileDecorations?: FileDecoration[]
+    isDirectory?: boolean
+}): React.ReactNode {
     // Only need to check for number of decorations, other validation (like whether the decoration specifies at
     // least one of `text` or `percentage`) is done in the extension host
     if (!fileDecorations || fileDecorations.length === 0) {
