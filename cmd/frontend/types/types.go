@@ -1044,27 +1044,74 @@ type SiteActivityPeriod struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type CampaignsUsageStatistics struct {
-	ViewCampaignApplyPageCount              int32
+	// ViewCampaignApplyPageCount is the number of page views on the apply page
+	// ("preview" page).
+	ViewCampaignApplyPageCount int32
+	// ViewCampaignDetailsPageAfterCreateCount is the number of page views on
+	// the campaigns details page *after creating* the campaign on the apply
+	// page by clicking "Apply spec".
 	ViewCampaignDetailsPageAfterCreateCount int32
+	// ViewCampaignDetailsPageAfterUpdateCount is the number of page views on
+	// the campaigns details page *after updating* a campaign on the apply page
+	// by clicking "Apply spec".
 	ViewCampaignDetailsPageAfterUpdateCount int32
 
-	CampaignsCount       int32
+	// CampaignsCount is the number of campaigns on the instance. This can go
+	// down when users delete a campaign.
+	CampaignsCount int32
+	// CampaignsClosedCount is the number of *closed* campaigns on the
+	// instance. This can go down when users delete a campaign.
 	CampaignsClosedCount int32
 
-	CampaignSpecsCreatedCount  int32
+	// CampaignSpecsCreatedCount is the number of campaign specs that have been
+	// created by running `src campaign [preview|apply]`. This number never
+	// goes down since it's based on event logs, even if the campaign specs
+	// were not used and cleaned up.
+	CampaignSpecsCreatedCount int32
+	// ChangesetSpecsCreatedCount is the number of changeset specs that have
+	// been created by running `src campaign [preview|apply]`. This number
+	// never goes down since it's based on event logs, even if the changeset
+	// specs were not used and cleaned up.
 	ChangesetSpecsCreatedCount int32
 
-	ActionChangesetsCount              int32
-	ActionChangesetsDiffStatAddedSum   int32
+	// ActionChangesetsCount is the number of changesets published on code hosts by campaigns. This number
+	// *could* go down, since it's not based on event logs, but so far
+	// (Nov 2020) we never cleaned up changesets in the database.
+	ActionChangesetsCount int32
+	// ActionChangesetsDiffStatAddedSum is the total sum of lines added by
+	// changesets published on the code host by campaigns.
+	ActionChangesetsDiffStatAddedSum int32
+	// ActionChangesetsDiffStatChangedSum is the total sum of lines changed by
+	// changesets published on the code host by campaigns.
 	ActionChangesetsDiffStatChangedSum int32
+	// ActionChangesetsDiffStatDeletedSum is the total sum of lines deleted by
+	// changesets published on the code host by campaigns.
 	ActionChangesetsDiffStatDeletedSum int32
 
-	ActionChangesetsMergedCount              int32
-	ActionChangesetsMergedDiffStatAddedSum   int32
+	// ActionChangesetsMergedCount is the number of changesets published on
+	// code hosts by campaigns that have also been *merged*.
+	// This number *could* go down, since it's not based on event logs, but
+	// so far (Nov 2020) we never cleaned up changesets in the database.
+	ActionChangesetsMergedCount int32
+	// ActionChangesetsMergedDiffStatAddedSum is the total sum of lines added by
+	// changesets published on the code host by campaigns and merged.
+	ActionChangesetsMergedDiffStatAddedSum int32
+	// ActionChangesetsMergedDiffStatChangedSum is the total sum of lines changed by
+	// changesets published on the code host by campaigns and merged.
 	ActionChangesetsMergedDiffStatChangedSum int32
+	// ActionChangesetsMergedDiffStatDeletedSum is the total sum of lines deleted by
+	// changesets published on the code host by campaigns and merged.
 	ActionChangesetsMergedDiffStatDeletedSum int32
 
-	ManualChangesetsCount       int32
+	// ManualChangesetsCount is the total number of changesets that have been
+	// imported by a campaign to be tracked.
+	// This number *could* go down, since it's not based on event logs, but
+	// so far (Nov 2020) we never cleaned up changesets in the database.
+	ManualChangesetsCount int32
+	// ManualChangesetsCount is the total number of *merged* changesets that
+	// have been imported by a campaign to be tracked.
+	// This number *could* go down, since it's not based on event logs, but
+	// so far (Nov 2020) we never cleaned up changesets in the database.
 	ManualChangesetsMergedCount int32
 }
 

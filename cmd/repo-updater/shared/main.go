@@ -36,7 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -56,11 +55,6 @@ func Main(enterpriseInit EnterpriseInit) {
 	logging.Init()
 	tracer.Init()
 	trace.Init(true)
-
-	err := secret.Init()
-	if err != nil {
-		log.Fatalf("Failed to initialize secrets encryption: %v", err)
-	}
 
 	clock := func() time.Time { return time.Now().UTC() }
 

@@ -42,9 +42,15 @@ export interface StructuralMeta {
     value: string
 }
 
+export interface Field {
+    type: 'field'
+    range: CharacterRange
+    value: string
+}
+
 export type MetaToken = RegexpMeta | StructuralMeta
 
-type DecoratedToken = Token | MetaToken
+type DecoratedToken = Token | Field | MetaToken
 
 const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
     const tokens: DecoratedToken[] = []
@@ -252,6 +258,21 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
     while (pattern.value[start] !== undefined) {
         current = nextChar()
         switch (current) {
+            case '.':
+                // Look ahead and see if this is a ... hole alias.
+                if (pattern.value.slice(start, start + 2) === '..') {
+                    // It is a ... hole.
+                    if (token.length > 0) {
+                        // Append the value before this '...'.
+                        appendDecoratedToken(start - 1, PatternKind.Literal)
+                    }
+                    start = start + 2
+                    // Append the value of '...' after advancing.
+                    appendDecoratedToken(start - 3, StructuralMetaKind.Hole)
+                    continue
+                }
+                token.push('.')
+                break
             case ':':
                 if (open > 0) {
                     // ':' inside a hole, likely part of a regexp pattern.
@@ -274,8 +295,9 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                         token.push(':[')
                         continue
                     }
-                    // Something else, push the ':' we saw and the look ahead char.
-                    token.push(':', current)
+                    // Something else, push the ':' we saw, backtrack, and continue.
+                    token.push(':')
+                    start = start - 1
                     continue
                 }
                 // Trailing ':'.
@@ -352,20 +374,46 @@ export const hasRegexpValue = (field: string): boolean => {
 const decorateTokens = (tokens: Token[]): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     for (const token of tokens) {
-        if (token.type === 'pattern') {
-            switch (token.kind) {
-                case PatternKind.Regexp:
-                    decorated.push(...mapRegexpMeta(token))
-                    break
-                case PatternKind.Structural:
-                    decorated.push(...mapStructuralMeta(token))
-                    break
-                default:
-                    decorated.push(token)
+        switch (token.type) {
+            case 'pattern':
+                switch (token.kind) {
+                    case PatternKind.Regexp:
+                        decorated.push(...mapRegexpMeta(token))
+                        break
+                    case PatternKind.Structural:
+                        decorated.push(...mapStructuralMeta(token))
+                        break
+                    case PatternKind.Literal:
+                        decorated.push(token)
+                        break
+                }
+                break
+            case 'filter': {
+                decorated.push({
+                    type: 'field',
+                    range: token.range,
+                    value: token.field.value,
+                })
+                if (token.value && token.value.type === 'literal' && hasRegexpValue(token.field.value)) {
+                    // Highlight fields with regexp values.
+                    decorated.push(
+                        ...decorateTokens([
+                            {
+                                type: 'pattern',
+                                kind: PatternKind.Regexp,
+                                value: token.value.value,
+                                range: token.value.range,
+                            },
+                        ])
+                    )
+                } else if (token.value) {
+                    decorated.push(token.value)
+                }
+                break
             }
-            continue
+            default:
+                decorated.push(token)
         }
-        decorated.push(token)
     }
     return decorated
 }
@@ -374,36 +422,7 @@ const fromDecoratedTokens = (tokens: DecoratedToken[]): Monaco.languages.IToken[
     const monacoTokens: Monaco.languages.IToken[] = []
     for (const token of tokens) {
         switch (token.type) {
-            case 'filter':
-                {
-                    monacoTokens.push({
-                        startIndex: token.filterType.range.start,
-                        scopes: 'filterKeyword',
-                    })
-
-                    if (
-                        hasRegexpValue(token.filterType.value) &&
-                        token.filterValue &&
-                        token.filterValue.type === 'literal'
-                    ) {
-                        // Highlight fields with regexp values.
-                        const decoratedValue = decorateTokens([
-                            {
-                                type: 'pattern',
-                                kind: PatternKind.Regexp,
-                                value: token.filterValue.value,
-                                range: token.filterValue.range,
-                            },
-                        ])
-                        monacoTokens.push(...fromDecoratedTokens(decoratedValue))
-                    } else if (token.filterValue) {
-                        monacoTokens.push({
-                            startIndex: token.filterValue.range.start,
-                            scopes: 'identifier',
-                        })
-                    }
-                }
-                break
+            case 'field':
             case 'whitespace':
             case 'keyword':
             case 'comment':
@@ -442,12 +461,12 @@ const fromTokens = (tokens: Token[]): Monaco.languages.IToken[] => {
             case 'filter':
                 {
                     monacoTokens.push({
-                        startIndex: token.filterType.range.start,
-                        scopes: 'filterKeyword',
+                        startIndex: token.field.range.start,
+                        scopes: 'field',
                     })
-                    if (token.filterValue) {
+                    if (token.value) {
                         monacoTokens.push({
-                            startIndex: token.filterValue.range.start,
+                            startIndex: token.value.range.start,
                             scopes: 'identifier',
                         })
                     }

@@ -7,12 +7,11 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -51,20 +50,11 @@ func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec extsv
 		return Mocks.ExternalAccounts.LookupUserAndSave(spec, data)
 	}
 
-	var esAuthData, esData secret.NullStringValue
-	if data.AuthData != nil {
-		authDataStr := string(*data.AuthData)
-		esAuthData = secret.NullStringValue{S: &authDataStr}
-	}
-	if data.Data != nil {
-		dataStr := string(*data.Data)
-		esData = secret.NullStringValue{S: &dataStr}
-	}
 	err = dbconn.Global.QueryRowContext(ctx, `
 UPDATE user_external_accounts SET auth_data=$5, account_data=$6, updated_at=now()
 WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND deleted_at IS NULL
 RETURNING user_id
-`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, esAuthData, esData).Scan(&userID)
+`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data).Scan(&userID)
 	if err == sql.ErrNoRows {
 		err = userExternalAccountNotFoundError{[]interface{}{spec}}
 	}
@@ -124,20 +114,11 @@ WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND d
 		return s.insert(ctx, tx, userID, spec, data)
 	}
 
-	var esAuthData, esData secret.NullStringValue
-	if data.AuthData != nil {
-		authDataStr := string(*data.AuthData)
-		esAuthData = secret.NullStringValue{S: &authDataStr}
-	}
-	if data.Data != nil {
-		dataStr := string(*data.Data)
-		esData = secret.NullStringValue{S: &dataStr}
-	}
 	// Update the external account (it exists).
 	res, err := tx.ExecContext(ctx, `
 UPDATE user_external_accounts SET auth_data=$6, account_data=$7, updated_at=now()
 WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND user_id=$5 AND deleted_at IS NULL
-`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID, esAuthData, esData)
+`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID, data.AuthData, data.Data)
 	if err != nil {
 		return err
 	}
@@ -187,19 +168,10 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 }
 
 func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
-	var esAuthData, esData secret.NullStringValue
-	if data.AuthData != nil {
-		authDataStr := string(*data.AuthData)
-		esAuthData = secret.NullStringValue{S: &authDataStr}
-	}
-	if data.Data != nil {
-		dataStr := string(*data.Data)
-		esData = secret.NullStringValue{S: &dataStr}
-	}
 	_, err := tx.ExecContext(ctx, `
 INSERT INTO user_external_accounts(user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
 VALUES($1, $2, $3, $4, $5, $6, $7)
-`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, esAuthData, esData)
+`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data)
 
 	return err
 }
@@ -267,42 +239,6 @@ func (s *userExternalAccounts) Count(ctx context.Context, opt ExternalAccountsLi
 	return count, err
 }
 
-// TmpMigrate implements the migration described in bg.MigrateExternalAccounts (which is the only
-// func that should call this).
-func (*userExternalAccounts) TmpMigrate(ctx context.Context, serviceType string) error {
-	// TEMP: Delete all external accounts associated with deleted users. Due to a bug in this
-	// migration code, it was possible for deleted users to be associated with non-deleted external
-	// accounts. This caused unexpected behavior in the UI (although did not pose a security
-	// threat). So, run this cleanup task upon each server startup.
-	if err := (userExternalAccounts{}).deleteForDeletedUsers(ctx); err != nil {
-		log15.Warn("Unable to clean up external user accounts.", "err", err)
-	}
-
-	const needsMigrationSentinel = "migration_in_progress"
-
-	// Avoid running UPDATE (which takes a lock) if it's not needed. The UPDATE only needs to run
-	// once ever, and we are guaranteed that the DB migration has run by the time we arrive here, so
-	// this is safe and not racy.
-	var needsMigration bool
-	if err := dbconn.Global.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM user_external_accounts WHERE service_type=$1 AND deleted_at IS NULL)`, needsMigrationSentinel).Scan(&needsMigration); err != nil && err != sql.ErrNoRows {
-		return err
-	}
-	if !needsMigration {
-		return nil
-	}
-
-	var err error
-	if serviceType == "" {
-		_, err = dbconn.Global.ExecContext(ctx, `UPDATE user_external_accounts SET deleted_at=now(), service_type='not_configured_at_migration_time' WHERE service_type=$1`, needsMigrationSentinel)
-	} else {
-		_, err = dbconn.Global.ExecContext(ctx, `UPDATE user_external_accounts SET service_type=$2, account_id=SUBSTR(account_id, CHAR_LENGTH(service_id)+2) WHERE service_type=$1 AND service_id!='override'`, needsMigrationSentinel, serviceType)
-		if err == nil {
-			_, err = dbconn.Global.ExecContext(ctx, `UPDATE user_external_accounts SET service_type='override', service_id='' WHERE service_type=$1 AND service_id='override'`, needsMigrationSentinel)
-		}
-	}
-	return err
-}
-
 func (userExternalAccounts) deleteForDeletedUsers(ctx context.Context) error {
 	_, err := dbconn.Global.ExecContext(ctx, `UPDATE user_external_accounts SET deleted_at=now() FROM users WHERE user_external_accounts.user_id=users.id AND users.deleted_at IS NOT NULL AND user_external_accounts.deleted_at IS NULL`)
 	return err
@@ -325,28 +261,28 @@ func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Qu
 	if err != nil {
 		return nil, err
 	}
-	var results []*extsvc.Account
 	defer rows.Close()
+
+	var results []*extsvc.Account
 	for rows.Next() {
 		var acct extsvc.Account
-		var authDataStr, dataStr string
-		esAuthData := secret.NullStringValue{S: &authDataStr}
-		esData := secret.NullStringValue{S: &dataStr}
+		var authData, data sql.NullString
 		if err := rows.Scan(
 			&acct.ID, &acct.UserID,
 			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
-			&esAuthData, &esData,
-			&acct.CreatedAt, &acct.UpdatedAt); err != nil {
+			&authData, &data,
+			&acct.CreatedAt, &acct.UpdatedAt,
+		); err != nil {
 			return nil, err
 		}
 
-		if esAuthData.Valid {
-			authData := json.RawMessage(authDataStr)
-			acct.AuthData = &authData
+		if authData.Valid {
+			tmp := json.RawMessage(authData.String)
+			acct.AuthData = &tmp
 		}
-		if esData.Valid {
-			data := json.RawMessage(dataStr)
-			acct.Data = &data
+		if data.Valid {
+			tmp := json.RawMessage(data.String)
+			acct.Data = &tmp
 		}
 		results = append(results, &acct)
 	}

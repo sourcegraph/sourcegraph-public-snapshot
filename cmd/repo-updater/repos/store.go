@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/internal/secret"
 )
 
 // A Store exposes methods to read and write repos and external services.
@@ -766,9 +765,9 @@ ORDER BY id ASC LIMIT %s
 }
 
 type externalServiceRepo struct {
-	ExternalServiceID int64              `json:"external_service_id"`
-	RepoID            int64              `json:"repo_id"`
-	CloneURL          secret.StringValue `json:"clone_url"`
+	ExternalServiceID int64  `json:"external_service_id"`
+	RepoID            int64  `json:"repo_id"`
+	CloneURL          string `json:"clone_url"`
 }
 
 func (s *DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]SourceInfo) error {
@@ -783,7 +782,7 @@ func (s *DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes m
 				srcs = append(srcs, externalServiceRepo{
 					ExternalServiceID: info.ExternalServiceID(),
 					RepoID:            int64(rid),
-					CloneURL:          secret.StringValue{S: &info.CloneURL},
+					CloneURL:          info.CloneURL,
 				})
 			}
 		}
@@ -1348,7 +1347,7 @@ func sourcesColumn(repoID api.RepoID, sources map[string]*SourceInfo) (json.RawM
 		records = append(records, externalServiceRepo{
 			ExternalServiceID: src.ExternalServiceID(),
 			RepoID:            int64(repoID),
-			CloneURL:          secret.StringValue{S: &src.CloneURL},
+			CloneURL:          src.CloneURL,
 		})
 	}
 
@@ -1390,7 +1389,7 @@ func scanExternalService(svc *ExternalService, s scanner) error {
 		&svc.ID,
 		&svc.Kind,
 		&svc.DisplayName,
-		&secret.StringValue{S: &svc.Config},
+		&svc.Config,
 		&svc.CreatedAt,
 		&dbutil.NullTime{Time: &svc.UpdatedAt},
 		&dbutil.NullTime{Time: &svc.DeletedAt},
@@ -1428,7 +1427,7 @@ func scanRepo(r *Repo, s scanner) error {
 
 	type sourceInfo struct {
 		ID       int64
-		CloneURL secret.StringValue
+		CloneURL string
 		Kind     string
 	}
 	r.Sources = make(map[string]*SourceInfo)
@@ -1442,7 +1441,7 @@ func scanRepo(r *Repo, s scanner) error {
 			urn := extsvc.URN(src.Kind, src.ID)
 			r.Sources[urn] = &SourceInfo{
 				ID:       urn,
-				CloneURL: *src.CloneURL.S,
+				CloneURL: src.CloneURL,
 			}
 		}
 	}

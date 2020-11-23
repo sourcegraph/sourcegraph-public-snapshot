@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -1321,25 +1320,23 @@ ORDER BY id ASC
 
 	for rows.Next() {
 		var acct extsvc.Account
-		var authDataStr, dataStr string
-		esAuthData := secret.NullStringValue{S: &authDataStr}
-		esData := secret.NullStringValue{S: &dataStr}
+		var authData, data sql.NullString
 		if err := rows.Scan(
 			&acct.ID, &acct.UserID,
 			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
-			&esAuthData, &esData,
+			&authData, &data,
 			&acct.CreatedAt, &acct.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
 
-		if esAuthData.Valid {
-			authData := json.RawMessage(authDataStr)
-			acct.AuthData = &authData
+		if authData.Valid {
+			tmp := json.RawMessage(authData.String)
+			acct.AuthData = &tmp
 		}
-		if esData.Valid {
-			data := json.RawMessage(dataStr)
-			acct.Data = &data
+		if data.Valid {
+			tmp := json.RawMessage(data.String)
+			acct.Data = &tmp
 		}
 		accounts = append(accounts, &acct)
 	}

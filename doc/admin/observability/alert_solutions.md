@@ -2529,24 +2529,6 @@ with your code hosts connections or networking issues affecting communication wi
 ```
 
 <br />
-## repo-updater: authz_filter_duration
-
-<p class="subtitle">cloud: 95th authorization duration</p>**Descriptions:**
-
-- _repo-updater: 1s+ 95th authorization duration for 1m0s_
-
-**Possible solutions:**
-
-- Check if database is overloaded.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_repo-updater_authz_filter_duration"
-]
-```
-
-<br />
 ## repo-updater: perms_syncer_sync_errors
 
 <p class="subtitle">cloud: permissions sync error rate</p>**Descriptions:**
