@@ -1,52 +1,43 @@
-import React, { useState, FunctionComponent, useCallback, useEffect } from 'react'
+import React, { useState, FunctionComponent, useCallback } from 'react'
 import * as H from 'history'
 
-import { IUserEmail } from '../../../../../shared/src/graphql/schema'
 import { requestGraphQL } from '../../../backend/graphql'
 import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
-import { SetUserEmailPrimaryResult, SetUserEmailPrimaryVariables } from '../../../graphql-operations'
+import { SetUserEmailPrimaryResult, SetUserEmailPrimaryVariables, UserEmailsResult } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { asError } from '../../../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 
 import { Form } from '../../../../../branded/src/components/Form'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ErrorAlert } from '../../../components/alerts'
 
+type UserEmail = NonNullable<UserEmailsResult['node']>['emails'][number]
+
 interface Props {
     user: string
-    emails: Omit<IUserEmail, '__typename' | 'user'>[]
-    onDidSet: (email: string) => void
+    emails: UserEmail[]
+    onDidSet: () => void
     history: H.History
+
     className?: string
 }
 
-interface UserEmailState {
-    loading: boolean
-    error?: Error
-}
+type Status = undefined | 'loading' | ErrorLike
+
+// There is always exactly one primary email returned from the backend
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+const findPrimaryEmail = (emails: UserEmail[]): string => emails.find(email => email.isPrimary)!.email
 
 export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails, onDidSet, className, history }) => {
-    const [primaryEmail, setPrimaryEmail] = useState<string>('')
-    const [options, setOptions] = useState<string[]>([])
-    const [status, setStatus] = useState<UserEmailState>({ loading: false })
+    const [primaryEmail, setPrimaryEmail] = useState<string>(findPrimaryEmail(emails))
+    const [statusOrError, setStatusOrError] = useState<Status>()
 
-    useEffect(() => {
-        const options = emails.reduce((accumulator: string[], email) => {
-            if (!email.isPrimary && email.verified) {
-                accumulator.push(email.email)
-            }
-            return accumulator
-        }, [])
-
-        setOptions(options)
-
-        const defaultOption = emails.find(email => email.isPrimary)?.email
-        /**
-         * If there are options, non-primary and verified emails
-         * Use the first value as default value on the initial render
-         */
-        setPrimaryEmail(options[0] || defaultOption || '')
-    }, [emails])
+    const options = emails.reduce((accumulator: string[], email) => {
+        if (email.verified) {
+            accumulator.push(email.email)
+        }
+        return accumulator
+    }, [])
 
     const onPrimaryEmailSelect: React.ChangeEventHandler<HTMLSelectElement> = event =>
         setPrimaryEmail(event.target.value)
@@ -54,7 +45,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
     const onSubmit: React.FormEventHandler<HTMLFormElement> = useCallback(
         async event => {
             event.preventDefault()
-            setStatus({ loading: true })
+            setStatusOrError('loading')
 
             try {
                 dataOrThrowErrors(
@@ -69,16 +60,15 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
                         { user, email: primaryEmail }
                     ).toPromise()
                 )
+
+                eventLogger.log('UserEmailAddressSetAsPrimary')
+                setStatusOrError(undefined)
+
+                if (onDidSet) {
+                    onDidSet()
+                }
             } catch (error) {
-                setStatus({ loading: false, error: asError(error) })
-                return
-            }
-
-            eventLogger.log('UserEmailAddressSetAsPrimary')
-            setStatus({ loading: false })
-
-            if (onDidSet) {
-                onDidSet(primaryEmail)
+                setStatusOrError(asError(error))
             }
         },
         [user, primaryEmail, onDidSet]
@@ -97,27 +87,23 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
                     value={primaryEmail}
                     onChange={onPrimaryEmailSelect}
                     required={true}
-                    disabled={options.length === 0}
+                    disabled={options.length === 1 || statusOrError === 'loading'}
                 >
-                    {options.length === 0 ? (
-                        <option value={primaryEmail}>{primaryEmail}</option>
-                    ) : (
-                        options.map(email => (
-                            <option key={email} value={email}>
-                                {email}
-                            </option>
-                        ))
-                    )}
+                    {options.map(email => (
+                        <option key={email} value={email}>
+                            {email}
+                        </option>
+                    ))}
                 </select>
                 <LoaderButton
-                    loading={status.loading}
+                    loading={statusOrError === 'loading'}
                     label="Save"
                     type="submit"
-                    disabled={options.length === 0 || status.loading}
+                    disabled={options.length === 1 || statusOrError === 'loading'}
                     className="btn btn-primary"
                 />
             </Form>
-            {status.error && <ErrorAlert className="mt-2" error={status.error} history={history} />}
+            {isErrorLike(statusOrError) && <ErrorAlert className="mt-2" error={statusOrError} history={history} />}
         </div>
     )
 }

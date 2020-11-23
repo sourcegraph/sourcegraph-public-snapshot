@@ -7,11 +7,10 @@ import { requestGraphQL } from '../../../backend/graphql'
 import { UserAreaUserFields, UserEmailsResult, UserEmailsVariables } from '../../../graphql-operations'
 import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { siteFlags } from '../../../site/backend'
-import { asError } from '../../../../../shared/src/util/errors'
-
+import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { eventLogger } from '../../../tracking/eventLogger'
+
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { UserEmail } from './UserEmail'
@@ -23,31 +22,12 @@ interface Props extends RouteComponentProps<{}> {
     history: H.History
 }
 
-interface LoadingState {
-    loading: boolean
-    error?: Error
-}
-
-type UserEmail = Omit<GQL.IUserEmail, '__typename' | 'user'>
+type UserEmail = NonNullable<UserEmailsResult['node']>['emails'][number]
+type Status = undefined | 'loading' | 'loaded' | ErrorLike
 
 export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history }) => {
     const [emails, setEmails] = useState<UserEmail[]>([])
-    const [status, setStatus] = useState<LoadingState>({ loading: false })
-
-    const onEmailVerify = useCallback(
-        ({ email: verifiedEmail, verified }: { email: string; verified: boolean }): void => {
-            const updatedEmails = emails.map(email => {
-                if (email.email === verifiedEmail) {
-                    email.verified = verified
-                }
-
-                return email
-            })
-
-            setEmails(updatedEmails)
-        },
-        [emails]
-    )
+    const [statusOrError, setStatusOrError] = useState<Status>()
 
     const onEmailRemove = useCallback(
         (deletedEmail: string): void => {
@@ -56,32 +36,11 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
         [emails]
     )
 
-    const onPrimaryEmailSet = useCallback(
-        (email: string): void => {
-            const updateNewPrimaryEmail = (updatedEmail: string): UserEmail[] =>
-                emails.map(email => {
-                    if (email.isPrimary && email.email !== updatedEmail) {
-                        email.isPrimary = false
-                    }
-
-                    if (email.email === updatedEmail) {
-                        email.isPrimary = true
-                    }
-
-                    return email
-                })
-
-            setEmails(updateNewPrimaryEmail(email))
-        },
-        [emails]
-    )
-
     const fetchEmails = useCallback(async (): Promise<void> => {
-        setStatus({ loading: true })
-        let fetchedEmails
+        setStatusOrError('loading')
 
         try {
-            fetchedEmails = dataOrThrowErrors(
+            const fetchedEmails = dataOrThrowErrors(
                 await requestGraphQL<UserEmailsResult, UserEmailsVariables>(
                     gql`
                         query UserEmails($user: ID!) {
@@ -101,15 +60,15 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
                     { user: user.id }
                 ).toPromise()
             )
-        } catch (error) {
-            setStatus({ loading: false, error: asError(error) })
-        }
 
-        if (fetchedEmails?.node?.emails) {
-            setStatus({ loading: false })
-            setEmails(fetchedEmails.node.emails)
+            if (fetchedEmails?.node?.emails) {
+                setEmails(fetchedEmails.node.emails)
+                setStatusOrError('loaded')
+            }
+        } catch (error) {
+            setStatusOrError(asError(error))
         }
-    }, [user, setStatus, setEmails])
+    }, [user, setStatusOrError, setEmails])
 
     const flags = useObservable(siteFlags)
 
@@ -119,7 +78,7 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
 
     useEffect(() => {
         fetchEmails().catch(error => {
-            setStatus({ loading: false, error: asError(error) })
+            setStatusOrError(asError(error))
         })
     }, [fetchEmails])
 
@@ -135,9 +94,9 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
                 </div>
             )}
 
-            {status.error && <ErrorAlert className="mt-2" error={status.error} history={history} />}
+            {isErrorLike(statusOrError) && <ErrorAlert className="mt-2" error={statusOrError} history={history} />}
 
-            {status.loading ? (
+            {statusOrError === 'loading' ? (
                 <span className="user-settings-emails-page__loader">
                     <LoadingSpinner className="icon-inline" />
                 </span>
@@ -149,7 +108,7 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
                                 <UserEmail
                                     user={user.id}
                                     email={email}
-                                    onEmailVerify={onEmailVerify}
+                                    onEmailVerify={fetchEmails}
                                     onDidRemove={onEmailRemove}
                                     history={history}
                                 />
@@ -162,13 +121,8 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
             {/* re-fetch emails on onDidAdd to guarantee correct state */}
             <AddUserEmailForm className="mt-4" user={user.id} onDidAdd={fetchEmails} history={history} />
             <hr className="my-4" />
-            {!status.loading && (
-                <SetUserPrimaryEmailForm
-                    user={user.id}
-                    emails={emails}
-                    onDidSet={onPrimaryEmailSet}
-                    history={history}
-                />
+            {statusOrError === 'loaded' && (
+                <SetUserPrimaryEmailForm user={user.id} emails={emails} onDidSet={fetchEmails} history={history} />
             )}
         </div>
     )
