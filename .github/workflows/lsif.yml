@@ -32,10 +32,11 @@ jobs:
       - name: Generate LSIF data
         working-directory: client/web/
         run: lsif-tsc -p .
-      - name: Upload LSIF data
+      - name: Upload LSIF data to .com
         working-directory: client/web/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
       - name: Upload LSIF data to dogfood
+        working-directory: client/web/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/
@@ -55,10 +56,11 @@ jobs:
       - name: Generate LSIF data
         working-directory: client/shared/
         run: lsif-tsc -p .
-      - name: Upload LSIF data
+      - name: Upload LSIF data to .com
         working-directory: client/shared/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
       - name: Upload LSIF data to dogfood
+        working-directory: client/shared/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/
@@ -78,10 +80,11 @@ jobs:
       - name: Generate LSIF data
         working-directory: client/branded/
         run: lsif-tsc -p .
-      - name: Upload LSIF data
+      - name: Upload LSIF data to .com
         working-directory: client/branded/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
       - name: Upload LSIF data to dogfood
+        working-directory: client/branded/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/
@@ -101,10 +104,11 @@ jobs:
       - name: Generate LSIF data
         working-directory: client/browser/
         run: lsif-tsc -p .
-      - name: Upload LSIF data
+      - name: Upload LSIF data to .com
         working-directory: client/browser/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
       - name: Upload LSIF data to dogfood
+        working-directory: client/browser/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/
@@ -126,10 +130,11 @@ jobs:
       - name: Generate LSIF data
         working-directory: client/web/
         run: yarn eslint -f lsif -o dump.lsif
-      - name: Upload LSIF data
+      - name: Upload LSIF data to .com
         working-directory: client/web/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
       - name: Upload LSIF data to dogfood
+        working-directory: client/web/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/
@@ -151,10 +156,11 @@ jobs:
       - name: Generate LSIF data
         working-directory: client/shared/
         run: yarn eslint -f lsif -o dump.lsif
-      - name: Upload LSIF data
+      - name: Upload LSIF data to .com
         working-directory: client/shared/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
       - name: Upload LSIF data to dogfood
+        working-directory: client/shared/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/
@@ -176,10 +182,11 @@ jobs:
       - name: Generate LSIF data
         working-directory: client/browser/
         run: yarn eslint -f lsif -o dump.lsif
-      - name: Upload LSIF data
+      - name: Upload LSIF data to .com
         working-directory: client/browser/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
       - name: Upload LSIF data to dogfood
+        working-directory: client/browser/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/
