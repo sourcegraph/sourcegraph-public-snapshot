@@ -27,7 +27,7 @@ const TreeEntry: React.FunctionComponent<{
     <Link
         to={url}
         className={classNames(
-            'tree-entry test-file-decorable-name',
+            'tree-entry test-page-file-decorable',
             isDirectory && 'font-weight-bold',
             `test-tree-entry-${isDirectory ? 'directory' : 'file'}`
         )}
@@ -35,7 +35,7 @@ const TreeEntry: React.FunctionComponent<{
     >
         <div
             className={classNames(
-                'd-flex align-items-center justify-content-between test-page-file-decorable overflow-hidden'
+                'd-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden'
             )}
         >
             <span>

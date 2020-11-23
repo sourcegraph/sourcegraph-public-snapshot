@@ -363,7 +363,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 </div>
                             </>
                         ) : (
-                            <h2 className="tree-page__title test-tree-page-title">
+                            <h2 className="tree-page__title">
                                 <FolderIcon className="icon-inline" /> {filePath}
                             </h2>
                         )}

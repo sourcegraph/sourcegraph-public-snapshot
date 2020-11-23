@@ -748,7 +748,7 @@ describe('Repository', () => {
 
                         function activate(context: sourcegraph.ExtensionContext): void {
                             context.subscriptions.add(
-                                sourcegraph.tree.registerFileDecorationProvider({
+                                sourcegraph.app.registerFileDecorationProvider({
                                     provideFileDecorations: ({ files }) =>
                                         files.map(file => {
                                             const fragments = file.path.split('/')
@@ -860,15 +860,19 @@ describe('Repository', () => {
             )
 
             // Wait for file decorations to be sent from extension host
-            await driver.page.waitForFunction(
-                () =>
-                    !![...document.querySelectorAll('.test-panel-file-decorable')]
-                        .find(file =>
-                            file.querySelector('.test-file-decorable-name')?.textContent?.includes('triply-nested')
-                        )
-                        ?.querySelector('.test-file-decoration-container'),
-                { timeout: 5000 }
-            )
+            try {
+                await driver.page.waitForFunction(
+                    () =>
+                        !![...document.querySelectorAll('.test-panel-file-decorable')]
+                            .find(file =>
+                                file.querySelector('.test-file-decorable-name')?.textContent?.includes('triply-nested')
+                            )
+                            ?.querySelector('.test-file-decoration-container'),
+                    { timeout: 5000 }
+                )
+            } catch {
+                throw new Error('Timed out waiting for "triply-nested" decorations in tree panel')
+            }
             const triplyNestedDecorations = await getDecorationsByFilename('panel', 'triply-nested')
 
             assert.deepStrictEqual(
@@ -882,24 +886,51 @@ describe('Repository', () => {
 
             // TREE PAGE ASSERTIONS
 
+            try {
+                await driver.findElementWithText('nested', {
+                    selector: '.test-page-file-decorable .test-file-decorable-name',
+                    fuzziness: 'contains',
+                    wait: {
+                        timeout: 3000,
+                    },
+                })
+            } catch {
+                throw new Error('timed out waiting for "nested" in tree page')
+            }
+
+            // Wait for decorations
+            try {
+                await driver.page.waitForSelector('.test-page-file-decorable .test-file-decoration-container')
+            } catch {
+                throw new Error('Timed out waiting for "nested" decorations in tree page')
+            }
+
             await driver.page.evaluate(() =>
                 ([...document.querySelectorAll('.test-page-file-decorable .test-file-decorable-name')].find(name =>
                     name?.textContent?.includes('nested')
                 ) as HTMLAnchorElement | undefined)?.click()
             )
 
-            // Wait for new tree entries and file decorations
-            await driver.findElementWithText('nested', {
-                selector: '.test-tree-page-title',
-                fuzziness: 'contains',
-                wait: {
-                    timeout: 3000,
-                },
-            })
-            await driver.page.waitForSelector('.test-page-file-decorable .test-file-decoration-container')
+            // try {
+            //     await driver.page.waitForFunction(
+            //         () =>
+            //             !![...document.querySelectorAll('.test-page-file-decorable .test-file-decorable-name')]
+            //                 .find(file => file.textContent?.includes('ReactComponent'))
+            //                 ?.querySelector('.test-file-decoration-container'),
+            //         { timeout: 5000 }
+            //     )
+            // } catch {
+            //     throw new Error('Timed out waiting for "ReactComponent.tsx" decorations in tree page')
+            // }
+
+            // Wait for decorations
+            try {
+                await driver.page.waitForSelector('.test-page-file-decorable .test-file-decoration-container')
+            } catch {
+                throw new Error('Timed out waiting for "ReactComponent.tsx" decorations in tree page')
+            }
 
             const reactDecorations = await getDecorationsByFilename('page', 'ReactComponent.tsx')
-
             assert.deepStrictEqual(
                 reactDecorations,
                 {
@@ -927,14 +958,20 @@ describe('Repository', () => {
             )
 
             // Wait for new tree page
-            await driver.findElementWithText('doubly-nested', {
-                selector: '.test-tree-page-title',
+            await driver.findElementWithText('triply-nested', {
+                selector: '.test-page-file-decorable .test-file-decorable-name',
                 fuzziness: 'contains',
                 wait: {
                     timeout: 3000,
                 },
             })
-            await driver.page.waitForSelector('.test-page-file-decorable .test-file-decoration-container')
+
+            // Wait for decorations
+            try {
+                await driver.page.waitForSelector('.test-page-file-decorable .test-file-decoration-container')
+            } catch {
+                throw new Error('Timed out waiting for "triply-nested" decorations in tree page')
+            }
 
             const triplyNestedPageDecorations = await getDecorationsByFilename('page', 'triply-nested.ts')
             // This should be equal to its panel decorations
