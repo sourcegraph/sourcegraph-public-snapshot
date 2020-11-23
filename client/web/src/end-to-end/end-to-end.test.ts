@@ -12,6 +12,7 @@ import { getConfig } from '../../../shared/src/testing/config'
 import assert from 'assert'
 import expect from 'expect'
 import { Settings } from '../schema/settings.schema'
+import delay from 'delay'
 
 const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
 
@@ -321,6 +322,7 @@ describe('e2e test suite', () => {
                 }),
                 ensureRepos: ['bbs/SOURCEGRAPH/jsonrpc2'],
             })
+            await delay(10000)
             await driver.page.goto(sourcegraphBaseUrl + '/bbs/SOURCEGRAPH/jsonrpc2/-/blob/.travis.yml')
             const blob = (await (
                 await driver.page.waitFor(() => document.querySelector<HTMLElement>('.test-repo-blob')?.textContent)
