@@ -828,7 +828,7 @@ describe('Repository', () => {
                 },
                 'Incorrect decorations for nested on tree panel'
             )
-            await new Promise(() => {})
+
             // Since nested is a single child, its children should be visible and decorated as well
 
             const testDecorations = await getDecorationsByFilename('panel', 'test.ts')
@@ -898,7 +898,7 @@ describe('Repository', () => {
             } catch {
                 throw new Error('timed out waiting for "nested" in tree page')
             }
-
+            console.log('here')
             // Wait for decorations
             try {
                 await driver.page.waitForSelector('.test-page-file-decorable .test-file-decoration-container')
@@ -911,18 +911,6 @@ describe('Repository', () => {
                     name?.textContent?.includes('nested')
                 ) as HTMLAnchorElement | undefined)?.click()
             )
-
-            // try {
-            //     await driver.page.waitForFunction(
-            //         () =>
-            //             !![...document.querySelectorAll('.test-page-file-decorable .test-file-decorable-name')]
-            //                 .find(file => file.textContent?.includes('ReactComponent'))
-            //                 ?.querySelector('.test-file-decoration-container'),
-            //         { timeout: 5000 }
-            //     )
-            // } catch {
-            //     throw new Error('Timed out waiting for "ReactComponent.tsx" decorations in tree page')
-            // }
 
             // Wait for decorations
             try {
