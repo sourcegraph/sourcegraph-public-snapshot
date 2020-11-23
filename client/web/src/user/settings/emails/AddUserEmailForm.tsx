@@ -29,7 +29,7 @@ interface State {
 export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, onDidAdd, history }) => {
     const [status, setStatus] = useState<State>({})
 
-    const [emailState, nextEmailFieldChange, emailInputReference] = useInputValidation(
+    const [emailState, nextEmailFieldChange, emailInputReference, overrideEmailState] = useInputValidation(
         useMemo(
             () => ({
                 synchronousValidators: [],
@@ -64,6 +64,7 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
             }
 
             eventLogger.log('NewUserEmailAddressAdded')
+            overrideEmailState()
             setStatus({})
             if (onDidAdd) {
                 onDidAdd()
