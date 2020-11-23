@@ -24075,8 +24075,3 @@ zip-stream@^1.2.0:
     compress-commons "^1.2.0"
     lodash "^4.8.0"
     readable-stream "^2.0.0"
-
-zod@^2.0.0-beta.22:
-  version "2.0.0-beta.22"
-  resolved "https://registry.npmjs.org/zod/-/zod-2.0.0-beta.22.tgz#57c7a98a81ad60c076a5c7dca9f205182e66afda"
-  integrity sha512-A0UldVo1gA8OkXrVv6AuVPMiyGD2wPFc0iTIsK/DSavFNKke6Cgp1VwqaeM/FY1cui5t8I46iqsKNxUPHjIlpQ==

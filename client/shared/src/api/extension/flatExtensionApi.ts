@@ -17,6 +17,7 @@ import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
 import { castArray, groupBy, identity, isEqual } from 'lodash'
 import { fromHoverMerged } from '../client/types/hover'
 import { isNot, isExactly, isDefined } from '../../util/types'
+import { validateFileDecoration } from './api/decorations'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -194,7 +195,7 @@ export const initNewExtensionAPI = (
                           // No need to filter
                           provider => provider.provideFileDecorations(parameters),
                           mergeProviderResults
-                      ).pipe(map(({ result }) => groupBy(result, 'path')))
+                      ).pipe(map(({ result }) => groupBy(result.filter(validateFileDecoration), 'path')))
             ),
     }
 
