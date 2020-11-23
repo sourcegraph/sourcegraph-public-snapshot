@@ -118,13 +118,8 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
                 </div>
             )}
 
-            <AddUserEmailForm
-                key={emails.length}
-                className="mt-4"
-                user={user.id}
-                onDidAdd={fetchEmails}
-                history={history}
-            />
+            {/* re-fetch emails on onDidAdd to guarantee correct state */}
+            <AddUserEmailForm className="mt-4" user={user.id} onDidAdd={fetchEmails} history={history} />
             <hr className="my-4" />
             {statusOrError === 'loaded' && (
                 <SetUserPrimaryEmailForm user={user.id} emails={emails} onDidSet={fetchEmails} history={history} />

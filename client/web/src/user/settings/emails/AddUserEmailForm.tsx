@@ -26,7 +26,7 @@ type Status = undefined | 'loading' | ErrorLike
 export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, onDidAdd, history }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
 
-    const [emailState, nextEmailFieldChange, emailInputReference] = useInputValidation(
+    const [emailState, nextEmailFieldChange, emailInputReference, overrideEmailState] = useInputValidation(
         useMemo(
             () => ({
                 synchronousValidators: [],
@@ -57,6 +57,7 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
                 )
 
                 eventLogger.log('NewUserEmailAddressAdded')
+                overrideEmailState({ value: '' })
                 setStatusOrError(undefined)
 
                 if (onDidAdd) {
