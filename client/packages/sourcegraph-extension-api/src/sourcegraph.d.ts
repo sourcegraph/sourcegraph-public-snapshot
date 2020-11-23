@@ -941,7 +941,7 @@ declare module 'sourcegraph' {
         component?: 'sidebar' | 'page'
 
         /** An optional object that describes the text content contributed by the decoration */
-        text?: {
+        after?: {
             /** Text value to be displayed. This should value should be very short to prevent truncation */
             value: string
 

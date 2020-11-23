@@ -757,7 +757,7 @@ describe('Repository', () => {
                                             return {
                                                 uri: file.uri,
                                                 path: file.path,
-                                                text: {
+                                                after: {
                                                     value: `${
                                                         name.split('').filter(char => vowels.includes(char)).length
                                                     } vowels`,

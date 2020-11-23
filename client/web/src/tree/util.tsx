@@ -107,7 +107,7 @@ export function renderFileDecorations({
         >
             {fileDecorations.map(
                 (fileDecoration, index) =>
-                    (fileDecoration.percentage || fileDecoration.text) && (
+                    (fileDecoration.percentage || fileDecoration.after) && (
                         <div
                             className="d-flex align-items-center"
                             // We want some margin right if this isn't the last decoration for this file
@@ -115,16 +115,16 @@ export function renderFileDecorations({
                             style={{ marginRight: index === fileDecorations.length - 1 ? 0 : 12 }}
                             key={fileDecoration.path + String(index)}
                         >
-                            {fileDecoration.text && (
+                            {fileDecoration.after && (
                                 // link or span?
                                 <small
                                     // eslint-disable-next-line react/forbid-dom-props
-                                    style={{ color: fileDecoration.text.color }}
-                                    data-tooltip={fileDecoration.text.hoverMessage}
+                                    style={{ color: fileDecoration.after.color }}
+                                    data-tooltip={fileDecoration.after.hoverMessage}
                                     data-placement="bottom"
                                     className="text-monospace d-inline-block font-weight-normal test-file-decoration-text"
                                 >
-                                    {fileDecoration.text.value}
+                                    {fileDecoration.after.value}
                                 </small>
                             )}
                             {fileDecoration.percentage && (

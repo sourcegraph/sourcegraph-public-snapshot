@@ -14,14 +14,14 @@ export const createDecorationType = (): TextDocumentDecorationType => ({ key: un
 export function validateFileDecoration(fileDecoration: unknown): fileDecoration is FileDecoration {
     // TODO(tj): Create validators for every provider result to prevent UI errors
 
-    const validText =
+    const validAfter =
         typeof fileDecoration === 'object' &&
         fileDecoration !== null &&
-        hasProperty('text')(fileDecoration) &&
-        fileDecoration.text &&
-        typeof fileDecoration.text === 'object' &&
-        hasProperty('value')(fileDecoration.text) &&
-        typeof fileDecoration.text.value === 'string'
+        hasProperty('after')(fileDecoration) &&
+        fileDecoration.after &&
+        typeof fileDecoration.after === 'object' &&
+        hasProperty('value')(fileDecoration.after) &&
+        typeof fileDecoration.after.value === 'string'
 
     const validPercentage =
         typeof fileDecoration === 'object' &&
@@ -32,5 +32,5 @@ export function validateFileDecoration(fileDecoration: unknown): fileDecoration 
         hasProperty('value')(fileDecoration.percentage) &&
         typeof fileDecoration.percentage.value === 'number'
 
-    return validText || validPercentage
+    return validAfter || validPercentage
 }
