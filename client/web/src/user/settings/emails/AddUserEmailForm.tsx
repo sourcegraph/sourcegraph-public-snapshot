@@ -64,7 +64,7 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
             }
 
             eventLogger.log('NewUserEmailAddressAdded')
-            overrideEmailState()
+            overrideEmailState({ value: '' })
             setStatus({})
             if (onDidAdd) {
                 onDidAdd()

@@ -45,7 +45,7 @@ interface OverrideOptions {
     value: string
 
     /** Whether to validate the new value */
-    validate: boolean
+    validate?: boolean
 }
 
 /**
@@ -54,9 +54,6 @@ interface OverrideOptions {
  * and custom synchronous and asynchronous validators.
  *
  * @param options Config object that declares sync + async validators
- * @param initialValue
- *
- * @returns
  */
 export function useInputValidation(
     options: ValidationOptions
@@ -64,7 +61,7 @@ export function useInputValidation(
     InputValidationState,
     (change: React.ChangeEvent<HTMLInputElement>) => void,
     React.MutableRefObject<HTMLInputElement | null>,
-    (overrideOptions?: OverrideOptions) => void
+    (overrideOptions: OverrideOptions) => void
 ] {
     const inputReference = useRef<HTMLInputElement>(null)
 
@@ -81,7 +78,7 @@ export function useInputValidation(
 
     // TODO(tj): Move control of state to consumer
     const overrideState = useCallback(
-        (overrideOptions?: OverrideOptions) => {
+        (overrideOptions: OverrideOptions) => {
             // clear custom validity
             inputReference.current?.setCustomValidity('')
 
@@ -91,7 +88,7 @@ export function useInputValidation(
                 value: overrideOptions?.value ?? '',
             })
 
-            if (overrideOptions?.value) {
+            if (overrideOptions?.validate) {
                 nextInputChangeEvent({
                     preventDefault: noop,
                     target: { value: overrideOptions.value },
