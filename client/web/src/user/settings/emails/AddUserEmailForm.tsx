@@ -4,9 +4,8 @@ import * as H from 'history'
 
 import { AddUserEmailResult, AddUserEmailVariables } from '../../../graphql-operations'
 import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { requestGraphQL } from '../../../backend/graphql'
-import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, isErrorLike, ErrorLike } from '../../../../../shared/src/util/errors'
 import { useInputValidation, deriveInputClassName } from '../../../../../shared/src/util/useInputValidation'
 
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -15,19 +14,17 @@ import { LoaderButton } from '../../../components/LoaderButton'
 import { LoaderInput } from '../../../../../branded/src/components/LoaderInput'
 
 interface Props {
-    user: GQL.ID
+    user: string
     onDidAdd: () => void
+    history: H.History
 
     className?: string
-    history: H.History
 }
 
-interface State {
-    loadingOrError?: boolean | Error
-}
+type Status = undefined | 'loading' | ErrorLike
 
 export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, onDidAdd, history }) => {
-    const [status, setStatus] = useState<State>({})
+    const [statusOrError, setStatusOrError] = useState<Status>()
 
     const [emailState, nextEmailFieldChange, emailInputReference] = useInputValidation(
         useMemo(
@@ -43,7 +40,7 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
         event.preventDefault()
 
         if (emailState.kind === 'VALID') {
-            setStatus({ loadingOrError: true })
+            setStatusOrError('loading')
 
             try {
                 dataOrThrowErrors(
@@ -58,15 +55,15 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
                         { user, email: emailState.value }
                     ).toPromise()
                 )
-            } catch (error) {
-                setStatus({ loadingOrError: asError(error) })
-                return
-            }
 
-            eventLogger.log('NewUserEmailAddressAdded')
-            setStatus({})
-            if (onDidAdd) {
-                onDidAdd()
+                eventLogger.log('NewUserEmailAddressAdded')
+                setStatusOrError(undefined)
+
+                if (onDidAdd) {
+                    onDidAdd()
+                }
+            } catch (error) {
+                setStatusOrError(asError(error))
             }
         }
     }
@@ -106,10 +103,10 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
                     />
                 </LoaderInput>{' '}
                 <LoaderButton
-                    loading={typeof status.loadingOrError === 'boolean' ? status.loadingOrError : false}
+                    loading={statusOrError === 'loading'}
                     label="Add"
                     type="submit"
-                    disabled={typeof status.loadingOrError === 'boolean' ? status.loadingOrError : false}
+                    disabled={statusOrError === 'loading'}
                     className="btn btn-primary"
                 />
                 {emailState.kind === 'INVALID' && (
@@ -118,9 +115,7 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
                     </small>
                 )}
             </form>
-            {isErrorLike(status.loadingOrError) && (
-                <ErrorAlert className="mt-2" error={status.loadingOrError} history={history} />
-            )}
+            {isErrorLike(statusOrError) && <ErrorAlert className="mt-2" error={statusOrError} history={history} />}
         </div>
     )
 }
