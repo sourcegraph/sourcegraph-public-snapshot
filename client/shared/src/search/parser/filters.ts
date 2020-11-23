@@ -244,23 +244,23 @@ const isValidDiscreteValue = (definition: NegatableFilterDefinition | BaseFilter
 }
 
 /**
- * Validates a filter given its type and value.
+ * Validates a filter given its field and value.
  */
 export const validateFilter = (
-    filterType: string,
-    filterValue: Filter['filterValue']
+    field: string,
+    value: Filter['value']
 ): { valid: true } | { valid: false; reason: string } => {
-    const typeAndDefinition = resolveFilter(filterType)
+    const typeAndDefinition = resolveFilter(field)
     if (!typeAndDefinition) {
         return { valid: false, reason: 'Invalid filter type.' }
     }
     const { definition } = typeAndDefinition
     if (
         definition.discreteValues &&
-        (!filterValue ||
-            (filterValue.type !== 'literal' && filterValue.type !== 'quoted') ||
-            (filterValue.type === 'literal' && !isValidDiscreteValue(definition, filterValue.value)) ||
-            (filterValue.type === 'quoted' && !isValidDiscreteValue(definition, filterValue.quotedValue)))
+        (!value ||
+            (value.type !== 'literal' && value.type !== 'quoted') ||
+            (value.type === 'literal' && !isValidDiscreteValue(definition, value.value)) ||
+            (value.type === 'quoted' && !isValidDiscreteValue(definition, value.quotedValue)))
     ) {
         return {
             valid: false,

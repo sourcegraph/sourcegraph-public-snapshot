@@ -16,7 +16,7 @@ function filterExistsInQuery(parsedQuery: ScanResult<Token[]>, filterToMatch: st
         const tokens = parsedQuery.term
         for (const token of tokens) {
             if (token.type === 'filter') {
-                const resolvedFilter = resolveFilter(token.filterType.value)
+                const resolvedFilter = resolveFilter(token.field.value)
                 if (resolvedFilter !== undefined && resolvedFilter.type === filterToMatch) {
                     return true
                 }

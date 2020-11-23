@@ -21,8 +21,8 @@ import {
     CaseSensitivityProps,
     parseSearchURL,
     PatternTypeProps,
-    resolveVersionContext,
     SearchStreamingProps,
+    resolveVersionContext,
 } from '../..'
 
 export interface StreamingSearchResultsProps

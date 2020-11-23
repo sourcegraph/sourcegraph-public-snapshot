@@ -254,12 +254,12 @@ export async function getCompletionItems(
         }
     }
     if (token.type === 'filter') {
-        const { filterValue } = token
-        const completingValue = !filterValue || filterValue.range.start + 1 <= column
+        const { value } = token
+        const completingValue = !value || value.range.start + 1 <= column
         if (!completingValue) {
             return null
         }
-        const resolvedFilter = resolveFilter(token.filterType.value)
+        const resolvedFilter = resolveFilter(token.field.value)
         if (!resolvedFilter) {
             return null
         }
@@ -270,7 +270,7 @@ export async function getCompletionItems(
                         label,
                         kind: Monaco.languages.CompletionItemKind.Text,
                         insertText: label,
-                        range: filterValue ? toMonacoRange(filterValue.range) : defaultRange,
+                        range: value ? toMonacoRange(value.range) : defaultRange,
                         command: COMPLETION_ITEM_SELECTED,
                     })),
                 }
@@ -288,10 +288,8 @@ export async function getCompletionItems(
                         // Set the current value as filterText, so that all dynamic suggestions
                         // returned by the server are displayed. otherwise, if the current filter value
                         // is a regex pattern, Monaco's filtering might hide some suggestions.
-                        filterText:
-                            filterValue &&
-                            (filterValue?.type === 'literal' ? filterValue.value : filterValue.quotedValue),
-                        range: filterValue ? toMonacoRange(filterValue.range) : defaultRange,
+                        filterText: value && (value?.type === 'literal' ? value.value : value.quotedValue),
+                        range: value ? toMonacoRange(value.range) : defaultRange,
                         command: COMPLETION_ITEM_SELECTED,
                     })),
             }
@@ -304,7 +302,7 @@ export async function getCompletionItems(
                         kind: Monaco.languages.CompletionItemKind.Value,
                         insertText: `${label} `,
                         filterText: label,
-                        range: filterValue ? toMonacoRange(filterValue.range) : defaultRange,
+                        range: value ? toMonacoRange(value.range) : defaultRange,
                         command: COMPLETION_ITEM_SELECTED,
                     })
                 ),

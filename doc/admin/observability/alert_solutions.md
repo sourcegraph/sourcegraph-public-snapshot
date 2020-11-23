@@ -3390,7 +3390,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: syntax_highlighting_errors
 
-<p class="subtitle">code-intel: syntax highlighting errors every 5m</p>**Descriptions:**
+<p class="subtitle">cloud: syntax highlighting errors every 5m</p>**Descriptions:**
 
 - _syntect-server: 5%+ syntax highlighting errors every 5m for 5m0s_
 
@@ -3407,7 +3407,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: syntax_highlighting_timeouts
 
-<p class="subtitle">code-intel: syntax highlighting timeouts every 5m</p>**Descriptions:**
+<p class="subtitle">cloud: syntax highlighting timeouts every 5m</p>**Descriptions:**
 
 - _syntect-server: 5%+ syntax highlighting timeouts every 5m for 5m0s_
 
@@ -3424,7 +3424,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: syntax_highlighting_panics
 
-<p class="subtitle">code-intel: syntax highlighting panics every 5m</p>**Descriptions:**
+<p class="subtitle">cloud: syntax highlighting panics every 5m</p>**Descriptions:**
 
 - _syntect-server: 5+ syntax highlighting panics every 5m_
 
@@ -3441,7 +3441,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: syntax_highlighting_worker_deaths
 
-<p class="subtitle">code-intel: syntax highlighter worker deaths every 5m</p>**Descriptions:**
+<p class="subtitle">cloud: syntax highlighter worker deaths every 5m</p>**Descriptions:**
 
 - _syntect-server: 1+ syntax highlighter worker deaths every 5m_
 
@@ -3458,7 +3458,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: container_cpu_usage
 
-<p class="subtitle">code-intel: container cpu usage total (1m average) across all cores by instance</p>**Descriptions:**
+<p class="subtitle">cloud: container cpu usage total (1m average) across all cores by instance</p>**Descriptions:**
 
 - _syntect-server: 99%+ container cpu usage total (1m average) across all cores by instance_
 
@@ -3477,7 +3477,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: container_memory_usage
 
-<p class="subtitle">code-intel: container memory usage by instance</p>**Descriptions:**
+<p class="subtitle">cloud: container memory usage by instance</p>**Descriptions:**
 
 - _syntect-server: 99%+ container memory usage by instance_
 
@@ -3496,7 +3496,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: container_restarts
 
-<p class="subtitle">code-intel: container restarts every 5m by instance</p>**Descriptions:**
+<p class="subtitle">cloud: container restarts every 5m by instance</p>**Descriptions:**
 
 - _syntect-server: 1+ container restarts every 5m by instance_
 
@@ -3519,7 +3519,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: fs_inodes_used
 
-<p class="subtitle">code-intel: fs inodes in use by instance</p>**Descriptions:**
+<p class="subtitle">cloud: fs inodes in use by instance</p>**Descriptions:**
 
 - _syntect-server: 3e+06+ fs inodes in use by instance_
 
@@ -3538,7 +3538,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
+<p class="subtitle">cloud: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
 - _syntect-server: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
@@ -3559,7 +3559,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>**Descriptions:**
+<p class="subtitle">cloud: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
 - _syntect-server: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
 
@@ -3580,7 +3580,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: provisioning_container_cpu_usage_short_term
 
-<p class="subtitle">code-intel: container cpu usage total (5m maximum) across all cores by instance</p>**Descriptions:**
+<p class="subtitle">cloud: container cpu usage total (5m maximum) across all cores by instance</p>**Descriptions:**
 
 - _syntect-server: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
 
@@ -3599,7 +3599,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: provisioning_container_memory_usage_short_term
 
-<p class="subtitle">code-intel: container memory usage (5m maximum) by instance</p>**Descriptions:**
+<p class="subtitle">cloud: container memory usage (5m maximum) by instance</p>**Descriptions:**
 
 - _syntect-server: 90%+ container memory usage (5m maximum) by instance_
 
@@ -3618,7 +3618,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: pods_available_percentage
 
-<p class="subtitle">code-intel: percentage pods available</p>**Descriptions:**
+<p class="subtitle">cloud: percentage pods available</p>**Descriptions:**
 
 - _syntect-server: less than 90% percentage pods available for 10m0s_
 
