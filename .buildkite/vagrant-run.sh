@@ -4,7 +4,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 set -euxo pipefail
 
 box="$1"
-pushd "test"
+pushd "dev/ci/test"
 
 cleanup() {
   vagrant destroy -f "$box"
@@ -20,6 +20,6 @@ done
 trap cleanup EXIT
 vagrant up "$box" --provider=google
 
-vagrant scp "${box}:/sourcegraph/puppeteer/*.png" ../
-vagrant scp "${box}:/sourcegraph/*.mp4" ../
-vagrant scp "${box}:/sourcegraph/*.log" ../
+vagrant scp "${box}:/sourcegraph/puppeteer/*.png" ../../../
+vagrant scp "${box}:/sourcegraph/*.mp4" ../../../
+vagrant scp "${box}:/sourcegraph/*.log" ../../../

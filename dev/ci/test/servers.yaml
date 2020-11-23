@@ -11,7 +11,7 @@
   shell_commands:
     - |
       cd /sourcegraph
-      ./test/e2e/test.sh
+      ./dev/ci/test/e2e/test.sh
 
 - name: sourcegraph-qa-test
   box: google/gce
@@ -25,7 +25,7 @@
   shell_commands:
     - |
       cd /sourcegraph
-      ./test/qa/test.sh
+      ./dev/ci/test/qa/test.sh
 
 - name: sourcegraph-code-intel-test
   box: google/gce
@@ -39,7 +39,7 @@
   shell_commands:
     - |
       cd /sourcegraph
-      ./test/code-intel/test.sh
+      ./dev/ci/test/code-intel/test.sh
 
 - name: sourcegraph-upgrade
   box: google/gce
@@ -52,5 +52,5 @@
   ssh_key_path: '~/.ssh/id_rsa'
   shell_commands:
     - |
-       cd /sourcegraph
-       ./test/upgrade/test.sh
+      cd /sourcegraph
+      ./dev/ci/test/upgrade/test.sh
