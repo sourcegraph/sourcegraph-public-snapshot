@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import classNames from 'classnames'
 import * as H from 'history'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
