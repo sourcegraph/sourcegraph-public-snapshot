@@ -62,8 +62,8 @@ func TestHasCommit(t *testing.T) {
 		{51, makeCommit(1), false},
 	}
 
-	insertNearestUploads(t, dbconn.Global, 50, map[string][]UploadMeta{makeCommit(1): {{UploadID: 42, Distance: 1}}})
-	insertNearestUploads(t, dbconn.Global, 51, map[string][]UploadMeta{makeCommit(2): {{UploadID: 43, Distance: 2}}})
+	insertNearestUploads(t, dbconn.Global, 50, map[string][]UploadMeta{makeCommit(1): {{UploadID: 42, Flags: 1}}})
+	insertNearestUploads(t, dbconn.Global, 51, map[string][]UploadMeta{makeCommit(2): {{UploadID: 43, Flags: 2}}})
 
 	for _, testCase := range testCases {
 		name := fmt.Sprintf("repositoryID=%d commit=%s", testCase.repositoryID, testCase.commit)
@@ -145,14 +145,14 @@ func TestCalculateVisibleUploads(t *testing.T) {
 	}
 
 	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}},
-		makeCommit(2): {{UploadID: 1, Distance: 1}},
-		makeCommit(3): {{UploadID: 2, Distance: 0}},
-		makeCommit(4): {{UploadID: 2, Distance: 1}},
-		makeCommit(5): {{UploadID: 1, Distance: 2}},
-		makeCommit(6): {{UploadID: 3, Distance: 1}},
-		makeCommit(7): {{UploadID: 3, Distance: 0}},
-		makeCommit(8): {{UploadID: 1, Distance: 4}},
+		makeCommit(1): {{UploadID: 1, Flags: 0}},
+		makeCommit(2): {{UploadID: 1, Flags: 1}},
+		makeCommit(3): {{UploadID: 2, Flags: 0}},
+		makeCommit(4): {{UploadID: 2, Flags: 1}},
+		makeCommit(5): {{UploadID: 1, Flags: 2}},
+		makeCommit(6): {{UploadID: 3, Flags: 1}},
+		makeCommit(7): {{UploadID: 3, Flags: 0}},
+		makeCommit(8): {{UploadID: 1, Flags: 4}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50), UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
@@ -199,9 +199,9 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 	}
 
 	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 1}},
-		makeCommit(2): {{UploadID: 1, Distance: 0}},
-		makeCommit(3): {{UploadID: 1, Distance: 1}},
+		makeCommit(1): {{UploadID: 1, Flags: 1}},
+		makeCommit(2): {{UploadID: 1, Flags: 0}},
+		makeCommit(3): {{UploadID: 1, Flags: 1}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50), UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
@@ -239,8 +239,8 @@ func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
 	}
 
 	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 1}, {UploadID: 2, Distance: 1}},
-		makeCommit(2): {{UploadID: 1, Distance: 0}, {UploadID: 2, Distance: 0}},
+		makeCommit(1): {{UploadID: 1, Flags: 1}, {UploadID: 2, Flags: 1}},
+		makeCommit(2): {{UploadID: 1, Flags: 0}, {UploadID: 2, Flags: 0}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50), UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
@@ -305,12 +305,12 @@ func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
 	}
 
 	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}, {UploadID: 2, Distance: 0}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 1}, {UploadID: 5, Distance: 1}},
-		makeCommit(2): {{UploadID: 1, Distance: 1}, {UploadID: 2, Distance: 1}, {UploadID: 3, Distance: 0}, {UploadID: 4, Distance: 0}, {UploadID: 5, Distance: 0}},
-		makeCommit(3): {{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 2}, {UploadID: 4, Distance: 1}, {UploadID: 5, Distance: 1}, {UploadID: 6, Distance: 0}},
-		makeCommit(4): {{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 2}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 1}, {UploadID: 7, Distance: 0}},
-		makeCommit(5): {{UploadID: 1, Distance: 3}, {UploadID: 2, Distance: 3}, {UploadID: 6, Distance: 1}, {UploadID: 7, Distance: 1}, {UploadID: 8, Distance: 0}},
-		makeCommit(6): {{UploadID: 1, Distance: 4}, {UploadID: 2, Distance: 4}, {UploadID: 7, Distance: 2}, {UploadID: 8, Distance: 1}, {UploadID: 9, Distance: 0}},
+		makeCommit(1): {{UploadID: 1, Flags: 0}, {UploadID: 2, Flags: 0}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 1}, {UploadID: 5, Flags: 1}},
+		makeCommit(2): {{UploadID: 1, Flags: 1}, {UploadID: 2, Flags: 1}, {UploadID: 3, Flags: 0}, {UploadID: 4, Flags: 0}, {UploadID: 5, Flags: 0}},
+		makeCommit(3): {{UploadID: 1, Flags: 2}, {UploadID: 2, Flags: 2}, {UploadID: 4, Flags: 1}, {UploadID: 5, Flags: 1}, {UploadID: 6, Flags: 0}},
+		makeCommit(4): {{UploadID: 1, Flags: 2}, {UploadID: 2, Flags: 2}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 1}, {UploadID: 7, Flags: 0}},
+		makeCommit(5): {{UploadID: 1, Flags: 3}, {UploadID: 2, Flags: 3}, {UploadID: 6, Flags: 1}, {UploadID: 7, Flags: 1}, {UploadID: 8, Flags: 0}},
+		makeCommit(6): {{UploadID: 1, Flags: 4}, {UploadID: 2, Flags: 4}, {UploadID: 7, Flags: 2}, {UploadID: 8, Flags: 1}, {UploadID: 9, Flags: 0}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50), UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
@@ -358,24 +358,24 @@ func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
 
 	expectedVisibleUploads := map[string][]UploadMeta{
 		makeCommit(1): {
-			{UploadID: 1, Distance: 0}, {UploadID: 2, Distance: 1}, {UploadID: 3, Distance: 2}, {UploadID: 4, Distance: 3},
-			{UploadID: 5, Distance: 0}, {UploadID: 6, Distance: 1}, {UploadID: 7, Distance: 2}, {UploadID: 8, Distance: 3},
+			{UploadID: 1, Flags: 0}, {UploadID: 2, Flags: 1}, {UploadID: 3, Flags: 2}, {UploadID: 4, Flags: 3},
+			{UploadID: 5, Flags: 0}, {UploadID: 6, Flags: 1}, {UploadID: 7, Flags: 2}, {UploadID: 8, Flags: 3},
 		},
 		makeCommit(2): {
-			{UploadID: 1, Distance: 1}, {UploadID: 2, Distance: 0}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 2},
-			{UploadID: 5, Distance: 1}, {UploadID: 6, Distance: 0}, {UploadID: 7, Distance: 1}, {UploadID: 8, Distance: 2},
+			{UploadID: 1, Flags: 1}, {UploadID: 2, Flags: 0}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 2},
+			{UploadID: 5, Flags: 1}, {UploadID: 6, Flags: 0}, {UploadID: 7, Flags: 1}, {UploadID: 8, Flags: 2},
 		},
 		makeCommit(3): {
-			{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 1}, {UploadID: 3, Distance: 0}, {UploadID: 4, Distance: 1},
-			{UploadID: 5, Distance: 2}, {UploadID: 6, Distance: 1}, {UploadID: 7, Distance: 0}, {UploadID: 8, Distance: 1},
+			{UploadID: 1, Flags: 2}, {UploadID: 2, Flags: 1}, {UploadID: 3, Flags: 0}, {UploadID: 4, Flags: 1},
+			{UploadID: 5, Flags: 2}, {UploadID: 6, Flags: 1}, {UploadID: 7, Flags: 0}, {UploadID: 8, Flags: 1},
 		},
 		makeCommit(4): {
-			{UploadID: 1, Distance: 3}, {UploadID: 2, Distance: 2}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 0},
-			{UploadID: 5, Distance: 3}, {UploadID: 6, Distance: 2}, {UploadID: 7, Distance: 1}, {UploadID: 8, Distance: 0},
+			{UploadID: 1, Flags: 3}, {UploadID: 2, Flags: 2}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 0},
+			{UploadID: 5, Flags: 3}, {UploadID: 6, Flags: 2}, {UploadID: 7, Flags: 1}, {UploadID: 8, Flags: 0},
 		},
 		makeCommit(5): {
-			{UploadID: 1, Distance: 4}, {UploadID: 2, Distance: 3}, {UploadID: 3, Distance: 2}, {UploadID: 4, Distance: 1},
-			{UploadID: 5, Distance: 4}, {UploadID: 6, Distance: 3}, {UploadID: 7, Distance: 2}, {UploadID: 8, Distance: 1},
+			{UploadID: 1, Flags: 4}, {UploadID: 2, Flags: 3}, {UploadID: 3, Flags: 2}, {UploadID: 4, Flags: 1},
+			{UploadID: 5, Flags: 4}, {UploadID: 6, Flags: 3}, {UploadID: 7, Flags: 2}, {UploadID: 8, Flags: 1},
 		},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50), UploadMetaComparer); diff != "" {
