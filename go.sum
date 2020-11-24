@@ -1223,8 +1223,6 @@ github.com/soheilhy/cmux v0.1.4/go.mod h1:IM3LyeVVIOuxMH7sFAkER9+bJ4dT7Ms6E4xg4k
 github.com/sony/gobreaker v0.4.1/go.mod h1:ZKptC7FHNvhBz7dN2LGjPVBz2sZJmc0/PkyDJOjmxWY=
 github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d h1:yKm7XZV6j9Ev6lojP2XaIshpT4ymkqhMeSghO5Ps00E=
 github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d/go.mod h1:UdhH50NIW0fCiwBSr0co2m7BnFLdv4fQTgdqdJTHFeE=
-github.com/sourcegraph/campaignutils v0.0.0-20201124101951-f2b625b9bf16 h1:AvKLNpt8KtCf+SxnbwQwQrfqYcqYJ4YPamUCxK1tG+s=
-github.com/sourcegraph/campaignutils v0.0.0-20201124101951-f2b625b9bf16/go.mod h1:xm6i78Mk2t4DBLQDqEFc/3x6IPf7yYZCgbNaTQGhJHA=
 github.com/sourcegraph/campaignutils v0.0.0-20201124155628-5d86cf20398d h1:BvdJF34dFf+M4anMVVGDaXDoAJbAonWV3SLILngzXds=
 github.com/sourcegraph/campaignutils v0.0.0-20201124155628-5d86cf20398d/go.mod h1:xm6i78Mk2t4DBLQDqEFc/3x6IPf7yYZCgbNaTQGhJHA=
 github.com/sourcegraph/codeintelutils v0.0.0-20200824140252-1db3aed5cf58 h1:Ps+U1xoZP+Zoph39YfRB6Q846ghO8pgrAgp0MiObvPs=
@@ -1260,8 +1258,6 @@ github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20201109233450-89466ac1243c h1:2JUc76DtYfQgILS86INdYbzlp1IKQKvDoK1kPfzV6tg=
-github.com/sourcegraph/zoekt v0.0.0-20201109233450-89466ac1243c/go.mod h1:MHjbwlJc598A067EF2SHjHTqSgMgk1NzZcH+fex9ev8=
 github.com/sourcegraph/zoekt v0.0.0-20201124084228-b6ed3e04a806 h1:7uSVdy2vF9oUml7aMaUgY6vr6OYE6Le4Mqe3n8J2rLE=
 github.com/sourcegraph/zoekt v0.0.0-20201124084228-b6ed3e04a806/go.mod h1:MHjbwlJc598A067EF2SHjHTqSgMgk1NzZcH+fex9ev8=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
