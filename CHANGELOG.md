@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Syntax highlighting on files with mixed extension case (e.g. `.CPP` vs `.cpp`) now works as expected. [#11327](https://github.com/sourcegraph/sourcegraph/issues/11327)
 - After applying a campaign, some GitLab MRs might have had outdated state shown in the UI until the next sync with the code host. [#16100](https://github.com/sourcegraph/sourcegraph/pull/16100)
 
 ### Removed
