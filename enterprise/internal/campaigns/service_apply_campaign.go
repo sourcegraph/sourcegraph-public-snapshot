@@ -189,7 +189,7 @@ type changesetRewirer struct {
 // It also updates the ChangesetIDs on the campaign.
 func (r *changesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.Changeset, err error) {
 	// First we need to load the associations.
-	accessibleReposByID, changesetsByID, changesetSpecsByID, err := r.loadAssociations(ctx)
+	associations, err := r.loadAssociations(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -199,14 +199,14 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 	for _, m := range r.mappings {
 		// If a Changeset that's currently attached to the campaign wasn't matched to a ChangesetSpec, it needs to be closed/detached.
 		if m.ChangesetSpecID == 0 {
-			changeset, ok := changesetsByID[m.ChangesetID]
+			changeset, ok := associations.changesetsByID[m.ChangesetID]
 			if !ok {
 				// This should never happen.
 				return nil, errors.New("changeset not found")
 			}
 
 			// If we don't have access to a repository, we don't detach nor close the changeset.
-			_, ok = accessibleReposByID[m.RepoID]
+			_, ok = associations.accessibleReposByID[m.RepoID]
 			if !ok {
 				continue
 			}
@@ -218,7 +218,7 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 			continue
 		}
 
-		spec, ok := changesetSpecsByID[m.ChangesetSpecID]
+		spec, ok := associations.changesetSpecsByID[m.ChangesetSpecID]
 		if !ok {
 			// This should never happen.
 			return nil, errors.New("spec not found")
@@ -228,7 +228,7 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 		// simply skip the repository? If we skip it, the user can't reapply
 		// the same campaign spec, since it's already applied and re-applying
 		// would require a new spec.
-		repo, ok := accessibleReposByID[m.RepoID]
+		repo, ok := associations.accessibleReposByID[m.RepoID]
 		if !ok {
 			return nil, &db.RepoNotFoundErr{ID: m.RepoID}
 		}
@@ -240,7 +240,7 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 		var changeset *campaigns.Changeset
 
 		if m.ChangesetID != 0 {
-			changeset, ok = changesetsByID[m.ChangesetID]
+			changeset, ok = associations.changesetsByID[m.ChangesetID]
 			if !ok {
 				// This should never happen.
 				return nil, errors.New("changeset not found")
@@ -352,13 +352,14 @@ func (r *changesetRewirer) closeChangeset(ctx context.Context, changeset *campai
 	return r.tx.UpdateChangeset(ctx, changeset)
 }
 
+type rewirerAssociations struct {
+	accessibleReposByID map[api.RepoID]*types.Repo
+	changesetsByID      map[int64]*campaigns.Changeset
+	changesetSpecsByID  map[int64]*campaigns.ChangesetSpec
+}
+
 // loadAssociations retrieves all entities required to rewire the changesets in a campaign.
-func (r *changesetRewirer) loadAssociations(ctx context.Context) (
-	accessibleReposByID map[api.RepoID]*types.Repo,
-	changesetsByID map[int64]*campaigns.Changeset,
-	changesetSpecsByID map[int64]*campaigns.ChangesetSpec,
-	err error,
-) {
+func (r *changesetRewirer) loadAssociations(ctx context.Context) (associations *rewirerAssociations, err error) {
 	// Fetch the changeset specs involved in this rewiring. This should always be the same as omitting the `IDs` section,
 	// we just make sure people know why that is the case here.
 	changesetSpecs, _, err := r.tx.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{
@@ -366,33 +367,34 @@ func (r *changesetRewirer) loadAssociations(ctx context.Context) (
 		IDs:            r.mappings.ChangesetSpecIDs(),
 	})
 	if err != nil {
-		return accessibleReposByID, changesetsByID, changesetSpecsByID, err
+		return nil, err
 	}
 
 	// Then fetch the changesets involved in this rewiring.
 	changesets, _, err := r.tx.ListChangesets(ctx, ListChangesetsOpts{IDs: r.mappings.ChangesetIDs()})
 	if err != nil {
-		return accessibleReposByID, changesetsByID, changesetSpecsByID, err
+		return nil, err
 	}
 
+	associations = &rewirerAssociations{}
 	// Fetch all repos involved. We use them later to enforce repo permissions.
 	//
 	// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
-	accessibleReposByID, err = db.Repos.GetReposSetByIDs(ctx, r.mappings.RepoIDs()...)
+	associations.accessibleReposByID, err = db.Repos.GetReposSetByIDs(ctx, r.mappings.RepoIDs()...)
 	if err != nil {
-		return accessibleReposByID, changesetsByID, changesetSpecsByID, err
+		return nil, err
 	}
 
-	changesetsByID = map[int64]*campaigns.Changeset{}
-	changesetSpecsByID = map[int64]*campaigns.ChangesetSpec{}
+	associations.changesetsByID = map[int64]*campaigns.Changeset{}
+	associations.changesetSpecsByID = map[int64]*campaigns.ChangesetSpec{}
 
 	for _, c := range changesets {
-		changesetsByID[c.ID] = c
+		associations.changesetsByID[c.ID] = c
 	}
 	for _, c := range changesetSpecs {
-		changesetSpecsByID[c.ID] = c
+		associations.changesetSpecsByID[c.ID] = c
 	}
 
-	return accessibleReposByID, changesetsByID, changesetSpecsByID, nil
+	return associations, nil
 }
