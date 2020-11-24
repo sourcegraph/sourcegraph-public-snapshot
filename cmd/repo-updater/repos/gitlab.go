@@ -354,6 +354,11 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 		}
 	}
 
+	// These additional API calls can go away once we can use the GraphQL API.
+	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
+		return exists, errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
+	}
+
 	if err := c.SetMetadata(mr); err != nil {
 		return exists, errors.Wrap(err, "setting changeset metadata")
 	}
@@ -386,6 +391,7 @@ func (s *GitLabSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (
 
 // CloseChangeset closes the merge request on GitLab, leaving it unlocked.
 func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
+	project := c.Repo.Metadata.(*gitlab.Project)
 	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitLab merge request")
@@ -393,13 +399,18 @@ func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 
 	// Title and TargetBranch are required, even though we're not actually
 	// changing them.
-	updated, err := s.client.UpdateMergeRequest(ctx, c.Repo.Metadata.(*gitlab.Project), mr, gitlab.UpdateMergeRequestOpts{
+	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
 		Title:        mr.Title,
 		TargetBranch: mr.TargetBranch,
 		StateEvent:   gitlab.UpdateMergeRequestStateEventClose,
 	})
 	if err != nil {
 		return errors.Wrap(err, "updating GitLab merge request")
+	}
+
+	// These additional API calls can go away once we can use the GraphQL API.
+	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
+		return errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
 	}
 
 	if err := c.SetMetadata(updated); err != nil {
@@ -439,6 +450,7 @@ func (s *GitLabSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 
 // ReopenChangeset closes the merge request on GitLab, leaving it unlocked.
 func (s *GitLabSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
+	project := c.Repo.Metadata.(*gitlab.Project)
 	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitLab merge request")
@@ -446,13 +458,18 @@ func (s *GitLabSource) ReopenChangeset(ctx context.Context, c *Changeset) error 
 
 	// Title and TargetBranch are required, even though we're not actually
 	// changing them.
-	updated, err := s.client.UpdateMergeRequest(ctx, c.Repo.Metadata.(*gitlab.Project), mr, gitlab.UpdateMergeRequestOpts{
+	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
 		Title:        mr.Title,
 		TargetBranch: mr.TargetBranch,
 		StateEvent:   gitlab.UpdateMergeRequestStateEventReopen,
 	})
 	if err != nil {
 		return errors.Wrap(err, "reopening GitLab merge request")
+	}
+
+	// These additional API calls can go away once we can use the GraphQL API.
+	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
+		return errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
 	}
 
 	if err := c.SetMetadata(updated); err != nil {
@@ -558,14 +575,20 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 	if !ok {
 		return errors.New("Changeset is not a GitLab merge request")
 	}
+	project := c.Repo.Metadata.(*gitlab.Project)
 
-	updated, err := s.client.UpdateMergeRequest(ctx, c.Repo.Metadata.(*gitlab.Project), mr, gitlab.UpdateMergeRequestOpts{
+	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
 		Title:        c.Title,
 		Description:  c.Body,
 		TargetBranch: git.AbbreviateRef(c.BaseRef),
 	})
 	if err != nil {
 		return errors.Wrap(err, "updating GitLab merge request")
+	}
+
+	// These additional API calls can go away once we can use the GraphQL API.
+	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
+		return errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
 	}
 
 	return c.Changeset.SetMetadata(updated)
