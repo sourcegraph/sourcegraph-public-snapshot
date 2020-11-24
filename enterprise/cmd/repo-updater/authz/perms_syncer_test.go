@@ -3,6 +3,7 @@ package authz
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -111,6 +113,9 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id}, nil
 	}
+	db.Mocks.ExternalAccounts.TouchLastValid = func(ctx context.Context, id int32) error {
+		return nil
+	}
 	edb.Mocks.Perms.ListExternalAccounts = func(context.Context, int32) ([]*extsvc.Account, error) {
 		return []*extsvc.Account{&extAccount}, nil
 	}
@@ -127,6 +132,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}
 	defer func() {
 		db.Mocks.Users = db.MockUsers{}
+		db.Mocks.ExternalAccounts = db.MockExternalAccounts{}
 		edb.Mocks.Perms = edb.MockPerms{}
 	}()
 
@@ -167,6 +173,67 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
+	}
+}
+
+func TestPermsSyncer_syncUserPerms_invalidToken(t *testing.T) {
+	p := &mockProvider{
+		serviceType: extsvc.TypeGitLab,
+		serviceID:   "https://gitlab.com/",
+	}
+	authz.SetProviders(false, []authz.Provider{p})
+	defer authz.SetProviders(true, nil)
+
+	extAccount := extsvc.Account{
+		AccountSpec: extsvc.AccountSpec{
+			ServiceType: p.ServiceType(),
+			ServiceID:   p.ServiceID(),
+		},
+	}
+
+	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: id}, nil
+	}
+	edb.Mocks.Perms.ListExternalAccounts = func(context.Context, int32) ([]*extsvc.Account, error) {
+		return []*extsvc.Account{&extAccount}, nil
+	}
+	edb.Mocks.Perms.SetUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
+		return nil
+	}
+	defer func() {
+		db.Mocks.Users = db.MockUsers{}
+		db.Mocks.ExternalAccounts = db.MockExternalAccounts{}
+		edb.Mocks.Perms = edb.MockPerms{}
+	}()
+
+	reposStore := &mockReposStore{
+		listRepos: func(_ context.Context, args repos.StoreListReposArgs) ([]*repos.Repo, error) {
+			if !args.PrivateOnly {
+				return nil, errors.New("PrivateOnly want true but got false")
+			}
+			return []*repos.Repo{{ID: 1}}, nil
+		},
+	}
+	permsStore := edb.NewPermsStore(nil, timeutil.Now)
+	s := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
+
+	calledTouchExpired := false
+	db.Mocks.ExternalAccounts.TouchExpired = func(ctx context.Context, id int32) error {
+		calledTouchExpired = true
+		return nil
+	}
+
+	p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
+		return nil, &github.APIError{Code: http.StatusUnauthorized}
+	}
+
+	err := s.syncUserPerms(context.Background(), 1, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !calledTouchExpired {
+		t.Fatal("!calledTouchExpired")
 	}
 }
 

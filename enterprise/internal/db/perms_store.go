@@ -1100,6 +1100,7 @@ FROM user_external_accounts
 WHERE
     user_id = %s
 AND deleted_at IS NULL
+AND expired_at IS NULL
 ORDER BY id ASC
 `, userID)
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
