@@ -5,6 +5,7 @@ import { Link } from '../../../../shared/src/components/Link'
 import { FileDecorationsByPath } from 'sourcegraph'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { FileDecorator } from '../../tree/FileDecorator'
+import { identity } from 'lodash'
 
 /**
  * Use a multi-column layout for tree entries when there are at least this many. See TreeEntriesSection.scss
@@ -68,17 +69,33 @@ export const TreeEntriesSection: React.FunctionComponent<TreeEntriesSectionProps
     // Render file decorations for all files in parent so we know how many total file decorations exist
     // and can decide whether or not to render dividers
     // No need to memoize decorations, since this component should only rerender when entries change
-    const renderedDecorationsByIndex = directChildren.map(entry =>
-        FileDecorator({
+    const renderedDecorationsByIndex = directChildren.map(entry => (
+        <FileDecorator
+            key={entry.path}
             // If component is not specified, or it is 'page', render it.
-            fileDecorations: fileDecorationsByPath[entry.path]?.filter(
+            fileDecorations={fileDecorationsByPath[entry.path]?.filter(
                 decoration => decoration?.component !== 'sidebar'
-            ),
-            isLightTheme,
+            )}
+            isLightTheme={isLightTheme}
+        />
+    ))
+
+    // If there are no file decorations, we want to hide column-rule.
+    // TODO(tj): turn 4 iterations over directChildren in this component into 1
+    const noDecorations = !directChildren
+        // Return whether or not each child has decorations
+        .map(entry => {
+            const decorations = fileDecorationsByPath[entry.path]?.filter(
+                decoration => decoration?.component !== 'sidebar'
+            )
+            if (!decorations) {
+                return false
+            }
+
+            return decorations.length > 0
         })
-    )
-    // If no ReactNode is truthy, we want to hide column-rule
-    const noDecorations = !renderedDecorationsByIndex.some(decoration => !!decoration)
+        // If any child has decorations, the result is true
+        .find(identity)
 
     const isColumnLayout = directChildren.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT
 

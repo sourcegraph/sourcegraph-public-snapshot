@@ -763,9 +763,8 @@ describe('Repository', () => {
                                                     } vowels`,
                                                     color: file.isDirectory ? 'red' : 'blue',
                                                 },
-                                                percentage: {
+                                                meter: {
                                                     value: file.isDirectory ? 50 : 100,
-                                                    color: file.isDirectory ? 'red' : 'blue',
                                                 },
                                             }
                                         }),
@@ -798,9 +797,7 @@ describe('Repository', () => {
 
                     return {
                         textContent: decorable.querySelector('.test-file-decoration-text')?.textContent,
-                        percentage: decorable
-                            .querySelector('.test-file-decoration-meter')
-                            ?.getAttribute('aria-valuenow'),
+                        percentage: decorable.querySelector('.test-file-decoration-meter')?.getAttribute('value'),
                     }
                 },
                 { pageOrSidebar, filename }

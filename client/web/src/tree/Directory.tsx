@@ -62,12 +62,12 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                             {props.entryInfo.name}
                         </Link>
                     </div>
-                    {/* If component is not specified, or it is 'sidebar', render it. */}
-                    {FileDecorator({
-                        fileDecorations: props.fileDecorations?.filter(decoration => decoration?.component !== 'page'),
-                        isDirectory: true,
-                        isLightTheme: props.isLightTheme,
-                    })}
+                    <FileDecorator
+                        // If component is not specified, or it is 'sidebar', render it.
+                        fileDecorations={props.fileDecorations?.filter(decoration => decoration?.component !== 'page')}
+                        className="mr-3"
+                        isLightTheme={props.isLightTheme}
+                    />
                 </div>
                 {props.loading && (
                     <div className="tree__row-loader">

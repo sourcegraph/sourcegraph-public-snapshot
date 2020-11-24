@@ -3,23 +3,31 @@ import classNames from 'classnames'
 import { FileDecoration } from 'sourcegraph'
 import { fileDecorationColorForTheme } from '../../../shared/src/api/client/services/decoration'
 
+interface FileDecoratorProps {
+    /** Array of file decorations to render */
+    fileDecorations?: FileDecoration[]
+
+    /** File decorations may be styled differently depending on the theme */
+    isLightTheme: boolean
+
+    /**
+     * File decorations may be styled differently depending on whether or not
+     * the decorated file is selected
+     */
+    isSelected?: boolean
+
+    className?: string
+}
+
 /**
- *
- * NOTE: Don't use `FileDecorator` like a component (pass to React.createElement).
- * Instead, call it directly. It's meant to return ReactNodes, which
- * includes null.
+ * Renders a list of file decorations from extensions
  */
-export function FileDecorator({
+export const FileDecorator: React.FunctionComponent<FileDecoratorProps> = ({
     fileDecorations,
     isLightTheme,
-    isDirectory,
+    className,
     isSelected,
-}: {
-    fileDecorations?: FileDecoration[]
-    isLightTheme: boolean
-    isDirectory?: boolean
-    isSelected?: boolean
-}): React.ReactNode {
+}) => {
     // Only need to check for number of decorations, other validation (like whether the decoration specifies at
     // least one of `text` or `percentage`) is done in the extension host
     if (!fileDecorations || fileDecorations.length === 0) {
@@ -27,11 +35,7 @@ export function FileDecorator({
     }
 
     return (
-        <div
-            className={classNames('d-flex align-items-center text-nowrap test-file-decoration-container', {
-                'mr-3': isDirectory,
-            })}
-        >
+        <div className={classNames('d-flex align-items-center text-nowrap test-file-decoration-container', className)}>
             {fileDecorations.map(
                 (fileDecoration, index) =>
                     (fileDecoration.meter || fileDecoration.after) && (
@@ -40,7 +44,6 @@ export function FileDecorator({
                             key={fileDecoration.path + String(index)}
                         >
                             {fileDecoration.after && (
-                                // link or span?
                                 <small
                                     // eslint-disable-next-line react/forbid-dom-props
                                     style={{
