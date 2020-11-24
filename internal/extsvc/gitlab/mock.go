@@ -25,6 +25,10 @@ var MockCreateMergeRequest func(c *Client, ctx context.Context, project *Project
 // Client.GetMergeRequest
 var MockGetMergeRequest func(c *Client, ctx context.Context, project *Project, iid ID) (*MergeRequest, error)
 
+// MockGetMergeRequestResourceStateEvents, if non-nil, will be called instead of
+// Client.GetMergeRequestResourceStateEvents
+var MockGetMergeRequestResourceStateEvents func(c *Client, ctx context.Context, project *Project, iid ID) func() ([]*ResourceStateEvent, error)
+
 // MockGetMergeRequestNotes, if non-nil, will be called instead of
 // Client.GetMergeRequestNotes
 var MockGetMergeRequestNotes func(c *Client, ctx context.Context, project *Project, iid ID) func() ([]*Note, error)

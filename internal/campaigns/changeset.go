@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -452,10 +451,21 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 		}
 
 	case *gitlab.MergeRequest:
-		events = make([]*ChangesetEvent, 0, len(m.Notes)+len(m.Pipelines))
+		events = make([]*ChangesetEvent, 0, len(m.Notes)+len(m.Events)+len(m.Pipelines))
 
 		for _, note := range m.Notes {
 			if event := note.ToEvent(); event != nil {
+				appendEvent(&ChangesetEvent{
+					ChangesetID: c.ID,
+					Key:         event.(Keyer).Key(),
+					Kind:        ChangesetEventKindFor(event),
+					Metadata:    event,
+				})
+			}
+		}
+
+		for _, e := range m.Events {
+			if event := e.ToEvent(); event != nil {
 				appendEvent(&ChangesetEvent{
 					ChangesetID: c.ID,
 					Key:         event.(Keyer).Key(),
@@ -728,12 +738,14 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindGitLabMarkWorkInProgress
 	case *gitlab.UnmarkWorkInProgressEvent:
 		return ChangesetEventKindGitLabUnmarkWorkInProgress
-	case *gitlabwebhooks.MergeRequestCloseEvent:
+
+	case *gitlab.MergeRequestClosedEvent:
 		return ChangesetEventKindGitLabClosed
-	case *gitlabwebhooks.MergeRequestMergeEvent:
-		return ChangesetEventKindGitLabMerged
-	case *gitlabwebhooks.MergeRequestReopenEvent:
+	case *gitlab.MergeRequestReopenedEvent:
 		return ChangesetEventKindGitLabReopened
+	case *gitlab.MergeRequestMergedEvent:
+		return ChangesetEventKindGitLabMerged
+
 	default:
 		panic(errors.Errorf("unknown changeset event kind for %T", e))
 	}
@@ -808,11 +820,11 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 		case ChangesetEventKindGitLabUnmarkWorkInProgress:
 			return new(gitlab.UnmarkWorkInProgressEvent), nil
 		case ChangesetEventKindGitLabClosed:
-			return new(gitlabwebhooks.MergeRequestCloseEvent), nil
+			return new(gitlab.MergeRequestClosedEvent), nil
 		case ChangesetEventKindGitLabMerged:
-			return new(gitlabwebhooks.MergeRequestMergeEvent), nil
+			return new(gitlab.MergeRequestMergedEvent), nil
 		case ChangesetEventKindGitLabReopened:
-			return new(gitlabwebhooks.MergeRequestReopenEvent), nil
+			return new(gitlab.MergeRequestReopenedEvent), nil
 		}
 	}
 	return nil, errors.Errorf("unknown changeset event kind %q", k)
