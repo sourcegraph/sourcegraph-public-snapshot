@@ -21,7 +21,7 @@ var isDev, _ = strconv.ParseBool(os.Getenv("DEV"))
 const alertSuffix = "_alert_rules.yml"
 
 // Generate is the main Sourcegraph monitoring generator entrypoint.
-func Generate(containers []*Container) {
+func Generate(containers ...*Container) {
 	println("Regenerating monitoring...")
 
 	grafanaDir, ok := os.LookupEnv("GRAFANA_DIR")

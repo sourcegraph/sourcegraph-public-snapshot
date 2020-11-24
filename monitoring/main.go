@@ -5,7 +5,9 @@ package main
 import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 
 func main() {
-	monitoring.Generate([]*monitoring.Container{
+	// Runs the monitoring generator. Ensure that any dashboards created or removed are
+	// updated in the arguments here as required.
+	monitoring.Generate(
 		Frontend(),
 		GitServer(),
 		GitHubProxy(),
@@ -19,5 +21,5 @@ func main() {
 		ZoektWebServer(),
 		Prometheus(),
 		ExecutorAndExecutorQueue(),
-	})
+	)
 }
