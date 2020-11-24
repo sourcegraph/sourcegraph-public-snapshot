@@ -31,14 +31,14 @@ export const CodeIntelUploadOrIndexTimeline: FunctionComponent<CodeIntelUploadOr
 }) => (
     <Timeline
         stages={[
-            { icon: <FileUploadIcon />, text: 'Uploaded', date: node.uploadedAt, className: 'success' },
-            { icon: <TimerSandIcon />, text: 'Queued', date: node.queuedAt, className: 'success' },
-            { icon: <ProgressClockIcon />, text: 'Began processing', date: node.startedAt, className: 'success' },
+            { icon: <FileUploadIcon />, text: 'Uploaded', date: node.uploadedAt, className: 'bg-success' },
+            { icon: <TimerSandIcon />, text: 'Queued', date: node.queuedAt, className: 'bg-success' },
+            { icon: <ProgressClockIcon />, text: 'Began processing', date: node.startedAt, className: 'bg-success' },
             {
                 icon: isCompleted(node) ? <CheckIcon /> : <ErrorIcon />,
                 text: isCompleted(node) ? 'Finished' : 'Failed',
                 date: node.finishedAt,
-                className: isCompleted(node) ? 'success' : 'failure',
+                className: isCompleted(node) ? 'bg-success' : 'bg-danger',
             },
         ]}
         now={now}

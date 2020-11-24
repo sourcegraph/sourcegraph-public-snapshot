@@ -62,7 +62,8 @@ body,
     flex: 1;
 }
 
-.min-width-0 {
+.flex-bounded {
+    flex: 1;
     min-width: 0;
 }
 

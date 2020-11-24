@@ -33,7 +33,7 @@ export const Timeline: FunctionComponent<TimelineProps> = ({ stages, now, classN
                             {previousDate && (
                                 <div className="d-flex align-items-center">
                                     <div className="flex-0">
-                                        <div className="executor-timeline-task-separator" />
+                                        <div className="timeline__executor-task-separator" />
                                     </div>
                                     <div className="flex-1">
                                         <span className="text-muted ml-4">
@@ -45,7 +45,7 @@ export const Timeline: FunctionComponent<TimelineProps> = ({ stages, now, classN
 
                             <div className="d-flex align-items-center">
                                 <div className="flex-0 m-2">
-                                    <div className={classNames('executor-timeline-icon', stage.className)}>
+                                    <div className={classNames('timeline__executor-task-icon', stage.className)}>
                                         {stage.icon}
                                     </div>
                                 </div>

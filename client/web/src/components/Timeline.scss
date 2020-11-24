@@ -1,28 +1,22 @@
-.executor-timeline-task-separator {
-    height: 2.25rem;
-    border-left: 4px solid var(--border-color);
-    margin-left: 1.5rem;
-    margin-top: -1rem;
-    margin-bottom: -1rem;
-}
+.timeline {
+    &__executor-task-separator {
+        height: 2.25rem;
+        border-left: 4px solid var(--border-color);
+        margin-left: 1.5rem;
+        margin-top: -1rem;
+        margin-bottom: -1rem;
+    }
 
-.executor-timeline-icon {
-    border-radius: 50%;
-    width: 2.25rem;
-    height: 2.25rem;
-    color: #ffffff;
-    padding-top: 0.375rem;
-}
+    &__executor-task-icon {
+        border-radius: 50%;
+        width: 2.25rem;
+        height: 2.25rem;
+        color: #ffffff;
+        padding-top: 0.375rem;
 
-.executor-timeline-icon svg {
-    display: block;
-    margin: 0 auto;
-}
-
-.executor-timeline-icon.success {
-    background-color: var(--success);
-}
-
-.executor-timeline-icon.failure {
-    background-color: var(--danger);
+        svg {
+            display: block;
+            margin: 0 auto;
+        }
+    }
 }

@@ -13,7 +13,7 @@ export const ExecutorLogs: FunctionComponent<ExecutorLogsProps> = ({ index, clas
         <div className={className}>
             {index.logContents && (
                 <pre className="bg-code rounded p-3">
-                    <code dangerouslySetInnerHTML={{ __html: index.logContents }} />
+                    <code>{index.logContents}</code>
                 </pre>
             )}
         </div>
