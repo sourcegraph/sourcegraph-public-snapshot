@@ -1,21 +1,30 @@
-// Package monitoring declares types for Sourcegraph's monitoring generator as well as the generator implementation itself.
+//go:generate echo "Regenerating monitoring..."
+//go:generate go build -o /tmp/monitoring-generator
+//go:generate /tmp/monitoring-generator
+
 //nolint:golint,gocritic
-package monitoring
+package main
 
 import (
 	"bytes"
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
 
 	"github.com/grafana-tools/sdk"
 	"github.com/prometheus/common/model"
+	"gopkg.in/yaml.v2"
 )
 
 // Container describes a Docker container to be observed.
@@ -803,57 +812,6 @@ func withPeriod(s string) string {
 	return s
 }
 
-func deleteRemnants(filelist []string, grafanaDir, promDir string) {
-	err := filepath.Walk(grafanaDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			log.Print("Unable to access file: ", path)
-			return nil
-		}
-		if filepath.Ext(path) != ".json" || info.IsDir() {
-			return nil
-		}
-		for _, f := range filelist {
-			if filepath.Ext(f) != ".json" || filepath.Ext(path) != ".json" || info.IsDir() {
-				continue
-			}
-			if filepath.Base(path) == f {
-				return nil
-			}
-		}
-		err = os.Remove(path)
-		log.Println("Removed orphan grafana file: ", path)
-		return err
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = filepath.Walk(promDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			log.Print("Unable to access file: ", path)
-			return nil
-		}
-		if !strings.Contains(filepath.Base(path), alertSuffix) || info.IsDir() {
-			return nil
-		}
-
-		for _, f := range filelist {
-			if filepath.Ext(f) != ".yml" {
-				continue
-			}
-			if filepath.Base(path) == f {
-				return nil
-			}
-		}
-		err = os.Remove(path)
-		log.Println("Removed orphan prometheus alert file: ", path)
-		return err
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 func generateDocs(containers []*Container) []byte {
 	var b bytes.Buffer
 	fmt.Fprintf(&b, `# Alert solutions
@@ -952,6 +910,164 @@ func goMarkdown(m string) (string, error) {
 	}
 
 	return m, nil
+}
+
+var isDev, _ = strconv.ParseBool(os.Getenv("DEV"))
+
+const alertSuffix = "_alert_rules.yml"
+
+func main() {
+	grafanaDir, ok := os.LookupEnv("GRAFANA_DIR")
+	if !ok {
+		grafanaDir = "../docker-images/grafana/config/provisioning/dashboards/sourcegraph/"
+	}
+	prometheusDir, ok := os.LookupEnv("PROMETHEUS_DIR")
+	if !ok {
+		prometheusDir = "../docker-images/prometheus/config/"
+	}
+	docSolutionsFile, ok := os.LookupEnv("DOC_SOLUTIONS_FILE")
+	if !ok {
+		docSolutionsFile = "../doc/admin/observability/alert_solutions.md"
+	}
+
+	reloadValue, ok := os.LookupEnv("RELOAD")
+	if !ok && isDev {
+		reloadValue = "true"
+	}
+	reload, _ := strconv.ParseBool(reloadValue)
+
+	containers := []*Container{
+		Frontend(),
+		GitServer(),
+		GitHubProxy(),
+		PreciseCodeIntelWorker(),
+		QueryRunner(),
+		RepoUpdater(),
+		Searcher(),
+		Symbols(),
+		SyntectServer(),
+		ZoektIndexServer(),
+		ZoektWebServer(),
+		Prometheus(),
+		ExecutorAndExecutorQueue(),
+	}
+	var filelist []string
+	for _, container := range containers {
+		if err := container.validate(); err != nil {
+			log.Fatal(fmt.Sprintf("container %q: %+v", container.Name, err))
+		}
+		if grafanaDir != "" {
+			board := container.dashboard()
+			data, err := json.MarshalIndent(board, "", "  ")
+			if err != nil {
+				log.Fatal(err)
+			}
+			// #nosec G306  prometheus runs as nobody
+			err = ioutil.WriteFile(filepath.Join(grafanaDir, container.Name+".json"), data, 0666)
+			if err != nil {
+				log.Fatal(err)
+			}
+			filelist = append(filelist, container.Name+".json")
+
+			if reload {
+				ctx := context.Background()
+				client := sdk.NewClient("http://127.0.0.1:3370", "admin:admin", sdk.DefaultHTTPClient)
+				_, err := client.SetDashboard(ctx, *board, sdk.SetDashboardParams{Overwrite: true})
+				if err != nil {
+					log.Fatal("updating dashboard:", err)
+				}
+			}
+		}
+
+		if prometheusDir != "" {
+			promAlertsFile := container.promAlertsFile()
+			data, err := yaml.Marshal(promAlertsFile)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fileName := strings.Replace(container.Name, "-", "_", -1) + alertSuffix
+			filelist = append(filelist, fileName)
+			// #nosec G306  grafana runs as UID 472
+			err = ioutil.WriteFile(filepath.Join(prometheusDir, fileName), data, 0666)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+	deleteRemnants(filelist, grafanaDir, prometheusDir)
+
+	if prometheusDir != "" && reload {
+		resp, err := http.Post("http://127.0.0.1:9090/-/reload", "", nil)
+		if err != nil {
+			log.Fatal("reloading Prometheus rules, got error:", err)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != 200 {
+			log.Fatal("reloading Prometheus rules, got status code:", resp.StatusCode)
+		}
+	}
+	if reload && grafanaDir != "" && prometheusDir != "" {
+		fmt.Println("Reloaded Prometheus rules & Grafana dashboards")
+	}
+
+	if docSolutionsFile != "" {
+		solutions := generateDocs(containers)
+		// #nosec G306
+		err := ioutil.WriteFile(docSolutionsFile, solutions, 0666)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+func deleteRemnants(filelist []string, grafanaDir, promDir string) {
+	err := filepath.Walk(grafanaDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			log.Print("Unable to access file: ", path)
+			return nil
+		}
+		if filepath.Ext(path) != ".json" || info.IsDir() {
+			return nil
+		}
+		for _, f := range filelist {
+			if filepath.Ext(f) != ".json" || filepath.Ext(path) != ".json" || info.IsDir() {
+				continue
+			}
+			if filepath.Base(path) == f {
+				return nil
+			}
+		}
+		err = os.Remove(path)
+		log.Println("Removed orphan grafana file: ", path)
+		return err
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = filepath.Walk(promDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			log.Print("Unable to access file: ", path)
+			return nil
+		}
+		if !strings.Contains(filepath.Base(path), alertSuffix) || info.IsDir() {
+			return nil
+		}
+
+		for _, f := range filelist {
+			if filepath.Ext(f) != ".yml" {
+				continue
+			}
+			if filepath.Base(path) == f {
+				return nil
+			}
+		}
+		err = os.Remove(path)
+		log.Println("Removed orphan prometheus alert file: ", path)
+		return err
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 // promRulesFile represents a Prometheus recording rules file (which we use for defining our alerts)
