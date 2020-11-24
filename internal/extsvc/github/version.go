@@ -29,7 +29,7 @@ var globalVersionCache *versionCache = &versionCache{
 	versions: make(map[string]*semver.Version),
 }
 
-// normalizeURL will attempt to normalise rawURL.
+// normalizeURL will attempt to normalize rawURL.
 // If there is an error parsing it, we'll just return rawURL lower cased.
 func normalizeURL(rawURL string) string {
 	parsed, err := url.Parse(rawURL)

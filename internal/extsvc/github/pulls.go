@@ -980,7 +980,7 @@ func timelineItemTypes(version *semver.Version) (string, error) {
 	if ghe221PlusOrDotComSemver.Check(version) {
 		return timelineItemTypesFmtStr + `, CONVERT_TO_DRAFT_EVENT`, nil
 	}
-	return "", errors.New("unsupported version of GitHub")
+	return "", fmt.Errorf("unsupported version of GitHub: %s", version)
 }
 
 // This fragment was formatted using the "prettify" button in the GitHub API explorer:
@@ -1222,7 +1222,7 @@ func timelineItemsFragment(version *semver.Version) (string, error) {
 	if ghe221PlusOrDotComSemver.Check(version) {
 		return fmt.Sprintf(timelineItemsFragmentFmtstr, convertToDraftEventFmtstr), nil
 	}
-	return "", errors.New("unsupported version of GitHub")
+	return "", fmt.Errorf("unsupported version of GitHub: %s", version)
 }
 
 // This fragment was formatted using the "prettify" button in the GitHub API explorer:
@@ -1323,5 +1323,5 @@ func pullRequestFragments(version *semver.Version) (string, error) {
 	if ghe221PlusOrDotComSemver.Check(version) {
 		return fmt.Sprintf(timelineItemsFragment+pullRequestFragmentsFmtstr, "isDraft", timelineItemTypes), nil
 	}
-	return "", errors.New("unsupported version of GitHub")
+	return "", fmt.Errorf("unsupported version of GitHub: %s", version)
 }
