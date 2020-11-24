@@ -265,6 +265,7 @@ func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
 	}
 
 	return eventFileMatch{
+		Type:        fileMatch,
 		Path:        fm.JPath,
 		Repository:  fm.Repo.Name(),
 		Branches:    branches,
@@ -280,6 +281,7 @@ func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []symbol) eve
 	}
 
 	return eventSymbolMatch{
+		Type:       symbolMatch,
 		Path:       fm.JPath,
 		Repository: fm.Repo.Name(),
 		Branches:   branches,
@@ -295,6 +297,7 @@ func fromRepository(repo *graphqlbackend.RepositoryResolver) eventRepoMatch {
 	}
 
 	return eventRepoMatch{
+		Type:       repoMatch,
 		Repository: repo.Name(),
 		Branches:   branches,
 	}
@@ -313,6 +316,7 @@ func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) eventCommitMa
 		}
 	}
 	return eventCommitMatch{
+		Type:    commitMatch,
 		Icon:    commit.Icon(),
 		Label:   commit.Label().Text(),
 		URL:     commit.URL(),
@@ -324,6 +328,9 @@ func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) eventCommitMa
 
 // eventFileMatch is a subset of zoekt.FileMatch for our event API.
 type eventFileMatch struct {
+	// Type is always fileMatch. Included here for marshalling.
+	Type matchType `json:"type"`
+
 	Path       string   `json:"name"`
 	Repository string   `json:"repository"`
 	Branches   []string `json:"branches,omitempty"`
@@ -341,12 +348,18 @@ type eventLineMatch struct {
 
 // eventRepoMatch is a subset of zoekt.FileMatch for our event API.
 type eventRepoMatch struct {
+	// Type is always repoMatch. Included here for marshalling.
+	Type matchType `json:"type"`
+
 	Repository string   `json:"repository"`
 	Branches   []string `json:"branches,omitempty"`
 }
 
 // eventSymbolMatch is eventFileMatch but with Symbols instead of LineMatches
 type eventSymbolMatch struct {
+	// Type is always symbolMatch. Included here for marshalling.
+	Type matchType `json:"type"`
+
 	Path       string   `json:"name"`
 	Repository string   `json:"repository"`
 	Branches   []string `json:"branches,omitempty"`
@@ -367,6 +380,9 @@ type symbol struct {
 // into what is actually useful in a commit result / or if we should have a
 // "type" for that.
 type eventCommitMatch struct {
+	// Type is always commitMatch. Included here for marshalling.
+	Type matchType `json:"type"`
+
 	Icon    string `json:"icon"`
 	Label   string `json:"label"`
 	URL     string `json:"url"`
