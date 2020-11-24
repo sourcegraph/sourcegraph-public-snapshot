@@ -30,13 +30,22 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = {
             condition: () => window.context.accessTokensAllow !== 'none',
         },
         {
-            label: 'Manage repositories',
+            label: 'Code hosts',
             to: '/external-services',
             condition: props =>
                 window.context.externalServicesUserModeEnabled ||
                 (props.user.id === props.authenticatedUser.id &&
                     props.authenticatedUser.tags.includes('AllowUserExternalServicePublic')) ||
                 props.user.tags?.includes('AllowUserExternalServicePublic'),
+        },
+        {
+            label: 'Repositories',
+            to: '/repositories',
+            condition: props =>
+                window.context.externalServicesUserModeEnabled ||
+                (props.user.id === props.authenticatedUser.id &&
+                    props.authenticatedUser.tags.includes('AllowUserExternalServicePublic')) ||
+                props.user.tags?.includes('AllowExternalServicePublic'),
         },
     ],
 }

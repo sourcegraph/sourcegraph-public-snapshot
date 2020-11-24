@@ -199,12 +199,21 @@ func (s *RepoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 		return 0, err
 	}
 
+	joins := []*sqlf.Query{}
+	if len(opt.ExternalServiceIDs) != 0 {
+		serviceIDQuery := []*sqlf.Query{}
+		for _, id := range opt.ExternalServiceIDs {
+			serviceIDQuery = append(serviceIDQuery, sqlf.Sprintf("%s", id))
+		}
+		joins = append(joins, sqlf.Sprintf("JOIN external_service_repos e ON (repo.id = e.repo_id AND e.external_service_id IN (%s))", sqlf.Join(serviceIDQuery, ",")))
+	}
+
 	predQ := sqlf.Sprintf("TRUE")
 	if len(conds) > 0 {
 		predQ = sqlf.Sprintf("(%s)", sqlf.Join(conds, "AND"))
 	}
 
-	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo WHERE deleted_at IS NULL AND %s", predQ)
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo %s WHERE deleted_at IS NULL AND %s", sqlf.Join(joins, " "), predQ)
 	tr.LazyPrintf("SQL: %v", q.Query(sqlf.PostgresBindVar))
 
 	var count int
@@ -443,7 +452,7 @@ type ReposListOptions struct {
 
 	// ExternalServiceID, if non zero, will only return repos added by the given external service.
 	// The id is that of the external_services table NOT the external_service_id in the repo table
-	ExternalServiceID int64
+	ExternalServiceIDs []int64
 
 	// PatternQuery is an expression tree of patterns to query. The atoms of
 	// the query are strings which are regular expression patterns.
@@ -558,8 +567,12 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 	}
 
 	fromClause := sqlf.Sprintf("repo")
-	if opt.ExternalServiceID != 0 {
-		fromClause = sqlf.Sprintf("repo JOIN external_service_repos e ON (repo.id = e.repo_id AND e.external_service_id = %s)", opt.ExternalServiceID)
+	if len(opt.ExternalServiceIDs) != 0 {
+		serviceIDQuery := []*sqlf.Query{}
+		for _, id := range opt.ExternalServiceIDs {
+			serviceIDQuery = append(serviceIDQuery, sqlf.Sprintf("%s", id))
+		}
+		fromClause = sqlf.Sprintf("repo JOIN external_service_repos e ON (repo.id = e.repo_id AND e.external_service_id IN (%s))", sqlf.Join(serviceIDQuery, ","))
 	}
 
 	queryConds := sqlf.Sprintf("TRUE")

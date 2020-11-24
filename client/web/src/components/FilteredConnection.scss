@@ -14,6 +14,15 @@
         margin-bottom: 0.5rem;
     }
 
+    &__form {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    &__filter {
+        max-width: 20rem;
+    }
+
     &--compact &__nodes,
     &--compact &__summary {
         margin-bottom: 0;
