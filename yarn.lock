@@ -1854,7 +1854,7 @@
     is-promise "4.0.0"
     tslib "~2.0.0"
 
-"@hot-loader/react-dom@^16.13.0", "react-dom@npm:@hot-loader/react-dom@^16.13.0":
+"@hot-loader/react-dom@^16.13.0":
   version "16.13.0"
   resolved "https://registry.npmjs.org/@hot-loader/react-dom/-/react-dom-16.13.0.tgz#de245b42358110baf80aaf47a0592153d4047997"
   integrity sha512-lJZrmkucz2MrQJTQtJobx5MICXcfQvKihszqv655p557HPi0hMOWxrNpiHv3DWD8ugNWjtWcVWqRnFvwsHq1mQ==
@@ -18766,6 +18766,16 @@ react-dom-confetti@^0.1.4:
   integrity sha512-YNhYUlxbvdQKe6qdMVSZeoFg3Vm9Sz/4JYF2uMVzAZGi7752X+k/9Zj1NJW9dfDhCjsmWb1bF8jxsVSbu9AX3w==
   dependencies:
     dom-confetti "0.1.1"
+
+"react-dom@npm:@hot-loader/react-dom@^16.14.0":
+  version "16.14.0"
+  resolved "https://registry.npmjs.org/@hot-loader/react-dom/-/react-dom-16.14.0.tgz#3cfc64e40bb78fa623e59b582b8f09dcdaad648a"
+  integrity sha512-EN9czvcLsMYmSDo5yRKZOAq3ZGRlDpad1gPtX0NdMMomJXcPE3yFSeFzE94X/NjOaiSVimB7LuqPYpkWVaIi4Q==
+  dependencies:
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
+    prop-types "^15.6.2"
+    scheduler "^0.19.1"
 
 react-draggable@^4.0.0, react-draggable@^4.0.3:
   version "4.3.1"
