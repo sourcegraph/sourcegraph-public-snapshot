@@ -19,7 +19,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
 	github.com/pkg/errors v0.9.1
-	github.com/sourcegraph/campaignutils v0.0.0-20201016010611-63eb2bca27ad
+	github.com/sourcegraph/campaignutils v0.0.0-20201124055807-2f9cfa9317e2
 	github.com/sourcegraph/codeintelutils v0.0.0-20201118031531-b82ba3167b30
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf

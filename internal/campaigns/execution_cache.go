@@ -24,6 +24,41 @@ type ExecutionCacheKey struct {
 	*Task
 }
 
+// Key converts the key into a string form that can be used to uniquely identify
+// the cache key in a more concise form than the entire Task.
+func (key ExecutionCacheKey) Key() (string, error) {
+	// We have to resolve the step environments and include them in the cache
+	// key to ensure that the cache is properly invalidated when an environment
+	// variable changes.
+	//
+	// Note that we don't base the cache key on the entire global environment:
+	// if an unrelated environment variable changes, that's fine. We're only
+	// interested in the ones that actually make it into the step container.
+	global := os.Environ()
+	envs := make([]map[string]string, len(key.Task.Steps))
+	for i, step := range key.Task.Steps {
+		env, err := step.Env.Resolve(global)
+		if err != nil {
+			return "", errors.Wrapf(err, "resolving environment for step %d", i)
+		}
+		envs[i] = env
+	}
+
+	raw, err := json.Marshal(struct {
+		*Task
+		Environments []map[string]string
+	}{
+		Task:         key.Task,
+		Environments: envs,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	hash := sha256.Sum256(raw)
+	return base64.RawURLEncoding.EncodeToString(hash[:16]), nil
+}
+
 type ExecutionCache interface {
 	Get(ctx context.Context, key ExecutionCacheKey) (result *ChangesetSpec, err error)
 	Set(ctx context.Context, key ExecutionCacheKey, result *ChangesetSpec) error
@@ -35,13 +70,10 @@ type ExecutionDiskCache struct {
 }
 
 func (c ExecutionDiskCache) cacheFilePath(key ExecutionCacheKey) (string, error) {
-	keyJSON, err := json.Marshal(key)
+	keyString, err := key.Key()
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to marshal JSON when generating action cache key")
+		return "", errors.Wrap(err, "calculating execution cache key")
 	}
-
-	b := sha256.Sum256(keyJSON)
-	keyString := base64.RawURLEncoding.EncodeToString(b[:16])
 
 	return filepath.Join(c.Dir, keyString+".json"), nil
 }

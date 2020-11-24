@@ -3,6 +3,9 @@ package campaigns
 import (
 	"fmt"
 
+	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
+	"github.com/sourcegraph/campaignutils/env"
 	"github.com/sourcegraph/campaignutils/overridable"
 	"github.com/sourcegraph/campaignutils/yaml"
 	"github.com/sourcegraph/src-cli/schema"
@@ -65,16 +68,29 @@ type OnQueryOrRepository struct {
 type Step struct {
 	Run       string            `json:"run,omitempty" yaml:"run"`
 	Container string            `json:"container,omitempty" yaml:"container"`
-	Env       map[string]string `json:"env,omitempty" yaml:"env"`
+	Env       env.Environment   `json:"env,omitempty" yaml:"env"`
 	Files     map[string]string `json:"files,omitempty" yaml:"files,omitempty"`
 
 	image string
 }
 
-func ParseCampaignSpec(data []byte) (*CampaignSpec, error) {
+func ParseCampaignSpec(data []byte, features featureFlags) (*CampaignSpec, error) {
 	var spec CampaignSpec
 	if err := yaml.UnmarshalValidate(schema.CampaignSpecJSON, data, &spec); err != nil {
 		return nil, err
+	}
+
+	if !features.allowArrayEnvironments {
+		var errs *multierror.Error
+		for i, step := range spec.Steps {
+			if !step.Env.IsStatic() {
+				errs = multierror.Append(errs, errors.Errorf("step %d includes one or more dynamic environment variables, which are unsupported in this Sourcegraph version", i+1))
+			}
+		}
+
+		if err := errs.ErrorOrNil(); err != nil {
+			return nil, err
+		}
 	}
 
 	return &spec, nil

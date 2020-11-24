@@ -168,10 +168,16 @@ func runSteps(ctx context.Context, wc *WorkspaceCreator, repo *graphql.Repositor
 			filesToMount[name] = fp
 		}
 
-		// Render the step.Env variables as templates.
-		env, err := renderStepEnv(step.Env, &stepContext)
+		// Resolve step.Env given the current environment.
+		stepEnv, err := step.Env.Resolve(os.Environ())
 		if err != nil {
-			return nil, errors.Wrap(err, "parsing step files")
+			return nil, errors.Wrap(err, "resolving step environment")
+		}
+
+		// Render the step.Env variables as templates.
+		env, err := renderStepEnv(stepEnv, &stepContext)
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing step environment")
 		}
 
 		reportProgress(runScript.String())

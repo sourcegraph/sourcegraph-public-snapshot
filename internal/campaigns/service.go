@@ -293,7 +293,7 @@ func (svc *Service) ParseCampaignSpec(in io.Reader) (*CampaignSpec, string, erro
 		return nil, "", errors.Wrap(err, "reading campaign spec")
 	}
 
-	spec, err := ParseCampaignSpec(data)
+	spec, err := ParseCampaignSpec(data, svc.features)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "parsing campaign spec")
 	}

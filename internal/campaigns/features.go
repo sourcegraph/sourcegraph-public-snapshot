@@ -8,6 +8,7 @@ import (
 // featureFlags represent features that are only available on certain
 // Sourcegraph versions and we therefore have to detect at runtime.
 type featureFlags struct {
+	allowArrayEnvironments   bool
 	includeAutoAuthorDetails bool
 	useGzipCompression       bool
 }
@@ -18,6 +19,7 @@ func (ff *featureFlags) setFromVersion(version string) error {
 		constraint string
 		minDate    string
 	}{
+		{&ff.allowArrayEnvironments, ">= 3.23.0", "2020-11-24"},
 		{&ff.includeAutoAuthorDetails, ">= 3.20.0", "2020-09-10"},
 		{&ff.useGzipCompression, ">= 3.21.0", "2020-10-12"},
 	} {
