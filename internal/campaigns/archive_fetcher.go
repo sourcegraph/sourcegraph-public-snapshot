@@ -120,12 +120,11 @@ func fetchRepositoryArchive(ctx context.Context, client api.Client, repo *graphq
 }
 
 func repositoryZipArchivePath(repo *graphql.Repository) string {
-	return path.Join("", repo.Name+"@"+repo.DefaultBranch.Name, "-", "raw")
+	return path.Join("", repo.Name+"@"+repo.BaseRef(), "-", "raw")
 }
 
 func localRepositoryZipArchivePath(dir string, repo *graphql.Repository) string {
-	ref := repo.DefaultBranch.Target.OID
-	return filepath.Join(dir, fmt.Sprintf("%s-%s.zip", repo.Slug(), ref))
+	return filepath.Join(dir, fmt.Sprintf("%s-%s.zip", repo.Slug(), repo.Rev()))
 }
 
 func unzip(zipFile, dest string) error {

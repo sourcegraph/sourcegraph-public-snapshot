@@ -19,6 +19,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- The evaluation of the [`repository.branch` attribute](https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#on-repository) has been fixed to actually cause the correct version of the repository to be used. [#393](https://github.com/sourcegraph/src-cli/pull/393)
+
 ### Removed
 
 ## 3.22.3

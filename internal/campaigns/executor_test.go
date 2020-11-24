@@ -37,14 +37,14 @@ func TestExecutor_Integration(t *testing.T) {
 	srcCLIRepo := &graphql.Repository{
 		ID:            "src-cli",
 		Name:          "github.com/sourcegraph/src-cli",
-		DefaultBranch: &graphql.Branch{Name: "main", Target: struct{ OID string }{OID: "d34db33f"}},
+		DefaultBranch: &graphql.Branch{Name: "main", Target: graphql.Target{OID: "d34db33f"}},
 	}
 	sourcegraphRepo := &graphql.Repository{
 		ID:   "sourcegraph",
 		Name: "github.com/sourcegraph/sourcegraph",
 		DefaultBranch: &graphql.Branch{
 			Name:   "main",
-			Target: struct{ OID string }{OID: "f00b4r3r"},
+			Target: graphql.Target{OID: "f00b4r3r"},
 		},
 	}
 
@@ -220,7 +220,7 @@ func newZipArchivesMux(t *testing.T, callback http.HandlerFunc, archives ...mock
 
 	for _, archive := range archives {
 		files := archive.files
-		path := fmt.Sprintf("/%s@%s/-/raw", archive.repo.Name, archive.repo.DefaultBranch.Name)
+		path := fmt.Sprintf("/%s@%s/-/raw", archive.repo.Name, archive.repo.BaseRef())
 
 		downloadName := filepath.Base(archive.repo.Name)
 		mediaType := mime.FormatMediaType("Attachment", map[string]string{

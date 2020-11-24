@@ -30,7 +30,7 @@ func TestWorkspaceCreator_Create(t *testing.T) {
 	repo := &graphql.Repository{
 		ID:            "src-cli",
 		Name:          "github.com/sourcegraph/src-cli",
-		DefaultBranch: &graphql.Branch{Name: "main", Target: struct{ OID string }{OID: "d34db33f"}},
+		DefaultBranch: &graphql.Branch{Name: "main", Target: graphql.Target{OID: "d34db33f"}},
 	}
 
 	archive := mockRepoArchive{
@@ -154,6 +154,44 @@ func TestWorkspaceCreator_Create(t *testing.T) {
 		}
 		if ok {
 			t.Fatalf("zip file in temp dir was not cleaned up")
+		}
+	})
+
+	t.Run("non-default branch", func(t *testing.T) {
+		otherBranchOID := "f00b4r"
+		repo := &graphql.Repository{
+			ID:            "src-cli-with-non-main-branch",
+			Name:          "github.com/sourcegraph/src-cli",
+			DefaultBranch: &graphql.Branch{Name: "main", Target: graphql.Target{OID: "d34db33f"}},
+
+			Commit: graphql.Target{OID: otherBranchOID},
+			Branch: graphql.Branch{Name: "other-branch", Target: graphql.Target{OID: otherBranchOID}},
+		}
+
+		archive := mockRepoArchive{repo: repo, files: map[string]string{}}
+
+		ts := httptest.NewServer(newZipArchivesMux(t, nil, archive))
+		defer ts.Close()
+
+		var clientBuffer bytes.Buffer
+		client := api.NewClient(api.ClientOpts{Endpoint: ts.URL, Out: &clientBuffer})
+
+		testTempDir := workspaceTmpDir(t)
+
+		creator := &WorkspaceCreator{dir: testTempDir, client: client}
+
+		_, err := creator.Create(context.Background(), repo)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		wantZipFile := "github.com-sourcegraph-src-cli-" + otherBranchOID + ".zip"
+		ok, err := dirContains(creator.dir, wantZipFile)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			t.Fatalf("temp dir doesnt contain zip file")
 		}
 	})
 }

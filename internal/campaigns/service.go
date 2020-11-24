@@ -363,8 +363,7 @@ func (svc *Service) ResolveNamespace(ctx context.Context, namespace string) (str
 }
 
 func (svc *Service) ResolveRepositories(ctx context.Context, spec *CampaignSpec) ([]*graphql.Repository, error) {
-	final := []*graphql.Repository{}
-	seen := map[string]struct{}{}
+	seen := map[string]*graphql.Repository{}
 	unsupported := UnsupportedRepoSet{}
 
 	// TODO: this could be trivially parallelised in the future.
@@ -375,11 +374,12 @@ func (svc *Service) ResolveRepositories(ctx context.Context, spec *CampaignSpec)
 		}
 
 		for _, repo := range repos {
-			if _, ok := seen[repo.ID]; !ok {
-				if repo.DefaultBranch == nil {
-					continue
-				}
-				seen[repo.ID] = struct{}{}
+			if !repo.HasBranch() {
+				continue
+			}
+
+			if other, ok := seen[repo.ID]; !ok {
+				seen[repo.ID] = repo
 				switch st := strings.ToLower(repo.ExternalRepository.ServiceType); st {
 				case "github", "gitlab", "bitbucketserver":
 				default:
@@ -388,10 +388,18 @@ func (svc *Service) ResolveRepositories(ctx context.Context, spec *CampaignSpec)
 						continue
 					}
 				}
-
-				final = append(final, repo)
+			} else {
+				// If we've already seen this repository, we overwrite the
+				// Commit/Branch fields with the latest value we have
+				other.Commit = repo.Commit
+				other.Branch = repo.Branch
 			}
 		}
+	}
+
+	final := make([]*graphql.Repository, 0, len(seen))
+	for _, repo := range seen {
+		final = append(final, repo)
 	}
 
 	if unsupported.hasUnsupported() && !svc.allowUnsupported {
@@ -404,6 +412,12 @@ func (svc *Service) ResolveRepositories(ctx context.Context, spec *CampaignSpec)
 func (svc *Service) ResolveRepositoriesOn(ctx context.Context, on *OnQueryOrRepository) ([]*graphql.Repository, error) {
 	if on.RepositoriesMatchingQuery != "" {
 		return svc.resolveRepositorySearch(ctx, on.RepositoriesMatchingQuery)
+	} else if on.Repository != "" && on.Branch != "" {
+		repo, err := svc.resolveRepositoryNameAndBranch(ctx, on.Repository, on.Branch)
+		if err != nil {
+			return nil, err
+		}
+		return []*graphql.Repository{repo}, nil
 	} else if on.Repository != "" {
 		repo, err := svc.resolveRepositoryName(ctx, on.Repository)
 		if err != nil {
@@ -418,7 +432,7 @@ func (svc *Service) ResolveRepositoriesOn(ctx context.Context, on *OnQueryOrRepo
 }
 
 const repositoryNameQuery = `
-query Repository($name: String!) {
+query Repository($name: String!, $queryCommit: Boolean!, $rev: String!) {
     repository(name: $name) {
         ...repositoryFields
     }
@@ -428,7 +442,9 @@ query Repository($name: String!) {
 func (svc *Service) resolveRepositoryName(ctx context.Context, name string) (*graphql.Repository, error) {
 	var result struct{ Repository *graphql.Repository }
 	if ok, err := svc.client.NewRequest(repositoryNameQuery, map[string]interface{}{
-		"name": name,
+		"name":        name,
+		"queryCommit": false,
+		"rev":         "",
 	}).Do(ctx, &result); err != nil || !ok {
 		return nil, err
 	}
@@ -438,10 +454,36 @@ func (svc *Service) resolveRepositoryName(ctx context.Context, name string) (*gr
 	return result.Repository, nil
 }
 
+func (svc *Service) resolveRepositoryNameAndBranch(ctx context.Context, name, branch string) (*graphql.Repository, error) {
+	var result struct{ Repository *graphql.Repository }
+	if ok, err := svc.client.NewRequest(repositoryNameQuery, map[string]interface{}{
+		"name":        name,
+		"queryCommit": true,
+		"rev":         branch,
+	}).Do(ctx, &result); err != nil || !ok {
+		return nil, err
+	}
+	if result.Repository == nil {
+		return nil, errors.New("no repository found")
+	}
+	if result.Repository.Commit.OID == "" {
+		return nil, fmt.Errorf("no branch matching %q found for repository %s", branch, name)
+	}
+
+	result.Repository.Branch = graphql.Branch{
+		Name:   branch,
+		Target: result.Repository.Commit,
+	}
+
+	return result.Repository, nil
+}
+
 // TODO: search result alerts.
 const repositorySearchQuery = `
 query ChangesetRepos(
     $query: String!,
+	$queryCommit: Boolean!,
+	$rev: String!,
 ) {
     search(query: $query, version: V2) {
         results {
@@ -471,7 +513,9 @@ func (svc *Service) resolveRepositorySearch(ctx context.Context, query string) (
 		}
 	}
 	if ok, err := svc.client.NewRequest(repositorySearchQuery, map[string]interface{}{
-		"query": setDefaultQueryCount(query),
+		"query":       setDefaultQueryCount(query),
+		"queryCommit": false,
+		"rev":         "",
 	}).Do(ctx, &result); err != nil || !ok {
 		return nil, err
 	}
