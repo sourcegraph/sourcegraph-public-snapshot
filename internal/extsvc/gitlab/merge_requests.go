@@ -57,10 +57,10 @@ func SetWIP(title string) string {
 	if strings.HasPrefix(title, "Draft:") {
 		return title
 	}
-	if !strings.HasPrefix(title, "WIP:") {
-		return "WIP: " + title
+	if strings.HasPrefix(title, "WIP:") {
+		return title
 	}
-	return title
+	return "WIP: " + title
 }
 
 // UnsetWIP removes "WIP:" and "Draft:" prefixes from the given title.
