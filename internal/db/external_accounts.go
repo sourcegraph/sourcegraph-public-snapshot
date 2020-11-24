@@ -209,8 +209,8 @@ VALUES ($1, $2, $3, $4, $5, $6, $7)
 
 // TouchExpired sets the given user external account to be expired now.
 func (*userExternalAccounts) TouchExpired(ctx context.Context, id int32) error {
-	if Mocks.ExternalAccounts.SetExpired != nil {
-		return Mocks.ExternalAccounts.SetExpired(ctx, id)
+	if Mocks.ExternalAccounts.TouchExpired != nil {
+		return Mocks.ExternalAccounts.TouchExpired(ctx, id)
 	}
 
 	_, err := dbconn.Global.ExecContext(ctx, `
@@ -224,8 +224,8 @@ WHERE id = $1
 
 // TouchLastValid sets last valid time of the given user external account to be now.
 func (*userExternalAccounts) TouchLastValid(ctx context.Context, id int32) error {
-	if Mocks.ExternalAccounts.SetLastValid != nil {
-		return Mocks.ExternalAccounts.SetLastValid(ctx, id)
+	if Mocks.ExternalAccounts.TouchLastValid != nil {
+		return Mocks.ExternalAccounts.TouchLastValid(ctx, id)
 	}
 
 	_, err := dbconn.Global.ExecContext(ctx, `
@@ -416,6 +416,6 @@ type MockExternalAccounts struct {
 	Delete               func(id int32) error
 	List                 func(ExternalAccountsListOptions) ([]*extsvc.Account, error)
 	Count                func(ExternalAccountsListOptions) (int, error)
-	SetExpired           func(ctx context.Context, id int32) error
-	SetLastValid         func(ctx context.Context, id int32) error
+	TouchExpired         func(ctx context.Context, id int32) error
+	TouchLastValid       func(ctx context.Context, id int32) error
 }

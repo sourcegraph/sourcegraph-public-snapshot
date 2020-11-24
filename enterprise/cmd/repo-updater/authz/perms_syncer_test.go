@@ -113,7 +113,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	db.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id}, nil
 	}
-	db.Mocks.ExternalAccounts.SetLastValid = func(ctx context.Context, id int32) error {
+	db.Mocks.ExternalAccounts.TouchLastValid = func(ctx context.Context, id int32) error {
 		return nil
 	}
 	edb.Mocks.Perms.ListExternalAccounts = func(context.Context, int32) ([]*extsvc.Account, error) {
@@ -218,7 +218,7 @@ func TestPermsSyncer_syncUserPerms_invalidToken(t *testing.T) {
 	s := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
 
 	calledSetExpired := false
-	db.Mocks.ExternalAccounts.SetExpired = func(ctx context.Context, id int32) error {
+	db.Mocks.ExternalAccounts.TouchExpired = func(ctx context.Context, id int32) error {
 		calledSetExpired = true
 		return nil
 	}
