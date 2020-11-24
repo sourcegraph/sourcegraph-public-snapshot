@@ -305,21 +305,25 @@ Referenced by:
 
 # Table "public.cm_queries"
 ```
-   Column   |           Type           |                        Modifiers                        
-------------+--------------------------+---------------------------------------------------------
- id         | bigint                   | not null default nextval('cm_queries_id_seq'::regclass)
- monitor    | bigint                   | not null
- query      | text                     | not null
- created_by | integer                  | not null
- created_at | timestamp with time zone | not null default now()
- changed_by | integer                  | not null
- changed_at | timestamp with time zone | not null default now()
+    Column     |           Type           |                        Modifiers                        
+---------------+--------------------------+---------------------------------------------------------
+ id            | bigint                   | not null default nextval('cm_queries_id_seq'::regclass)
+ monitor       | bigint                   | not null
+ query         | text                     | not null
+ created_by    | integer                  | not null
+ created_at    | timestamp with time zone | not null default now()
+ changed_by    | integer                  | not null
+ changed_at    | timestamp with time zone | not null default now()
+ next_run      | timestamp with time zone | default now()
+ latest_result | timestamp with time zone | 
 Indexes:
     "cm_queries_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
     "cm_triggers_changed_by_fk" FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE CASCADE
     "cm_triggers_created_by_fk" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
     "cm_triggers_monitor" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "cm_trigger_jobs" CONSTRAINT "cm_trigger_jobs_query_fk" FOREIGN KEY (query) REFERENCES cm_queries(id) ON DELETE CASCADE
 
 ```
 
@@ -337,6 +341,27 @@ Foreign-key constraints:
     "cm_recipients_emails" FOREIGN KEY (email) REFERENCES cm_emails(id) ON DELETE CASCADE
     "cm_recipients_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     "cm_recipients_user_id_fk" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+# Table "public.cm_trigger_jobs"
+```
+     Column      |           Type           |                          Modifiers                           
+-----------------+--------------------------+--------------------------------------------------------------
+ id              | integer                  | not null default nextval('cm_trigger_jobs_id_seq'::regclass)
+ query           | bigint                   | not null
+ state           | text                     | default 'queued'::text
+ failure_message | text                     | 
+ started_at      | timestamp with time zone | 
+ finished_at     | timestamp with time zone | 
+ process_after   | timestamp with time zone | 
+ num_resets      | integer                  | not null default 0
+ num_failures    | integer                  | not null default 0
+ log_contents    | text                     | 
+Indexes:
+    "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "cm_trigger_jobs_query_fk" FOREIGN KEY (query) REFERENCES cm_queries(id) ON DELETE CASCADE
 
 ```
 
