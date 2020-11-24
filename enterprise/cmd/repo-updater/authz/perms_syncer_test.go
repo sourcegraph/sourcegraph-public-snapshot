@@ -217,9 +217,9 @@ func TestPermsSyncer_syncUserPerms_invalidToken(t *testing.T) {
 	permsStore := edb.NewPermsStore(nil, timeutil.Now)
 	s := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
 
-	calledSetExpired := false
+	calledTouchExpired := false
 	db.Mocks.ExternalAccounts.TouchExpired = func(ctx context.Context, id int32) error {
-		calledSetExpired = true
+		calledTouchExpired = true
 		return nil
 	}
 
@@ -232,8 +232,8 @@ func TestPermsSyncer_syncUserPerms_invalidToken(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !calledSetExpired {
-		t.Fatal("!calledSetExpired")
+	if !calledTouchExpired {
+		t.Fatal("!calledTouchExpired")
 	}
 }
 
