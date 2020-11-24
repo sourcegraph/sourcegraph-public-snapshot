@@ -13,7 +13,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
@@ -28,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type RepoNotFoundErr struct {
@@ -819,6 +819,10 @@ insert_sources AS (
     repo_id,
     clone_url
   FROM sources_list
+  ON CONFLICT ON CONSTRAINT external_service_repos_repo_id_external_service_id_unique
+  DO
+    UPDATE SET clone_url = EXCLUDED.clone_url
+    WHERE external_service_repos.clone_url != EXCLUDED.clone_url
 )
 SELECT id FROM inserted_repos_with_ids;
 `
@@ -1013,28 +1017,25 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 func (s *RepoStore) GetUserAddedRepoNames(ctx context.Context, userID int32) ([]api.RepoName, error) {
 	s.ensureStore()
 
-	columns := minimalColumns(getBySQLColumns)
-
 	authzConds, err := authzQueryConds(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO(jchen): Only select name
 	const fmtString = `
-SELECT %s FROM repo
+SELECT DISTINCT(repo.name) FROM repo
 JOIN external_service_repos esr ON repo.id = esr.repo_id
 WHERE
 	esr.external_service_id IN (
 		SELECT id from external_services
-		WHERE namespace_user_id = %%s
+		WHERE namespace_user_id = %s
 		AND deleted_at IS NULL
 	)
-AND (%%s) -- Populates "authzConds"
+AND (%s) -- Populates "authzConds"
 AND repo.deleted_at IS NULL
 `
 	q := sqlf.Sprintf(
-		fmt.Sprintf(fmtString, strings.Join(columns, ",")),
+		fmtString,
 		userID,
 		authzConds, // 🚨 SECURITY: Enforce repository permissions
 	)
@@ -1045,23 +1046,19 @@ AND repo.deleted_at IS NULL
 	}
 	defer rows.Close()
 
-	var repos []*types.Repo
+	var repoNames []api.RepoName
 	for rows.Next() {
-		var repo types.Repo
-		if err := scanRepo(rows, &repo); err != nil {
+		var name api.RepoName
+		if err := rows.Scan(&name); err != nil {
 			return nil, err
 		}
-		repos = append(repos, &repo)
+		repoNames = append(repoNames, name)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
-	names := make([]api.RepoName, 0, len(repos))
-	for _, r := range repos {
-		names = append(names, r.Name)
-	}
-	return names, nil
+	return repoNames, nil
 }
 
 // parseCursorConds checks whether the query is using cursor-based pagination, and

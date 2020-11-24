@@ -1,7 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import { createBrowserHistory } from 'history'
 import React from 'react'
-import { of } from 'rxjs'
+import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 import { SearchPatternType } from '../../../../../shared/src/graphql-operations'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
@@ -30,12 +30,16 @@ const defaultProps: StreamingSearchResultsProps = {
     patternType: SearchPatternType.literal,
     setPatternType: sinon.spy(),
     versionContext: undefined,
+    setVersionContext: sinon.spy(),
+    availableVersionContexts: [],
+    previousVersionContext: null,
 
     extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
 
     history,
     location: history.location,
+    authenticatedUser: null,
 
     navbarSearchQueryState: { query: '', cursorPosition: 0 },
 
@@ -43,6 +47,7 @@ const defaultProps: StreamingSearchResultsProps = {
         subjects: null,
         final: null,
     },
+    platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER },
 
     streamSearch: () => of(streamingSearchResult),
 }
@@ -51,4 +56,94 @@ const { add } = storiesOf('web/search/results/streaming/StreamingSearchResults',
     chromatic: { viewports: [769, 993] },
 })
 
-add('render', () => <WebStory>{() => <StreamingSearchResults {...defaultProps} />}</WebStory>)
+add('standard render', () => <WebStory>{() => <StreamingSearchResults {...defaultProps} />}</WebStory>)
+
+add('diffs tab selected', () => {
+    const history = createBrowserHistory()
+    history.replace({ search: 'q=r:golang/oauth2+test+f:travis+type:diff' })
+
+    return (
+        <WebStory>
+            {() => <StreamingSearchResults {...defaultProps} history={history} location={history.location} />}
+        </WebStory>
+    )
+})
+
+add('search with quotes', () => {
+    const history = createBrowserHistory()
+    history.replace({ search: 'q=r:golang/oauth2+test+f:travis+"test"' })
+
+    return (
+        <WebStory>
+            {() => <StreamingSearchResults {...defaultProps} history={history} location={history.location} />}
+        </WebStory>
+    )
+})
+
+add('progress with warnings', () => {
+    const result: AggregateStreamingSearchResults = {
+        results: MULTIPLE_SEARCH_RESULT.results,
+        filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
+        progress: {
+            done: true,
+            durationMs: 500,
+            matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
+            skipped: [
+                {
+                    reason: 'excluded-fork',
+                    message: '10k forked repositories excluded',
+                    severity: 'info',
+                    title: '10k forked repositories excluded',
+                    suggested: {
+                        title: 'forked:yes',
+                        queryExpression: 'forked:yes',
+                    },
+                },
+                {
+                    reason: 'excluded-archive',
+                    message: '60k archived repositories excluded',
+                    severity: 'info',
+                    title: '60k archived repositories excluded',
+                    suggested: {
+                        title: 'archived:yes',
+                        queryExpression: 'archived:yes',
+                    },
+                },
+                {
+                    reason: 'shard-timedout',
+                    message: 'Search timed out',
+                    severity: 'warn',
+                    title: 'Search timed out',
+                    suggested: {
+                        title: 'timeout:2m',
+                        queryExpression: 'timeout:2m',
+                    },
+                },
+            ],
+        },
+    }
+
+    return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
+})
+
+add('show version context warning', () => {
+    const history = createBrowserHistory()
+    history.replace({ search: 'q=r:golang/oauth2+test+f:travis&c=test' })
+
+    return (
+        <WebStory>
+            {() => (
+                <StreamingSearchResults
+                    {...defaultProps}
+                    history={history}
+                    location={history.location}
+                    previousVersionContext={null}
+                    availableVersionContexts={[
+                        { name: 'test', revisions: [] },
+                        { name: 'other', revisions: [] },
+                    ]}
+                />
+            )}
+        </WebStory>
+    )
+})

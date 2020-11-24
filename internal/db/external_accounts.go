@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 
@@ -52,8 +51,19 @@ func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec extsv
 	}
 
 	err = dbconn.Global.QueryRowContext(ctx, `
-UPDATE user_external_accounts SET auth_data=$5, account_data=$6, updated_at=now()
-WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND deleted_at IS NULL
+-- source: internal/db/external_accounts.go:userExternalAccounts.LookupUserAndSave
+UPDATE user_external_accounts
+SET
+	auth_data = $5,
+	account_data = $6,
+	updated_at = now(),
+	expired_at = NULL
+WHERE
+	service_type = $1
+AND service_id = $2
+AND client_id = $3
+AND account_id = $4
+AND deleted_at IS NULL
 RETURNING user_id
 `, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data).Scan(&userID)
 	if err == sql.ErrNoRows {
@@ -96,8 +106,15 @@ func (s *userExternalAccounts) AssociateUserAndSave(ctx context.Context, userID 
 	var exists bool
 	var existingID, associatedUserID int32
 	err = tx.QueryRowContext(ctx, `
-SELECT id, user_id FROM user_external_accounts
-WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND deleted_at IS NULL
+-- source: internal/db/external_accounts.go:userExternalAccounts.AssociateUserAndSave
+SELECT id, user_id
+FROM user_external_accounts
+WHERE
+	service_type = $1
+AND service_id = $2
+AND client_id = $3
+AND account_id = $4
+AND deleted_at IS NULL
 `, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID).Scan(&existingID, &associatedUserID)
 	if err != nil && err != sql.ErrNoRows {
 		return err
@@ -117,8 +134,20 @@ WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND d
 
 	// Update the external account (it exists).
 	res, err := tx.ExecContext(ctx, `
-UPDATE user_external_accounts SET auth_data=$6, account_data=$7, updated_at=now()
-WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND user_id=$5 AND deleted_at IS NULL
+-- source: internal/db/external_accounts.go:userExternalAccounts.AssociateUserAndSave
+UPDATE user_external_accounts
+SET
+	auth_data = $6,
+	account_data = $7,
+	updated_at = now(),
+	expired_at = NULL
+WHERE
+	service_type = $1
+AND service_id = $2
+AND client_id = $3
+AND account_id = $4
+AND user_id = $5
+AND deleted_at IS NULL
 `, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID, data.AuthData, data.Data)
 	if err != nil {
 		return err
@@ -170,10 +199,42 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 
 func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
 	_, err := tx.ExecContext(ctx, `
-INSERT INTO user_external_accounts(user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
-VALUES($1, $2, $3, $4, $5, $6, $7)
+-- source: internal/db/external_accounts.go:userExternalAccounts.insert
+INSERT INTO user_external_accounts (user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
 `, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data)
+	return err
+}
 
+// TouchExpired sets the given user external account to be expired now.
+func (*userExternalAccounts) TouchExpired(ctx context.Context, id int32) error {
+	if Mocks.ExternalAccounts.TouchExpired != nil {
+		return Mocks.ExternalAccounts.TouchExpired(ctx, id)
+	}
+
+	_, err := dbconn.Global.ExecContext(ctx, `
+-- source: internal/db/external_accounts.go:userExternalAccounts.TouchExpired
+UPDATE user_external_accounts
+SET expired_at = now()
+WHERE id = $1
+`, id)
+	return err
+}
+
+// TouchLastValid sets last valid time of the given user external account to be now.
+func (*userExternalAccounts) TouchLastValid(ctx context.Context, id int32) error {
+	if Mocks.ExternalAccounts.TouchLastValid != nil {
+		return Mocks.ExternalAccounts.TouchLastValid(ctx, id)
+	}
+
+	_, err := dbconn.Global.ExecContext(ctx, `
+-- source: internal/db/external_accounts.go:userExternalAccounts.TouchLastValid
+UPDATE user_external_accounts
+SET
+	expired_at = NULL,
+	last_valid_at = now()
+WHERE id = $1
+`, id)
 	return err
 }
 
@@ -202,6 +263,7 @@ type ExternalAccountsListOptions struct {
 	UserID                           int32
 	ServiceType, ServiceID, ClientID string
 	AccountID                        int64
+	ExcludeExpired                   bool
 	*LimitOffset
 }
 
@@ -238,42 +300,6 @@ func (s *userExternalAccounts) Count(ctx context.Context, opt ExternalAccountsLi
 	var count int
 	err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count)
 	return count, err
-}
-
-// TmpMigrate implements the migration described in bg.MigrateExternalAccounts (which is the only
-// func that should call this).
-func (*userExternalAccounts) TmpMigrate(ctx context.Context, serviceType string) error {
-	// TEMP: Delete all external accounts associated with deleted users. Due to a bug in this
-	// migration code, it was possible for deleted users to be associated with non-deleted external
-	// accounts. This caused unexpected behavior in the UI (although did not pose a security
-	// threat). So, run this cleanup task upon each server startup.
-	if err := (userExternalAccounts{}).deleteForDeletedUsers(ctx); err != nil {
-		log15.Warn("Unable to clean up external user accounts.", "err", err)
-	}
-
-	const needsMigrationSentinel = "migration_in_progress"
-
-	// Avoid running UPDATE (which takes a lock) if it's not needed. The UPDATE only needs to run
-	// once ever, and we are guaranteed that the DB migration has run by the time we arrive here, so
-	// this is safe and not racy.
-	var needsMigration bool
-	if err := dbconn.Global.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM user_external_accounts WHERE service_type=$1 AND deleted_at IS NULL)`, needsMigrationSentinel).Scan(&needsMigration); err != nil && err != sql.ErrNoRows {
-		return err
-	}
-	if !needsMigration {
-		return nil
-	}
-
-	var err error
-	if serviceType == "" {
-		_, err = dbconn.Global.ExecContext(ctx, `UPDATE user_external_accounts SET deleted_at=now(), service_type='not_configured_at_migration_time' WHERE service_type=$1`, needsMigrationSentinel)
-	} else {
-		_, err = dbconn.Global.ExecContext(ctx, `UPDATE user_external_accounts SET service_type=$2, account_id=SUBSTR(account_id, CHAR_LENGTH(service_id)+2) WHERE service_type=$1 AND service_id!='override'`, needsMigrationSentinel, serviceType)
-		if err == nil {
-			_, err = dbconn.Global.ExecContext(ctx, `UPDATE user_external_accounts SET service_type='override', service_id='' WHERE service_type=$1 AND service_id='override'`, needsMigrationSentinel)
-		}
-	}
-	return err
 }
 
 func (userExternalAccounts) deleteForDeletedUsers(ctx context.Context) error {
@@ -338,6 +364,9 @@ func (*userExternalAccounts) listSQL(opt ExternalAccountsListOptions) (conds []*
 	if opt.AccountID != 0 {
 		conds = append(conds, sqlf.Sprintf("account_id=%d", opt.AccountID))
 	}
+	if opt.ExcludeExpired {
+		conds = append(conds, sqlf.Sprintf("expired_at IS NULL"))
+	}
 	return conds
 }
 
@@ -350,4 +379,6 @@ type MockExternalAccounts struct {
 	Delete               func(id int32) error
 	List                 func(ExternalAccountsListOptions) ([]*extsvc.Account, error)
 	Count                func(ExternalAccountsListOptions) (int, error)
+	TouchExpired         func(ctx context.Context, id int32) error
+	TouchLastValid       func(ctx context.Context, id int32) error
 }

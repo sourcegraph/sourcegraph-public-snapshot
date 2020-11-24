@@ -2,12 +2,12 @@
 
 # shellcheck disable=SC1091
 source /root/.profile
-root_dir="$(dirname "${BASH_SOURCE[0]}")/../.."
+root_dir="$(dirname "${BASH_SOURCE[0]}")/../../../.."
 cd "$root_dir"
 
 set -ex
 
-test/setup-deps.sh
+dev/ci/test/setup-deps.sh
 
 # ==========================
 
@@ -23,7 +23,7 @@ IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION ./dev/run-server-image
 trap docker_logs exit
 sleep 15
 
-go run test/init-server.go
+go run dev/ci/test/init-server.go
 
 # Load variables set up by init-server, disabling `-x` to avoid printing variables
 set +x

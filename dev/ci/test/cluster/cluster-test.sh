@@ -4,7 +4,8 @@ set -euxo pipefail
 # setup DIR for easier pathing /Users/dax/work/sourcegraph/test/cluster
 DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)""
 # cd to repo root
-cd "$(dirname "${BASH_SOURCE[0]}")/../.."
+root_dir="$(dirname "${BASH_SOURCE[0]}")/../../../.."
+cd "$root_dir"
 
 function cluster_setup() {
   git clone --depth 1 \
@@ -50,14 +51,14 @@ function test_setup() {
   # shellcheck disable=SC1091
   source /root/.profile
 
-  test/setup-deps.sh
+  dev/ci/test/setup-deps.sh
 
   sleep 15
   export SOURCEGRAPH_BASE_URL="http://sourcegraph-frontend.$NAMESPACE.svc.cluster.local:30080"
   curl "$SOURCEGRAPH_BASE_URL"
 
   # setup admin users, etc
-  go run test/init-server.go -base-url="$SOURCEGRAPH_BASE_URL"
+  go run dev/ci/test/init-server.go -base-url="$SOURCEGRAPH_BASE_URL"
 
   # Load variables set up by init-server, disabling `-x` to avoid printing variables, setting +u to avoid blowing up on ubound ones
   set +x +u

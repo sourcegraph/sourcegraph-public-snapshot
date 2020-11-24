@@ -2,17 +2,17 @@
 
 # shellcheck disable=SC1091
 source /root/.profile
-root_dir="$(dirname "${BASH_SOURCE[0]}")/../.."
+root_dir="$(dirname "${BASH_SOURCE[0]}")/../../../.."
 cd "$root_dir"
 
 set -ex
 
-test/setup-deps.sh
-test/setup-display.sh
+dev/ci/test/setup-deps.sh
+dev/ci/test/setup-display.sh
 
 cleanup() {
   cd "$root_dir"
-  test/cleanup-display.sh
+  dev/ci/test/cleanup-display.sh
 }
 trap cleanup EXIT
 
@@ -21,7 +21,7 @@ trap cleanup EXIT
 # Run and initialize an old Sourcegraph release
 IMAGE=sourcegraph/server:$MINIMUM_UPGRADEABLE_VERSION ./dev/run-server-image.sh -d --name sourcegraph-old
 sleep 15
-go run test/init-server.go
+go run dev/ci/test/init-server.go
 
 # Load variables set up by init-server, disabling `-x` to avoid printing variables
 set +x

@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -53,7 +54,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		secret := "secret"
 		repoStore := repos.NewDBStore(db, sql.TxOptions{})
-		extSvc := &repos.ExternalService{
+		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub",
 			Config: ct.MarshalJSON(t, &schema.GitHubConnection{
@@ -226,7 +227,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		secret := "secret"
 		repoStore := repos.NewDBStore(db, sql.TxOptions{})
-		extSvc := &repos.ExternalService{
+		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket",
 			Config: ct.MarshalJSON(t, &schema.BitbucketServerConnection{

@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbws "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -19,7 +20,7 @@ func testSyncWorkerPlumbing(db *sql.DB) func(t *testing.T, repoStore repos.Store
 	return func(t *testing.T, repoStore repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx := context.Background()
-			testSvc := &repos.ExternalService{
+			testSvc := &types.ExternalService{
 				Kind:        extsvc.KindGitHub,
 				DisplayName: "TestService",
 				Config:      "{}",

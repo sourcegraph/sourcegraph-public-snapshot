@@ -81,7 +81,7 @@ If you have previously uploaded LSIF precise code intelligence data and wish to 
 
 **Skipping the migration**
 
-If you choose not to migrate the data, Sourcegraph will use basic code intelligence until you upload LSIF data again.
+If you choose not to migrate the data, Sourcegraph will use search-based code intelligence until you upload LSIF data again.
 
 You may run the following commands to remove the now unused resources:
 

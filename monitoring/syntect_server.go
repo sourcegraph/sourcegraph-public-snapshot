@@ -23,7 +23,7 @@ func SyntectServer() *monitoring.Container {
 							DataMayNotExist:   true,
 							Warning:           monitoring.Alert().GreaterOrEqual(5).For(5 * time.Minute),
 							PanelOptions:      monitoring.PanelOptions().LegendFormat("error").Unit(monitoring.Percentage),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
+							Owner:             monitoring.ObservableOwnerCloud,
 							PossibleSolutions: "none",
 						},
 						{
@@ -33,7 +33,7 @@ func SyntectServer() *monitoring.Container {
 							DataMayNotExist:   true,
 							Warning:           monitoring.Alert().GreaterOrEqual(5).For(5 * time.Minute),
 							PanelOptions:      monitoring.PanelOptions().LegendFormat("timeout").Unit(monitoring.Percentage),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
+							Owner:             monitoring.ObservableOwnerCloud,
 							PossibleSolutions: "none",
 						},
 					},
@@ -45,7 +45,7 @@ func SyntectServer() *monitoring.Container {
 							DataMayNotExist:   true,
 							Warning:           monitoring.Alert().GreaterOrEqual(5),
 							PanelOptions:      monitoring.PanelOptions().LegendFormat("panic"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
+							Owner:             monitoring.ObservableOwnerCloud,
 							PossibleSolutions: "none",
 						},
 						{
@@ -55,7 +55,7 @@ func SyntectServer() *monitoring.Container {
 							DataMayNotExist:   true,
 							Warning:           monitoring.Alert().GreaterOrEqual(1),
 							PanelOptions:      monitoring.PanelOptions().LegendFormat("worker death"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
+							Owner:             monitoring.ObservableOwnerCloud,
 							PossibleSolutions: "none",
 						},
 					},
@@ -66,12 +66,12 @@ func SyntectServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedContainerCPUUsage("syntect-server", monitoring.ObservableOwnerCodeIntel),
-						sharedContainerMemoryUsage("syntect-server", monitoring.ObservableOwnerCodeIntel),
+						sharedContainerCPUUsage("syntect-server", monitoring.ObservableOwnerCloud),
+						sharedContainerMemoryUsage("syntect-server", monitoring.ObservableOwnerCloud),
 					},
 					{
-						sharedContainerRestarts("syntect-server", monitoring.ObservableOwnerCodeIntel),
-						sharedContainerFsInodes("syntect-server", monitoring.ObservableOwnerCodeIntel),
+						sharedContainerRestarts("syntect-server", monitoring.ObservableOwnerCloud),
+						sharedContainerFsInodes("syntect-server", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -80,12 +80,12 @@ func SyntectServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("syntect-server", monitoring.ObservableOwnerCodeIntel),
-						sharedProvisioningMemoryUsageLongTerm("syntect-server", monitoring.ObservableOwnerCodeIntel),
+						sharedProvisioningCPUUsageLongTerm("syntect-server", monitoring.ObservableOwnerCloud),
+						sharedProvisioningMemoryUsageLongTerm("syntect-server", monitoring.ObservableOwnerCloud),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("syntect-server", monitoring.ObservableOwnerCodeIntel),
-						sharedProvisioningMemoryUsageShortTerm("syntect-server", monitoring.ObservableOwnerCodeIntel),
+						sharedProvisioningCPUUsageShortTerm("syntect-server", monitoring.ObservableOwnerCloud),
+						sharedProvisioningMemoryUsageShortTerm("syntect-server", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -94,7 +94,7 @@ func SyntectServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedKubernetesPodsAvailable("syntect-server", monitoring.ObservableOwnerCodeIntel),
+						sharedKubernetesPodsAvailable("syntect-server", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
