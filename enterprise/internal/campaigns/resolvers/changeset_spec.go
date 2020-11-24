@@ -2,19 +2,14 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
-	"encoding/json"
 	"fmt"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -146,123 +141,6 @@ func (r *changesetSpecResolver) ToVisibleChangesetSpec() (graphqlbackend.Visible
 	}
 
 	return r, true
-}
-
-func (r *changesetSpecResolver) Changeset(ctx context.Context) (graphqlbackend.ChangesetResolver, error) {
-	campaignSpec, err := r.store.GetCampaignSpec(ctx, ee.GetCampaignSpecOpts{ID: r.changesetSpec.CampaignSpecID})
-	if err != nil {
-		return nil, err
-	}
-	svc := ee.NewService(r.store, r.httpFactory)
-	campaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, campaignSpec)
-	if err != nil {
-		return nil, err
-	}
-	// If we don't have a matching campaign, no changesets exist yet to match against.
-	// TODO: This is not 100% correct, for importing changesets this could still be true.
-	if campaign == nil {
-		return nil, nil
-	}
-
-	mappings, err := r.store.GetRewirerMappings(ctx, ee.GetRewirerMappingsOpts{CampaignID: campaign.ID, CampaignSpecID: campaignSpec.ID})
-	if err != nil {
-		return nil, err
-	}
-	for _, m := range mappings {
-		if m.ChangesetSpecID == 0 {
-			changeset, err := r.store.GetChangeset(ctx, ee.GetChangesetOpts{ID: m.ChangesetID})
-			if err != nil {
-				return nil, err
-			}
-			fmt.Printf("Will close changeset %s\n", changeset.ExternalID)
-		}
-	}
-	for _, m := range mappings {
-		if m.ChangesetSpecID == r.changesetSpec.ID {
-			if m.ChangesetID == 0 {
-				return nil, nil
-			}
-			changeset, err := r.store.GetChangeset(ctx, ee.GetChangesetOpts{ID: m.ChangesetID})
-			if err != nil {
-				return nil, err
-			}
-			repo, err := r.computeRepo()
-			if err != nil {
-				return nil, err
-			}
-			return NewChangesetResolver(r.store, r.httpFactory, changeset, repo.Type()), nil
-		}
-	}
-	return nil, nil
-}
-
-func (r *changesetSpecResolver) Operations(ctx context.Context) ([]string, error) {
-	campaignSpec, err := r.store.GetCampaignSpec(ctx, ee.GetCampaignSpecOpts{ID: r.changesetSpec.CampaignSpecID})
-	if err != nil {
-		return nil, err
-	}
-	svc := ee.NewService(r.store, r.httpFactory)
-	campaign, err := svc.ReconcileCampaign(ctx, campaignSpec)
-	if err != nil {
-		return nil, err
-	}
-
-	mappings, err := r.store.GetRewirerMappings(ctx, ee.GetRewirerMappingsOpts{
-		// TODO: This can be null but it is fine, because a campaign is not required for the query. Prob just need to document it.
-		CampaignID: campaign.ID, CampaignSpecID: campaignSpec.ID})
-	if err != nil {
-		return nil, err
-	}
-	j, _ := json.Marshal(mappings)
-	log15.Warn("Retrieved mappings", "mappings", string(j))
-
-	for _, m := range mappings {
-		if m.ChangesetSpecID == r.changesetSpec.ID {
-			var previousSpec *campaigns.ChangesetSpec
-			var changeset *campaigns.Changeset
-			if m.ChangesetID != 0 {
-				changeset, err = r.store.GetChangeset(ctx, ee.GetChangesetOpts{ID: m.ChangesetID})
-				if err != nil {
-					return nil, err
-				}
-				if changeset.CurrentSpecID != 0 {
-					previousSpec, err = r.store.GetChangesetSpec(ctx, ee.GetChangesetSpecOpts{ID: changeset.CurrentSpecID})
-					if err != nil {
-						return nil, err
-					}
-				}
-			}
-			if changeset == nil {
-				rewirer := ee.ChangesetRewirer{
-					Mappings: campaigns.RewirerMappings{m},
-					Campaign: campaign,
-					RStore:   repos.NewDBStore(r.store.DB(), sql.TxOptions{}),
-					TX:       r.store,
-				}
-
-				changesets, err := rewirer.Rewire(ctx)
-				if err != nil {
-					return nil, err
-				}
-				if len(changesets) != 1 {
-					return nil, errors.New("invalid changesets len, want 1")
-				}
-				changeset = changesets[0]
-			}
-			plan, err := ee.DeterminePlan(previousSpec, r.changesetSpec, changeset)
-			if err != nil {
-				return nil, err
-			}
-
-			eo := plan.Ops.ExecutionOrder()
-			operations := make([]string, len(eo))
-			for i, e := range eo {
-				operations[i] = string(e)
-			}
-			return operations, nil
-		}
-	}
-	return nil, nil
 }
 
 var _ graphqlbackend.ChangesetDescription = &changesetDescriptionResolver{}
