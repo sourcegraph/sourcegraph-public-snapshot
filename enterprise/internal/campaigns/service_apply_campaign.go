@@ -114,7 +114,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	// correctly with the Changesets so that the reconciler can create/update
 	// them.
 
-	// Load the mapping between changeset specs and existing changesets in the target campaign.
+	// Load the mapping between ChangesetSpecs and existing Changesets in the target campaign.
 	mappings, err := tx.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
 		CampaignSpecID: campaign.CampaignSpecID,
 		CampaignID:     campaign.ID,
