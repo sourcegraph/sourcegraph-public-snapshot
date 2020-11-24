@@ -43,4 +43,8 @@
     &:hover {
         background-color: var(--color-bg-1);
     }
+
+    &--no-columns {
+        max-width: 18rem;
+    }
 }

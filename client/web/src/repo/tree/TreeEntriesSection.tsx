@@ -22,16 +22,13 @@ const TreeEntry: React.FunctionComponent<{
     renderedFileDecorations: React.ReactNode
     path: string
 }> = ({ isDirectory, name, url, isColumnLayout, renderedFileDecorations, path }) => (
-    // TODO(tj): Limit width when not column layout
-    // {
-    //     'w-25': !isColumnLayout,
-    // }
     <Link
         to={url}
         className={classNames(
             'tree-entry test-page-file-decorable',
             isDirectory && 'font-weight-bold',
-            `test-tree-entry-${isDirectory ? 'directory' : 'file'}`
+            `test-tree-entry-${isDirectory ? 'directory' : 'file'}`,
+            !isColumnLayout && 'tree-entry--no-columns'
         )}
         title={path}
     >

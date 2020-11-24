@@ -35,7 +35,12 @@ export const FileDecorator: React.FunctionComponent<FileDecoratorProps> = ({
     }
 
     return (
-        <div className={classNames('d-flex align-items-center text-nowrap test-file-decoration-container', className)}>
+        <div
+            className={classNames(
+                'd-flex align-items-center text-nowrap pl-1 test-file-decoration-container',
+                className
+            )}
+        >
             {fileDecorations.map(
                 (fileDecoration, index) =>
                     (fileDecoration.meter || fileDecoration.after) && (
