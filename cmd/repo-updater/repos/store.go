@@ -545,6 +545,10 @@ insert_sources AS (
     repo_id,
     clone_url
   FROM sources_list
+  ON CONFLICT ON CONSTRAINT external_service_repos_repo_id_external_service_id_unique
+  DO
+    UPDATE SET clone_url = EXCLUDED.clone_url
+    WHERE external_service_repos.clone_url != EXCLUDED.clone_url
 )
 SELECT id FROM inserted_repos_with_ids;
 `
@@ -876,6 +880,10 @@ INSERT INTO external_service_repos (
   repo_id,
   clone_url
 FROM inserted_sources_list
+ON CONFLICT ON CONSTRAINT external_service_repos_repo_id_external_service_id_unique
+DO
+  UPDATE SET clone_url = EXCLUDED.clone_url
+  WHERE external_service_repos.clone_url != EXCLUDED.clone_url
 `
 
 // SetClonedRepos updates cloned status for all repositories.
