@@ -1,6 +1,7 @@
 gitserver: gitserver
 query-runner: query-runner
 repo-updater: repo-updater
+code-monitors-worker: code-monitors-worker
 searcher: searcher
 symbols: symbols
 github-proxy: github-proxy
@@ -30,3 +31,4 @@ codeintel-executor: EXECUTOR_QUEUE_NAME=codeintel TMPDIR=~/.sourcegraph/indexer-
 # Enterprise code intelligence services
 precise-code-intel-worker: precise-code-intel-worker
 minio: ./dev/minio.sh
+
