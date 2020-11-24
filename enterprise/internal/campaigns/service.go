@@ -182,14 +182,14 @@ func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 // applies to, if that Campaign already exists.
 // If it doesn't exist yet, both return values are nil.
 // It accepts a *Store so that it can be used inside a transaction.
-func (s *Service) GetCampaignMatchingCampaignSpec(ctx context.Context, tx *Store, spec *campaigns.CampaignSpec) (*campaigns.Campaign, error) {
+func (s *Service) GetCampaignMatchingCampaignSpec(ctx context.Context, spec *campaigns.CampaignSpec) (*campaigns.Campaign, error) {
 	opts := GetCampaignOpts{
 		Name:            spec.Spec.Name,
 		NamespaceUserID: spec.NamespaceUserID,
 		NamespaceOrgID:  spec.NamespaceOrgID,
 	}
 
-	campaign, err := tx.GetCampaign(ctx, opts)
+	campaign, err := s.store.GetCampaign(ctx, opts)
 	if err != nil {
 		if err != ErrNoResults {
 			return nil, err
