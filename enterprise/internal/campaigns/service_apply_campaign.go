@@ -211,11 +211,8 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 				continue
 			}
 
-			if c, err := r.closeChangeset(ctx, changeset); err != nil {
+			if err := r.closeChangeset(ctx, changeset); err != nil {
 				return nil, err
-			} else if c != nil {
-				// TODO: Don't keep changeset in campaign. (This doesn't happen but I don't know why.)
-				changesets = append(changesets, c)
 			}
 
 			continue
@@ -335,7 +332,7 @@ func (r *changesetRewirer) attachTrackingChangeset(changeset *campaigns.Changese
 	}
 }
 
-func (r *changesetRewirer) closeChangeset(ctx context.Context, changeset *campaigns.Changeset) (*campaigns.Changeset, error) {
+func (r *changesetRewirer) closeChangeset(ctx context.Context, changeset *campaigns.Changeset) error {
 	if changeset.CurrentSpecID != 0 && changeset.OwnedByCampaignID == r.campaign.ID {
 		// If we have a current spec ID and the changeset was created by
 		// _this_ campaign that means we should detach and close it.
@@ -346,13 +343,13 @@ func (r *changesetRewirer) closeChangeset(ctx context.Context, changeset *campai
 			changeset.ResetQueued()
 		} else {
 			// otherwise we simply delete it.
-			return nil, r.tx.DeleteChangeset(ctx, changeset.ID)
+			return r.tx.DeleteChangeset(ctx, changeset.ID)
 		}
 	}
 
 	// Disassociate the changeset with the campaign.
 	changeset.RemoveCampaignID(r.campaign.ID)
-	return changeset, nil
+	return r.tx.UpdateChangeset(ctx, changeset)
 }
 
 // loadAssociations retrieves all entities required to rewire the changesets in a campaign.
