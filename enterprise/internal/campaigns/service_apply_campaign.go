@@ -197,7 +197,7 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 	changesets = []*campaigns.Changeset{}
 
 	for _, m := range r.mappings {
-		// If no changeset spec matched, a changeset must have matched, and it needs to be closed/detached.
+		// If a Changeset that's currently attached to the campaign wasn't matched to a ChangesetSpec, it needs to be closed/detached.
 		if m.ChangesetSpecID == 0 {
 			changeset, ok := changesetsByID[m.ChangesetID]
 			if !ok {
