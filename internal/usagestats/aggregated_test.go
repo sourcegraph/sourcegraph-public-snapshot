@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestGroupSiteUsageStats(t *testing.T) {

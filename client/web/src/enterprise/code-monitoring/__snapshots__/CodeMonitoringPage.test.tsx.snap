@@ -1,0 +1,3494 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
+<CodeMonitoringPage
+  authenticatedUser={
+    Object {
+      "email": "alice@alice.com",
+      "id": "foobar",
+      "username": "alice",
+    }
+  }
+  breadcrumbs={
+    Array [
+      Object {
+        "breadcrumb": null,
+        "depth": 0,
+      },
+    ]
+  }
+  fetchUserCodeMonitors={[Function]}
+  history="[History]"
+  location="[Location path=/]"
+  setBreadcrumb={[Function]}
+  useBreadcrumb={[Function]}
+>
+  <div
+    className="container mt-3 web-content"
+  >
+    <PageTitle
+      title="Code Monitoring"
+    />
+    <PageHeader
+      actions={
+        <AnchorLink
+          className="btn btn-secondary"
+          to="/code-monitoring/new"
+        >
+          <Memo(PlusIcon)
+            className="icon-inline"
+          />
+          Add new code monitor
+        </AnchorLink>
+      }
+      icon={
+        Object {
+          "$$typeof": Symbol(react.memo),
+          "compare": null,
+          "type": [Function],
+        }
+      }
+      title={
+        <React.Fragment>
+          Code monitoring
+           
+          <sup>
+            <span
+              className="badge badge-info text-uppercase"
+            >
+              Prototype
+            </span>
+          </sup>
+        </React.Fragment>
+      }
+    >
+      <div
+        className="page-header d-flex flex-wrap align-items-center"
+      >
+        <h1
+          className="flex-grow-1"
+        >
+          <Memo(VideoInputAntennaIcon)
+            className="icon-inline page-header__icon"
+          />
+           
+          Code monitoring
+           
+          <sup>
+            <span
+              className="badge badge-info text-uppercase"
+            >
+              Prototype
+            </span>
+          </sup>
+        </h1>
+        <AnchorLink
+          className="btn btn-secondary"
+          to="/code-monitoring/new"
+        >
+          <a
+            className="btn btn-secondary"
+            href="/code-monitoring/new"
+          >
+            <Memo(PlusIcon)
+              className="icon-inline"
+            />
+            Add new code monitor
+          </a>
+        </AnchorLink>
+      </div>
+    </PageHeader>
+    <div
+      className="text-muted mb-4"
+    >
+      Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
+       
+      <a
+        href="/"
+      >
+        Learn more.
+      </a>
+    </div>
+    <div
+      className="d-flex flex-column"
+    >
+      <div
+        className="code-monitoring-page-tabs border-bottom mb-4"
+      >
+        <div
+          className="nav nav-tabs border-bottom-0"
+        >
+          <div
+            className="nav-item"
+          >
+            <div
+              className="nav-link active"
+            >
+              Code monitors
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        className="row mb-5"
+      >
+        <div
+          className="d-flex flex-column col-2 mr-2"
+        >
+          <h3>
+            Filters
+          </h3>
+          <button
+            className="btn text-left btn-primary"
+            onClick={[Function]}
+            type="button"
+          >
+            All
+          </button>
+          <button
+            className="btn text-left"
+            onClick={[Function]}
+            type="button"
+          >
+            Your code monitors
+          </button>
+        </div>
+        <div
+          className="d-flex flex-column w-100 col"
+        >
+          <h3
+            className="mb-2"
+          >
+            All code monitors
+          </h3>
+          <FilteredConnection
+            cursorPaging={true}
+            defaultFirst={10}
+            hideSearch={true}
+            history="[History]"
+            location="[Location path=/]"
+            noSummaryIfAllNodesVisible={true}
+            nodeComponent={[Function]}
+            noun="code monitor"
+            pluralNoun="code monitors"
+            queryConnection={[Function]}
+            useURLQuery={true}
+          >
+            <div
+              className="filtered-connection test-filtered-connection filtered-connection--noncompact "
+            >
+              <ConnectionNodes
+                connection={
+                  Object {
+                    "nodes": Array [
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Test code monitor",
+                        "enabled": true,
+                        "id": "foo0",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Second test code monitor",
+                        "enabled": true,
+                        "id": "foo1",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Third test code monitor",
+                        "enabled": true,
+                        "id": "foo2",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Fourth test code monitor",
+                        "enabled": true,
+                        "id": "foo3",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Fifth test code monitor",
+                        "enabled": true,
+                        "id": "foo4",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Sixth test code monitor",
+                        "enabled": true,
+                        "id": "foo5",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Seventh test code monitor",
+                        "enabled": true,
+                        "id": "foo6",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Eighth test code monitor",
+                        "enabled": true,
+                        "id": "foo7",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Ninth test code monitor",
+                        "enabled": true,
+                        "id": "foo9",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Tenth test code monitor",
+                        "enabled": true,
+                        "id": "foo10",
+                      },
+                    ],
+                    "pageInfo": Object {
+                      "endCursor": "foo10",
+                      "hasNextPage": false,
+                    },
+                    "totalCount": 10,
+                  }
+                }
+                connectionQuery=""
+                first={10}
+                loading={false}
+                location="[Location path=/]"
+                noSummaryIfAllNodesVisible={true}
+                nodeComponent={[Function]}
+                noun="code monitor"
+                onShowMore={[Function]}
+                pluralNoun="code monitors"
+                query=""
+              >
+                <ul
+                  className="filtered-connection__nodes "
+                >
+                  <CodeMonitorNode
+                    key="foo0"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Test code monitor",
+                        "enabled": true,
+                        "id": "foo0",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo1"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Second test code monitor",
+                        "enabled": true,
+                        "id": "foo1",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Second test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo2"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Third test code monitor",
+                        "enabled": true,
+                        "id": "foo2",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Third test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo3"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Fourth test code monitor",
+                        "enabled": true,
+                        "id": "foo3",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Fourth test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo4"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Fifth test code monitor",
+                        "enabled": true,
+                        "id": "foo4",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Fifth test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo5"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Sixth test code monitor",
+                        "enabled": true,
+                        "id": "foo5",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Sixth test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo6"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Seventh test code monitor",
+                        "enabled": true,
+                        "id": "foo6",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Seventh test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo7"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Eighth test code monitor",
+                        "enabled": true,
+                        "id": "foo7",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Eighth test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo9"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Ninth test code monitor",
+                        "enabled": true,
+                        "id": "foo9",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Ninth test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo10"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Tenth test code monitor",
+                        "enabled": true,
+                        "id": "foo10",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Tenth test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                </ul>
+              </ConnectionNodes>
+            </div>
+          </FilteredConnection>
+        </div>
+      </div>
+      <div
+        className="mt-5"
+      >
+        We want to hear your feedback! 
+        <a
+          href="/"
+        >
+          Share your thoughts
+        </a>
+      </div>
+    </div>
+  </div>
+</CodeMonitoringPage>
+`;
+
+exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1`] = `
+<CodeMonitoringPage
+  authenticatedUser={
+    Object {
+      "email": "alice@alice.com",
+      "id": "foobar",
+      "username": "alice",
+    }
+  }
+  breadcrumbs={
+    Array [
+      Object {
+        "breadcrumb": null,
+        "depth": 0,
+      },
+    ]
+  }
+  fetchUserCodeMonitors={[Function]}
+  history="[History]"
+  location="[Location path=/]"
+  setBreadcrumb={[Function]}
+  useBreadcrumb={[Function]}
+>
+  <div
+    className="container mt-3 web-content"
+  >
+    <PageTitle
+      title="Code Monitoring"
+    />
+    <PageHeader
+      actions={
+        <AnchorLink
+          className="btn btn-secondary"
+          to="/code-monitoring/new"
+        >
+          <Memo(PlusIcon)
+            className="icon-inline"
+          />
+          Add new code monitor
+        </AnchorLink>
+      }
+      icon={
+        Object {
+          "$$typeof": Symbol(react.memo),
+          "compare": null,
+          "type": [Function],
+        }
+      }
+      title={
+        <React.Fragment>
+          Code monitoring
+           
+          <sup>
+            <span
+              className="badge badge-info text-uppercase"
+            >
+              Prototype
+            </span>
+          </sup>
+        </React.Fragment>
+      }
+    >
+      <div
+        className="page-header d-flex flex-wrap align-items-center"
+      >
+        <h1
+          className="flex-grow-1"
+        >
+          <Memo(VideoInputAntennaIcon)
+            className="icon-inline page-header__icon"
+          />
+           
+          Code monitoring
+           
+          <sup>
+            <span
+              className="badge badge-info text-uppercase"
+            >
+              Prototype
+            </span>
+          </sup>
+        </h1>
+        <AnchorLink
+          className="btn btn-secondary"
+          to="/code-monitoring/new"
+        >
+          <a
+            className="btn btn-secondary"
+            href="/code-monitoring/new"
+          >
+            <Memo(PlusIcon)
+              className="icon-inline"
+            />
+            Add new code monitor
+          </a>
+        </AnchorLink>
+      </div>
+    </PageHeader>
+    <div
+      className="text-muted mb-4"
+    >
+      Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
+       
+      <a
+        href="/"
+      >
+        Learn more.
+      </a>
+    </div>
+    <div
+      className="d-flex flex-column"
+    >
+      <div
+        className="code-monitoring-page-tabs border-bottom mb-4"
+      >
+        <div
+          className="nav nav-tabs border-bottom-0"
+        >
+          <div
+            className="nav-item"
+          >
+            <div
+              className="nav-link active"
+            >
+              Code monitors
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        className="row mb-5"
+      >
+        <div
+          className="d-flex flex-column col-2 mr-2"
+        >
+          <h3>
+            Filters
+          </h3>
+          <button
+            className="btn text-left btn-primary"
+            onClick={[Function]}
+            type="button"
+          >
+            All
+          </button>
+          <button
+            className="btn text-left"
+            onClick={[Function]}
+            type="button"
+          >
+            Your code monitors
+          </button>
+        </div>
+        <div
+          className="d-flex flex-column w-100 col"
+        >
+          <h3
+            className="mb-2"
+          >
+            All code monitors
+          </h3>
+          <FilteredConnection
+            cursorPaging={true}
+            defaultFirst={10}
+            hideSearch={true}
+            history="[History]"
+            location="[Location path=/]"
+            noSummaryIfAllNodesVisible={true}
+            nodeComponent={[Function]}
+            noun="code monitor"
+            pluralNoun="code monitors"
+            queryConnection={[Function]}
+            useURLQuery={true}
+          >
+            <div
+              className="filtered-connection test-filtered-connection filtered-connection--noncompact "
+            >
+              <ConnectionNodes
+                connection={
+                  Object {
+                    "nodes": Array [
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Test code monitor",
+                        "enabled": true,
+                        "id": "foo0",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Second test code monitor",
+                        "enabled": true,
+                        "id": "foo1",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Third test code monitor",
+                        "enabled": true,
+                        "id": "foo2",
+                      },
+                    ],
+                    "pageInfo": Object {
+                      "endCursor": "foo3",
+                      "hasNextPage": false,
+                    },
+                    "totalCount": 3,
+                  }
+                }
+                connectionQuery=""
+                first={10}
+                loading={false}
+                location="[Location path=/]"
+                noSummaryIfAllNodesVisible={true}
+                nodeComponent={[Function]}
+                noun="code monitor"
+                onShowMore={[Function]}
+                pluralNoun="code monitors"
+                query=""
+              >
+                <ul
+                  className="filtered-connection__nodes "
+                >
+                  <CodeMonitorNode
+                    key="foo0"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Test code monitor",
+                        "enabled": true,
+                        "id": "foo0",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo1"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Second test code monitor",
+                        "enabled": true,
+                        "id": "foo1",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Second test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo2"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Third test code monitor",
+                        "enabled": true,
+                        "id": "foo2",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Third test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                </ul>
+              </ConnectionNodes>
+            </div>
+          </FilteredConnection>
+        </div>
+      </div>
+      <div
+        className="mt-5"
+      >
+        We want to hear your feedback! 
+        <a
+          href="/"
+        >
+          Share your thoughts
+        </a>
+      </div>
+    </div>
+  </div>
+</CodeMonitoringPage>
+`;
+
+exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1`] = `
+<CodeMonitoringPage
+  authenticatedUser={
+    Object {
+      "email": "alice@alice.com",
+      "id": "foobar",
+      "username": "alice",
+    }
+  }
+  breadcrumbs={
+    Array [
+      Object {
+        "breadcrumb": null,
+        "depth": 0,
+      },
+    ]
+  }
+  fetchUserCodeMonitors={[Function]}
+  history="[History]"
+  location="[Location path=/]"
+  setBreadcrumb={[Function]}
+  useBreadcrumb={[Function]}
+>
+  <div
+    className="container mt-3 web-content"
+  >
+    <PageTitle
+      title="Code Monitoring"
+    />
+    <PageHeader
+      actions={
+        <AnchorLink
+          className="btn btn-secondary"
+          to="/code-monitoring/new"
+        >
+          <Memo(PlusIcon)
+            className="icon-inline"
+          />
+          Add new code monitor
+        </AnchorLink>
+      }
+      icon={
+        Object {
+          "$$typeof": Symbol(react.memo),
+          "compare": null,
+          "type": [Function],
+        }
+      }
+      title={
+        <React.Fragment>
+          Code monitoring
+           
+          <sup>
+            <span
+              className="badge badge-info text-uppercase"
+            >
+              Prototype
+            </span>
+          </sup>
+        </React.Fragment>
+      }
+    >
+      <div
+        className="page-header d-flex flex-wrap align-items-center"
+      >
+        <h1
+          className="flex-grow-1"
+        >
+          <Memo(VideoInputAntennaIcon)
+            className="icon-inline page-header__icon"
+          />
+           
+          Code monitoring
+           
+          <sup>
+            <span
+              className="badge badge-info text-uppercase"
+            >
+              Prototype
+            </span>
+          </sup>
+        </h1>
+        <AnchorLink
+          className="btn btn-secondary"
+          to="/code-monitoring/new"
+        >
+          <a
+            className="btn btn-secondary"
+            href="/code-monitoring/new"
+          >
+            <Memo(PlusIcon)
+              className="icon-inline"
+            />
+            Add new code monitor
+          </a>
+        </AnchorLink>
+      </div>
+    </PageHeader>
+    <div
+      className="text-muted mb-4"
+    >
+      Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
+       
+      <a
+        href="/"
+      >
+        Learn more.
+      </a>
+    </div>
+    <div
+      className="d-flex flex-column"
+    >
+      <div
+        className="code-monitoring-page-tabs border-bottom mb-4"
+      >
+        <div
+          className="nav nav-tabs border-bottom-0"
+        >
+          <div
+            className="nav-item"
+          >
+            <div
+              className="nav-link active"
+            >
+              Code monitors
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        className="row mb-5"
+      >
+        <div
+          className="d-flex flex-column col-2 mr-2"
+        >
+          <h3>
+            Filters
+          </h3>
+          <button
+            className="btn text-left btn-primary"
+            onClick={[Function]}
+            type="button"
+          >
+            All
+          </button>
+          <button
+            className="btn text-left"
+            onClick={[Function]}
+            type="button"
+          >
+            Your code monitors
+          </button>
+        </div>
+        <div
+          className="d-flex flex-column w-100 col"
+        >
+          <h3
+            className="mb-2"
+          >
+            All code monitors
+          </h3>
+          <FilteredConnection
+            cursorPaging={true}
+            defaultFirst={10}
+            hideSearch={true}
+            history="[History]"
+            location="[Location path=/]"
+            noSummaryIfAllNodesVisible={true}
+            nodeComponent={[Function]}
+            noun="code monitor"
+            pluralNoun="code monitors"
+            queryConnection={[Function]}
+            useURLQuery={true}
+          >
+            <div
+              className="filtered-connection test-filtered-connection filtered-connection--noncompact "
+            >
+              <ConnectionNodes
+                connection={
+                  Object {
+                    "nodes": Array [
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Test code monitor",
+                        "enabled": true,
+                        "id": "foo0",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Second test code monitor",
+                        "enabled": true,
+                        "id": "foo1",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Third test code monitor",
+                        "enabled": true,
+                        "id": "foo2",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Fourth test code monitor",
+                        "enabled": true,
+                        "id": "foo3",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Fifth test code monitor",
+                        "enabled": true,
+                        "id": "foo4",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Sixth test code monitor",
+                        "enabled": true,
+                        "id": "foo5",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Seventh test code monitor",
+                        "enabled": true,
+                        "id": "foo6",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Eighth test code monitor",
+                        "enabled": true,
+                        "id": "foo7",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Ninth test code monitor",
+                        "enabled": true,
+                        "id": "foo9",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Tenth test code monitor",
+                        "enabled": true,
+                        "id": "foo10",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Eleventh test code monitor",
+                        "enabled": true,
+                        "id": "foo11",
+                      },
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Twelfth test code monitor",
+                        "enabled": true,
+                        "id": "foo12",
+                      },
+                    ],
+                    "pageInfo": Object {
+                      "endCursor": "foo12",
+                      "hasNextPage": true,
+                    },
+                    "totalCount": 12,
+                  }
+                }
+                connectionQuery=""
+                first={10}
+                loading={false}
+                location="[Location path=/]"
+                noSummaryIfAllNodesVisible={true}
+                nodeComponent={[Function]}
+                noun="code monitor"
+                onShowMore={[Function]}
+                pluralNoun="code monitors"
+                query=""
+              >
+                <ul
+                  className="filtered-connection__nodes "
+                >
+                  <CodeMonitorNode
+                    key="foo0"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Test code monitor",
+                        "enabled": true,
+                        "id": "foo0",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo1"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Second test code monitor",
+                        "enabled": true,
+                        "id": "foo1",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Second test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo2"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Third test code monitor",
+                        "enabled": true,
+                        "id": "foo2",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Third test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo3"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Fourth test code monitor",
+                        "enabled": true,
+                        "id": "foo3",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Fourth test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo4"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Fifth test code monitor",
+                        "enabled": true,
+                        "id": "foo4",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Fifth test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo5"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Sixth test code monitor",
+                        "enabled": true,
+                        "id": "foo5",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Sixth test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo6"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Seventh test code monitor",
+                        "enabled": true,
+                        "id": "foo6",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Seventh test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo7"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Eighth test code monitor",
+                        "enabled": true,
+                        "id": "foo7",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Eighth test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo9"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Ninth test code monitor",
+                        "enabled": true,
+                        "id": "foo9",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Ninth test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo10"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Tenth test code monitor",
+                        "enabled": true,
+                        "id": "foo10",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Tenth test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo11"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Eleventh test code monitor",
+                        "enabled": true,
+                        "id": "foo11",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Eleventh test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                  <CodeMonitorNode
+                    key="foo12"
+                    node={
+                      Object {
+                        "actions": Object {
+                          "nodes": Array [
+                            Object {
+                              "enabled": true,
+                              "recipients": Object {
+                                "nodes": Array [
+                                  Object {
+                                    "id": "baz",
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                        "description": "Twelfth test code monitor",
+                        "enabled": true,
+                        "id": "foo12",
+                      }
+                    }
+                  >
+                    <div
+                      className="card p-3 mb-2"
+                    >
+                      <div
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="font-weight-bold"
+                          >
+                            Twelfth test code monitor
+                          </div>
+                          <div
+                            className="text-muted"
+                          >
+                            New search result → Sends email notifications
+                          </div>
+                        </div>
+                        <div
+                          className="d-flex flex-column"
+                        >
+                          <div
+                            className="d-flex"
+                          >
+                            <div
+                              onClick={[Function]}
+                            >
+                              <Toggle
+                                className="mr-3"
+                                disabled={false}
+                                value={true}
+                              >
+                                <button
+                                  aria-checked={true}
+                                  className="toggle mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  role="switch"
+                                  type="button"
+                                  value={1}
+                                >
+                                  <span
+                                    className="toggle__bar toggle__bar--on"
+                                  />
+                                  <span
+                                    className="toggle__bar-shadow toggle__bar-shadow--on"
+                                  />
+                                  <span
+                                    className="toggle__knob toggle__knob--on"
+                                  />
+                                </button>
+                              </Toggle>
+                            </div>
+                            <AnchorLink
+                              to="/"
+                            >
+                              <a
+                                href="/"
+                              >
+                                Edit
+                              </a>
+                            </AnchorLink>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CodeMonitorNode>
+                </ul>
+                <p
+                  className="filtered-connection__summary"
+                >
+                  <small>
+                    <span>
+                      12
+                       
+                      code monitors
+                       
+                      total
+                    </span>
+                     
+                  </small>
+                </p>
+                <button
+                  className="btn btn-secondary btn-sm filtered-connection__show-more "
+                  onClick={[Function]}
+                  type="button"
+                >
+                  Show more
+                </button>
+              </ConnectionNodes>
+            </div>
+          </FilteredConnection>
+        </div>
+      </div>
+      <div
+        className="mt-5"
+      >
+        We want to hear your feedback! 
+        <a
+          href="/"
+        >
+          Share your thoughts
+        </a>
+      </div>
+    </div>
+  </div>
+</CodeMonitoringPage>
+`;

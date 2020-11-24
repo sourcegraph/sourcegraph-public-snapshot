@@ -52,10 +52,10 @@ func addReposCommand() error {
 	}
 
 	err = client.WaitForReposToBeCloned(
-		"sourcegraph-testing/etcd",
-		"sourcegraph-testing/tidb",
-		"sourcegraph-testing/titan",
-		"sourcegraph-testing/zap",
+		"github.com/sourcegraph-testing/etcd",
+		"github.com/sourcegraph-testing/tidb",
+		"github.com/sourcegraph-testing/titan",
+		"github.com/sourcegraph-testing/zap",
 	)
 	if err != nil {
 		log.Fatal(err)

@@ -7,12 +7,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// WaitForReposToBeCloned waits (up to 30 seconds) for all repositories
+// WaitForReposToBeCloned waits (up to two minutes) for all repositories
 // in the list to be cloned.
 //
 // This method requires the authenticated user to be a site admin.
 func (c *Client) WaitForReposToBeCloned(repos ...string) error {
-	timeout := 45 * time.Second
+	timeout := 120 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 

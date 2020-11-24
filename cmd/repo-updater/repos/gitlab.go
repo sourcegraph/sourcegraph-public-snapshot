@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -24,7 +25,7 @@ import (
 // A GitLabSource yields repositories from a single GitLab connection configured
 // in Sourcegraph via the external services configuration.
 type GitLabSource struct {
-	svc                 *ExternalService
+	svc                 *types.ExternalService
 	config              *schema.GitLabConnection
 	exclude             excludeFunc
 	baseURL             *url.URL // URL with path /api/v4 (no trailing slash)
@@ -39,7 +40,7 @@ var _ DraftChangesetSource = &GitLabSource{}
 var _ ChangesetSource = &GitLabSource{}
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
-func NewGitLabSource(svc *ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
+func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
 	var c schema.GitLabConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -47,7 +48,7 @@ func NewGitLabSource(svc *ExternalService, cf *httpcli.Factory) (*GitLabSource, 
 	return newGitLabSource(svc, &c, cf)
 }
 
-func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
+func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -133,8 +134,8 @@ func (s GitLabSource) GetRepo(ctx context.Context, pathWithNamespace string) (*R
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s GitLabSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+func (s GitLabSource) ExternalServices() types.ExternalServices {
+	return types.ExternalServices{s.svc}
 }
 
 func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {

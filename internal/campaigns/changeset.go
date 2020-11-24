@@ -8,12 +8,14 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -346,7 +348,7 @@ func (c *Changeset) Body() (string, error) {
 // SetDeleted sets the internal state of a Changeset so that its State is
 // ChangesetStateDeleted.
 func (c *Changeset) SetDeleted() {
-	c.ExternalDeletedAt = time.Now().UTC().Truncate(time.Microsecond)
+	c.ExternalDeletedAt = timeutil.Now()
 }
 
 // IsDeleted returns true when the Changeset's ExternalDeletedAt is a non-zero

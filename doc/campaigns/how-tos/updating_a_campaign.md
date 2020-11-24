@@ -8,7 +8,13 @@ When a new campaign spec is applied to an existing campaign the existing campaig
 
 ## Requirements 
 
-To update a campaign, you need [admin access to the campaign](../explanations/permissions_in_campaigns.md#campaign-access-for-each-permission-level), and, if you want to [publish changesets](publishing_changesets.md) in the campaign, [write access to all affected repositories](../explanations/permissions_in_campaigns.md#repository-permissions-for-campaigns) with published changesets.
+To update a changeset, you need:
+
+1. [admin permissions for the campaign](../explanations/permissions_in_campaigns.md#permission-levels-for-campaigns),
+1. write access to the changeset's repository (on the code host), and
+1. a personal access token [configured in Sourcegraph for your code host(s)](configuring_user_credentials.md).
+
+For more information, see [Code host interactions in campaigns](../explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns).
 
 ## Preview and apply a new campaign spec
 

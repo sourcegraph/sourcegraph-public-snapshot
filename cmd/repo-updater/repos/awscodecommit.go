@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/net/http2"
 )
@@ -22,7 +23,7 @@ import (
 // connection configured in Sourcegraph via the external services
 // configuration.
 type AWSCodeCommitSource struct {
-	svc    *ExternalService
+	svc    *types.ExternalService
 	config *schema.AWSCodeCommitConnection
 
 	awsConfig    aws.Config
@@ -34,7 +35,7 @@ type AWSCodeCommitSource struct {
 }
 
 // NewAWSCodeCommitSource returns a new AWSCodeCommitSource from the given external service.
-func NewAWSCodeCommitSource(svc *ExternalService, cf *httpcli.Factory) (*AWSCodeCommitSource, error) {
+func NewAWSCodeCommitSource(svc *types.ExternalService, cf *httpcli.Factory) (*AWSCodeCommitSource, error) {
 	var c schema.AWSCodeCommitConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -42,7 +43,7 @@ func NewAWSCodeCommitSource(svc *ExternalService, cf *httpcli.Factory) (*AWSCode
 	return newAWSCodeCommitSource(svc, &c, cf)
 }
 
-func newAWSCodeCommitSource(svc *ExternalService, c *schema.AWSCodeCommitConnection, cf *httpcli.Factory) (*AWSCodeCommitSource, error) {
+func newAWSCodeCommitSource(svc *types.ExternalService, c *schema.AWSCodeCommitConnection, cf *httpcli.Factory) (*AWSCodeCommitSource, error) {
 	awsConfig := defaults.Config()
 	awsConfig.Region = c.Region
 	awsConfig.Credentials = aws.StaticCredentialsProvider{
@@ -110,8 +111,8 @@ func (s *AWSCodeCommitSource) ListRepos(ctx context.Context, results chan Source
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s *AWSCodeCommitSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+func (s *AWSCodeCommitSource) ExternalServices() types.ExternalServices {
+	return types.ExternalServices{s.svc}
 }
 
 func (s *AWSCodeCommitSource) makeRepo(r *awscodecommit.Repository) (*Repo, error) {

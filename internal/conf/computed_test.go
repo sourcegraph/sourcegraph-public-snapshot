@@ -85,6 +85,35 @@ func TestSearchIndexEnabled(t *testing.T) {
 	}
 }
 
+func TestAuthPasswordResetLinkDuration(t *testing.T) {
+	tests := []struct {
+		name string
+		sc   *Unified
+		want int
+	}{{
+		name: "password link expiry has a default value if null",
+		sc:   &Unified{},
+		want: defaultPasswordLinkExpiry,
+	}, {
+		name: "password link expiry has a default value if blank",
+		sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{AuthPasswordResetLinkExpiry: 0}},
+		want: defaultPasswordLinkExpiry,
+	}, {
+		name: "password link expiry can be customized",
+		sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{AuthPasswordResetLinkExpiry: 60}},
+		want: 60,
+	}}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			Mock(test.sc)
+			if got, want := AuthPasswordResetLinkExpiry(), test.want; got != want {
+				t.Fatalf("AuthPasswordResetLinkExpiry() = %v, want %v", got, want)
+			}
+		})
+	}
+}
+
 func setenv(t *testing.T, keyval string) func() {
 	t.Helper()
 

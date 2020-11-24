@@ -11,8 +11,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -687,7 +688,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 
 	t.Run("with existing pings in database", func(t *testing.T) {
 		userID := int32(0)
-		timestamp := time.Now().UTC().Truncate(time.Microsecond)
+		timestamp := timeutil.Now()
 
 		ctx := context.Background()
 		events := []*Event{

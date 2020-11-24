@@ -3,8 +3,11 @@ package db
 import (
 	"context"
 	"testing"
+	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestUsers_BuiltinAuth(t *testing.T) {
@@ -198,4 +201,62 @@ func TestUsers_UpdatePassword(t *testing.T) {
 	if isPassword, err := Users.IsPassword(ctx, usr.ID, "right-password"); err == nil && isPassword {
 		t.Fatal("accepted wrong (old) password")
 	}
+}
+
+func TestUsers_PasswordResetExpiry(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	user, err := Users.Create(ctx, NewUser{
+		Email:                 "foo@bar.com",
+		Username:              "foo",
+		Password:              "right-password",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resetCode, err := Users.RenewPasswordResetCode(ctx, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(time.Second) // the lowest expiry is 1 second
+
+	t.Run("expired link", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				AuthPasswordResetLinkExpiry: 1,
+			},
+		})
+		defer conf.Mock(nil)
+
+		success, err := Users.SetPassword(ctx, user.ID, resetCode, "new-password")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if success {
+			t.Fatal("accepted an expired password reset")
+		}
+	})
+
+	t.Run("valid link", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				AuthPasswordResetLinkExpiry: 3600,
+			},
+		})
+		defer conf.Mock(nil)
+
+		success, err := Users.SetPassword(ctx, user.ID, resetCode, "new-password")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !success {
+			t.Fatal("did not accept a valid password reset")
+		}
+	})
 }

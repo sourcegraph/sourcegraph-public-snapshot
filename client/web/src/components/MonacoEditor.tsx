@@ -32,7 +32,7 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
     },
     rules: [
         { token: 'identifier', foreground: '#f2f4f8' },
-        { token: 'filterKeyword', foreground: '#569cd6' },
+        { token: 'field', foreground: '#569cd6' },
         { token: 'keyword', foreground: '#da77f2' },
         { token: 'openingParen', foreground: '#da77f2' },
         { token: 'closingParen', foreground: '#da77f2' },
@@ -40,9 +40,14 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
         // Regexp pattern highlighting
         { token: 'regexpMetaDelimited', foreground: '#ff6b6b' },
         { token: 'regexpMetaAssertion', foreground: '#ff6b6b' },
-        { token: 'regexpMetaCharacterSet', foreground: '#3bc9db' },
-        { token: 'regexpMetaCharacterClass', foreground: '#3bc9db' },
-        { token: 'regexpMetaQuantifier', foreground: '#3bc9db' },
+        { token: 'regexpMetaLazyQuantifier', foreground: '#ff6b6b' },
+        { token: 'regexpMetaEscapedCharacter', foreground: '#ffa8a8' },
+        { token: 'regexpMetaCharacterSet', foreground: '#da77f2' },
+        { token: 'regexpMetaCharacterClass', foreground: '#da77f2' },
+        { token: 'regexpMetaRangeQuantifier', foreground: '#3bc9db' },
+        { token: 'regexpMetaAlternative', foreground: '#3bc9db' },
+        // Structural pattern highlighting
+        { token: 'structuralMetaHole', foreground: '#ff6b6b' },
     ],
 })
 
@@ -66,7 +71,7 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
     },
     rules: [
         { token: 'identifier', foreground: '#2b3750' },
-        { token: 'filterKeyword', foreground: '#268bd2' },
+        { token: 'field', foreground: '#268bd2' },
         { token: 'keyword', foreground: '#ae3ec9' },
         { token: 'openingParen', foreground: '#ae3ec9' },
         { token: 'closingParen', foreground: '#ae3ec9' },
@@ -74,9 +79,14 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
         // Regexp pattern highlighting
         { token: 'regexpMetaDelimited', foreground: '#c92a2a' },
         { token: 'regexpMetaAssertion', foreground: '#c92a2a' },
-        { token: 'regexpMetaCharacterSet', foreground: '#1098ad' },
-        { token: 'regexpMetaCharacterClass', foreground: '#1098ad' },
-        { token: 'regexpMetaQuantifier', foreground: '#1098ad' },
+        { token: 'regexpMetaLazyQuantifier', foreground: '#c92a2a' },
+        { token: 'regexpMetaEscapedCharacter', foreground: '#af5200' },
+        { token: 'regexpMetaCharacterSet', foreground: '#ae3ec9' },
+        { token: 'regexpMetaCharacterClass', foreground: '#ae3ec9' },
+        { token: 'regexpMetaRangeQuantifier', foreground: '#1098ad' },
+        { token: 'regexpMetaAlternative', foreground: '#1098ad' },
+        // Structural pattern highlighting
+        { token: 'structuralMetaHole', foreground: '#c92a2a' },
     ],
 })
 
