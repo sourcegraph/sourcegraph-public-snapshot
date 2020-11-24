@@ -4,17 +4,23 @@ import React from 'react'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 import { SearchPatternType } from '../../../../../shared/src/graphql-operations'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
-import { extensionsController, MULTIPLE_SEARCH_RESULT } from '../../../../../shared/src/util/searchTestHelpers'
 import { WebStory } from '../../../components/WebStory'
 import { AggregateStreamingSearchResults } from '../../stream'
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
+import {
+    extensionsController,
+    HIGHLIGHTED_FILE_LINES_LONG,
+    MULTIPLE_SEARCH_RESULT,
+    REPO_MATCH_RESULT,
+} from '../../../../../shared/src/util/searchTestHelpers'
 
 const history = createBrowserHistory()
 history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
 
 const streamingSearchResult: AggregateStreamingSearchResults = {
-    results: MULTIPLE_SEARCH_RESULT.results,
+    results: [...MULTIPLE_SEARCH_RESULT.results, REPO_MATCH_RESULT] as GQL.SearchResult[],
     filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
     progress: {
         done: true,
@@ -40,6 +46,7 @@ const defaultProps: StreamingSearchResultsProps = {
     history,
     location: history.location,
     authenticatedUser: null,
+    isLightTheme: true,
 
     navbarSearchQueryState: { query: '', cursorPosition: 0 },
 
@@ -50,6 +57,8 @@ const defaultProps: StreamingSearchResultsProps = {
     platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER },
 
     streamSearch: () => of(streamingSearchResult),
+
+    fetchHighlightedFileLines: () => of(HIGHLIGHTED_FILE_LINES_LONG),
 }
 
 const { add } = storiesOf('web/search/results/streaming/StreamingSearchResults', module).addParameters({
