@@ -11,7 +11,7 @@ import { subtypeOf } from '../../util/types'
 const { add } = storiesOf('shared/ActivationDropdown', module).addDecorator(story => (
     <>
         <style>{webMainStyles}</style>
-        <div className="theme-light">{story()}</div>
+        <div>{story()}</div>
     </>
 ))
 
@@ -52,7 +52,6 @@ const history = H.createMemoryHistory({ keyLength: 0 })
 const commonProps = subtypeOf<Partial<ActivationDropdownProps>>()({
     alwaysShow: true,
     history,
-    // Make sure the dropdown is not rendered outside the theme-light container
     portal: false,
 })
 

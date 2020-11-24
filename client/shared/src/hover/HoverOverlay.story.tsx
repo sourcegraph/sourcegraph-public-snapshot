@@ -118,265 +118,239 @@ const FIXTURE_ACTIONS = [
 add('Loading', () => (
     <>
         <style>{webStyles}</style>
-        <div className="theme-light">
-            <HoverOverlay
-                {...commonProps()}
-                {...webHoverOverlayClassProps}
-                hoverOrError="loading"
-                actionsOrError={FIXTURE_ACTIONS}
-            />
-        </div>
+        <HoverOverlay
+            {...commonProps()}
+            {...webHoverOverlayClassProps}
+            hoverOrError="loading"
+            actionsOrError={FIXTURE_ACTIONS}
+        />
     </>
 ))
 
 add('Error', () => (
     <>
         <style>{webStyles}</style>
-        <div className="theme-light">
-            <HoverOverlay
-                {...commonProps()}
-                {...webHoverOverlayClassProps}
-                hoverOrError={
-                    new Error(
-                        'Something terrible happened: Eiusmod voluptate deserunt in sint cillum pariatur laborum eiusmod.'
-                    )
-                }
-                actionsOrError={FIXTURE_ACTIONS}
-            />
-        </div>
+        <HoverOverlay
+            {...commonProps()}
+            {...webHoverOverlayClassProps}
+            hoverOrError={
+                new Error(
+                    'Something terrible happened: Eiusmod voluptate deserunt in sint cillum pariatur laborum eiusmod.'
+                )
+            }
+            actionsOrError={FIXTURE_ACTIONS}
+        />
     </>
 ))
 
 add('Common content', () => (
     <>
         <style>{webStyles}</style>
-        <div className="theme-light">
-            <HoverOverlay
-                {...commonProps()}
-                {...webHoverOverlayClassProps}
-                hoverOrError={{
-                    contents: [FIXTURE_CONTENT],
-                }}
-                actionsOrError={FIXTURE_ACTIONS}
-            />
-        </div>
+        <HoverOverlay
+            {...commonProps()}
+            {...webHoverOverlayClassProps}
+            hoverOrError={{
+                contents: [FIXTURE_CONTENT],
+            }}
+            actionsOrError={FIXTURE_ACTIONS}
+        />
     </>
 ))
 
 add('Legacy badge', () => (
     <>
         <style>{webStyles}</style>
-        <div className="theme-light">
-            <HoverOverlay
-                {...commonProps()}
-                {...webHoverOverlayClassProps}
-                hoverOrError={{
-                    contents: [{ ...FIXTURE_CONTENT, badge: LEGACY_FIXTURE_BADGE }],
-                }}
-                actionsOrError={FIXTURE_ACTIONS}
-            />
-        </div>
+        <HoverOverlay
+            {...commonProps()}
+            {...webHoverOverlayClassProps}
+            hoverOrError={{
+                contents: [{ ...FIXTURE_CONTENT, badge: LEGACY_FIXTURE_BADGE }],
+            }}
+            actionsOrError={FIXTURE_ACTIONS}
+        />
     </>
 ))
 
 add('Only actions', () => (
     <>
         <style>{webStyles}</style>
-        <div className="theme-light">
-            <HoverOverlay
-                {...commonProps()}
-                {...webHoverOverlayClassProps}
-                hoverOrError={null}
-                actionsOrError={FIXTURE_ACTIONS}
-            />
-        </div>
+        <HoverOverlay
+            {...commonProps()}
+            {...webHoverOverlayClassProps}
+            hoverOrError={null}
+            actionsOrError={FIXTURE_ACTIONS}
+        />
     </>
 ))
 
 add('Long code', () => (
     <>
         <style>{webStyles}</style>
-        <div className="theme-light">
-            <HoverOverlay
-                {...commonProps()}
-                {...webHoverOverlayClassProps}
-                hoverOrError={{
-                    contents: [FIXTURE_CONTENT_LONG_CODE],
-                }}
-                actionsOrError={FIXTURE_ACTIONS}
-            />
-        </div>
+        <HoverOverlay
+            {...commonProps()}
+            {...webHoverOverlayClassProps}
+            hoverOrError={{
+                contents: [FIXTURE_CONTENT_LONG_CODE],
+            }}
+            actionsOrError={FIXTURE_ACTIONS}
+        />
     </>
 ))
 
 add('Long text only', () => (
     <>
         <style>{webStyles}</style>
-        <div className="theme-light">
-            <HoverOverlay
-                {...commonProps()}
-                {...webHoverOverlayClassProps}
-                hoverOrError={{
-                    contents: [FIXTURE_CONTENT_LONG_TEXT_ONLY],
-                }}
-                actionsOrError={FIXTURE_ACTIONS}
-            />
-        </div>
+        <HoverOverlay
+            {...commonProps()}
+            {...webHoverOverlayClassProps}
+            hoverOrError={{
+                contents: [FIXTURE_CONTENT_LONG_TEXT_ONLY],
+            }}
+            actionsOrError={FIXTURE_ACTIONS}
+        />
     </>
 ))
 
 add('Multiple MarkupContents', () => (
     <>
         <style>{webStyles}</style>
-        <div className="theme-light">
-            <HoverOverlay
-                {...commonProps()}
-                {...webHoverOverlayClassProps}
-                hoverOrError={{
-                    contents: [FIXTURE_CONTENT, FIXTURE_CONTENT, FIXTURE_CONTENT],
-                }}
-                actionsOrError={FIXTURE_ACTIONS}
-            />
-        </div>
+        <HoverOverlay
+            {...commonProps()}
+            {...webHoverOverlayClassProps}
+            hoverOrError={{
+                contents: [FIXTURE_CONTENT, FIXTURE_CONTENT, FIXTURE_CONTENT],
+            }}
+            actionsOrError={FIXTURE_ACTIONS}
+        />
     </>
 ))
 
 add('With small-text alert', () => (
     <>
         <style>{webStyles}</style>
-        <div className="theme-light">
-            <HoverOverlay
-                {...commonProps()}
-                {...webHoverOverlayClassProps}
-                hoverOrError={{
-                    contents: [FIXTURE_CONTENT],
-                    alerts: [
-                        {
-                            summary: {
-                                kind: MarkupKind.Markdown,
-                                value:
-                                    '<small>This is a test alert. Enim esse quis commodo ex. Pariatur tempor laborum officiairure est do est laborum nostrud cillum. Cupidatat id consectetur et eiusmod Loremproident cupidatat ullamco dolor nostrud. Cupidatat sit do dolor aliqua labore adlaboris cillum deserunt dolor. Sunt labore veniam Lorem reprehenderit quis occaecatsint do mollit aliquip. Consectetur mollit mollit magna eiusmod duis ex. Sint nisilabore labore nulla laboris.</small>',
-                            },
-                            type: 'test-alert-type',
+        <HoverOverlay
+            {...commonProps()}
+            {...webHoverOverlayClassProps}
+            hoverOrError={{
+                contents: [FIXTURE_CONTENT],
+                alerts: [
+                    {
+                        summary: {
+                            kind: MarkupKind.Markdown,
+                            value:
+                                '<small>This is a test alert. Enim esse quis commodo ex. Pariatur tempor laborum officiairure est do est laborum nostrud cillum. Cupidatat id consectetur et eiusmod Loremproident cupidatat ullamco dolor nostrud. Cupidatat sit do dolor aliqua labore adlaboris cillum deserunt dolor. Sunt labore veniam Lorem reprehenderit quis occaecatsint do mollit aliquip. Consectetur mollit mollit magna eiusmod duis ex. Sint nisilabore labore nulla laboris.</small>',
                         },
-                    ],
-                }}
-                actionsOrError={FIXTURE_ACTIONS}
-                onAlertDismissed={action('onAlertDismissed')}
-            />
-        </div>
+                        type: 'test-alert-type',
+                    },
+                ],
+            }}
+            actionsOrError={FIXTURE_ACTIONS}
+            onAlertDismissed={action('onAlertDismissed')}
+        />
     </>
 ))
 
 add('With one-line alert', () => (
     <>
         <style>{webStyles}</style>
-        <div className="theme-light">
-            <HoverOverlay
-                {...commonProps()}
-                {...webHoverOverlayClassProps}
-                hoverOrError={{
-                    contents: [FIXTURE_CONTENT],
-                    alerts: [
-                        {
-                            summary: {
-                                kind: MarkupKind.PlainText,
-                                value: 'This is a test alert.',
-                            },
+        <HoverOverlay
+            {...commonProps()}
+            {...webHoverOverlayClassProps}
+            hoverOrError={{
+                contents: [FIXTURE_CONTENT],
+                alerts: [
+                    {
+                        summary: {
+                            kind: MarkupKind.PlainText,
+                            value: 'This is a test alert.',
                         },
-                    ],
-                }}
-                actionsOrError={FIXTURE_ACTIONS}
-                onAlertDismissed={action('onAlertDismissed')}
-            />
-        </div>
+                    },
+                ],
+            }}
+            actionsOrError={FIXTURE_ACTIONS}
+            onAlertDismissed={action('onAlertDismissed')}
+        />
     </>
 ))
 
 add('With badged alert', () => (
     <>
         <style>{webStyles}</style>
-        <div className="theme-light">
-            <HoverOverlay
-                {...commonProps()}
-                {...webHoverOverlayClassProps}
-                hoverOrError={{
-                    contents: [FIXTURE_CONTENT],
-                    alerts: [
-                        {
-                            summary: {
-                                kind: MarkupKind.PlainText,
-                                value: 'This is a test alert.',
-                            },
-                            badge: {
-                                kind: 'info',
-                            },
+        <HoverOverlay
+            {...commonProps()}
+            {...webHoverOverlayClassProps}
+            hoverOrError={{
+                contents: [FIXTURE_CONTENT],
+                alerts: [
+                    {
+                        summary: {
+                            kind: MarkupKind.PlainText,
+                            value: 'This is a test alert.',
                         },
-                    ],
-                }}
-                actionsOrError={FIXTURE_ACTIONS}
-                onAlertDismissed={action('onAlertDismissed')}
-            />
-        </div>
+                        badge: {
+                            kind: 'info',
+                        },
+                    },
+                ],
+            }}
+            actionsOrError={FIXTURE_ACTIONS}
+            onAlertDismissed={action('onAlertDismissed')}
+        />
     </>
 ))
 
 add('With badged dismissible alert', () => (
     <>
         <style>{webStyles}</style>
-        <div className="theme-light">
-            <HoverOverlay
-                {...commonProps()}
-                {...webHoverOverlayClassProps}
-                hoverOrError={{
-                    contents: [FIXTURE_CONTENT],
-                    alerts: [
-                        {
-                            summary: {
-                                kind: MarkupKind.Markdown,
-                                value: 'This is a test alert.',
-                            },
-                            type: 'test-alert-type',
-                            badge: {
-                                kind: 'info',
-                            },
+        <HoverOverlay
+            {...commonProps()}
+            {...webHoverOverlayClassProps}
+            hoverOrError={{
+                contents: [FIXTURE_CONTENT],
+                alerts: [
+                    {
+                        summary: {
+                            kind: MarkupKind.Markdown,
+                            value: 'This is a test alert.',
                         },
-                    ],
-                }}
-                actionsOrError={FIXTURE_ACTIONS}
-                onAlertDismissed={action('onAlertDismissed')}
-            />
-        </div>
+                        type: 'test-alert-type',
+                        badge: {
+                            kind: 'info',
+                        },
+                    },
+                ],
+            }}
+            actionsOrError={FIXTURE_ACTIONS}
+            onAlertDismissed={action('onAlertDismissed')}
+        />
     </>
 ))
 
 add('With long markdown text badged dismissible alert.', () => (
     <>
         <style>{webStyles}</style>
-        <div className="theme-light">
-            <HoverOverlay
-                {...commonProps()}
-                {...webHoverOverlayClassProps}
-                hoverOrError={{
-                    contents: [FIXTURE_CONTENT],
-                    alerts: [
-                        {
-                            summary: {
-                                kind: MarkupKind.Markdown,
-                                value:
-                                    'This is a test alert. [It uses Markdown.](https://sourcegraph.com) `To render things easily`. *Cool!*',
-                            },
-                            type: 'test-alert-type',
-                            badge: {
-                                kind: 'info',
-                            },
+        <HoverOverlay
+            {...commonProps()}
+            {...webHoverOverlayClassProps}
+            hoverOrError={{
+                contents: [FIXTURE_CONTENT],
+                alerts: [
+                    {
+                        summary: {
+                            kind: MarkupKind.Markdown,
+                            value:
+                                'This is a test alert. [It uses Markdown.](https://sourcegraph.com) `To render things easily`. *Cool!*',
                         },
-                    ],
-                }}
-                actionsOrError={FIXTURE_ACTIONS}
-                onAlertDismissed={action('onAlertDismissed')}
-            />
-        </div>
+                        type: 'test-alert-type',
+                        badge: {
+                            kind: 'info',
+                        },
+                    },
+                ],
+            }}
+            actionsOrError={FIXTURE_ACTIONS}
+            onAlertDismissed={action('onAlertDismissed')}
+        />
     </>
 ))
 
