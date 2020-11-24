@@ -120,20 +120,6 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
                 <>
                     <div />
                     <div className="visible-changeset-spec-node__expanded-section p-2">
-                        <div className="mb-5">
-                            <h3 className="mb-1">Reconciler operations</h3>
-                            <code>
-                                {node.operations.map((operation, index) => (
-                                    <>
-                                        <span key={operation} className="badge badge-primary">
-                                            {operation}
-                                        </span>
-                                        {index !== node.operations.length - 1 && <> {'=>'} </>}
-                                    </>
-                                ))}
-                                {node.operations.length === 0 && <>No operations</>}
-                            </code>
-                        </div>
                         {node.description.__typename === 'GitBranchChangesetDescription' && (
                             <>
                                 <h4>Commits</h4>
