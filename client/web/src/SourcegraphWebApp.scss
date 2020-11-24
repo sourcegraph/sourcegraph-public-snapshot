@@ -62,6 +62,11 @@ body,
     flex: 1;
 }
 
+.flex-bounded {
+    flex: 1;
+    min-width: 0;
+}
+
 .flex-shrink-past-contents {
     flex-shrink: 1;
     min-width: 0;
@@ -124,6 +129,7 @@ body,
 @import './org/OrgsArea';
 @import './components/Collapsible';
 @import './components/DismissibleAlert';
+@import './components/Timeline';
 @import './marketing/SurveyPage';
 @import './components/branding/BrandLogo';
 @import './components/SingleValueCard';
