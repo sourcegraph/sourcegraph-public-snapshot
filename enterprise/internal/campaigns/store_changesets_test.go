@@ -148,6 +148,52 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		}
 	})
 
+	t.Run("Upsert", func(t *testing.T) {
+		changeset := &cmpgn.Changeset{
+			RepoID:              repo.ID,
+			CreatedAt:           clock.now(),
+			UpdatedAt:           clock.now(),
+			Metadata:            githubPR,
+			CampaignIDs:         []int64{1},
+			ExternalID:          "foobar-123",
+			ExternalServiceType: extsvc.TypeGitHub,
+			ExternalBranch:      "refs/heads/campaigns/test",
+			ExternalUpdatedAt:   clock.now(),
+			ExternalState:       cmpgn.ChangesetExternalStateOpen,
+			ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
+			ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
+			PreviousSpecID:      1,
+			OwnedByCampaignID:   1,
+			PublicationState:    cmpgn.ChangesetPublicationStatePublished,
+			ReconcilerState:     cmpgn.ReconcilerStateCompleted,
+			StartedAt:           clock.now(),
+			FinishedAt:          clock.now(),
+			ProcessAfter:        clock.now(),
+		}
+
+		if err := s.UpsertChangeset(ctx, changeset); err != nil {
+			t.Fatal(err)
+		}
+
+		if changeset.ID == 0 {
+			t.Fatal("id should not be zero")
+		}
+
+		prev := changeset.Clone()
+
+		if err := s.UpsertChangeset(ctx, changeset); err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(changeset, prev); diff != "" {
+			t.Fatal(diff)
+		}
+
+		if err := s.DeleteChangeset(ctx, changeset.ID); err != nil {
+			t.Fatal(err)
+		}
+	})
+
 	t.Run("ReconcilerState database representation", func(t *testing.T) {
 		// campaigns.ReconcilerStates are defined as "enum" string constants.
 		// The string values are uppercase, because that way they can easily be
