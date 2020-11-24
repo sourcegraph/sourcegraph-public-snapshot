@@ -366,7 +366,7 @@ func (r *changesetRewirer) closeChangeset(ctx context.Context, changeset *campai
 	return changeset, nil
 }
 
-// loadAssociations retrieves all entities required to rewire a campaign.
+// loadAssociations retrieves all entities required to rewire the changesets in a campaign.
 func (r *changesetRewirer) loadAssociations(ctx context.Context) (
 	accessibleReposByID map[api.RepoID]*types.Repo,
 	changesetsByID map[int64]*campaigns.Changeset,
