@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // SyncRegistry manages a ChangesetSyncer per code host
@@ -35,7 +36,7 @@ type SyncRegistry struct {
 }
 
 type RepoStore interface {
-	ListExternalServices(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error)
+	ListExternalServices(context.Context, repos.StoreListExternalServicesArgs) ([]*types.ExternalService, error)
 	ListRepos(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error)
 }
 
@@ -68,7 +69,7 @@ func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, 
 
 // Add adds a syncer for the code host associated with the supplied external service if the syncer hasn't
 // already been added and starts it.
-func (s *SyncRegistry) Add(extSvc *repos.ExternalService) {
+func (s *SyncRegistry) Add(extSvc *types.ExternalService) {
 	if !campaigns.IsKindSupported(extSvc.Kind) {
 		log15.Info("External service not support by campaigns", "kind", extSvc.Kind)
 		return
@@ -176,7 +177,7 @@ func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
 	s.mu.Unlock()
 
 	if es.DeletedAt.IsZero() && !exists {
-		res := (repos.ExternalService)(es)
+		res := (types.ExternalService)(es)
 		s.Add(&res)
 	}
 
@@ -548,7 +549,7 @@ func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore
 // buildChangesetSource returns a ChangesetSource for the given external service.
 func buildChangesetSource(
 	sourcer repos.Sourcer,
-	extSvc *repos.ExternalService,
+	extSvc *types.ExternalService,
 ) (repos.ChangesetSource, error) {
 	sources, err := sourcer(extSvc)
 	if err != nil {

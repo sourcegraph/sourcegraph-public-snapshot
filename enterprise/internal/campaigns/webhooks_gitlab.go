@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -98,7 +99,7 @@ var (
 //
 // On failure, errExternalServiceNotFound is returned if the ID doesn't match
 // any GitLab service.
-func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw string) (*repos.ExternalService, error) {
+func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw string) (*types.ExternalService, error) {
 	id, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing the raw external service ID")
@@ -129,7 +130,7 @@ type stateMergeRequestEvent interface {
 
 // handleEvent is essentially a router: it dispatches based on the event type
 // to perform whatever changeset action is appropriate for that event.
-func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *repos.ExternalService, event interface{}) *httpError {
+func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *types.ExternalService, event interface{}) *httpError {
 	log15.Debug("GitLab webhook received", "type", fmt.Sprintf("%T", event))
 
 	esID, err := extractExternalServiceID(extSvc)
@@ -275,7 +276,7 @@ func gitlabToPR(project *gitlab.ProjectCommon, mr *gitlab.MergeRequest) PR {
 
 // validateGitLabSecret validates that the given secret matches one of the
 // webhooks in the external service.
-func validateGitLabSecret(extSvc *repos.ExternalService, secret string) (bool, error) {
+func validateGitLabSecret(extSvc *types.ExternalService, secret string) (bool, error) {
 	// An empty secret never succeeds.
 	if secret == "" {
 		return false, nil

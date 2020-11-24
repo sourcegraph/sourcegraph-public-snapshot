@@ -137,13 +137,13 @@ func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID
 	return userID
 }
 
-func newGitHubExternalService(t *testing.T, store repos.Store) *repos.ExternalService {
+func newGitHubExternalService(t *testing.T, store repos.Store) *types.ExternalService {
 	t.Helper()
 
 	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
-	svc := repos.ExternalService{
+	svc := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
 		Config:      `{"url": "https://github.com"}`,
@@ -159,7 +159,7 @@ func newGitHubExternalService(t *testing.T, store repos.Store) *repos.ExternalSe
 	return &svc
 }
 
-func newGitHubTestRepo(name string, externalService *repos.ExternalService) *repos.Repo {
+func newGitHubTestRepo(name string, externalService *types.ExternalService) *repos.Repo {
 	return &repos.Repo{
 		Name:    name,
 		Private: true,

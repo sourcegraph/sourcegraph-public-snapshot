@@ -24,6 +24,7 @@ import (
 	extsvcGitHub "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
@@ -71,7 +72,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 
 	reposStore := repos.NewDBStore(testDB, sql.TxOptions{})
 
-	svc := repos.ExternalService{
+	svc := types.ExternalService{
 		Kind:      extsvc.KindGitHub,
 		CreatedAt: timeutil.Now(),
 		Config:    `{"url": "https://github.com", "authorization": {}}`,
