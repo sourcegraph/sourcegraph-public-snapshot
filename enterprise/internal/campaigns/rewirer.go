@@ -2,8 +2,10 @@ package campaigns
 
 import "github.com/sourcegraph/sourcegraph/internal/api"
 
-// RewirerMapping holds a mapping from a changeset spec to a changeset.
-// If the changeset spec doesn't target any changeset (ie. it's new), ChangesetID is 0.
+// RewirerMapping maps a connection between ChangesetSpec and Changeset.
+// If the ChangesetSpec doesn't match a Changeset (ie. it describes a to-be-created Changeset), ChangesetID is 0.
+// If the ChangesetSpec is 0, the Changeset will be non-zero and means "to be closed".
+// If both are non-zero values, the changeset should be updated with the changeset spec in the mapping.
 type RewirerMapping struct {
 	ChangesetSpecID int64
 	ChangesetID     int64
@@ -12,6 +14,7 @@ type RewirerMapping struct {
 
 type RewirerMappings []*RewirerMapping
 
+// ChangesetIDs returns a list of unique changeset IDs in the slice of mappings.
 func (rm RewirerMappings) ChangesetIDs() []int64 {
 	changesetIDMap := make(map[int64]struct{})
 	for _, m := range rm {
@@ -26,6 +29,7 @@ func (rm RewirerMappings) ChangesetIDs() []int64 {
 	return changesetIDs
 }
 
+// ChangesetSpecIDs returns a list of unique changeset spec IDs in the slice of mappings.
 func (rm RewirerMappings) ChangesetSpecIDs() []int64 {
 	changesetSpecIDMap := make(map[int64]struct{})
 	for _, m := range rm {
@@ -40,6 +44,7 @@ func (rm RewirerMappings) ChangesetSpecIDs() []int64 {
 	return changesetSpecIDs
 }
 
+// RepoIDs returns a list of unique repo IDs in the slice of mappings.
 func (rm RewirerMappings) RepoIDs() []api.RepoID {
 	repoIDMap := make(map[api.RepoID]struct{})
 	for _, m := range rm {
