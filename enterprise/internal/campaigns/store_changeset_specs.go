@@ -416,7 +416,7 @@ type GetRewirerMappingsOpts struct {
 //
 // We need to:
 // 1. Find out whether our new specs should _update_ an existing
-//    changeset (ChangesetSpec != 0, Changeset != 0), or whether we need to create a new one (ChangesetSpec != 0, Changeset == 0).
+//    changeset (ChangesetSpec != 0, Changeset != 0), or whether we need to create a new one.
 // 2. Since we can have multiple changesets per repository, we need to match
 //    based on repo and external ID for imported changesets and on repo and head_ref for 'branch' changesets.
 // 3. If a changeset wasn't published yet, it doesn't have an external ID nor does it have an external head_ref.
@@ -442,11 +442,11 @@ type GetRewirerMappingsOpts struct {
 // │Changeset 5 | Repo C | | run-goimports │───▶│  Spec 3 | Repo C | run-goimports  │
 // └───────────────────────────────────────┘    └───────────────────────────────────┘
 //
-// Spec 1 should be attached to Changeset 1 and (possibly) update its title/body/diff.
-// Spec 2 should be attached to Changeset 2 and publish it on the code host.
-// Spec 3 should get a new Changeset, since its branch doesn't match Changeset 3's branch.
-// Spec 4 should be attached to Changeset 4, since it tracks PR #333 in Repo C.
-// Changeset 3 doesn't have a matching spec and should be detached from the campaign (and closed) (ChangesetSpec == 0, Changeset != 0).
+// Spec 1 should be attached to Changeset 1 and (possibly) update its title/body/diff. (ChangesetSpec = 1, Changeset = 1)
+// Spec 2 should be attached to Changeset 2 and publish it on the code host. (ChangesetSpec = 2, Changeset = 2)
+// Spec 3 should get a new Changeset, since its branch doesn't match Changeset 3's branch. (ChangesetSpec = 3, Changeset = 0)
+// Spec 4 should be attached to Changeset 4, since it tracks PR #333 in Repo C. (ChangesetSpec = 4, Changeset = 4)
+// Changeset 3 doesn't have a matching spec and should be detached from the campaign (and closed) (ChangesetSpec == 0, Changeset = 3).
 func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsOpts) (mappings RewirerMappings, err error) {
 	q := getRewirerMappingsQuery(opts)
 
@@ -476,7 +476,7 @@ func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) *sqlf.Query {
 var getRewirerMappingsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:GetRewirerMappings
 WITH
-	-- Fetch all changeset specs in the campaign spec that are of type 'existing'.
+	-- Fetch all changeset specs in the campaign spec that want to import/track an ChangesetSpecDescriptionTypeExisting changeset.
 	-- Match the entries to changesets in the target campaign by external ID and repo.
 	tracked_mappings AS (
 		SELECT changeset_specs.id AS changeset_spec_id, COALESCE(changesets.id, 0) AS changeset_id, changeset_specs.repo_id AS repo_id
@@ -488,7 +488,7 @@ WITH
 		changeset_specs.spec->>'externalID' IS NOT NULL AND changeset_specs.spec->>'externalID' != '' AND
 		repo.deleted_at IS NULL
 	),
-	-- Fetch all changeset specs in the campaign spec that are of type 'branch'.
+	-- Fetch all changeset specs in the campaign spec that are of type ChangesetSpecDescriptionTypeBranch.
 	-- Match the entries to changesets in the target campaign by head ref and repo.
 	branch_mappings AS (
 		SELECT changeset_specs.id AS changeset_spec_id, COALESCE(changesets.id, 0) AS changeset_id, changeset_specs.repo_id AS repo_id
@@ -497,15 +497,11 @@ WITH
 			changesets.repo_id = changeset_specs.repo_id AND
 			changesets.current_spec_id IS NOT NULL AND
 			((changesets.campaign_ids ? %s) OR changesets.owned_by_campaign_id = %s) AND
-			(
-				(changesets.external_branch IS NOT NULL AND changesets.external_branch = changeset_specs.spec->>'headRef')
-				OR
-				(changesets.external_branch IS NULL AND (SELECT spec FROM changeset_specs WHERE changeset_specs.id = changesets.current_spec_id)->>'headRef' = changeset_specs.spec->>'headRef')
-			)
+			(SELECT spec FROM changeset_specs WHERE changeset_specs.id = changesets.current_spec_id)->>'headRef' = changeset_specs.spec->>'headRef'
 		INNER JOIN repo ON changeset_specs.repo_id = repo.id
 		WHERE
 			changeset_specs.campaign_spec_id = %s AND
-			--- We look at a 'branch' changeset.
+			--- We look at a ChangesetSpecDescriptionTypeBranch changeset.
 			(changeset_specs.spec->>'externalID' IS NULL OR changeset_specs.spec->>'externalID' = '') AND
 			repo.deleted_at IS NULL
 )
