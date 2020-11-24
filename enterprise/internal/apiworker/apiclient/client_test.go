@@ -185,6 +185,24 @@ func TestMarkErroredBadResponse(t *testing.T) {
 	})
 }
 
+func TestMarkFailed(t *testing.T) {
+	spec := routeSpec{
+		expectedMethod:   "POST",
+		expectedPath:     "/.executors/queue/test_queue/markFailed",
+		expectedUsername: "test",
+		expectedPassword: "hunter2",
+		expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
+		responseStatus:   http.StatusNoContent,
+		responsePayload:  ``,
+	}
+
+	testRoute(t, spec, func(client *Client) {
+		if err := client.MarkFailed(context.Background(), "test_queue", 42, "OH NO"); err != nil {
+			t.Fatalf("unexpected error completing job: %s", err)
+		}
+	})
+}
+
 func TestHeartbeat(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
