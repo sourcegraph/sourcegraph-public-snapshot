@@ -105,6 +105,8 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 	}
 	pushStates(openedAt)
 
+	isDraft := currentExtState == campaigns.ChangesetExternalStateDraft
+
 	for _, e := range ce {
 		et := e.Timestamp()
 		if et.IsZero() {
@@ -129,6 +131,7 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 			pushStates(et)
 
 		case campaigns.ChangesetEventKindGitLabMarkWorkInProgress:
+			isDraft = true
 			// This event only matters when the changeset is open, otherwise a change in the title won't change the overall external state.
 			if currentExtState == campaigns.ChangesetExternalStateOpen {
 				currentExtState = campaigns.ChangesetExternalStateDraft
@@ -136,13 +139,16 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 			}
 
 		case campaigns.ChangesetEventKindGitHubConvertToDraft:
+			isDraft = true
 			// Merged is a final state. We can ignore everything after.
 			if currentExtState != campaigns.ChangesetExternalStateMerged {
 				currentExtState = campaigns.ChangesetExternalStateDraft
 				pushStates(et)
 			}
 
-		case campaigns.ChangesetEventKindGitLabUnmarkWorkInProgress:
+		case campaigns.ChangesetEventKindGitLabUnmarkWorkInProgress,
+			campaigns.ChangesetEventKindGitHubReadyForReview:
+			isDraft = false
 			// This event only matters when the changeset is open, otherwise a change in the title won't change the overall external state.
 			if currentExtState == campaigns.ChangesetExternalStateDraft {
 				currentExtState = campaigns.ChangesetExternalStateOpen
@@ -151,11 +157,14 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 
 		case campaigns.ChangesetEventKindGitHubReopened,
 			campaigns.ChangesetEventKindBitbucketServerReopened,
-			campaigns.ChangesetEventKindGitLabReopened,
-			campaigns.ChangesetEventKindGitHubReadyForReview:
+			campaigns.ChangesetEventKindGitLabReopened:
 			// Merged is a final state. We can ignore everything after.
 			if currentExtState != campaigns.ChangesetExternalStateMerged {
-				currentExtState = campaigns.ChangesetExternalStateOpen
+				if isDraft {
+					currentExtState = campaigns.ChangesetExternalStateDraft
+				} else {
+					currentExtState = campaigns.ChangesetExternalStateOpen
+				}
 				pushStates(et)
 			}
 
