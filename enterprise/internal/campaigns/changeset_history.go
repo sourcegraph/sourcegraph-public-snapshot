@@ -89,6 +89,11 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 		currentReviewState = campaigns.ChangesetReviewStatePending
 
 		lastReviewByAuthor = map[string]campaigns.ChangesetReviewState{}
+		// The draft state is tracked alongside the "external state" on GitHub and GitLab,
+		// that means we need to take changes to this state into account separately. On reopen,
+		// we cannot simply say it's open, because it could be it was converted to a draft while
+		// it was closed. Hence, we need to track the state using this variable.
+		isDraft = currentExtState == campaigns.ChangesetExternalStateDraft
 	)
 
 	pushStates := func(t time.Time) {
@@ -104,8 +109,6 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 		return nil, errors.New("changeset ExternalCreatedAt has zero value")
 	}
 	pushStates(openedAt)
-
-	isDraft := currentExtState == campaigns.ChangesetExternalStateDraft
 
 	for _, e := range ce {
 		et := e.Timestamp()
