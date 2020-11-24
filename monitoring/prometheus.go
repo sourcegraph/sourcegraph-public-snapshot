@@ -1,25 +1,23 @@
 package main
 
-import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
-
-func Prometheus() *monitoring.Container {
-	return &monitoring.Container{
+func Prometheus() *Container {
+	return &Container{
 		Name:        "prometheus",
 		Title:       "Prometheus",
 		Description: "Sourcegraph's all-in-one Prometheus and Alertmanager service.",
-		Groups: []monitoring.Group{
+		Groups: []Group{
 			{
 				Title: "Metrics",
-				Rows: []monitoring.Row{
+				Rows: []Row{
 					{
 						{
 							Name:              "prometheus_metrics_bloat",
 							Description:       "prometheus metrics payload size",
 							Query:             `http_response_size_bytes{handler="prometheus",job!="kubernetes-apiservers",job!="kubernetes-nodes",quantile="0.5"}`,
 							DataMayNotExist:   true,
-							Warning:           monitoring.Alert().GreaterOrEqual(20000),
-							PanelOptions:      monitoring.PanelOptions().Unit(monitoring.Bytes).LegendFormat("{{instance}}"),
-							Owner:             monitoring.ObservableOwnerDistribution,
+							Warning:           Alert().GreaterOrEqual(20000),
+							PanelOptions:      PanelOptions().Unit(Bytes).LegendFormat("{{instance}}"),
+							Owner:             ObservableOwnerDistribution,
 							PossibleSolutions: "none",
 						},
 					},
@@ -27,16 +25,16 @@ func Prometheus() *monitoring.Container {
 			},
 			{
 				Title: "Alerts",
-				Rows: []monitoring.Row{
+				Rows: []Row{
 					{
 						{
 							Name:              "alertmanager_notifications_failed_total",
 							Description:       "failed alertmanager notifications over 1m",
 							Query:             `sum by(integration) (rate(alertmanager_notifications_failed_total[1m]))`,
 							DataMayNotExist:   true,
-							Warning:           monitoring.Alert().GreaterOrEqual(1),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{integration}}"),
-							Owner:             monitoring.ObservableOwnerDistribution,
+							Warning:           Alert().GreaterOrEqual(1),
+							PanelOptions:      PanelOptions().LegendFormat("{{integration}}"),
+							Owner:             ObservableOwnerDistribution,
 							PossibleSolutions: "Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.",
 						},
 					},
@@ -45,37 +43,37 @@ func Prometheus() *monitoring.Container {
 			{
 				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
-				Rows: []monitoring.Row{
+				Rows: []Row{
 					{
-						sharedContainerCPUUsage("prometheus", monitoring.ObservableOwnerDistribution),
-						sharedContainerMemoryUsage("prometheus", monitoring.ObservableOwnerDistribution),
+						sharedContainerCPUUsage("prometheus", ObservableOwnerDistribution),
+						sharedContainerMemoryUsage("prometheus", ObservableOwnerDistribution),
 					},
 					{
-						sharedContainerRestarts("prometheus", monitoring.ObservableOwnerDistribution),
-						sharedContainerFsInodes("prometheus", monitoring.ObservableOwnerDistribution),
+						sharedContainerRestarts("prometheus", ObservableOwnerDistribution),
+						sharedContainerFsInodes("prometheus", ObservableOwnerDistribution),
 					},
 				},
 			},
 			{
 				Title:  "Provisioning indicators (not available on server)",
 				Hidden: true,
-				Rows: []monitoring.Row{
+				Rows: []Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("prometheus", monitoring.ObservableOwnerDistribution),
-						sharedProvisioningMemoryUsageLongTerm("prometheus", monitoring.ObservableOwnerDistribution),
+						sharedProvisioningCPUUsageLongTerm("prometheus", ObservableOwnerDistribution),
+						sharedProvisioningMemoryUsageLongTerm("prometheus", ObservableOwnerDistribution),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("prometheus", monitoring.ObservableOwnerDistribution),
-						sharedProvisioningMemoryUsageShortTerm("prometheus", monitoring.ObservableOwnerDistribution),
+						sharedProvisioningCPUUsageShortTerm("prometheus", ObservableOwnerDistribution),
+						sharedProvisioningMemoryUsageShortTerm("prometheus", ObservableOwnerDistribution),
 					},
 				},
 			},
 			{
 				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
 				Hidden: true,
-				Rows: []monitoring.Row{
+				Rows: []Row{
 					{
-						sharedKubernetesPodsAvailable("prometheus", monitoring.ObservableOwnerDistribution),
+						sharedKubernetesPodsAvailable("prometheus", ObservableOwnerDistribution),
 					},
 				},
 			},

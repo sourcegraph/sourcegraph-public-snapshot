@@ -1,25 +1,23 @@
 package main
 
-import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
-
-func ExecutorAndExecutorQueue() *monitoring.Container {
-	return &monitoring.Container{
+func ExecutorAndExecutorQueue() *Container {
+	return &Container{
 		Name:        "executor-queue",
 		Title:       "Executor Queue",
 		Description: "Coordinates the and executes jobs from the executor work queue.",
-		Groups: []monitoring.Group{
+		Groups: []Group{
 			{
 				Title: "Executor",
-				Rows: []monitoring.Row{
+				Rows: []Row{
 					{
 						{
 							Name:              "executor_queue_size",
 							Description:       "executor queue size",
 							Query:             `max(src_executor_queue_total)`,
 							DataMayNotExist:   true,
-							Warning:           monitoring.Alert().GreaterOrEqual(100),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("uploads queued for processing"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
+							Warning:           Alert().GreaterOrEqual(100),
+							PanelOptions:      PanelOptions().LegendFormat("uploads queued for processing"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -28,9 +26,9 @@ func ExecutorAndExecutorQueue() *monitoring.Container {
 							Query:           `sum(increase(src_executor_queue_total[30m])) / sum(increase(src_executor_queue_processor_total[30m]))`,
 							DataMayNotExist: true,
 
-							Warning:           monitoring.Alert().GreaterOrEqual(5),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("executor queue growth rate"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
+							Warning:           Alert().GreaterOrEqual(5),
+							PanelOptions:      PanelOptions().LegendFormat("executor queue growth rate"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 						{
@@ -38,9 +36,9 @@ func ExecutorAndExecutorQueue() *monitoring.Container {
 							Description:       "executor process errors every 5m",
 							Query:             `sum(increase(src_executor_queue_processor_errors_total[5m]))`,
 							DataMayNotExist:   true,
-							Warning:           monitoring.Alert().GreaterOrEqual(20),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("errors"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
+							Warning:           Alert().GreaterOrEqual(20),
+							PanelOptions:      PanelOptions().LegendFormat("errors"),
+							Owner:             ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
 					},
@@ -49,56 +47,56 @@ func ExecutorAndExecutorQueue() *monitoring.Container {
 			{
 				Title:  "Internal service requests",
 				Hidden: true,
-				Rows: []monitoring.Row{
+				Rows: []Row{
 					{
-						sharedFrontendInternalAPIErrorResponses("executor-queue", monitoring.ObservableOwnerCodeIntel),
+						sharedFrontendInternalAPIErrorResponses("executor-queue", ObservableOwnerCodeIntel),
 					},
 				},
 			},
 			{
 				Title:  "Container monitoring (not available on server)",
 				Hidden: true,
-				Rows: []monitoring.Row{
+				Rows: []Row{
 					{
-						sharedContainerCPUUsage("executor-queue", monitoring.ObservableOwnerCodeIntel),
-						sharedContainerMemoryUsage("executor-queue", monitoring.ObservableOwnerCodeIntel),
+						sharedContainerCPUUsage("executor-queue", ObservableOwnerCodeIntel),
+						sharedContainerMemoryUsage("executor-queue", ObservableOwnerCodeIntel),
 					},
 					{
-						sharedContainerRestarts("executor-queue", monitoring.ObservableOwnerCodeIntel),
-						sharedContainerFsInodes("executor-queue", monitoring.ObservableOwnerCodeIntel),
+						sharedContainerRestarts("executor-queue", ObservableOwnerCodeIntel),
+						sharedContainerFsInodes("executor-queue", ObservableOwnerCodeIntel),
 					},
 				},
 			},
 			{
 				Title:  "Provisioning indicators (not available on server)",
 				Hidden: true,
-				Rows: []monitoring.Row{
+				Rows: []Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("executor-queue", monitoring.ObservableOwnerCodeIntel),
-						sharedProvisioningMemoryUsageLongTerm("executor-queue", monitoring.ObservableOwnerCodeIntel),
+						sharedProvisioningCPUUsageLongTerm("executor-queue", ObservableOwnerCodeIntel),
+						sharedProvisioningMemoryUsageLongTerm("executor-queue", ObservableOwnerCodeIntel),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("executor-queue", monitoring.ObservableOwnerCodeIntel),
-						sharedProvisioningMemoryUsageShortTerm("executor-queue", monitoring.ObservableOwnerCodeIntel),
+						sharedProvisioningCPUUsageShortTerm("executor-queue", ObservableOwnerCodeIntel),
+						sharedProvisioningMemoryUsageShortTerm("executor-queue", ObservableOwnerCodeIntel),
 					},
 				},
 			},
 			{
 				Title:  "Golang runtime monitoring",
 				Hidden: true,
-				Rows: []monitoring.Row{
+				Rows: []Row{
 					{
-						sharedGoGoroutines("executor-queue", monitoring.ObservableOwnerCodeIntel),
-						sharedGoGcDuration("executor-queue", monitoring.ObservableOwnerCodeIntel),
+						sharedGoGoroutines("executor-queue", ObservableOwnerCodeIntel),
+						sharedGoGcDuration("executor-queue", ObservableOwnerCodeIntel),
 					},
 				},
 			},
 			{
 				Title:  "Kubernetes monitoring (ignore if using Docker Compose or server)",
 				Hidden: true,
-				Rows: []monitoring.Row{
+				Rows: []Row{
 					{
-						sharedKubernetesPodsAvailable("executor-queue", monitoring.ObservableOwnerCodeIntel),
+						sharedKubernetesPodsAvailable("executor-queue", ObservableOwnerCodeIntel),
 					},
 				},
 			},
