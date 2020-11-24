@@ -506,7 +506,7 @@ type CreatePullRequestInput struct {
 	// The body of the pull request (optional).
 	Body string `json:"body"`
 	// When true the PR will be in draft mode initially.
-	Draft bool `json:"-"`
+	Draft bool `json:"draft"`
 }
 
 // CreatePullRequest creates a PullRequest on Github.
