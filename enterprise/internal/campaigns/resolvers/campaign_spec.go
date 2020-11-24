@@ -203,6 +203,27 @@ func (r *campaignSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlba
 	}, nil
 }
 
+func (r *campaignSpecResolver) SupersedingCampaignSpec(ctx context.Context) (graphqlbackend.CampaignSpecResolver, error) {
+	svc := ee.NewService(r.store, r.httpFactory)
+	newest, err := svc.GetNewestCampaignSpec(ctx, r.store, r.campaignSpec, actor.FromContext(ctx).UID)
+	if err != nil {
+		return nil, err
+	}
+
+	// If this is the newest spec, then we can just return nil.
+	if newest == nil || newest.ID == r.campaignSpec.ID {
+		return nil, nil
+	}
+
+	// Although we may have the namespace fields already set on r, sync.Once
+	// values cannot be copied, so we'll have to leave them blank.
+	return &campaignSpecResolver{
+		store:        r.store,
+		httpFactory:  r.httpFactory,
+		campaignSpec: newest,
+	}, nil
+}
+
 func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {

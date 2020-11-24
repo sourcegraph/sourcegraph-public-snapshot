@@ -213,6 +213,57 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 		})
 	})
 
+	t.Run("GetNewest", func(t *testing.T) {
+		t.Run("NotFound", func(t *testing.T) {
+			opts := GetNewestCampaignSpecOpts{
+				NamespaceUserID: 1235,
+				Name:            "Foobar",
+				UserID:          1234567,
+			}
+
+			_, err := s.GetNewestCampaignSpec(ctx, opts)
+			if err != ErrNoResults {
+				t.Errorf("unexpected error: have=%v want=%v", err, ErrNoResults)
+			}
+		})
+
+		t.Run("NamespaceUser", func(t *testing.T) {
+			opts := GetNewestCampaignSpecOpts{
+				NamespaceUserID: 1235,
+				Name:            "Foobar",
+				UserID:          1235 + 1234,
+			}
+
+			have, err := s.GetNewestCampaignSpec(ctx, opts)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+
+			want := campaignSpecs[1]
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Errorf("unexpected campaign spec:\n%s", diff)
+			}
+		})
+
+		t.Run("NamespaceOrg", func(t *testing.T) {
+			opts := GetNewestCampaignSpecOpts{
+				NamespaceOrgID: 23,
+				Name:           "Foobar",
+				UserID:         1234 + 1234,
+			}
+
+			have, err := s.GetNewestCampaignSpec(ctx, opts)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+
+			want := campaignSpecs[0]
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Errorf("unexpected campaign spec:\n%s", diff)
+			}
+		})
+	})
+
 	t.Run("Delete", func(t *testing.T) {
 		for i := range campaignSpecs {
 			err := s.DeleteCampaignSpec(ctx, campaignSpecs[i].ID)

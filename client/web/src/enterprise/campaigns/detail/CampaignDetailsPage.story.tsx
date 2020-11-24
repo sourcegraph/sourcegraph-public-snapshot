@@ -65,6 +65,7 @@ const campaignDefaults: CampaignFields = {
     },
     currentSpec: {
         originalInput: 'name: awesome-campaign\ndescription: somestring',
+        supersedingCampaignSpec: null,
     },
 }
 
@@ -268,15 +269,25 @@ const stories: Record<string, string> = {
 
 for (const [name, url] of Object.entries(stories)) {
     add(name, () => {
+        const supersedingCampaignSpec = boolean('supersedingCampaignSpec', false)
         const viewerCanAdminister = boolean('viewerCanAdminister', true)
         const isClosed = boolean('isClosed', false)
         const campaign: CampaignFields = useMemo(
             () => ({
                 ...campaignDefaults,
+                currentSpec: {
+                    originalInput: campaignDefaults.currentSpec.originalInput,
+                    supersedingCampaignSpec: supersedingCampaignSpec
+                        ? {
+                              createdAt: subDays(new Date(), 1).toISOString(),
+                              applyURL: '/users/alice/campaigns/apply/newspecid',
+                          }
+                        : null,
+                },
                 viewerCanAdminister,
                 closedAt: isClosed ? subDays(now, 1).toISOString() : null,
             }),
-            [viewerCanAdminister, isClosed]
+            [supersedingCampaignSpec, viewerCanAdminister, isClosed]
         )
 
         const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])
