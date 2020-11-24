@@ -698,7 +698,7 @@ SET
 	updated_at = %s
 WHERE
 	id = ANY (%s)
-AND	permission = %s
+AND permission = %s
 AND object_type = %s
 `
 	if updatedAt.IsZero() {
