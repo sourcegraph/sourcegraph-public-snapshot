@@ -12,25 +12,35 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// scanUploadMeta scans upload metadata grouped by commit from the return value of `*Store.query`.
-func scanUploadMeta(rows *sql.Rows, queryErr error) (_ map[string][]UploadMeta, err error) {
+// scanCommitGraphView scans a commit graph view from the return value of `*Store.query`.
+func scanCommitGraphView(rows *sql.Rows, queryErr error) (_ *CommitGraphView, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	uploadMeta := map[string][]UploadMeta{}
+	commitGraphView := NewCommitGraphView()
+
 	for rows.Next() {
-		var commit string
-		var upload UploadMeta
-		if err := rows.Scan(&upload.UploadID, &commit, &upload.Root, &upload.Indexer, &upload.Distance, &upload.AncestorVisible, &upload.Overwritten); err != nil {
+		var meta UploadMeta
+		var commit, token string
+		var ancestorVisible, overwritten bool
+
+		if err := rows.Scan(&meta.UploadID, &commit, &token, &meta.Flags, &ancestorVisible, &overwritten); err != nil {
 			return nil, err
 		}
 
-		uploadMeta[commit] = append(uploadMeta[commit], upload)
+		if ancestorVisible {
+			meta.Flags |= FlagAncestorVisible
+		}
+		if overwritten {
+			meta.Flags |= FlagOverwritten
+		}
+
+		commitGraphView.Add(meta, commit, token)
 	}
 
-	return uploadMeta, nil
+	return commitGraphView, nil
 }
 
 // HasRepository determines if there is LSIF data for the given repository.
@@ -138,8 +148,8 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 
 	// Pull all queryable upload metadata known to this repository so we can correlate
 	// it with the current  commit graph.
-	uploadMeta, err := scanUploadMeta(tx.Store.Query(ctx, sqlf.Sprintf(`
-		SELECT id, commit, root, indexer, 0 as distance, true as ancestor_visible, false as overwritten
+	commitGraphView, err := scanCommitGraphView(tx.Store.Query(ctx, sqlf.Sprintf(`
+		SELECT id, commit, md5(root || ':' || indexer) as token, 0 as distance, true as ancestor_visible, false as overwritten
 		FROM lsif_uploads
 		WHERE state = 'completed' AND repository_id = %s
 	`, repositoryID)))
@@ -148,7 +158,7 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 	}
 
 	// Determine which uploads are visible to which commits for this repository
-	visibleUploads, err := calculateVisibleUploads(graph, uploadMeta)
+	visibleUploads, err := calculateVisibleUploads(graph, commitGraphView)
 	if err != nil {
 		return err
 	}
@@ -181,9 +191,9 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 				repositoryID,
 				dbutil.CommitBytea(commit),
 				uploadMeta.UploadID,
-				uploadMeta.Distance,
-				uploadMeta.AncestorVisible,
-				uploadMeta.Overwritten,
+				uploadMeta.Flags&MaxDistance,
+				(uploadMeta.Flags&FlagAncestorVisible) != 0,
+				(uploadMeta.Flags&FlagOverwritten) != 0,
 			); err != nil {
 				return err
 			}

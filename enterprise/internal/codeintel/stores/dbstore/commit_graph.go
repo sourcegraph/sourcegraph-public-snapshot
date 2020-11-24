@@ -6,35 +6,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-// UploadMeta contains the subset of fields from the lsif_uploads table that are used
-// to determine visibility of an upload from a particular commit.
-type UploadMeta struct {
-	UploadID int
-	Root     string
-	Indexer  string
-
-	// Distance is the number of commits between the definition and reference commits.
-	Distance int
-
-	// AncestorVisible indicates whether or not this upload was visible to the commit by
-	// looking for older uploads defined in an ancestor commit. False indicates that the
-	// upload is only visible via another upload defined in a descendant commit.
-	AncestorVisible bool
-
-	// Overwritten indicates that this upload defined on an ancestor commit that is farther
-	// away than an upload defined on a descendant commit that has the same root and indexer.
-	//
-	// If overwritten, this upload is not considered in nearest commit operations, but is kept
-	// in the database so that we can reconstruct the set of all ancestor-visible uploads of a
-	// commit, which is useful when determining the closest uploads with only a partial commit
-	// graph.
-	Overwritten bool
-}
-
 // calculateVisibleUploads transforms the given commit graph and the set of LSIF uploads
 // defined on each commit with LSIF upload into a map from a commit to the set of uploads
 // which are visible from that commit.
-func calculateVisibleUploads(graph map[string][]string, uploads map[string][]UploadMeta) (map[string][]UploadMeta, error) {
+func calculateVisibleUploads(graph map[string][]string, commitGraphView *CommitGraphView) (map[string][]UploadMeta, error) {
 	// Order parents before children
 	ordering, err := topologicalSort(graph)
 	if err != nil {
@@ -56,9 +31,11 @@ func calculateVisibleUploads(graph map[string][]string, uploads map[string][]Upl
 		defer wg.Done()
 
 		for commit := range graph {
-			for _, upload := range uploads[commit] {
-				upload.AncestorVisible = true
-				ancestorVisibleUploads[commit] = append(ancestorVisibleUploads[commit], upload)
+			for _, upload := range commitGraphView.Meta[commit] {
+				ancestorVisibleUploads[commit] = append(ancestorVisibleUploads[commit], UploadMeta{
+					UploadID: upload.UploadID,
+					Flags:    upload.Flags | FlagAncestorVisible,
+				})
 			}
 		}
 
@@ -66,11 +43,12 @@ func calculateVisibleUploads(graph map[string][]string, uploads map[string][]Upl
 			uploads := ancestorVisibleUploads[commit]
 			for _, parent := range graph[commit] {
 				for _, upload := range ancestorVisibleUploads[parent] {
-					upload.Distance++
-					uploads = addUploadMeta(uploads, upload, true)
+					uploads = addUploadMeta(uploads, commitGraphView, UploadMeta{
+						UploadID: upload.UploadID,
+						Flags:    upload.Flags + 1,
+					}, true)
 				}
 			}
-
 			ancestorVisibleUploads[commit] = uploads
 		}
 	}()
@@ -87,9 +65,11 @@ func calculateVisibleUploads(graph map[string][]string, uploads map[string][]Upl
 		defer wg.Done()
 
 		for commit := range graph {
-			for _, upload := range uploads[commit] {
-				upload.AncestorVisible = false
-				descendantVisibleUploads[commit] = append(descendantVisibleUploads[commit], upload)
+			for _, upload := range commitGraphView.Meta[commit] {
+				descendantVisibleUploads[commit] = append(descendantVisibleUploads[commit], UploadMeta{
+					UploadID: upload.UploadID,
+					Flags:    upload.Flags &^ FlagAncestorVisible,
+				})
 			}
 		}
 
@@ -101,11 +81,12 @@ func calculateVisibleUploads(graph map[string][]string, uploads map[string][]Upl
 			uploads := descendantVisibleUploads[commit]
 			for _, child := range reverseGraph[commit] {
 				for _, upload := range descendantVisibleUploads[child] {
-					upload.Distance++
-					uploads = addUploadMeta(uploads, upload, true)
+					uploads = addUploadMeta(uploads, commitGraphView, UploadMeta{
+						UploadID: upload.UploadID,
+						Flags:    upload.Flags + 1,
+					}, true)
 				}
 			}
-
 			descendantVisibleUploads[commit] = uploads
 		}
 	}()
@@ -128,7 +109,7 @@ func calculateVisibleUploads(graph map[string][]string, uploads map[string][]Upl
 	//     FindClosestDumpsFromGraphFragment for additional details.
 	for commit, uploads := range ancestorVisibleUploads {
 		for _, upload := range descendantVisibleUploads[commit] {
-			uploads = addUploadMeta(uploads, upload, false)
+			uploads = addUploadMeta(uploads, commitGraphView, upload, false)
 		}
 
 		ancestorVisibleUploads[commit] = uploads
@@ -144,27 +125,30 @@ func calculateVisibleUploads(graph map[string][]string, uploads map[string][]Upl
 // upload will be marked as overwritten and the upload will be appended to the end of the list
 // (if replace is false). If there is no such upload with the same root and indexer, then the
 // given upload will be appended to the end of the list.
-func addUploadMeta(uploads []UploadMeta, upload UploadMeta, replace bool) []UploadMeta {
-	for i, candidate := range uploads {
-		if upload.Root == candidate.Root && upload.Indexer == candidate.Indexer {
-			if upload.Distance < candidate.Distance || (upload.Distance == candidate.Distance && upload.UploadID < candidate.UploadID) {
-				u := uploads
-				if !replace {
-					u = append(uploads, UploadMeta{
-						UploadID:        uploads[i].UploadID,
-						Root:            uploads[i].Root,
-						Indexer:         uploads[i].Indexer,
-						Distance:        uploads[i].Distance,
-						AncestorVisible: uploads[i].AncestorVisible,
-						Overwritten:     true,
-					})
-				}
-				u[i] = upload
-				return u
-			}
+func addUploadMeta(uploads []UploadMeta, commitGraphView *CommitGraphView, upload UploadMeta, replace bool) []UploadMeta {
+	sharedFieldToken := commitGraphView.Tokens[upload.UploadID]
 
+	for i, candidate := range uploads {
+		candidateSharedFieldToken := commitGraphView.Tokens[candidate.UploadID]
+		if sharedFieldToken != candidateSharedFieldToken {
+			continue
+		}
+
+		uploadDistance := upload.Flags & MaxDistance
+		candidateDistance := candidate.Flags & MaxDistance
+
+		if uploadDistance < candidateDistance || (uploadDistance == candidateDistance && upload.UploadID < candidate.UploadID) {
+			if !replace {
+				uploads = append(uploads, UploadMeta{
+					UploadID: candidate.UploadID,
+					Flags:    candidate.Flags | FlagOverwritten,
+				})
+			}
+			uploads[i] = upload
 			return uploads
 		}
+
+		return uploads
 	}
 
 	return append(uploads, upload)

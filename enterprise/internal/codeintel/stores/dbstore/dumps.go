@@ -182,9 +182,9 @@ func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 		commits = append(commits, sqlf.Sprintf("%s", commit))
 	}
 
-	uploadMeta, err := scanUploadMeta(s.Store.Query(ctx, sqlf.Sprintf(
+	commitGraphView, err := scanCommitGraphView(s.Store.Query(ctx, sqlf.Sprintf(
 		`
-			SELECT nu.upload_id, encode(nu.commit_bytea, 'hex'), u.root, u.indexer, nu.distance, nu.ancestor_visible, nu.overwritten
+			SELECT nu.upload_id, encode(nu.commit_bytea, 'hex'), md5(u.root || ':' || u.indexer) as token, nu.distance, nu.ancestor_visible, nu.overwritten
 			FROM lsif_nearest_uploads nu
 			JOIN lsif_uploads u ON u.id = nu.upload_id
 			WHERE nu.repository_id = %s AND encode(nu.commit_bytea, 'hex') IN (%s) AND nu.ancestor_visible
@@ -196,14 +196,14 @@ func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 		return nil, err
 	}
 
-	visibleUploads, err := calculateVisibleUploads(graph, uploadMeta)
+	visibleUploads, err := calculateVisibleUploads(graph, commitGraphView)
 	if err != nil {
 		return nil, err
 	}
 
 	var ids []*sqlf.Query
 	for _, uploadMeta := range visibleUploads[commit] {
-		if !uploadMeta.Overwritten {
+		if (uploadMeta.Flags & FlagOverwritten) == 0 {
 			ids = append(ids, sqlf.Sprintf("%d", uploadMeta.UploadID))
 		}
 	}

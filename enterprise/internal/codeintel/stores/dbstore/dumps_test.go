@@ -102,21 +102,21 @@ func TestFindClosestDumps(t *testing.T) {
 		makeCommit(8): {makeCommit(6)},
 	}
 
-	visibleUploads, err := calculateVisibleUploads(graph, toUploadMeta(uploads))
+	visibleUploads, err := calculateVisibleUploads(graph, toCommitGraphView(uploads))
 	if err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}},
-		makeCommit(2): {{UploadID: 1, Distance: 1}},
-		makeCommit(3): {{UploadID: 2, Distance: 0}},
-		makeCommit(4): {{UploadID: 2, Distance: 1}},
-		makeCommit(5): {{UploadID: 1, Distance: 2}},
-		makeCommit(6): {{UploadID: 3, Distance: 1}},
-		makeCommit(7): {{UploadID: 3, Distance: 0}},
-		makeCommit(8): {{UploadID: 1, Distance: 4}},
+		makeCommit(1): {{UploadID: 1, Flags: 0}},
+		makeCommit(2): {{UploadID: 1, Flags: 1}},
+		makeCommit(3): {{UploadID: 2, Flags: 0}},
+		makeCommit(4): {{UploadID: 2, Flags: 1}},
+		makeCommit(5): {{UploadID: 1, Flags: 2}},
+		makeCommit(6): {{UploadID: 3, Flags: 1}},
+		makeCommit(7): {{UploadID: 3, Flags: 0}},
+		makeCommit(8): {{UploadID: 1, Flags: 4}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads), UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
@@ -165,16 +165,16 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 		makeCommit(8): {makeCommit(7)},
 	}
 
-	visibleUploads, err := calculateVisibleUploads(graph, toUploadMeta(uploads))
+	visibleUploads, err := calculateVisibleUploads(graph, toCommitGraphView(uploads))
 	if err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 1}},
-		makeCommit(2): {{UploadID: 1, Distance: 0}},
-		makeCommit(3): {{UploadID: 1, Distance: 1}},
+		makeCommit(1): {{UploadID: 1, Flags: 1}},
+		makeCommit(2): {{UploadID: 1, Flags: 0}},
+		makeCommit(3): {{UploadID: 1, Flags: 1}},
 		makeCommit(4): nil,
 		makeCommit(5): nil,
 		makeCommit(6): nil,
@@ -220,15 +220,15 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 		makeCommit(2): {makeCommit(1)},
 	}
 
-	visibleUploads, err := calculateVisibleUploads(graph, toUploadMeta(uploads))
+	visibleUploads, err := calculateVisibleUploads(graph, toCommitGraphView(uploads))
 	if err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 1}, {UploadID: 2, Distance: 1}},
-		makeCommit(2): {{UploadID: 1, Distance: 0}, {UploadID: 2, Distance: 0}},
+		makeCommit(1): {{UploadID: 1, Flags: 1}, {UploadID: 2, Flags: 1}},
+		makeCommit(2): {{UploadID: 1, Flags: 0}, {UploadID: 2, Flags: 0}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads), UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
@@ -292,19 +292,19 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 		makeCommit(6): {makeCommit(5)},
 	}
 
-	visibleUploads, err := calculateVisibleUploads(graph, toUploadMeta(uploads))
+	visibleUploads, err := calculateVisibleUploads(graph, toCommitGraphView(uploads))
 	if err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}, {UploadID: 2, Distance: 0}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 1}, {UploadID: 5, Distance: 1}},
-		makeCommit(2): {{UploadID: 1, Distance: 1}, {UploadID: 2, Distance: 1}, {UploadID: 3, Distance: 0}, {UploadID: 4, Distance: 0}, {UploadID: 5, Distance: 0}},
-		makeCommit(3): {{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 2}, {UploadID: 4, Distance: 1}, {UploadID: 5, Distance: 1}, {UploadID: 6, Distance: 0}},
-		makeCommit(4): {{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 2}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 1}, {UploadID: 7, Distance: 0}},
-		makeCommit(5): {{UploadID: 1, Distance: 3}, {UploadID: 2, Distance: 3}, {UploadID: 6, Distance: 1}, {UploadID: 7, Distance: 1}, {UploadID: 8, Distance: 0}},
-		makeCommit(6): {{UploadID: 1, Distance: 4}, {UploadID: 2, Distance: 4}, {UploadID: 7, Distance: 2}, {UploadID: 8, Distance: 1}, {UploadID: 9, Distance: 0}},
+		makeCommit(1): {{UploadID: 1, Flags: 0}, {UploadID: 2, Flags: 0}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 1}, {UploadID: 5, Flags: 1}},
+		makeCommit(2): {{UploadID: 1, Flags: 1}, {UploadID: 2, Flags: 1}, {UploadID: 3, Flags: 0}, {UploadID: 4, Flags: 0}, {UploadID: 5, Flags: 0}},
+		makeCommit(3): {{UploadID: 1, Flags: 2}, {UploadID: 2, Flags: 2}, {UploadID: 4, Flags: 1}, {UploadID: 5, Flags: 1}, {UploadID: 6, Flags: 0}},
+		makeCommit(4): {{UploadID: 1, Flags: 2}, {UploadID: 2, Flags: 2}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 1}, {UploadID: 7, Flags: 0}},
+		makeCommit(5): {{UploadID: 1, Flags: 3}, {UploadID: 2, Flags: 3}, {UploadID: 6, Flags: 1}, {UploadID: 7, Flags: 1}, {UploadID: 8, Flags: 0}},
+		makeCommit(6): {{UploadID: 1, Flags: 4}, {UploadID: 2, Flags: 4}, {UploadID: 7, Flags: 2}, {UploadID: 8, Flags: 1}, {UploadID: 9, Flags: 0}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads), UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
@@ -350,7 +350,7 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 		makeCommit(5): {makeCommit(4)},
 	}
 
-	visibleUploads, err := calculateVisibleUploads(graph, toUploadMeta(uploads))
+	visibleUploads, err := calculateVisibleUploads(graph, toCommitGraphView(uploads))
 	if err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
@@ -358,24 +358,24 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 
 	expectedVisibleUploads := map[string][]UploadMeta{
 		makeCommit(1): {
-			{UploadID: 1, Distance: 0}, {UploadID: 2, Distance: 1}, {UploadID: 3, Distance: 2}, {UploadID: 4, Distance: 3},
-			{UploadID: 5, Distance: 0}, {UploadID: 6, Distance: 1}, {UploadID: 7, Distance: 2}, {UploadID: 8, Distance: 3},
+			{UploadID: 1, Flags: 0}, {UploadID: 2, Flags: 1}, {UploadID: 3, Flags: 2}, {UploadID: 4, Flags: 3},
+			{UploadID: 5, Flags: 0}, {UploadID: 6, Flags: 1}, {UploadID: 7, Flags: 2}, {UploadID: 8, Flags: 3},
 		},
 		makeCommit(2): {
-			{UploadID: 1, Distance: 1}, {UploadID: 2, Distance: 0}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 2},
-			{UploadID: 5, Distance: 1}, {UploadID: 6, Distance: 0}, {UploadID: 7, Distance: 1}, {UploadID: 8, Distance: 2},
+			{UploadID: 1, Flags: 1}, {UploadID: 2, Flags: 0}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 2},
+			{UploadID: 5, Flags: 1}, {UploadID: 6, Flags: 0}, {UploadID: 7, Flags: 1}, {UploadID: 8, Flags: 2},
 		},
 		makeCommit(3): {
-			{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 1}, {UploadID: 3, Distance: 0}, {UploadID: 4, Distance: 1},
-			{UploadID: 5, Distance: 2}, {UploadID: 6, Distance: 1}, {UploadID: 7, Distance: 0}, {UploadID: 8, Distance: 1},
+			{UploadID: 1, Flags: 2}, {UploadID: 2, Flags: 1}, {UploadID: 3, Flags: 0}, {UploadID: 4, Flags: 1},
+			{UploadID: 5, Flags: 2}, {UploadID: 6, Flags: 1}, {UploadID: 7, Flags: 0}, {UploadID: 8, Flags: 1},
 		},
 		makeCommit(4): {
-			{UploadID: 1, Distance: 3}, {UploadID: 2, Distance: 2}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 0},
-			{UploadID: 5, Distance: 3}, {UploadID: 6, Distance: 2}, {UploadID: 7, Distance: 1}, {UploadID: 8, Distance: 0},
+			{UploadID: 1, Flags: 3}, {UploadID: 2, Flags: 2}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 0},
+			{UploadID: 5, Flags: 3}, {UploadID: 6, Flags: 2}, {UploadID: 7, Flags: 1}, {UploadID: 8, Flags: 0},
 		},
 		makeCommit(5): {
-			{UploadID: 1, Distance: 4}, {UploadID: 2, Distance: 3}, {UploadID: 3, Distance: 2}, {UploadID: 4, Distance: 1},
-			{UploadID: 5, Distance: 4}, {UploadID: 6, Distance: 3}, {UploadID: 7, Distance: 2}, {UploadID: 8, Distance: 1},
+			{UploadID: 1, Flags: 4}, {UploadID: 2, Flags: 3}, {UploadID: 3, Flags: 2}, {UploadID: 4, Flags: 1},
+			{UploadID: 5, Flags: 4}, {UploadID: 6, Flags: 3}, {UploadID: 7, Flags: 2}, {UploadID: 8, Flags: 1},
 		},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads), UploadMetaComparer); diff != "" {
@@ -414,14 +414,14 @@ func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 		makeCommit(1): {},
 	}
 
-	visibleUploads, err := calculateVisibleUploads(graph, toUploadMeta(uploads))
+	visibleUploads, err := calculateVisibleUploads(graph, toCommitGraphView(uploads))
 	if err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}},
+		makeCommit(1): {{UploadID: 1}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads), UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
@@ -463,18 +463,18 @@ func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 		makeCommit(6): {makeCommit(5)},
 	}
 
-	visibleUploads, err := calculateVisibleUploads(currentGraph, toUploadMeta(uploads))
+	visibleUploads, err := calculateVisibleUploads(currentGraph, toCommitGraphView(uploads))
 	if err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}},
-		makeCommit(2): {{UploadID: 1, Distance: 1}},
-		makeCommit(3): {{UploadID: 1, Distance: 2}},
-		makeCommit(5): {{UploadID: 2, Distance: 0}},
-		makeCommit(6): {{UploadID: 2, Distance: 1}},
+		makeCommit(1): {{UploadID: 1, Flags: 0}},
+		makeCommit(2): {{UploadID: 1, Flags: 1}},
+		makeCommit(3): {{UploadID: 1, Flags: 2}},
+		makeCommit(5): {{UploadID: 2, Flags: 0}},
+		makeCommit(6): {{UploadID: 2, Flags: 1}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads), UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
