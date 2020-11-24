@@ -249,7 +249,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		if err != nil {
 			// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
 			if errcode.IsUnauthorized(errors.Cause(err)) {
-				err = db.ExternalAccounts.SetExpired(ctx, acct.ID)
+				err = db.ExternalAccounts.TouchExpired(ctx, acct.ID)
 				if err != nil {
 					return errors.Wrapf(err, "set expired for external account %d", acct.ID)
 				}
@@ -265,7 +265,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			}
 			log15.Warn("PermsSyncer.syncUserPerms.proceedWithPartialResults", "userID", user.ID, "error", err)
 		} else {
-			err = db.ExternalAccounts.SetLastValid(ctx, acct.ID)
+			err = db.ExternalAccounts.TouchLastValid(ctx, acct.ID)
 			if err != nil {
 				return errors.Wrapf(err, "set last valid for external account %d", acct.ID)
 			}

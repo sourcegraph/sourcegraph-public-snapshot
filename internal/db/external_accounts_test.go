@@ -333,7 +333,7 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 	acct := accts[0]
 
 	t.Run("Exclude expired", func(t *testing.T) {
-		err := ExternalAccounts.SetExpired(ctx, acct.ID)
+		err := ExternalAccounts.TouchExpired(ctx, acct.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -348,7 +348,7 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 	})
 
 	t.Run("LookupUserAndSave should set expired_at to NULL", func(t *testing.T) {
-		err := ExternalAccounts.SetExpired(ctx, acct.ID)
+		err := ExternalAccounts.TouchExpired(ctx, acct.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -368,7 +368,7 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 	})
 
 	t.Run("AssociateUserAndSave should set expired_at to NULL", func(t *testing.T) {
-		err := ExternalAccounts.SetExpired(ctx, acct.ID)
+		err := ExternalAccounts.TouchExpired(ctx, acct.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -387,13 +387,13 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 		}
 	})
 
-	t.Run("SetLastValid should set expired_at to NULL", func(t *testing.T) {
-		err := ExternalAccounts.SetExpired(ctx, acct.ID)
+	t.Run("TouchLastValid should set expired_at to NULL", func(t *testing.T) {
+		err := ExternalAccounts.TouchExpired(ctx, acct.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		err = ExternalAccounts.SetLastValid(ctx, acct.ID)
+		err = ExternalAccounts.TouchLastValid(ctx, acct.ID)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -207,14 +207,14 @@ VALUES ($1, $2, $3, $4, $5, $6, $7)
 	return err
 }
 
-// SetExpired sets the given user external account to be expired now.
-func (*userExternalAccounts) SetExpired(ctx context.Context, id int32) error {
+// TouchExpired sets the given user external account to be expired now.
+func (*userExternalAccounts) TouchExpired(ctx context.Context, id int32) error {
 	if Mocks.ExternalAccounts.SetExpired != nil {
 		return Mocks.ExternalAccounts.SetExpired(ctx, id)
 	}
 
 	_, err := dbconn.Global.ExecContext(ctx, `
--- source: internal/db/external_accounts.go:userExternalAccounts.SetExpired
+-- source: internal/db/external_accounts.go:userExternalAccounts.TouchExpired
 UPDATE user_external_accounts
 SET expired_at = now()
 WHERE id = $1
@@ -222,14 +222,14 @@ WHERE id = $1
 	return err
 }
 
-// SetLastValid sets last valid time of the given user external account to be now.
-func (*userExternalAccounts) SetLastValid(ctx context.Context, id int32) error {
+// TouchLastValid sets last valid time of the given user external account to be now.
+func (*userExternalAccounts) TouchLastValid(ctx context.Context, id int32) error {
 	if Mocks.ExternalAccounts.SetLastValid != nil {
 		return Mocks.ExternalAccounts.SetLastValid(ctx, id)
 	}
 
 	_, err := dbconn.Global.ExecContext(ctx, `
--- source: internal/db/external_accounts.go:userExternalAccounts.SetLastValid
+-- source: internal/db/external_accounts.go:userExternalAccounts.TouchLastValid
 UPDATE user_external_accounts
 SET
 	expired_at = NULL,
