@@ -508,6 +508,7 @@ Check constraints:
  repo_id             | integer | not null
  clone_url           | text    | not null
 Indexes:
+    "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
     "external_service_repos_external_service_id" btree (external_service_id)
     "external_service_repos_repo_id" btree (repo_id)
 Foreign-key constraints:

@@ -11,7 +11,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -101,19 +102,7 @@ func (r *Reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 		delta: plan.delta,
 	}
 
-	err = e.ExecutePlan(ctx, plan)
-	if errcode.IsTerminal(err) {
-		// We don't want to retry on terminal error so we don't return an error
-		// from this function and set the NumFailures so high that the changeset is
-		// not dequeued up again.
-		msg := err.Error()
-		e.ch.FailureMessage = &msg
-		e.ch.ReconcilerState = campaigns.ReconcilerStateErrored
-		e.ch.NumFailures = ReconcilerMaxNumRetries + 999
-		return tx.UpdateChangeset(ctx, ch)
-	}
-
-	return err
+	return e.ExecutePlan(ctx, plan)
 }
 
 // ErrPublishSameBranch is returned by publish changeset if a changeset with
@@ -127,7 +116,7 @@ func (e ErrPublishSameBranch) Error() string {
 	return "cannot create changeset on the same branch in multiple campaigns"
 }
 
-func (e ErrPublishSameBranch) Terminal() bool { return true }
+func (e ErrPublishSameBranch) NonRetryable() bool { return true }
 
 type executor struct {
 	gitserverClient   GitserverClient
@@ -138,7 +127,7 @@ type executor struct {
 	ccs repos.ChangesetSource
 
 	repo   *repos.Repo
-	extSvc *repos.ExternalService
+	extSvc *types.ExternalService
 
 	// au is nil if we want to use the global credentials stored in the external
 	// service configuration.
@@ -234,7 +223,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 	return e.tx.UpdateChangeset(ctx, e.ch)
 }
 
-func (e *executor) buildChangesetSource(repo *repos.Repo, extSvc *repos.ExternalService) (repos.ChangesetSource, error) {
+func (e *executor) buildChangesetSource(repo *repos.Repo, extSvc *types.ExternalService) (repos.ChangesetSource, error) {
 	sources, err := e.sourcer(extSvc)
 	if err != nil {
 		return nil, err
@@ -320,7 +309,7 @@ func (e ErrMissingCredentials) Error() string {
 	return fmt.Sprintf("user does not have a valid credential for repository %q", e.repo)
 }
 
-func (e ErrMissingCredentials) Terminal() bool { return true }
+func (e ErrMissingCredentials) NonRetryable() bool { return true }
 
 // pushChangesetPatch creates the commits for the changeset on its codehost.
 func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
@@ -527,7 +516,7 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 	return nil
 }
 
-func buildCommitOpts(repo *repos.Repo, extSvc *repos.ExternalService, spec *campaigns.ChangesetSpec, a auth.Authenticator) (protocol.CreateCommitFromPatchRequest, error) {
+func buildCommitOpts(repo *repos.Repo, extSvc *types.ExternalService, spec *campaigns.ChangesetSpec, a auth.Authenticator) (protocol.CreateCommitFromPatchRequest, error) {
 	var opts protocol.CreateCommitFromPatchRequest
 
 	desc := spec.Spec
@@ -639,7 +628,7 @@ func (e ErrNoPushCredentials) Error() string {
 	return fmt.Sprintf("cannot use credentials of type %T to push commits", e.credentialsType)
 }
 
-func (e ErrNoPushCredentials) Terminal() bool { return true }
+func (e ErrNoPushCredentials) NonRetryable() bool { return true }
 
 // operation is an enum to distinguish between different reconciler operations.
 type operation string
@@ -867,8 +856,8 @@ func loadRepo(ctx context.Context, tx RepoStore, id api.RepoID) (*repos.Repo, er
 	return rs[0], nil
 }
 
-func loadExternalService(ctx context.Context, reposStore RepoStore, repo *repos.Repo) (*repos.ExternalService, error) {
-	var externalService *repos.ExternalService
+func loadExternalService(ctx context.Context, reposStore RepoStore, repo *repos.Repo) (*types.ExternalService, error) {
+	var externalService *types.ExternalService
 	args := repos.StoreListExternalServicesArgs{IDs: repo.ExternalServiceIDs()}
 
 	es, err := reposStore.ListExternalServices(ctx, args)

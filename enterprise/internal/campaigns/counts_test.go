@@ -1389,6 +1389,40 @@ func TestCalcCounts(t *testing.T) {
 				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
 			},
 		},
+		{
+			codehosts: extsvc.TypeGitHub,
+			name:      "GitHub still draft after reopen",
+			changesets: []*campaigns.Changeset{
+				setDraft(ghChangeset(1, daysAgo(2))),
+			},
+			start: daysAgo(2),
+			events: []*campaigns.ChangesetEvent{
+				event(t, daysAgo(1), campaigns.ChangesetEventKindGitHubClosed, 1),
+				event(t, daysAgo(0), campaigns.ChangesetEventKindGitHubReopened, 1),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(2), Total: 1, Draft: 1},
+				{Time: daysAgo(1), Total: 1, Closed: 1},
+				{Time: daysAgo(0), Total: 1, Draft: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitLab,
+			name:      "GitLab still draft after reopen",
+			changesets: []*campaigns.Changeset{
+				setDraft(glChangeset(1, daysAgo(2))),
+			},
+			start: daysAgo(2),
+			events: []*campaigns.ChangesetEvent{
+				glClosed(1, daysAgo(1), "user1"),
+				glReopen(1, daysAgo(0), "user1"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(2), Total: 1, Draft: 1},
+				{Time: daysAgo(1), Total: 1, Closed: 1},
+				{Time: daysAgo(0), Total: 1, Draft: 1},
+			},
+		},
 	}
 
 	for _, tc := range tests {
@@ -1576,6 +1610,19 @@ func glClosed(id int64, t time.Time, login string) *campaigns.ChangesetEvent {
 		ChangesetID: id,
 		Kind:        campaigns.ChangesetEventKindGitLabClosed,
 		Metadata: &gitlabwebhooks.MergeRequestCloseEvent{
+			MergeRequestEventCommon: gitlabwebhooks.MergeRequestEventCommon{
+				User: &gitlab.User{Username: login},
+			},
+		},
+		CreatedAt: t,
+	}
+}
+
+func glReopen(id int64, t time.Time, login string) *campaigns.ChangesetEvent {
+	return &campaigns.ChangesetEvent{
+		ChangesetID: id,
+		Kind:        campaigns.ChangesetEventKindGitLabReopened,
+		Metadata: &gitlabwebhooks.MergeRequestReopenEvent{
 			MergeRequestEventCommon: gitlabwebhooks.MergeRequestEventCommon{
 				User: &gitlab.User{Username: login},
 			},

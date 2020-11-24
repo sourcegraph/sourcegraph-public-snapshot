@@ -43,7 +43,7 @@ export function getProviders(
 ): SearchFieldProviders {
     const scannedQueries = searchQueries.pipe(
         map(rawQuery => {
-            const scanned = scanSearchQuery(rawQuery, options.interpretComments ?? false)
+            const scanned = scanSearchQuery(rawQuery, options.interpretComments ?? false, options.patternType)
             return { rawQuery, scanned }
         }),
         publishReplay(1),
@@ -72,7 +72,9 @@ export function getProviders(
                     .pipe(
                         first(),
                         map(({ scanned }) =>
-                            scanned.type === 'error' ? null : getHoverResult(scanned.term, position)
+                            scanned.type === 'error'
+                                ? null
+                                : getHoverResult(scanned.term, position, options.enableSmartQuery)
                         ),
                         takeUntil(fromEventPattern(handler => token.onCancellationRequested(handler)))
                     )

@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -19,12 +18,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -62,7 +63,6 @@ func TestReconcilerProcess(t *testing.T) {
 			Changeset: &campaigns.Changeset{ExternalID: "100000"},
 		},
 	}
-	notFoundErrMsg := notFoundErr.Error()
 
 	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
 	campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
@@ -87,7 +87,8 @@ func TestReconcilerProcess(t *testing.T) {
 
 		wantGitserverCommit bool
 
-		wantChangeset changesetAssertions
+		wantChangeset       changesetAssertions
+		wantNonRetryableErr bool
 	}
 
 	tests := map[string]testCase{
@@ -667,14 +668,7 @@ func TestReconcilerProcess(t *testing.T) {
 
 			wantLoadFromCodeHost: true,
 
-			wantChangeset: changesetAssertions{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				failureMessage:   &notFoundErrMsg,
-				externalID:       "100000",
-				reconcilerState:  campaigns.ReconcilerStateErrored,
-				numFailures:      ReconcilerMaxNumRetries + 999,
-				unsynced:         true,
-			},
+			wantNonRetryableErr: true,
 		},
 	}
 
@@ -748,8 +742,13 @@ func TestReconcilerProcess(t *testing.T) {
 				Sourcer:           sourcer,
 				Store:             store,
 			}
-			if err := rec.process(ctx, store, changeset); err != nil {
-				t.Fatalf("reconciler process failed: %s", err)
+			err := rec.process(ctx, store, changeset)
+			if err != nil {
+				if tc.wantNonRetryableErr && errcode.IsNonRetryable(err) {
+					// all good
+				} else {
+					t.Fatalf("reconciler process failed: %s", err)
+				}
 			}
 
 			// Assert that all the calls happened
@@ -783,6 +782,10 @@ func TestReconcilerProcess(t *testing.T) {
 
 			if have, want := fakeSource.CloseChangesetCalled, tc.wantCloseOnCodeHost; have != want {
 				t.Fatalf("wrong CloseChangeset call. wantCalled=%t, wasCalled=%t", want, have)
+			}
+
+			if tc.wantNonRetryableErr {
+				return
 			}
 
 			// Assert that the changeset in the database looks like we want
@@ -1056,23 +1059,14 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 	}
 
 	err := rec.process(ctx, store, otherChangeset)
-	if err != nil {
-		t.Fatalf("reconciler process failed: %s", err)
+	if err == nil {
+		t.Fatal("reconciler did not return error")
 	}
 
-	// We expect the changeset to be errored, but without any retries left, so
-	// we don't retry.
-	wantMsg := ErrPublishSameBranch{}.Error()
-	reloadAndAssertChangeset(t, ctx, store, otherChangeset, changesetAssertions{
-		repo:            otherChangeset.RepoID,
-		currentSpec:     otherChangesetSpec.ID,
-		ownedByCampaign: otherCampaign.ID,
-
-		failureMessage:   &wantMsg,
-		reconcilerState:  campaigns.ReconcilerStateErrored,
-		publicationState: campaigns.ChangesetPublicationStateUnpublished,
-		numFailures:      ReconcilerMaxNumRetries + 999,
-	})
+	// We expect a non-retryable error to be returned.
+	if !errcode.IsNonRetryable(err) {
+		t.Fatalf("error is not non-retryabe. have=%s", err)
+	}
 }
 
 func buildGithubPR(now time.Time, externalState campaigns.ChangesetExternalState) *github.PullRequest {

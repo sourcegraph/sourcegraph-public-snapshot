@@ -14,6 +14,8 @@ import (
 	"github.com/goware/urlx"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/xeipuuv/gojsonschema"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -23,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/xeipuuv/gojsonschema"
 )
 
 // RepoFields are lazy loaded data fields on a Repo (from the DB).

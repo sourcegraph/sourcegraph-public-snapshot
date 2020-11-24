@@ -89,6 +89,11 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 		currentReviewState = campaigns.ChangesetReviewStatePending
 
 		lastReviewByAuthor = map[string]campaigns.ChangesetReviewState{}
+		// The draft state is tracked alongside the "external state" on GitHub and GitLab,
+		// that means we need to take changes to this state into account separately. On reopen,
+		// we cannot simply say it's open, because it could be it was converted to a draft while
+		// it was closed. Hence, we need to track the state using this variable.
+		isDraft = currentExtState == campaigns.ChangesetExternalStateDraft
 	)
 
 	pushStates := func(t time.Time) {
@@ -129,6 +134,7 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 			pushStates(et)
 
 		case campaigns.ChangesetEventKindGitLabMarkWorkInProgress:
+			isDraft = true
 			// This event only matters when the changeset is open, otherwise a change in the title won't change the overall external state.
 			if currentExtState == campaigns.ChangesetExternalStateOpen {
 				currentExtState = campaigns.ChangesetExternalStateDraft
@@ -136,13 +142,16 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 			}
 
 		case campaigns.ChangesetEventKindGitHubConvertToDraft:
+			isDraft = true
 			// Merged is a final state. We can ignore everything after.
 			if currentExtState != campaigns.ChangesetExternalStateMerged {
 				currentExtState = campaigns.ChangesetExternalStateDraft
 				pushStates(et)
 			}
 
-		case campaigns.ChangesetEventKindGitLabUnmarkWorkInProgress:
+		case campaigns.ChangesetEventKindGitLabUnmarkWorkInProgress,
+			campaigns.ChangesetEventKindGitHubReadyForReview:
+			isDraft = false
 			// This event only matters when the changeset is open, otherwise a change in the title won't change the overall external state.
 			if currentExtState == campaigns.ChangesetExternalStateDraft {
 				currentExtState = campaigns.ChangesetExternalStateOpen
@@ -151,11 +160,14 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 
 		case campaigns.ChangesetEventKindGitHubReopened,
 			campaigns.ChangesetEventKindBitbucketServerReopened,
-			campaigns.ChangesetEventKindGitLabReopened,
-			campaigns.ChangesetEventKindGitHubReadyForReview:
+			campaigns.ChangesetEventKindGitLabReopened:
 			// Merged is a final state. We can ignore everything after.
 			if currentExtState != campaigns.ChangesetExternalStateMerged {
-				currentExtState = campaigns.ChangesetExternalStateOpen
+				if isDraft {
+					currentExtState = campaigns.ChangesetExternalStateDraft
+				} else {
+					currentExtState = campaigns.ChangesetExternalStateOpen
+				}
 				pushStates(et)
 			}
 
