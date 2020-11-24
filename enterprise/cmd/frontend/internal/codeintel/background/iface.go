@@ -35,6 +35,7 @@ type DBStore interface {
 	GetRepositoriesWithIndexConfiguration(ctx context.Context) ([]int, error)
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (dbstore.IndexConfiguration, bool, error)
 	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
+	OldestDumpForRepository(ctx context.Context, repositoryID int) (dbstore.Dump, bool, error)
 }
 
 type DBStoreShim struct {
@@ -60,4 +61,5 @@ type GitserverClient interface {
 	FileExists(ctx context.Context, repositoryID int, commit, file string) (bool, error)
 	RawContents(ctx context.Context, repositoryID int, commit, file string) ([]byte, error)
 	CommitGraph(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (map[string][]string, error)
+	CommitDate(ctx context.Context, repositoryID int, commit string) (time.Time, error)
 }
