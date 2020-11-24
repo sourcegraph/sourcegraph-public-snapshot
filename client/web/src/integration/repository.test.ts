@@ -799,7 +799,7 @@ describe('Repository', () => {
                     return {
                         textContent: decorable.querySelector('.test-file-decoration-text')?.textContent,
                         percentage: decorable
-                            .querySelector('.test-file-decoration-progress')
+                            .querySelector('.test-file-decoration-meter')
                             ?.getAttribute('aria-valuenow'),
                     }
                 },

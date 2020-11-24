@@ -13,7 +13,7 @@ export const createDecorationType = (): TextDocumentDecorationType => ({ key: un
  */
 export function validateFileDecoration(fileDecoration: unknown): fileDecoration is FileDecoration {
     // TODO(tj): Create validators for every provider result to prevent UI errors
-
+    // Only need to validate properties that could cause UI errors (e.g. ensure objects aren't passed as React children)
     const validAfter =
         typeof fileDecoration === 'object' &&
         fileDecoration !== null &&
@@ -23,14 +23,14 @@ export function validateFileDecoration(fileDecoration: unknown): fileDecoration 
         hasProperty('value')(fileDecoration.after) &&
         typeof fileDecoration.after.value === 'string'
 
-    const validPercentage =
+    const validMeter =
         typeof fileDecoration === 'object' &&
         fileDecoration !== null &&
-        hasProperty('percentage')(fileDecoration) &&
-        fileDecoration.percentage &&
-        typeof fileDecoration.percentage === 'object' &&
-        hasProperty('value')(fileDecoration.percentage) &&
-        typeof fileDecoration.percentage.value === 'number'
+        hasProperty('meter')(fileDecoration) &&
+        fileDecoration.meter &&
+        typeof fileDecoration.meter === 'object' &&
+        hasProperty('value')(fileDecoration.meter) &&
+        typeof fileDecoration.meter.value === 'number'
 
-    return validAfter || validPercentage
+    return validAfter || validMeter
 }

@@ -6,7 +6,7 @@
     //
     // See also MIN_ENTRIES_FOR_COLUMN_LAYOUT.
     &--columns {
-        column-gap: 2.25rem;
+        column-gap: 1.5rem;
         column-width: 13rem;
         column-rule: 1px solid var(--border-color);
         border-right: solid 1px var(--border-color);
@@ -20,9 +20,6 @@
         @media (min-width: $media-md) {
             column-count: 4;
         }
-
-        // TODO(tj): reduce gap + pr
-        padding-right: 1.125rem;
     }
 
     &--no-decorations {
@@ -38,6 +35,7 @@
     white-space: nowrap;
 
     margin-left: -0.25rem;
+    margin-right: -0.25rem;
     padding: 0.125rem 0.25rem;
 
     break-inside: avoid-column;

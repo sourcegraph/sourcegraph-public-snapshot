@@ -966,22 +966,66 @@ declare module 'sourcegraph' {
         /** An optional object that describes the text content contributed by the decoration */
         after?: FileDecorationAttachmentRenderOptions
 
-        /** An optional object that describes a progress bar contributed by the decoration */
-        percentage?: {
-            /** Integer from 0 to 100. */
+        /**
+         * Describes a meter bar like the [HTML5 `<meter>`
+         * element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter)
+         * to be rendered after the file/directory name.
+         */
+        meter?: {
+            /**
+             * The current numeric value. This must be between the minimum and maximum values
+             * (min attribute and max attribute) if they are specified. If unspecified or
+             * malformed, the value is 0. If specified, but not within the range given by
+             * the min attribute and max attribute, the value is equal to the nearest
+             * end of the range.
+             */
             value: number
 
-            /** The CSS background-color property value for the progress bar. */
-            color?: string
+            /**
+             * The lower numeric bound of the measured range. This must be less than
+             * the maximum value (max attribute), if specified. If unspecified, the
+             * minimum value is 0.
+             */
+            min?: number
 
-            /** Overwrite color for light themes. */
-            light?: string
+            /**
+             * The upper numeric bound of the measured range. This must be greater
+             * than the minimum value (min attribute), if specified. If unspecified,
+             * the maximum value is 1.
+             */
+            max?: number
 
-            /** Overwrite color for dark themes. */
-            dark?: string
+            /**
+             * The upper numeric bound of the low end of the measured range. This
+             * must be greater than the minimum value (min attribute), and it also
+             * must be less than the high value and maximum value (high attribute
+             * and max attribute, respectively), if any are specified. If
+             * unspecified, or if less than the minimum value, the low value is
+             * equal to the minimum value.
+             */
+            low?: number
 
-            /** Overwrite color for when the node is selected. Should be the same for both light and dark themes */
-            selected?: string
+            /**
+             * The lower numeric bound of the high end of the measured range. This
+             * must be less than the maximum value (max attribute), and it also must
+             * be greater than the low value and minimum value (low attribute and
+             * min attribute, respectively), if any are specified. If unspecified,
+             * or if greater than the maximum value, the high value is equal to the
+             * maximum value.
+             */
+            high?: number
+
+            /**
+             * This attribute indicates the optimal numeric value. It must be within
+             * the range (as defined by the min attribute and max attribute). When
+             * used with the low attribute and high attribute, it gives an
+             * indication where along the range is considered preferable. For
+             * example, if it is between the min attribute and the low attribute,
+             * then the lower range is considered preferred. The browser may color
+             * the meter's bar differently depending on whether the value is less
+             * than or equal to the optimum value.
+             */
+            optimum?: number
 
             /** Tooltip text to display when hovering over the progress bar. */
             hoverMessage?: string

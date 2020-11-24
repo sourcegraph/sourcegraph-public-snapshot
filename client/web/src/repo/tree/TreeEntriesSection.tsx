@@ -3,8 +3,8 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import classNames from 'classnames'
 import { Link } from '../../../../shared/src/components/Link'
 import { FileDecorationsByPath } from 'sourcegraph'
-import { renderFileDecorations } from '../../tree/util'
 import { ThemeProps } from '../../../../shared/src/theme'
+import { FileDecorator } from '../../tree/FileDecorator'
 
 /**
  * Use a multi-column layout for tree entries when there are at least this many. See TreeEntriesSection.scss
@@ -69,7 +69,7 @@ export const TreeEntriesSection: React.FunctionComponent<TreeEntriesSectionProps
     // and can decide whether or not to render dividers
     // No need to memoize decorations, since this component should only rerender when entries change
     const renderedDecorationsByIndex = directChildren.map(entry =>
-        renderFileDecorations({
+        FileDecorator({
             // If component is not specified, or it is 'page', render it.
             fileDecorations: fileDecorationsByPath[entry.path]?.filter(
                 decoration => decoration?.component !== 'sidebar'
@@ -86,7 +86,7 @@ export const TreeEntriesSection: React.FunctionComponent<TreeEntriesSectionProps
         <div
             className={
                 isColumnLayout
-                    ? classNames('tree-entries-section--columns', {
+                    ? classNames('tree-entries-section--columns pr-2', {
                           'tree-entries-section--no-decorations': noDecorations,
                       })
                     : undefined

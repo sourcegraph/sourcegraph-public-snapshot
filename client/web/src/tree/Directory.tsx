@@ -4,9 +4,9 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { FileDecoration } from 'sourcegraph'
-import { TreeNode } from './Tree'
+import { FileDecorator } from './FileDecorator'
 import { TreeLayerProps } from './TreeLayer'
-import { renderFileDecorations, treePadding } from './util'
+import { treePadding } from './util'
 
 interface TreeChildProps extends TreeLayerProps {
     className: string
@@ -35,7 +35,7 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                 data-tree-path={props.entryInfo.path}
             >
                 <div className="tree__row-contents-text">
-                    <div className="d-flex align-items-center">
+                    <div className="d-flex">
                         <a
                             // needed because of dynamic styling
                             // eslint-disable-next-line react/forbid-dom-props
@@ -63,7 +63,7 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                         </Link>
                     </div>
                     {/* If component is not specified, or it is 'sidebar', render it. */}
-                    {renderFileDecorations({
+                    {FileDecorator({
                         fileDecorations: props.fileDecorations?.filter(decoration => decoration?.component !== 'page'),
                         isDirectory: true,
                         isLightTheme: props.isLightTheme,

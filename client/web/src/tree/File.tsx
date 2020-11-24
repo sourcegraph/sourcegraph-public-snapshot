@@ -2,7 +2,8 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { TreeLayerProps } from './TreeLayer'
-import { maxEntries, renderFileDecorations, treePadding } from './util'
+import { maxEntries, treePadding } from './util'
+import { FileDecorator } from './FileDecorator'
 
 interface FileProps extends TreeLayerProps {
     className: string
@@ -14,7 +15,7 @@ interface FileProps extends TreeLayerProps {
 }
 
 export const File: React.FunctionComponent<FileProps> = props => {
-    const renderedFileDecorations = renderFileDecorations({
+    const renderedFileDecorations = FileDecorator({
         // If component is not specified, or it is 'sidebar', render it.
         fileDecorations: props.fileDecorations?.filter(decoration => decoration?.component !== 'page'),
         isLightTheme: props.isLightTheme,
