@@ -25,7 +25,9 @@ const toHover = (token: DecoratedToken): string => {
                             return '**Negated word boundary**. Match a position between two word characters, or a position between two non-word characters. This is the negation of `\\b`.'
                     }
                 case RegexpMetaKind.CharacterClass:
-                    return '**Character set**. Match any character in the set.'
+                    return token.value.startsWith('[^')
+                        ? '**Negated character class**. Match any character _not_ inside the square brackets.'
+                        : '**Character class**. Match any character inside the square brackets.'
                 case RegexpMetaKind.CharacterSet:
                     switch (token.value) {
                         case '.':
