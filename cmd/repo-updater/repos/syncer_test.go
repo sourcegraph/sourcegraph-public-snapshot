@@ -13,6 +13,7 @@ import (
 	"github.com/gitchander/permutation"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -1695,7 +1696,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 			conf.Mock(nil)
 
 			// If the user has the AllowUserExternalServicePrivate tag, user service can also sync private code
-			_, err := db.ExecContext(ctx, "UPDATE users SET tags = '{\"AllowUserExternalServicePrivate\"}' WHERE id = $1", userID)
+			_, err := db.ExecContext(ctx, "UPDATE users SET tags = $1 WHERE id = $2", pq.Array([]string{repos.TagAllowUserExternalServicePrivate}), userID)
 			if err != nil {
 				t.Fatal(err)
 			}
