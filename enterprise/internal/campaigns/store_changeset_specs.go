@@ -466,7 +466,6 @@ func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) *sqlf.Query {
 		getRewirerMappingsQueryFmtstr,
 		opts.CampaignSpecID,
 		opts.CampaignID,
-		opts.CampaignID,
 		opts.CampaignSpecID,
 		opts.CampaignID,
 		opts.CampaignID,
@@ -496,7 +495,7 @@ WITH
 		LEFT JOIN changesets ON
 			changesets.repo_id = changeset_specs.repo_id AND
 			changesets.current_spec_id IS NOT NULL AND
-			((changesets.campaign_ids ? %s) OR changesets.owned_by_campaign_id = %s) AND
+			changesets.owned_by_campaign_id = %s AND
 			(SELECT spec FROM changeset_specs WHERE changeset_specs.id = changesets.current_spec_id)->>'headRef' = changeset_specs.spec->>'headRef'
 		INNER JOIN repo ON changeset_specs.repo_id = repo.id
 		WHERE
