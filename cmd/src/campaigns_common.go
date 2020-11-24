@@ -96,6 +96,8 @@ func newCampaignsApplyFlags(flagSet *flag.FlagSet, cacheDir, tempDir string) *ca
 		"If true, deletes downloaded repository archives after executing campaign steps.",
 	)
 
+	flagSet.BoolVar(verbose, "v", false, "print verbose output")
+
 	return caf
 }
 
