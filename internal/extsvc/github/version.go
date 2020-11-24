@@ -20,7 +20,7 @@ var allMatchingSemver = semver.MustParse("99.99.99")
 const versionCacheResetTime = 6 * 60 * time.Minute
 
 type versionCache struct {
-	mu        sync.RWMutex
+	mu        sync.Mutex
 	versions  map[string]*semver.Version
 	lastReset time.Time
 }
@@ -47,28 +47,17 @@ func normalizeURL(rawURL string) string {
 // error occurs, we print a warning to the logs but don't fail and return the allMatchingSemver.
 func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
 	url := normalizeURL(c.apiURL.String())
+	globalVersionCache.mu.Lock()
+	defer globalVersionCache.mu.Unlock()
 
-	globalVersionCache.mu.RLock()
 	if globalVersionCache.lastReset.IsZero() || time.Now().After(globalVersionCache.lastReset.Add(versionCacheResetTime)) {
-		globalVersionCache.mu.RUnlock()
-		globalVersionCache.mu.Lock()
-
 		// Clear cache and set last expiry to now.
 		globalVersionCache.lastReset = time.Now()
 		globalVersionCache.versions = make(map[string]*semver.Version)
-
-		globalVersionCache.mu.Unlock()
-		globalVersionCache.mu.RLock()
 	}
-
 	if version, ok := globalVersionCache.versions[url]; ok {
-		globalVersionCache.mu.RUnlock()
 		return version
 	}
-
-	globalVersionCache.mu.RUnlock()
-	globalVersionCache.mu.Lock()
-	defer globalVersionCache.mu.Unlock()
 	version := c.fetchGitHubVersion(ctx)
 	globalVersionCache.versions[url] = version
 	return version
