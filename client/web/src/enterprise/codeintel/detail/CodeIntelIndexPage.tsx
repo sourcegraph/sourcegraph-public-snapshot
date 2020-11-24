@@ -11,6 +11,7 @@ import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetrySer
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { ErrorAlert } from '../../../components/alerts'
+import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifIndexFields } from '../../../graphql-operations'
 import { CodeIntelStateBanner } from '../shared/CodeIntelStateBanner'
@@ -147,15 +148,18 @@ interface CodeIntelIndexPageTitleProps {
 }
 
 const CodeIntelIndexPageTitle: FunctionComponent<CodeIntelIndexPageTitleProps> = ({ index, actions, className }) => (
-    <div className={classNames('d-flex flex-wrap align-items-center', className)}>
-        <h2 className="flex-grow-1">
-            <span className="text-muted">Auto-index record for commit</span>
-            <span className="ml-2">
-                {index.projectRoot ? index.projectRoot.commit.abbreviatedOID : index.inputCommit.slice(0, 7)}
-            </span>
-        </h2>
-        {actions}
-    </div>
+    <PageHeader
+        title={
+            <>
+                <span className="text-muted">Auto-index record for commit</span>
+                <span className="ml-2">
+                    {index.projectRoot ? index.projectRoot.commit.abbreviatedOID : index.inputCommit.slice(0, 7)}
+                </span>
+            </>
+        }
+        actions={actions}
+        className={className}
+    />
 )
 
 interface CodeIntelDeleteIndexProps {
