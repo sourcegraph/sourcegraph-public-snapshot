@@ -518,7 +518,7 @@ SELECT changeset_spec_id, changeset_id, repo_id FROM branch_mappings
 
 UNION ALL
 
--- Finally, fetch all changesets mapped to no spec in the campaign spec that aren't part of tracked_mappings and branch_mappings. Those are to be closed.
+-- Finally, fetch all changesets that didn't match a changeset spec in the campaign spec and that aren't part of tracked_mappings and branch_mappings. Those are to be closed.
 SELECT 0 as changeset_spec_id, changesets.id as changeset_id, changesets.repo_id as repo_id
 FROM changesets
 INNER JOIN repo ON changesets.repo_id = repo.id
