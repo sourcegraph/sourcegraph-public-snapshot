@@ -447,11 +447,11 @@ type GetRewirerMappingsOpts struct {
 // Spec 3 should get a new Changeset, since its branch doesn't match Changeset 3's branch.
 // Spec 4 should be attached to Changeset 4, since it tracks PR #333 in Repo C.
 // Changeset 3 doesn't have a matching spec and should be detached from the campaign (and closed) (ChangesetSpec == 0, Changeset != 0).
-func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsOpts) (mappings campaigns.RewirerMappings, err error) {
+func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsOpts) (mappings RewirerMappings, err error) {
 	q := getRewirerMappingsQuery(opts)
 
 	err = s.query(ctx, q, func(sc scanner) error {
-		var c campaigns.RewirerMapping
+		var c RewirerMapping
 		if err := sc.Scan(&c.ChangesetSpecID, &c.ChangesetID, &c.RepoID); err != nil {
 			return err
 		}

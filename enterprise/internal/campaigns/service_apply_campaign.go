@@ -175,7 +175,7 @@ func (s *Service) ReconcileCampaign(ctx context.Context, campaignSpec *campaigns
 }
 
 type ChangesetRewirer struct {
-	Mappings campaigns.RewirerMappings
+	Mappings RewirerMappings
 	Campaign *campaigns.Campaign
 	TX       *Store
 	RStore   repos.Store
