@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -26,7 +27,7 @@ import (
 // A GithubSource yields repositories from a single Github connection configured
 // in Sourcegraph via the external services configuration.
 type GithubSource struct {
-	svc             *ExternalService
+	svc             *types.ExternalService
 	config          *schema.GitHubConnection
 	exclude         excludeFunc
 	excludeArchived bool
@@ -50,7 +51,7 @@ var _ DraftChangesetSource = &GithubSource{}
 var _ ChangesetSource = &GithubSource{}
 
 // NewGithubSource returns a new GithubSource from the given external service.
-func NewGithubSource(svc *ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -58,7 +59,7 @@ func NewGithubSource(svc *ExternalService, cf *httpcli.Factory) (*GithubSource, 
 	return newGithubSource(svc, &c, cf)
 }
 
-func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
+func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -174,8 +175,8 @@ func (s GithubSource) ListRepos(ctx context.Context, results chan SourceResult) 
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s GithubSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+func (s GithubSource) ExternalServices() types.ExternalServices {
+	return types.ExternalServices{s.svc}
 }
 
 // CreateChangeset creates the given changeset on the code host.

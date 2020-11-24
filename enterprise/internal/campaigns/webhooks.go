@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -82,7 +83,7 @@ func (h Webhook) getRepoForPR(
 	return rs[0], nil
 }
 
-func extractExternalServiceID(extSvc *repos.ExternalService) (string, error) {
+func extractExternalServiceID(extSvc *types.ExternalService) (string, error) {
 	c, err := extSvc.Configuration()
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to get external service config")
@@ -224,7 +225,7 @@ func (h *GitHubWebhook) Register(router *webhooks.GitHubWebhook) {
 
 // handleGithubWebhook is the entry point for webhooks from the webhook router, see the events
 // it's registered to handle in GitHubWebhook.Register
-func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *repos.ExternalService, payload interface{}) error {
+func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
 	m := new(multierror.Error)
 	externalServiceID, err := extractExternalServiceID(extSvc)
 	if err != nil {
@@ -806,7 +807,7 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repos.ExternalService, *httpError) {
+func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *types.ExternalService, *httpError) {
 	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
@@ -833,7 +834,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
 	}
 
-	var extSvc *repos.ExternalService
+	var extSvc *types.ExternalService
 	for _, e := range es {
 		if externalServiceID != 0 && e.ID != externalServiceID {
 			continue

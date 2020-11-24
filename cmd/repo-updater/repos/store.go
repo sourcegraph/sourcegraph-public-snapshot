@@ -22,13 +22,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // A Store exposes methods to read and write repos and external services.
 type Store interface {
-	GetExternalService(ctx context.Context, id int64) (*ExternalService, error)
-	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
-	UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) error
+	GetExternalService(ctx context.Context, id int64) (*types.ExternalService, error)
+	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*types.ExternalService, error)
+	UpsertExternalServices(ctx context.Context, svcs ...*types.ExternalService) error
 
 	ListRepos(context.Context, StoreListReposArgs) ([]*Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
@@ -202,12 +203,12 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 	return &DBStore{Store: txBase}, nil
 }
 
-func (s *DBStore) GetExternalService(ctx context.Context, id int64) (*ExternalService, error) {
+func (s *DBStore) GetExternalService(ctx context.Context, id int64) (*types.ExternalService, error) {
 	query := sqlf.Sprintf(
 		getExternalServiceQueryFmtstr,
 		id,
 	)
-	svc := ExternalService{}
+	svc := types.ExternalService{}
 	err := scanExternalService(&svc, s.QueryRow(ctx, query))
 	return &svc, err
 }
@@ -232,13 +233,13 @@ AND deleted_at IS NULL
 `
 
 // ListExternalServices lists all stored external services matching the given args.
-func (s *DBStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (svcs []*ExternalService, _ error) {
+func (s *DBStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (svcs []*types.ExternalService, _ error) {
 	if args.PerPage <= 0 {
 		args.PerPage = DefaultListExternalServicesPerPage
 	}
 	return svcs, s.paginate(ctx, args.Limit, args.PerPage, args.Cursor, listExternalServicesQuery(args),
 		func(sc scanner) (last, count int64, err error) {
-			var svc ExternalService
+			var svc types.ExternalService
 			err = scanExternalService(&svc, sc)
 			if err != nil {
 				return 0, 0, err
@@ -334,7 +335,7 @@ func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuer
 }
 
 // UpsertExternalServices updates or inserts the given ExternalServices.
-func (s *DBStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) error {
+func (s *DBStore) UpsertExternalServices(ctx context.Context, svcs ...*types.ExternalService) error {
 	if len(svcs) == 0 {
 		return nil
 	}
@@ -355,7 +356,7 @@ func (s *DBStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalS
 	return err
 }
 
-func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
+func upsertExternalServicesQuery(svcs []*types.ExternalService) *sqlf.Query {
 	vals := make([]*sqlf.Query, 0, len(svcs))
 	for _, s := range svcs {
 		vals = append(vals, sqlf.Sprintf(
@@ -1392,7 +1393,7 @@ func closeErr(c io.Closer, err *error) {
 	}
 }
 
-func scanExternalService(svc *ExternalService, s scanner) error {
+func scanExternalService(svc *types.ExternalService, s scanner) error {
 	return s.Scan(
 		&svc.ID,
 		&svc.Kind,

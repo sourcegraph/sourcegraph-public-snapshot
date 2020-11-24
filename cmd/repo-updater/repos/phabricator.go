@@ -13,13 +13,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // A PhabricatorSource yields repositories from a single Phabricator connection configured
 // in Sourcegraph via the external services configuration.
 type PhabricatorSource struct {
-	svc  *ExternalService
+	svc  *types.ExternalService
 	conn *schema.PhabricatorConnection
 	cf   *httpcli.Factory
 
@@ -28,7 +29,7 @@ type PhabricatorSource struct {
 }
 
 // NewPhabricatorSource returns a new PhabricatorSource from the given external service.
-func NewPhabricatorSource(svc *ExternalService, cf *httpcli.Factory) (*PhabricatorSource, error) {
+func NewPhabricatorSource(svc *types.ExternalService, cf *httpcli.Factory) (*PhabricatorSource, error) {
 	var c schema.PhabricatorConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
@@ -74,8 +75,8 @@ func (s *PhabricatorSource) ListRepos(ctx context.Context, results chan SourceRe
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s *PhabricatorSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+func (s *PhabricatorSource) ExternalServices() types.ExternalServices {
+	return types.ExternalServices{s.svc}
 }
 
 func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*Repo, error) {
