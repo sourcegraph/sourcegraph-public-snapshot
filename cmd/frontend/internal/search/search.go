@@ -57,59 +57,16 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 
 	resultsStream, resultsStreamDone := newResultsStream(ctx, search)
 
-	const filematchesChunk = 1000
-	filematchesBuf := make([]eventFileMatch, 0, filematchesChunk)
-	flushFileMatchesBuf := func() {
-		if len(filematchesBuf) > 0 {
-			if err := eventWriter.Event("filematches", filematchesBuf); err != nil {
+	const matchesChunk = 1000
+	matchesBuf := make([]interface{}, 0, matchesChunk)
+	flushMatchesBuf := func() {
+		if len(matchesBuf) > 0 {
+			if err := eventWriter.Event("matches", matchesBuf); err != nil {
 				// EOF
 				return
 			}
-			filematchesBuf = filematchesBuf[:0]
+			matchesBuf = matchesBuf[:0]
 		}
-	}
-
-	const symbolmatchesChunk = 1000
-	symbolmatchesBuf := make([]eventSymbolMatch, 0, symbolmatchesChunk)
-	flushSymbolMatchesBuf := func() {
-		if len(symbolmatchesBuf) > 0 {
-			if err := eventWriter.Event("symbolmatches", symbolmatchesBuf); err != nil {
-				// EOF
-				return
-			}
-			symbolmatchesBuf = symbolmatchesBuf[:0]
-		}
-	}
-
-	const repomatchesChunk = 1000
-	repomatchesBuf := make([]eventRepoMatch, 0, repomatchesChunk)
-	flushRepoMatchesBuf := func() {
-		if len(repomatchesBuf) > 0 {
-			if err := eventWriter.Event("repomatches", repomatchesBuf); err != nil {
-				// EOF
-				return
-			}
-			repomatchesBuf = repomatchesBuf[:0]
-		}
-	}
-
-	const commitmatchesChunk = 1000
-	commitmatchesBuf := make([]eventCommitMatch, 0, commitmatchesChunk)
-	flushCommitMatchesBuf := func() {
-		if len(commitmatchesBuf) > 0 {
-			if err := eventWriter.Event("commitmatches", commitmatchesBuf); err != nil {
-				// EOF
-				return
-			}
-			commitmatchesBuf = commitmatchesBuf[:0]
-		}
-	}
-
-	flushAll := func() {
-		flushFileMatchesBuf()
-		flushSymbolMatchesBuf()
-		flushRepoMatchesBuf()
-		flushCommitMatchesBuf()
 	}
 
 	flushTicker := time.NewTicker(100 * time.Millisecond)
@@ -122,7 +79,7 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		case results, ok = <-resultsStream:
 		case <-flushTicker.C:
 			ok = true
-			flushAll()
+			flushMatchesBuf()
 		}
 
 		if !ok {
@@ -147,33 +104,24 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 							Kind:          sym.Kind(),
 						})
 					}
-					symbolmatchesBuf = append(symbolmatchesBuf, fromSymbolMatch(fm, symbols))
-					if len(symbolmatchesBuf) == cap(symbolmatchesBuf) {
-						flushSymbolMatchesBuf()
-					}
+					matchesBuf = append(matchesBuf, fromSymbolMatch(fm, symbols))
 				} else {
-					filematchesBuf = append(filematchesBuf, fromFileMatch(fm))
-					if len(filematchesBuf) == cap(filematchesBuf) {
-						flushFileMatchesBuf()
-					}
+					matchesBuf = append(matchesBuf, fromFileMatch(fm))
 				}
 			}
 			if repo, ok := result.ToRepository(); ok {
-				repomatchesBuf = append(repomatchesBuf, fromRepository(repo))
-				if len(repomatchesBuf) == cap(repomatchesBuf) {
-					flushRepoMatchesBuf()
-				}
+				matchesBuf = append(matchesBuf, fromRepository(repo))
 			}
 			if commit, ok := result.ToCommitSearchResult(); ok {
-				commitmatchesBuf = append(commitmatchesBuf, fromCommit(commit))
-				if len(commitmatchesBuf) == cap(commitmatchesBuf) {
-					flushCommitMatchesBuf()
-				}
+				matchesBuf = append(matchesBuf, fromCommit(commit))
+			}
+			if len(matchesBuf) == cap(matchesBuf) {
+				flushMatchesBuf()
 			}
 		}
 	}
 
-	flushAll()
+	flushMatchesBuf()
 
 	final := <-resultsStreamDone
 	resultsResolver, err := final.resultsResolver, final.err
