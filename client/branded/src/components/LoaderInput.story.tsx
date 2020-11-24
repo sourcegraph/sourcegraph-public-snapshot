@@ -13,11 +13,9 @@ const { add } = storiesOf('branded/LoaderInput', module).addDecorator(story => (
 add('Interactive', () => (
     <BrandedStory>
         {() => (
-            <>
-                <LoaderInput loading={boolean('loading', true)}>
-                    <input type="text" placeholder="Loader input" className="form-control" />
-                </LoaderInput>
-            </>
+            <LoaderInput loading={boolean('loading', true)}>
+                <input type="text" placeholder="Loader input" className="form-control" />
+            </LoaderInput>
         )}
     </BrandedStory>
 ))
