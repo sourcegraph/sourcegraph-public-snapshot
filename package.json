@@ -284,7 +284,7 @@
     "graphiql": "^1.0.6",
     "he": "^1.2.0",
     "highlight.js": "^10.4.0",
-    "highlightjs-graphql": "^1.0.1",
+    "highlightjs-graphql": "^1.0.2",
     "is-absolute-url": "^3.0.3",
     "iterare": "^1.2.1",
     "js-cookie": "^2.2.1",
