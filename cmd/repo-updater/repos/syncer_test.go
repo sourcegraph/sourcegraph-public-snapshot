@@ -1638,7 +1638,7 @@ func testSyncRepoMaintainsOtherSources(db *sql.DB) func(t *testing.T, store repo
 			// Run syncRepo with only one source
 			urn := extsvc.URN(extsvc.KindGitHub, svc1.ID)
 			githubRepo.Sources = map[string]*repos.SourceInfo{
-				urn: &repos.SourceInfo{
+				urn: {
 					ID:       urn,
 					CloneURL: "cloneURL",
 				},
