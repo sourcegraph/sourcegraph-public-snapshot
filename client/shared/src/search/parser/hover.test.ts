@@ -300,6 +300,41 @@ describe('getHoverResult()', () => {
         `)
     })
 
+    test('smartQuery flag on ordinary and negated character class', () => {
+        const scannedQuery = toSuccess(scanSearchQuery('[^a-z][0-9]', false, SearchPatternType.regexp))
+        expect(getHoverResult(scannedQuery, { column: 2 }, true)).toMatchInlineSnapshot(`
+            {
+              "contents": [
+                {
+                  "value": "**Negated character class**. Match any character _not_ inside the square brackets."
+                }
+              ],
+              "range": {
+                "startLineNumber": 1,
+                "endLineNumber": 1,
+                "startColumn": 1,
+                "endColumn": 7
+              }
+            }
+        `)
+
+        expect(getHoverResult(scannedQuery, { column: 7 }, true)).toMatchInlineSnapshot(`
+            {
+              "contents": [
+                {
+                  "value": "**Character class**. Match any character inside the square brackets."
+                }
+              ],
+              "range": {
+                "startLineNumber": 1,
+                "endLineNumber": 1,
+                "startColumn": 7,
+                "endColumn": 12
+              }
+            }
+        `)
+    })
+
     test('smartQuery flag as literal search interprets parentheses as patterns', () => {
         const scannedQuery = toSuccess(scanSearchQuery('(abcd)', false, SearchPatternType.literal))
         expect(getHoverResult(scannedQuery, { column: 1 }, true)).toMatchInlineSnapshot(`
