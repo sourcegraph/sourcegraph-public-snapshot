@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -433,13 +434,13 @@ func (r *Resolver) runEmailQuery(ctx context.Context, q *sqlf.Query) (graphqlbac
 	return ms[0], nil
 }
 
-func (r *Resolver) runTriggerQuery(ctx context.Context, q *sqlf.Query) (graphqlbackend.MonitorQueryResolver, error) {
+func (r *Resolver) runTriggerQuery(ctx context.Context, q *sqlf.Query) (*cm.MonitorQuery, error) {
 	rows, err := r.db.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	ms, err := scanQueries(rows)
+	ms, err := cm.ScanTriggerQueries(rows)
 	if err != nil {
 		return nil, err
 	}
@@ -489,34 +490,6 @@ func scanEmails(rows *sql.Rows) ([]graphqlbackend.MonitorEmailResolver, error) {
 			&m.enabled,
 			&m.priority,
 			&m.header,
-			&m.createdBy,
-			&m.createdAt,
-			&m.changedBy,
-			&m.changedAt,
-		); err != nil {
-			return nil, err
-		}
-		ms = append(ms, m)
-	}
-	err := rows.Close()
-	if err != nil {
-		return nil, err
-	}
-	// Rows.Err will report the last error encountered by Rows.Scan.
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return ms, nil
-}
-
-func scanQueries(rows *sql.Rows) ([]graphqlbackend.MonitorQueryResolver, error) {
-	var ms []graphqlbackend.MonitorQueryResolver
-	for rows.Next() {
-		m := &monitorQuery{}
-		if err := rows.Scan(
-			&m.id,
-			&m.monitor,
-			&m.query,
 			&m.createdBy,
 			&m.createdAt,
 			&m.changedBy,
@@ -680,6 +653,7 @@ var queryColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_queries.id"),
 	sqlf.Sprintf("cm_queries.monitor"),
 	sqlf.Sprintf("cm_queries.query"),
+	sqlf.Sprintf("cm_queries.next_run"),
 	sqlf.Sprintf("cm_queries.created_by"),
 	sqlf.Sprintf("cm_queries.created_at"),
 	sqlf.Sprintf("cm_queries.changed_by"),
@@ -745,7 +719,7 @@ RETURNING %s;
 
 func (r *Resolver) triggerQueryByMonitorQuery(ctx context.Context, monitorID int64) (*sqlf.Query, error) {
 	const triggerQueryByMonitorQuery = `
-SELECT id, monitor, query, created_by, created_at, changed_by, changed_at
+SELECT id, monitor, query, next_run, created_by, created_at, changed_by, changed_at
 FROM cm_queries
 WHERE monitor = %s;
 `
@@ -1138,9 +1112,7 @@ func (m *monitor) Trigger(ctx context.Context) (graphqlbackend.MonitorTrigger, e
 	if err != nil {
 		return nil, err
 	}
-	// Hydrate with resolver.
-	t.(*monitorQuery).Resolver = m.Resolver
-	return &monitorTrigger{t}, nil
+	return &monitorTrigger{&monitorQuery{m.Resolver, t}}, nil
 }
 
 func (m *monitor) Actions(ctx context.Context, args *graphqlbackend.ListActionArgs) (graphqlbackend.MonitorActionConnectionResolver, error) {
@@ -1194,25 +1166,19 @@ func (t *monitorTrigger) ToMonitorQuery() (graphqlbackend.MonitorQueryResolver, 
 //
 type monitorQuery struct {
 	*Resolver
-	id        int64
-	monitor   int64
-	query     string
-	createdBy int64
-	createdAt time.Time
-	changedBy int64
-	changedAt time.Time
+	*cm.MonitorQuery
 }
 
 func (q *monitorQuery) ID() graphql.ID {
-	return relay.MarshalID(monitorTriggerQueryKind, q.id)
+	return relay.MarshalID(monitorTriggerQueryKind, q.Id)
 }
 
 func (q *monitorQuery) Query() string {
-	return q.query
+	return q.QueryString
 }
 
 func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) graphqlbackend.MonitorTriggerEventConnectionResolver {
-	return &monitorTriggerEventConnection{monitorID: relay.MarshalID(monitorKind, q.monitor), userID: relay.MarshalID("User", actor.FromContext(ctx).UID)}
+	return &monitorTriggerEventConnection{monitorID: relay.MarshalID(monitorKind, q.Monitor), userID: relay.MarshalID("User", actor.FromContext(ctx).UID)}
 }
 
 //
