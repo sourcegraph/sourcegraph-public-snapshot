@@ -279,6 +279,8 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 				SourceBranch: p.mr.SourceBranch,
 				TargetBranch: p.mr.TargetBranch,
 			}, nil, gitlab.ErrMergeRequestAlreadyExists)
+			p.mockGetMergeRequestNotes(p.mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(p.mr.IID, nil, 20, nil)
 			p.mockGetOpenMergeRequestByRefs(p.mr, nil)
 
 			exists, err := p.source.CreateChangeset(p.ctx, p.changeset)
@@ -300,6 +302,8 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 				SourceBranch: p.mr.SourceBranch,
 				TargetBranch: p.mr.TargetBranch,
 			}, p.mr, nil)
+			p.mockGetMergeRequestNotes(p.mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(p.mr.IID, nil, 20, nil)
 
 			exists, err := p.source.CreateChangeset(p.ctx, p.changeset)
 			if exists {
@@ -344,11 +348,13 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 		t.Run("success", func(t *testing.T) {
 			want := &gitlab.MergeRequest{}
-			mr := &gitlab.MergeRequest{}
+			mr := &gitlab.MergeRequest{IID: 2}
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.Metadata = mr
 			p.mockUpdateMergeRequest(mr, want, gitlab.UpdateMergeRequestStateEventClose, nil)
+			p.mockGetMergeRequestNotes(mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(mr.IID, nil, 20, nil)
 
 			if err := p.source.CloseChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
@@ -385,11 +391,13 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 		t.Run("success", func(t *testing.T) {
 			want := &gitlab.MergeRequest{}
-			mr := &gitlab.MergeRequest{}
+			mr := &gitlab.MergeRequest{IID: 2}
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.Metadata = mr
 			p.mockUpdateMergeRequest(mr, want, gitlab.UpdateMergeRequestStateEventReopen, nil)
+			p.mockGetMergeRequestNotes(mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(mr.IID, nil, 20, nil)
 
 			if err := p.source.ReopenChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
@@ -614,12 +622,14 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 		})
 
 		t.Run("success", func(t *testing.T) {
-			in := &gitlab.MergeRequest{}
+			in := &gitlab.MergeRequest{IID: 2}
 			out := &gitlab.MergeRequest{}
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.Metadata = in
 			p.mockUpdateMergeRequest(in, out, "", nil)
+			p.mockGetMergeRequestNotes(in.IID, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(in.IID, nil, 20, nil)
 
 			if err := p.source.UpdateChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected non-nil error: %+v", err)

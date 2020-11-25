@@ -1,8 +1,9 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import React, { FunctionComponent } from 'react'
 import { LSIFIndexState, LSIFUploadState } from '../../../graphql-operations'
-import { CodeIntelStateDescription } from '../shared/CodeIntelStateDescription'
-import { CodeIntelStateIcon } from '../shared/CodeIntelStateIcon'
+import { CodeIntelStateDescription } from './CodeIntelStateDescription'
+import { CodeIntelStateIcon } from './CodeIntelStateIcon'
 
 export interface CodeIntelStateBannerProps {
     typeName: string
@@ -23,7 +24,7 @@ export const CodeIntelStateBanner: FunctionComponent<CodeIntelStateBannerProps> 
     className = 'alert-primary',
     history,
 }) => (
-    <div className={`alert mb-4 mt-3 ${className}`}>
+    <div className={classNames('alert', className)}>
         <span className="icon-inline">
             <CodeIntelStateIcon state={state} />
         </span>

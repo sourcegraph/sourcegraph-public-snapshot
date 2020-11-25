@@ -19,7 +19,7 @@ func Frontend() *monitoring.Container {
 						{
 							Name:            "99th_percentile_search_request_duration",
 							Description:     "99th percentile successful search request duration over 5m",
-							Query:           `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",name!="CodeIntelSearch"}[5m])))`,
+							Query:           `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",request_name!="CodeIntelSearch"}[5m])))`,
 							DataMayNotExist: true,
 
 							Warning:      monitoring.Alert().GreaterOrEqual(20),
@@ -35,7 +35,7 @@ func Frontend() *monitoring.Container {
 						{
 							Name:            "90th_percentile_search_request_duration",
 							Description:     "90th percentile successful search request duration over 5m",
-							Query:           `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",name!="CodeIntelSearch"}[5m])))`,
+							Query:           `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",request_name!="CodeIntelSearch"}[5m])))`,
 							DataMayNotExist: true,
 
 							Warning:      monitoring.Alert().GreaterOrEqual(15),
@@ -53,7 +53,7 @@ func Frontend() *monitoring.Container {
 						{
 							Name:            "hard_timeout_search_responses",
 							Description:     "hard timeout search responses every 5m",
-							Query:           `(sum(increase(src_graphql_search_response{status="timeout",source="browser",name!="CodeIntelSearch"}[5m])) + sum(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="browser",name!="CodeIntelSearch"}[5m]))) / sum(increase(src_graphql_search_response{source="browser",name!="CodeIntelSearch"}[5m])) * 100`,
+							Query:           `(sum(increase(src_graphql_search_response{status="timeout",source="browser",request_name!="CodeIntelSearch"}[5m])) + sum(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="browser",request_name!="CodeIntelSearch"}[5m]))) / sum(increase(src_graphql_search_response{source="browser",request_name!="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist: true,
 
 							Warning:           monitoring.Alert().GreaterOrEqual(2).For(15 * time.Minute),
@@ -65,7 +65,7 @@ func Frontend() *monitoring.Container {
 						{
 							Name:            "hard_error_search_responses",
 							Description:     "hard error search responses every 5m",
-							Query:           `sum by (status)(increase(src_graphql_search_response{status=~"error",source="browser",name!="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="browser",name!="CodeIntelSearch"}[5m])) * 100`,
+							Query:           `sum by (status)(increase(src_graphql_search_response{status=~"error",source="browser",request_name!="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="browser",request_name!="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist: true,
 
 							Warning:           monitoring.Alert().GreaterOrEqual(2).For(15 * time.Minute),
@@ -77,7 +77,7 @@ func Frontend() *monitoring.Container {
 						{
 							Name:            "partial_timeout_search_responses",
 							Description:     "partial timeout search responses every 5m",
-							Query:           `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="browser",name!="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="browser",name!="CodeIntelSearch"}[5m])) * 100`,
+							Query:           `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="browser",request_name!="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="browser",request_name!="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist: true,
 
 							Warning:           monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
@@ -88,7 +88,7 @@ func Frontend() *monitoring.Container {
 						{
 							Name:            "search_alert_user_suggestions",
 							Description:     "search alert user suggestions shown every 5m",
-							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert_type",alert_type!~"timed_out|no_results__suggest_quotes",source="browser",name!="CodeIntelSearch"}[5m])) / ignoring(alert_type) group_left sum(increase(src_graphql_search_response{source="browser",name!="CodeIntelSearch"}[5m])) * 100`,
+							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out|no_results__suggest_quotes",source="browser",request_name!="CodeIntelSearch"}[5m])) / ignoring(alert_type) group_left sum(increase(src_graphql_search_response{source="browser",request_name!="CodeIntelSearch"}[5m])) * 100`,
 							DataMayNotExist: true,
 
 							Warning:      monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),

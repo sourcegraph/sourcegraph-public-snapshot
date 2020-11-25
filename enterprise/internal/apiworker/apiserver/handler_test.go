@@ -310,6 +310,43 @@ func TestMarkErroredUnknownQueue(t *testing.T) {
 	}
 }
 
+func TestMarkFailed(t *testing.T) {
+	store := workerstoremocks.NewMockStore()
+	store.DequeueWithIndependentTransactionContextFunc.SetDefaultReturn(testRecord{ID: 42}, store, true, nil)
+	recordTransformer := func(record workerutil.Record) (apiclient.Job, error) { return apiclient.Job{ID: 42}, nil }
+
+	options := Options{
+		QueueOptions: map[string]QueueOptions{
+			"test_queue": {Store: store, RecordTransformer: recordTransformer},
+		},
+		MaximumNumTransactions: 10,
+	}
+	handler := newHandler(options, glock.NewMockClock())
+
+	job, dequeued, err := handler.dequeue(context.Background(), "test_queue", "deadbeef")
+	if err != nil {
+		t.Fatalf("unexpected error dequeueing job: %s", err)
+	}
+	if !dequeued {
+		t.Fatalf("expected a job to be dequeued")
+	}
+
+	if err := handler.markFailed(context.Background(), "test_queue", "deadbeef", job.ID, "OH NO"); err != nil {
+		t.Fatalf("unexpected error completing job: %s", err)
+	}
+
+	if value := len(store.MarkFailedFunc.History()); value != 1 {
+		t.Fatalf("unexpected number of calls to MarkFailed. want=%d have=%d", 1, value)
+	}
+	call := store.MarkFailedFunc.History()[0]
+	if call.Arg1 != 42 {
+		t.Errorf("unexpected job identifier. want=%d have=%d", 42, call.Arg1)
+	}
+	if call.Arg2 != "OH NO" {
+		t.Errorf("unexpected job error. want=%s have=%s", "OH NO", call.Arg2)
+	}
+}
+
 type testRecord struct {
 	ID      int
 	Payload string

@@ -18,6 +18,7 @@ type QueueStore interface {
 	SetLogContents(ctx context.Context, queueName string, jobID int, contents string) error
 	MarkComplete(ctx context.Context, queueName string, jobID int) error
 	MarkErrored(ctx context.Context, queueName string, jobID int, errorMessage string) error
+	MarkFailed(ctx context.Context, queueName string, jobID int, errorMessage string) error
 }
 
 var _ workerutil.Store = &storeShim{}
@@ -46,6 +47,10 @@ func (s *storeShim) MarkComplete(ctx context.Context, id int) (bool, error) {
 
 func (s *storeShim) MarkErrored(ctx context.Context, id int, errorMessage string) (bool, error) {
 	return true, s.queueStore.MarkErrored(ctx, s.queueName, id, errorMessage)
+}
+
+func (s *storeShim) MarkFailed(ctx context.Context, id int, errorMessage string) (bool, error) {
+	return true, s.queueStore.MarkFailed(ctx, s.queueName, id, errorMessage)
 }
 
 func (s *storeShim) Done(err error) error {
