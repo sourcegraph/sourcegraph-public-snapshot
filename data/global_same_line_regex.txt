@@ -1,0 +1,6 @@
+func rtoorg patterntype:regexp
+func bool bar patterntype:regexp
+func bool patterntype:regexp
+int32 error patterntype:regexp
+func return patterntype:regexp
+config override patterntype:regexp
