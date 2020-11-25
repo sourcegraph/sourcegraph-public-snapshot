@@ -144,6 +144,17 @@ type repoRecord struct {
 }
 
 func newRepoRecord(r *types.Repo) (*repoRecord, error) {
+	if r.RepoFields == nil {
+		return &repoRecord{
+			ID:                  r.ID,
+			Name:                r.Name,
+			ExternalServiceType: nullStringColumn(r.ExternalRepo.ServiceType),
+			ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
+			ExternalID:          nullStringColumn(r.ExternalRepo.ID),
+			Private:             r.Private,
+		}, nil
+	}
+
 	metadata, err := metadataColumn(r.Metadata)
 	if err != nil {
 		return nil, errors.Wrapf(err, "newRecord: metadata marshalling failed")
