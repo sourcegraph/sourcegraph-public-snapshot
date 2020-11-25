@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -21,7 +22,7 @@ func TestRepo(t *testing.T, store repos.Store, serviceKind string) *repos.Repo {
 	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
-	svc := repos.ExternalService{
+	svc := types.ExternalService{
 		Kind:        serviceKind,
 		DisplayName: serviceKind + " - Test",
 		Config:      `{"url": "https://github.com"}`,
@@ -51,12 +52,12 @@ func TestRepo(t *testing.T, store repos.Store, serviceKind string) *repos.Repo {
 	}
 }
 
-func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *repos.ExternalService) {
+func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *types.ExternalService) {
 	t.Helper()
 
 	rstore := repos.NewDBStore(db, sql.TxOptions{})
 
-	ext := &repos.ExternalService{
+	ext := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: MarshalJSON(t, &schema.GitHubConnection{
@@ -87,12 +88,12 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 	return rs, ext
 }
 
-func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *repos.ExternalService) {
+func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *types.ExternalService) {
 	t.Helper()
 
 	rstore := repos.NewDBStore(db, sql.TxOptions{})
 
-	ext := &repos.ExternalService{
+	ext := &types.ExternalService{
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "GitLab",
 		Config: MarshalJSON(t, &schema.GitLabConnection{
@@ -123,12 +124,12 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count 
 	return rs, ext
 }
 
-func CreateBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *repos.ExternalService) {
+func CreateBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *types.ExternalService) {
 	t.Helper()
 
 	rstore := repos.NewDBStore(db, sql.TxOptions{})
 
-	ext := &repos.ExternalService{
+	ext := &types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server",
 		Config: MarshalJSON(t, &schema.BitbucketServerConnection{

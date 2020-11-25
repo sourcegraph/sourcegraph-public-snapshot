@@ -5,8 +5,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func GetRetentionStatistics(ctx context.Context) (*types.RetentionStats, error) {

@@ -11,7 +11,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/campaignutils/overridable"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -25,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func TestNullIDResilience(t *testing.T) {
@@ -275,10 +278,8 @@ func TestApplyCampaign(t *testing.T) {
 
 	userID := insertTestUser(t, dbconn.Global, "apply-campaign", true)
 
-	now := time.Now().UTC().Truncate(time.Microsecond)
-	clock := func() time.Time {
-		return now.UTC().Truncate(time.Microsecond)
-	}
+	now := timeutil.Now()
+	clock := func() time.Time { return now }
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 

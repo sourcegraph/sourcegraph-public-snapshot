@@ -750,18 +750,9 @@ type Mutation {
     """
     createCodeMonitor(
         """
-        The namespace represents the owner of the code monitor.
-        Owners can either be users or organizations.
+        A monitor.
         """
-        namespace: ID!
-        """
-        A meaningful description of the code monitor.
-        """
-        description: String!
-        """
-        Whether the code monitor is enabled or not.
-        """
-        enabled: Boolean!
+        monitor: MonitorInput!
         """
         A trigger.
         """
@@ -794,9 +785,10 @@ type Mutation {
         id: ID!
     ): EmptyResponse!
     """
-    Update a code monitor. Objects in the db will be overwritten with the objects in the request. Objects
-    which are not contained in the request remain unchanged. If the request contains objects that have
-    no corresponding entry in the db, an error is returned.
+    Update a code monitor. We assume that the request contains a complete code monitor,
+    including its trigger and all actions. Actions which are stored in the database,
+    but are missing from the request will be deleted from the database. Actions with id=null
+    will be created.
     """
     updateCodeMonitor(
         """
@@ -1502,9 +1494,14 @@ enum ChangesetReconcilerState {
 
     """
     The changeset reconciler ran into a problem while processing the
-    changeset.
+    changeset and will retry it for a number of retries.
     """
     ERRORED
+    """
+    The changeset reconciler ran into a problem while processing the
+    changeset that can't be fixed by retrying.
+    """
+    FAILED
 
     """
     The changeset is not enqueued for processing.
@@ -3430,7 +3427,7 @@ input MonitorEditEmailInput {
     """
     The id of an email action.
     """
-    id: ID!
+    id: ID
     """
     The desired state after the update.
     """

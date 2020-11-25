@@ -34,6 +34,7 @@ import { browserPortToMessagePort, findMessagePorts } from '../../shared/platfor
 import { EndpointPair } from '../../../../shared/src/platform/context'
 import { BrowserActionIconState, setBrowserActionIconState } from '../browser-action-icon'
 import { fetchSite } from '../../shared/backend/server'
+import { patternToRegex } from 'webext-patterns'
 
 const IS_EXTENSION = true
 
@@ -202,7 +203,7 @@ async function main(): Promise<void> {
         if (
             changeInfo.status === 'complete' &&
             customServerOrigins.some(
-                origin => origin === '<all_urls>' || (!!tab.url && tab.url.startsWith(origin.replace('/*', '')))
+                origin => origin === '<all_urls>' || (!!tab.url && urlMatchesPattern(tab.url, origin))
             )
         ) {
             // Inject content script whenever a new tab was opened with a URL for which we have permission
@@ -453,4 +454,9 @@ function observeBrowserActionState(): Observable<BrowserActionIconState> {
         }),
         distinctUntilChanged()
     )
+}
+
+function urlMatchesPattern(url: string, originPermissionPattern: string): boolean {
+    const regex = patternToRegex(originPermissionPattern)
+    return regex.test(url)
 }

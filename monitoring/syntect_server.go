@@ -19,7 +19,7 @@ func SyntectServer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(5).For(5 * time.Minute),
 							PanelOptions:      PanelOptions().LegendFormat("error").Unit(Percentage),
-							Owner:             ObservableOwnerCodeIntel,
+							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "none",
 						},
 						{
@@ -29,7 +29,7 @@ func SyntectServer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(5).For(5 * time.Minute),
 							PanelOptions:      PanelOptions().LegendFormat("timeout").Unit(Percentage),
-							Owner:             ObservableOwnerCodeIntel,
+							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "none",
 						},
 					},
@@ -41,7 +41,7 @@ func SyntectServer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(5),
 							PanelOptions:      PanelOptions().LegendFormat("panic"),
-							Owner:             ObservableOwnerCodeIntel,
+							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "none",
 						},
 						{
@@ -51,7 +51,7 @@ func SyntectServer() *Container {
 							DataMayNotExist:   true,
 							Warning:           Alert().GreaterOrEqual(1),
 							PanelOptions:      PanelOptions().LegendFormat("worker death"),
-							Owner:             ObservableOwnerCodeIntel,
+							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "none",
 						},
 					},
@@ -62,12 +62,12 @@ func SyntectServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedContainerCPUUsage("syntect-server", ObservableOwnerCodeIntel),
-						sharedContainerMemoryUsage("syntect-server", ObservableOwnerCodeIntel),
+						sharedContainerCPUUsage("syntect-server", ObservableOwnerCloud),
+						sharedContainerMemoryUsage("syntect-server", ObservableOwnerCloud),
 					},
 					{
-						sharedContainerRestarts("syntect-server", ObservableOwnerCodeIntel),
-						sharedContainerFsInodes("syntect-server", ObservableOwnerCodeIntel),
+						sharedContainerRestarts("syntect-server", ObservableOwnerCloud),
+						sharedContainerFsInodes("syntect-server", ObservableOwnerCloud),
 					},
 				},
 			},
@@ -76,12 +76,12 @@ func SyntectServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("syntect-server", ObservableOwnerCodeIntel),
-						sharedProvisioningMemoryUsageLongTerm("syntect-server", ObservableOwnerCodeIntel),
+						sharedProvisioningCPUUsageLongTerm("syntect-server", ObservableOwnerCloud),
+						sharedProvisioningMemoryUsageLongTerm("syntect-server", ObservableOwnerCloud),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("syntect-server", ObservableOwnerCodeIntel),
-						sharedProvisioningMemoryUsageShortTerm("syntect-server", ObservableOwnerCodeIntel),
+						sharedProvisioningCPUUsageShortTerm("syntect-server", ObservableOwnerCloud),
+						sharedProvisioningMemoryUsageShortTerm("syntect-server", ObservableOwnerCloud),
 					},
 				},
 			},
@@ -90,7 +90,7 @@ func SyntectServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedKubernetesPodsAvailable("syntect-server", ObservableOwnerCodeIntel),
+						sharedKubernetesPodsAvailable("syntect-server", ObservableOwnerCloud),
 					},
 				},
 			},

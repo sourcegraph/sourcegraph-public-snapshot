@@ -182,6 +182,25 @@ func (m *handler) markErrored(ctx context.Context, queueName, executorName strin
 	return nil
 }
 
+// markFailed calls MarkFailed for the given job, then commits the job's transaction.
+// The job is removed from the executor's job list on success.
+func (m *handler) markFailed(ctx context.Context, queueName, executorName string, jobID int, errorMessage string) error {
+	job, err := m.findMeta(queueName, executorName, jobID, true)
+	if err != nil {
+		return err
+	}
+
+	defer func() { m.dequeueSemaphore <- struct{}{} }()
+
+	_, err = job.tx.MarkFailed(ctx, job.record.RecordID(), errorMessage)
+
+	if doneErr := job.tx.Done(err); doneErr != err {
+		return doneErr
+	}
+
+	return nil
+}
+
 // findMeta returns the job with the given id and executor name. If the job is
 // unknown, an error is returned. If the remove parameter is true, the job will
 // be removed from the executor's job list on success.

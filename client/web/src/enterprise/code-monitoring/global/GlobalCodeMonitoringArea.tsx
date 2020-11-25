@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
+import { CodeMonitoringProps } from '..'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
@@ -18,7 +19,8 @@ interface Props
         TelemetryProps,
         PlatformContextProps,
         BreadcrumbsProps,
-        BreadcrumbSetters {
+        BreadcrumbSetters,
+        CodeMonitoringProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }

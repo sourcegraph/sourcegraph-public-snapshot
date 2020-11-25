@@ -10,15 +10,15 @@ export function getDiagnostics(tokens: Token[], patternType: SearchPatternType):
     const diagnostics: Monaco.editor.IMarkerData[] = []
     for (const token of tokens) {
         if (token.type === 'filter') {
-            const { filterType, filterValue } = token
-            const validationResult = validateFilter(filterType.value, filterValue)
+            const { field, value } = token
+            const validationResult = validateFilter(field.value, value)
             if (validationResult.valid) {
                 continue
             }
             diagnostics.push({
                 severity: Monaco.MarkerSeverity.Error,
                 message: validationResult.reason,
-                ...toMonacoRange(filterType.range),
+                ...toMonacoRange(field.range),
             })
         } else if (token.type === 'quoted') {
             if (patternType === SearchPatternType.literal) {

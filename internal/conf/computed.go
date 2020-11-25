@@ -306,6 +306,19 @@ func AuthMinPasswordLength() int {
 	return val
 }
 
+// By default, password reset links are valid for 4 hours.
+const defaultPasswordLinkExpiry = 14400
+
+// AuthPasswordResetLinkExpiry returns the time (in seconds) indicating how long password
+// reset links are considered valid. If not set, it returns the default value.
+func AuthPasswordResetLinkExpiry() int {
+	val := Get().AuthPasswordResetLinkExpiry
+	if val <= 0 {
+		return defaultPasswordLinkExpiry
+	}
+	return val
+}
+
 type ExternalServiceMode int
 
 const (

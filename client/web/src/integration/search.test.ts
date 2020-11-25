@@ -6,8 +6,9 @@ import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/scr
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { test } from 'mocha'
 import { siteGQLID, siteID } from './jscontext'
-import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
+import { SharedGraphQlOperations, SymbolKind } from '../../../shared/src/graphql-operations'
 import { SearchEvent } from '../search/stream'
+import { Key } from 'ts-key-enum'
 
 const searchResults = (): SearchResult => ({
     search: {
@@ -100,6 +101,130 @@ describe('Search', () => {
         await driver.page.waitForSelector('.monaco-editor .view-lines')
         await driver.page.click('.monaco-editor .view-lines')
     }
+
+    const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
+        driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
+
+    describe('Search filters', () => {
+        test('Search filters are shown on search result pages and clicking them triggers a new search', async () => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+            })
+            const dynamicFilters = ['archived:yes', 'repo:^github\\.com/Algorilla/manta-ray$']
+            const origQuery = 'foo'
+            for (const filter of dynamicFilters) {
+                await driver.page.goto(
+                    `${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal`
+                )
+                await driver.page.waitForSelector(`[data-testid="filter-chip"][value=${JSON.stringify(filter)}]`)
+                await driver.page.click(`[data-testid="filter-chip"][value=${JSON.stringify(filter)}]`)
+                await driver.page.waitForFunction(
+                    expectedQuery => {
+                        const url = new URL(document.location.href)
+                        const query = url.searchParams.get('q')
+                        return query && query.trim() === expectedQuery
+                    },
+                    { timeout: 5000 },
+                    `${origQuery} ${filter}`
+                )
+            }
+        })
+    })
+
+    describe('Suggestions', () => {
+        test('Typing in the search field shows relevant suggestions', async () => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+                SearchSuggestions: () => ({
+                    search: {
+                        suggestions: [
+                            { __typename: 'Repository', name: 'github.com/auth0/go-jwt-middleware' },
+                            {
+                                __typename: 'Symbol',
+                                name: 'OnError',
+                                containerName: 'jwtmiddleware',
+                                url: '/github.com/auth0/go-jwt-middleware/-/blob/jwtmiddleware.go#L56:1-56:14',
+                                kind: SymbolKind.STRUCT,
+                                location: {
+                                    resource: {
+                                        path: 'jwtmiddleware.go',
+                                        repository: { name: 'github.com/auth0/go-jwt-middleware' },
+                                    },
+                                },
+                            },
+                            {
+                                __typename: 'File',
+                                path: 'jwtmiddleware.go',
+                                name: 'jwtmiddleware.go',
+                                isDirectory: false,
+                                url: '/github.com/auth0/go-jwt-middleware/-/blob/jwtmiddleware.go',
+                                repository: { name: 'github.com/auth0/go-jwt-middleware' },
+                            },
+                        ],
+                    },
+                }),
+            })
+            // Repo autocomplete from homepage
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+            // Using id selector rather than `test-` classes as Monaco doesn't allow customizing classes
+            await driver.page.waitForSelector('#monaco-query-input')
+            await driver.replaceText({
+                selector: '#monaco-query-input',
+                newText: 'go-jwt-middlew',
+                enterTextMethod: 'type',
+            })
+            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
+            await driver.findElementWithText('github.com/auth0/go-jwt-middleware', {
+                action: 'click',
+                wait: { timeout: 5000 },
+                selector: '.monaco-query-input-container .suggest-widget.visible span',
+            })
+            expect(await getSearchFieldValue(driver)).toStrictEqual('repo:^github\\.com/auth0/go-jwt-middleware$ ')
+
+            // Submit search
+            await driver.page.keyboard.press(Key.Enter)
+
+            // File autocomplete from repo search bar
+            await driver.page.waitForSelector('#monaco-query-input')
+            await driver.page.focus('#monaco-query-input')
+            await driver.page.keyboard.type('jwtmi')
+            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
+            await driver.findElementWithText('jwtmiddleware.go', {
+                selector: '.monaco-query-input-container .suggest-widget.visible span',
+                wait: { timeout: 5000 },
+            })
+            await driver.page.keyboard.press(Key.Tab)
+            expect(await getSearchFieldValue(driver)).toStrictEqual(
+                'repo:^github\\.com/auth0/go-jwt-middleware$ file:^jwtmiddleware\\.go$ '
+            )
+
+            // Symbol autocomplete in top search bar
+            await driver.page.keyboard.type('On')
+            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
+            await driver.findElementWithText('OnError', {
+                selector: '.monaco-query-input-container .suggest-widget.visible span',
+                wait: { timeout: 5000 },
+            })
+        })
+    })
+
+    describe('Search field value', () => {
+        test('Is set from the URL query parameter when loading a search-related page', async () => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+            })
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
+            await driver.page.waitForSelector('#monaco-query-input')
+            expect(await getSearchFieldValue(driver)).toStrictEqual('foo')
+            // Field value is cleared when navigating to a non search-related page
+            await driver.page.waitForSelector('[data-testid="extensions"]')
+            await driver.page.click('[data-testid="extensions"]')
+            expect(await getSearchFieldValue(driver)).toStrictEqual('')
+            // Field value is restored when the back button is pressed
+            await driver.page.goBack()
+            expect(await getSearchFieldValue(driver)).toStrictEqual('foo')
+        })
+    })
 
     describe('Case sensitivity toggle', () => {
         test('Clicking toggle turns on case sensitivity', async () => {
@@ -210,7 +335,8 @@ describe('Search', () => {
             }),
         }
 
-        test('Streaming search with single repo result', async () => {
+        // Skip streaming search tests until streaming search UI is properly implemented
+        test.skip('Streaming search with single repo result', async () => {
             const searchStreamEvents: SearchEvent[] = [
                 { type: 'repomatches', data: [{ repository: 'github.com/sourcegraph/sourcegraph' }] },
                 { type: 'done', data: {} },

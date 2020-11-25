@@ -27,6 +27,7 @@ export enum RegexpMetaKind {
 export interface RegexpMeta {
     type: 'regexpMeta'
     range: CharacterRange
+    groupRange?: CharacterRange
     kind: RegexpMetaKind
     value: string
 }
@@ -42,9 +43,15 @@ export interface StructuralMeta {
     value: string
 }
 
+export interface Field {
+    type: 'field'
+    range: CharacterRange
+    value: string
+}
+
 export type MetaToken = RegexpMeta | StructuralMeta
 
-type DecoratedToken = Token | MetaToken
+export type DecoratedToken = Token | Field | MetaToken
 
 const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
     const tokens: DecoratedToken[] = []
@@ -95,6 +102,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                 tokens.push({
                     type: 'regexpMeta',
                     range: { start: offset + node.start, end: offset + node.start + 1 },
+                    groupRange: { start: offset + node.start, end: offset + node.end },
                     value: '(',
                     kind: RegexpMetaKind.Delimited,
                 })
@@ -102,6 +110,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                 tokens.push({
                     type: 'regexpMeta',
                     range: { start: offset + node.end - 1, end: offset + node.end },
+                    groupRange: { start: offset + node.start, end: offset + node.end },
                     value: ')',
                     kind: RegexpMetaKind.Delimited,
                 })
@@ -119,6 +128,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                 tokens.push({
                     type: 'regexpMeta',
                     range: { start: offset + node.start, end: offset + node.start + 1 },
+                    groupRange: { start: offset + node.start, end: offset + node.end },
                     value: '[',
                     kind: RegexpMetaKind.CharacterClass,
                 })
@@ -126,6 +136,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                 tokens.push({
                     type: 'regexpMeta',
                     range: { start: offset + node.end - 1, end: offset + node.end },
+                    groupRange: { start: offset + node.start, end: offset + node.end },
                     value: ']',
                     kind: RegexpMetaKind.CharacterClass,
                 })
@@ -161,7 +172,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                             start: offset + node.end - 1 - lazyQuantifierOffset,
                             end: offset + node.end - lazyQuantifierOffset,
                         },
-                        value: node.raw,
+                        value: quantifier,
                         kind: RegexpMetaKind.RangeQuantifier,
                     })
                 } else {
@@ -176,8 +187,8 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                     }
                     tokens.push({
                         type: 'regexpMeta',
-                        range: { start: offset + openBrace, end: offset + node.end },
-                        value: pattern.value.slice(offset + openBrace, offset + node.end - lazyQuantifierOffset),
+                        range: { start: offset + openBrace, end: offset + node.end - lazyQuantifierOffset },
+                        value: pattern.value.slice(openBrace, node.end - lazyQuantifierOffset),
                         kind: RegexpMetaKind.RangeQuantifier,
                     })
                 }
@@ -215,7 +226,126 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
     return tokens
 }
 
-const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => [pattern]
+const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
+    const offset = pattern.range.start
+
+    const decorated: DecoratedToken[] = []
+    let current = ''
+    let start = 0
+    let token: string[] = []
+
+    // Track context of whether we are inside an opening hole, e.g., after
+    // ':['. Value is greater than 1 when inside.
+    let open = 0
+    // Track whether we are balanced inside a regular expression character
+    // set like '[a]' inside an open hole, e.g., :[foo~[a]]. Value is greater
+    // than 1 when inside.
+    let inside = 0
+
+    const nextChar = (): string => {
+        current = pattern.value[start]
+        start = start + 1
+        return current
+    }
+
+    // Appends a decorated token to the list of tokens, and resets the current token to be empty.
+    const appendDecoratedToken = (endIndex: number, kind: PatternKind.Literal | StructuralMetaKind): void => {
+        const value = token.join('')
+        const range = { start: offset + endIndex - value.length, end: offset + endIndex }
+        if (kind === PatternKind.Literal) {
+            decorated.push({ type: 'pattern', kind, value, range })
+        } else {
+            decorated.push({ type: 'structuralMeta', kind, value, range })
+        }
+        token = []
+    }
+
+    while (pattern.value[start] !== undefined) {
+        current = nextChar()
+        switch (current) {
+            case '.':
+                // Look ahead and see if this is a ... hole alias.
+                if (pattern.value.slice(start, start + 2) === '..') {
+                    // It is a ... hole.
+                    if (token.length > 0) {
+                        // Append the value before this '...'.
+                        appendDecoratedToken(start - 1, PatternKind.Literal)
+                    }
+                    start = start + 2
+                    // Append the value of '...' after advancing.
+                    appendDecoratedToken(start - 3, StructuralMetaKind.Hole)
+                    continue
+                }
+                token.push('.')
+                break
+            case ':':
+                if (open > 0) {
+                    // ':' inside a hole, likely part of a regexp pattern.
+                    token.push(':')
+                    continue
+                }
+                if (pattern.value[start] !== undefined) {
+                    // Look ahead and see if this is the start of a hole.
+                    if (pattern.value[start] === '[') {
+                        // It is the start of a hole, consume the '['.
+                        current = nextChar()
+                        open = open + 1
+                        // Persist the literal token scanned up to this point.
+                        appendDecoratedToken(start - 2, PatternKind.Literal)
+                        token.push(':[')
+                        continue
+                    }
+                    // Something else, push the ':' we saw and continue.
+                    token.push(':')
+                    continue
+                }
+                // Trailing ':'.
+                token.push(current)
+                break
+            case '\\':
+                if (pattern.value[start] !== undefined && open > 0) {
+                    // Assume this is an escape sequence inside a regexp hole.
+                    current = nextChar()
+                    token.push('\\', current)
+                    continue
+                }
+                token.push('\\')
+                break
+            case '[':
+                if (open > 0) {
+                    // Assume this is a character set inside a regexp hole.
+                    inside = inside + 1
+                    token.push('[')
+                    continue
+                }
+                token.push('[')
+                break
+            case ']':
+                if (open > 0 && inside > 0) {
+                    // This ']' closes a regular expression inside a hole.
+                    inside = inside - 1
+                    token.push(current)
+                    continue
+                }
+                if (open > 0) {
+                    // This ']' closes a hole.
+                    open = open - 1
+                    token.push(']')
+                    appendDecoratedToken(start, StructuralMetaKind.Hole)
+                    continue
+                }
+                token.push(current)
+                break
+            default:
+                token.push(current)
+        }
+    }
+    if (token.length > 0) {
+        // Append any left over literal at the end.
+        appendDecoratedToken(start, PatternKind.Literal)
+    }
+    return decorated
+}
 
 /**
  * Returns true for filter values that have regexp values, e.g., repo, file.
@@ -240,23 +370,49 @@ export const hasRegexpValue = (field: string): boolean => {
     }
 }
 
-const decorateTokens = (tokens: Token[]): DecoratedToken[] => {
+export const decorateTokens = (tokens: Token[]): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     for (const token of tokens) {
-        if (token.type === 'pattern') {
-            switch (token.kind) {
-                case PatternKind.Regexp:
-                    decorated.push(...mapRegexpMeta(token))
-                    break
-                case PatternKind.Structural:
-                    decorated.push(...mapStructuralMeta(token))
-                    break
-                default:
-                    decorated.push(token)
+        switch (token.type) {
+            case 'pattern':
+                switch (token.kind) {
+                    case PatternKind.Regexp:
+                        decorated.push(...mapRegexpMeta(token))
+                        break
+                    case PatternKind.Structural:
+                        decorated.push(...mapStructuralMeta(token))
+                        break
+                    case PatternKind.Literal:
+                        decorated.push(token)
+                        break
+                }
+                break
+            case 'filter': {
+                decorated.push({
+                    type: 'field',
+                    range: token.field.range,
+                    value: token.field.value,
+                })
+                if (token.value && token.value.type === 'literal' && hasRegexpValue(token.field.value)) {
+                    // Highlight fields with regexp values.
+                    decorated.push(
+                        ...decorateTokens([
+                            {
+                                type: 'pattern',
+                                kind: PatternKind.Regexp,
+                                value: token.value.value,
+                                range: token.value.range,
+                            },
+                        ])
+                    )
+                } else if (token.value) {
+                    decorated.push(token.value)
+                }
+                break
             }
-            continue
+            default:
+                decorated.push(token)
         }
-        decorated.push(token)
     }
     return decorated
 }
@@ -265,36 +421,7 @@ const fromDecoratedTokens = (tokens: DecoratedToken[]): Monaco.languages.IToken[
     const monacoTokens: Monaco.languages.IToken[] = []
     for (const token of tokens) {
         switch (token.type) {
-            case 'filter':
-                {
-                    monacoTokens.push({
-                        startIndex: token.filterType.range.start,
-                        scopes: 'filterKeyword',
-                    })
-
-                    if (
-                        hasRegexpValue(token.filterType.value) &&
-                        token.filterValue &&
-                        token.filterValue.type === 'literal'
-                    ) {
-                        // Highlight fields with regexp values.
-                        const decoratedValue = decorateTokens([
-                            {
-                                type: 'pattern',
-                                kind: PatternKind.Regexp,
-                                value: token.filterValue.value,
-                                range: token.filterValue.range,
-                            },
-                        ])
-                        monacoTokens.push(...fromDecoratedTokens(decoratedValue))
-                    } else if (token.filterValue) {
-                        monacoTokens.push({
-                            startIndex: token.filterValue.range.start,
-                            scopes: 'identifier',
-                        })
-                    }
-                }
-                break
+            case 'field':
             case 'whitespace':
             case 'keyword':
             case 'comment':
@@ -333,12 +460,12 @@ const fromTokens = (tokens: Token[]): Monaco.languages.IToken[] => {
             case 'filter':
                 {
                     monacoTokens.push({
-                        startIndex: token.filterType.range.start,
-                        scopes: 'filterKeyword',
+                        startIndex: token.field.range.start,
+                        scopes: 'field',
                     })
-                    if (token.filterValue) {
+                    if (token.value) {
                         monacoTokens.push({
-                            startIndex: token.filterValue.range.start,
+                            startIndex: token.value.range.start,
                             scopes: 'identifier',
                         })
                     }

@@ -824,6 +824,12 @@ const SiteSchemaJSON = `{
       "default": 12,
       "group": "Authentication"
     },
+    "auth.passwordResetLinkExpiry": {
+      "description": "The duration (in seconds) that a password reset link is considered valid.",
+      "type": "integer",
+      "default": 14400,
+      "group": "Authentication"
+    },
     "update.channel": {
       "description": "The channel on which to automatically check for Sourcegraph updates.",
       "type": ["string"],

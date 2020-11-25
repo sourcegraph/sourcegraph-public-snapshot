@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -22,7 +23,7 @@ import (
 // A GitoliteSource yields repositories from a single Gitolite connection configured
 // in Sourcegraph via the external services configuration.
 type GitoliteSource struct {
-	svc  *ExternalService
+	svc  *types.ExternalService
 	conn *schema.GitoliteConnection
 	// We ask gitserver to talk to gitolite because it holds the ssh keys
 	// required for authentication.
@@ -31,7 +32,7 @@ type GitoliteSource struct {
 }
 
 // NewGitoliteSource returns a new GitoliteSource from the given external service.
-func NewGitoliteSource(svc *ExternalService, cf *httpcli.Factory) (*GitoliteSource, error) {
+func NewGitoliteSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitoliteSource, error) {
 	var c schema.GitoliteConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
@@ -83,8 +84,8 @@ func (s *GitoliteSource) ListRepos(ctx context.Context, results chan SourceResul
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s GitoliteSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+func (s GitoliteSource) ExternalServices() types.ExternalServices {
+	return types.ExternalServices{s.svc}
 }
 
 func (s GitoliteSource) excludes(gr *gitolite.Repo, r *Repo) bool {

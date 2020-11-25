@@ -3,6 +3,9 @@ import * as semver from 'semver'
 import { readFileSync } from 'fs'
 import { parse as parseJSONC } from '@sqs/jsonc-parser'
 
+/**
+ * Release configuration file format
+ */
 export interface Config {
     teamEmail: string
 

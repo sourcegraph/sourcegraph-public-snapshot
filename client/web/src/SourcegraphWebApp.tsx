@@ -36,7 +36,7 @@ import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { LayoutRouteProps } from './routes'
-import { search, searchStream, fetchSavedSearches, fetchRecentSearches, fetchRecentFileViews } from './search/backend'
+import { search, fetchSavedSearches, fetchRecentSearches, fetchRecentFileViews } from './search/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreference } from './theme'
@@ -69,6 +69,8 @@ import {
 } from './util/settings'
 import { SearchPatternType } from '../../shared/src/graphql-operations'
 import { HTTPStatusError } from '../../shared/src/backend/fetch'
+import { listUserCodeMonitors } from './enterprise/code-monitoring/backend'
+import { aggregateStreamingSearch } from './search/stream'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
@@ -165,11 +167,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      */
     previousVersionContext: string | null
 
-    /**
-     * Whether the experimental search streaming API should be used.
-     */
-    searchStreaming: boolean
-
     showRepogroupHomepage: boolean
 
     showOnboardingTour: boolean
@@ -253,7 +250,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         const availableVersionContexts = window.context.experimentalFeatures.versionContexts
         const previousVersionContext = localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
         const resolvedVersionContext = availableVersionContexts
-            ? parseSearchURLVersionContext(window.location.search) ||
+            ? resolveVersionContext(
+                  parseSearchURLVersionContext(window.location.search) || undefined,
+                  availableVersionContexts
+              ) ||
               resolveVersionContext(previousVersionContext || undefined, availableVersionContexts) ||
               undefined
             : undefined
@@ -273,7 +273,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             versionContext: resolvedVersionContext,
             availableVersionContexts,
             previousVersionContext,
-            searchStreaming: false,
             showRepogroupHomepage: false,
             showOnboardingTour: false,
             showEnterpriseHomePanels: false,
@@ -431,8 +430,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     navbarSearchQueryState={this.state.navbarSearchQueryState}
                                     onNavbarQueryChange={this.onNavbarQueryChange}
                                     fetchHighlightedFileLines={fetchHighlightedFileLines}
-                                    searchRequest={this.state.searchStreaming ? searchStream : search}
-                                    searchStreaming={this.state.searchStreaming}
+                                    searchRequest={search}
                                     // Extensions
                                     platformContext={this.platformContext}
                                     extensionsController={this.extensionsController}
@@ -462,6 +460,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     fetchSavedSearches={fetchSavedSearches}
                                     fetchRecentSearches={fetchRecentSearches}
                                     fetchRecentFileViews={fetchRecentFileViews}
+                                    fetchUserCodeMonitors={listUserCodeMonitors}
+                                    streamSearch={aggregateStreamingSearch}
                                 />
                             )}
                         />

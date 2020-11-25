@@ -22,7 +22,7 @@ describe('e2e test suite', () => {
         // Cloning the repositories takes ~1 minute, so give initialization 2
         // minutes instead of 1 (which would be inherited from
         // `jest.setTimeout(1 * 60 * 1000)` above).
-        this.timeout(2 * 60 * 1000)
+        this.timeout(5 * 60 * 1000)
 
         // Reset date mocking
         MockDate.reset()

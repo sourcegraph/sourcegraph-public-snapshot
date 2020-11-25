@@ -1,12 +1,11 @@
 package db
 
 import (
+	"context"
 	"testing"
 
-	"context"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type MockRepos struct {

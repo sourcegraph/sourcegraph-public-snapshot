@@ -7,11 +7,12 @@ import (
 	"sync"
 
 	"github.com/neelance/parallel"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatisticsResolver, error) {

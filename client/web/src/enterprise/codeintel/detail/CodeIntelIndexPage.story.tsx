@@ -1,19 +1,19 @@
-import { CodeIntelIndexPage } from './CodeIntelIndexPage'
-import { of } from 'rxjs'
 import { storiesOf } from '@storybook/react'
-import { SuiteFunction } from 'mocha'
-import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
 import * as H from 'history'
+import { SuiteFunction } from 'mocha'
 import React from 'react'
-import webStyles from '../../../SourcegraphWebApp.scss'
-import { SourcegraphContext } from '../../../jscontext'
+import { of } from 'rxjs'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
+import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
+import { SourcegraphContext } from '../../../jscontext'
+import webStyles from '../../../SourcegraphWebApp.scss'
+import { CodeIntelIndexPage } from './CodeIntelIndexPage'
 
 window.context = {} as SourcegraphContext & SuiteFunction
 
 const { add } = storiesOf('web/Codeintel administration/CodeIntelIndex', module).addDecorator(story => (
     <>
-        <div className="theme-light container">{story()}</div>
+        <div className="container">{story()}</div>
         <style>{webStyles}</style>
     </>
 ))

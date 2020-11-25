@@ -65,6 +65,7 @@ import { SearchPatternType } from './graphql-operations'
 import { TelemetryProps } from '../../shared/src/telemetry/telemetryService'
 import { useObservable } from '../../shared/src/util/useObservable'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
+import { CodeMonitoringProps } from './enterprise/code-monitoring'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -84,7 +85,8 @@ export interface LayoutProps
         RepogroupHomepageProps,
         OnboardingTourProps,
         HomePanelsProps,
-        SearchStreamingProps {
+        SearchStreamingProps,
+        CodeMonitoringProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]

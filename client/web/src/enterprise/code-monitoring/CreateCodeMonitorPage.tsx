@@ -98,9 +98,11 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                     tap(event => event.preventDefault()),
                     mergeMap(() =>
                         createCodeMonitor({
-                            namespace: props.authenticatedUser.id,
-                            description: codeMonitor.description,
-                            enabled: codeMonitor.enabled,
+                            monitor: {
+                                namespace: props.authenticatedUser.id,
+                                description: codeMonitor.description,
+                                enabled: codeMonitor.enabled,
+                            },
                             trigger: { query: codeMonitor.query },
                             actions: [
                                 {
@@ -274,20 +276,20 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             const hasTypeDiffOrCommitFilter = filters.some(
                                 filter =>
                                     filter.type === 'filter' &&
-                                    resolveFilter(filter.filterType.value)?.type === FilterType.type &&
-                                    ((filter.filterValue?.type === 'literal' &&
-                                        filter.filterValue &&
-                                        isDiffOrCommit(filter.filterValue.value)) ||
-                                        (filter.filterValue?.type === 'quoted' &&
-                                            filter.filterValue &&
-                                            isDiffOrCommit(filter.filterValue.quotedValue)))
+                                    resolveFilter(filter.field.value)?.type === FilterType.type &&
+                                    ((filter.value?.type === 'literal' &&
+                                        filter.value &&
+                                        isDiffOrCommit(filter.value.value)) ||
+                                        (filter.value?.type === 'quoted' &&
+                                            filter.value &&
+                                            isDiffOrCommit(filter.value.quotedValue)))
                             )
                             const hasPatternTypeFilter = filters.some(
                                 filter =>
                                     filter.type === 'filter' &&
-                                    resolveFilter(filter.filterType.value)?.type === FilterType.patterntype &&
-                                    filter.filterValue &&
-                                    validateFilter(filter.filterType.value, filter.filterValue)
+                                    resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
+                                    filter.value &&
+                                    validateFilter(filter.field.value, filter.value)
                             )
                             if (hasTypeDiffOrCommitFilter && hasPatternTypeFilter) {
                                 return undefined
