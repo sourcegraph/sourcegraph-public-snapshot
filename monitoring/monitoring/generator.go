@@ -17,6 +17,7 @@ import (
 )
 
 var isDev, _ = strconv.ParseBool(os.Getenv("DEV"))
+var noPrune, _ = strconv.ParseBool(os.Getenv("NO_PRUNE"))
 
 const alertSuffix = "_alert_rules.yml"
 
@@ -86,7 +87,9 @@ func Generate(containers ...*Container) {
 			}
 		}
 	}
-	deleteRemnants(filelist, grafanaDir, prometheusDir)
+	if !noPrune {
+		deleteRemnants(filelist, grafanaDir, prometheusDir)
+	}
 
 	if prometheusDir != "" && reload {
 		resp, err := http.Post("http://127.0.0.1:9090/-/reload", "", nil)
