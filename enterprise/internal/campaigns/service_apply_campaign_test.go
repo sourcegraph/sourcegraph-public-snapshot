@@ -583,7 +583,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !plan.ops.Equal(operations{operationUpdate}) {
+			if !plan.ops.Equal(operations{campaigns.ReconcilerOperationUpdate}) {
 				t.Fatalf("Got invalid reconciler operations: %q", plan.ops.String())
 			}
 
@@ -621,7 +621,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !plan.ops.Equal(operations{operationUpdate}) {
+			if !plan.ops.Equal(operations{campaigns.ReconcilerOperationUpdate}) {
 				t.Fatalf("Got invalid reconciler operations: %q", plan.ops.String())
 			}
 
@@ -661,7 +661,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !plan.ops.Equal(operations{operationUpdate}) {
+			if !plan.ops.Equal(operations{campaigns.ReconcilerOperationUpdate}) {
 				t.Fatalf("Got invalid reconciler operations: %q", plan.ops.String())
 			}
 		})
@@ -777,7 +777,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !plan.ops.Equal(operations{operationPush, operationPublish}) {
+			if !plan.ops.Equal(operations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish}) {
 				t.Fatalf("Got invalid reconciler operations: %q", plan.ops.String())
 			}
 		})
