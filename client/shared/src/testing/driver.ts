@@ -239,13 +239,8 @@ export class Driver {
         await this.page.waitForSelector('.test-sourcegraph-url')
         await this.replaceText({ selector: '.test-sourcegraph-url', newText: this.sourcegraphBaseUrl })
         await this.page.keyboard.press(Key.Enter)
-        await this.page.waitForFunction(
-            () => {
-                const element = document.querySelector('.test-connection-status')
-                return element?.textContent?.includes('Connected')
-            },
-            { timeout: 5000 }
-        )
+        await new Promise<never>(() => {})
+        await this.page.waitForSelector('.test-valid-sourcegraph-url-feedback')
     }
 
     public async close(): Promise<void> {
@@ -733,24 +728,24 @@ interface DriverOptions extends LaunchOptions {
     keepBrowser?: boolean
 }
 
-export async function createDriverForTest(options?: DriverOptions): Promise<Driver> {
+export async function createDriverForTest(options?: Partial<DriverOptions>): Promise<Driver> {
     // Apply defaults
-    options = {
+    const resolvedOptions = {
         ...getConfig('sourcegraphBaseUrl', 'headless', 'slowMo', 'keepBrowser', 'browser', 'devtools'),
         ...options,
     }
 
-    const { loadExtension } = options
+    const { loadExtension } = resolvedOptions
     const args: string[] = []
     const launchOptions: puppeteer.LaunchOptions = {
         ignoreHTTPSErrors: true,
-        ...options,
+        ...resolvedOptions,
         args,
         defaultViewport: null,
         timeout: 30000,
     }
     let browser: puppeteer.Browser
-    if (options.browser === 'firefox') {
+    if (resolvedOptions.browser === 'firefox') {
         // Make sure CSP is disabled in FF preferences,
         // because Puppeteer uses new Function() to evaluate code
         // which is not allowed by the github.com CSP.
@@ -806,5 +801,5 @@ export async function createDriverForTest(options?: DriverOptions): Promise<Driv
 
     const page = await browser.newPage()
 
-    return new Driver(browser, page, options)
+    return new Driver(browser, page, resolvedOptions)
 }

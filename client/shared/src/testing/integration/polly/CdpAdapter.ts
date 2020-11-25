@@ -14,7 +14,7 @@ function fromBase64(input: string): string {
 }
 
 export interface CdpAdapterOptions {
-    page: Puppeteer.Page
+    browser: Puppeteer.Browser
 }
 
 interface PollyResponse {
@@ -66,7 +66,7 @@ export class CdpAdapter extends PollyAdapter {
      * The puppeteer Page this adapter is attached to, obtained from
      * options passed to the Polly constructor.
      */
-    private page: Puppeteer.Page
+    private browser: Puppeteer.Browser
 
     /**
      * A map of all intercepted requests to their respond function, which will be called by the
@@ -77,7 +77,7 @@ export class CdpAdapter extends PollyAdapter {
     /**
      * The CDP session used to control request interception in the browser.
      */
-    private cdpSession?: Puppeteer.CDPSession
+    private cdpSessions = new Map<string, Puppeteer.CDPSession>()
 
     /**
      * A map of all intercepted requests to their passthrough callbacks function, which will be called by the
@@ -98,7 +98,7 @@ export class CdpAdapter extends PollyAdapter {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         super(polly)
-        this.page = this.options.page
+        this.browser = this.options.browser
     }
 
     /**
@@ -106,24 +106,32 @@ export class CdpAdapter extends PollyAdapter {
      * interception using the CDP "Fetch domain".
      */
     public async onConnect(): Promise<void> {
-        this.cdpSession = await this.page.target().createCDPSession()
+        console.log('onConnect')
+        const pages = await this.browser.pages()
+        // Handle other targets like the background page
+        // TODO listen to new pages/targets being created (tragetcreated event)
+        for (const page of pages) {
+            // TODO this needs to have multiple cdpSession
+            const cdpSession = await page.target().createCDPSession()
 
-        // TODO: This is where we narrow down the interception with patterns.
-        // Request and respond stages are independent, so we can set a different
-        // set of patterns for each.
-        const fetchEnableRequest: Protocol.Fetch.EnableRequest = {
-            patterns: [{ requestStage: 'Request' }, { requestStage: 'Response' }],
-        }
-        await this.cdpSession.send('Fetch.enable', fetchEnableRequest)
-
-        this.cdpSession.on('Fetch.requestPaused', (event: Protocol.Fetch.RequestPausedEvent): void => {
-            const isInResponseStage = eventIsInResponseStage(event)
-            if (isInResponseStage) {
-                this.handlePausedRequestInResponseStage(event)
-            } else {
-                this.handlePausedRequestInRequestStage(event)
+            // TODO: This is where we narrow down the interception with patterns.
+            // Request and respond stages are independent, so we can set a different
+            // set of patterns for each.
+            const fetchEnableRequest: Protocol.Fetch.EnableRequest = {
+                patterns: [{ requestStage: 'Request' }, { requestStage: 'Response' }],
             }
-        })
+            await cdpSession.send('Fetch.enable', fetchEnableRequest)
+
+            cdpSession.on('Fetch.requestPaused', (event: Protocol.Fetch.RequestPausedEvent): void => {
+                this.cdpSessions.set(event.requestId, cdpSession)
+                const isInResponseStage = eventIsInResponseStage(event)
+                if (isInResponseStage) {
+                    this.handlePausedRequestInResponseStage(event)
+                } else {
+                    this.handlePausedRequestInRequestStage(event)
+                }
+            })
+        }
     }
 
     /**

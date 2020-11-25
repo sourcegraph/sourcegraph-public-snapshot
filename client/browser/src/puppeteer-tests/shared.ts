@@ -10,7 +10,6 @@ import assert from 'assert'
 export function testSingleFilePage({
     getDriver,
     url,
-    sourcegraphBaseUrl,
     repoName,
     lineSelector,
     goToDefinitionURL,
@@ -20,9 +19,6 @@ export function testSingleFilePage({
 
     /** The URL to sourcegraph/jsonrpc2 call_opt.go at commit 4fb7cd90793ee6ab445f466b900e6bffb9b63d78 on the code host */
     url: string
-
-    /** The base URL of the sourcegraph instance */
-    sourcegraphBaseUrl: string
 
     /** The repo name of sourcgraph/jsonrpc2 on the Sourcegraph instance */
     repoName: string
@@ -63,7 +59,9 @@ export function testSingleFilePage({
                     await getDriver().page.evaluate(
                         () => document.querySelector<HTMLAnchorElement>('.code-view-toolbar .open-on-sourcegraph')?.href
                     ),
-                    `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go?utm_source=${
+                    `${
+                        getDriver().sourcegraphBaseUrl
+                    }/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go?utm_source=${
                         getDriver().browserType
                     }-extension`
                 )
@@ -92,7 +90,9 @@ export function testSingleFilePage({
                         () => document.querySelector<HTMLAnchorElement>('.test-tooltip-go-to-definition')?.href
                     ),
                     goToDefinitionURL ||
-                        `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go#L5:6`
+                        `${
+                            getDriver().sourcegraphBaseUrl
+                        }/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go#L5:6`
                 )
             })
         })
