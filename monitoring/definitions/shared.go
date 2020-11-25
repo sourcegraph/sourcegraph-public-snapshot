@@ -253,7 +253,7 @@ var postgresVersion sharedObservable = func(dbName string, owner ObservableOwner
 		Query:             fmt.Sprintf(`pg_settings_server_version_num{app="%s"}`, dbName),
 		DataMayNotExist:   true,
 		Critical:          Alert().LessOrEqual(9.6),
-		PanelOptions:      PanelOptions().LegendFormat("time_series").Unit(Seconds),
+		PanelOptions:      PanelOptions().LegendFormat("singlestat"),
 		Owner:             owner,
 		PossibleSolutions: "none",
 	}
@@ -277,12 +277,28 @@ var postgresSharedBuffers sharedObservable = func(dbName string, owner Observabl
 	return Observable{
 		Name:              "shared_buffers",
 		Description:       "shared buffers",
-		Query:             fmt.Sprintf(`pg_settings_shared_buffers_bytes{app="%s}`, dbName),
-		DataMayNotExist:   false,
+		Query:             fmt.Sprintf(`pg_settings_shared_buffers_bytes{app="%s"}`, dbName),
+		DataMayNotExist:   true,
 		DataMayNotBeNaN:   false,
 		Warning:           Alert().GreaterOrEqual(128000000),
 		PanelOptions:      PanelOptions().LegendFormat("time_series").Unit(Bytes),
 		Owner:             owner,
 		PossibleSolutions: "none",
+	}
+}
+
+var postgresEffectiveCacheBytes sharedObservable = func(dbname string,
+	owner ObservableOwner) Observable {
+	return Observable{
+		Name:        "effective_cache",
+		Description: "effective cache",
+		Owner:       owner,
+		Query: fmt.Sprintf(
+			`pg_settings_effective_cache_size_bytes{app="%s"}`, dbname),
+		DataMayNotExist:   true,
+		DataMayNotBeNaN:   false,
+		Warning:           Alert().LessOrEqual(4000000),
+		PossibleSolutions: "none",
+		PanelOptions:      PanelOptions().LegendFormat("time_series").Unit(Bytes),
 	}
 }
