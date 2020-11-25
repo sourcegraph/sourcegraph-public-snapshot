@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/tag"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -45,13 +46,13 @@ func currentUserAllowedExternalServices(ctx context.Context) conf.ExternalServic
 	}
 
 	// The user may have a tag that opts them in
-	err := backend.CheckActorHasTag(ctx, backend.TagAllowUserExternalServicePrivate)
-	if err == nil {
+	ok, _ := tag.CheckActorHasTag(ctx, tag.AllowUserExternalServicePrivate)
+	if ok {
 		return conf.ExternalServiceModeAll
 	}
 
-	err = backend.CheckActorHasTag(ctx, backend.TagAllowUserExternalServicePublic)
-	if err == nil {
+	ok, _ = tag.CheckActorHasTag(ctx, tag.AllowUserExternalServicePublic)
+	if ok {
 		return conf.ExternalServiceModePublic
 	}
 
