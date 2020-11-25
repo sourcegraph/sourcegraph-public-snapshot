@@ -157,7 +157,7 @@ func getRepoStore() (*db.RepoStore, error) {
 	//
 	// START FLAILING
 
-	// Gitserver only does internal actor. We rely on the frontend to do authz
+	// Gitserver is an internal actor. We rely on the frontend to do authz
 	// checks for user requests.
 	authz.SetProviders(true, []authz.Provider{})
 
