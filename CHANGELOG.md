@@ -21,6 +21,7 @@ All notable changes to `src-cli` are documented in this file.
 ### Fixed
 
 - The evaluation of the [`repository.branch` attribute](https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#on-repository) has been fixed to actually cause the correct version of the repository to be used. [#393](https://github.com/sourcegraph/src-cli/pull/393)
+- Normally, when one or more repositories in a campaign generate an empty diff, a changeset spec isn't created. From src-cli 3.21.9 to 3.22.3, inclusive, re-running a campaign would result in an empty changeset spec being created by mistake if the empty changeset spec was in the execution cache, which would result in errors on Sourcegraph when applying the campaign. This has been fixed, and empty changeset specs in the cache are now treated the same way as uncached changeset specs that are empty: they are skipped, and a message is displayed in `-v` mode indicating the repo that was skipped. [#397](https://github.com/sourcegraph/src-cli/pull/397)
 
 ### Removed
 

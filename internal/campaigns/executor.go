@@ -210,9 +210,20 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 				diff = result.Commits[0].Diff
 			}
 
+			status.Cached = true
+
+			// If the cached result resulted in an empty diff, we don't need to
+			// add it to the list of specs that are displayed to the user and
+			// send to the server. Instead, we can just report that the task is
+			// complete and move on.
+			if len(diff) == 0 {
+				status.FinishedAt = time.Now()
+				x.updateTaskStatus(task, status)
+				return
+			}
+
 			spec := createChangesetSpec(task, diff, x.features)
 
-			status.Cached = true
 			status.ChangesetSpec = spec
 			status.FinishedAt = time.Now()
 			x.updateTaskStatus(task, status)

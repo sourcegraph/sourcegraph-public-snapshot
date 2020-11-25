@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -14,6 +15,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -116,6 +118,21 @@ func TestExecutor_Integration(t *testing.T) {
 				srcCLIRepo.ID: []string{"main.go", "modified-main.go.md", "added-modified-main.go.md"},
 			},
 		},
+		{
+			name:  "empty",
+			repos: []*graphql.Repository{srcCLIRepo},
+			archives: []mockRepoArchive{
+				{repo: srcCLIRepo, files: map[string]string{
+					"README.md": "# Welcome to the README\n",
+					"main.go":   "package main\n\nfunc main() {\n\tfmt.Println(     \"Hello World\")\n}\n",
+				}},
+			},
+			steps: []Step{
+				{Run: `true`, Container: "doesntmatter:13"},
+			},
+			// No changesets should be generated.
+			wantFilesChanged: map[string][]string{},
+		},
 	}
 
 	for _, tc := range tests {
@@ -132,9 +149,10 @@ func TestExecutor_Integration(t *testing.T) {
 			}
 			defer os.Remove(testTempDir)
 
+			cache := newInMemoryExecutionCache()
 			creator := &WorkspaceCreator{dir: testTempDir, client: client}
 			opts := ExecutorOpts{
-				Cache:       &ExecutionNoOpCache{},
+				Cache:       cache,
 				Creator:     creator,
 				TempDir:     testTempDir,
 				Parallelism: runtime.GOMAXPROCS(0),
@@ -144,63 +162,98 @@ func TestExecutor_Integration(t *testing.T) {
 				opts.Timeout = 30 * time.Second
 			}
 
-			executor := newExecutor(opts, client, featuresAllEnabled())
+			// execute contains the actual logic running the tasks on an
+			// executor. We'll run this multiple times to cover both the cache
+			// and non-cache code paths.
+			execute := func() {
+				executor := newExecutor(opts, client, featuresAllEnabled())
 
-			template := &ChangesetTemplate{}
-			for _, r := range tc.repos {
-				executor.AddTask(r, tc.steps, template)
-			}
-
-			executor.Start(context.Background())
-			specs, err := executor.Wait()
-			if tc.wantErrInclude == "" && err != nil {
-				t.Fatalf("execution failed: %s", err)
-			}
-			if err != nil && !strings.Contains(err.Error(), tc.wantErrInclude) {
-				t.Errorf("wrong error. have=%q want included=%q", err, tc.wantErrInclude)
-			}
-			if tc.wantErrInclude != "" {
-				return
-			}
-
-			if have, want := len(specs), len(tc.wantFilesChanged); have != want {
-				t.Fatalf("wrong number of changeset specs. want=%d, have=%d", want, have)
-			}
-
-			for _, spec := range specs {
-				if have, want := len(spec.Commits), 1; have != want {
-					t.Fatalf("wrong number of commits. want=%d, have=%d", want, have)
+				template := &ChangesetTemplate{}
+				for _, r := range tc.repos {
+					executor.AddTask(r, tc.steps, template)
 				}
 
-				fileDiffs, err := diff.ParseMultiFileDiff([]byte(spec.Commits[0].Diff))
-				if err != nil {
-					t.Fatalf("failed to parse diff: %s", err)
+				executor.Start(context.Background())
+				specs, err := executor.Wait()
+				if tc.wantErrInclude == "" && err != nil {
+					t.Fatalf("execution failed: %s", err)
+				}
+				if err != nil && !strings.Contains(err.Error(), tc.wantErrInclude) {
+					t.Errorf("wrong error. have=%q want included=%q", err, tc.wantErrInclude)
+				}
+				if tc.wantErrInclude != "" {
+					return
 				}
 
-				wantFiles, ok := tc.wantFilesChanged[spec.BaseRepository]
-				if !ok {
-					t.Fatalf("unexpected file changes in repo %s", spec.BaseRepository)
+				if have, want := len(specs), len(tc.wantFilesChanged); have != want {
+					t.Fatalf("wrong number of changeset specs. want=%d, have=%d", want, have)
 				}
 
-				if have, want := len(fileDiffs), len(wantFiles); have != want {
-					t.Fatalf("repo %s: wrong number of fileDiffs. want=%d, have=%d", spec.BaseRepository, want, have)
-				}
+				for _, spec := range specs {
+					if have, want := len(spec.Commits), 1; have != want {
+						t.Fatalf("wrong number of commits. want=%d, have=%d", want, have)
+					}
 
-				diffsByName := map[string]*diff.FileDiff{}
-				for _, fd := range fileDiffs {
-					if fd.NewName == "/dev/null" {
-						diffsByName[fd.OrigName] = fd
-					} else {
-						diffsByName[fd.NewName] = fd
+					fileDiffs, err := diff.ParseMultiFileDiff([]byte(spec.Commits[0].Diff))
+					if err != nil {
+						t.Fatalf("failed to parse diff: %s", err)
+					}
+
+					wantFiles, ok := tc.wantFilesChanged[spec.BaseRepository]
+					if !ok {
+						t.Fatalf("unexpected file changes in repo %s", spec.BaseRepository)
+					}
+
+					if have, want := len(fileDiffs), len(wantFiles); have != want {
+						t.Fatalf("repo %s: wrong number of fileDiffs. want=%d, have=%d", spec.BaseRepository, want, have)
+					}
+
+					diffsByName := map[string]*diff.FileDiff{}
+					for _, fd := range fileDiffs {
+						if fd.NewName == "/dev/null" {
+							diffsByName[fd.OrigName] = fd
+						} else {
+							diffsByName[fd.NewName] = fd
+						}
+					}
+
+					for _, file := range wantFiles {
+						if _, ok := diffsByName[file]; !ok {
+							t.Errorf("%s was not changed (diffsByName=%#v)", file, diffsByName)
+						}
 					}
 				}
+			}
 
-				for _, file := range wantFiles {
-					if _, ok := diffsByName[file]; !ok {
-						t.Errorf("%s was not changed (diffsByName=%#v)", file, diffsByName)
-					}
+			verifyCache := func() {
+				want := len(tc.repos)
+				if tc.wantErrInclude != "" {
+					want = 0
+				}
+
+				// Verify that there is a cache entry for each repo.
+				if have := cache.size(); have != want {
+					t.Errorf("unexpected number of cache entries: have=%d want=%d cache=%+v", have, want, cache)
 				}
 			}
+
+			// Sanity check, since we're going to be looking at the side effects
+			// on the cache.
+			if cache.size() != 0 {
+				t.Fatalf("unexpectedly hot cache: %+v", cache)
+			}
+
+			// Run with a cold cache.
+			t.Run("cold cache", func(t *testing.T) {
+				execute()
+				verifyCache()
+			})
+
+			// Run with a warm cache.
+			t.Run("warm cache", func(t *testing.T) {
+				execute()
+				verifyCache()
+			})
 		})
 	}
 }
@@ -253,4 +306,74 @@ func newZipArchivesMux(t *testing.T, callback http.HandlerFunc, archives ...mock
 	}
 
 	return mux
+}
+
+// inMemoryExecutionCache provides an in-memory cache for testing purposes.
+type inMemoryExecutionCache struct {
+	cache map[string][]byte
+	mu    sync.RWMutex
+}
+
+func newInMemoryExecutionCache() *inMemoryExecutionCache {
+	return &inMemoryExecutionCache{
+		cache: make(map[string][]byte),
+	}
+}
+
+func (c *inMemoryExecutionCache) size() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	return len(c.cache)
+}
+
+func (c *inMemoryExecutionCache) Get(ctx context.Context, key ExecutionCacheKey) (*ChangesetSpec, error) {
+	k, err := key.Key()
+	if err != nil {
+		return nil, err
+	}
+
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if raw, ok := c.cache[k]; ok {
+		var spec ChangesetSpec
+		if err := json.Unmarshal(raw, &spec); err != nil {
+			return nil, err
+		}
+
+		return &spec, nil
+	}
+	return nil, nil
+}
+
+func (c *inMemoryExecutionCache) Set(ctx context.Context, key ExecutionCacheKey, spec *ChangesetSpec) error {
+	k, err := key.Key()
+	if err != nil {
+		return err
+	}
+
+	v, err := json.Marshal(spec)
+	if err != nil {
+		return err
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.cache[k] = v
+	return nil
+}
+
+func (c *inMemoryExecutionCache) Clear(ctx context.Context, key ExecutionCacheKey) error {
+	k, err := key.Key()
+	if err != nil {
+		return err
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	delete(c.cache, k)
+	return nil
 }
