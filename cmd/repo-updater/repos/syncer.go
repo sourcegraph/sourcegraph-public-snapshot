@@ -245,7 +245,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 		return errors.Wrap(err, "syncer.sync.sourced")
 	}
 
-	// Unless explicitly specified with the "all" setting or unless the owner of the service has the "AllowUserExternalServicePrivate" tag,
+	// Unless explicitly specified with the "all" setting or the owner of the service has the "AllowUserExternalServicePrivate" tag,
 	// user added external services should only sync public code.
 	if isUserOwned && conf.ExternalServiceUserMode() != conf.ExternalServiceModeAll {
 		syncPublicOnly := true
