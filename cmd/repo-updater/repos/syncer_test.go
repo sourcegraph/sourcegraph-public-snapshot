@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/tag"
+	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -1697,7 +1697,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 			conf.Mock(nil)
 
 			// If the user has the AllowUserExternalServicePrivate tag, user service can also sync private code
-			_, err := db.ExecContext(ctx, "UPDATE users SET tags = $1 WHERE id = $2", pq.Array([]string{tag.AllowUserExternalServicePrivate}), userID)
+			_, err := db.ExecContext(ctx, "UPDATE users SET tags = $1 WHERE id = $2", pq.Array([]string{idb.TagAllowUserExternalServicePrivate}), userID)
 			if err != nil {
 				t.Fatal(err)
 			}

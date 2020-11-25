@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/tag"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -45,13 +44,18 @@ func currentUserAllowedExternalServices(ctx context.Context) conf.ExternalServic
 		return mode
 	}
 
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return conf.ExternalServiceModeDisabled
+	}
+
 	// The user may have a tag that opts them in
-	ok, _ := tag.CheckActorHasTag(ctx, tag.AllowUserExternalServicePrivate)
+	ok, _ := db.Users.HasTag(ctx, a.UID, db.TagAllowUserExternalServicePrivate)
 	if ok {
 		return conf.ExternalServiceModeAll
 	}
 
-	ok, _ = tag.CheckActorHasTag(ctx, tag.AllowUserExternalServicePublic)
+	ok, _ = db.Users.HasTag(ctx, a.UID, db.TagAllowUserExternalServicePublic)
 	if ok {
 		return conf.ExternalServiceModePublic
 	}

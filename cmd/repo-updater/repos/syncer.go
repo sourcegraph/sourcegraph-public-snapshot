@@ -17,7 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/tag"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -242,7 +242,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	// Unless explicitly specified with the "all" setting or the owner of the service has the "AllowUserExternalServicePrivate" tag,
 	// user added external services should only sync public code.
 	if isUserOwned && conf.ExternalServiceUserMode() != conf.ExternalServiceModeAll {
-		ok, err := tag.CheckUserHasTag(ctx, svc.NamespaceUserID, tag.AllowUserExternalServicePrivate)
+		ok, err := db.Users.HasTag(ctx, svc.NamespaceUserID, db.TagAllowUserExternalServicePrivate)
 		if err != nil {
 			return errors.Wrap(err, "checking user tag")
 		}

@@ -827,3 +827,25 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 
 	return users, nil
 }
+
+const (
+	// If the owner of an external service has this tag, the service is allowed to sync private code
+	TagAllowUserExternalServicePrivate = "AllowUserExternalServicePrivate"
+	// If the owner of an external service has this tag, the service is allowed to sync public code only
+	TagAllowUserExternalServicePublic = "AllowUserExternalServicePublic"
+)
+
+// HasTag reports whether the context actor has the given tag.
+// If not, it returns false and a nil error.
+func (u *users) HasTag(ctx context.Context, userID int32, tag string) (bool, error) {
+	user, err := u.GetByID(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	for _, t := range user.Tags {
+		if t == tag {
+			return true, nil
+		}
+	}
+	return false, nil
+}
