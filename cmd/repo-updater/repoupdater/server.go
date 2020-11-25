@@ -32,10 +32,10 @@ type Server struct {
 	*repos.Syncer
 	SourcegraphDotComMode bool
 	GithubDotComSource    interface {
-		GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error)
+		GetRepo(ctx context.Context, nameWithOwner string) (*types.Repo, error)
 	}
 	GitLabDotComSource interface {
-		GetRepo(ctx context.Context, projectWithNamespace string) (*repos.Repo, error)
+		GetRepo(ctx context.Context, projectWithNamespace string) (*types.Repo, error)
 	}
 	Scheduler interface {
 		UpdateOnce(id api.RepoID, name api.RepoName, url string)
@@ -149,7 +149,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	args := repos.StoreListExternalServicesArgs{
-		Kinds: repos.Repos(rs).Kinds(),
+		Kinds: types.Repos(rs).Kinds(),
 	}
 
 	es, err := s.Store.ListExternalServices(r.Context(), args)
@@ -332,7 +332,7 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 
 	return &protocol.RepoUpdateResponse{
 		ID:   repo.ID,
-		Name: repo.Name,
+		Name: string(repo.Name),
 		URL:  req.URL,
 	}, http.StatusOK, nil
 }
@@ -457,7 +457,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	if err != nil {
 		return nil, err
 	}
-	var repo *repos.Repo
+	var repo *types.Repo
 	if len(list) > 0 {
 		repo = list[0]
 	}
@@ -485,7 +485,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 				// we can safely assume that when a repository stored in the database is not accessible anymore,
 				// no other external service should have access to it, we can then remove it.
 				if repoResult.ErrorNotFound || repoResult.ErrorUnauthorized {
-					err = s.Store.UpsertRepos(ctx, repo.With(func(r *repos.Repo) {
+					err = s.Store.UpsertRepos(ctx, repo.With(func(r *types.Repo) {
 						r.DeletedAt = s.Now()
 					}))
 					if err != nil {
@@ -519,7 +519,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 // remoteRepoSync is used by Sourcegraph.com to incrementally sync metadata
 // for remoteName on codehost.
 func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, remoteName string) (*protocol.RepoLookupResult, error) {
-	var repo *repos.Repo
+	var repo *types.Repo
 	var err error
 	switch codehost {
 	case extsvc.GitHubDotCom:
@@ -690,7 +690,7 @@ func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request)
 	respond(w, http.StatusOK, nil)
 }
 
-func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
+func newRepoInfo(r *types.Repo) (*protocol.RepoInfo, error) {
 	urls := r.CloneURLs()
 	if len(urls) == 0 {
 		return nil, fmt.Errorf("no clone urls for repo id=%q name=%q", r.ID, r.Name)

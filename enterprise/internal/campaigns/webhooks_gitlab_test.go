@@ -915,14 +915,16 @@ func createGitLabExternalService(t *testing.T, ctx context.Context, rstore repos
 
 // createGitLabRepo creates a mock GitLab repo attached to the given external
 // service.
-func createGitLabRepo(t *testing.T, ctx context.Context, rstore repos.Store, es *types.ExternalService) *repos.Repo {
-	repo := (&repos.Repo{
+func createGitLabRepo(t *testing.T, ctx context.Context, rstore repos.Store, es *types.ExternalService) *types.Repo {
+	repo := (&types.Repo{
 		Name: "gitlab.com/sourcegraph/test",
-		URI:  "gitlab.com/sourcegraph/test",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "123",
 			ServiceType: extsvc.TypeGitLab,
 			ServiceID:   "https://gitlab.com/",
+		},
+		RepoFields: &types.RepoFields{
+			URI: "gitlab.com/sourcegraph/test",
 		},
 	}).With(repos.Opt.RepoSources(es.URN()))
 	if err := rstore.InsertRepos(ctx, repo); err != nil {
@@ -933,7 +935,7 @@ func createGitLabRepo(t *testing.T, ctx context.Context, rstore repos.Store, es 
 }
 
 // createGitLabChangeset creates a mock GitLab changeset.
-func createGitLabChangeset(t *testing.T, ctx context.Context, store *Store, repo *repos.Repo) *campaigns.Changeset {
+func createGitLabChangeset(t *testing.T, ctx context.Context, store *Store, repo *types.Repo) *campaigns.Changeset {
 	c := &campaigns.Changeset{
 		RepoID:              repo.ID,
 		ExternalID:          "1",
@@ -948,7 +950,7 @@ func createGitLabChangeset(t *testing.T, ctx context.Context, store *Store, repo
 
 // createMergeRequestPayload creates a mock GitLab webhook payload of the merge
 // request object kind.
-func createMergeRequestPayload(t *testing.T, repo *repos.Repo, changeset *campaigns.Changeset, action string) string {
+func createMergeRequestPayload(t *testing.T, repo *types.Repo, changeset *campaigns.Changeset, action string) string {
 	cid, err := strconv.Atoi(changeset.ExternalID)
 	if err != nil {
 		t.Fatal(err)
@@ -976,7 +978,7 @@ func createMergeRequestPayload(t *testing.T, repo *repos.Repo, changeset *campai
 
 // createPipelinePayload creates a mock GitLab webhook payload of the pipeline
 // object kind.
-func createPipelinePayload(t *testing.T, repo *repos.Repo, changeset *campaigns.Changeset, pipeline gitlab.Pipeline) string {
+func createPipelinePayload(t *testing.T, repo *types.Repo, changeset *campaigns.Changeset, pipeline gitlab.Pipeline) string {
 	pid, err := strconv.Atoi(repo.ExternalRepo.ID)
 	if err != nil {
 		t.Fatal(err)

@@ -324,7 +324,7 @@ func (s GithubSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
 
 // GetRepo returns the Github repository with the given name and owner
 // ("org/repo-name")
-func (s GithubSource) GetRepo(ctx context.Context, nameWithOwner string) (*Repo, error) {
+func (s GithubSource) GetRepo(ctx context.Context, nameWithOwner string) (*types.Repo, error) {
 	r, err := s.getRepository(ctx, nameWithOwner)
 	if err != nil {
 		return nil, err
@@ -332,31 +332,33 @@ func (s GithubSource) GetRepo(ctx context.Context, nameWithOwner string) (*Repo,
 	return s.makeRepo(r), nil
 }
 
-func (s GithubSource) makeRepo(r *github.Repository) *Repo {
+func (s GithubSource) makeRepo(r *github.Repository) *types.Repo {
 	urn := s.svc.URN()
-	return &Repo{
-		Name: string(reposource.GitHubRepoName(
+	return &types.Repo{
+		Name: reposource.GitHubRepoName(
 			s.config.RepositoryPathPattern,
 			s.originalHostname,
 			r.NameWithOwner,
-		)),
-		URI: string(reposource.GitHubRepoName(
-			"",
-			s.originalHostname,
-			r.NameWithOwner,
-		)),
+		),
 		ExternalRepo: github.ExternalRepoSpec(r, s.baseURL),
-		Description:  r.Description,
-		Fork:         r.IsFork,
-		Archived:     r.IsArchived,
 		Private:      r.IsPrivate,
-		Sources: map[string]*SourceInfo{
-			urn: {
-				ID:       urn,
-				CloneURL: s.authenticatedRemoteURL(r),
+		RepoFields: &types.RepoFields{
+			URI: string(reposource.GitHubRepoName(
+				"",
+				s.originalHostname,
+				r.NameWithOwner,
+			)),
+			Description: r.Description,
+			Fork:        r.IsFork,
+			Archived:    r.IsArchived,
+			Sources: map[string]*types.SourceInfo{
+				urn: {
+					ID:       urn,
+					CloneURL: s.authenticatedRemoteURL(r),
+				},
 			},
+			Metadata: r,
 		},
-		Metadata: r,
 	}
 }
 

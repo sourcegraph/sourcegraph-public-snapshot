@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -769,7 +770,7 @@ func TestRepositoryPermissions(t *testing.T) {
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	// Create 2 repositories
-	repos := make([]*repos.Repo, 0, 2)
+	repos := make([]*types.Repo, 0, 2)
 	for i := 0; i < cap(repos); i++ {
 		name := fmt.Sprintf("github.com/sourcegraph/repo-%d", i)
 		r := newGitHubTestRepo(name, newGitHubExternalService(t, reposStore))

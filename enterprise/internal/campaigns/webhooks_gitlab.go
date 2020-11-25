@@ -257,7 +257,7 @@ func (h *GitLabWebhook) handlePipelineEvent(ctx context.Context, esID string, ev
 	return nil
 }
 
-func (h *GitLabWebhook) getChangesetForPR(ctx context.Context, tx *Store, pr *PR, repo *repos.Repo) (*campaigns.Changeset, error) {
+func (h *GitLabWebhook) getChangesetForPR(ctx context.Context, tx *Store, pr *PR, repo *types.Repo) (*campaigns.Changeset, error) {
 	return tx.GetChangeset(ctx, GetChangesetOpts{
 		RepoID:              repo.ID,
 		ExternalID:          strconv.FormatInt(pr.ID, 10),

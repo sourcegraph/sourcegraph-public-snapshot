@@ -63,7 +63,7 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			var got []*Repo
+			var got []*types.Repo
 			for _, r := range repos {
 				got = append(got, s.makeRepo(r, false))
 			}
@@ -167,10 +167,12 @@ func TestBitbucketServerSource_LoadChangeset(t *testing.T) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	repo := &Repo{
-		Metadata: &bitbucketserver.Repo{
-			Slug:    "vegeta",
-			Project: &bitbucketserver.Project{Key: "SOUR"},
+	repo := &types.Repo{
+		RepoFields: &types.RepoFields{
+			Metadata: &bitbucketserver.Repo{
+				Slug:    "vegeta",
+				Project: &bitbucketserver.Project{Key: "SOUR"},
+			},
 		},
 	}
 
@@ -253,10 +255,12 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	repo := &Repo{
-		Metadata: &bitbucketserver.Repo{
-			Slug:    "automation-testing",
-			Project: &bitbucketserver.Project{Key: "SOUR"},
+	repo := &types.Repo{
+		RepoFields: &types.RepoFields{
+			Metadata: &bitbucketserver.Repo{
+				Slug:    "automation-testing",
+				Project: &bitbucketserver.Project{Key: "SOUR"},
+			},
 		},
 	}
 

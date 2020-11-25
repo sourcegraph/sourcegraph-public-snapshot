@@ -14,8 +14,6 @@ import (
 	"github.com/goware/urlx"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/xeipuuv/gojsonschema"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -25,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/xeipuuv/gojsonschema"
 )
 
 // RepoFields are lazy loaded data fields on a Repo (from the DB).
@@ -137,17 +136,50 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 		r.Name, modified = n.Name, true
 	}
 
+	if n.ExternalRepo != (api.ExternalRepoSpec{}) &&
+		!r.ExternalRepo.Equal(&n.ExternalRepo) {
+		r.ExternalRepo, modified = n.ExternalRepo, true
+	}
+
+	if r.Private != n.Private {
+		r.Private, modified = n.Private, true
+	}
+
+	copyMetadata := func() {
+		// As a special case, we clear out the value of ViewerPermission for GitHub repos as
+		// the value is dependent on the token used to fetch it. We don't want to store this in the DB as it will
+		// flip flop as we fetch the same repo from different external services.
+		switch x := n.Metadata.(type) {
+		case *github.Repository:
+			cp := *x
+			cp.ViewerPermission = ""
+			n = n.With(func(clone *Repo) {
+				// Repo.Clone does not currently clone metadata for any types as they could contain hard to clone
+				// items such as maps. However, we know that copying github.Repository is safe as it only contains values.
+				clone.Metadata = &cp
+			})
+		}
+	}
+
+	if r.RepoFields == nil {
+		if n.RepoFields == nil {
+			return modified
+		}
+		copyMetadata()
+		c := n.Clone()
+		r.RepoFields, modified = c.RepoFields, true
+		return
+	} else if n.RepoFields == nil {
+		r.RepoFields, modified = nil, true
+		return
+	}
+
 	if r.URI != n.URI {
 		r.URI, modified = n.URI, true
 	}
 
 	if r.Description != n.Description {
 		r.Description, modified = n.Description, true
-	}
-
-	if n.ExternalRepo != (api.ExternalRepoSpec{}) &&
-		!r.ExternalRepo.Equal(&n.ExternalRepo) {
-		r.ExternalRepo, modified = n.ExternalRepo, true
 	}
 
 	if r.Archived != n.Archived {
@@ -158,27 +190,11 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 		r.Fork, modified = n.Fork, true
 	}
 
-	if r.Private != n.Private {
-		r.Private, modified = n.Private, true
-	}
-
 	if !reflect.DeepEqual(r.Sources, n.Sources) {
 		r.Sources, modified = n.Sources, true
 	}
 
-	// As a special case, we clear out the value of ViewerPermission for GitHub repos as
-	// the value is dependent on the token used to fetch it. We don't want to store this in the DB as it will
-	// flip flop as we fetch the same repo from different external services.
-	switch x := n.Metadata.(type) {
-	case *github.Repository:
-		cp := *x
-		cp.ViewerPermission = ""
-		n = n.With(func(clone *Repo) {
-			// Repo.Clone does not currently clone metadata for any types as they could contain hard to clone
-			// items such as maps. However, we know that copying github.Repository is safe as it only contains values.
-			clone.Metadata = &cp
-		})
-	}
+	copyMetadata()
 
 	if !reflect.DeepEqual(r.Metadata, n.Metadata) {
 		r.Metadata, modified = n.Metadata, true
@@ -196,11 +212,11 @@ func (r *Repo) Clone() *Repo {
 	if r.RepoFields != nil {
 		repoFields := *r.RepoFields
 		clone.RepoFields = &repoFields
-	}
-	if r.Sources != nil {
-		clone.Sources = make(map[string]*SourceInfo, len(r.Sources))
-		for k, v := range r.Sources {
-			clone.Sources[k] = v
+		if r.Sources != nil {
+			clone.Sources = make(map[string]*SourceInfo, len(r.Sources))
+			for k, v := range r.Sources {
+				clone.Sources[k] = v
+			}
 		}
 	}
 	return &clone
@@ -254,7 +270,7 @@ func (r *Repo) Less(s *Repo) bool {
 
 func (r *Repo) String() string {
 	eid := fmt.Sprintf("{%s %s %s}", r.ExternalRepo.ServiceID, r.ExternalRepo.ServiceType, r.ExternalRepo.ID)
-	if r.IsDeleted() {
+	if r.RepoFields != nil && r.IsDeleted() {
 		return fmt.Sprintf("Repo{ID: %d, Name: %q, EID: %s, IsDeleted: true}", r.ID, r.Name, eid)
 	}
 	return fmt.Sprintf("Repo{ID: %d, Name: %q, EID: %s}", r.ID, r.Name, eid)
@@ -285,9 +301,17 @@ func sortedSliceLess(a, b []string) bool {
 // Repos is an utility type with convenience methods for operating on lists of Repos.
 type Repos []*Repo
 
-func (rs Repos) Len() int           { return len(rs) }
-func (rs Repos) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
-func (rs Repos) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
+func (rs Repos) Len() int {
+	return len(rs)
+}
+
+func (rs Repos) Swap(i, j int) {
+	rs[i], rs[j] = rs[j], rs[i]
+}
+
+func (rs Repos) Less(i, j int) bool {
+	return rs[i].Less(rs[j])
+}
 
 // IDs returns the list of ids from all Repos.
 func (rs Repos) IDs() []api.RepoID {
@@ -561,6 +585,9 @@ func (e *ExternalService) excludeGitLabRepos(rs ...*Repo) error {
 		}
 
 		for _, r := range rs {
+			if r.RepoFields == nil {
+				continue
+			}
 			p, ok := r.Metadata.(*gitlab.Project)
 			if !ok {
 				continue
@@ -610,6 +637,9 @@ func (e *ExternalService) excludeBitbucketServerRepos(rs ...*Repo) error {
 		}
 
 		for _, r := range rs {
+			if r.RepoFields == nil {
+				continue
+			}
 			repo, ok := r.Metadata.(*bitbucketserver.Repo)
 			if !ok {
 				continue
@@ -661,6 +691,9 @@ func (e *ExternalService) excludeGitoliteRepos(rs ...*Repo) error {
 		}
 
 		for _, r := range rs {
+			if r.RepoFields == nil {
+				continue
+			}
 			repo, ok := r.Metadata.(*gitolite.Repo)
 			if ok && repo.Name != "" && !set[repo.Name] {
 				c.Exclude = append(c.Exclude, &schema.ExcludedGitoliteRepo{Name: repo.Name})
@@ -693,6 +726,9 @@ func (e *ExternalService) excludeGithubRepos(rs ...*Repo) error {
 		}
 
 		for _, r := range rs {
+			if r.RepoFields == nil {
+				continue
+			}
 			repo, ok := r.Metadata.(*github.Repository)
 			if !ok {
 				continue
@@ -742,6 +778,9 @@ func (e *ExternalService) excludeAWSCodeCommitRepos(rs ...*Repo) error {
 		}
 
 		for _, r := range rs {
+			if r.RepoFields == nil {
+				continue
+			}
 			repo, ok := r.Metadata.(*awscodecommit.Repository)
 			if !ok {
 				continue

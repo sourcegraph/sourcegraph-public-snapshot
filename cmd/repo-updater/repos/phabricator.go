@@ -79,7 +79,7 @@ func (s *PhabricatorSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*Repo, error) {
+func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*types.Repo, error) {
 	var external []*phabricator.URI
 	builtin := make(map[string]*phabricator.URI)
 
@@ -137,26 +137,28 @@ func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*Repo, error) {
 	}
 
 	urn := s.svc.URN()
-	return &Repo{
-		Name: name,
-		URI:  name,
+	return &types.Repo{
+		Name: api.RepoName(name),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          repo.PHID,
 			ServiceType: extsvc.TypePhabricator,
 			ServiceID:   serviceID,
 		},
-		Sources: map[string]*SourceInfo{
-			urn: {
-				ID:       urn,
-				CloneURL: cloneURL,
-				// TODO(tsenart): We need a way for admins to specify which URI to
-				// use as a CloneURL. Do they want to use https + shortname, git + callsign
-				// an external URI that's mirrored or observed, etc.
-				// This must be figured out when starting to integrate the new Syncer with this
-				// source.
+		RepoFields: &types.RepoFields{
+			URI: name,
+			Sources: map[string]*types.SourceInfo{
+				urn: {
+					ID:       urn,
+					CloneURL: cloneURL,
+					// TODO(tsenart): We need a way for admins to specify which URI to
+					// use as a CloneURL. Do they want to use https + shortname, git + callsign
+					// an external URI that's mirrored or observed, etc.
+					// This must be figured out when starting to integrate the new Syncer with this
+					// source.
+				},
 			},
+			Metadata: repo,
 		},
-		Metadata: repo,
 	}, nil
 }
 
@@ -227,7 +229,7 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context, s Store) {
 }
 
 // updatePhabRepos ensures that all provided repositories exist in the phabricator_repos table.
-func updatePhabRepos(ctx context.Context, repos []*Repo) error {
+func updatePhabRepos(ctx context.Context, repos []*types.Repo) error {
 	for _, r := range repos {
 		repo := r.Metadata.(*phabricator.Repo)
 		err := api.InternalClient.PhabricatorRepoCreate(

@@ -115,23 +115,25 @@ func (s *AWSCodeCommitSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func (s *AWSCodeCommitSource) makeRepo(r *awscodecommit.Repository) (*Repo, error) {
+func (s *AWSCodeCommitSource) makeRepo(r *awscodecommit.Repository) (*types.Repo, error) {
 	urn := s.svc.URN()
 	cloneURL := s.authenticatedRemoteURL(r)
 	serviceID := awscodecommit.ServiceID(s.awsPartition, s.awsRegion, r.AccountID)
 
-	return &Repo{
-		Name:         string(reposource.AWSRepoName(s.config.RepositoryPathPattern, r.Name)),
-		URI:          string(reposource.AWSRepoName("", r.Name)),
+	return &types.Repo{
+		Name:         reposource.AWSRepoName(s.config.RepositoryPathPattern, r.Name),
 		ExternalRepo: awscodecommit.ExternalRepoSpec(r, serviceID),
-		Description:  r.Description,
-		Sources: map[string]*SourceInfo{
-			urn: {
-				ID:       urn,
-				CloneURL: cloneURL,
+		RepoFields: &types.RepoFields{
+			URI:         string(reposource.AWSRepoName("", r.Name)),
+			Description: r.Description,
+			Sources: map[string]*types.SourceInfo{
+				urn: {
+					ID:       urn,
+					CloneURL: cloneURL,
+				},
 			},
+			Metadata: r,
 		},
-		Metadata: r,
 	}, nil
 }
 

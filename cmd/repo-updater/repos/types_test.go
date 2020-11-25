@@ -27,7 +27,7 @@ func TestExternalService_Exclude(t *testing.T) {
 	type testCase struct {
 		name   string
 		svcs   types.ExternalServices
-		repos  Repos
+		repos  types.Repos
 		assert ExternalServicesAssertion
 	}
 
@@ -108,61 +108,63 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	repos := Repos{
+	repos := types.Repos{
 		{
-			Metadata: &github.Repository{
+			RepoFields: &types.RepoFields{Metadata: &github.Repository{
 				ID:            "foo",
 				NameWithOwner: "org/foo",
-			},
+			}},
 		},
 		{
-			Metadata: &gitlab.Project{
+			RepoFields: &types.RepoFields{Metadata: &gitlab.Project{
 				ProjectCommon: gitlab.ProjectCommon{
 					ID:                1,
 					PathWithNamespace: "org/foo",
 				},
 			},
-		},
-		{
-			Metadata: &github.Repository{
-				NameWithOwner: "org/baz",
 			},
 		},
 		{
-			Metadata: &gitlab.Project{
+			RepoFields: &types.RepoFields{Metadata: &github.Repository{
+				NameWithOwner: "org/baz",
+			},
+			},
+		},
+		{
+			RepoFields: &types.RepoFields{Metadata: &gitlab.Project{
 				ProjectCommon: gitlab.ProjectCommon{
 					PathWithNamespace: "org/baz",
 				},
-			},
+			}},
 		},
 		{
-			Metadata: &bitbucketserver.Repo{
+			RepoFields: &types.RepoFields{Metadata: &bitbucketserver.Repo{
 				ID:   1,
 				Slug: "foo",
 				Project: &bitbucketserver.Project{
 					Key: "org",
 				},
-			},
+			}},
 		},
 		{
-			Metadata: &bitbucketserver.Repo{
+			RepoFields: &types.RepoFields{Metadata: &bitbucketserver.Repo{
 				Slug: "baz",
 				Project: &bitbucketserver.Project{
 					Key: "org",
 				},
-			},
+			}},
 		},
 		{
-			Metadata: &awscodecommit.Repository{
+			RepoFields: &types.RepoFields{Metadata: &awscodecommit.Repository{
 				ID:   "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
 				Name: "foo",
-			},
+			}},
 		},
 		{
-			Metadata: &awscodecommit.Repository{
+			RepoFields: &types.RepoFields{Metadata: &awscodecommit.Repository{
 				ID:   "b4455554-4444-5555-b7d2-888c9EXAMPLE",
 				Name: "baz",
-			},
+			}},
 		},
 		{
 			Name: "git-host.mycorp.com/org/foo",
@@ -180,7 +182,7 @@ func TestExternalService_Exclude(t *testing.T) {
 			},
 		},
 		{
-			Metadata: &gitolite.Repo{Name: "foo"},
+			RepoFields: &types.RepoFields{Metadata: &gitolite.Repo{Name: "foo"}},
 		},
 	}
 
@@ -466,7 +468,7 @@ func TestExternalService_Exclude(t *testing.T) {
 }
 
 func TestReposNamesSummary(t *testing.T) {
-	var rps Repos
+	var rps types.Repos
 
 	eid := func(id int) api.ExternalRepoSpec {
 		return api.ExternalRepoSpec{
@@ -477,7 +479,7 @@ func TestReposNamesSummary(t *testing.T) {
 	}
 
 	for i := 0; i < 5; i++ {
-		rps = append(rps, &Repo{Name: "bar", ExternalRepo: eid(i)})
+		rps = append(rps, &types.Repo{Name: "bar", ExternalRepo: eid(i)})
 	}
 
 	expected := "bar bar bar bar bar"
@@ -489,7 +491,7 @@ func TestReposNamesSummary(t *testing.T) {
 	rps = nil
 
 	for i := 0; i < 22; i++ {
-		rps = append(rps, &Repo{Name: "b", ExternalRepo: eid(i)})
+		rps = append(rps, &types.Repo{Name: "b", ExternalRepo: eid(i)})
 	}
 
 	expected = "b b b b b b b b b b b b b b b b b b b b..."
@@ -510,10 +512,10 @@ func TestPick(t *testing.T) {
 			ServiceID:   "https://fake.com",
 		}
 	}
-	a := &Repo{Name: "bar", ExternalRepo: eid("1")}
-	b := &Repo{Name: "bar", ExternalRepo: eid("2")}
+	a := &types.Repo{Name: "bar", ExternalRepo: eid("1")}
+	b := &types.Repo{Name: "bar", ExternalRepo: eid("2")}
 
-	for _, args := range [][2]*Repo{{a, b}, {b, a}} {
+	for _, args := range [][2]*types.Repo{{a, b}, {b, a}} {
 		keep, discard := pick(args[0], args[1])
 		if keep != a || discard != b {
 			t.Errorf("unexpected pick(%v, %v)", args[0], args[1])

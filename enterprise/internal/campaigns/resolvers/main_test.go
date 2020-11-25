@@ -159,19 +159,21 @@ func newGitHubExternalService(t *testing.T, store repos.Store) *types.ExternalSe
 	return &svc
 }
 
-func newGitHubTestRepo(name string, externalService *types.ExternalService) *repos.Repo {
-	return &repos.Repo{
-		Name:    name,
+func newGitHubTestRepo(name string, externalService *types.ExternalService) *types.Repo {
+	return &types.Repo{
+		Name:    api.RepoName(name),
 		Private: true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", externalService.ID),
 			ServiceType: "github",
 			ServiceID:   "https://github.com/",
 		},
-		Sources: map[string]*repos.SourceInfo{
-			externalService.URN(): {
-				ID:       externalService.URN(),
-				CloneURL: fmt.Sprintf("https://secrettoken@%s", name),
+		RepoFields: &types.RepoFields{
+			Sources: map[string]*types.SourceInfo{
+				externalService.URN(): {
+					ID:       externalService.URN(),
+					CloneURL: fmt.Sprintf("https://secrettoken@%s", name),
+				},
 			},
 		},
 	}

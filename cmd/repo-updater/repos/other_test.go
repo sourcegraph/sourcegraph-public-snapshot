@@ -29,7 +29,7 @@ func TestSrcExpose(t *testing.T) {
 	cases := []struct {
 		name string
 		body string
-		want []*Repo
+		want []*types.Repo
 		err  string
 	}{{
 		name: "error",
@@ -42,73 +42,81 @@ func TestSrcExpose(t *testing.T) {
 	}, {
 		name: "empty",
 		body: `{"items":[]}`,
-		want: []*Repo{},
+		want: []*types.Repo{},
 	}, {
 		name: "minimal",
 		body: `{"Items":[{"uri": "foo"},{"uri":"bar/baz"}]}`,
-		want: []*Repo{{
-			URI:  "foo",
+		want: []*types.Repo{{
 			Name: "foo",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: extsvc.TypeOther,
 				ID:          "foo",
 			},
-			Sources: map[string]*SourceInfo{
-				"extsvc:other:1": {
-					ID:       "extsvc:other:1",
-					CloneURL: s.URL + "/foo/.git",
+			RepoFields: &types.RepoFields{
+				URI: "foo",
+				Sources: map[string]*types.SourceInfo{
+					"extsvc:other:1": {
+						ID:       "extsvc:other:1",
+						CloneURL: s.URL + "/foo/.git",
+					},
 				},
 			},
 		}, {
-			URI:  "bar/baz",
 			Name: "bar/baz",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: extsvc.TypeOther,
 				ID:          "bar/baz",
 			},
-			Sources: map[string]*SourceInfo{
-				"extsvc:other:1": {
-					ID:       "extsvc:other:1",
-					CloneURL: s.URL + "/bar/baz/.git",
+			RepoFields: &types.RepoFields{
+				URI: "bar/baz",
+				Sources: map[string]*types.SourceInfo{
+					"extsvc:other:1": {
+						ID:       "extsvc:other:1",
+						CloneURL: s.URL + "/bar/baz/.git",
+					},
 				},
 			},
 		}},
 	}, {
 		name: "override",
 		body: `{"Items":[{"uri": "/repos/foo", "name": "foo", "description": "hi"}]}`,
-		want: []*Repo{{
-			URI:         "/repos/foo",
-			Name:        "foo",
-			Description: "hi",
+		want: []*types.Repo{{
+			Name: "foo",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: extsvc.TypeOther,
 				ID:          "/repos/foo",
 			},
-			Sources: map[string]*SourceInfo{
-				"extsvc:other:1": {
-					ID:       "extsvc:other:1",
-					CloneURL: s.URL + "/repos/foo/.git",
+			RepoFields: &types.RepoFields{
+				Description: "hi",
+				URI:         "/repos/foo",
+				Sources: map[string]*types.SourceInfo{
+					"extsvc:other:1": {
+						ID:       "extsvc:other:1",
+						CloneURL: s.URL + "/repos/foo/.git",
+					},
 				},
 			},
 		}},
 	}, {
 		name: "immutable",
 		body: `{"Items":[{"uri": "foo", "enabled": false, "externalrepo": {"serviceid": "x", "servicetype": "y", "id": "z"}, "sources": {"x":{"id":"x", "cloneurl":"y"}}}]}`,
-		want: []*Repo{{
-			URI:  "foo",
+		want: []*types.Repo{{
 			Name: "foo",
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: extsvc.TypeOther,
 				ID:          "foo",
 			},
-			Sources: map[string]*SourceInfo{
-				"extsvc:other:1": {
-					ID:       "extsvc:other:1",
-					CloneURL: s.URL + "/foo/.git",
+			RepoFields: &types.RepoFields{
+				URI: "foo",
+				Sources: map[string]*types.SourceInfo{
+					"extsvc:other:1": {
+						ID:       "extsvc:other:1",
+						CloneURL: s.URL + "/foo/.git",
+					},
 				},
 			},
 		}},

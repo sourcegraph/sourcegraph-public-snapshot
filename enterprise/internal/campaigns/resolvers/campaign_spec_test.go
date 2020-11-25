@@ -124,7 +124,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 					Description: apitest.ChangesetSpecDescription{
 						BaseRepository: apitest.Repository{
 							ID:   string(repoID),
-							Name: repo.Name,
+							Name: string(repo.Name),
 						},
 					},
 				},
