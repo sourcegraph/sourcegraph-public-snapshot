@@ -984,7 +984,7 @@ func TestDeterminePlan(t *testing.T) {
 			wantOperations: operations{},
 		},
 		{
-			name: "changeset closed and detached will reopen",
+			name: "changeset closed-and-detached will reopen",
 			previousSpec: testSpecOpts{
 				published: true,
 				repo:      githubRepo.ID,
