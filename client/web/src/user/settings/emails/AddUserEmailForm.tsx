@@ -95,7 +95,6 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
                         value={emailState.value}
                         ref={emailInputReference}
                         required={true}
-                        placeholder="Email"
                         autoComplete="email"
                         autoCorrect="off"
                         autoCapitalize="off"

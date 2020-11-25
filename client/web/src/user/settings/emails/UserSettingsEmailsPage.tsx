@@ -97,12 +97,12 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
             {isErrorLike(statusOrError) && <ErrorAlert className="mt-2" error={statusOrError} history={history} />}
 
             {statusOrError === 'loading' ? (
-                <span className="user-settings-emails-page__loader">
+                <div className="d-flex justify-content-center">
                     <LoadingSpinner className="icon-inline" />
-                </span>
+                </div>
             ) : (
-                <div className="list-group list-group-flush mt-4">
-                    <ul className="user-settings-emails-page__list">
+                <div className="mt-4">
+                    <ul className="list-group">
                         {emails.map(email => (
                             <li key={email.email} className="list-group-item p-3">
                                 <UserEmail

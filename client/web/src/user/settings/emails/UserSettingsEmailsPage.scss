@@ -8,23 +8,11 @@
             right: 1rem;
         }
     }
-    &__list {
-        list-style-type: none;
-        margin-bottom: 0;
-        padding: 0;
-    }
-    &__btn {
-        padding: 0;
-    }
     &__btn:not(:first-of-type) {
-        padding-left: 0.5rem;
+        margin-left: 0.5rem;
     }
     &__email {
         display: inline-block;
         margin-right: 0.25rem;
-    }
-    &__loader {
-        display: flex;
-        justify-content: center;
     }
 }

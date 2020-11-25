@@ -109,14 +109,14 @@ export const UserEmail: FunctionComponent<Props> = ({
         <>
             <div className="d-flex align-items-center justify-content-between">
                 <div>
-                    <span className="user-settings-emails-page__email">{email}</span> {verifiedLinkFragment}{' '}
-                    {isPrimary && <span className="badge badge-primary">Primary</span>}
+                    <span className="user-settings-emails-page__email">{email}</span>
+                    {verifiedLinkFragment} {isPrimary && <span className="badge badge-primary">Primary</span>}
                 </div>
                 <div>
                     {viewerCanManuallyVerify && (
                         <button
                             type="button"
-                            className="btn btn-link text-primary user-settings-emails-page__btn"
+                            className="btn btn-link text-primary p-0 user-settings-emails-page__btn"
                             onClick={() => updateEmailVerification(!verified)}
                             disabled={statusOrError === 'loading'}
                         >
@@ -126,7 +126,7 @@ export const UserEmail: FunctionComponent<Props> = ({
                     {!isPrimary && (
                         <button
                             type="button"
-                            className="btn btn-link text-danger user-settings-emails-page__btn"
+                            className="btn btn-link text-danger p-0 user-settings-emails-page__btn"
                             onClick={removeEmail}
                             disabled={statusOrError === 'loading'}
                         >
