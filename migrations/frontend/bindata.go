@@ -138,6 +138,10 @@
 // 1528395751_add_unique_constraint_to_external_service_repos.up.sql (996B)
 // 1528395752_extend_worker_state_enums_with_failed.down.sql (2.128kB)
 // 1528395752_extend_worker_state_enums_with_failed.up.sql (2.692kB)
+// 1528395753_add_enqueue_table_for_trigger_queries.down.sql (53B)
+// 1528395753_add_enqueue_table_for_trigger_queries.up.sql (559B)
+// 1528395754_add_cols_next_run_latest_result_to_cm_queries.down.sql (115B)
+// 1528395754_add_cols_next_run_latest_result_to_cm_queries.up.sql (159B)
 
 package migrations
 
@@ -2966,6 +2970,86 @@ func _1528395752_extend_worker_state_enums_with_failedUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395753_add_enqueue_table_for_trigger_queriesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xce\x8d\x2f\x29\xca\x4c\x4f\x4f\x2d\x8a\xcf\xca\x4f\x2a\xb6\xe6\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x17\xa4\x51\xd3\x35\x00\x00\x00")
+
+func _1528395753_add_enqueue_table_for_trigger_queriesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395753_add_enqueue_table_for_trigger_queriesDownSql,
+		"1528395753_add_enqueue_table_for_trigger_queries.down.sql",
+	)
+}
+
+func _1528395753_add_enqueue_table_for_trigger_queriesDownSql() (*asset, error) {
+	bytes, err := _1528395753_add_enqueue_table_for_trigger_queriesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395753_add_enqueue_table_for_trigger_queries.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd, 0x83, 0xac, 0x7d, 0x6, 0xc2, 0xd, 0x8b, 0xa2, 0x43, 0x58, 0x9b, 0xcd, 0x66, 0x61, 0x12, 0xf9, 0x5d, 0x8e, 0xa6, 0x65, 0x3a, 0xe9, 0xc4, 0xb4, 0x15, 0xd5, 0xe3, 0xf7, 0x22, 0x65, 0x21}}
+	return a, nil
+}
+
+var __1528395753_add_enqueue_table_for_trigger_queriesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\xd1\x41\x4f\xf2\x40\x10\x06\xe0\xfb\xfe\x8a\xb9\x01\xc9\x77\xf8\x0e\x1e\x4c\x38\x95\x32\x90\x8d\x65\x6b\xb6\x6b\x22\xa7\x4d\xa5\xd3\xba\x4a\x5b\xd8\x9d\x26\xea\xaf\x37\x14\x2c\xa0\x26\xf6\xda\x67\xdf\xcc\xcc\x3b\xc3\xa5\x54\x53\x11\x6b\x8c\x0c\x82\x89\x66\x09\x82\x5c\x80\x4a\x0d\xe0\xa3\xcc\x4c\x06\x9b\xda\xb2\x77\x55\x45\xde\xbe\xb4\x4f\x41\x8c\x05\x00\x80\x2b\xe0\xea\xcb\x50\xcb\x28\x81\x7b\x2d\x57\x91\x5e\xc3\x1d\xae\xff\xf5\x6e\xdf\x91\x7f\xbf\x70\xae\xe1\xdb\x3e\x5d\x3d\x24\xc9\x91\x04\xce\x99\x2e\x08\xd3\x1b\x43\x41\x65\xde\x6d\x19\x46\xfb\x8e\x3a\x2a\x46\x47\x5a\xe6\x6e\xdb\x79\xb2\x35\x85\x90\x57\xd4\xd3\x21\xc4\x33\x15\x36\xe7\x53\x88\xab\x29\x70\x5e\xef\xf8\xe3\xf4\xd4\x35\x2e\x3c\x9f\xc5\x0f\xb0\xf3\xed\x86\x42\xb0\x79\xc9\xe4\x7f\x03\x4d\x57\x5b\x4f\x81\x38\x0c\xab\xdc\x0c\xab\x0c\x03\xff\x3f\xe3\xd3\xb4\xe1\x4f\xbc\x6d\x2b\xbb\x69\x1b\xa6\xe6\x98\x7d\x5e\x2b\x4e\x55\x66\x74\x24\x95\xf9\xde\x83\xed\x2f\x6b\xcb\x57\xf1\x75\xb7\x45\xaa\x51\x2e\xd5\xe1\xf6\x30\xee\xff\x4e\xc4\x65\x45\x1a\x17\xa8\x51\xc5\xd8\x77\x7a\x00\x8e\x02\x8c\x5d\x71\xcd\x52\x05\x73\x4c\xd0\x20\xc4\x51\x16\x47\x73\x14\x93\xa9\x88\xd3\xd5\x4a\x9a\xa9\xf8\x0c\x00\x00\xff\xff\xb4\x9c\xc0\x75\x2f\x02\x00\x00")
+
+func _1528395753_add_enqueue_table_for_trigger_queriesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395753_add_enqueue_table_for_trigger_queriesUpSql,
+		"1528395753_add_enqueue_table_for_trigger_queries.up.sql",
+	)
+}
+
+func _1528395753_add_enqueue_table_for_trigger_queriesUpSql() (*asset, error) {
+	bytes, err := _1528395753_add_enqueue_table_for_trigger_queriesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395753_add_enqueue_table_for_trigger_queries.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x95, 0x30, 0x59, 0xb2, 0xdf, 0x60, 0x87, 0x3a, 0xaf, 0x19, 0x56, 0x6b, 0xb3, 0x95, 0xc0, 0x1, 0x27, 0xad, 0x9f, 0xe0, 0x9a, 0x7, 0x76, 0xf4, 0xaf, 0x1, 0xe3, 0x8a, 0x27, 0x42, 0x11, 0x82}}
+	return a, nil
+}
+
+var __1528395754_add_cols_next_run_latest_result_to_cm_queriesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x8d\x2f\x2c\x4d\x2d\xca\x4c\x2d\xe6\x52\x50\x50\x50\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\xc8\x4b\xad\x28\x89\x2f\x2a\xcd\xd3\xc1\xa3\x26\x27\xb1\x24\xb5\xb8\x24\xbe\x28\xb5\xb8\x34\xa7\xc4\x9a\xcb\xd9\xdf\xd7\xd7\x33\xc4\x9a\x0b\x10\x00\x00\xff\xff\xf6\x0f\x7e\xfa\x73\x00\x00\x00")
+
+func _1528395754_add_cols_next_run_latest_result_to_cm_queriesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395754_add_cols_next_run_latest_result_to_cm_queriesDownSql,
+		"1528395754_add_cols_next_run_latest_result_to_cm_queries.down.sql",
+	)
+}
+
+func _1528395754_add_cols_next_run_latest_result_to_cm_queriesDownSql() (*asset, error) {
+	bytes, err := _1528395754_add_cols_next_run_latest_result_to_cm_queriesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395754_add_cols_next_run_latest_result_to_cm_queries.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd7, 0x3b, 0xe8, 0xfd, 0x23, 0x97, 0xac, 0xe4, 0x19, 0x63, 0x30, 0xbe, 0x41, 0xc4, 0x1f, 0xe3, 0x91, 0xfb, 0xbd, 0x4d, 0xb9, 0xd9, 0x25, 0x54, 0xf0, 0x5e, 0xd1, 0x4b, 0x46, 0xf2, 0x1, 0x5b}}
+	return a, nil
+}
+
+var __1528395754_add_cols_next_run_latest_result_to_cm_queriesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\xcc\x3b\xaa\x02\x31\x14\x06\xe0\x3e\xab\xf8\xcb\x7b\xc1\x1d\x4c\x35\x8f\x28\x81\x3c\xc0\x89\x60\x17\x82\x1e\x61\x60\x12\x35\x39\x41\x71\xf5\x62\x67\xe5\x02\xbe\x6f\x90\x3b\x65\x3b\xd1\x6b\x2f\xf7\xf0\xfd\xa0\x25\x4e\x29\xdc\x1b\x95\x85\xaa\x00\x80\x7e\x9a\x30\x3a\x7d\x30\x16\x6a\x0b\xeb\x3c\xe4\x51\xcd\x7e\x46\xa6\x27\x87\xd2\x32\x78\x49\x54\x39\xa6\x1b\xbf\x70\xa6\x4b\x6c\x2b\x23\x5f\x1f\x7f\xff\x9b\xdf\xc1\x1a\x99\x2a\x87\x42\xf5\x23\xbe\x96\x4e\x8c\xce\x18\xe5\x3b\xf1\x0e\x00\x00\xff\xff\x0c\x83\x74\x22\x9f\x00\x00\x00")
+
+func _1528395754_add_cols_next_run_latest_result_to_cm_queriesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395754_add_cols_next_run_latest_result_to_cm_queriesUpSql,
+		"1528395754_add_cols_next_run_latest_result_to_cm_queries.up.sql",
+	)
+}
+
+func _1528395754_add_cols_next_run_latest_result_to_cm_queriesUpSql() (*asset, error) {
+	bytes, err := _1528395754_add_cols_next_run_latest_result_to_cm_queriesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395754_add_cols_next_run_latest_result_to_cm_queries.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x5a, 0x9f, 0x5d, 0xe5, 0x73, 0xdf, 0x43, 0x1f, 0x24, 0xb6, 0x50, 0x6d, 0x6e, 0x25, 0x41, 0x48, 0xf9, 0x71, 0xc2, 0x17, 0x2f, 0x7c, 0x93, 0x8e, 0x40, 0x1d, 0xae, 0x1e, 0x74, 0x28, 0xb8, 0x31}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3195,6 +3279,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395751_add_unique_constraint_to_external_service_repos.up.sql":                      _1528395751_add_unique_constraint_to_external_service_reposUpSql,
 	"1528395752_extend_worker_state_enums_with_failed.down.sql":                              _1528395752_extend_worker_state_enums_with_failedDownSql,
 	"1528395752_extend_worker_state_enums_with_failed.up.sql":                                _1528395752_extend_worker_state_enums_with_failedUpSql,
+	"1528395753_add_enqueue_table_for_trigger_queries.down.sql":                              _1528395753_add_enqueue_table_for_trigger_queriesDownSql,
+	"1528395753_add_enqueue_table_for_trigger_queries.up.sql":                                _1528395753_add_enqueue_table_for_trigger_queriesUpSql,
+	"1528395754_add_cols_next_run_latest_result_to_cm_queries.down.sql":                      _1528395754_add_cols_next_run_latest_result_to_cm_queriesDownSql,
+	"1528395754_add_cols_next_run_latest_result_to_cm_queries.up.sql":                        _1528395754_add_cols_next_run_latest_result_to_cm_queriesUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3379,6 +3467,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395751_add_unique_constraint_to_external_service_repos.up.sql":                      {_1528395751_add_unique_constraint_to_external_service_reposUpSql, map[string]*bintree{}},
 	"1528395752_extend_worker_state_enums_with_failed.down.sql":                              {_1528395752_extend_worker_state_enums_with_failedDownSql, map[string]*bintree{}},
 	"1528395752_extend_worker_state_enums_with_failed.up.sql":                                {_1528395752_extend_worker_state_enums_with_failedUpSql, map[string]*bintree{}},
+	"1528395753_add_enqueue_table_for_trigger_queries.down.sql":                              {_1528395753_add_enqueue_table_for_trigger_queriesDownSql, map[string]*bintree{}},
+	"1528395753_add_enqueue_table_for_trigger_queries.up.sql":                                {_1528395753_add_enqueue_table_for_trigger_queriesUpSql, map[string]*bintree{}},
+	"1528395754_add_cols_next_run_latest_result_to_cm_queries.down.sql":                      {_1528395754_add_cols_next_run_latest_result_to_cm_queriesDownSql, map[string]*bintree{}},
+	"1528395754_add_cols_next_run_latest_result_to_cm_queries.up.sql":                        {_1528395754_add_cols_next_run_latest_result_to_cm_queriesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
