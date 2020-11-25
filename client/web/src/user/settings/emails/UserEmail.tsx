@@ -117,17 +117,17 @@ export const UserEmail: FunctionComponent<Props> = ({
                     {viewerCanManuallyVerify && (
                         <button
                             type="button"
-                            className="btn btn-link text-primary p-0 user-settings-emails-page__btn"
+                            className="btn btn-link text-primary p-0"
                             onClick={() => updateEmailVerification(!verified)}
                             disabled={statusOrError === 'loading'}
                         >
                             {verified ? 'Mark as unverified' : 'Mark as verified'}
                         </button>
-                    )}
+                    )}{' '}
                     {!isPrimary && (
                         <button
                             type="button"
-                            className="btn btn-link text-danger p-0 user-settings-emails-page__btn"
+                            className="btn btn-link text-danger p-0"
                             onClick={removeEmail}
                             disabled={statusOrError === 'loading'}
                         >
