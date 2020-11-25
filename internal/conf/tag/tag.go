@@ -14,8 +14,8 @@ const (
 	AllowUserExternalServicePublic = "AllowUserExternalServicePublic"
 )
 
-// CheckUserHasTag reports whether the context actor has the given tag. If not, or if an error
-// occurs, a non-nil error is returned.
+// CheckUserHasTag reports whether the context actor has the given tag.
+// If not, it returns false and a nil error.
 func CheckUserHasTag(ctx context.Context, id int32, tag string) (bool, error) {
 	user, err := db.Users.GetByID(ctx, id)
 	if err != nil {
@@ -29,8 +29,8 @@ func CheckUserHasTag(ctx context.Context, id int32, tag string) (bool, error) {
 	return false, nil
 }
 
-// CheckActorHasTag reports whether the context actor has the given tag. If not, or if an error
-// occurs, a non-nil error is returned.
+// CheckActorHasTag reports whether the context actor has the given tag.
+// If not, it returns false and a nil error.
 func CheckActorHasTag(ctx context.Context, tag string) (bool, error) {
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() {
