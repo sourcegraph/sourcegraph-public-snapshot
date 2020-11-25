@@ -254,12 +254,10 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 		if err != nil {
 			return errors.Wrap(err, "getting service owner")
 		}
-		if user != nil {
-			for _, t := range user.Tags {
-				if t == TagAllowUserExternalServicePrivate {
-					syncPublicOnly = false
-					break
-				}
+		for _, t := range user.Tags {
+			if t == TagAllowUserExternalServicePrivate {
+				syncPublicOnly = false
+				break
 			}
 		}
 
