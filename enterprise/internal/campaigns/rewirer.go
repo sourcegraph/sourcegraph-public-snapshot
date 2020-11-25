@@ -3,7 +3,6 @@ package campaigns
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -17,11 +16,45 @@ import (
 // If both are non-zero values, the changeset should be updated with the changeset spec in the mapping.
 type RewirerMapping struct {
 	ChangesetSpecID int64
+	ChangesetSpec   *campaigns.ChangesetSpec
 	ChangesetID     int64
+	Changeset       *campaigns.Changeset
 	RepoID          api.RepoID
 }
 
 type RewirerMappings []*RewirerMapping
+
+func (rm RewirerMappings) Hydrate(ctx context.Context, store *Store) error {
+	changesetSpecs, _, err := store.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{
+		IDs: rm.ChangesetSpecIDs(),
+	})
+	if err != nil {
+		return err
+	}
+	changesets, _, err := store.ListChangesets(ctx, ListChangesetsOpts{IDs: rm.ChangesetIDs()})
+	if err != nil {
+		return err
+	}
+	changesetsByID := map[int64]*campaigns.Changeset{}
+	changesetSpecsByID := map[int64]*campaigns.ChangesetSpec{}
+
+	for _, c := range changesets {
+		changesetsByID[c.ID] = c
+	}
+	for _, c := range changesetSpecs {
+		changesetSpecsByID[c.ID] = c
+	}
+
+	for _, m := range rm {
+		if m.ChangesetID != 0 {
+			m.Changeset = changesetsByID[m.ChangesetID]
+		}
+		if m.ChangesetSpecID != 0 {
+			m.ChangesetSpec = changesetSpecsByID[m.ChangesetSpecID]
+		}
+	}
+	return nil
+}
 
 // ChangesetIDs returns a list of unique changeset IDs in the slice of mappings.
 func (rm RewirerMappings) ChangesetIDs() []int64 {
@@ -98,14 +131,10 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 	for _, m := range r.mappings {
 		// If a Changeset that's currently attached to the campaign wasn't matched to a ChangesetSpec, it needs to be closed/detached.
 		if m.ChangesetSpecID == 0 {
-			changeset, ok := associations.changesetsByID[m.ChangesetID]
-			if !ok {
-				// This should never happen.
-				return nil, errors.New("changeset not found")
-			}
+			changeset := m.Changeset
 
 			// If we don't have access to a repository, we don't detach nor close the changeset.
-			_, ok = associations.accessibleReposByID[m.RepoID]
+			_, ok := associations.accessibleReposByID[m.RepoID]
 			if !ok {
 				continue
 			}
@@ -122,11 +151,7 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 			continue
 		}
 
-		spec, ok := associations.changesetSpecsByID[m.ChangesetSpecID]
-		if !ok {
-			// This should never happen.
-			return nil, errors.New("spec not found")
-		}
+		spec := m.ChangesetSpec
 
 		// If we don't have access to a repository, we return an error. Why not
 		// simply skip the repository? If we skip it, the user can't reapply
@@ -144,11 +169,7 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 		var changeset *campaigns.Changeset
 
 		if m.ChangesetID != 0 {
-			changeset, ok = associations.changesetsByID[m.ChangesetID]
-			if !ok {
-				// This should never happen.
-				return nil, errors.New("changeset not found")
-			}
+			changeset = m.Changeset
 			if spec.Spec.IsImportingExisting() {
 				r.attachTrackingChangeset(changeset)
 			} else if spec.Spec.IsBranch() {
@@ -284,25 +305,11 @@ func (r *changesetRewirer) closeChangeset(ctx context.Context, changeset *campai
 
 type rewirerAssociations struct {
 	accessibleReposByID map[api.RepoID]*types.Repo
-	changesetsByID      map[int64]*campaigns.Changeset
-	changesetSpecsByID  map[int64]*campaigns.ChangesetSpec
 }
 
 // loadAssociations retrieves all entities required to rewire the changesets in a campaign.
 func (r *changesetRewirer) loadAssociations(ctx context.Context) (associations *rewirerAssociations, err error) {
-	// Fetch the changeset specs involved in this rewiring. This should always be the same as omitting the `IDs` section,
-	// we just make sure people know why that is the case here.
-	changesetSpecs, _, err := r.tx.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{
-		CampaignSpecID: r.campaign.CampaignSpecID,
-		IDs:            r.mappings.ChangesetSpecIDs(),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	// Then fetch the changesets involved in this rewiring.
-	changesets, _, err := r.tx.ListChangesets(ctx, ListChangesetsOpts{IDs: r.mappings.ChangesetIDs()})
-	if err != nil {
+	if err := r.mappings.Hydrate(ctx, r.tx); err != nil {
 		return nil, err
 	}
 
@@ -314,16 +321,6 @@ func (r *changesetRewirer) loadAssociations(ctx context.Context) (associations *
 	associations.accessibleReposByID, err = db.Repos.GetReposSetByIDs(ctx, r.mappings.RepoIDs()...)
 	if err != nil {
 		return nil, err
-	}
-
-	associations.changesetsByID = map[int64]*campaigns.Changeset{}
-	associations.changesetSpecsByID = map[int64]*campaigns.ChangesetSpec{}
-
-	for _, c := range changesets {
-		associations.changesetsByID[c.ID] = c
-	}
-	for _, c := range changesetSpecs {
-		associations.changesetSpecsByID[c.ID] = c
 	}
 
 	return associations, nil
