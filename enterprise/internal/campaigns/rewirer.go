@@ -183,7 +183,7 @@ func (r *changesetRewirer) createChangesetForSpec(repo *types.Repo, spec *campai
 }
 
 func (r *changesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec *campaigns.ChangesetSpec) {
-	if c.ReconcilerState != campaigns.ReconcilerStateErrored && c.ReconcilerState != campaigns.ReconcilerStateQueued {
+	if c.ReconcilerState == campaigns.ReconcilerStateCompleted {
 		c.PreviousSpecID = c.CurrentSpecID
 	}
 	c.CurrentSpecID = spec.ID
