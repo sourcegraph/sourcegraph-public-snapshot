@@ -4,9 +4,9 @@ import { FiltersToTypeAndValue } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
 import { scanSearchQuery, CharacterRange } from '../search/parser/scanner'
 import { replaceRange } from './strings'
-import { discreteValueAliases } from '../search/parser/filters'
 import { tryCatch } from './errors'
 import { SearchPatternType } from '../graphql-operations'
+import { findGlobalFilter } from '../search/parser/validate'
 
 export interface RepoSpec {
     /**
@@ -585,50 +585,32 @@ export function buildSearchURLQuery(
     searchParametersList?: { key: string; value: string }[]
 ): string {
     const searchParameters = new URLSearchParams()
-    let fullQuery = query
+    let queryParameter = query
+    let patternTypeParameter: string = patternType
+    let caseParameter: string = caseSensitive ? 'yes' : 'no'
 
     if (filtersInQuery && !isEmpty(filtersInQuery)) {
-        fullQuery = [generateFiltersQuery(filtersInQuery), fullQuery].filter(query => query.length > 0).join(' ')
+        queryParameter = [generateFiltersQuery(filtersInQuery), queryParameter]
+            .filter(query => query.length > 0)
+            .join(' ')
     }
 
-    const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
-    if (patternTypeInQuery) {
-        const { start, end } = patternTypeInQuery.range
-        fullQuery = replaceRange(fullQuery, { start: Math.max(0, start - 1), end }).trim()
-        searchParameters.set('q', fullQuery)
-        searchParameters.set('patternType', patternTypeInQuery.value)
-    } else {
-        searchParameters.set('q', fullQuery)
-        searchParameters.set('patternType', patternType)
+    const globalPatternType = findGlobalFilter(queryParameter, 'patterntype')
+    if (globalPatternType?.value) {
+        const { start, end } = globalPatternType.range
+        queryParameter = replaceRange(queryParameter, { start: Math.max(0, start - 1), end }).trim()
+        patternTypeParameter = query.slice(globalPatternType.value?.range.start)
     }
+    searchParameters.set('patternType', patternTypeParameter)
 
-    const caseInQuery = parseCaseSensitivityFromQuery(fullQuery)
-    if (caseInQuery) {
-        fullQuery = replaceRange(fullQuery, caseInQuery.range)
-        searchParameters.set('q', fullQuery)
-
-        if (discreteValueAliases.yes.includes(caseInQuery.value)) {
-            fullQuery = replaceRange(fullQuery, caseInQuery.range)
-            searchParameters.set('case', caseInQuery.value)
-        } else {
-            // For now, remove case when case:no, since it's the default behavior. Avoids
-            // queries breaking when only `repo:` filters are specified.
-            //
-            // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
-            searchParameters.delete('case')
-        }
-    } else {
-        searchParameters.set('q', fullQuery)
-        if (caseSensitive) {
-            searchParameters.set('case', 'yes')
-        } else {
-            // For now, remove case when case:no, since it's the default behavior. Avoids
-            // queries breaking when only `repo:` filters are specified.
-            //
-            // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
-            searchParameters.delete('case')
-        }
+    const globalCase = findGlobalFilter(queryParameter, 'case')
+    if (globalCase?.value && globalCase.value.type === 'literal') {
+        caseParameter = globalCase.value.value
+        queryParameter = replaceRange(queryParameter, globalCase.range)
     }
+    searchParameters.set('case', caseParameter)
+
+    searchParameters.set('q', queryParameter)
 
     if (versionContext) {
         searchParameters.set('c', versionContext)
