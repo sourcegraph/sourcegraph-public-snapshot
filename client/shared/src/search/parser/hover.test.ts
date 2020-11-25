@@ -221,6 +221,85 @@ describe('getHoverResult()', () => {
         `)
     })
 
+    test('smartQuery flag on regexp escape characters', () => {
+        const scannedQuery = toSuccess(scanSearchQuery('\\q\\r\\n\\.\\\\', false, SearchPatternType.regexp))
+        expect(getHoverResult(scannedQuery, { column: 1 }, true)).toMatchInlineSnapshot(`
+            {
+              "contents": [
+                {
+                  "value": "**Escaped Character. The character \`q\` is escaped."
+                }
+              ],
+              "range": {
+                "startLineNumber": 1,
+                "endLineNumber": 1,
+                "startColumn": 1,
+                "endColumn": 3
+              }
+            }
+        `)
+        expect(getHoverResult(scannedQuery, { column: 3 }, true)).toMatchInlineSnapshot(`
+            {
+              "contents": [
+                {
+                  "value": "**Escaped Character. Match a carriage return."
+                }
+              ],
+              "range": {
+                "startLineNumber": 1,
+                "endLineNumber": 1,
+                "startColumn": 3,
+                "endColumn": 5
+              }
+            }
+        `)
+        expect(getHoverResult(scannedQuery, { column: 5 }, true)).toMatchInlineSnapshot(`
+            {
+              "contents": [
+                {
+                  "value": "**Escaped Character. Match a new line."
+                }
+              ],
+              "range": {
+                "startLineNumber": 1,
+                "endLineNumber": 1,
+                "startColumn": 5,
+                "endColumn": 7
+              }
+            }
+        `)
+        expect(getHoverResult(scannedQuery, { column: 7 }, true)).toMatchInlineSnapshot(`
+            {
+              "contents": [
+                {
+                  "value": "**Escaped Character. Match the character \`.\`."
+                }
+              ],
+              "range": {
+                "startLineNumber": 1,
+                "endLineNumber": 1,
+                "startColumn": 7,
+                "endColumn": 9
+              }
+            }
+        `)
+        expect(getHoverResult(scannedQuery, { column: 9 }, true)).toMatchInlineSnapshot(`
+            {
+              "contents": [
+                {
+                  "value": "**Escaped Character. Match the character \`\\\\\`."
+                }
+              ],
+              "range": {
+                "startLineNumber": 1,
+                "endLineNumber": 1,
+                "startColumn": 9,
+                "endColumn": 11
+              }
+            }
+        `)
+    })
+
     test('smartQuery flag as literal search interprets parentheses as patterns', () => {
         const scannedQuery = toSuccess(scanSearchQuery('(abcd)', false, SearchPatternType.literal))
         expect(getHoverResult(scannedQuery, { column: 1 }, true)).toMatchInlineSnapshot(`
