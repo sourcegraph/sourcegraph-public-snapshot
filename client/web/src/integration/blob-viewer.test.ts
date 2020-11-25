@@ -961,6 +961,17 @@ describe('Blob viewer', () => {
             }
         })
 
+        it('shows a "View on GitHub" button', async () => {
+            await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
+            await driver.page.waitForSelector('.test-go-to-code-host', { visible: true })
+            assert.strictEqual(
+                await driver.page.evaluate(
+                    () => document.querySelector<HTMLAnchorElement>('.test-go-to-code-host')?.href
+                ),
+                'https://github.com/sourcegraph/go-diff/blob/3f415a150aec0685cb81b73cc201e762e075006d/diff/parse.go#L19'
+            )
+        })
+
         describe('browser extension discoverability', () => {
             const HOVER_THRESHOLD = 5
             const HOVER_COUNT_KEY = 'hover-count'
