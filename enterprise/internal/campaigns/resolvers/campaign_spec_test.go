@@ -161,6 +161,35 @@ func TestCampaignSpecResolver(t *testing.T) {
 		}
 	}
 
+	// Now create an updated changeset spec and check that we get a superseding
+	// campaign spec.
+	sup, err := campaigns.NewCampaignSpecFromRaw(ct.TestRawCampaignSpec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sup.UserID = userID
+	sup.NamespaceOrgID = orgID
+	if err := store.CreateCampaignSpec(ctx, sup); err != nil {
+		t.Fatal(err)
+	}
+
+	{
+		var response struct{ Node apitest.CampaignSpec }
+
+		// Note that we have to execute as the actual user, since a superseding
+		// spec isn't returned for an admin.
+		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryCampaignSpecNode)
+
+		// Expect an ID on the superseding campaign spec.
+		want.SupersedingCampaignSpec = &apitest.CampaignSpec{
+			ID: string(marshalCampaignSpecRandID(sup.RandID)),
+		}
+
+		if diff := cmp.Diff(want, response.Node); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+	}
+
 	// Now soft-delete the creator and check that the campaign spec is still retrievable.
 	err = db.Users.Delete(ctx, userID)
 	if err != nil {
@@ -176,6 +205,9 @@ func TestCampaignSpecResolver(t *testing.T) {
 		want.OnlyWithoutCredential = apitest.CampaignsCodeHostsConnection{
 			Nodes: []apitest.CampaignsCodeHost{},
 		}
+		// Expect no superseding campaign spec, since this request is run as a
+		// different user.
+		want.SupersedingCampaignSpec = nil
 
 		if diff := cmp.Diff(want, response.Node); diff != "" {
 			t.Fatalf("unexpected response (-want +got):\n%s", diff)
@@ -232,6 +264,8 @@ query($campaignSpec: ID!) {
       diffStat { added, deleted, changed }
 
 	  appliesToCampaign { id }
+
+	  supersedingCampaignSpec { id }
 
 	  allCodeHosts: viewerCampaignsCodeHosts {
 		totalCount
