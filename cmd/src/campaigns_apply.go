@@ -78,6 +78,7 @@ Examples:
 
 		if err := doApply(ctx, out, svc, flags); err != nil {
 			printExecutionError(out, err)
+			out.Write("")
 			return &exitCodeError{nil, 1}
 		}
 

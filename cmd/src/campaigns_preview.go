@@ -54,6 +54,7 @@ Examples:
 		_, url, err := campaignsExecute(ctx, out, svc, flags)
 		if err != nil {
 			printExecutionError(out, err)
+			out.Write("")
 			return &exitCodeError{nil, 1}
 		}
 

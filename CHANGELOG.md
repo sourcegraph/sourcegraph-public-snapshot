@@ -14,6 +14,7 @@ All notable changes to `src-cli` are documented in this file.
 ### Added
 
 - Campaign steps may now include environment variables from outside of the campaign spec using [array syntax](http://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#environment-array). [#392](https://github.com/sourcegraph/src-cli/pull/392)
+- A new `-skip-errors` flag has been added to `src campaign [apply|preview]` to allow users to continue execution of and upload a campaign spec even if execution failed in some repositories. [#395](https://github.com/sourcegraph/src-cli/pull/395)
 
 ### Changed
 
