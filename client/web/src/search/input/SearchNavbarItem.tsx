@@ -10,8 +10,9 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import Shepherd from 'shepherd.js'
-import { defaultTourOptions, generateStepTooltip } from './SearchOnboardingTour'
+import { defaultTourOptions, generateStepTooltip, HAS_CANCELLED_TOUR_KEY } from './SearchOnboardingTour'
 import { eventLogger } from '../../tracking/eventLogger'
+import { useLocalStorage } from '../../util/useLocalStorage'
 
 interface Props
     extends ActivationProps,
@@ -30,6 +31,7 @@ interface Props
     enableSmartQuery: boolean
 }
 
+const HAS_COMPLETED_TOUR_KEY = 'has-completed-onboarding-tour'
 /**
  * The search item in the navbar
  */
@@ -43,6 +45,8 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
     )
 
     const tour = useMemo(() => new Shepherd.Tour(defaultTourOptions), [])
+    const [hasCancelledTour] = useLocalStorage(HAS_CANCELLED_TOUR_KEY, false)
+    const [hasCompletedTour, setHasCompletedTour] = useLocalStorage(HAS_COMPLETED_TOUR_KEY, false)
 
     useEffect(() => {
         tour.addSteps([
@@ -70,10 +74,35 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
 
     useEffect(() => {
         const url = new URLSearchParams(props.location.search)
-        if (url.has('onboardingTour') && props.showOnboardingTour) {
+        if (
+            url.has('onboardingTour') &&
+            props.showOnboardingTour &&
+            hasCancelledTour !== true &&
+            hasCompletedTour !== true
+        ) {
             tour.show('view-search-reference')
         }
-    }, [tour, props.showOnboardingTour, props.location.search])
+    }, [tour, props.showOnboardingTour, props.location.search, hasCancelledTour, hasCompletedTour])
+
+    useEffect(() => {
+        for (const event of ['complete', 'cancel']) {
+            // Remove the onboardingTour query param when the user advances or cancels the search reference step.
+            tour.on(event, () => {
+                const queryParameters = new URLSearchParams(props.location.search)
+                if (queryParameters.has('onboardingTour')) {
+                    queryParameters.delete('onboardingTour')
+                    props.history.replace({
+                        search: queryParameters.toString(),
+                        hash: props.history.location.hash,
+                    })
+                }
+
+                if (event === 'complete') {
+                    setHasCompletedTour(true)
+                }
+            })
+        }
+    })
 
     useEffect(
         () => () => {

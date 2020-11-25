@@ -70,7 +70,7 @@ export function generateStepTooltip(options: {
  */
 export function generateBottomRow(tour: Shepherd.Tour, stepNumber: number, totalStepCount: number): HTMLElement {
     const closeTourButton = document.createElement('button')
-    closeTourButton.className = 'btn btn-link p-0'
+    closeTourButton.className = 'btn btn-link p-0 test-tour-close-button'
     closeTourButton.textContent = 'Close tour'
     closeTourButton.addEventListener('click', () => {
         tour.cancel()
