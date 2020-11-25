@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
+import { Driver, createDriverForTest, percySnapshot } from '../../../shared/src/testing/driver'
 import { ExtensionManifest } from '../../../shared/src/schema/extensionSchema'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
@@ -32,6 +32,7 @@ describe('Blob viewer', () => {
         })
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEach(() => driver.page.evaluate(() => localStorage.clear()))
     afterEach(() => testContext?.dispose())
 
     const repositoryName = 'github.com/sourcegraph/jsonrpc2'
@@ -80,6 +81,28 @@ describe('Blob viewer', () => {
                     content: name,
                     href: `${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${name}`,
                 }))
+            )
+        })
+    })
+
+    describe('repository nav bar', () => {
+        it('truncates long file paths properly', async function () {
+            await driver.page.goto(
+                `${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/this_is_a_long_file_path/apps/rest-showcase/src/main/java/org/demo/rest/example/OrdersController.java`
+            )
+            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.waitForSelector('.test-breadcrumb')
+            await percySnapshot(driver.page, this.test!.fullTitle())
+        })
+
+        it('shows a "View on GitHub" button', async () => {
+            await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
+            await driver.page.waitForSelector('.test-go-to-code-host', { visible: true })
+            assert.strictEqual(
+                await driver.page.evaluate(
+                    () => document.querySelector<HTMLAnchorElement>('.test-go-to-code-host')?.href
+                ),
+                'https://github.com/sourcegraph/go-diff/blob/3f415a150aec0685cb81b73cc201e762e075006d/diff/parse.go#L19'
             )
         })
     })
@@ -190,29 +213,6 @@ describe('Blob viewer', () => {
                     const extensionBundleString = `(${extensionBundle.toString()})()`
                     response.type('application/javascript; charset=utf-8').send(extensionBundleString)
                 })
-        })
-
-        describe('repository nav bar', () => {
-            it('truncates long file paths properly', async () => {
-                await driver.page.goto(
-                    `${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/this_is_a_long_file_path/apps/rest-showcase/src/main/java/org/demo/rest/example/OrdersController.java`
-                )
-                await driver.page.waitForSelector('.test-repo-blob')
-                await driver.page.waitForSelector('.test-breadcrumb')
-                // Uncomment this snapshot once https://github.com/sourcegraph/sourcegraph/issues/15126 is resolved
-                // await percySnapshot(driver.page, this.test!.fullTitle())
-            })
-
-            it('shows a "View on GitHub" button', async () => {
-                await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
-                await driver.page.waitForSelector('.test-go-to-code-host', { visible: true })
-                assert.strictEqual(
-                    await driver.page.evaluate(
-                        () => document.querySelector<HTMLAnchorElement>('.test-go-to-code-host')?.href
-                    ),
-                    'https://github.com/sourcegraph/go-diff/blob/3f415a150aec0685cb81b73cc201e762e075006d/diff/parse.go#L19'
-                )
-            })
         })
 
         it.skip('shows a hover overlay from a hover provider when a token is hovered', async () => {
@@ -977,12 +977,8 @@ describe('Blob viewer', () => {
 
         describe('browser extension discoverability', () => {
             const HOVER_THRESHOLD = 5
-            const HOVER_COUNT_KEY = 'hover-count'
-
             it(`shows a popover about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers and clicks "View on [code host]" button`, async () => {
                 await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
-                await driver.page.evaluate(() => localStorage.removeItem('hover-count'))
-                await driver.page.reload()
 
                 await driver.page.waitForSelector('.test-go-to-code-host', { visible: true })
                 // Close new tab after clicking link
@@ -1023,8 +1019,6 @@ describe('Blob viewer', () => {
 
             it(`shows an alert about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers`, async () => {
                 await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
-                await driver.page.evaluate(HOVER_COUNT_KEY => localStorage.removeItem(HOVER_COUNT_KEY), HOVER_COUNT_KEY)
-                await driver.page.reload()
 
                 // Alert should not be visible before the user reaches the hover threshold
                 assert(
