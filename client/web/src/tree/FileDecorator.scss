@@ -1,6 +1,6 @@
 .file-decoration {
     &__after {
-        margin-bottom: -0.25rem;
+        margin-bottom: -0.125rem;
     }
 
     &__meter {
@@ -9,5 +9,66 @@
 
     &:not(:last-child) {
         margin-right: 0.75rem;
+    }
+}
+
+$optimum-color: $green;
+$suboptimum-color: $orange;
+$horrible-color: $red;
+
+meter {
+    /* Reset the default appearence */
+    -moz-appearance: none;
+    // Don't reset -webkit-appearance: https://bugs.chromium.org/p/chromium/issues/detail?id=632510
+
+    /* We can directly style the meter's background for Firefox */
+    background: none;
+    background-color: var(--border-color-2);
+    border-radius: 1px;
+    height: 0.375rem;
+
+    &::-moz-meter-bar {
+        background: none;
+        border-radius: 1px;
+    }
+
+    /* We have to style this pseudo-element for Chrome */
+    &::-webkit-meter-bar {
+        background: none;
+        background-size: 100% 100%;
+        background-color: var(--border-color-2);
+        height: 0.375rem;
+        border: none;
+        border-radius: 1px;
+    }
+
+    // Optimum value styles
+    &:-moz-meter-optimum::-moz-meter-bar {
+        background-color: $optimum-color;
+    }
+
+    &::-webkit-meter-optimum-value {
+        background-color: $optimum-color;
+        background-size: 100% 100%;
+    }
+
+    // Suboptimum value styles
+    &:-moz-meter-sub-optimum::-moz-meter-bar {
+        background-color: $suboptimum-color;
+    }
+
+    &::-webkit-meter-sub-optimum-value {
+        background-color: $suboptimum-color;
+        background-size: 100% 100%;
+    }
+
+    // Horrible value styles
+    &:-moz-meter-sub-sub-optimum::-moz-meter-bar {
+        background-color: $horrible-color;
+    }
+
+    &::-webkit-meter-even-less-good-value {
+        background-color: $horrible-color;
+        background-size: 100% 100%;
     }
 }
