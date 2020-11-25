@@ -13,7 +13,7 @@ type MonitorQuery struct {
 	Id          int64
 	Monitor     int64
 	QueryString string
-	NextRun     string
+	NextRun     time.Time
 	CreatedBy   int64
 	CreatedAt   time.Time
 	ChangedBy   int64

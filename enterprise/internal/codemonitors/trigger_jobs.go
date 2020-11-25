@@ -25,23 +25,8 @@ INSERT INTO cm_trigger_jobs (query)
 SELECT id from due EXCEPT SELECT id from busy
 `
 
-func (s *Store) enqueueTriggerQueriesQuery(ctx context.Context) (*sqlf.Query, error) {
-	return sqlf.Sprintf(
-		enqueueTriggerQueryFmtStr,
-	), nil
-}
-
 func (s *Store) EnqueueTriggerQueries(ctx context.Context) (err error) {
-	var q *sqlf.Query
-	q, err = s.enqueueTriggerQueriesQuery(ctx)
-	if err != nil {
-		return err
-	}
-	err = s.Store.Exec(ctx, q)
-	if err != nil {
-		return err
-	}
-	return nil
+	return s.Store.Exec(ctx, sqlf.Sprintf(enqueueTriggerQueryFmtStr))
 }
 
 type TriggerJobs struct {
