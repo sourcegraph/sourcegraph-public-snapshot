@@ -110,6 +110,11 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 				continue
 			}
 
+			// If the changeset is currently not attached to this campaign, we don't want to modify it.
+			if !changeset.AttachedTo(r.campaign.ID) {
+				continue
+			}
+
 			if err := r.closeChangeset(ctx, changeset); err != nil {
 				return nil, err
 			}

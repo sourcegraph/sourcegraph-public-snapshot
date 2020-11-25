@@ -782,6 +782,65 @@ func TestServiceApplyCampaign(t *testing.T) {
 			}
 		})
 
+		t.Run("closed and detached changeset not re-enqueued for close", func(t *testing.T) {
+			campaignSpec1 := createCampaignSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
+
+			specOpts := testSpecOpts{
+				user:         admin.ID,
+				repo:         repos[0].ID,
+				campaignSpec: campaignSpec1.ID,
+				headRef:      "refs/heads/detached-closed",
+			}
+			spec1 := createChangesetSpec(t, ctx, store, specOpts)
+
+			// STEP 1: We apply the spec and expect 1 changeset.
+			campaign, changesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 1)
+
+			// Now we update the changeset so it looks like it's been published
+			// on the code host.
+			c := changesets[0]
+			setChangesetPublished(t, ctx, store, c, "995544", specOpts.headRef)
+
+			assertions := changesetAssertions{
+				repo:             c.RepoID,
+				currentSpec:      spec1.ID,
+				externalID:       c.ExternalID,
+				externalBranch:   c.ExternalBranch,
+				externalState:    campaigns.ChangesetExternalStateOpen,
+				ownedByCampaign:  campaign.ID,
+				reconcilerState:  campaigns.ReconcilerStateCompleted,
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				diffStat:         testChangsetSpecDiffStat,
+			}
+			c = reloadAndAssertChangeset(t, ctx, store, c, assertions)
+
+			// STEP 2: Now we apply a new spec without any changesets.
+			campaignSpec2 := createCampaignSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
+			applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 0)
+
+			// Our previously published changeset should be marked as "to be closed"
+			assertions.closing = true
+			assertions.reconcilerState = campaigns.ReconcilerStateQueued
+			// And the previous spec is recorded, because the previous run finished with reconcilerState completed.
+			assertions.previousSpec = spec1.ID
+			c = reloadAndAssertChangeset(t, ctx, store, c, assertions)
+
+			// Now we update the changeset to make it look closed.
+			setChangesetClosed(t, ctx, store, c)
+			assertions.closing = false
+			assertions.reconcilerState = campaigns.ReconcilerStateCompleted
+			assertions.externalState = campaigns.ChangesetExternalStateClosed
+			c = reloadAndAssertChangeset(t, ctx, store, c, assertions)
+
+			// STEP 3: We apply a new campaign spec and expect that the detached changeset record is not re-enqueued.
+			campaignSpec3 := createCampaignSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
+
+			applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 0)
+
+			// Assert that the changeset record is still completed and closed.
+			reloadAndAssertChangeset(t, ctx, store, c, assertions)
+		})
+
 		t.Run("campaign with changeset that is detached and reattached", func(t *testing.T) {
 			t.Run("changeset has been closed before re-attaching", func(t *testing.T) {
 				campaignSpec1 := createCampaignSpec(t, ctx, store, "detach-reattach-changeset", admin.ID)
@@ -800,7 +859,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// Now we update the changeset so it looks like it's been published
 				// on the code host.
 				c := changesets[0]
-				setChangesetPublished(t, ctx, store, c, "995544", specOpts.headRef)
+				setChangesetPublished(t, ctx, store, c, "995533", specOpts.headRef)
 
 				assertions := changesetAssertions{
 					repo:             c.RepoID,
