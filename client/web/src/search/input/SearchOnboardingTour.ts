@@ -74,7 +74,6 @@ export function generateBottomRow(tour: Shepherd.Tour, stepNumber: number, total
     closeTourButton.textContent = 'Close tour'
     closeTourButton.addEventListener('click', () => {
         tour.cancel()
-        localStorage.setItem(HAS_CANCELLED_TOUR_KEY, 'true')
         eventLogger.log('CloseOnboardingTourClicked', { stage: stepNumber })
     })
 
