@@ -74,7 +74,7 @@ func main() {
 			for _, info := range r.Sources {
 				return info.CloneURL, nil
 			}
-			return "", fmt.Errorf("internal error no sources for %s", repo)
+			return "", fmt.Errorf("no sources for %q", repo)
 		},
 	}
 	gitserver.RegisterMetrics()
