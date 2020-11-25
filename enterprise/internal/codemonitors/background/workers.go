@@ -28,7 +28,7 @@ func newTriggerQueryEnqueuer(ctx context.Context, store *cm.Store) goroutine.Bac
 		func(ctx context.Context) error {
 			return store.EnqueueTriggerQueries(ctx)
 		})
-	return goroutine.NewPeriodicGoroutine(ctx, 10*time.Second, enqueueActive)
+	return goroutine.NewPeriodicGoroutine(ctx, 1*time.Minute, enqueueActive)
 }
 
 func newTriggerQueryResetter(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *dbworker.Resetter {
