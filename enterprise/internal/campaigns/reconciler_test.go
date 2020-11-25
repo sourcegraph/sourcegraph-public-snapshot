@@ -857,7 +857,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPush, operationPublish},
+			wantOperations: operations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish},
 		},
 		{
 			name: "GitHub publish as draft",
@@ -869,7 +869,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPush, operationPublishDraft},
+			wantOperations: operations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublishDraft},
 		},
 		{
 			name: "GitHub publish false",
@@ -910,7 +910,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationUndraft},
+			wantOperations: operations{campaigns.ReconcilerOperationUndraft},
 		},
 		{
 			name: "set from draft to publish true on unpublished",
@@ -926,7 +926,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPush, operationPublish},
+			wantOperations: operations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish},
 		},
 		{
 			name: "changeset spec changed attribute, needs update",
@@ -944,7 +944,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationUpdate},
+			wantOperations: operations{campaigns.ReconcilerOperationUpdate},
 		},
 		{
 			name: "changeset spec changed, needs new commit but no update",
@@ -962,7 +962,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{operationPush, operationSleep, operationSync},
+			wantOperations: operations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationSleep, campaigns.ReconcilerOperationSync},
 		},
 		{
 			name: "changeset merged and spec changed is noop",
@@ -1000,7 +1000,7 @@ func TestDeterminePlan(t *testing.T) {
 				ownedByCampaign:  campaign.ID,
 				campaignIDs:      []int64{campaign.ID},
 			},
-			wantOperations: operations{operationReopen},
+			wantOperations: operations{campaigns.ReconcilerOperationReopen},
 		},
 	}
 
@@ -1490,7 +1490,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
 	plan := &plan{}
-	plan.AddOp(operationPush)
+	plan.AddOp(campaigns.ReconcilerOperationPush)
 
 	tests := []struct {
 		name           string
