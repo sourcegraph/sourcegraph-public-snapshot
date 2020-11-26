@@ -43,7 +43,7 @@ type MonitorTrigger interface {
 type MonitorQueryResolver interface {
 	ID() graphql.ID
 	Query() string
-	Events(ctx context.Context, args *ListEventsArgs) MonitorTriggerEventConnectionResolver
+	Events(ctx context.Context, args *ListEventsArgs) (MonitorTriggerEventConnectionResolver, error)
 }
 
 type MonitorTriggerEventConnectionResolver interface {
@@ -54,9 +54,9 @@ type MonitorTriggerEventConnectionResolver interface {
 
 type MonitorTriggerEventResolver interface {
 	ID() graphql.ID
-	Status() string
+	Status() (string, error)
 	Message() *string
-	Timestamp() DateTime
+	Timestamp() (DateTime, error)
 	Actions(ctx context.Context, args *ListActionArgs) (MonitorActionConnectionResolver, error)
 }
 

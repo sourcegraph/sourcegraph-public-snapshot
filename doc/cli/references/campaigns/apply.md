@@ -17,9 +17,11 @@
 | `-keep-logs` | Retain logs after executing steps. | `false` |
 | `-n` | Alias for -namespace. |  |
 | `-namespace` | The user or organization namespace to place the campaign within. Default is the currently authenticated user. |  |
+| `-skip-errors` | If true, errors encountered while executing steps in a repository won't stop the execution of the campaign spec but only cause that repository to be skipped. | `false` |
 | `-timeout` | The maximum duration a single set of campaign steps can take. | `1h0m0s` |
 | `-tmp` | Directory for storing temporary data, such as log files. Default is /tmp. Can also be set with environment variable SRC_CAMPAIGNS_TMP_DIR; if both are set, this flag will be used and not the environment variable. | `/tmp` |
 | `-trace` | Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing | `false` |
+| `-v` | print verbose output | `false` |
 
 
 ## Usage
@@ -50,12 +52,15 @@ Usage of 'src campaigns apply':
     	Alias for -namespace.
   -namespace string
     	The user or organization namespace to place the campaign within. Default is the currently authenticated user.
+  -skip-errors
+    	If true, errors encountered while executing steps in a repository won't stop the execution of the campaign spec but only cause that repository to be skipped.
   -timeout duration
     	The maximum duration a single set of campaign steps can take. (default 1h0m0s)
   -tmp string
     	Directory for storing temporary data, such as log files. Default is /tmp. Can also be set with environment variable SRC_CAMPAIGNS_TMP_DIR; if both are set, this flag will be used and not the environment variable. (default "/tmp")
   -trace
     	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
+  -v	print verbose output
 
 'src campaigns apply' is used to apply a campaign spec on a Sourcegraph
 instance, creating or updating the described campaign if necessary.

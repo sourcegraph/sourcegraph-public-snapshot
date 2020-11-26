@@ -45,9 +45,12 @@ type Option interface {
 	apply(*options)
 }
 
+type hook func() error
+
 type options struct {
-	actions []*graphqlbackend.CreateActionArgs
-	owner   graphql.ID
+	actions   []*graphqlbackend.CreateActionArgs
+	owner     graphql.ID
+	postHooks []hook
 }
 
 type actionOption struct {
@@ -74,6 +77,18 @@ func WithOwner(owner graphql.ID) Option {
 	return ownerOption{owner: owner}
 }
 
+type postHookOption struct {
+	hooks []hook
+}
+
+func (h postHookOption) apply(opts *options) {
+	opts.postHooks = h.hooks
+}
+
+func WithPostHooks(hooks []hook) Option {
+	return postHookOption{hooks: hooks}
+}
+
 // insertTestMonitorWithOpts is a test helper that creates monitors for test
 // purposes with sensible defaults. You can override the defaults by providing
 // (optional) opts.
@@ -89,13 +104,14 @@ func (r *Resolver) insertTestMonitorWithOpts(ctx context.Context, t *testing.T, 
 			Header:     "test header"}}}
 
 	options := options{
-		actions: defaultAction,
-		owner:   defaultOwner,
+		actions:   defaultAction,
+		owner:     defaultOwner,
+		postHooks: nil,
 	}
 	for _, opt := range opts {
 		opt.apply(&options)
 	}
-	return r.CreateCodeMonitor(ctx, &graphqlbackend.CreateCodeMonitorArgs{
+	m, err := r.CreateCodeMonitor(ctx, &graphqlbackend.CreateCodeMonitorArgs{
 		Monitor: &graphqlbackend.CreateMonitorArgs{
 			Namespace:   options.owner,
 			Description: "test monitor",
@@ -104,6 +120,16 @@ func (r *Resolver) insertTestMonitorWithOpts(ctx context.Context, t *testing.T, 
 		Trigger: &graphqlbackend.CreateTriggerArgs{Query: "repo:foo"},
 		Actions: options.actions,
 	})
+	if err != nil {
+		return nil, err
+	}
+	for _, h := range options.postHooks {
+		err = h()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return m, nil
 }
 
 // newTestResolver returns a Resolver with stopped clock, which is useful to

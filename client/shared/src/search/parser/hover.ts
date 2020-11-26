@@ -25,7 +25,9 @@ const toHover = (token: DecoratedToken): string => {
                             return '**Negated word boundary**. Match a position between two word characters, or a position between two non-word characters. This is the negation of `\\b`.'
                     }
                 case RegexpMetaKind.CharacterClass:
-                    return '**Character set**. Match any character in the set.'
+                    return token.value.startsWith('[^')
+                        ? '**Negated character class**. Match any character _not_ inside the square brackets.'
+                        : '**Character class**. Match any character inside the square brackets.'
                 case RegexpMetaKind.CharacterSet:
                     switch (token.value) {
                         case '.':
@@ -45,8 +47,24 @@ const toHover = (token: DecoratedToken): string => {
                     }
                 case RegexpMetaKind.Delimited:
                     return '**Group**. Groups together multiple expressions to match.'
-                case RegexpMetaKind.EscapedCharacter:
-                    return `**Escaped Character**. Match the character \`${token.value[1]}\`.`
+                case RegexpMetaKind.EscapedCharacter: {
+                    const escapable = '~`!@#$%^&*()[]{}<>,.?/\\|=+-_'
+                    let description = escapable.includes(token.value[1])
+                        ? `Match the character \`${token.value[1]}\`.`
+                        : `The character \`${token.value[1]}\` is escaped.`
+                    switch (token.value[1]) {
+                        case 'n':
+                            description = 'Match a new line.'
+                            break
+                        case 't':
+                            description = 'Match a tab.'
+                            break
+                        case 'r':
+                            description = 'Match a carriage return.'
+                            break
+                    }
+                    return `**Escaped Character. ${description}`
+                }
                 case RegexpMetaKind.LazyQuantifier:
                     return '**Lazy**. Match as few as characters as possible that match the previous expression.'
                 case RegexpMetaKind.RangeQuantifier:

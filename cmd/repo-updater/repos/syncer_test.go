@@ -13,10 +13,12 @@ import (
 	"github.com/gitchander/permutation"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -1566,6 +1568,92 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 	}
 }
 
+// Test that sync repo does not clear out any other repo relationships
+func testSyncRepoMaintainsOtherSources(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store repos.Store) func(t *testing.T) {
+		return func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			now := time.Now()
+
+			svc1 := &types.ExternalService{
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "Github - Test1",
+				Config:      `{"url": "https://github.com"}`,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			}
+			svc2 := &types.ExternalService{
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "Github - Test2",
+				Config:      `{"url": "https://github.com"}`,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			}
+
+			// setup services
+			if err := store.UpsertExternalServices(ctx, svc1, svc2); err != nil {
+				t.Fatal(err)
+			}
+
+			githubRepo := &repos.Repo{
+				Name:     "github.com/org/foo",
+				Metadata: &github.Repository{},
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "foo-external-12345",
+					ServiceID:   "https://github.com/",
+					ServiceType: extsvc.TypeGitHub,
+				},
+			}
+
+			// Add two services, both pointing at the same repo
+
+			// Sync first service
+			syncer := &repos.Syncer{
+				Sourcer: func(services ...*types.ExternalService) (repos.Sources, error) {
+					s := repos.NewFakeSource(svc1, nil, githubRepo)
+					return repos.Sources{s}, nil
+				},
+				Now: time.Now,
+			}
+			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+				t.Fatal(err)
+			}
+
+			// Sync second service
+			syncer = &repos.Syncer{
+				Sourcer: func(services ...*types.ExternalService) (repos.Sources, error) {
+					s := repos.NewFakeSource(svc2, nil, githubRepo)
+					return repos.Sources{s}, nil
+				},
+				Now: time.Now,
+			}
+			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+				t.Fatal(err)
+			}
+
+			// Confirm that there are two relationships
+			assertSourceCount(ctx, t, db, 2)
+
+			// Run syncRepo with only one source
+			urn := extsvc.URN(extsvc.KindGitHub, svc1.ID)
+			githubRepo.Sources = map[string]*repos.SourceInfo{
+				urn: {
+					ID:       urn,
+					CloneURL: "cloneURL",
+				},
+			}
+			if err := syncer.SyncRepo(ctx, store, githubRepo); err != nil {
+				t.Fatal(err)
+			}
+
+			// We should still have two sources
+			assertSourceCount(ctx, t, db, 2)
+		}
+	}
+}
+
 func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos.Store) func(t *testing.T) {
 	return func(t *testing.T, store repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
@@ -1693,6 +1781,30 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 			// Confirm that there are two relationships
 			assertSourceCount(ctx, t, db, 2)
 			conf.Mock(nil)
+
+			// If the user has the AllowUserExternalServicePrivate tag, user service can also sync private code
+			_, err := db.ExecContext(ctx, "UPDATE users SET tags = $1 WHERE id = $2", pq.Array([]string{idb.TagAllowUserExternalServicePrivate}), userID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			syncer = &repos.Syncer{
+				Sourcer: func(services ...*types.ExternalService) (repos.Sources, error) {
+					s := repos.NewFakeSource(userService, nil, publicRepo, privateRepo)
+					return repos.Sources{s}, nil
+				},
+				Now: time.Now,
+			}
+			if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err != nil {
+				t.Fatal(err)
+			}
+
+			// Confirm that there are two relationships
+			assertSourceCount(ctx, t, db, 2)
+			_, err = db.ExecContext(ctx, "UPDATE users SET tags = '{}' WHERE id = $1", userID)
+			if err != nil {
+				t.Fatal(err)
+			}
 
 			// Attempt to add some repos with a per user limit set
 			syncer = &repos.Syncer{
