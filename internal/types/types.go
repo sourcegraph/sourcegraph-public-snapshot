@@ -117,7 +117,7 @@ func (r *Repo) CloneURLs() []string {
 }
 
 // IsDeleted returns true if the repo is deleted.
-func (r *Repo) IsDeleted() bool { return !r.DeletedAt.IsZero() }
+func (r *Repo) IsDeleted() bool { return r.RepoFields != nil && !r.DeletedAt.IsZero() }
 
 // ExternalServiceIDs returns the IDs of the external services this
 // repo belongs to.
@@ -270,7 +270,7 @@ func (r *Repo) Less(s *Repo) bool {
 	}
 
 	if s.RepoFields == nil {
-		return len(s.RepoFields.Sources) > 0
+		return len(r.RepoFields.Sources) > 0
 	}
 
 	return sortedSliceLess(sourcesKeys(r.Sources), sourcesKeys(s.Sources))
@@ -278,7 +278,7 @@ func (r *Repo) Less(s *Repo) bool {
 
 func (r *Repo) String() string {
 	eid := fmt.Sprintf("{%s %s %s}", r.ExternalRepo.ServiceID, r.ExternalRepo.ServiceType, r.ExternalRepo.ID)
-	if r.RepoFields != nil && r.IsDeleted() {
+	if r.IsDeleted() {
 		return fmt.Sprintf("Repo{ID: %d, Name: %q, EID: %s, IsDeleted: true}", r.ID, r.Name, eid)
 	}
 	return fmt.Sprintf("Repo{ID: %d, Name: %q, EID: %s}", r.ID, r.Name, eid)
