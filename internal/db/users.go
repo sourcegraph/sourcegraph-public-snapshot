@@ -838,11 +838,17 @@ const (
 // HasTag reports whether the context actor has the given tag.
 // If not, it returns false and a nil error.
 func (u *users) HasTag(ctx context.Context, userID int32, tag string) (bool, error) {
-	user, err := u.GetByID(ctx, userID)
+	var tags []string
+	err := dbconn.Global.QueryRowContext(ctx, "SELECT tags FROM users WHERE id = $1", userID).Scan(pq.Array(&tags))
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, userNotFoundErr{[]interface{}{userID}}
+		}
+
 		return false, err
 	}
-	for _, t := range user.Tags {
+
+	for _, t := range tags {
 		if t == tag {
 			return true, nil
 		}
