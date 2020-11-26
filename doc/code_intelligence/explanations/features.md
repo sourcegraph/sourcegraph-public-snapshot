@@ -18,7 +18,7 @@ When you select 'Go to definition' from the hover tooltip, you will be navigated
 
 ## Find references
 
-When you select 'Find references' from the hover tooltip, a panel will be shown at the bottom of the page that lists all of the references found for both precise (LSIF or language server) and basic results (from search heuristics). This panel will separate references by repository, and you can optionally group them by file.
+When you select 'Find references' from the hover tooltip, a panel will be shown at the bottom of the page that lists all of the references found for both precise (LSIF or language server) and search-based results (from search heuristics). This panel will separate references by repository, and you can optionally group them by file.
 
 > NOTE: When a particular token returns a large number of references, we truncate the results to < 500 to optimize for browser loading speed. We are planning to improve this in the future with the ability to view it as a search so that users can utilize the powerful filtering of Sourcegraph's search to find the references they are looking for.
 

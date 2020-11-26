@@ -75,6 +75,7 @@ Create a campaign by specifying a search query to get a list of repositories and
 
 - [Introduction to campaigns](explanations/introduction_to_campaigns.md)
 - [Permissions in campaigns](explanations/permissions_in_campaigns.md)
+- [Campaigns design](explanations/campaigns_design.md)
 
 ## How-tos
 
@@ -85,6 +86,7 @@ Create a campaign by specifying a search query to get a list of repositories and
 - [Tracking existing changesets](how-tos/tracking_existing_changesets.md)
 - [Closing or deleting a campaign](how-tos/closing_or_deleting_a_campaign.md)
 - [Site admin configuration for campaigns](how-tos/site_admin_configuration.md)
+- [Configuring user credentials for campaigns](how-tos/configuring_user_credentials.md)
 
 ## Tutorials
 

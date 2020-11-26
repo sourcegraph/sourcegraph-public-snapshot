@@ -25,6 +25,7 @@ func (h *handler) setupRoutes(router *mux.Router) {
 		"setLogContents": h.handleSetLogContents,
 		"markComplete":   h.handleMarkComplete,
 		"markErrored":    h.handleMarkErrored,
+		"markFailed":     h.handleMarkFailed,
 	}
 	for path, handler := range routes {
 		router.Path(fmt.Sprintf("/{queueName:(?:%s)}/%s", strings.Join(names, "|"), path)).Methods("POST").HandlerFunc(handler)
@@ -77,6 +78,20 @@ func (h *handler) handleMarkErrored(w http.ResponseWriter, r *http.Request) {
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
 		err := h.markErrored(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID, payload.ErrorMessage)
+		if err == ErrUnknownJob {
+			return http.StatusNotFound, nil, nil
+		}
+
+		return http.StatusNoContent, nil, err
+	})
+}
+
+// POST /{queueName}/markFailed
+func (h *handler) handleMarkFailed(w http.ResponseWriter, r *http.Request) {
+	var payload apiclient.MarkErroredRequest
+
+	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
+		err := h.markFailed(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID, payload.ErrorMessage)
 		if err == ErrUnknownJob {
 			return http.StatusNotFound, nil, nil
 		}

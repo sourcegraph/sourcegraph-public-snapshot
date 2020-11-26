@@ -3,7 +3,6 @@ package campaigns
 import (
 	"context"
 	"database/sql"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -11,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
@@ -19,20 +19,18 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		return err
 	}
 
-	campaignsStore := campaigns.NewStoreWithClock(dbconn.Global, msResolutionClock)
+	campaignsStore := campaigns.NewStoreWithClock(dbconn.Global, timeutil.Now)
 	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	enterpriseServices.CampaignsResolver = resolvers.NewResolver(dbconn.Global)
-	enterpriseServices.GitHubWebhook = campaigns.NewGitHubWebhook(campaignsStore, repositories, msResolutionClock)
+	enterpriseServices.GitHubWebhook = campaigns.NewGitHubWebhook(campaignsStore, repositories, timeutil.Now)
 	enterpriseServices.BitbucketServerWebhook = campaigns.NewBitbucketServerWebhook(
 		campaignsStore,
 		repositories,
-		msResolutionClock,
+		timeutil.Now,
 		"sourcegraph-"+globalState.SiteID,
 	)
-	enterpriseServices.GitLabWebhook = campaigns.NewGitLabWebhook(campaignsStore, repositories, msResolutionClock)
+	enterpriseServices.GitLabWebhook = campaigns.NewGitLabWebhook(campaignsStore, repositories, timeutil.Now)
 
 	return nil
 }
-
-var msResolutionClock = func() time.Time { return time.Now().UTC().Truncate(time.Microsecond) }

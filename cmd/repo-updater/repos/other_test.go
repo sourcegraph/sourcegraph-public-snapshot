@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestSrcExpose(t *testing.T) {
@@ -113,7 +114,7 @@ func TestSrcExpose(t *testing.T) {
 		}},
 	}}
 
-	source, err := NewOtherSource(&ExternalService{
+	source, err := NewOtherSource(&types.ExternalService{
 		ID:     1,
 		Kind:   extsvc.KindOther,
 		Config: fmt.Sprintf(`{"url": %q}`, s.URL),

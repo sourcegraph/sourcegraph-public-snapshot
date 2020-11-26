@@ -36,6 +36,9 @@ type MockStore struct {
 	// MarkErroredFunc is an instance of a mock function object controlling
 	// the behavior of the method MarkErrored.
 	MarkErroredFunc *StoreMarkErroredFunc
+	// MarkFailedFunc is an instance of a mock function object controlling
+	// the behavior of the method MarkFailed.
+	MarkFailedFunc *StoreMarkFailedFunc
 	// QueuedCountFunc is an instance of a mock function object controlling
 	// the behavior of the method QueuedCount.
 	QueuedCountFunc *StoreQueuedCountFunc
@@ -84,6 +87,11 @@ func NewMockStore() *MockStore {
 				return false, nil
 			},
 		},
+		MarkFailedFunc: &StoreMarkFailedFunc{
+			defaultHook: func(context.Context, int, string) (bool, error) {
+				return false, nil
+			},
+		},
 		QueuedCountFunc: &StoreQueuedCountFunc{
 			defaultHook: func(context.Context, []*sqlf.Query) (int, error) {
 				return 0, nil
@@ -128,6 +136,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		MarkErroredFunc: &StoreMarkErroredFunc{
 			defaultHook: i.MarkErrored,
+		},
+		MarkFailedFunc: &StoreMarkFailedFunc{
+			defaultHook: i.MarkFailed,
 		},
 		QueuedCountFunc: &StoreQueuedCountFunc{
 			defaultHook: i.QueuedCount,
@@ -795,6 +806,117 @@ func (c StoreMarkErroredFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreMarkErroredFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreMarkFailedFunc describes the behavior when the MarkFailed method of
+// the parent MockStore instance is invoked.
+type StoreMarkFailedFunc struct {
+	defaultHook func(context.Context, int, string) (bool, error)
+	hooks       []func(context.Context, int, string) (bool, error)
+	history     []StoreMarkFailedFuncCall
+	mutex       sync.Mutex
+}
+
+// MarkFailed delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockStore) MarkFailed(v0 context.Context, v1 int, v2 string) (bool, error) {
+	r0, r1 := m.MarkFailedFunc.nextHook()(v0, v1, v2)
+	m.MarkFailedFunc.appendCall(StoreMarkFailedFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the MarkFailed method of
+// the parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreMarkFailedFunc) SetDefaultHook(hook func(context.Context, int, string) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MarkFailed method of the parent MockStore instance inovkes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreMarkFailedFunc) PushHook(hook func(context.Context, int, string) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *StoreMarkFailedFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *StoreMarkFailedFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreMarkFailedFunc) nextHook() func(context.Context, int, string) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreMarkFailedFunc) appendCall(r0 StoreMarkFailedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreMarkFailedFuncCall objects describing
+// the invocations of this function.
+func (f *StoreMarkFailedFunc) History() []StoreMarkFailedFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreMarkFailedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreMarkFailedFuncCall is an object that describes an invocation of
+// method MarkFailed on an instance of MockStore.
+type StoreMarkFailedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreMarkFailedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreMarkFailedFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

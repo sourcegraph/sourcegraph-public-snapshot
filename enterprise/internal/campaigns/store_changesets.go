@@ -152,6 +152,14 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 	return sqlf.Sprintf(q, vars...), nil
 }
 
+// UpsertChangeset creates or updates the given Changeset.
+func (s *Store) UpsertChangeset(ctx context.Context, c *campaigns.Changeset) error {
+	if c.ID == 0 {
+		return s.CreateChangeset(ctx, c)
+	}
+	return s.UpdateChangeset(ctx, c)
+}
+
 // CreateChangeset creates the given Changeset.
 func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) error {
 	if c.CreatedAt.IsZero() {
@@ -493,37 +501,6 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 		sqlf.Join(ChangesetColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
-}
-
-// ListChangesetsAttachedOrOwnedByCampaign lists Changesets that are either
-// attached to the given Campaign or their OwnedByCampaignID points to the
-// campaign.
-func (s *Store) ListChangesetsAttachedOrOwnedByCampaign(ctx context.Context, campaign int64) (cs campaigns.Changesets, err error) {
-	q := sqlf.Sprintf(`
--- source: enterprise/internal/campaigns/store.go:ListChangesetsAttachedOrOwnedByCampaign
-SELECT %s FROM changesets
-INNER JOIN repo ON repo.id = changesets.repo_id
-WHERE
-  ((changesets.campaign_ids ? %s) OR changesets.owned_by_campaign_id = %s)
-AND
-  repo.deleted_at IS NULL
-ORDER BY id ASC
-`,
-		sqlf.Join(ChangesetColumns, ", "),
-		campaign,
-		campaign,
-	)
-
-	err = s.query(ctx, q, func(sc scanner) (err error) {
-		var c campaigns.Changeset
-		if err = scanChangeset(&c, sc); err != nil {
-			return err
-		}
-		cs = append(cs, &c)
-		return nil
-	})
-
-	return cs, err
 }
 
 // UpdateChangeset updates the given Changeset.

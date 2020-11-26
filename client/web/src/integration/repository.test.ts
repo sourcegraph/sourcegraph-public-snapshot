@@ -388,13 +388,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
             )
-            assert.deepStrictEqual(breadcrumbTexts, [
-                'Home',
-                'Repositories',
-                shortRepositoryName,
-                '@master',
-                clickedFileName,
-            ])
+            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', clickedFileName])
 
             // Return to repo page
             await driver.page.waitForSelector('a.repo-header__repo')
@@ -472,7 +466,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
             )
-            assert.deepStrictEqual(breadcrumbTexts, ['Home', 'Repositories', shortRepositoryName, '@master', filePath])
+            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', filePath])
 
             await driver.page.waitForSelector('#monaco-query-input .view-lines')
             // TODO: find a more reliable way to get the current search query,
@@ -533,13 +527,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
             )
-            assert.deepStrictEqual(breadcrumbTexts, [
-                'Home',
-                'Repositories',
-                shortRepositoryName,
-                '@master',
-                'readme.md',
-            ])
+            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', 'readme.md'])
         })
     })
 

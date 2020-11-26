@@ -6,50 +6,41 @@ import (
 	"net/http"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 type server struct {
-	listener net.Listener
-	server   *http.Server
-	once     sync.Once
+	server       *http.Server
+	makeListener func() (net.Listener, error)
+	once         sync.Once
 }
 
-type Options struct {
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
-}
-
-// New returns a BackgroundRoutine that serves the given handler on the given listener.
-func New(listener net.Listener, handler http.Handler, options Options) goroutine.BackgroundRoutine {
-	httpServer := &http.Server{
-		Handler:      ot.Middleware(handler),
-		ReadTimeout:  options.ReadTimeout,
-		WriteTimeout: options.WriteTimeout,
-	}
-
+// New returns a BackgroundRoutine that serves the given server on the given listener.
+func New(listener net.Listener, httpServer *http.Server) goroutine.BackgroundRoutine {
 	return &server{
-		listener: listener,
-		server:   httpServer,
+		server:       httpServer,
+		makeListener: func() (net.Listener, error) { return listener, nil },
 	}
 }
 
 // New returns a BackgroundRoutine that serves the given handler on the given address.
-func NewFromAddr(addr string, handler http.Handler, options Options) (goroutine.BackgroundRoutine, error) {
-	listener, err := NewListener(addr)
-	if err != nil {
-		return nil, err
+func NewFromAddr(addr string, httpServer *http.Server) goroutine.BackgroundRoutine {
+	return &server{
+		server:       httpServer,
+		makeListener: func() (net.Listener, error) { return NewListener(addr) },
 	}
-
-	return New(listener, handler, options), nil
 }
 
 func (s *server) Start() {
-	if err := s.server.Serve(s.listener); err != http.ErrServerClosed {
+	listener, err := s.makeListener()
+	if err != nil {
+		log15.Error("Failed to create listener", "error", err)
+		os.Exit(1)
+	}
+
+	if err := s.server.Serve(listener); err != http.ErrServerClosed {
 		log15.Error("Failed to start server", "error", err)
 		os.Exit(1)
 	}

@@ -204,13 +204,13 @@ func (s *Store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
 func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upload, _ int, err error) {
 	ctx, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("opts.RepositoryID", opts.RepositoryID),
-		log.String("opts.State", opts.State),
-		log.String("opts.Term", opts.Term),
-		log.Bool("opts.VisibleAtTip", opts.VisibleAtTip),
+		log.Int("repositoryID", opts.RepositoryID),
+		log.String("state", opts.State),
+		log.String("term", opts.Term),
+		log.Bool("visibleAtTip", opts.VisibleAtTip),
 		// TODO(efritz) - opts.UploadedBefore should be a duration
-		log.Int("opts.Limit", opts.Limit),
-		log.Int("opts.Offset", opts.Offset),
+		log.Int("limit", opts.Limit),
+		log.Int("offset", opts.Offset),
 	}})
 	defer endObservation(1, observation.Args{})
 

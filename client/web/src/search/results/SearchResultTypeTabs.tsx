@@ -8,7 +8,7 @@ import { VersionContextProps } from '../../../../shared/src/search/util'
 interface Props
     extends Omit<PatternTypeProps, 'setPatternType'>,
         Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
-        Pick<InteractiveSearchProps, 'filtersInQuery'>,
+        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
         VersionContextProps {
     location: H.Location
     history: H.History

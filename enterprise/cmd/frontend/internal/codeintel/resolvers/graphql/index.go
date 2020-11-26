@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -42,6 +43,19 @@ func (r *IndexResolver) DockerSteps() []gql.DockerStepResolver {
 	}
 
 	return steps
+}
+
+func (r *IndexResolver) LogContents(ctx context.Context) (*string, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		if err == backend.ErrMustBeSiteAdmin {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only site admins can view executor log contents.
+	return strPtr(r.index.LogContents), nil
 }
 
 func (r *IndexResolver) ProjectRoot(ctx context.Context) (*gql.GitTreeEntryResolver, error) {

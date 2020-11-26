@@ -21,6 +21,7 @@ import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 import { deriveInputClassName, useInputValidation } from '../../../../shared/src/util/useInputValidation'
 import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
 import { FilterType } from '../../../../shared/src/search/interactive/util'
+import { resolveFilter, validateFilter } from '../../../../shared/src/search/parser/filters'
 
 export interface CreateCodeMonitorPageProps extends BreadcrumbsProps, BreadcrumbSetters {
     location: H.Location
@@ -97,9 +98,11 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                     tap(event => event.preventDefault()),
                     mergeMap(() =>
                         createCodeMonitor({
-                            namespace: props.authenticatedUser.id,
-                            description: codeMonitor.description,
-                            enabled: codeMonitor.enabled,
+                            monitor: {
+                                namespace: props.authenticatedUser.id,
+                                description: codeMonitor.description,
+                                enabled: codeMonitor.enabled,
+                            },
                             trigger: { query: codeMonitor.query },
                             actions: [
                                 {
@@ -240,8 +243,6 @@ interface TriggerAreaProps {
 }
 
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
-const isValidPatternType = (value: string): boolean =>
-    value === SearchPatternType.literal || value === SearchPatternType.regexp || value === SearchPatternType.structural
 
 const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     query,
@@ -267,43 +268,36 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     const [queryState, nextQueryFieldChange, queryInputReference] = useInputValidation(
         useMemo(
             () => ({
-                initialValue: query,
                 synchronousValidators: [
                     (value: string) => {
                         const tokens = scanSearchQuery(value)
                         if (tokens.type === 'success') {
                             const filters = tokens.term.filter(token => token.type === 'filter')
-                            const typeFilters = filters.filter(
+                            const hasTypeDiffOrCommitFilter = filters.some(
                                 filter =>
                                     filter.type === 'filter' &&
-                                    filter.filterType.value === FilterType.type &&
-                                    ((filter.filterValue?.type === 'literal' &&
-                                        filter.filterValue &&
-                                        isDiffOrCommit(filter.filterValue.value)) ||
-                                        (filter.filterValue?.type === 'quoted' &&
-                                            filter.filterValue &&
-                                            isDiffOrCommit(filter.filterValue.quotedValue)))
+                                    resolveFilter(filter.field.value)?.type === FilterType.type &&
+                                    ((filter.value?.type === 'literal' &&
+                                        filter.value &&
+                                        isDiffOrCommit(filter.value.value)) ||
+                                        (filter.value?.type === 'quoted' &&
+                                            filter.value &&
+                                            isDiffOrCommit(filter.value.quotedValue)))
                             )
-                            const patternTypeFilters = filters.filter(
+                            const hasPatternTypeFilter = filters.some(
                                 filter =>
-                                    (filter.type === 'filter' &&
-                                        filter.filterType.value === FilterType.patterntype &&
-                                        filter.filterValue?.type === 'literal' &&
-                                        filter.filterValue &&
-                                        isValidPatternType(filter.filterValue.value)) ||
-                                    (filter.type === 'filter' &&
-                                        filter.filterType.value === FilterType.patterntype &&
-                                        filter.filterValue?.type === 'quoted' &&
-                                        filter.filterValue &&
-                                        isValidPatternType(filter.filterValue.quotedValue))
+                                    filter.type === 'filter' &&
+                                    resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
+                                    filter.value &&
+                                    validateFilter(filter.field.value, filter.value)
                             )
-                            if (typeFilters.length > 0 && patternTypeFilters.length > 0) {
+                            if (hasTypeDiffOrCommitFilter && hasPatternTypeFilter) {
                                 return undefined
                             }
-                            if (typeFilters.length === 0) {
+                            if (!hasTypeDiffOrCommitFilter) {
                                 return 'Code monitors require queries to specify either `type:commit` or `type:diff`.'
                             }
-                            if (patternTypeFilters.length === 0) {
+                            if (!hasPatternTypeFilter) {
                                 return 'Code monitors require queries to specify a `patternType:` of literal, regexp, or structural.'
                             }
                         }
@@ -311,7 +305,7 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                     },
                 ],
             }),
-            [query]
+            []
         )
     )
 

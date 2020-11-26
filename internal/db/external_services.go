@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
@@ -18,14 +17,14 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/secret"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -169,7 +168,7 @@ func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 			return errors.New("users are only allowed to add external service for https://github.com/, https://gitlab.com/ and https://bitbucket.org/")
 		}
 
-		disallowedFields := []string{"repositoryPathPattern", "nameTransformations"}
+		disallowedFields := []string{"repositoryPathPattern", "nameTransformations", "rateLimit"}
 		results := gjson.GetMany(opt.Config, disallowedFields...)
 		for i, r := range results {
 			if r.Exists() {
@@ -461,7 +460,7 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		return err
 	}
 
-	es.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
+	es.CreatedAt = timeutil.Now()
 	es.UpdatedAt = es.CreatedAt
 
 	// Prior to saving the record, run a validation hook.
@@ -476,7 +475,7 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	return e.Store.Handle().DB().QueryRowContext(
 		ctx,
 		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id, unrestricted) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
-		es.Kind, es.DisplayName, secret.StringValue{S: &es.Config}, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), es.Unrestricted,
+		es.Kind, es.DisplayName, es.Config, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), es.Unrestricted,
 	).Scan(&es.ID)
 }
 
@@ -507,7 +506,7 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&svcs[i].ID,
 			&svcs[i].Kind,
 			&svcs[i].DisplayName,
-			&secret.StringValue{S: &svcs[i].Config},
+			&svcs[i].Config,
 			&svcs[i].CreatedAt,
 			&dbutil.NullTime{Time: &svcs[i].UpdatedAt},
 			&dbutil.NullTime{Time: &svcs[i].DeletedAt},
@@ -649,7 +648,7 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 
 	if update.Config != nil {
 		unrestricted := !gjson.Get(*update.Config, "authorization").Exists()
-		q := sqlf.Sprintf(`config = %s, next_sync_at = NOW(), unrestricted = %s`, secret.StringValue{S: update.Config}, unrestricted)
+		q := sqlf.Sprintf(`config = %s, next_sync_at = NOW(), unrestricted = %s`, update.Config, unrestricted)
 		if err := execUpdate(ctx, tx.DB(), q); err != nil {
 			return err
 		}
@@ -778,7 +777,7 @@ func (e *ExternalServiceStore) list(ctx context.Context, conds []*sqlf.Query, li
 			nextSyncAt      sql.NullTime
 			namespaceUserID sql.NullInt32
 		)
-		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &secret.StringValue{S: &h.Config}, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted); err != nil {
+		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted); err != nil {
 			return nil, err
 		}
 

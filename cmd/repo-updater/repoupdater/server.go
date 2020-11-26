@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // Server is a repoupdater server.
@@ -157,8 +158,29 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tmp := make([]*types.Repo, len(rs))
+	for i, r := range rs {
+		tmp[i] = &types.Repo{
+			ID:           r.ID,
+			ExternalRepo: r.ExternalRepo,
+			Name:         api.RepoName(r.Name),
+			Private:      r.Private,
+			RepoFields: &types.RepoFields{
+				URI:         r.URI,
+				Description: r.Description,
+				Fork:        r.Fork,
+				Archived:    r.Archived,
+				Cloned:      r.Cloned,
+				CreatedAt:   r.CreatedAt,
+				UpdatedAt:   r.UpdatedAt,
+				DeletedAt:   r.DeletedAt,
+				Metadata:    r.Metadata,
+			},
+		}
+	}
+
 	for _, e := range es {
-		if err := e.Exclude(rs...); err != nil {
+		if err := e.Exclude(tmp...); err != nil {
 			respond(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -200,7 +222,7 @@ func respond(w http.ResponseWriter, code int, v interface{}) {
 	}
 }
 
-func newExternalServices(es ...*repos.ExternalService) []api.ExternalService {
+func newExternalServices(es ...*types.ExternalService) []api.ExternalService {
 	svcs := make([]api.ExternalService, 0, len(es))
 
 	for _, e := range es {
@@ -370,7 +392,7 @@ func externalServiceValidate(ctx context.Context, req *protocol.ExternalServiceS
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	src, err := repos.NewSource(&repos.ExternalService{
+	src, err := repos.NewSource(&types.ExternalService{
 		ID:          req.ExternalService.ID,
 		Kind:        req.ExternalService.Kind,
 		DisplayName: req.ExternalService.DisplayName,

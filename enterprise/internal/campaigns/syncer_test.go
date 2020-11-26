@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestNextSync(t *testing.T) {
@@ -359,7 +360,7 @@ func TestSyncRegistry(t *testing.T) {
 
 	now := time.Now()
 
-	extSvc := &repos.ExternalService{
+	extSvc := &types.ExternalService{
 		ID:          1,
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "",
@@ -369,8 +370,8 @@ func TestSyncRegistry(t *testing.T) {
 	}
 
 	repoStore := MockRepoStore{
-		listExternalServices: func(ctx context.Context, args repos.StoreListExternalServicesArgs) (services []*repos.ExternalService, err error) {
-			return []*repos.ExternalService{
+		listExternalServices: func(ctx context.Context, args repos.StoreListExternalServicesArgs) (services []*types.ExternalService, err error) {
+			return []*types.ExternalService{
 				extSvc,
 			}, nil
 		},
@@ -492,11 +493,11 @@ func (m MockSyncStore) Transact(ctx context.Context) (*Store, error) {
 }
 
 type MockRepoStore struct {
-	listExternalServices func(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error)
+	listExternalServices func(context.Context, repos.StoreListExternalServicesArgs) ([]*types.ExternalService, error)
 	listRepos            func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error)
 }
 
-func (m MockRepoStore) UpsertExternalServices(ctx context.Context, svcs ...*repos.ExternalService) error {
+func (m MockRepoStore) UpsertExternalServices(ctx context.Context, svcs ...*types.ExternalService) error {
 	panic("implement me")
 }
 
@@ -504,7 +505,7 @@ func (m MockRepoStore) UpsertRepos(ctx context.Context, repos ...*repos.Repo) er
 	panic("implement me")
 }
 
-func (m MockRepoStore) ListExternalServices(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
+func (m MockRepoStore) ListExternalServices(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*types.ExternalService, error) {
 	return m.listExternalServices(ctx, args)
 }
 

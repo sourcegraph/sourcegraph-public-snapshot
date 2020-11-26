@@ -2,13 +2,14 @@ import * as uuid from 'uuid'
 import { TelemetryService } from '../../../shared/src/telemetry/telemetryService'
 import { browserExtensionMessageReceived, handleQueryEvents, pageViewQueryParameters } from './analyticsUtils'
 import { serverAdmin } from './services/serverAdminWrapper'
+import cookies from 'js-cookie'
 
-const uidKey = 'sourcegraphAnonymousUid'
+const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 
 export class EventLogger implements TelemetryService {
     private hasStrippedQueryParameters = false
 
-    private anonUid?: string
+    private anonymousUserId?: string
 
     constructor() {
         // EventLogger is never teared down
@@ -66,18 +67,25 @@ export class EventLogger implements TelemetryService {
      * on a Sourcegraph instance to see a count of unique users on a daily,
      * weekly, and monthly basis).
      */
-    public getAnonUserID(): string {
-        if (this.anonUid) {
-            return this.anonUid
+    public getAnonymousUserID(): string {
+        let anonymousUserId =
+            this.anonymousUserId || cookies.get(ANONYMOUS_USER_ID_KEY) || localStorage.getItem(ANONYMOUS_USER_ID_KEY)
+        if (!anonymousUserId) {
+            anonymousUserId = uuid.v4()
         }
-
-        let id = localStorage.getItem(uidKey)
-        if (id === null || id === '') {
-            id = uuid.v4()
-            localStorage.setItem(uidKey, id)
-        }
-        this.anonUid = id
-        return this.anonUid
+        // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
+        // Always set to renew expiry and migrate from localStorage
+        cookies.set(ANONYMOUS_USER_ID_KEY, anonymousUserId, {
+            // 365 days expiry, but renewed on activity.
+            expires: 365,
+            // Enforce HTTPS
+            secure: true,
+            // We only read the cookie with JS so we don't need to send it cross-site nor on initial page requests.
+            sameSite: 'Strict',
+        })
+        localStorage.removeItem(ANONYMOUS_USER_ID_KEY)
+        this.anonymousUserId = anonymousUserId
+        return anonymousUserId
     }
 }
 

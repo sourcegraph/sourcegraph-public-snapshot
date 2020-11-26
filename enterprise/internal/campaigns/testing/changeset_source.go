@@ -8,12 +8,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // FakeChangesetSource is a fake implementation of the repos.ChangesetSource
 // interface to be used in tests.
 type FakeChangesetSource struct {
-	Svc *repos.ExternalService
+	Svc *types.ExternalService
 
 	authenticator auth.Authenticator
 
@@ -168,10 +169,10 @@ func (s *FakeChangesetSource) ListRepos(ctx context.Context, results chan repos.
 	results <- repos.SourceResult{Source: s, Err: fakeNotImplemented}
 }
 
-func (s *FakeChangesetSource) ExternalServices() repos.ExternalServices {
+func (s *FakeChangesetSource) ExternalServices() types.ExternalServices {
 	s.ExternalServicesCalled = true
 
-	return repos.ExternalServices{s.Svc}
+	return types.ExternalServices{s.Svc}
 }
 func (s *FakeChangesetSource) LoadChangeset(ctx context.Context, c *repos.Changeset) error {
 	s.LoadChangesetCalled = true

@@ -17,7 +17,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -167,6 +169,12 @@ func (s *Syncer) TriggerEnqueueSyncJobs() {
 	s.enqueueSignal.Trigger()
 }
 
+const (
+	// If the owner of an external service has this tag, the syncer
+	// will sync private repositories.
+	TagAllowUserExternalServicePrivate = "AllowUserExternalServicePrivate"
+)
+
 // SyncExternalService syncs repos using the supplied external service.
 func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServiceID int64, minSyncInterval time.Duration) (err error) {
 	var diff Diff
@@ -237,9 +245,25 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 		return errors.Wrap(err, "syncer.sync.sourced")
 	}
 
-	// Unless explicitly specified with "all", user added external services should only sync public code
+	// Unless explicitly specified with the "all" setting or the owner of the service has the "AllowUserExternalServicePrivate" tag,
+	// user added external services should only sync public code.
 	if isUserOwned && conf.ExternalServiceUserMode() != conf.ExternalServiceModeAll {
-		sourced = sourced.Filter(func(r *Repo) bool { return !r.Private })
+		syncPublicOnly := true
+
+		user, err := db.Users.GetByID(ctx, svc.NamespaceUserID)
+		if err != nil {
+			return errors.Wrap(err, "getting service owner")
+		}
+		for _, t := range user.Tags {
+			if t == TagAllowUserExternalServicePrivate {
+				syncPublicOnly = false
+				break
+			}
+		}
+
+		if syncPublicOnly {
+			sourced = sourced.Filter(func(r *Repo) bool { return !r.Private })
+		}
 	}
 
 	var storedServiceRepos Repos
@@ -683,7 +707,7 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	return newDiff(nil, sourced, stored)
 }
 
-func newDiff(svc *ExternalService, sourced, stored []*Repo) (diff Diff) {
+func newDiff(svc *types.ExternalService, sourced, stored []*Repo) (diff Diff) {
 	// Sort sourced so we merge deterministically
 	sort.Sort(Repos(sourced))
 
@@ -754,7 +778,7 @@ func merge(o, n *Repo) {
 	o.Update(n)
 }
 
-func (s *Syncer) sourced(ctx context.Context, svcs []*ExternalService, onSourced ...func(*Repo) error) ([]*Repo, error) {
+func (s *Syncer) sourced(ctx context.Context, svcs []*types.ExternalService, onSourced ...func(*Repo) error) ([]*Repo, error) {
 	srcs, err := s.Sourcer(svcs...)
 	if err != nil {
 		return nil, err

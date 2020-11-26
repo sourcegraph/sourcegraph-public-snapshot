@@ -2,7 +2,6 @@ import React, { useCallback, useState } from 'react'
 import * as H from 'history'
 import Dialog from '@reach/dialog'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import LockIcon from 'mdi-react/LockIcon'
 import { Form } from '../../../../../branded/src/components/Form'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
@@ -130,11 +129,6 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                             onChange={onChangeCredential}
                         />
                         <p className="form-text">{helpTexts[externalServiceKind]}</p>
-                        <p className="form-text">
-                            <i>
-                                <LockIcon className="icon-inline" /> Access tokens are encrypted before storing.
-                            </i>
-                        </p>
                     </div>
                     <div className="d-flex justify-content-end">
                         <button

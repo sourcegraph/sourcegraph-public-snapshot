@@ -21,3 +21,11 @@ steps:
   artifact_paths: ./*.log
   agents:
     queue: 'baremetal'
+
+- label: ":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA"
+  commands:
+    - dev/ci/test/cluster/cluster-test.sh
+  artifact_paths: ./*.png;./*.mp4;./*.log
+  concurrency: 1
+  concurrency_group: "cluster-test"
+  timeout_in_minutes: 30

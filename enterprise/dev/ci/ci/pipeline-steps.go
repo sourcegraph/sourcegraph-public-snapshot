@@ -9,38 +9,6 @@ import (
 	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
 )
 
-var allDockerImages = []string{
-	// Slow images first for faster CI
-	"server",
-	"frontend",
-	"grafana",
-	"prometheus",
-	"ignite-ubuntu",
-
-	"github-proxy",
-	"gitserver",
-	"query-runner",
-	"repo-updater",
-	"searcher",
-	"symbols",
-	"precise-code-intel-worker",
-	"executor-queue",
-	"executor",
-
-	// Images under docker-images/
-	"cadvisor",
-	"indexed-searcher",
-	"postgres-11.4",
-	"redis-cache",
-	"redis-store",
-	"search-indexer",
-	"syntax-highlighter",
-	"jaeger-agent",
-	"jaeger-all-in-one",
-	"codeintel-db",
-	"minio",
-}
-
 // Verifies the docs formatting and builds the `docsite` command.
 func addDocs(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":memo: Check and build docsite",
@@ -119,14 +87,6 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 
-		// Storybook coverage
-		pipeline.AddStep(":storybook::codecov: Code coverage",
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-storybook"),
-			bk.Cmd("yarn run cover-storybook"),
-			bk.Cmd("yarn nyc report -r json"),
-			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F storybook"))
-
 		// Upload storybook to Chromatic
 		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
 		if !c.isPR() {
@@ -136,6 +96,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.AutomaticRetry(5),
 			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn gulp generate"),
+			bk.Env("CHROMATIC", "1"),
 			bk.Cmd(chromaticCommand))
 
 		// Shared tests
@@ -189,7 +150,7 @@ func addBackendIntegrationTests(c Config) func(*bk.Pipeline) {
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
-	for _, browser := range []string{"chrome", "firefox"} {
+	for _, browser := range []string{"chrome"} {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s: E2E for %s extension", browser, browser),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
@@ -241,6 +202,40 @@ func wait(pipeline *bk.Pipeline) {
 	pipeline.AddWait()
 }
 
+// Trigger the async pipeline to run.
+func triggerAsync(c Config) func(*bk.Pipeline) {
+	env := copyEnv(
+		"BUILDKITE_PULL_REQUEST",
+		"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
+		"BUILDKITE_PULL_REQUEST_REPO",
+	)
+
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddTrigger(":snail: Trigger Async",
+			bk.Trigger("sourcegraph-async"),
+			bk.Async(true),
+			bk.Build(bk.BuildOptions{
+				Message: os.Getenv("BUILDKITE_MESSAGE"),
+				Commit:  c.commit,
+				Branch:  c.branch,
+				Env:     env,
+			}),
+		)
+	}
+}
+
+// images used by cluster-qa test
+func clusterDockerImages(images []string) string {
+	var clusterImages []string
+	imagesToRemove := map[string]bool{"server": true, "ignite-ubuntu": true}
+	for _, image := range images {
+		if _, exists := imagesToRemove[image]; !exists {
+			clusterImages = append(clusterImages, image)
+		}
+	}
+	return strings.Join(clusterImages, "\n")
+}
+
 func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	var async bool
 	if c.branch == "main" {
@@ -266,6 +261,8 @@ func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 
 	// Test upgrades from mininum upgradeable Sourcegraph version
 	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.20.0"
+
+	env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(SourcegraphDockerImages)
 
 	return func(pipeline *bk.Pipeline) {
 		if !c.shouldRunE2EandQA() {
@@ -308,6 +305,11 @@ func copyEnv(keys ...string) map[string]string {
 // Build all relevant Docker images for Sourcegraph (for example, candidates and final
 // images), given the current CI case (e.g., "tagged release", "release branch",
 // "master branch", etc.)
+//
+// Notes:
+//
+// - Publishing of `insiders` implies deployment
+// - See `images.go` for more details on what images get built and where they get published
 func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 	addDockerImage := func(c Config, app string, insiders bool) func(*bk.Pipeline) {
 		if !final {
@@ -320,29 +322,25 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 		switch {
 		// build all images for tagged releases
 		case c.taggedRelease:
-			for _, dockerImage := range allDockerImages {
+			for _, dockerImage := range SourcegraphDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
 
-		// only build `sourcegraph/server` for release branch updates
-		case c.releaseBranch:
-			addDockerImage(c, "server", false)(pipeline)
-
 		// replicates `main` build but does not deploy `insiders` images
 		case c.isMasterDryRun:
-			for _, dockerImage := range allDockerImages {
+			for _, dockerImage := range SourcegraphDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
 
 		// deploy `insiders` images for `main`
 		case c.branch == "main":
-			for _, dockerImage := range allDockerImages {
+			for _, dockerImage := range SourcegraphDockerImages {
 				addDockerImage(c, dockerImage, true)(pipeline)
 			}
 
 		// ensure candidate images are available for testing
 		case c.shouldRunE2EandQA():
-			for _, dockerImage := range allDockerImages {
+			for _, dockerImage := range SourcegraphDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
 
@@ -358,13 +356,13 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 // tags once the e2e tests pass.
 func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-
-		baseImage := "sourcegraph/" + strings.ReplaceAll(app, "/", "-")
+		image := strings.ReplaceAll(app, "/", "-")
+		localImage := "sourcegraph/" + image + ":" + c.version
 
 		cmds := []bk.StepOpt{
 			bk.Cmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
 			bk.Env("DOCKER_BUILDKIT", "1"),
-			bk.Env("IMAGE", baseImage+":"+c.version),
+			bk.Env("IMAGE", localImage),
 			bk.Env("VERSION", c.version),
 			bk.Cmd("yes | gcloud auth configure-docker"),
 		}
@@ -388,11 +386,13 @@ func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 			cmds = append(cmds, bk.Cmd(cmdDir+"/build.sh"))
 		}
 
-		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
-		tag := candidateImageTag(c)
+		devImage := fmt.Sprintf("%s/%s", SourcegraphDockerDevRegistry, image)
+		devTag := candidateImageTag(c)
 		cmds = append(cmds,
-			bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s", baseImage, c.version, gcrImage, tag)),
-			bk.Cmd(fmt.Sprintf("docker push %s:%s", gcrImage, tag)),
+			// Retag the local image for dev registry
+			bk.Cmd(fmt.Sprintf("docker tag %s %s:%s", localImage, devImage, devTag)),
+			// Publish tagged image
+			bk.Cmd(fmt.Sprintf("docker push %s:%s", devImage, devTag)),
 		)
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :construction: %s", app), cmds...)
@@ -403,12 +403,12 @@ func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 // after the e2e tests pass.
 func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		baseImage := "sourcegraph/" + strings.ReplaceAll(app, "/", "-")
-		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
-		dockerHubImage := fmt.Sprintf("index.docker.io/%s", baseImage)
+		image := strings.ReplaceAll(app, "/", "-")
+		devImage := fmt.Sprintf("%s/%s", SourcegraphDockerDevRegistry, image)
+		publishImage := fmt.Sprintf("%s/%s", SourcegraphDockerPublishRegistry, image)
 
 		var images []string
-		for _, image := range []string{dockerHubImage, gcrImage} {
+		for _, image := range []string{publishImage, devImage} {
 			if app != "server" || c.taggedRelease || c.patch || c.patchNoTest {
 				images = append(images, fmt.Sprintf("%s:%s", image, c.version))
 			}
@@ -422,18 +422,9 @@ func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline)
 			}
 		}
 
-		candidateImage := fmt.Sprintf("%s:%s", gcrImage, candidateImageTag(c))
+		candidateImage := fmt.Sprintf("%s:%s", devImage, candidateImageTag(c))
 		cmd := fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(images, " "))
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :white_check_mark: %s", app), bk.Cmd(cmd))
 	}
-}
-
-// candidateImageTag provides the tag for a candidate image built for this Buildkite run.
-//
-// Note that the availability of this image depends on whether a candidate gets built,
-// as determined in `addDockerImages()`.
-func candidateImageTag(c Config) string {
-	buildNumber := os.Getenv("BUILDKITE_BUILD_NUMBER")
-	return fmt.Sprintf("%s_%s_candidate", c.commit, buildNumber)
 }

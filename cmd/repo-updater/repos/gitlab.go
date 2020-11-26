@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -24,7 +25,7 @@ import (
 // A GitLabSource yields repositories from a single GitLab connection configured
 // in Sourcegraph via the external services configuration.
 type GitLabSource struct {
-	svc                 *ExternalService
+	svc                 *types.ExternalService
 	config              *schema.GitLabConnection
 	exclude             excludeFunc
 	baseURL             *url.URL // URL with path /api/v4 (no trailing slash)
@@ -39,7 +40,7 @@ var _ DraftChangesetSource = &GitLabSource{}
 var _ ChangesetSource = &GitLabSource{}
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
-func NewGitLabSource(svc *ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
+func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
 	var c schema.GitLabConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -47,7 +48,7 @@ func NewGitLabSource(svc *ExternalService, cf *httpcli.Factory) (*GitLabSource, 
 	return newGitLabSource(svc, &c, cf)
 }
 
-func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
+func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -133,8 +134,8 @@ func (s GitLabSource) GetRepo(ctx context.Context, pathWithNamespace string) (*R
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s GitLabSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+func (s GitLabSource) ExternalServices() types.ExternalServices {
+	return types.ExternalServices{s.svc}
 }
 
 func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
@@ -354,6 +355,11 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 		}
 	}
 
+	// These additional API calls can go away once we can use the GraphQL API.
+	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
+		return exists, errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
+	}
+
 	if err := c.SetMetadata(mr); err != nil {
 		return exists, errors.Wrap(err, "setting changeset metadata")
 	}
@@ -386,6 +392,7 @@ func (s *GitLabSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (
 
 // CloseChangeset closes the merge request on GitLab, leaving it unlocked.
 func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
+	project := c.Repo.Metadata.(*gitlab.Project)
 	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitLab merge request")
@@ -393,13 +400,18 @@ func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 
 	// Title and TargetBranch are required, even though we're not actually
 	// changing them.
-	updated, err := s.client.UpdateMergeRequest(ctx, c.Repo.Metadata.(*gitlab.Project), mr, gitlab.UpdateMergeRequestOpts{
+	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
 		Title:        mr.Title,
 		TargetBranch: mr.TargetBranch,
 		StateEvent:   gitlab.UpdateMergeRequestStateEventClose,
 	})
 	if err != nil {
 		return errors.Wrap(err, "updating GitLab merge request")
+	}
+
+	// These additional API calls can go away once we can use the GraphQL API.
+	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
+		return errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
 	}
 
 	if err := c.SetMetadata(updated); err != nil {
@@ -439,6 +451,7 @@ func (s *GitLabSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 
 // ReopenChangeset closes the merge request on GitLab, leaving it unlocked.
 func (s *GitLabSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
+	project := c.Repo.Metadata.(*gitlab.Project)
 	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitLab merge request")
@@ -446,13 +459,18 @@ func (s *GitLabSource) ReopenChangeset(ctx context.Context, c *Changeset) error 
 
 	// Title and TargetBranch are required, even though we're not actually
 	// changing them.
-	updated, err := s.client.UpdateMergeRequest(ctx, c.Repo.Metadata.(*gitlab.Project), mr, gitlab.UpdateMergeRequestOpts{
+	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
 		Title:        mr.Title,
 		TargetBranch: mr.TargetBranch,
 		StateEvent:   gitlab.UpdateMergeRequestStateEventReopen,
 	})
 	if err != nil {
 		return errors.Wrap(err, "reopening GitLab merge request")
+	}
+
+	// These additional API calls can go away once we can use the GraphQL API.
+	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
+		return errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
 	}
 
 	if err := c.SetMetadata(updated); err != nil {
@@ -558,14 +576,20 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 	if !ok {
 		return errors.New("Changeset is not a GitLab merge request")
 	}
+	project := c.Repo.Metadata.(*gitlab.Project)
 
-	updated, err := s.client.UpdateMergeRequest(ctx, c.Repo.Metadata.(*gitlab.Project), mr, gitlab.UpdateMergeRequestOpts{
+	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
 		Title:        c.Title,
 		Description:  c.Body,
 		TargetBranch: git.AbbreviateRef(c.BaseRef),
 	})
 	if err != nil {
 		return errors.Wrap(err, "updating GitLab merge request")
+	}
+
+	// These additional API calls can go away once we can use the GraphQL API.
+	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
+		return errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
 	}
 
 	return c.Changeset.SetMetadata(updated)

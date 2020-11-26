@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func TestServiceApplyCampaign(t *testing.T) {
@@ -42,10 +43,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 	repos, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 4)
 
-	now := time.Now().UTC().Truncate(time.Microsecond)
-	clock := func() time.Time {
-		return now.UTC().Truncate(time.Microsecond)
-	}
+	now := timeutil.Now()
+	clock := func() time.Time { return now }
 	store := NewStoreWithClock(dbconn.Global, clock)
 	svc := NewService(store, httpcli.NewExternalHTTPClientFactory())
 
@@ -452,16 +451,31 @@ func TestServiceApplyCampaign(t *testing.T) {
 			}
 			assertChangeset(t, c2, trackedChangesetAssertions)
 
-			// Now we stop tracking it in the second campaign
+			// Now try to apply a new spec that wants to modify the formerly tracked changeset.
 			campaignSpec3 := createCampaignSpec(t, ctx, store, "tracking-campaign", admin.ID)
 
-			// Campaign should have 0 changesets after applying, but the
-			// tracked changeset should not be closed, since the campaign is
+			spec3 := createChangesetSpec(t, ctx, store, testSpecOpts{
+				user:         admin.ID,
+				repo:         repos[0].ID,
+				campaignSpec: campaignSpec3.ID,
+				headRef:      "refs/heads/repo-0-branch-0",
+			})
+			// Apply again. This should have detached the tracked changeset but it should not be closed, since the campaign is
 			// not the owner.
-			applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 0)
+			trackingCampaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 1)
 
 			trackedChangesetAssertions.closing = false
 			reloadAndAssertChangeset(t, ctx, store, c2, trackedChangesetAssertions)
+
+			// But we do want to have a new changeset record that is going to create a new changeset on the code host.
+			reloadAndAssertChangeset(t, ctx, store, cs[0], changesetAssertions{
+				repo:             spec3.RepoID,
+				currentSpec:      spec3.ID,
+				ownedByCampaign:  trackingCampaign.ID,
+				reconcilerState:  campaigns.ReconcilerStateQueued,
+				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				diffStat:         testChangsetSpecDiffStat,
+			})
 		})
 
 		t.Run("campaign with changeset that is unpublished", func(t *testing.T) {

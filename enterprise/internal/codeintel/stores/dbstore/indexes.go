@@ -9,6 +9,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -34,6 +35,7 @@ type Index struct {
 	Indexer        string       `json:"indexer"`
 	IndexerArgs    []string     `json:"indexer_args"`
 	Outfile        string       `json:"outfile"`
+	LogContents    string       `json:"log_contents"`
 	Rank           *int         `json:"placeInQueue"`
 }
 
@@ -69,6 +71,7 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 			&index.Indexer,
 			pq.Array(&index.IndexerArgs),
 			&index.Outfile,
+			&dbutil.NullString{S: &index.LogContents},
 			&index.Rank,
 		); err != nil {
 			return nil, err
@@ -127,6 +130,7 @@ func (s *Store) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool, err 
 			u.indexer,
 			u.indexer_args,
 			u.outfile,
+			u.log_contents,
 			s.rank
 		FROM lsif_indexes_with_repository_name u
 		LEFT JOIN (
@@ -150,11 +154,11 @@ type GetIndexesOptions struct {
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
 func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Index, _ int, err error) {
 	ctx, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("opts.RepositoryID", opts.RepositoryID),
-		log.String("opts.State", opts.State),
-		log.String("opts.Term", opts.Term),
-		log.Int("opts.Limit", opts.Limit),
-		log.Int("opts.Offset", opts.Offset),
+		log.Int("repositoryID", opts.RepositoryID),
+		log.String("state", opts.State),
+		log.String("term", opts.Term),
+		log.Int("limit", opts.Limit),
+		log.Int("offset", opts.Offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -209,6 +213,7 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 				u.indexer,
 				u.indexer_args,
 				u.outfile,
+				u.log_contents,
 				s.rank
 			FROM lsif_indexes_with_repository_name u
 			LEFT JOIN (
@@ -279,7 +284,7 @@ func (s *Store) IsQueued(ctx context.Context, repositoryID int, commit string) (
 // InsertIndex inserts a new index and returns its identifier.
 func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error) {
 	ctx, endObservation := s.operations.insertIndex.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("index.ID", index.ID),
+		log.Int("indexID", index.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -294,8 +299,9 @@ func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error)
 				root,
 				indexer,
 				indexer_args,
-				outfile
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+				outfile,
+				log_contents
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 			RETURNING id
 		`,
 			index.State,
@@ -306,6 +312,7 @@ func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error)
 			index.Indexer,
 			pq.Array(index.IndexerArgs),
 			index.Outfile,
+			index.LogContents,
 		),
 	))
 
@@ -358,6 +365,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf(`u.indexer`),
 	sqlf.Sprintf(`u.indexer_args`),
 	sqlf.Sprintf(`u.outfile`),
+	sqlf.Sprintf(`u.log_contents`),
 	sqlf.Sprintf("NULL"),
 }
 

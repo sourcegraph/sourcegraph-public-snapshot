@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -35,7 +36,7 @@ func testStoreListExternalServicesByRepos(t *testing.T, store repos.Store) func(
 		now := clock.Now()
 
 		t.Run("", transact(ctx, store, func(t testing.TB, tx repos.Store) {
-			github := repos.ExternalService{
+			github := types.ExternalService{
 				Kind:        extsvc.KindGitHub,
 				DisplayName: "Github - Test",
 				Config:      `{"url": "https://github.com"}`,
@@ -43,7 +44,7 @@ func testStoreListExternalServicesByRepos(t *testing.T, store repos.Store) func(
 				UpdatedAt:   now,
 			}
 
-			gitlab := repos.ExternalService{
+			gitlab := types.ExternalService{
 				Kind:        extsvc.KindGitLab,
 				DisplayName: "GitLab - Test",
 				Config:      `{"url": "https://gitlab.com"}`,
@@ -51,7 +52,7 @@ func testStoreListExternalServicesByRepos(t *testing.T, store repos.Store) func(
 				UpdatedAt:   now,
 			}
 
-			svcs := repos.ExternalServices{&github, &gitlab}
+			svcs := types.ExternalServices{&github, &gitlab}
 
 			if err := tx.UpsertExternalServices(ctx, svcs...); err != nil {
 				t.Fatalf("failed to setup store: %v", err)
@@ -122,7 +123,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 		clock := dbtesting.NewFakeClock(time.Now(), 0)
 		now := clock.Now()
 
-		github := repos.ExternalService{
+		github := types.ExternalService{
 			Kind:            extsvc.KindGitHub,
 			DisplayName:     "Github - Test",
 			Config:          `{"url": "https://github.com"}`,
@@ -131,7 +132,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 			UpdatedAt:       now,
 		}
 
-		gitlab := repos.ExternalService{
+		gitlab := types.ExternalService{
 			Kind:        extsvc.KindGitLab,
 			DisplayName: "GitLab - Test",
 			Config:      `{"url": "https://gitlab.com"}`,
@@ -139,7 +140,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 			UpdatedAt:   now,
 		}
 
-		bitbucketServer := repos.ExternalService{
+		bitbucketServer := types.ExternalService{
 			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket Server - Test",
 			Config:      `{"url": "https://bitbucketserver.mycorp.com"}`,
@@ -147,7 +148,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 			UpdatedAt:   now,
 		}
 
-		awsCodeCommit := repos.ExternalService{
+		awsCodeCommit := types.ExternalService{
 			Kind:        extsvc.KindAWSCodeCommit,
 			DisplayName: "AWS CodeCommit - Test",
 			Config:      `{"region": "us-west-1"}`,
@@ -155,7 +156,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 			UpdatedAt:   now,
 		}
 
-		otherService := repos.ExternalService{
+		otherService := types.ExternalService{
 			Kind:        extsvc.KindOther,
 			DisplayName: "Other code hosts",
 			Config:      `{"url": "https://git-host.mycorp.com"}`,
@@ -163,7 +164,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 			UpdatedAt:   now,
 		}
 
-		gitoliteService := repos.ExternalService{
+		gitoliteService := types.ExternalService{
 			Kind:        extsvc.KindGitolite,
 			DisplayName: "Gitolite Server - Test",
 			Config:      `{"prefix": "/", "host": "git@gitolite.mycorp.com"}`,
@@ -171,7 +172,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 			UpdatedAt:   now,
 		}
 
-		phabricatorService := repos.ExternalService{
+		phabricatorService := types.ExternalService{
 			Kind:        extsvc.KindPhabricator,
 			DisplayName: "Phabricator - Test",
 			Config:      `{"url": "https://phab.org", "token": "foo"}`,
@@ -179,7 +180,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 			UpdatedAt:   now,
 		}
 
-		svcs := repos.ExternalServices{
+		svcs := types.ExternalServices{
 			&github,
 			&gitlab,
 			&bitbucketServer,
@@ -191,9 +192,9 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 
 		type testCase struct {
 			name string
-			args func(stored repos.ExternalServices) repos.StoreListExternalServicesArgs
+			args func(stored types.ExternalServices) repos.StoreListExternalServicesArgs
 
-			stored repos.ExternalServices
+			stored types.ExternalServices
 			assert repos.ExternalServicesAssertion
 			err    error
 		}
@@ -202,7 +203,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 		testCases = append(testCases,
 			testCase{
 				name: "returned kind is uppercase",
-				args: func(repos.ExternalServices) repos.StoreListExternalServicesArgs {
+				args: func(types.ExternalServices) repos.StoreListExternalServicesArgs {
 					return repos.StoreListExternalServicesArgs{
 						Kinds: svcs.Kinds(),
 					}
@@ -212,7 +213,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 			},
 			testCase{
 				name: "case-insensitive kinds",
-				args: func(repos.ExternalServices) (args repos.StoreListExternalServicesArgs) {
+				args: func(types.ExternalServices) (args repos.StoreListExternalServicesArgs) {
 					for _, kind := range svcs.Kinds() {
 						args.Kinds = append(args.Kinds, strings.ToLower(kind))
 					}
@@ -230,7 +231,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 				name:   "results are in ascending order by id",
 				stored: generateExternalServices(7, svcs...),
 				assert: repos.Assert.ExternalServicesOrderedBy(
-					func(a, b *repos.ExternalService) bool {
+					func(a, b *types.ExternalService) bool {
 						return a.ID < b.ID
 					},
 				),
@@ -238,7 +239,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 			testCase{
 				name:   "excludes phabricator by default",
 				stored: svcs,
-				assert: repos.Assert.ExternalServicesEqual(func() (es repos.ExternalServices) {
+				assert: repos.Assert.ExternalServicesEqual(func() (es types.ExternalServices) {
 					for _, e := range svcs {
 						if e.Kind != extsvc.KindPhabricator {
 							es = append(es, e)
@@ -250,7 +251,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 			testCase{
 				name:   "includes phabricator if specified in Kinds",
 				stored: svcs,
-				args: func(repos.ExternalServices) (args repos.StoreListExternalServicesArgs) {
+				args: func(types.ExternalServices) (args repos.StoreListExternalServicesArgs) {
 					args.Kinds = []string{extsvc.KindPhabricator}
 					return args
 				},
@@ -259,7 +260,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 			testCase{
 				name:   "returns svcs by their ids",
 				stored: svcs,
-				args: func(stored repos.ExternalServices) repos.StoreListExternalServicesArgs {
+				args: func(stored types.ExternalServices) repos.StoreListExternalServicesArgs {
 					return repos.StoreListExternalServicesArgs{
 						IDs: []int64{stored[0].ID, stored[1].ID},
 					}
@@ -269,7 +270,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 			testCase{
 				name:   "filter services by owner",
 				stored: svcs,
-				args: func(stored repos.ExternalServices) repos.StoreListExternalServicesArgs {
+				args: func(stored types.ExternalServices) repos.StoreListExternalServicesArgs {
 					return repos.StoreListExternalServicesArgs{
 						NamespaceUserID: userID,
 					}
@@ -279,7 +280,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 			testCase{
 				name:   "fetch services with NO owner",
 				stored: svcs,
-				args: func(stored repos.ExternalServices) repos.StoreListExternalServicesArgs {
+				args: func(stored types.ExternalServices) repos.StoreListExternalServicesArgs {
 					return repos.StoreListExternalServicesArgs{
 						NamespaceUserID: -1,
 					}
@@ -291,13 +292,13 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 			testCase{
 				name:   "limit and zero cursor",
 				stored: svcs,
-				args: func(repos.ExternalServices) (args repos.StoreListExternalServicesArgs) {
+				args: func(types.ExternalServices) (args repos.StoreListExternalServicesArgs) {
 					args.Cursor = 0
 					args.Limit = 1
 					return args
 				},
-				assert: repos.Assert.ExternalServicesEqual(func() (es repos.ExternalServices) {
-					return repos.ExternalServices{
+				assert: repos.Assert.ExternalServicesEqual(func() (es types.ExternalServices) {
+					return types.ExternalServices{
 						svcs[0],
 					}
 				}()...),
@@ -305,13 +306,13 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 			testCase{
 				name:   "limit and non-zero cursor",
 				stored: svcs,
-				args: func(repos repos.ExternalServices) (args repos.StoreListExternalServicesArgs) {
+				args: func(repos types.ExternalServices) (args repos.StoreListExternalServicesArgs) {
 					args.Cursor = repos[0].ID
 					args.Limit = 1
 					return args
 				},
-				assert: repos.Assert.ExternalServicesEqual(func() (es repos.ExternalServices) {
-					return repos.ExternalServices{
+				assert: repos.Assert.ExternalServicesEqual(func() (es types.ExternalServices) {
+					return types.ExternalServices{
 						svcs[1],
 					}
 				}()...),
@@ -358,7 +359,7 @@ func testStoreUpsertExternalServices(t *testing.T, store repos.Store) func(*test
 	now := clock.Now()
 
 	return func(t *testing.T) {
-		github := repos.ExternalService{
+		github := types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - Test",
 			Config:      `{"url": "https://github.com"}`,
@@ -366,7 +367,7 @@ func testStoreUpsertExternalServices(t *testing.T, store repos.Store) func(*test
 			UpdatedAt:   now,
 		}
 
-		gitlab := repos.ExternalService{
+		gitlab := types.ExternalService{
 			Kind:        extsvc.KindGitLab,
 			DisplayName: "GitLab - Test",
 			Config:      `{"url": "https://gitlab.com"}`,
@@ -374,7 +375,7 @@ func testStoreUpsertExternalServices(t *testing.T, store repos.Store) func(*test
 			UpdatedAt:   now,
 		}
 
-		bitbucketServer := repos.ExternalService{
+		bitbucketServer := types.ExternalService{
 			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket Server - Test",
 			Config:      `{"url": "https://bitbucketserver.mycorp.com"}`,
@@ -382,7 +383,7 @@ func testStoreUpsertExternalServices(t *testing.T, store repos.Store) func(*test
 			UpdatedAt:   now,
 		}
 
-		awsCodeCommit := repos.ExternalService{
+		awsCodeCommit := types.ExternalService{
 			Kind:        extsvc.KindAWSCodeCommit,
 			DisplayName: "AWS CodeCommit - Test",
 			Config:      `{"region": "us-west-1"}`,
@@ -390,7 +391,7 @@ func testStoreUpsertExternalServices(t *testing.T, store repos.Store) func(*test
 			UpdatedAt:   now,
 		}
 
-		otherService := repos.ExternalService{
+		otherService := types.ExternalService{
 			Kind:        extsvc.KindOther,
 			DisplayName: "Other code hosts",
 			Config:      `{"url": "https://git-host.mycorp.com"}`,
@@ -398,7 +399,7 @@ func testStoreUpsertExternalServices(t *testing.T, store repos.Store) func(*test
 			UpdatedAt:   now,
 		}
 
-		gitoliteService := repos.ExternalService{
+		gitoliteService := types.ExternalService{
 			Kind:        extsvc.KindGitolite,
 			DisplayName: "Gitolite Server - Test",
 			Config:      `{"prefix": "/", "host": "git@gitolite.mycorp.com"}`,
@@ -406,7 +407,7 @@ func testStoreUpsertExternalServices(t *testing.T, store repos.Store) func(*test
 			UpdatedAt:   now,
 		}
 
-		svcs := repos.ExternalServices{
+		svcs := types.ExternalServices{
 			&github,
 			&gitlab,
 			&bitbucketServer,
@@ -446,7 +447,7 @@ func testStoreUpsertExternalServices(t *testing.T, store repos.Store) func(*test
 				t.Fatalf("ListExternalServices error: %s", err)
 			}
 
-			if diff := cmp.Diff(have, []*repos.ExternalService(want), cmpopts.EquateEmpty()); diff != "" {
+			if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty()); diff != "" {
 				t.Fatalf("ListExternalServices:\n%s", diff)
 			}
 
@@ -464,7 +465,7 @@ func testStoreUpsertExternalServices(t *testing.T, store repos.Store) func(*test
 				t.Errorf("UpsertExternalServices error: %s", err)
 			} else if have, err = tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{}); err != nil {
 				t.Errorf("ListExternalServices error: %s", err)
-			} else if diff := cmp.Diff(have, []*repos.ExternalService(want), cmpopts.EquateEmpty()); diff != "" {
+			} else if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("ListExternalServices:\n%s", diff)
 			}
 
@@ -475,7 +476,7 @@ func testStoreUpsertExternalServices(t *testing.T, store repos.Store) func(*test
 				t.Errorf("UpsertExternalServices error: %s", err)
 			} else if have, err = tx.ListExternalServices(ctx, args); err != nil {
 				t.Errorf("ListExternalServices error: %s", err)
-			} else if diff := cmp.Diff(have, []*repos.ExternalService(nil), cmpopts.EquateEmpty()); diff != "" {
+			} else if diff := cmp.Diff(have, []*types.ExternalService(nil), cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("ListExternalServices:\n%s", diff)
 			}
 		}))
@@ -1843,9 +1844,9 @@ func testSyncRateLimiters(t *testing.T, store repos.Store) func(*testing.T) {
 		ctx := context.Background()
 		transact(ctx, store, func(t testing.TB, tx repos.Store) {
 			toCreate := 501 // Larger than default page size in order to test pagination
-			services := make([]*repos.ExternalService, 0, toCreate)
+			services := make([]*types.ExternalService, 0, toCreate)
 			for i := 0; i < toCreate; i++ {
-				svc := &repos.ExternalService{
+				svc := &types.ExternalService{
 					ID:          int64(i) + 1,
 					Kind:        "GitHub",
 					DisplayName: "GitHub",
@@ -1897,8 +1898,8 @@ func testStoreEnqueueSyncJobs(db *sql.DB, store *repos.DBStore) func(t *testing.
 
 		type testCase struct {
 			name            string
-			stored          repos.ExternalServices
-			queued          func(repos.ExternalServices) []int64
+			stored          types.ExternalServices
+			queued          func(types.ExternalServices) []int64
 			ignoreSiteAdmin bool
 			err             error
 		}
@@ -1907,34 +1908,34 @@ func testStoreEnqueueSyncJobs(db *sql.DB, store *repos.DBStore) func(t *testing.
 
 		testCases = append(testCases, testCase{
 			name: "enqueue everything",
-			stored: services.With(func(s *repos.ExternalService) {
+			stored: services.With(func(s *types.ExternalService) {
 				s.NextSyncAt = now.Add(-10 * time.Second)
 			}),
-			queued: func(svcs repos.ExternalServices) []int64 { return svcs.IDs() },
+			queued: func(svcs types.ExternalServices) []int64 { return svcs.IDs() },
 		})
 
 		testCases = append(testCases, testCase{
 			name: "nothing to enqueue",
-			stored: services.With(func(s *repos.ExternalService) {
+			stored: services.With(func(s *types.ExternalService) {
 				s.NextSyncAt = now.Add(10 * time.Second)
 			}),
-			queued: func(svcs repos.ExternalServices) []int64 { return []int64{} },
+			queued: func(svcs types.ExternalServices) []int64 { return []int64{} },
 		})
 
 		testCases = append(testCases, testCase{
 			name: "ignore siteadmin repos",
-			stored: services.With(func(s *repos.ExternalService) {
+			stored: services.With(func(s *types.ExternalService) {
 				s.NextSyncAt = now.Add(10 * time.Second)
 			}),
 			ignoreSiteAdmin: true,
-			queued:          func(svcs repos.ExternalServices) []int64 { return []int64{} },
+			queued:          func(svcs types.ExternalServices) []int64 { return []int64{} },
 		})
 
 		{
 			i := 0
 			testCases = append(testCases, testCase{
 				name: "some to enqueue",
-				stored: services.With(func(s *repos.ExternalService) {
+				stored: services.With(func(s *types.ExternalService) {
 					if i%2 == 0 {
 						s.NextSyncAt = now.Add(10 * time.Second)
 					} else {
@@ -1942,7 +1943,7 @@ func testStoreEnqueueSyncJobs(db *sql.DB, store *repos.DBStore) func(t *testing.
 					}
 					i++
 				}),
-				queued: func(svcs repos.ExternalServices) []int64 {
+				queued: func(svcs types.ExternalServices) []int64 {
 					var ids []int64
 					for i := range svcs {
 						if i%2 != 0 {
@@ -2020,11 +2021,11 @@ func mkRepos(n int, base ...*repos.Repo) repos.Repos {
 	return rs
 }
 
-func generateExternalServices(n int, base ...*repos.ExternalService) repos.ExternalServices {
+func generateExternalServices(n int, base ...*types.ExternalService) types.ExternalServices {
 	if len(base) == 0 {
 		return nil
 	}
-	es := make(repos.ExternalServices, 0, n)
+	es := make(types.ExternalServices, 0, n)
 	for i := 0; i < n; i++ {
 		id := strconv.Itoa(i)
 		r := base[i%len(base)].Clone()
@@ -2082,7 +2083,7 @@ func (tx *noopTxStore) Done(err error) error {
 	return nil
 }
 
-func createExternalServices(t *testing.T, store repos.Store) map[string]*repos.ExternalService {
+func createExternalServices(t *testing.T, store repos.Store) map[string]*types.ExternalService {
 	clock := dbtesting.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
@@ -2098,7 +2099,7 @@ func createExternalServices(t *testing.T, store repos.Store) map[string]*repos.E
 		t.Fatal("failed to list external services")
 	}
 
-	servicesPerKind := make(map[string]*repos.ExternalService)
+	servicesPerKind := make(map[string]*types.ExternalService)
 	for _, svc := range services {
 		servicesPerKind[svc.Kind] = svc
 	}
@@ -2106,8 +2107,8 @@ func createExternalServices(t *testing.T, store repos.Store) map[string]*repos.E
 	return servicesPerKind
 }
 
-func mkExternalServices(now time.Time) repos.ExternalServices {
-	githubSvc := repos.ExternalService{
+func mkExternalServices(now time.Time) types.ExternalServices {
+	githubSvc := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
 		Config:      `{"url": "https://github.com"}`,
@@ -2115,7 +2116,7 @@ func mkExternalServices(now time.Time) repos.ExternalServices {
 		UpdatedAt:   now,
 	}
 
-	gitlabSvc := repos.ExternalService{
+	gitlabSvc := types.ExternalService{
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "GitLab - Test",
 		Config:      `{"url": "https://gitlab.com"}`,
@@ -2123,7 +2124,7 @@ func mkExternalServices(now time.Time) repos.ExternalServices {
 		UpdatedAt:   now,
 	}
 
-	bitbucketServerSvc := repos.ExternalService{
+	bitbucketServerSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server - Test",
 		Config:      `{"url": "https://bitbucket.com"}`,
@@ -2131,7 +2132,7 @@ func mkExternalServices(now time.Time) repos.ExternalServices {
 		UpdatedAt:   now,
 	}
 
-	bitbucketCloudSvc := repos.ExternalService{
+	bitbucketCloudSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketCloud,
 		DisplayName: "Bitbucket Cloud - Test",
 		Config:      `{"url": "https://bitbucket.com"}`,
@@ -2139,7 +2140,7 @@ func mkExternalServices(now time.Time) repos.ExternalServices {
 		UpdatedAt:   now,
 	}
 
-	awsSvc := repos.ExternalService{
+	awsSvc := types.ExternalService{
 		Kind:        extsvc.KindAWSCodeCommit,
 		DisplayName: "AWS Code - Test",
 		Config:      `{"url": "https://aws.com"}`,
@@ -2147,7 +2148,7 @@ func mkExternalServices(now time.Time) repos.ExternalServices {
 		UpdatedAt:   now,
 	}
 
-	otherSvc := repos.ExternalService{
+	otherSvc := types.ExternalService{
 		Kind:        extsvc.KindOther,
 		DisplayName: "Other - Test",
 		Config:      `{"url": "https://other.com"}`,
@@ -2155,7 +2156,7 @@ func mkExternalServices(now time.Time) repos.ExternalServices {
 		UpdatedAt:   now,
 	}
 
-	gitoliteSvc := repos.ExternalService{
+	gitoliteSvc := types.ExternalService{
 		Kind:        extsvc.KindGitolite,
 		DisplayName: "Gitolite - Test",
 		Config:      `{"url": "https://gitolite.com"}`,
@@ -2163,7 +2164,7 @@ func mkExternalServices(now time.Time) repos.ExternalServices {
 		UpdatedAt:   now,
 	}
 
-	return []*repos.ExternalService{
+	return []*types.ExternalService{
 		&githubSvc,
 		&gitlabSvc,
 		&bitbucketServerSvc,

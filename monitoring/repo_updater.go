@@ -31,7 +31,7 @@ func RepoUpdater() *Container {
 							Description:       "time since last sync",
 							Query:             `max(timestamp(vector(time()))) - max(src_repoupdater_syncer_sync_last_time)`,
 							DataMayNotExist:   true,
-							Warning:           Alert().GreaterOrEqual(time.Hour.Seconds()).For(5 * time.Minute),
+							NoAlert:           true,
 							PanelOptions:      PanelOptions().Unit(Seconds),
 							Owner:             ObservableOwnerCloud,
 							PossibleSolutions: "Make sure there are external services added with valid tokens",
@@ -147,6 +147,7 @@ func RepoUpdater() *Container {
 							Name:              "sched_manual_fetch",
 							Description:       "repositories scheduled due to user traffic",
 							Query:             `sum(rate(src_repoupdater_sched_manual_fetch[1m]))`,
+							NoAlert:           true,
 							DataMayNotExist:   true,
 							PanelOptions:      PanelOptions().Unit(Number),
 							Owner:             ObservableOwnerCloud,
@@ -265,16 +266,6 @@ func RepoUpdater() *Container {
 						},
 					},
 					{
-						Observable{
-							Name:              "authz_filter_duration",
-							Description:       "95th authorization duration",
-							Query:             `histogram_quantile(0.95, sum by (le) (rate(src_frontend_authz_filter_duration_seconds_bucket{success="true"}[1m])))`,
-							DataMayNotExist:   true,
-							Critical:          Alert().GreaterOrEqual(1).For(time.Minute),
-							PanelOptions:      PanelOptions().Unit(Seconds),
-							Owner:             ObservableOwnerCloud,
-							PossibleSolutions: "Check if database is overloaded.",
-						},
 						Observable{
 							Name:            "perms_syncer_sync_errors",
 							Description:     "permissions sync error rate",

@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func cleanupPermsTables(t *testing.T, s *PermsStore) {
@@ -52,10 +53,10 @@ func toBitmap(ids ...uint32) *roaring.Bitmap {
 	return bm
 }
 
-var now = time.Now().Truncate(time.Microsecond).UnixNano()
+var now = timeutil.Now().UnixNano()
 
 func clock() time.Time {
-	return time.Unix(0, atomic.LoadInt64(&now)).Truncate(time.Microsecond)
+	return time.Unix(0, atomic.LoadInt64(&now))
 }
 
 func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
@@ -648,9 +649,9 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 
 func testPermsStore_TouchRepoPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		now := time.Now().Truncate(time.Microsecond).Unix()
+		now := timeutil.Now().Unix()
 		s := NewPermsStore(db, func() time.Time {
-			return time.Unix(atomic.LoadInt64(&now), 0).Truncate(time.Microsecond)
+			return time.Unix(atomic.LoadInt64(&now), 0)
 		})
 		t.Cleanup(func() {
 			cleanupPermsTables(t, s)
@@ -1936,18 +1937,19 @@ func testPermsStore_ListExternalAccounts(db *sql.DB) func(*testing.T) {
 		// Set up test users and external accounts
 		extSQL := `
 INSERT INTO
-	user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at, deleted_at)
+	user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at, deleted_at, expired_at)
 VALUES
-	(%s, %s, %s, %s, %s, %s, %s, %s)
+	(%s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 		qs := []*sqlf.Query{
 			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`), // ID=1
 			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),   // ID=2
 
-			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil), // ID=1
-			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitHub, "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock(), nil), // ID=2
-			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock(), nil),     // ID=3
-			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitHub, "https://github.com/", "bob_github", "bob_github_client_id", clock(), clock(), clock()), // ID=4
+			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil, nil), // ID=1
+			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitHub, "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock(), nil, nil), // ID=2
+			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock(), nil, nil),     // ID=3
+			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitHub, "https://github.com/", "bob_github", "bob_github_client_id", clock(), clock(), clock(), nil), // ID=4
+			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitHub, "https://github.com/", "expired", "expired_client_id", clock(), clock(), nil, clock()),       // ID=5
 		}
 		for _, q := range qs {
 			if err := s.execute(ctx, q); err != nil {
