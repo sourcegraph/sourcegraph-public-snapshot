@@ -15,6 +15,7 @@ func StartBackgroundJobs(ctx context.Context, db *sql.DB) {
 
 	routines := []goroutine.BackgroundRoutine{
 		newTriggerQueryEnqueuer(ctx, codeMonitorsStore),
+		newTriggerJobsLogDeleter(ctx, codeMonitorsStore),
 		newTriggerQueryRunner(ctx, codeMonitorsStore, metrics),
 		newTriggerQueryResetter(ctx, codeMonitorsStore, metrics),
 	}

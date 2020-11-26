@@ -358,6 +358,8 @@ Foreign-key constraints:
  num_resets      | integer                  | not null default 0
  num_failures    | integer                  | not null default 0
  log_contents    | text                     | 
+ query_string    | text                     | 
+ results         | boolean                  | 
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:

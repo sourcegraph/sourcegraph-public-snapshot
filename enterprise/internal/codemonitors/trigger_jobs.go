@@ -29,9 +29,40 @@ func (s *Store) EnqueueTriggerQueries(ctx context.Context) (err error) {
 	return s.Store.Exec(ctx, sqlf.Sprintf(enqueueTriggerQueryFmtStr))
 }
 
+const logSearchFmtStr = `
+UPDATE cm_trigger_jobs
+SET query_string = %s,
+	results = %s
+WHERE id = %s
+`
+
+func (s *Store) LogSearch(ctx context.Context, queryString string, results bool, recordID int) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, results, recordID))
+}
+
+const deleteObsoleteJobLogsFmtStr = `
+DELETE FROM cm_trigger_jobs
+WHERE results IS NOT TRUE
+AND state = 'completed'
+`
+
+// DeleteObsoleteJobLogs deletes all runs which are marked as completed and did
+// not return results.
+func (s *Store) DeleteObsoleteJobLogs(ctx context.Context) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(deleteObsoleteJobLogsFmtStr))
+}
+
 type TriggerJobs struct {
-	Id             int32
-	Query          int64
+	Id    int32
+	Query int64
+
+	// The query we ran including after: filter.
+	QueryString *string
+
+	// Whether we got any results.
+	Results *bool
+
+	// Fields demanded for any dbworker.
 	State          string
 	FailureMessage *string
 	StartedAt      *time.Time
@@ -61,6 +92,8 @@ func scanTriggerJobs(rows *sql.Rows, err error) ([]*TriggerJobs, error) {
 		if err := rows.Scan(
 			&m.Id,
 			&m.Query,
+			&m.QueryString,
+			&m.Results,
 			&m.State,
 			&m.FailureMessage,
 			&m.StartedAt,
@@ -88,6 +121,8 @@ func scanTriggerJobs(rows *sql.Rows, err error) ([]*TriggerJobs, error) {
 var TriggerJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_trigger_jobs.id"),
 	sqlf.Sprintf("cm_trigger_jobs.query"),
+	sqlf.Sprintf("cm_trigger_jobs.query_string"),
+	sqlf.Sprintf("cm_trigger_jobs.results"),
 	sqlf.Sprintf("cm_trigger_jobs.state"),
 	sqlf.Sprintf("cm_trigger_jobs.failure_message"),
 	sqlf.Sprintf("cm_trigger_jobs.started_at"),

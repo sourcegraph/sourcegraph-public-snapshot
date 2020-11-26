@@ -719,7 +719,7 @@ RETURNING %s;
 
 func (r *Resolver) triggerQueryByMonitorQuery(ctx context.Context, monitorID int64) (*sqlf.Query, error) {
 	const triggerQueryByMonitorQuery = `
-SELECT id, monitor, query, next_run, created_by, created_at, changed_by, changed_at
+SELECT id, monitor, query, next_run, latest_result, created_by, created_at, changed_by, changed_at
 FROM cm_queries
 WHERE monitor = %s;
 `

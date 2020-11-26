@@ -142,6 +142,8 @@
 // 1528395753_add_enqueue_table_for_trigger_queries.up.sql (559B)
 // 1528395754_add_cols_next_run_latest_result_to_cm_queries.down.sql (115B)
 // 1528395754_add_cols_next_run_latest_result_to_cm_queries.up.sql (159B)
+// 1528395755_cm_trigger_jobs_add_colums.down.sql (118B)
+// 1528395755_cm_trigger_jobs_add_colums.up.sql (137B)
 
 package migrations
 
@@ -3050,6 +3052,46 @@ func _1528395754_add_cols_next_run_latest_result_to_cm_queriesUpSql() (*asset, e
 	return a, nil
 }
 
+var __1528395755_cm_trigger_jobs_add_columsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x8d\x2f\x29\xca\x4c\x4f\x4f\x2d\x8a\xcf\xca\x4f\x2a\xe6\x52\x50\x50\x50\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x2c\x4d\x2d\xaa\x8c\x2f\x2e\x29\xca\xcc\x4b\xd7\xc1\xa3\xae\x28\xb5\xb8\x34\xa7\xa4\xd8\x9a\xcb\xd9\xdf\xd7\xd7\x33\xc4\x9a\x0b\x10\x00\x00\xff\xff\xdc\xd1\xaf\x8b\x76\x00\x00\x00")
+
+func _1528395755_cm_trigger_jobs_add_columsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395755_cm_trigger_jobs_add_columsDownSql,
+		"1528395755_cm_trigger_jobs_add_colums.down.sql",
+	)
+}
+
+func _1528395755_cm_trigger_jobs_add_columsDownSql() (*asset, error) {
+	bytes, err := _1528395755_cm_trigger_jobs_add_columsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395755_cm_trigger_jobs_add_colums.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x7c, 0x5c, 0xb0, 0x95, 0xca, 0x34, 0xb9, 0x5b, 0xde, 0xc4, 0xa3, 0xbc, 0xf6, 0xea, 0xea, 0xd7, 0x54, 0x17, 0x33, 0xdf, 0x1e, 0xdb, 0xac, 0xea, 0x20, 0x97, 0xe5, 0xbe, 0xc, 0x46, 0xfa, 0x6a}}
+	return a, nil
+}
+
+var __1528395755_cm_trigger_jobs_add_columsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\xca\x4d\xaa\xc2\x30\x10\x07\xf0\x7d\x4e\xf1\x3f\xc0\xbb\x41\x56\x69\x9b\x27\x81\x7c\x80\x8d\xe0\x2e\x58\x19\x42\xa5\x36\x38\x99\x82\xde\xde\x1b\xb8\xff\x0d\xf6\xe4\xa2\x56\xc6\x67\x7b\x46\x36\x83\xb7\xb8\x3f\x8b\xf0\x5a\x2b\x71\x79\xb4\xa5\x2b\x00\x30\xd3\x84\x31\xf9\x4b\x88\x70\xff\x88\x29\xc3\x5e\xdd\x9c\x67\xbc\x0e\xe2\x4f\xe9\xc2\xeb\x5e\x21\xf4\x96\xbf\xdf\x9e\xa9\x1f\x9b\x74\x2c\xad\x6d\x74\xdb\xb5\x1a\x53\x08\x2e\x6b\xf5\x0d\x00\x00\xff\xff\x21\x09\x59\x3e\x89\x00\x00\x00")
+
+func _1528395755_cm_trigger_jobs_add_columsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395755_cm_trigger_jobs_add_columsUpSql,
+		"1528395755_cm_trigger_jobs_add_colums.up.sql",
+	)
+}
+
+func _1528395755_cm_trigger_jobs_add_columsUpSql() (*asset, error) {
+	bytes, err := _1528395755_cm_trigger_jobs_add_columsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395755_cm_trigger_jobs_add_colums.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x54, 0xa4, 0x29, 0x2b, 0xf3, 0x5e, 0x82, 0x2b, 0x44, 0xb6, 0x1a, 0xbc, 0x80, 0x1e, 0x6, 0x26, 0xd1, 0x5d, 0x99, 0xdd, 0xac, 0xf2, 0x8c, 0xd3, 0xb7, 0x76, 0xe5, 0xce, 0xff, 0xfe, 0x38, 0x22}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3283,6 +3325,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395753_add_enqueue_table_for_trigger_queries.up.sql":                                _1528395753_add_enqueue_table_for_trigger_queriesUpSql,
 	"1528395754_add_cols_next_run_latest_result_to_cm_queries.down.sql":                      _1528395754_add_cols_next_run_latest_result_to_cm_queriesDownSql,
 	"1528395754_add_cols_next_run_latest_result_to_cm_queries.up.sql":                        _1528395754_add_cols_next_run_latest_result_to_cm_queriesUpSql,
+	"1528395755_cm_trigger_jobs_add_colums.down.sql":                                         _1528395755_cm_trigger_jobs_add_columsDownSql,
+	"1528395755_cm_trigger_jobs_add_colums.up.sql":                                           _1528395755_cm_trigger_jobs_add_columsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3471,6 +3515,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395753_add_enqueue_table_for_trigger_queries.up.sql":                                {_1528395753_add_enqueue_table_for_trigger_queriesUpSql, map[string]*bintree{}},
 	"1528395754_add_cols_next_run_latest_result_to_cm_queries.down.sql":                      {_1528395754_add_cols_next_run_latest_result_to_cm_queriesDownSql, map[string]*bintree{}},
 	"1528395754_add_cols_next_run_latest_result_to_cm_queries.up.sql":                        {_1528395754_add_cols_next_run_latest_result_to_cm_queriesUpSql, map[string]*bintree{}},
+	"1528395755_cm_trigger_jobs_add_colums.down.sql":                                         {_1528395755_cm_trigger_jobs_add_columsDownSql, map[string]*bintree{}},
+	"1528395755_cm_trigger_jobs_add_colums.up.sql":                                           {_1528395755_cm_trigger_jobs_add_columsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
