@@ -412,6 +412,11 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 
 		wg.Wait()
 	} else {
+		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
+		}
+
 		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, true)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
@@ -428,7 +433,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		URL:             "",
 		AnonymousUserID: "backend",
 		Source:          "BACKEND",
-		Argument:        json.RawMessage(contents),
+		Argument:        contents,
 		Timestamp:       time.Now().UTC(),
 	})
 
