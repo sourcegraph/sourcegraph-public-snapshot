@@ -498,7 +498,7 @@ func (s *Syncer) syncRepo(ctx context.Context, store Store, insertOnly bool, pub
 		return Diff{}, nil
 	}
 
-	// sourcedRepo only knows about one source so we need to add in the OTHER stored
+	// sourcedRepo only knows about one source so we need to add in the remaining stored
 	// sources
 	if len(storedSubset) == 1 {
 		for k, v := range storedSubset[0].Sources {
