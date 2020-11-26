@@ -331,16 +331,16 @@ func (r *UserResolver) Campaigns(ctx context.Context, args *ListCampaignsArgs) (
 }
 
 type ListUserRepositoriesArgs struct {
-	First           *int32
-	Query           *string
-	After           *string
-	Cloned          bool
-	NotCloned       bool
-	Indexed         bool
-	NotIndexed      bool
-	ExternalService *string
-	OrderBy         *string
-	Descending      bool
+	First             *int32
+	Query             *string
+	After             *string
+	Cloned            bool
+	NotCloned         bool
+	Indexed           bool
+	NotIndexed        bool
+	ExternalServiceID *graphql.ID
+	OrderBy           *string
+	Descending        bool
 }
 
 func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositoriesArgs) (RepositoryConnectionResolver, error) {
@@ -376,14 +376,22 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		return nil, err
 	}
 
-	ids := make([]int64, 0, len(extSvcs))
-	for _, svc := range extSvcs {
-		ids = append(ids, svc.ID)
+	if args.ExternalServiceID == nil {
+		ids := make([]int64, 0, len(extSvcs))
+		for _, svc := range extSvcs {
+			ids = append(ids, svc.ID)
+		}
+		if len(ids) == 0 {
+			ids = []int64{-1}
+		}
+		opt.ExternalServiceIDs = ids
+	} else {
+		id, err := unmarshalExternalServiceID(*args.ExternalServiceID)
+		if err != nil {
+			return nil, err
+		}
+		opt.ExternalServiceIDs = []int64{id}
 	}
-	if len(ids) == 0 {
-		ids = []int64{-1}
-	}
-	opt.ExternalServiceIDs = ids
 
 	return &repositoryConnectionResolver{
 		opt:        opt,

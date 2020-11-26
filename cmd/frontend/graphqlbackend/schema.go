@@ -6226,7 +6226,7 @@ type User implements Node & SettingsSubject & Namespace {
         """
         Only include repositories from this external service URL.
         """
-        externalService: String
+        externalServiceID: ID
 ): RepositoryConnection!
 }
 

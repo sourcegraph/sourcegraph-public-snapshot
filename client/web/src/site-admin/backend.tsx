@@ -110,6 +110,7 @@ const siteAdminRepositoryFieldsFragment = gql`
         }
         externalRepository {
             serviceType
+            serviceID
         }
     }
 `
@@ -127,6 +128,7 @@ export function listUserRepositories(
                 $notCloned: Boolean
                 $indexed: Boolean
                 $notIndexed: Boolean
+                $externalServiceID: ID
             ) {
                 node(id: $id) {
                     ... on User {
@@ -137,6 +139,7 @@ export function listUserRepositories(
                             notCloned: $notCloned
                             indexed: $indexed
                             notIndexed: $notIndexed
+                            externalServiceID: $externalServiceID
                         ) {
                             nodes {
                                 ...SiteAdminRepositoryFields
@@ -160,6 +163,7 @@ export function listUserRepositories(
             notIndexed: args.notIndexed ?? true,
             first: args.first ?? null,
             query: args.query ?? null,
+            externalServiceID: args.externalServiceID! ?? null,
         }
     ).pipe(
         map(dataOrThrowErrors),

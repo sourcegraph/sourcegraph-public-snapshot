@@ -43,11 +43,10 @@ interface FilterState {}
 
 class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, FilterState> {
     public render(): React.ReactFragment {
-        console.log(this.props.values)
         return (
             <div className="filtered-connection-filter-control">
                 {this.props.filters.map(filter => (
-                    <div key={filter.id}>
+                    <div className="d-flex " key={filter.id}>
                         {filter.type === 'radio' &&
                             filter.values.map(value => (
                                 <label key={value.value} className="radio-buttons__item" title={value.label}>
@@ -59,7 +58,10 @@ class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, F
                                             this.onChange(filter, event.currentTarget.value)
                                         }}
                                         value={value.value}
-                                        checked={this.props.values.get(filter.id)!.value === value.value}
+                                        checked={
+                                            this.props.values.get(filter.id) &&
+                                            this.props.values.get(filter.id)!.value === value.value
+                                        }
                                     />{' '}
                                     <small>
                                         <div className="radio-buttons__label">{value.label}</div>
@@ -67,16 +69,20 @@ class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, F
                                 </label>
                             ))}
                         {filter.type === 'select' && (
-                            <select
-                                name={filter.id}
-                                onChange={event => {
-                                    this.onChange(filter, event.currentTarget.value)
-                                }}
-                            >
-                                {filter.values.map(value => (
-                                    <option key={value.value} value={value.value} label={value.label} />
-                                ))}
-                            </select>
+                            <div className="d-flex mr-3 align-items-baseline">
+                                <p className="text-xl-center text-nowrap mr-2">{filter.label}:</p>
+                                <select
+                                    className="form-control"
+                                    name={filter.id}
+                                    onChange={event => {
+                                        this.onChange(filter, event.currentTarget.value)
+                                    }}
+                                >
+                                    {filter.values.map(value => (
+                                        <option key={value.value} value={value.value} label={value.label} />
+                                    ))}
+                                </select>
+                            </div>
                         )}
                     </div>
                 ))}
@@ -536,9 +542,16 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             activeValuesChanges
                 .pipe(
                     tap(values => {
-                        this.props.filters!.map((filter, index) => {
+                        if (this.props.filters === undefined) {
+                            return
+                        }
+                        this.props.filters.map((filter, index) => {
                             if (this.props.onValueSelect) {
-                                this.props.onValueSelect(filter, values.get(filter.id)!)
+                                const value = values.get(filter.id)
+                                if (value === undefined) {
+                                    return
+                                }
+                                this.props.onValueSelect(filter, value)
                             }
                         })
                     })
@@ -550,8 +563,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             // Use this.activeFilterChanges not activeFilterChanges so that it doesn't trigger on the initial mount
             // (it doesn't need to).
             this.activeValuesChanges.subscribe(values => {
-                console.log('set state', values)
-                this.setState({ activeValues: values })
+                this.setState({ activeValues: new Map(values) })
             })
         )
 

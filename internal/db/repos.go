@@ -450,7 +450,7 @@ type ReposListOptions struct {
 	// ServiceTypes of repos to list. When zero-valued, this is omitted from the predicate set.
 	ServiceTypes []string
 
-	// ExternalServiceID, if non zero, will only return repos added by the given external service.
+	// ExternalServiceIDs, if non empty, will only return repos added by the given external services.
 	// The id is that of the external_services table NOT the external_service_id in the repo table
 	ExternalServiceIDs []int64
 

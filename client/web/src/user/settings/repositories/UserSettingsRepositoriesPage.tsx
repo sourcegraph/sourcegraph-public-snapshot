@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { PageTitle } from '../../../components/PageTitle'
 import { RepositoriesResult, SiteAdminRepositoryFields } from '../../../graphql-operations'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
@@ -6,9 +6,11 @@ import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
+    FilterValue,
 } from '../../../components/FilteredConnection'
 import { Observable } from 'rxjs'
 import { listUserRepositories } from '../../../site-admin/backend'
+import { queryExternalServices } from '../../../components/externalServices/backend'
 import { RouteComponentProps } from 'react-router'
 import { RepoLink } from '../../../../../shared/src/components/RepoLink'
 import { Link } from '../../../../../shared/src/components/Link'
@@ -96,58 +98,14 @@ const UserSettingsRepositoryNode: React.FunctionComponent<UserSettingsRepository
             <div>
                 <StatusIcon node={node} />
                 <CodeHostIcon hostType={node.externalRepository.serviceType} />
-                <RepoLink repoName={node.name} to={node.url} />
+                <RepoLink className="text-muted" repoClassName="text-primary" repoName={node.name} to={node.url} />
             </div>
             {node.isPrivate && <div className="badge badge-secondary text-muted">Private</div>}
         </td>
     </tr>
 )
 
-const FILTERS: FilteredConnectionFilter[] = [
-    {
-        label: 'Status',
-        type: 'select',
-        id: 'status',
-        tooltip: 'Repository status',
-        values: [
-            {
-                value: 'all',
-                label: 'All',
-                args: {},
-            },
-            {
-                value: 'cloned',
-                label: 'Cloned',
-                args: { cloned: true, notCloned: false },
-            },
-            {
-                value: 'not-cloned',
-                label: 'Not Cloned',
-                args: { cloned: false, notCloned: true },
-            },
-        ],
-    },
-    {
-        label: 'Indexed',
-        type: 'radio',
-        id: 'indexed',
-        tooltip: 'Indexed',
-        values: [
-            {
-                value: 'indexed',
-                label: 'Indexed',
-                args: { indexed: true },
-            },
-            {
-                value: 'needs-index',
-                label: 'Needs index',
-                args: { indexed: false },
-            },
-        ],
-    },
-]
-
-interface Props extends RouteComponentProps<{}>, TelemetryProps {
+interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
     routingPrefix: string
 }
@@ -162,6 +120,66 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     routingPrefix,
     telemetryService,
 }) => {
+    const emptyFilters: FilteredConnectionFilter[] = []
+    const [state, setState] = useState({ filters: emptyFilters, fetched: false })
+
+    if (!state.fetched) {
+        queryExternalServices({ namespace: userID, first: null, after: null })
+            .toPromise()
+            .then(result => {
+                const services: FilterValue[] = [
+                    {
+                        value: 'all',
+                        label: 'All',
+                        args: {},
+                    },
+                ]
+                result.nodes.map(node => {
+                    services.push({
+                        value: node.id,
+                        label: node.displayName,
+                        args: { externalServiceID: node.id },
+                    })
+                })
+                const newFilters: FilteredConnectionFilter[] = [
+                    {
+                        label: 'Status',
+                        type: 'select',
+                        id: 'status',
+                        tooltip: 'Repository status',
+                        values: [
+                            {
+                                value: 'all',
+                                label: 'All',
+                                args: {},
+                            },
+                            {
+                                value: 'cloned',
+                                label: 'Cloned',
+                                args: { cloned: true, notCloned: false },
+                            },
+                            {
+                                value: 'not-cloned',
+                                label: 'Not Cloned',
+                                args: { cloned: false, notCloned: true },
+                            },
+                        ],
+                    },
+                    {
+                        label: 'Code host',
+                        type: 'select',
+                        id: 'code-host',
+                        tooltip: 'Code host',
+                        values: services,
+                    },
+                ]
+                setState({ filters: newFilters, fetched: true })
+            })
+            .catch(error => {
+                console.log('ERROR', error)
+            })
+    }
+
     const queryRepositories = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
             listUserRepositories({ ...args, id: userID }),
@@ -197,7 +215,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 nodeComponent={UserSettingsRepositoryNode}
                 listComponent="table"
                 listClassName="w-100"
-                filters={FILTERS}
+                filters={state.filters}
                 history={history}
                 location={location}
             />
