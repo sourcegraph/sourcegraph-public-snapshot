@@ -13,10 +13,12 @@ import (
 	"github.com/gitchander/permutation"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -1693,6 +1695,30 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 			// Confirm that there are two relationships
 			assertSourceCount(ctx, t, db, 2)
 			conf.Mock(nil)
+
+			// If the user has the AllowUserExternalServicePrivate tag, user service can also sync private code
+			_, err := db.ExecContext(ctx, "UPDATE users SET tags = $1 WHERE id = $2", pq.Array([]string{idb.TagAllowUserExternalServicePrivate}), userID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			syncer = &repos.Syncer{
+				Sourcer: func(services ...*types.ExternalService) (repos.Sources, error) {
+					s := repos.NewFakeSource(userService, nil, publicRepo, privateRepo)
+					return repos.Sources{s}, nil
+				},
+				Now: time.Now,
+			}
+			if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err != nil {
+				t.Fatal(err)
+			}
+
+			// Confirm that there are two relationships
+			assertSourceCount(ctx, t, db, 2)
+			_, err = db.ExecContext(ctx, "UPDATE users SET tags = '{}' WHERE id = $1", userID)
+			if err != nil {
+				t.Fatal(err)
+			}
 
 			// Attempt to add some repos with a per user limit set
 			syncer = &repos.Syncer{

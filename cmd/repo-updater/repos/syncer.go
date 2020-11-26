@@ -17,6 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -238,9 +239,17 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 		return errors.Wrap(err, "syncer.sync.sourced")
 	}
 
-	// Unless explicitly specified with "all", user added external services should only sync public code
+	// Unless explicitly specified with the "all" setting or the owner of the service has the "AllowUserExternalServicePrivate" tag,
+	// user added external services should only sync public code.
 	if isUserOwned && conf.ExternalServiceUserMode() != conf.ExternalServiceModeAll {
-		sourced = sourced.Filter(func(r *Repo) bool { return !r.Private })
+		ok, err := db.Users.HasTag(ctx, svc.NamespaceUserID, db.TagAllowUserExternalServicePrivate)
+		if err != nil {
+			return errors.Wrap(err, "checking user tag")
+		}
+
+		if !ok {
+			sourced = sourced.Filter(func(r *Repo) bool { return !r.Private })
+		}
 	}
 
 	var storedServiceRepos Repos

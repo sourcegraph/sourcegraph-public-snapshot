@@ -8,6 +8,8 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
@@ -89,6 +91,11 @@ func shouldRedirect(name api.RepoName) bool {
 		extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...) != nil
 }
 
+var metricIsRepoCloneable = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_frontend_repo_add_is_cloneable",
+	Help: "temporary metric to measure if this codepath is valuable on sourcegraph.com",
+}, []string{"status"})
+
 // Add adds the repository with the given name to the database by calling
 // repo-updater when in sourcegraph.com mode.
 func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
@@ -105,9 +112,20 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
 		}
 
 		if gitserverRepo != nil {
+			status := "unknown"
+			defer func() {
+				metricIsRepoCloneable.WithLabelValues(status).Inc()
+			}()
+
 			if err := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); err != nil {
+				if ctx.Err() != nil {
+					status = "timeout"
+				} else {
+					status = "fail"
+				}
 				return err
 			}
+			status = "success"
 		}
 	}
 
