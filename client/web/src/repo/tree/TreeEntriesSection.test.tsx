@@ -35,8 +35,8 @@ describe('TreeEntriesSection', () => {
                         },
                     ]}
                     fileDecorationsByPath={{
-                        src: [{ path: 'src', after: { value: 'src decoration' } }],
-                        testdata: [{ path: 'testdata', after: { value: 'testdata decoration' } }],
+                        src: [{ path: 'src', after: { contentText: 'src decoration' } }],
+                        testdata: [{ path: 'testdata', after: { contentText: 'testdata decoration' } }],
                     }}
                     isLightTheme={true}
                 />
@@ -75,10 +75,14 @@ describe('TreeEntriesSection', () => {
                         },
                     ]}
                     fileDecorationsByPath={{
-                        'src/testutils': [{ path: 'src/testutils', after: { value: 'testutils decoration' } }],
-                        'src/typings': [{ path: 'src/typings', after: { value: 'typings decoration' } }],
+                        'src/testutils': [{ path: 'src/testutils', after: { contentText: 'testutils decoration' } }],
+                        'src/typings': [{ path: 'src/typings', after: { contentText: 'typings decoration' } }],
                         'src/errors.ts': [
-                            { path: 'src/errors.ts', component: 'sidebar', after: { value: 'errors decoration' } }, // This shouldn't be rendered
+                            {
+                                path: 'src/errors.ts',
+                                component: 'sidebar',
+                                after: { contentText: 'errors decoration' },
+                            }, // This shouldn't be rendered
                         ],
                     }}
                     isLightTheme={true}
@@ -124,8 +128,8 @@ describe('TreeEntriesSection', () => {
                         },
                     ]}
                     fileDecorationsByPath={{
-                        'x/ref': [{ path: 'x/ref', after: { value: 'ref decoration' } }],
-                        'x/ref/cmd': [{ path: 'x/ref/cmd', after: { value: 'cmd decoration' } }],
+                        'x/ref': [{ path: 'x/ref', after: { contentText: 'ref decoration' } }],
+                        'x/ref/cmd': [{ path: 'x/ref/cmd', after: { contentText: 'cmd decoration' } }],
                     }}
                     isLightTheme={true}
                 />

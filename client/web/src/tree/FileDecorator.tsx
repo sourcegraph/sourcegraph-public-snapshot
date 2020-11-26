@@ -62,7 +62,7 @@ export const FileDecorator: React.FunctionComponent<FileDecoratorProps> = ({
                                     data-placement="bottom"
                                     className="file-decoration__after text-monospace font-weight-normal test-file-decoration-text"
                                 >
-                                    {fileDecoration.after.value}
+                                    {fileDecoration.after.contentText}
                                 </small>
                             )}
                             {fileDecoration.meter && (

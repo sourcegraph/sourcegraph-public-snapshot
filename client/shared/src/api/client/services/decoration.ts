@@ -66,7 +66,7 @@ export function fileDecorationColorForTheme(
 ): string | undefined {
     const overrides = isLightTheme ? after.light : after.dark
     // Discard non-ThemableFileDecorationStyle properties so they aren't included in result.
-    const { light, dark, value, hoverMessage, ...base } = after
+    const { light, dark, contentText, hoverMessage, ...base } = after
     const merged = { ...base, ...overrides }
 
     // fall back to default color if selected color isn't specified

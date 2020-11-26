@@ -190,7 +190,7 @@ describe('fileDecorationColorForTheme', () => {
         expect(
             fileDecorationColorForTheme(
                 {
-                    value: '',
+                    contentText: '',
                     color: 'red',
                 },
                 false
@@ -202,7 +202,7 @@ describe('fileDecorationColorForTheme', () => {
         expect(
             fileDecorationColorForTheme(
                 {
-                    value: '',
+                    contentText: '',
                     color: 'red',
                     light: {
                         color: 'blue',
@@ -217,7 +217,7 @@ describe('fileDecorationColorForTheme', () => {
         expect(
             fileDecorationColorForTheme(
                 {
-                    value: '',
+                    contentText: '',
                     color: 'red',
                     dark: {
                         color: 'green',
@@ -232,7 +232,7 @@ describe('fileDecorationColorForTheme', () => {
         expect(
             fileDecorationColorForTheme(
                 {
-                    value: '',
+                    contentText: '',
                     color: 'red',
                     selectedColor: 'orange',
                 },
@@ -246,7 +246,7 @@ describe('fileDecorationColorForTheme', () => {
         expect(
             fileDecorationColorForTheme(
                 {
-                    value: '',
+                    contentText: '',
                     color: 'red',
                     selectedColor: 'orange',
                     dark: {

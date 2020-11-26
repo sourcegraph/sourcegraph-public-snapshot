@@ -20,8 +20,8 @@ export function validateFileDecoration(fileDecoration: unknown): fileDecoration 
         hasProperty('after')(fileDecoration) &&
         fileDecoration.after &&
         typeof fileDecoration.after === 'object' &&
-        hasProperty('value')(fileDecoration.after) &&
-        typeof fileDecoration.after.value === 'string'
+        hasProperty('contentText')(fileDecoration.after) &&
+        typeof fileDecoration.after.contentText === 'string'
 
     const validMeter =
         typeof fileDecoration === 'object' &&

@@ -758,7 +758,7 @@ describe('Repository', () => {
                                                 uri: file.uri,
                                                 path: file.path,
                                                 after: {
-                                                    value: `${
+                                                    contentText: `${
                                                         name.split('').filter(char => vowels.includes(char)).length
                                                     } vowels`,
                                                     color: file.isDirectory ? 'red' : 'blue',
@@ -970,11 +970,5 @@ describe('Repository', () => {
                 'Incorrect decorations for triply-nested.ts on tree page'
             )
         })
-        // TODO(tj): need to implement overrideExtensions() to add tests for these cases,
-        // which are slighly less important than the existing tests, and would significantly
-        // lengthen this file atm
-        // - test conditional decorations (tree page and/or tree view)
-        // - multiple decorations of the same type
-        // - invalid decorations don't cause blob errors
     })
 })

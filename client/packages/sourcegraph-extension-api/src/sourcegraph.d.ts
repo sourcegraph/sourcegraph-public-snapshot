@@ -941,7 +941,7 @@ declare module 'sourcegraph' {
     /** A decoration attachment adds content after a {@link FileDecoration}. */
     export interface FileDecorationAttachmentRenderOptions extends ThemableFileDecorationStyle {
         /** Text value to be displayed. This value should be very short to prevent truncation */
-        value: string
+        contentText: string
 
         /** Tooltip text to display when hovering over the text content. */
         hoverMessage?: string
