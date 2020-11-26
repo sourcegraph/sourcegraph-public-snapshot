@@ -803,7 +803,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 						ServiceType: extsvc.TypeGitHub,
 						ServiceID:   "https://github.com/",
 					}
-					if r.Cloned {
+					if r.RepoFields != nil && r.Cloned {
 						cloned = append(cloned, string(r.Name))
 					}
 				}
