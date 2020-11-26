@@ -67,7 +67,7 @@ LIMIT %s;
 `
 
 func (s *Store) GetEventsForQueryIDInt64(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJobs, error) {
-	after, err := unmarshallAfter(args.After)
+	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +166,7 @@ var TriggerJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_trigger_jobs.log_contents"),
 }
 
-func unmarshallAfter(after *string) (int64, error) {
+func unmarshalAfter(after *string) (int64, error) {
 	var a int64
 	if after == nil {
 		a = 0

@@ -548,7 +548,7 @@ AND id > %s
 ORDER BY id ASC
 LIMIT %s
 `
-	after, err := unmarshallAfter(args.After)
+	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
 	}
@@ -794,7 +794,7 @@ AND id > %s
 LIMIT %s;
 ;
 `
-	after, err := unmarshallAfter(args.After)
+	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
 	}
@@ -867,7 +867,7 @@ AND id > %s
 ORDER BY id ASC
 LIMIT %s;
 `
-	after, err := unmarshallAfter(args.After)
+	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
 	}
@@ -1427,7 +1427,7 @@ func (m *monitorActionEvent) Timestamp() graphqlbackend.DateTime {
 	return m.timestamp
 }
 
-func unmarshallAfter(after *string) (int64, error) {
+func unmarshalAfter(after *string) (int64, error) {
 	var a int64
 	if after == nil {
 		a = 0
