@@ -9,6 +9,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -44,6 +45,11 @@ func TestIntegration(t *testing.T) {
 	)
 
 	userID := insertTestUser(t, db)
+
+	dbconn.Global = db
+	defer func() {
+		dbconn.Global = nil
+	}()
 
 	for _, tc := range []struct {
 		name string

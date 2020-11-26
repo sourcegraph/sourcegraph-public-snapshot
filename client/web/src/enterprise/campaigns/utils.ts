@@ -63,6 +63,10 @@ export function computeChangesetUIState(
     if (changeset.reconcilerState === ChangesetReconcilerState.ERRORED) {
         return ChangesetUIState.ERRORED
     }
+    // TODO: We should create a separate UI state for these
+    if (changeset.reconcilerState === ChangesetReconcilerState.FAILED) {
+        return ChangesetUIState.ERRORED
+    }
     if (changeset.reconcilerState !== ChangesetReconcilerState.COMPLETED) {
         return ChangesetUIState.PROCESSING
     }

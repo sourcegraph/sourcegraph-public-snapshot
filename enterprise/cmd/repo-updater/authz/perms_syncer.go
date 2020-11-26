@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -246,11 +247,28 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 		extIDs, err := provider.FetchUserPerms(ctx, acct)
 		if err != nil {
+			// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
+			if errcode.IsUnauthorized(errors.Cause(err)) {
+				err = db.ExternalAccounts.TouchExpired(ctx, acct.ID)
+				if err != nil {
+					return errors.Wrapf(err, "set expired for external account %d", acct.ID)
+				}
+				log15.Debug("PermsSyncer.syncUserPerms.setExternalAccountExpired", "userID", user.ID, "id", acct.ID)
+
+				// We still want to continue processing other external accounts
+				continue
+			}
+
 			// Process partial results if this is an initial fetch.
 			if !noPerms {
 				return errors.Wrap(err, "fetch user permissions")
 			}
 			log15.Warn("PermsSyncer.syncUserPerms.proceedWithPartialResults", "userID", user.ID, "error", err)
+		} else {
+			err = db.ExternalAccounts.TouchLastValid(ctx, acct.ID)
+			if err != nil {
+				return errors.Wrapf(err, "set last valid for external account %d", acct.ID)
+			}
 		}
 
 		for i := range extIDs {

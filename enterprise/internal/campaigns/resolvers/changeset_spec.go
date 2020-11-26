@@ -8,12 +8,13 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -102,6 +103,29 @@ func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend
 
 func (r *changesetSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.changesetSpec.ExpiresAt()}
+}
+
+func (r *changesetSpecResolver) Operations() ([]campaigns.ReconcilerOperation, error) {
+	return []campaigns.ReconcilerOperation{
+		campaigns.ReconcilerOperationPush,
+		campaigns.ReconcilerOperationUpdate,
+		campaigns.ReconcilerOperationUndraft,
+		campaigns.ReconcilerOperationPublish,
+		campaigns.ReconcilerOperationPublishDraft,
+		campaigns.ReconcilerOperationSync,
+		campaigns.ReconcilerOperationImport,
+		campaigns.ReconcilerOperationClose,
+		campaigns.ReconcilerOperationReopen,
+		campaigns.ReconcilerOperationSleep,
+	}, nil
+}
+
+func (r *changesetSpecResolver) Delta() (graphqlbackend.ChangesetSpecDeltaResolver, error) {
+	return &changesetSpecDeltaResolver{}, nil
+}
+
+func (r *changesetSpecResolver) Changeset() (graphqlbackend.ChangesetResolver, error) {
+	return nil, nil
 }
 
 func (r *changesetSpecResolver) repoAccessible() (bool, error) {
@@ -236,3 +260,34 @@ func (r *gitCommitDescriptionResolver) Body() *string {
 	return &body
 }
 func (r *gitCommitDescriptionResolver) Diff() string { return r.diff }
+
+type changesetSpecDeltaResolver struct {
+	delta ee.ChangesetSpecDelta
+}
+
+var _ graphqlbackend.ChangesetSpecDeltaResolver = &changesetSpecDeltaResolver{}
+
+func (c *changesetSpecDeltaResolver) TitleChanged() bool {
+	return c.delta.TitleChanged
+}
+func (c *changesetSpecDeltaResolver) BodyChanged() bool {
+	return c.delta.BodyChanged
+}
+func (c *changesetSpecDeltaResolver) Undraft() bool {
+	return c.delta.Undraft
+}
+func (c *changesetSpecDeltaResolver) BaseRefChanged() bool {
+	return c.delta.BaseRefChanged
+}
+func (c *changesetSpecDeltaResolver) DiffChanged() bool {
+	return c.delta.DiffChanged
+}
+func (c *changesetSpecDeltaResolver) CommitMessageChanged() bool {
+	return c.delta.CommitMessageChanged
+}
+func (c *changesetSpecDeltaResolver) AuthorNameChanged() bool {
+	return c.delta.AuthorNameChanged
+}
+func (c *changesetSpecDeltaResolver) AuthorEmailChanged() bool {
+	return c.delta.TitleChanged
+}

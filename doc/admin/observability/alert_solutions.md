@@ -805,14 +805,12 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">cloud: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _frontend: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _frontend: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the frontend service.
-	- **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the frontend service.
+- **Docker Compose:** Consider increasing `cpus:` of the frontend container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -826,14 +824,12 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">cloud: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _frontend: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
+- _frontend: 80%+ container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the frontend service.
-	- **Docker Compose:** Consider increasing `memory:` of the frontend container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the frontend service.
+- **Docker Compose:** Consider increasing `memory:` of the frontend container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1161,14 +1157,12 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">cloud: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _gitserver: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _gitserver: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the gitserver service.
-	- **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the gitserver service.
+- **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1389,14 +1383,12 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">cloud: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _github-proxy: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _github-proxy: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the github-proxy service.
-	- **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the github-proxy service.
+- **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1410,14 +1402,12 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">cloud: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _github-proxy: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
+- _github-proxy: 80%+ container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the github-proxy service.
-	- **Docker Compose:** Consider increasing `memory:` of the github-proxy container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the github-proxy service.
+- **Docker Compose:** Consider increasing `memory:` of the github-proxy container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1811,14 +1801,12 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _precise-code-intel-worker: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the precise-code-intel-worker service.
-	- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the precise-code-intel-worker service.
+- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1832,14 +1820,12 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _precise-code-intel-worker: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
+- _precise-code-intel-worker: 80%+ container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the precise-code-intel-worker service.
-	- **Docker Compose:** Consider increasing `memory:` of the precise-code-intel-worker container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the precise-code-intel-worker service.
+- **Docker Compose:** Consider increasing `memory:` of the precise-code-intel-worker container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2046,14 +2032,12 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">search: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _query-runner: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _query-runner: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the query-runner service.
-	- **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the query-runner service.
+- **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2067,14 +2051,12 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <p class="subtitle">search: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _query-runner: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
+- _query-runner: 80%+ container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the query-runner service.
-	- **Docker Compose:** Consider increasing `memory:` of the query-runner container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the query-runner service.
+- **Docker Compose:** Consider increasing `memory:` of the query-runner container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2529,24 +2511,6 @@ with your code hosts connections or networking issues affecting communication wi
 ```
 
 <br />
-## repo-updater: authz_filter_duration
-
-<p class="subtitle">cloud: 95th authorization duration</p>**Descriptions:**
-
-- _repo-updater: 1s+ 95th authorization duration for 1m0s_
-
-**Possible solutions:**
-
-- Check if database is overloaded.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_repo-updater_authz_filter_duration"
-]
-```
-
-<br />
 ## repo-updater: perms_syncer_sync_errors
 
 <p class="subtitle">cloud: permissions sync error rate</p>**Descriptions:**
@@ -2741,14 +2705,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 <p class="subtitle">cloud: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _repo-updater: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _repo-updater: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the repo-updater service.
-	- **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the repo-updater service.
+- **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2762,14 +2724,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 <p class="subtitle">cloud: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _repo-updater: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
+- _repo-updater: 80%+ container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the repo-updater service.
-	- **Docker Compose:** Consider increasing `memory:` of the repo-updater container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the repo-updater service.
+- **Docker Compose:** Consider increasing `memory:` of the repo-updater container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3010,14 +2970,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 <p class="subtitle">search: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _searcher: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _searcher: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the searcher service.
-	- **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the searcher service.
+- **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3031,14 +2989,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 <p class="subtitle">search: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _searcher: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
+- _searcher: 80%+ container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the searcher service.
-	- **Docker Compose:** Consider increasing `memory:` of the searcher container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the searcher service.
+- **Docker Compose:** Consider increasing `memory:` of the searcher container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3279,14 +3235,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 <p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _symbols: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _symbols: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the symbols service.
-	- **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the symbols service.
+- **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3300,14 +3254,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 <p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _symbols: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
+- _symbols: 80%+ container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the symbols service.
-	- **Docker Compose:** Consider increasing `memory:` of the symbols container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the symbols service.
+- **Docker Compose:** Consider increasing `memory:` of the symbols container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3408,7 +3360,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: syntax_highlighting_errors
 
-<p class="subtitle">code-intel: syntax highlighting errors every 5m</p>**Descriptions:**
+<p class="subtitle">cloud: syntax highlighting errors every 5m</p>**Descriptions:**
 
 - _syntect-server: 5%+ syntax highlighting errors every 5m for 5m0s_
 
@@ -3425,7 +3377,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: syntax_highlighting_timeouts
 
-<p class="subtitle">code-intel: syntax highlighting timeouts every 5m</p>**Descriptions:**
+<p class="subtitle">cloud: syntax highlighting timeouts every 5m</p>**Descriptions:**
 
 - _syntect-server: 5%+ syntax highlighting timeouts every 5m for 5m0s_
 
@@ -3442,7 +3394,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: syntax_highlighting_panics
 
-<p class="subtitle">code-intel: syntax highlighting panics every 5m</p>**Descriptions:**
+<p class="subtitle">cloud: syntax highlighting panics every 5m</p>**Descriptions:**
 
 - _syntect-server: 5+ syntax highlighting panics every 5m_
 
@@ -3459,7 +3411,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: syntax_highlighting_worker_deaths
 
-<p class="subtitle">code-intel: syntax highlighter worker deaths every 5m</p>**Descriptions:**
+<p class="subtitle">cloud: syntax highlighter worker deaths every 5m</p>**Descriptions:**
 
 - _syntect-server: 1+ syntax highlighter worker deaths every 5m_
 
@@ -3476,7 +3428,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: container_cpu_usage
 
-<p class="subtitle">code-intel: container cpu usage total (1m average) across all cores by instance</p>**Descriptions:**
+<p class="subtitle">cloud: container cpu usage total (1m average) across all cores by instance</p>**Descriptions:**
 
 - _syntect-server: 99%+ container cpu usage total (1m average) across all cores by instance_
 
@@ -3495,7 +3447,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: container_memory_usage
 
-<p class="subtitle">code-intel: container memory usage by instance</p>**Descriptions:**
+<p class="subtitle">cloud: container memory usage by instance</p>**Descriptions:**
 
 - _syntect-server: 99%+ container memory usage by instance_
 
@@ -3514,7 +3466,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: container_restarts
 
-<p class="subtitle">code-intel: container restarts every 5m by instance</p>**Descriptions:**
+<p class="subtitle">cloud: container restarts every 5m by instance</p>**Descriptions:**
 
 - _syntect-server: 1+ container restarts every 5m by instance_
 
@@ -3537,7 +3489,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: fs_inodes_used
 
-<p class="subtitle">code-intel: fs inodes in use by instance</p>**Descriptions:**
+<p class="subtitle">cloud: fs inodes in use by instance</p>**Descriptions:**
 
 - _syntect-server: 3e+06+ fs inodes in use by instance_
 
@@ -3556,16 +3508,14 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: provisioning_container_cpu_usage_long_term
 
-<p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
+<p class="subtitle">cloud: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _syntect-server: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _syntect-server: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the syntect-server service.
-	- **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the syntect-server service.
+- **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3577,16 +3527,14 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: provisioning_container_memory_usage_long_term
 
-<p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>**Descriptions:**
+<p class="subtitle">cloud: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _syntect-server: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
+- _syntect-server: 80%+ container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the syntect-server service.
-	- **Docker Compose:** Consider increasing `memory:` of the syntect-server container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the syntect-server service.
+- **Docker Compose:** Consider increasing `memory:` of the syntect-server container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3598,7 +3546,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: provisioning_container_cpu_usage_short_term
 
-<p class="subtitle">code-intel: container cpu usage total (5m maximum) across all cores by instance</p>**Descriptions:**
+<p class="subtitle">cloud: container cpu usage total (5m maximum) across all cores by instance</p>**Descriptions:**
 
 - _syntect-server: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
 
@@ -3617,7 +3565,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: provisioning_container_memory_usage_short_term
 
-<p class="subtitle">code-intel: container memory usage (5m maximum) by instance</p>**Descriptions:**
+<p class="subtitle">cloud: container memory usage (5m maximum) by instance</p>**Descriptions:**
 
 - _syntect-server: 90%+ container memory usage (5m maximum) by instance_
 
@@ -3636,7 +3584,7 @@ with your code hosts connections or networking issues affecting communication wi
 <br />
 ## syntect-server: pods_available_percentage
 
-<p class="subtitle">code-intel: percentage pods available</p>**Descriptions:**
+<p class="subtitle">cloud: percentage pods available</p>**Descriptions:**
 
 - _syntect-server: less than 90% percentage pods available for 10m0s_
 
@@ -3771,14 +3719,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 <p class="subtitle">search: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _zoekt-indexserver: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-indexserver service.
-	- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-indexserver service.
+- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3792,14 +3738,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 <p class="subtitle">search: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _zoekt-indexserver: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
+- _zoekt-indexserver: 80%+ container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-indexserver service.
-	- **Docker Compose:** Consider increasing `memory:` of the zoekt-indexserver container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-indexserver service.
+- **Docker Compose:** Consider increasing `memory:` of the zoekt-indexserver container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3982,14 +3926,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 <p class="subtitle">search: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _zoekt-webserver: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-webserver service.
-	- **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-webserver service.
+- **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4003,14 +3945,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 <p class="subtitle">search: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _zoekt-webserver: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
+- _zoekt-webserver: 80%+ container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-webserver service.
-	- **Docker Compose:** Consider increasing `memory:` of the zoekt-webserver container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-webserver service.
+- **Docker Compose:** Consider increasing `memory:` of the zoekt-webserver container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4177,14 +4117,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 <p class="subtitle">distribution: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _prometheus: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _prometheus: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the prometheus service.
-	- **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the prometheus service.
+- **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4198,14 +4136,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 <p class="subtitle">distribution: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _prometheus: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
+- _prometheus: 80%+ container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the prometheus service.
-	- **Docker Compose:** Consider increasing `memory:` of the prometheus container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the prometheus service.
+- **Docker Compose:** Consider increasing `memory:` of the prometheus container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4429,14 +4365,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 <p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>**Descriptions:**
 
-- _executor-queue: 80%+ or less than 10% container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+- _executor-queue: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the executor-queue service.
-	- **Docker Compose:** Consider increasing `cpus:` of the executor-queue container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the executor-queue service.
+- **Docker Compose:** Consider increasing `cpus:` of the executor-queue container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4450,14 +4384,12 @@ with your code hosts connections or networking issues affecting communication wi
 
 <p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>**Descriptions:**
 
-- _executor-queue: 80%+ or less than 10% container memory usage (1d maximum) by instance for 336h0m0s_
+- _executor-queue: 80%+ container memory usage (1d maximum) by instance for 336h0m0s_
 
 **Possible solutions:**
 
-- If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the executor-queue service.
-	- **Docker Compose:** Consider increasing `memory:` of the executor-queue container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the executor-queue service.
+- **Docker Compose:** Consider increasing `memory:` of the executor-queue container in `docker-compose.yml`.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json

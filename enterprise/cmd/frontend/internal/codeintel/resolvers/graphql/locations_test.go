@@ -10,13 +10,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -43,7 +43,7 @@ func TestCachedLocationResolver(t *testing.T) {
 	}
 
 	var commitCalls uint32
-	backend.Mocks.Repos.GetCommit = func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error) {
+	git.Mocks.GetCommit = func(commitID api.CommitID) (*git.Commit, error) {
 		atomic.AddUint32(&commitCalls, 1)
 		return &git.Commit{ID: commitID}, nil
 	}
@@ -135,8 +135,11 @@ func TestCachedLocationResolver(t *testing.T) {
 		t.Errorf("unexpected number of repo calls. want=%d have=%d", len(repositoryIDs), val)
 	}
 
-	if val := atomic.LoadUint32(&commitCalls); val != uint32(len(repositoryIDs)*len(commits)) {
-		t.Errorf("unexpected number of commit calls. want=%d have=%d", len(commits), val)
+	// We don't need to load commits from git-server unless we ask for fields like author or committer.
+	// Since we already know this commit exists, and we only need it's already known commit ID, we assert
+	// that zero calls to git.GetCommit where done. Check the gitCommitResolver lazy loading logic.
+	if val := atomic.LoadUint32(&commitCalls); val != 0 {
+		t.Errorf("unexpected number of commit calls. want=%d have=%d", 0, val)
 	}
 
 	close(resolvers)

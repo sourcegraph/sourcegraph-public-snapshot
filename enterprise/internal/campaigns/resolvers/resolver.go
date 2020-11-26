@@ -214,6 +214,10 @@ func (r *Resolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (
 		return nil, err
 	}
 
+	if dbID == 0 {
+		return nil, nil
+	}
+
 	cred, err := db.UserCredentials.GetByID(ctx, dbID)
 	if err != nil {
 		if errcode.IsNotFound(err) {

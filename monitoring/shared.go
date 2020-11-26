@@ -173,14 +173,12 @@ var sharedProvisioningCPUUsageLongTerm sharedObservable = func(containerName str
 		Description:     "container cpu usage total (90th percentile over 1d) across all cores by instance",
 		Query:           fmt.Sprintf(`quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{%s}[1d])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
-		Warning:         Alert().LessOrEqual(10).GreaterOrEqual(80).For(14 * 24 * time.Hour),
+		Warning:         Alert().GreaterOrEqual(80).For(14 * 24 * time.Hour),
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Max(100).Min(0),
 		Owner:           owner,
 		PossibleSolutions: strings.Replace(`
-			- If usage is high:
-				- **Kubernetes:** Consider increasing CPU limits in the 'Deployment.yaml' for the {{CONTAINER_NAME}} service.
-				- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-			- If usage is low, consider decreasing the above values.
+			- **Kubernetes:** Consider increasing CPU limits in the 'Deployment.yaml' for the {{CONTAINER_NAME}} service.
+			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
 		`, "{{CONTAINER_NAME}}", containerName, -1),
 	}
 }
@@ -191,14 +189,12 @@ var sharedProvisioningMemoryUsageLongTerm sharedObservable = func(containerName 
 		Description:     "container memory usage (1d maximum) by instance",
 		Query:           fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[1d])`, promCadvisorContainerMatchers(containerName)),
 		DataMayNotExist: true,
-		Warning:         Alert().LessOrEqual(10).GreaterOrEqual(80).For(14 * 24 * time.Hour),
+		Warning:         Alert().GreaterOrEqual(80).For(14 * 24 * time.Hour),
 		PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage).Max(100).Min(0),
 		Owner:           owner,
 		PossibleSolutions: strings.Replace(`
-			- If usage is high:
-				- **Kubernetes:** Consider increasing memory limits in the 'Deployment.yaml' for the {{CONTAINER_NAME}} service.
-				- **Docker Compose:** Consider increasing 'memory:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-			- If usage is low, consider decreasing the above values.
+			- **Kubernetes:** Consider increasing memory limits in the 'Deployment.yaml' for the {{CONTAINER_NAME}} service.
+			- **Docker Compose:** Consider increasing 'memory:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
 		`, "{{CONTAINER_NAME}}", containerName, -1),
 	}
 }

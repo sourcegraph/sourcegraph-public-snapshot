@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -53,7 +54,7 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 		},
 	}
 
-	svc := ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
+	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -126,7 +127,7 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 		},
 	}
 
-	svc := ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
+	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketServer}
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -205,7 +206,7 @@ func TestBitbucketServerSource_LoadChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
@@ -315,7 +316,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
@@ -388,7 +389,7 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
@@ -457,7 +458,7 @@ func TestBitbucketServerSource_ReopenChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
@@ -531,7 +532,7 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
@@ -567,7 +568,7 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 }
 
 func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
-	svc := &ExternalService{
+	svc := &types.ExternalService{
 		Kind: extsvc.KindBitbucketServer,
 		Config: marshalJSON(t, &schema.BitbucketServerConnection{
 			Url:   "https://bitbucket.sgdev.org",

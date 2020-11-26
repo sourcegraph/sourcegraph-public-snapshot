@@ -31,6 +31,10 @@ type Store interface {
 	// if the record was updated.
 	MarkErrored(ctx context.Context, id int, failureMessage string) (bool, error)
 
+	// MarkFailed attempts to update the state of the record to failed. This method returns a boolean flag indicating
+	// if the record was updated.
+	MarkFailed(ctx context.Context, id int, failureMessage string) (bool, error)
+
 	// Done marks the current record as complete. Depending on the store implementation, this may release locked
 	// or temporary resources, or commit or rollback a transaction. This method should append any additional error
 	// that occurs during finalization to the error argument.

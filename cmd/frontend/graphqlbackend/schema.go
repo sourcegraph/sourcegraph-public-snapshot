@@ -750,18 +750,9 @@ type Mutation {
     """
     createCodeMonitor(
         """
-        The namespace represents the owner of the code monitor.
-        Owners can either be users or organizations.
+        A monitor.
         """
-        namespace: ID!
-        """
-        A meaningful description of the code monitor.
-        """
-        description: String!
-        """
-        Whether the code monitor is enabled or not.
-        """
-        enabled: Boolean!
+        monitor: MonitorInput!
         """
         A trigger.
         """
@@ -794,9 +785,10 @@ type Mutation {
         id: ID!
     ): EmptyResponse!
     """
-    Update a code monitor. Objects in the db will be overwritten with the objects in the request. Objects
-    which are not contained in the request remain unchanged. If the request contains objects that have
-    no corresponding entry in the db, an error is returned.
+    Update a code monitor. We assume that the request contains a complete code monitor,
+    including its trigger and all actions. Actions which are stored in the database,
+    but are missing from the request will be deleted from the database. Actions with id=null
+    will be created.
     """
     updateCodeMonitor(
         """
@@ -883,6 +875,91 @@ type CampaignsCredential implements Node {
 }
 
 """
+This enum declares all operations supported by the reconciler.
+"""
+enum ChangesetSpecOperation {
+    """
+    Push a new commit to the code host.
+    """
+    PUSH
+    """
+    Update the existing changeset on the codehost. This is purely the changeset resource on the code host,
+    not the git commit. For updates to the commit, see 'PUSH'.
+    """
+    UPDATE
+    """
+    Move the existing changeset out of being a draft.
+    """
+    UNDRAFT
+    """
+    Publish a changeset to the codehost.
+    """
+    PUBLISH
+    """
+    Publish a changeset to the codehost as a draft changeset. (Only on supported code hosts).
+    """
+    PUBLISH_DRAFT
+    """
+    Sync the changeset with the current state on the codehost.
+    """
+    SYNC
+    """
+    Import an existing changeset from the code host with the ExternalID from the spec.
+    """
+    IMPORT
+    """
+    Close the changeset on the codehost.
+    """
+    CLOSE
+    """
+    Reopen the changeset on the codehost.
+    """
+    REOPEN
+    """
+    Internal operation to get around slow code host updates.
+    """
+    SLEEP
+}
+
+"""
+Description of the current changeset state vs the changeset spec desired state.
+"""
+type ChangesetSpecDelta {
+    """
+    When run, the title of the changeset will be updated.
+    """
+    titleChanged: Boolean!
+    """
+    When run, the body of the changeset will be updated.
+    """
+    bodyChanged: Boolean!
+    """
+    When run, the changeset will be taken out of draft mode.
+    """
+    undraft: Boolean!
+    """
+    When run, the target branch of the changeset will be updated.
+    """
+    baseRefChanged: Boolean!
+    """
+    When run, a new commit will be created on the branch of the changeset.
+    """
+    diffChanged: Boolean!
+    """
+    When run, a new commit will be created on the branch of the changeset.
+    """
+    commitMessageChanged: Boolean!
+    """
+    When run, a new commit in the name of the specified author will be created on the branch of the changeset.
+    """
+    authorNameChanged: Boolean!
+    """
+    When run, a new commit in the name of the specified author will be created on the branch of the changeset.
+    """
+    authorEmailChanged: Boolean!
+}
+
+"""
 The type of the changeset spec.
 """
 enum ChangesetSpecType {
@@ -911,6 +988,21 @@ interface ChangesetSpec {
     spec never expires (and this field is null) if its campaign spec has been applied.
     """
     expiresAt: DateTime
+
+    """
+    The operations to take to achieve the desired state of this changeset spec.
+    """
+    operations: [ChangesetSpecOperation!]!
+
+    """
+    The delta between the current changeset state and what this changeset spec envisions the changeset to look like.
+    """
+    delta: ChangesetSpecDelta!
+
+    """
+    The changeset that this changeset spec will modify. Null, if the changeset spec will create a new changeset.
+    """
+    changeset: Changeset
 }
 
 """
@@ -940,6 +1032,21 @@ type HiddenChangesetSpec implements ChangesetSpec & Node {
     spec never expires (and this field is null) if its campaign spec has been applied.
     """
     expiresAt: DateTime
+
+    """
+    The operations to take to achieve the desired state of this changeset spec.
+    """
+    operations: [ChangesetSpecOperation!]!
+
+    """
+    The delta between the current changeset state and what this changeset spec envisions the changeset to look like.
+    """
+    delta: ChangesetSpecDelta!
+
+    """
+    The changeset that this changeset spec will modify. Null, if the changeset spec will create a new changeset.
+    """
+    changeset: Changeset
 }
 
 """
@@ -974,6 +1081,21 @@ type VisibleChangesetSpec implements ChangesetSpec & Node {
     spec never expires (and this field is null) if its campaign spec has been applied.
     """
     expiresAt: DateTime
+
+    """
+    The operations to take to achieve the desired state of this changeset spec.
+    """
+    operations: [ChangesetSpecOperation!]!
+
+    """
+    The delta between the current changeset state and what this changeset spec envisions the changeset to look like.
+    """
+    delta: ChangesetSpecDelta!
+
+    """
+    The changeset that this changeset spec will modify. Null, if the changeset spec will create a new changeset.
+    """
+    changeset: Changeset
 }
 
 """
@@ -1502,9 +1624,14 @@ enum ChangesetReconcilerState {
 
     """
     The changeset reconciler ran into a problem while processing the
-    changeset.
+    changeset and will retry it for a number of retries.
     """
     ERRORED
+    """
+    The changeset reconciler ran into a problem while processing the
+    changeset that can't be fixed by retrying.
+    """
+    FAILED
 
     """
     The changeset is not enqueued for processing.
@@ -3430,7 +3557,7 @@ input MonitorEditEmailInput {
     """
     The id of an email action.
     """
-    id: ID!
+    id: ID
     """
     The desired state after the update.
     """
@@ -7948,6 +8075,11 @@ type LSIFIndex implements Node {
     The path to the index file relative to the root directory (dump.lsif by default).
     """
     outfile: String
+
+    """
+    The output of the configured docker step, indexer, and src-cli invocations.
+    """
+    logContents: String
 
     """
     The rank of this index in the queue. The value of this field is null if the index has been processed.

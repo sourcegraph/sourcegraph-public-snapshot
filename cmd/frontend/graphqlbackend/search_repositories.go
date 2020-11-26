@@ -7,9 +7,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var mockSearchRepositories func(args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error)
@@ -39,6 +39,7 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		query.FieldCase:               {},
 		query.FieldRepoHasFile:        {},
 		query.FieldRepoHasCommitAfter: {},
+		query.FieldPatternType:        {},
 	}
 	// Don't return repo results if the search contains fields that aren't on the allowlist.
 	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.

@@ -659,14 +659,10 @@ export function parsePatternTypeFromQuery(query: string): { range: CharacterRang
     const scannedQuery = scanSearchQuery(query)
     if (scannedQuery.type === 'success') {
         for (const token of scannedQuery.term) {
-            if (
-                token.type === 'filter' &&
-                token.filterType.value.toLowerCase() === 'patterntype' &&
-                token.filterValue
-            ) {
+            if (token.type === 'filter' && token.field.value.toLowerCase() === 'patterntype' && token.value) {
                 return {
-                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
-                    value: query.slice(token.filterValue.range.start, token.filterValue.range.end),
+                    range: { start: token.field.range.start, end: token.value.range.end },
+                    value: query.slice(token.value.range.start, token.value.range.end),
                 }
             }
         }
@@ -679,10 +675,10 @@ export function parseCaseSensitivityFromQuery(query: string): { range: Character
     const scannedQuery = scanSearchQuery(query)
     if (scannedQuery.type === 'success') {
         for (const token of scannedQuery.term) {
-            if (token.type === 'filter' && token.filterType.value.toLowerCase() === 'case' && token.filterValue) {
+            if (token.type === 'filter' && token.field.value.toLowerCase() === 'case' && token.value) {
                 return {
-                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
-                    value: query.slice(token.filterValue.range.start, token.filterValue.range.end),
+                    range: { start: token.field.range.start, end: token.value.range.end },
+                    value: query.slice(token.value.range.start, token.value.range.end),
                 }
             }
         }

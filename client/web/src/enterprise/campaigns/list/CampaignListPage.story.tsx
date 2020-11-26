@@ -1,7 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { CampaignListPage } from './CampaignListPage'
-import { nodes } from './CampaignNode.story'
+import { nodes } from './testData'
 import { of } from 'rxjs'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { useCallback } from '@storybook/addons'

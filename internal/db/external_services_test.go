@@ -12,13 +12,13 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
@@ -166,18 +166,32 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			wantErr:      `users are only allowed to add external service for https://github.com/, https://gitlab.com/ and https://bitbucket.org/`,
 		},
 		{
+			name:         "gjson handles comments",
+			kind:         extsvc.KindGitHub,
+			config:       `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["affiliated"]} // comment`,
+			hasNamespace: true,
+			wantErr:      "<nil>",
+		},
+		{
 			name:         "prevent disallowed repositoryPathPattern field",
 			kind:         extsvc.KindGitHub,
-			config:       `{"url": "https://github.com", "repositoryPathPattern": "github/{nameWithOwner}" // comments}`,
+			config:       `{"url": "https://github.com", "repositoryPathPattern": "github/{nameWithOwner}"}`,
 			hasNamespace: true,
 			wantErr:      `field "repositoryPathPattern" is not allowed in a user-added external service`,
 		},
 		{
 			name:         "prevent disallowed nameTransformations field",
 			kind:         extsvc.KindGitHub,
-			config:       `{"url": "https://github.com", "nameTransformations": [{"regex": "\\.d/","replacement": "/"},{"regex": "-git$","replacement": ""}] // comments}`,
+			config:       `{"url": "https://github.com", "nameTransformations": [{"regex": "\\.d/","replacement": "/"},{"regex": "-git$","replacement": ""}]}`,
 			hasNamespace: true,
 			wantErr:      `field "nameTransformations" is not allowed in a user-added external service`,
+		},
+		{
+			name:         "prevent disallowed rateLimit field",
+			kind:         extsvc.KindGitHub,
+			config:       `{"url": "https://github.com", "rateLimit": {}}`,
+			hasNamespace: true,
+			wantErr:      `field "rateLimit" is not allowed in a user-added external service`,
 		},
 	}
 	for _, test := range tests {

@@ -9,7 +9,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"flag"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -22,6 +21,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -29,6 +30,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -37,7 +40,7 @@ var update = flag.Bool("update", false, "update testdata")
 // Run from integration_test.go
 func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 	return func(t *testing.T) {
-		now := time.Now().UTC().Truncate(time.Microsecond)
+		now := timeutil.Now()
 		clock := func() time.Time { return now }
 
 		ctx := context.Background()
@@ -51,7 +54,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		secret := "secret"
 		repoStore := repos.NewDBStore(db, sql.TxOptions{})
-		extSvc := &repos.ExternalService{
+		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub",
 			Config: ct.MarshalJSON(t, &schema.GitHubConnection{
@@ -210,7 +213,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 // Run from integration_test.go
 func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 	return func(t *testing.T) {
-		now := time.Now().UTC().Truncate(time.Microsecond)
+		now := timeutil.Now()
 		clock := func() time.Time { return now }
 
 		ctx := context.Background()
@@ -224,7 +227,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		secret := "secret"
 		repoStore := repos.NewDBStore(db, sql.TxOptions{})
-		extSvc := &repos.ExternalService{
+		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket",
 			Config: ct.MarshalJSON(t, &schema.BitbucketServerConnection{

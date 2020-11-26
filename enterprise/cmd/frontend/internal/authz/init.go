@@ -12,10 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
-	eauthz.Init(dbconn.Global, msResolutionClock)
+	eauthz.Init(dbconn.Global, timeutil.Now)
 
 	go func() {
 		t := time.NewTicker(5 * time.Second)
@@ -26,9 +27,7 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		}
 	}()
 
-	enterpriseServices.AuthzResolver = resolvers.NewResolver(dbconn.Global, msResolutionClock)
+	enterpriseServices.AuthzResolver = resolvers.NewResolver(dbconn.Global, timeutil.Now)
 
 	return nil
 }
-
-var msResolutionClock = func() time.Time { return time.Now().UTC().Truncate(time.Microsecond) }
