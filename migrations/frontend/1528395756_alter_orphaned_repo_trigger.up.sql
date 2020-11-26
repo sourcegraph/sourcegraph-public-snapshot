@@ -16,8 +16,8 @@ BEGIN
         deleted_at = transaction_timestamp()
     WHERE
       deleted_at IS NULL
-      AND id NOT IN (
-        SELECT DISTINCT(repo_id) FROM external_service_repos
+      AND NOT EXISTS (
+        SELECT FROM external_service_repos WHERE repo_id = repo.id
     );
 
     RETURN NULL;
