@@ -4,6 +4,7 @@ import { FiltersToTypeAndValue } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
 import { scanSearchQuery, CharacterRange } from '../search/parser/scanner'
 import { replaceRange } from './strings'
+import { discreteValueAliases } from '../search/parser/filters'
 import { tryCatch } from './errors'
 import { SearchPatternType } from '../graphql-operations'
 import { findGlobalFilter } from '../search/parser/validate'
@@ -596,21 +597,25 @@ export function buildSearchURLQuery(
     }
 
     const globalPatternType = findGlobalFilter(queryParameter, 'patterntype')
-    if (globalPatternType?.value) {
+    if (globalPatternType?.value && globalPatternType.value.type === 'literal') {
         const { start, end } = globalPatternType.range
+        patternTypeParameter = query.slice(globalPatternType.value.range.start, end)
         queryParameter = replaceRange(queryParameter, { start: Math.max(0, start - 1), end }).trim()
-        patternTypeParameter = query.slice(globalPatternType.value?.range.start)
     }
-    searchParameters.set('patternType', patternTypeParameter)
 
     const globalCase = findGlobalFilter(queryParameter, 'case')
     if (globalCase?.value && globalCase.value.type === 'literal') {
-        caseParameter = globalCase.value.value
+        // When case:value is explicit in the query, override any previous value of caseParameter.
+        caseParameter = discreteValueAliases.yes.includes(globalCase.value.value) ? 'yes' : 'no'
         queryParameter = replaceRange(queryParameter, globalCase.range)
     }
-    searchParameters.set('case', caseParameter)
 
     searchParameters.set('q', queryParameter)
+    searchParameters.set('patternType', patternTypeParameter)
+
+    if (caseParameter === 'yes') {
+        searchParameters.set('case', caseParameter)
+    }
 
     if (versionContext) {
         searchParameters.set('c', versionContext)

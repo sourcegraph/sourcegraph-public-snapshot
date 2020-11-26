@@ -15,16 +15,14 @@ export const findGlobalFilter = (query: string, field: string): Filter | undefin
     const result = scanSearchQuery(query)
     let filter: Filter | undefined
     if (result.type === 'success') {
-        let balanced = 0
         let depth = 0
         let seenField = false
         for (const token of result.term) {
             if (token.type === 'openingParen') {
-                balanced = balanced + 1
                 depth = depth + 1
             }
             if (token.type === 'closingParen') {
-                balanced = balanced - 1
+                depth = depth - 1
             }
             if (token.type === 'filter' && token.field.value.toLowerCase() === field) {
                 if (seenField) {
