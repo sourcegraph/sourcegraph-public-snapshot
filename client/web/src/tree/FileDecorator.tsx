@@ -77,6 +77,7 @@ export const FileDecorator: React.FunctionComponent<FileDecoratorProps> = ({
                                     optimum={fileDecoration.meter.optimum}
                                     value={fileDecoration.meter.value}
                                     data-tooltip={fileDecoration.meter.hoverMessage}
+                                    aria-label={fileDecoration.meter.hoverMessage}
                                     data-placement="bottom"
                                 />
                             )}

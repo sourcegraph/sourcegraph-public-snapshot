@@ -1110,3 +1110,36 @@ add('List groups', () => (
         </div>
     </>
 ))
+
+add('Meter', () => (
+    <>
+        <h1>Meter</h1>
+        <p>
+            The HTML{' '}
+            <a
+                href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                <code>{'<meter>'}</code>
+            </a>{' '}
+            element represents either a scalar value within a known range or a fractional value.
+        </p>
+        <h2>Examples</h2>
+        <hr />
+        <div className="pb-3">
+            <p>Optimum</p>
+            <meter min={0} max={1} optimum={1} value={1} />
+        </div>
+        <hr />
+        <div className="pb-3">
+            <p>Sub optimum</p>
+            <meter min={0} max={1} high={0.8} low={0.2} optimum={1} value={0.6} />
+        </div>
+        <hr />
+        <div className="pb-3">
+            <p>Sub sub optimum</p>
+            <meter min={0} max={1} high={0.8} low={0.2} optimum={1} value={0.1} />
+        </div>
+    </>
+))

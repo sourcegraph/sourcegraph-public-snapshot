@@ -786,7 +786,7 @@ describe('Repository', () => {
             return driver.page.evaluate(
                 ({ pageOrSidebar, filename }) => {
                     const decorable = [
-                        ...document.querySelectorAll(`.test-${pageOrSidebar}-file-decorable`),
+                        ...document.querySelectorAll('.test-' + String(pageOrSidebar) + '-file-decorable'),
                     ].find(decorable =>
                         decorable?.querySelector('.test-file-decorable-name')?.textContent?.includes(filename)
                     )
