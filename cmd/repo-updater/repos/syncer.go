@@ -464,6 +464,7 @@ func (s *Syncer) insertIfNew(ctx context.Context, store Store, publicOnly bool, 
 	return err
 }
 
+// syncRepo syncs a single repo that has been sourced from a single external service.
 func (s *Syncer) syncRepo(ctx context.Context, store Store, insertOnly bool, publicOnly bool, sourcedRepo *Repo) (diff Diff, err error) {
 	if publicOnly && sourcedRepo.Private {
 		return Diff{}, nil
@@ -481,6 +482,18 @@ func (s *Syncer) syncRepo(ctx context.Context, store Store, insertOnly bool, pub
 
 	if insertOnly && len(storedSubset) > 0 {
 		return Diff{}, nil
+	}
+
+	// sourcedRepo only knows about one source so we need to add in the remaining stored
+	// sources
+	if len(storedSubset) == 1 {
+		for k, v := range storedSubset[0].Sources {
+			// Don't update the source from sourcedRepo
+			if _, ok := sourcedRepo.Sources[k]; ok {
+				continue
+			}
+			sourcedRepo.Sources[k] = v
+		}
 	}
 
 	// NewDiff modifies the stored slice so we clone it before passing it
