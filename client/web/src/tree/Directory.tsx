@@ -64,7 +64,7 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                     </div>
                     <FileDecorator
                         // If component is not specified, or it is 'sidebar', render it.
-                        fileDecorations={props.fileDecorations?.filter(decoration => decoration?.component !== 'page')}
+                        fileDecorations={props.fileDecorations?.filter(decoration => decoration?.where !== 'page')}
                         className="mr-3"
                         isLightTheme={props.isLightTheme}
                     />

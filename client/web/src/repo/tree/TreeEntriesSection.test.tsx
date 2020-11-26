@@ -84,7 +84,7 @@ describe('TreeEntriesSection', () => {
                         'src/errors.ts': [
                             {
                                 uri: 'git://test/src/errors.ts',
-                                component: 'sidebar',
+                                where: 'sidebar',
                                 after: { contentText: 'errors decoration' },
                             }, // This shouldn't be rendered
                         ],

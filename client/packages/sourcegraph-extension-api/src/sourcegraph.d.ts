@@ -961,7 +961,7 @@ declare module 'sourcegraph' {
         uri: string
 
         /** Whether to display the decoration on the sidebar file tree or tree page. If omitted, it will be displayed in both locations  */
-        component?: 'sidebar' | 'page'
+        where?: 'sidebar' | 'page'
 
         /** An optional object that describes the text content contributed by the decoration */
         after?: FileDecorationAttachmentRenderOptions

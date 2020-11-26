@@ -15,12 +15,14 @@ interface FileProps extends TreeLayerProps {
 }
 
 export const File: React.FunctionComponent<FileProps> = props => {
-    const renderedFileDecorations = FileDecorator({
-        // If component is not specified, or it is 'sidebar', render it.
-        fileDecorations: props.fileDecorations?.filter(decoration => decoration?.component !== 'page'),
-        isLightTheme: props.isLightTheme,
-        isSelected: props.isSelected,
-    })
+    const renderedFileDecorations = (
+        <FileDecorator
+            // If component is not specified, or it is 'sidebar', render it.
+            fileDecorations={props.fileDecorations?.filter(decoration => decoration?.where !== 'page')}
+            isLightTheme={props.isLightTheme}
+            isSelected={props.isSelected}
+        />
+    )
 
     return (
         <tr key={props.entryInfo.path} className={props.className}>

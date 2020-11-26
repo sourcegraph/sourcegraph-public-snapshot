@@ -70,9 +70,7 @@ export const TreeEntriesSection: React.FunctionComponent<TreeEntriesSectionProps
         <FileDecorator
             key={entry.path}
             // If component is not specified, or it is 'page', render it.
-            fileDecorations={fileDecorationsByPath[entry.path]?.filter(
-                decoration => decoration?.component !== 'sidebar'
-            )}
+            fileDecorations={fileDecorationsByPath[entry.path]?.filter(decoration => decoration?.where !== 'sidebar')}
             isLightTheme={isLightTheme}
         />
     ))
@@ -82,9 +80,7 @@ export const TreeEntriesSection: React.FunctionComponent<TreeEntriesSectionProps
     const noDecorations = !directChildren
         // Return whether or not each child has decorations
         .map(entry => {
-            const decorations = fileDecorationsByPath[entry.path]?.filter(
-                decoration => decoration?.component !== 'sidebar'
-            )
+            const decorations = fileDecorationsByPath[entry.path]?.filter(decoration => decoration?.where !== 'sidebar')
             if (!decorations) {
                 return false
             }

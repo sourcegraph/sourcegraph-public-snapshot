@@ -60,7 +60,7 @@ export const FileDecorator: React.FunctionComponent<FileDecoratorProps> = ({
                                     }}
                                     data-tooltip={fileDecoration.after.hoverMessage}
                                     data-placement="bottom"
-                                    className="file-decoration__after text-monospace font-weight-normal test-file-decoration-text"
+                                    className="file-decoration__after text-monospace text-muted font-weight-normal test-file-decoration-text"
                                 >
                                     {fileDecoration.after.contentText}
                                 </small>
