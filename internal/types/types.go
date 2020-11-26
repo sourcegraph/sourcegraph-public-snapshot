@@ -265,6 +265,14 @@ func (r *Repo) Less(s *Repo) bool {
 		return cmp == -1
 	}
 
+	if r.RepoFields == nil {
+		return s.RepoFields != nil && len(s.RepoFields.Sources) > 0
+	}
+
+	if s.RepoFields == nil {
+		return len(s.RepoFields.Sources) > 0
+	}
+
 	return sortedSliceLess(sourcesKeys(r.Sources), sourcesKeys(s.Sources))
 }
 
