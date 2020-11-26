@@ -44,14 +44,19 @@ func currentUserAllowedExternalServices(ctx context.Context) conf.ExternalServic
 		return mode
 	}
 
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return conf.ExternalServiceModeDisabled
+	}
+
 	// The user may have a tag that opts them in
-	err := backend.CheckActorHasTag(ctx, backend.TagAllowUserExternalServicePrivate)
-	if err == nil {
+	ok, _ := db.Users.HasTag(ctx, a.UID, db.TagAllowUserExternalServicePrivate)
+	if ok {
 		return conf.ExternalServiceModeAll
 	}
 
-	err = backend.CheckActorHasTag(ctx, backend.TagAllowUserExternalServicePublic)
-	if err == nil {
+	ok, _ = db.Users.HasTag(ctx, a.UID, db.TagAllowUserExternalServicePublic)
+	if ok {
 		return conf.ExternalServiceModePublic
 	}
 
