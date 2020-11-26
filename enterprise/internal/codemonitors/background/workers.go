@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"

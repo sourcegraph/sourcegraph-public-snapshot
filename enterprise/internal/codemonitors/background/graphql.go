@@ -174,8 +174,8 @@ func extractTime(result interface{}) (t *time.Time, err error) {
 			buf := make([]byte, size)
 			buf = buf[:runtime.Stack(buf, false)]
 			log.Printf("failed to extract time from search result: %v\n%s", r, buf)
+			err = fmt.Errorf("failed to extract time from search result")
 		}
-		err = fmt.Errorf("failed to extract time from search result")
 	}()
 
 	m := result.(map[string]interface{})
@@ -186,9 +186,9 @@ func extractTime(result interface{}) (t *time.Time, err error) {
 		author := commit["author"].(map[string]interface{})
 		date := author["date"].(string)
 
-		// For now, our graphql API commit authorship date is in Go default time format.
-		goTimeFormat := "2006-01-02 15:04:05.999999999 -0700 MST"
-		t, err := time.Parse(date, goTimeFormat)
+		// This relies on the date format that our API returns. It was previously broken
+		// and should be checked first in case date extraction stops working.
+		t, err := time.Parse(time.RFC3339, date)
 		if err != nil {
 			return nil, err
 		}
