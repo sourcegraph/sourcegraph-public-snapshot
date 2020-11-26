@@ -31,7 +31,7 @@ import { ErrorAlert } from '../components/alerts'
 import classNames from 'classnames'
 import { TreeFields } from '../graphql-operations'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { FileDecoration, FileDecorationsByPath } from 'sourcegraph'
+import { FileDecoration } from 'sourcegraph'
 import { getFileDecorations } from '../backend/features'
 import { ThemeProps } from '../../../shared/src/theme'
 

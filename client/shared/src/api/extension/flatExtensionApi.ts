@@ -69,6 +69,10 @@ export type PartialWorkspaceNamespace = Omit<
     typeof sourcegraph['workspace'],
     'textDocuments' | 'onDidOpenTextDocument' | 'openedTextDocuments' | 'roots' | 'versionContext'
 >
+
+/** Object of array of file decorations keyed by path relative to repo root uri */
+export type FileDecorationsByPath = Record<string, sourcegraph.FileDecoration[] | undefined>
+
 /**
  * Holds internally ExtState and manages communication with the Client
  * Returns the initialized public extension API pieces ready for consumption and the internal extension host API ready to be exposed to the main thread
@@ -195,7 +199,16 @@ export const initNewExtensionAPI = (
                           // No need to filter
                           provider => provider.provideFileDecorations(parameters),
                           mergeProviderResults
-                      ).pipe(map(({ result }) => groupBy(result.filter(validateFileDecoration), 'path')))
+                      ).pipe(
+                          map(({ result }) =>
+                              groupBy(
+                                  result.filter(validateFileDecoration),
+                                  // Get path from uri to key by path.
+                                  // Path should always exist, but fall back to uri just in case
+                                  ({ uri }) => parseRepoURI(uri).filePath || uri
+                              )
+                          )
+                      )
             ),
     }
 

@@ -5,7 +5,8 @@ import { TreeNode } from './Tree'
 import { TreeLayerProps } from './TreeLayer'
 import { maxEntries, SingleChildGitTree } from './util'
 import classNames from 'classnames'
-import { FileDecoration, FileDecorationsByPath } from 'sourcegraph'
+import { FileDecoration } from 'sourcegraph'
+import { FileDecorationsByPath } from '../../../shared/src/api/extension/flatExtensionApi'
 
 interface SingleChildTreeLayerProps extends TreeLayerProps {
     childrenEntries: SingleChildGitTree[]

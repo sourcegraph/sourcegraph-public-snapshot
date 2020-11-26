@@ -32,5 +32,20 @@ export function validateFileDecoration(fileDecoration: unknown): fileDecoration 
         hasProperty('value')(fileDecoration.meter) &&
         typeof fileDecoration.meter.value === 'number'
 
-    return validAfter || validMeter
+    // If neither are valid, no further validation necessary
+    if (!(validAfter || validMeter)) {
+        return false
+    }
+
+    // Check for objects where we expect primitives that will be React children
+    const textContentIsObject =
+        typeof fileDecoration === 'object' &&
+        fileDecoration !== null &&
+        hasProperty('after')(fileDecoration) &&
+        fileDecoration.after &&
+        typeof fileDecoration.after === 'object' &&
+        hasProperty('contentText')(fileDecoration.after) &&
+        typeof fileDecoration.after.contentText === 'object'
+
+    return !textContentIsObject
 }

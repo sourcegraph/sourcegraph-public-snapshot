@@ -35,8 +35,8 @@ describe('TreeEntriesSection', () => {
                         },
                     ]}
                     fileDecorationsByPath={{
-                        src: [{ path: 'src', after: { contentText: 'src decoration' } }],
-                        testdata: [{ path: 'testdata', after: { contentText: 'testdata decoration' } }],
+                        src: [{ uri: 'git://test/src', after: { contentText: 'src decoration' } }],
+                        testdata: [{ uri: 'git://test/testdata', after: { contentText: 'testdata decoration' } }],
                     }}
                     isLightTheme={true}
                 />
@@ -75,11 +75,15 @@ describe('TreeEntriesSection', () => {
                         },
                     ]}
                     fileDecorationsByPath={{
-                        'src/testutils': [{ path: 'src/testutils', after: { contentText: 'testutils decoration' } }],
-                        'src/typings': [{ path: 'src/typings', after: { contentText: 'typings decoration' } }],
+                        'src/testutils': [
+                            { uri: 'git://test/src/testutils', after: { contentText: 'testutils decoration' } },
+                        ],
+                        'src/typings': [
+                            { uri: 'git://test/src/typings', after: { contentText: 'typings decoration' } },
+                        ],
                         'src/errors.ts': [
                             {
-                                path: 'src/errors.ts',
+                                uri: 'git://test/src/errors.ts',
                                 component: 'sidebar',
                                 after: { contentText: 'errors decoration' },
                             }, // This shouldn't be rendered
@@ -128,8 +132,8 @@ describe('TreeEntriesSection', () => {
                         },
                     ]}
                     fileDecorationsByPath={{
-                        'x/ref': [{ path: 'x/ref', after: { contentText: 'ref decoration' } }],
-                        'x/ref/cmd': [{ path: 'x/ref/cmd', after: { contentText: 'cmd decoration' } }],
+                        'x/ref': [{ uri: 'git://test/x/ref', after: { contentText: 'ref decoration' } }],
+                        'x/ref/cmd': [{ uri: 'git://test/x/ref/cmd', after: { contentText: 'cmd decoration' } }],
                     }}
                     isLightTheme={true}
                 />

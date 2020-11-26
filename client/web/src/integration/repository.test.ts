@@ -756,7 +756,6 @@ describe('Repository', () => {
                                             const name = fragments[fragments.length - 1]
                                             return {
                                                 uri: file.uri,
-                                                path: file.path,
                                                 after: {
                                                     contentText: `${
                                                         name.split('').filter(char => vowels.includes(char)).length

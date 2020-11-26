@@ -46,7 +46,7 @@ export const FileDecorator: React.FunctionComponent<FileDecoratorProps> = ({
                     (fileDecoration.meter || fileDecoration.after) && (
                         <div
                             className="file-decoration d-flex align-items-center"
-                            key={fileDecoration.path + String(index)}
+                            key={fileDecoration.uri + String(index)}
                         >
                             {fileDecoration.after && (
                                 <small

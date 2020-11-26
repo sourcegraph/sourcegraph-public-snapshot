@@ -23,8 +23,8 @@ import { ErrorAlert } from '../components/alerts'
 import { TreeFields } from '../graphql-operations'
 import { getFileDecorations } from '../backend/features'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { FileDecorationsByPath } from 'sourcegraph'
 import { ThemeProps } from '../../../shared/src/theme'
+import { FileDecorationsByPath } from '../../../shared/src/api/extension/flatExtensionApi'
 
 const maxEntries = 2500
 

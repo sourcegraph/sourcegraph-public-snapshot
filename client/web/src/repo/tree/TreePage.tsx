@@ -47,7 +47,7 @@ import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryServic
 import { TreeEntriesSection } from './TreeEntriesSection'
 import { GitCommitFields } from '../../graphql-operations'
 import { getFileDecorations } from '../../backend/features'
-import { FileDecorationsByPath } from 'sourcegraph'
+import { FileDecorationsByPath } from '../../../../shared/src/api/extension/flatExtensionApi'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {

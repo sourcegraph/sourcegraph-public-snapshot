@@ -957,8 +957,8 @@ declare module 'sourcegraph' {
      * A file decoration adds text content and/or a progress bar to files in a tree view
      */
     export interface FileDecoration {
-        /** File path relative to repo root uri */
-        path: string
+        /** The resource identifier of this file */
+        uri: string
 
         /** Whether to display the decoration on the sidebar file tree or tree page. If omitted, it will be displayed in both locations  */
         component?: 'sidebar' | 'page'
@@ -1045,14 +1045,14 @@ declare module 'sourcegraph' {
             /** Whether this file is a directory */
             isDirectory: boolean
 
-            // TODO: path is temporary, remove when we implement parseUri util
-            /** File path relative to repo root uri  */
+            /**
+             * File path relative to repo root uri
+             *
+             * @todo Remove this once `parseRepoUri` is public
+             * */
             path: string
         }[]
     }
-
-    /** Object of array of file decorations keyed by path relative to repo root uri */
-    export type FileDecorationsByPath = Record<string, FileDecoration[] | undefined>
 
     export interface FileDecorationProvider {
         provideFileDecorations: (fileDecorationContext: FileDecorationContext) => ProviderResult<FileDecoration[]>

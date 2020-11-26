@@ -1,11 +1,10 @@
 import { ProxyMarked, proxyMarker, Remote } from 'comlink'
 import { Observer } from 'rxjs'
-import { FileDecorationsByPath } from 'sourcegraph'
 import { SettingsCascade } from '../../settings/settings'
 import { MainThreadAPI } from '../contract'
 import { pretendRemote } from '../util'
 import { ExtensionDocuments } from './api/documents'
-import { initNewExtensionAPI } from './flatExtensionApi'
+import { FileDecorationsByPath, initNewExtensionAPI } from './flatExtensionApi'
 
 describe('getFileDecorations from ExtensionHost API, it aims to have more e2e feel', () => {
     // integration(ish) tests for scenarios not covered by providers tests
@@ -36,7 +35,7 @@ describe('getFileDecorations from ExtensionHost API, it aims to have more e2e fe
 
         let counter = 0
         registerFileDecorationProvider({
-            provideFileDecorations: ({ files }) => [{ path: files[0]?.path, after: { contentText: `a${++counter}` } }],
+            provideFileDecorations: ({ files }) => [{ uri: files[0]?.uri, after: { contentText: `a${++counter}` } }],
         })
 
         let results: FileDecorationsByPath[] = []
@@ -48,7 +47,7 @@ describe('getFileDecorations from ExtensionHost API, it aims to have more e2e fe
                         uri:
                             'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/package.ts',
                         isDirectory: false,
-                        path: 'typescript/src/package.ts',
+                        path: 'extensions/typescript/src/package.ts',
                     },
                 ],
             })
@@ -58,9 +57,10 @@ describe('getFileDecorations from ExtensionHost API, it aims to have more e2e fe
         expect(results).toEqual<FileDecorationsByPath[]>([
             {},
             {
-                'typescript/src/package.ts': [
+                'extensions/typescript/src/package.ts': [
                     {
-                        path: 'typescript/src/package.ts',
+                        uri:
+                            'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/package.ts',
                         after: {
                             contentText: 'a1',
                         },
@@ -71,15 +71,16 @@ describe('getFileDecorations from ExtensionHost API, it aims to have more e2e fe
         results = []
 
         const subscription = registerFileDecorationProvider({
-            provideFileDecorations: ({ files }) => [{ path: files[0]?.path, after: { contentText: 'b' } }],
+            provideFileDecorations: ({ files }) => [{ uri: files[0]?.uri, after: { contentText: 'b' } }],
         })
 
         // second and first
         expect(results).toEqual<FileDecorationsByPath[]>([
             {
-                'typescript/src/package.ts': [
+                'extensions/typescript/src/package.ts': [
                     {
-                        path: 'typescript/src/package.ts',
+                        uri:
+                            'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/package.ts',
                         after: {
                             contentText: 'a2',
                         },
@@ -87,15 +88,17 @@ describe('getFileDecorations from ExtensionHost API, it aims to have more e2e fe
                 ],
             },
             {
-                'typescript/src/package.ts': [
+                'extensions/typescript/src/package.ts': [
                     {
-                        path: 'typescript/src/package.ts',
+                        uri:
+                            'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/package.ts',
                         after: {
                             contentText: 'a2',
                         },
                     },
                     {
-                        path: 'typescript/src/package.ts',
+                        uri:
+                            'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/package.ts',
                         after: {
                             contentText: 'b',
                         },
@@ -111,9 +114,10 @@ describe('getFileDecorations from ExtensionHost API, it aims to have more e2e fe
         expect(results).toEqual<FileDecorationsByPath[]>([
             {},
             {
-                'typescript/src/package.ts': [
+                'extensions/typescript/src/package.ts': [
                     {
-                        path: 'typescript/src/package.ts',
+                        uri:
+                            'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/package.ts',
                         after: {
                             contentText: 'a3',
                         },

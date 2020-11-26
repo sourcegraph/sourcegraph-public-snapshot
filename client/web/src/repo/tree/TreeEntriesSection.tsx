@@ -2,10 +2,10 @@ import React from 'react'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import classNames from 'classnames'
 import { Link } from '../../../../shared/src/components/Link'
-import { FileDecorationsByPath } from 'sourcegraph'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { FileDecorator } from '../../tree/FileDecorator'
 import { identity } from 'lodash'
+import { FileDecorationsByPath } from '../../../../shared/src/api/extension/flatExtensionApi'
 
 /**
  * Use a multi-column layout for tree entries when there are at least this many. See TreeEntriesSection.scss

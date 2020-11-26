@@ -12,10 +12,11 @@ import {
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { switchMap } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
-import { DocumentHighlight, FileDecorationsByPath } from 'sourcegraph'
+import { DocumentHighlight } from 'sourcegraph'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { Remote } from 'comlink'
 import { FlatExtensionHostAPI } from '../../../shared/src/api/contract'
+import { FileDecorationsByPath } from '../../../shared/src/api/extension/flatExtensionApi'
 
 /**
  * Fetches hover information for the given location.

@@ -1,5 +1,5 @@
 import React from 'react'
-import { FileDecorationsByPath } from 'sourcegraph'
+import { FileDecorationsByPath } from '../../../shared/src/api/extension/flatExtensionApi'
 import { SingleChildTreeLayer } from './SingleChildTreeLayer'
 import { TreeLayer } from './TreeLayer'
 import { TreeRootProps } from './TreeRoot'
