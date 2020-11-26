@@ -2779,6 +2779,8 @@ type Query {
         """
         after: String
     ): LSIFIndexConnection!
+
+    repositoryStats(): RepositoryStats!
 }
 
 """
