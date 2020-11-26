@@ -124,12 +124,13 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                 })
             },
             onCharacterClassEnter(node: CharacterClass) {
+                const negatedOffset = node.negate ? 1 : 0
                 // Push the leading '['
                 tokens.push({
                     type: 'regexpMeta',
-                    range: { start: offset + node.start, end: offset + node.start + 1 },
+                    range: { start: offset + node.start, end: offset + node.start + 1 + negatedOffset },
                     groupRange: { start: offset + node.start, end: offset + node.end },
-                    value: '[',
+                    value: node.negate ? '[^' : '[',
                     kind: RegexpMetaKind.CharacterClass,
                 })
                 // Push the trailing ']'
