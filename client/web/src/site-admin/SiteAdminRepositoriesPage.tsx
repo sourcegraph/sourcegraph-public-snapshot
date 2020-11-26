@@ -83,22 +83,22 @@ const FILTERS: FilteredConnectionFilter[] = [
                 label: 'Cloned',
                 value: 'cloned',
                 tooltip: 'Show cloned repositories only',
-                args: {cloned: true, notCloned: false},
+                args: { cloned: true, notCloned: false },
             },
             {
                 label: 'Not cloned',
                 value: 'not-cloned',
                 tooltip: 'Show only repositories that have not been cloned yet',
-                args: {cloned: false, notCloned: true},
+                args: { cloned: false, notCloned: true },
             },
             {
                 label: 'Needs index',
                 value: 'needs-index',
                 tooltip: 'Show only repositories that need to be indexed',
-                args: {indexed: false},
+                args: { indexed: false },
             },
-        ]
-    }
+        ],
+    },
 ]
 
 /**

@@ -54,8 +54,8 @@ const FILTERS: FilteredConnectionFilter[] = [
                 tooltip: 'Show all campaigns',
                 args: {},
             },
-        ]
-    }
+        ],
+    },
 ]
 
 type SelectedTab = 'campaigns' | 'gettingStarted'

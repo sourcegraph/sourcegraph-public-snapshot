@@ -160,8 +160,8 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
                     tooltip: 'Show only extensions from the local registry',
                     args: { remote: false, local: true },
                 },
-            ]
-        }
+            ],
+        },
     ]
 
     private updates = new Subject<void>()

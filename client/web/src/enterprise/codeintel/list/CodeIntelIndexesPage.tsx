@@ -34,22 +34,22 @@ const filters: FilteredConnectionFilter[] = [
                 label: 'Completed',
                 value: 'completed',
                 tooltip: 'Show completed indexes only',
-                args: {state: LSIFIndexState.COMPLETED},
+                args: { state: LSIFIndexState.COMPLETED },
             },
             {
                 label: 'Errored',
                 value: 'errored',
                 tooltip: 'Show errored indexes only',
-                args: {state: LSIFIndexState.ERRORED},
+                args: { state: LSIFIndexState.ERRORED },
             },
             {
                 label: 'Queued',
                 value: 'queued',
                 tooltip: 'Show queued indexes only',
-                args: {state: LSIFIndexState.QUEUED},
+                args: { state: LSIFIndexState.QUEUED },
             },
-        ]
-    }
+        ],
+    },
 ]
 
 export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> = ({
