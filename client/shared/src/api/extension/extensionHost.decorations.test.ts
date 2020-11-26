@@ -6,7 +6,7 @@ import { pretendRemote } from '../util'
 import { ExtensionDocuments } from './api/documents'
 import { FileDecorationsByPath, initNewExtensionAPI } from './flatExtensionApi'
 
-describe('getFileDecorations from ExtensionHost API, it aims to have more e2e feel', () => {
+describe('extensionHostAPI.getFileDecorations()', () => {
     // integration(ish) tests for scenarios not covered by providers tests
     const noopMain = pretendRemote<MainThreadAPI>({})
     const emptySettings: SettingsCascade<object> = {
