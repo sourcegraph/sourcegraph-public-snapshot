@@ -24,6 +24,10 @@ func (p *progressSimple) SetLabel(i int, label string) {
 	p.bars[i].Label = label
 }
 
+func (p *progressSimple) SetLabelAndRecalc(i int, label string) {
+	p.bars[i].Label = label
+}
+
 func (p *progressSimple) SetValue(i int, v float64) {
 	p.bars[i].Value = v
 }

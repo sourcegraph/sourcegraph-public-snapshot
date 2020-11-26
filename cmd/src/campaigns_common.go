@@ -25,7 +25,6 @@ import (
 var (
 	campaignsPendingColor = output.StylePending
 	campaignsSuccessColor = output.StyleSuccess
-	campaignsErrorColor   = output.StyleWarning
 	campaignsSuccessEmoji = output.EmojiSuccess
 )
 

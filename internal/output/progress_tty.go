@@ -65,6 +65,17 @@ func (p *progressTTY) SetLabel(i int, label string) {
 	p.drawInSitu()
 }
 
+func (p *progressTTY) SetLabelAndRecalc(i int, label string) {
+	p.o.lock.Lock()
+	defer p.o.lock.Unlock()
+
+	p.bars[i].Label = label
+	p.bars[i].labelWidth = runewidth.StringWidth(label)
+
+	p.determineLabelWidth()
+	p.drawInSitu()
+}
+
 func (p *progressTTY) SetValue(i int, v float64) {
 	p.o.lock.Lock()
 	defer p.o.lock.Unlock()

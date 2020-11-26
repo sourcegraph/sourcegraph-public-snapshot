@@ -15,6 +15,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 
+- `src campaign [apply|preview]` now show the current execution progress in numbers next to the progress bar. [#396](https://github.com/sourcegraph/src-cli/pull/396)
+
 ### Fixed
 
 ### Removed

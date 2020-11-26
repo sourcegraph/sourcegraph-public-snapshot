@@ -13,6 +13,10 @@ type Progress interface {
 	// SetLabel updates the label for the given bar.
 	SetLabel(i int, label string)
 
+	// SetLabelAndRecalc updates the label for the given bar and recalculates
+	// the maximum width of the labels.
+	SetLabelAndRecalc(i int, label string)
+
 	// SetValue updates the value for the given bar.
 	SetValue(i int, v float64)
 }

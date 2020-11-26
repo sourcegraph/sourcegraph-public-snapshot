@@ -82,6 +82,10 @@ func (ts *TaskStatus) IsCompleted() bool {
 	return !ts.StartedAt.IsZero() && !ts.FinishedAt.IsZero()
 }
 
+func (ts *TaskStatus) ExecutionTime() time.Duration {
+	return ts.FinishedAt.Sub(ts.StartedAt).Truncate(time.Millisecond)
+}
+
 type executor struct {
 	ExecutorOpts
 
