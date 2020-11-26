@@ -435,6 +435,9 @@ func TestExternalService_Exclude(t *testing.T) {
 
 			tmp := make([]*types.Repo, len(repos))
 			for i, r := range repos {
+				if r.RepoFields == nil {
+					r.RepoFields = new(types.RepoFields)
+				}
 				tmp[i] = &types.Repo{
 					ID:           r.ID,
 					ExternalRepo: r.ExternalRepo,
