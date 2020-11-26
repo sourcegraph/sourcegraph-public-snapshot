@@ -36,9 +36,9 @@ func TestCreateCodeMonitor(t *testing.T) {
 	want := &monitor{
 		id:              1,
 		createdBy:       userID,
-		createdAt:       r.clock(),
+		createdAt:       r.Now(),
 		changedBy:       userID,
-		changedAt:       r.clock(),
+		changedAt:       r.Now(),
 		description:     "test monitor",
 		enabled:         true,
 		namespaceUserID: &userID,
@@ -243,7 +243,7 @@ func TestQueryMonitor(t *testing.T) {
 					Enabled:     true,
 					Owner:       apitest.UserOrg{Name: userName},
 					CreatedBy:   apitest.UserOrg{Name: userName},
-					CreatedAt:   marshalDateTime(t, r.clock()),
+					CreatedAt:   marshalDateTime(t, r.Now()),
 					Trigger: apitest.Trigger{
 						Id:    string(relay.MarshalID(monitorTriggerQueryKind, 1)),
 						Query: "repo:foo",
@@ -391,7 +391,7 @@ func TestEditCodeMonitor(t *testing.T) {
 			CreatedBy: apitest.UserOrg{
 				Name: user1Name,
 			},
-			CreatedAt: marshalDateTime(t, r.clock()),
+			CreatedAt: marshalDateTime(t, r.store.Now()),
 			Trigger: apitest.Trigger{
 				Id:    string(relay.MarshalID(monitorTriggerQueryKind, 1)),
 				Query: "repo:bar",

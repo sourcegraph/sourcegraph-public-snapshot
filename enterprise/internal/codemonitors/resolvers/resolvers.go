@@ -10,29 +10,31 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 // NewResolver returns a new Resolver that uses the given db
 func NewResolver(db dbutil.DB) graphqlbackend.CodeMonitorsResolver {
-	return &Resolver{db: basestore.NewWithDB(db, sql.TxOptions{}), clock: timeutil.Now}
+	return &Resolver{store: cm.NewStore(db)}
 }
 
 // newResolverWithClock is used in tests to set the clock manually.
 func newResolverWithClock(db dbutil.DB, clock func() time.Time) graphqlbackend.CodeMonitorsResolver {
-	return &Resolver{db: basestore.NewWithDB(db, sql.TxOptions{}), clock: clock}
+	return &Resolver{store: cm.NewStoreWithClock(db, clock)}
 }
 
 type Resolver struct {
-	db    *basestore.Store
-	clock func() time.Time
+	store *cm.Store
+}
+
+func (r *Resolver) Now() time.Time {
+	return r.store.Now()
 }
 
 func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) (graphqlbackend.MonitorConnectionResolver, error) {
@@ -40,7 +42,7 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.Query(ctx, q)
+	rows, err := r.store.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -62,18 +64,16 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	if err != nil {
 		return nil, err
 	}
-
 	// start transaction
-	var txStore *basestore.Store
-	txStore, err = r.db.Transact(ctx)
+	var txStore *cm.Store
+	txStore, err = r.store.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 	tx := Resolver{
-		db:    txStore,
-		clock: r.clock,
+		store: txStore,
 	}
-	defer func() { err = tx.db.Done(err) }()
+	defer func() { err = tx.store.Done(err) }()
 
 	// create code monitor
 	var q *sqlf.Query
@@ -91,37 +91,17 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	if err != nil {
 		return nil, err
 	}
-	err = tx.db.Exec(ctx, q)
+	err = tx.store.Exec(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
 	// create actions
-	for i, action := range args.Actions {
-		if action.Email != nil {
-			q, err = tx.createActionEmailQuery(ctx, m.(*monitor).id, action.Email)
-			if err != nil {
-				return nil, err
-			}
-			var e graphqlbackend.MonitorEmailResolver
-			e, err = tx.runEmailQuery(ctx, q)
-			if err != nil {
-				return nil, err
-			}
-
-			// insert recipients
-			q, err = tx.createRecipientsQuery(ctx, action.Email.Recipients, e.(*monitorEmail).id)
-			if err != nil {
-				return nil, err
-			}
-			err = tx.db.Exec(ctx, q)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, fmt.Errorf("missing email object for action %d", i)
-		}
+	err = tx.createActions(ctx, args.Actions, m.(*monitor).id)
+	if err != nil {
+		return nil, err
 	}
+
 	// Hydrate monitor with Resolver.
 	m.(*monitor).Resolver = r
 	return m, nil
@@ -148,7 +128,7 @@ func (r *Resolver) DeleteCodeMonitor(ctx context.Context, args *graphqlbackend.D
 	if err != nil {
 		return nil, err
 	}
-	if err := r.db.Exec(ctx, q); err != nil {
+	if err := r.store.Exec(ctx, q); err != nil {
 		return nil, err
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
@@ -183,7 +163,7 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = tx.db.Done(err) }()
+	defer func() { err = tx.store.Done(err) }()
 
 	err = tx.deleteActionsInt64(ctx, toDelete, monitorID)
 	if err != nil {
@@ -233,7 +213,7 @@ func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int
 
 func (r *Resolver) actionIDsForMonitorIDINT64SinglePage(ctx context.Context, q *sqlf.Query, limit int) (IDs []graphql.ID, cursor *string, err error) {
 	var rows *sql.Rows
-	rows, err = r.db.Query(ctx, q)
+	rows, err = r.store.Query(ctx, q)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -304,7 +284,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	if err != nil {
 		return nil, err
 	}
-	err = r.db.Exec(ctx, q)
+	err = r.store.Exec(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -326,7 +306,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		if err != nil {
 			return nil, err
 		}
-		err = r.db.Exec(ctx, q)
+		err = r.store.Exec(ctx, q)
 		if err != nil {
 			return nil, err
 		}
@@ -342,7 +322,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		if err != nil {
 			return nil, err
 		}
-		err = r.db.Exec(ctx, q)
+		err = r.store.Exec(ctx, q)
 		if err != nil {
 			return nil, err
 		}
@@ -367,7 +347,7 @@ func (r *Resolver) createActions(ctx context.Context, args []*graphqlbackend.Cre
 		if err != nil {
 			return err
 		}
-		err = r.db.Exec(ctx, q)
+		err = r.store.Exec(ctx, q)
 		if err != nil {
 			return err
 		}
@@ -384,7 +364,7 @@ func (r *Resolver) deleteActionsInt64(ctx context.Context, actionIDs []int64, mo
 	if err != nil {
 		return err
 	}
-	err = r.db.Exec(ctx, q)
+	err = r.store.Exec(ctx, q)
 	if err != nil {
 		return err
 	}
@@ -392,18 +372,17 @@ func (r *Resolver) deleteActionsInt64(ctx context.Context, actionIDs []int64, mo
 }
 
 func (r *Resolver) transact(ctx context.Context) (*Resolver, error) {
-	txStore, err := r.db.Transact(ctx)
+	txStore, err := r.store.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &Resolver{
-		db:    txStore,
-		clock: r.clock,
+		store: txStore,
 	}, nil
 }
 
 func (r *Resolver) runMonitorQuery(ctx context.Context, q *sqlf.Query) (graphqlbackend.MonitorResolver, error) {
-	rows, err := r.db.Query(ctx, q)
+	rows, err := r.store.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -419,7 +398,7 @@ func (r *Resolver) runMonitorQuery(ctx context.Context, q *sqlf.Query) (graphqlb
 }
 
 func (r *Resolver) runEmailQuery(ctx context.Context, q *sqlf.Query) (graphqlbackend.MonitorEmailResolver, error) {
-	rows, err := r.db.Query(ctx, q)
+	rows, err := r.store.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -435,7 +414,7 @@ func (r *Resolver) runEmailQuery(ctx context.Context, q *sqlf.Query) (graphqlbac
 }
 
 func (r *Resolver) runTriggerQuery(ctx context.Context, q *sqlf.Query) (*cm.MonitorQuery, error) {
-	rows, err := r.db.Query(ctx, q)
+	rows, err := r.store.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -595,7 +574,7 @@ RETURNING %s;
 	if err != nil {
 		return nil, err
 	}
-	now := r.clock()
+	now := r.Now()
 	a := actor.FromContext(ctx)
 	return sqlf.Sprintf(
 		InsertCodeMonitorQuery,
@@ -629,7 +608,7 @@ RETURNING %s;
 	if err != nil {
 		return nil, err
 	}
-	now := r.clock()
+	now := r.Now()
 	a := actor.FromContext(ctx)
 	var monitorID int64
 	err = relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
@@ -667,7 +646,7 @@ INSERT INTO cm_queries
 VALUES (%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
-	now := r.clock()
+	now := r.Now()
 	a := actor.FromContext(ctx)
 	return sqlf.Sprintf(
 		insertQueryQuery,
@@ -691,7 +670,7 @@ WHERE id = %s
 AND monitor = %s
 RETURNING %s;
 `
-	now := r.clock()
+	now := r.Now()
 	a := actor.FromContext(ctx)
 
 	var triggerID int64
@@ -748,7 +727,7 @@ INSERT INTO cm_emails
 VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
-	now := r.clock()
+	now := r.Now()
 	a := actor.FromContext(ctx)
 	return sqlf.Sprintf(
 		insertEmailQuery,
@@ -791,7 +770,7 @@ RETURNING %s;
 	if err != nil {
 		return nil, err
 	}
-	now := r.clock()
+	now := r.Now()
 	a := actor.FromContext(ctx)
 	return sqlf.Sprintf(
 		updateMonitorActionEmailQuery,
@@ -919,7 +898,7 @@ RETURNING %s
 		toggleCodeMonitorQuery,
 		args.Enabled,
 		actorUID,
-		r.clock(),
+		r.Now(),
 		monitorID,
 		sqlf.Join(monitorColumns, ", "),
 	)
@@ -987,7 +966,7 @@ func (r *Resolver) ownerForID64(ctx context.Context, monitorID int64) (owner gra
 	if err != nil {
 		return "", err
 	}
-	rows, err = r.db.Query(ctx, q)
+	rows, err = r.store.Query(ctx, q)
 	if err != nil {
 		return "", err
 	}
@@ -1127,7 +1106,7 @@ func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, tr
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.Query(ctx, q)
+	rows, err := r.store.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -1309,7 +1288,7 @@ func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.List
 	if err != nil {
 		return nil, err
 	}
-	rows, err := m.db.Query(ctx, q)
+	rows, err := m.store.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
