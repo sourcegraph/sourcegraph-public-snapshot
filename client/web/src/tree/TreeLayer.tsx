@@ -34,6 +34,7 @@ import { ExtensionsControllerProps } from '../../../shared/src/extensions/contro
 import { FileDecoration } from 'sourcegraph'
 import { getFileDecorations } from '../backend/features'
 import { ThemeProps } from '../../../shared/src/theme'
+import { FileDecorationsByPath } from '../../../shared/src/api/extension/flatExtensionApi'
 
 export interface TreeLayerProps extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps {
     history: H.History
