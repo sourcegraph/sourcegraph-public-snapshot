@@ -1098,7 +1098,7 @@ func (m *monitor) Actions(ctx context.Context, args *graphqlbackend.ListActionAr
 	return m.actionConnectionResolverWithTriggerID(ctx, nil, m.id, args)
 }
 
-func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, triggerEventID *int64, monitorID int64, args *graphqlbackend.ListActionArgs) (c graphqlbackend.MonitorActionConnectionResolver, err error) {
+func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, triggerEventID *int32, monitorID int64, args *graphqlbackend.ListActionArgs) (c graphqlbackend.MonitorActionConnectionResolver, err error) {
 	// For now, we only support emails as actions. Once we add other actions such as
 	// webhooks, we have to query those tables here too.
 	var q *sqlf.Query
@@ -1156,8 +1156,20 @@ func (q *monitorQuery) Query() string {
 	return q.QueryString
 }
 
-func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) graphqlbackend.MonitorTriggerEventConnectionResolver {
-	return &monitorTriggerEventConnection{monitorID: relay.MarshalID(monitorKind, q.Monitor), userID: relay.MarshalID("User", actor.FromContext(ctx).UID)}
+func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) (graphqlbackend.MonitorTriggerEventConnectionResolver, error) {
+	es, err := q.Resolver.store.GetEventsForQueryIDInt64(ctx, q.Id, args)
+	if err != nil {
+		return nil, err
+	}
+	events := make([]graphqlbackend.MonitorTriggerEventResolver, 0, len(es))
+	for _, e := range es {
+		events = append(events, graphqlbackend.MonitorTriggerEventResolver(&monitorTriggerEvent{
+			Resolver:    q.Resolver,
+			monitorID:   q.Monitor,
+			TriggerJobs: e,
+		}))
+	}
+	return &monitorTriggerEventConnection{q.Resolver, events}, nil
 }
 
 //
@@ -1165,28 +1177,22 @@ func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEven
 //
 type monitorTriggerEventConnection struct {
 	*Resolver
-	monitorID graphql.ID
-	userID    graphql.ID // TODO: remove this. Just for stub implementation
+	events []graphqlbackend.MonitorTriggerEventResolver
 }
 
 func (a *monitorTriggerEventConnection) Nodes(ctx context.Context) ([]graphqlbackend.MonitorTriggerEventResolver, error) {
-	return []graphqlbackend.MonitorTriggerEventResolver{&monitorTriggerEvent{
-		Resolver:  a.Resolver,
-		id:        42,
-		status:    "SUCCESS",
-		message:   nil,
-		timestamp: graphqlbackend.DateTime{Time: time.Now()},
-		monitorID: a.monitorID,
-		userID:    a.userID,
-	}}, nil
+	return a.events, nil
 }
 
 func (a *monitorTriggerEventConnection) TotalCount(ctx context.Context) (int32, error) {
-	return 1, nil
+	return int32(len(a.events)), nil
 }
 
 func (a *monitorTriggerEventConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(false), nil
+	if len(a.events) == 0 {
+		return graphqlutil.HasNextPage(false), nil
+	}
+	return graphqlutil.NextPageCursor(string(a.events[len(a.events)-1].ID())), nil
 }
 
 //
@@ -1194,33 +1200,44 @@ func (a *monitorTriggerEventConnection) PageInfo(ctx context.Context) (*graphqlu
 //
 type monitorTriggerEvent struct {
 	*Resolver
-	id        int64
-	status    string
-	message   *string
-	timestamp graphqlbackend.DateTime
-	monitorID graphql.ID
-
-	userID graphql.ID // TODO: remove this. Just for stub implementation
+	*cm.TriggerJobs
+	monitorID int64
 }
 
 func (m *monitorTriggerEvent) ID() graphql.ID {
-	return relay.MarshalID(monitorTriggerEventKind, m.id)
+	return relay.MarshalID(monitorTriggerEventKind, m.Id)
 }
 
-func (m *monitorTriggerEvent) Status() string {
-	return m.status
+// stateToStatus maps the state of the dbworker job to the public GraphQL status of
+// events.
+var stateToStatus = map[string]string{
+	"completed":  "SUCCESS",
+	"queued":     "PENDING",
+	"processing": "PENDING",
+	"errored":    "ERROR",
+	"failed":     "ERROR",
+}
+
+func (m *monitorTriggerEvent) Status() (string, error) {
+	if v, ok := stateToStatus[m.State]; ok {
+		return v, nil
+	}
+	return "", fmt.Errorf("unknown status: %s", m.State)
 }
 
 func (m *monitorTriggerEvent) Message() *string {
-	return m.message
+	return m.FailureMessage
 }
 
-func (m *monitorTriggerEvent) Timestamp() graphqlbackend.DateTime {
-	return m.timestamp
+func (m *monitorTriggerEvent) Timestamp() (graphqlbackend.DateTime, error) {
+	if m.FinishedAt == nil {
+		return graphqlbackend.DateTime{Time: m.store.Now()}, nil
+	}
+	return graphqlbackend.DateTime{Time: *m.FinishedAt}, nil
 }
 
 func (m *monitorTriggerEvent) Actions(ctx context.Context, args *graphqlbackend.ListActionArgs) (graphqlbackend.MonitorActionConnectionResolver, error) {
-	return m.actionConnectionResolverWithTriggerID(ctx, &m.id, m.id, args)
+	return m.actionConnectionResolverWithTriggerID(ctx, &m.Id, m.monitorID, args)
 }
 
 // ActionConnection
@@ -1229,7 +1246,7 @@ type monitorActionConnection struct {
 	actions []graphqlbackend.MonitorAction
 
 	// triggerEventID is used to link action events to a trigger event
-	triggerEventID *int64
+	triggerEventID *int32
 }
 
 func (a *monitorActionConnection) Nodes(ctx context.Context) ([]graphqlbackend.MonitorAction, error) {
