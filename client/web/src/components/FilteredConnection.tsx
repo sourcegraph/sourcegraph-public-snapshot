@@ -46,7 +46,7 @@ class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, F
         return (
             <div className="filtered-connection-filter-control">
                 {this.props.filters.map(filter => (
-                    <div className="d-flex " key={filter.id}>
+                    <div className="d-inline-flex flex-row" key={filter.id}>
                         {filter.type === 'radio' &&
                             filter.values.map(value => (
                                 <label key={value.value} className="radio-buttons__item" title={value.tooltip}>
@@ -69,7 +69,7 @@ class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, F
                                 </label>
                             ))}
                         {filter.type === 'select' && (
-                            <div className="d-flex mr-3 align-items-baseline">
+                            <div className="d-inline-flex flex-row mr-3 align-items-baseline">
                                 <p className="text-xl-center text-nowrap mr-2">{filter.label}:</p>
                                 <select
                                     className="form-control"
@@ -826,7 +826,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                 }`}
             >
                 {(!this.props.hideSearch || this.props.filters) && (
-                    <Form className="filtered-connection__form" onSubmit={this.onSubmit}>
+                    <Form className="w-100 d-inline-flex justify-content-between flex-row filtered-connection__form" onSubmit={this.onSubmit}>
                         {this.props.filters && (
                             <FilteredConnectionFilterControl
                                 filters={this.props.filters}
@@ -838,7 +838,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         )}
                         {!this.props.hideSearch && (
                             <input
-                                className="form-control filtered-connection__filter"
+                                className="form-control filtered-connection__filter w-30"
                                 type="search"
                                 placeholder={`Search ${this.props.pluralNoun}...`}
                                 name="query"
