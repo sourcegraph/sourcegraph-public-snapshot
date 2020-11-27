@@ -163,7 +163,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			kind:         extsvc.KindGitHub,
 			config:       `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
 			hasNamespace: true,
-			wantErr:      `users are only allowed to add external service for https://github.com/, https://gitlab.com/ and https://bitbucket.org/`,
+			wantErr:      `users are only allowed to add external service for https://github.com/ and https://gitlab.com/`,
 		},
 		{
 			name:         "gjson handles comments",
