@@ -29,12 +29,9 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
     const [emails, setEmails] = useState<UserEmail[]>([])
     const [statusOrError, setStatusOrError] = useState<Status>()
 
-    const onEmailRemove = useCallback(
-        (deletedEmail: string): void => {
-            setEmails(emails.filter(({ email }) => email !== deletedEmail))
-        },
-        [emails]
-    )
+    const onEmailRemove = useCallback((deletedEmail: string): void => {
+        setEmails(emails => emails.filter(({ email }) => email !== deletedEmail))
+    }, [])
 
     const fetchEmails = useCallback(async (): Promise<void> => {
         setStatusOrError('loading')

@@ -106,7 +106,7 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
                     loading={statusOrError === 'loading'}
                     label="Add"
                     type="submit"
-                    disabled={statusOrError === 'loading'}
+                    disabled={statusOrError === 'loading' || emailState.kind !== 'VALID'}
                     className="btn btn-primary"
                 />
                 {emailState.kind === 'INVALID' && (
