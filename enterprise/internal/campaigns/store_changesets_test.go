@@ -47,7 +47,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	otherRepo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
 	gitlabRepo := ct.TestRepo(t, reposStore, extsvc.KindGitLab)
 
-	rs := db.NewRepoStoreWith(s.Store)
+	rs := db.NewRepoStoreWith(reposStore.(*repos.DBStore))
 
 	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
