@@ -241,12 +241,29 @@ func (r *changesetRewirer) closeChangeset(ctx context.Context, changeset *campai
 		// But only if it was created on the code host:
 		if changeset.Published() {
 			// Store the current spec also as the previous spec.
-			// Reason:
-			// When a changeset with (prev: 0, curr: 1) should be closed but closing failed, it will still have (0, 1) set.
-			// Now when someone comes by and reattaches that changeset, the changeset would have (prev: 0, curr: 1), because
-			// we don't rotate specs on errors. That would mean, though, that the delta is big and we would repush and update on the code host,
-			// in addition to 'reopen', which would actually be the only required action.
-			changeset.PreviousSpecID = changeset.CurrentSpecID
+			//
+			// Why?
+			//
+			// When a changeset with (prev: A, curr: B) should be closed but
+			// closing failed, it will still have (prev: A, curr: B) set.
+			//
+			// If someone then applies a new campaign spec and re-attaches that
+			// changeset with changeset spec C, the changeset would end up with
+			// (prev: A, curr: C), because we don't rotate specs on errors in
+			// `updateChangesetToNewSpec`.
+			//
+			// That would mean, though, that the delta between A and C tells us
+			// to repush and update the changeset on the code host, in addition
+			// to 'reopen', which would actually be the only required action.
+			//
+			// So, when we mark a changeset as to-be-closed, we also rotate the
+			// specs, so that it changeset is saved as (prev: B, curr: B) and
+			// when somebody re-attaches it it's (prev: B, curr: C).
+			// But we only rotate the spec, if applying the currentSpecID was
+			// successful:
+			if changeset.ReconcilerState == campaigns.ReconcilerStateCompleted {
+				changeset.PreviousSpecID = changeset.CurrentSpecID
+			}
 			changeset.Closing = true
 			changeset.ResetQueued()
 		} else {

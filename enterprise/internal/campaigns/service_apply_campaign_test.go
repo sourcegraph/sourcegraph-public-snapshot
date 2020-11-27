@@ -899,15 +899,15 @@ func TestServiceApplyCampaign(t *testing.T) {
 				assertions.previousSpec = spec1.ID
 				c = reloadAndAssertChangeset(t, ctx, store, c, assertions)
 
-				// Now we update the changeset to fail the close task.
+				// Now we update the changeset to simulate that closing failed.
 				setChangesetFailed(t, ctx, store, c)
 				assertions.closing = true
 				assertions.reconcilerState = campaigns.ReconcilerStateErrored
 				assertions.externalState = campaigns.ChangesetExternalStateOpen
 
 				// Side-effects of setChangesetFailed.
-				assertions.failureMessage = &canceledChangesetFailureMessage
-				assertions.numFailures = 5
+				assertions.failureMessage = c.FailureMessage
+				assertions.numFailures = c.NumFailures
 				reloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 				// STEP 3: We apply a new campaign spec with a changeset spec that
@@ -918,7 +918,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				specOpts.campaignSpec = campaignSpec3.ID
 				spec2 := createChangesetSpec(t, ctx, store, specOpts)
 
-				campaign, changesets = applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 1)
+				_, changesets = applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 1)
 
 				attachedChangeset := changesets[0]
 				if have, want := attachedChangeset.ID, c.ID; have != want {
