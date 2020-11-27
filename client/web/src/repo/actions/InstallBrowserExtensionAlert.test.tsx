@@ -1,5 +1,5 @@
 import React from 'react'
-import { InstallBrowserExtensionAlert } from './InstallBrowserExtensionAlert'
+import { FirefoxAddonAlert, InstallBrowserExtensionAlert } from './InstallBrowserExtensionAlert'
 import { mount } from 'enzyme'
 import { noop } from 'lodash'
 
@@ -33,5 +33,52 @@ describe('InstallBrowserExtensionAlert', () => {
                 ).toMatchSnapshot()
             })
         }
+
+        // TODO(tj): Remove this after the final date (December 21, 2020)
+        describe(`FirefoxAddonAlert (${serviceType ?? 'unknown service type'})`, () => {
+            test('displays alert before the final date', () => {
+                expect(
+                    mount(
+                        <FirefoxAddonAlert
+                            now={() => new Date('December 10, 2020')}
+                            onAlertDismissed={noop}
+                            externalURLs={
+                                serviceType
+                                    ? [
+                                          {
+                                              __typename: 'ExternalLink',
+                                              url: '',
+                                              serviceType,
+                                          },
+                                      ]
+                                    : []
+                            }
+                        />
+                    )
+                ).toMatchSnapshot()
+            })
+
+            test('does not display test after the final date', () => {
+                expect(
+                    mount(
+                        <FirefoxAddonAlert
+                            now={() => new Date('December 22, 2020')}
+                            onAlertDismissed={noop}
+                            externalURLs={
+                                serviceType
+                                    ? [
+                                          {
+                                              __typename: 'ExternalLink',
+                                              url: '',
+                                              serviceType,
+                                          },
+                                      ]
+                                    : []
+                            }
+                        />
+                    )
+                ).toMatchSnapshot()
+            })
+        })
     }
 })

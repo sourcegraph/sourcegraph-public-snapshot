@@ -57,7 +57,7 @@ import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { ExternalLinkFields } from '../graphql-operations'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
-import { InstallBrowserExtensionAlert } from './actions/InstallBrowserExtensionAlert'
+import { FirefoxAddonAlert, InstallBrowserExtensionAlert } from './actions/InstallBrowserExtensionAlert'
 import { IS_CHROME } from '../marketing/util'
 import { useLocalStorage } from '../util/useLocalStorage'
 import { Settings } from '../schema/settings.schema'
@@ -129,6 +129,7 @@ interface RepoContainerProps
 
 export const HOVER_COUNT_KEY = 'hover-count'
 const HAS_DISMISSED_ALERT_KEY = 'has-dismissed-extension-alert'
+const HAS_DISMISSED_FIREFOX_ALERT_KEY = 'has-dismissed-firefox-addon-alert'
 
 export const HOVER_THRESHOLD = 5
 
@@ -374,6 +375,17 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         setHasDismissedExtensionAlert(true)
     }, [onExtensionAlertDismissed, setHasDismissedExtensionAlert])
 
+    // TEMPORARY: Alert to notify users that the Firefox addon is back
+    const [hasDismissedFirefoxAlert, setHasDismissedFirefoxAlert] = useLocalStorage(
+        HAS_DISMISSED_FIREFOX_ALERT_KEY,
+        false
+    )
+    const showFirefoxAlert = !hasDismissedFirefoxAlert
+
+    const onFirefoxAlertDismissed = useCallback(() => {
+        setHasDismissedFirefoxAlert(true)
+    }, [setHasDismissedFirefoxAlert])
+
     if (!repoOrError) {
         // Render nothing while loading
         return null
@@ -410,6 +422,13 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     return (
         <div className="repo-container test-repo-container w-100 d-flex flex-column">
+            {showFirefoxAlert && (
+                <FirefoxAddonAlert
+                    onAlertDismissed={onFirefoxAlertDismissed}
+                    externalURLs={repoOrError.externalURLs}
+                    nextSiblingAlert={showExtensionAlert}
+                />
+            )}
             {showExtensionAlert && (
                 <InstallBrowserExtensionAlert
                     isChrome={IS_CHROME}
@@ -425,7 +444,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 repo={repoOrError}
                 resolvedRev={resolvedRevisionOrError}
                 onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
-                isAlertDisplayed={showExtensionAlert}
+                isAlertDisplayed={showExtensionAlert || showFirefoxAlert}
             />
             <RepoHeaderContributionPortal
                 position="right"

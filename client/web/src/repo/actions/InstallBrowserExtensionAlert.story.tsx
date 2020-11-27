@@ -2,7 +2,7 @@ import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { WebStory } from '../../components/WebStory'
-import { InstallBrowserExtensionAlert } from './InstallBrowserExtensionAlert'
+import { FirefoxAddonAlert, InstallBrowserExtensionAlert } from './InstallBrowserExtensionAlert'
 
 const onAlertDismissed = action('onAlertDismissed')
 
@@ -95,4 +95,23 @@ for (const serviceType of services) {
             },
         }
     )
+
+    // TEMPORARY: Firefox alert
+    add(`${serviceType} (Firefox alert)`, () => (
+        <WebStory>
+            {() => (
+                <FirefoxAddonAlert
+                    now={() => new Date('December 10, 2020')}
+                    onAlertDismissed={onAlertDismissed}
+                    externalURLs={[
+                        {
+                            __typename: 'ExternalLink',
+                            url: '',
+                            serviceType,
+                        },
+                    ]}
+                />
+            )}
+        </WebStory>
+    ))
 }
