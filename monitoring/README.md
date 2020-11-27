@@ -29,12 +29,12 @@ The generator automatically generates and ships dashboards from monitoring defin
 
 It also takes care of the following:
 
-* Graphs within rows are sized appropriately
-* Alerts visualization through the [`ObservableAlertDefinitions` API](./monitoring/README.md#observablealertdefinition):
-  * Overview graphs for alerts (both Sourcegraph-wide and per-service)
-  * Threshold lines for alerts of all levels are rendered in graphs
-* Formatting of units, labels, and more (using either the defaults, or the [`ObservablePanelOptions` API](./monitoring/README.md#type-observablepaneloptions))
-* Maintaining a uniform look and feel across all dashboards
+- Graphs within rows are sized appropriately
+- Alerts visualization through the [`ObservableAlertDefinitions` API](./monitoring/README.md#observablealertdefinition):
+  - Overview graphs for alerts (both Sourcegraph-wide and per-service)
+  - Threshold lines for alerts of all levels are rendered in graphs
+- Formatting of units, labels, and more (using either the defaults, or the [`ObservablePanelOptions` API](./monitoring/README.md#type-observablepaneloptions))
+- Maintaining a uniform look and feel across all dashboards
 
 Links to generated documentation can be provided in our other generated integrations - for example, [Slack alerts](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) will provide a link to the appropriate service's dashboard.
 
@@ -54,11 +54,11 @@ At Sourcegraph, routing based on team ownership (as defined by [`ObservableOwner
 
 The Sourcegraph monitoring generator consists of three components:
 
-* The [main program](./main.go) - this is the primary entrypoint to the generator.
-* *Definitions*, defined in the top-level [`monitoring/definitions` package](./definitions/).
+- The [main program](./main.go) - this is the primary entrypoint to the generator.
+- _Definitions_, defined in the top-level [`monitoring/definitions` package](./definitions/).
   This is where the all service monitoring definitions lives.
   If you are editing monitoring, this is probably where you want to look - see the [Sourcegraph monitoring developer guide](https://about.sourcegraph.com/handbook/engineering/observability/monitoring).
-* *Generator*, defined in the nested [`monitoring/monitoring` package](./monitoring/README.md) package.
+- _Generator_, defined in the nested [`monitoring/monitoring` package](./monitoring/README.md) package.
   This is where the API for service monitoring definitions is defined, as well as the generator code.
 
 All features and capabilities for developed for the generator should align with the [Sourcegraph monitoring pillars](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_pillars).
