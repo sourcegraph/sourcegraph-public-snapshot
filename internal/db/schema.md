@@ -358,6 +358,8 @@ Foreign-key constraints:
  num_resets      | integer                  | not null default 0
  num_failures    | integer                  | not null default 0
  log_contents    | text                     | 
+ query_string    | text                     | 
+ results         | boolean                  | 
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -540,7 +542,7 @@ Foreign-key constraints:
     "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
     "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Triggers:
-    trig_soft_delete_orphan_repo_by_external_service_repo AFTER DELETE ON external_service_repos FOR EACH ROW EXECUTE PROCEDURE soft_delete_orphan_repo_by_external_service_repos()
+    trig_soft_delete_orphan_repo_by_external_service_repo AFTER DELETE ON external_service_repos FOR EACH STATEMENT EXECUTE PROCEDURE soft_delete_orphan_repo_by_external_service_repos()
 
 ```
 

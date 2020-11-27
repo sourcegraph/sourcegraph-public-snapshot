@@ -5,9 +5,15 @@ import { TreeNode } from './Tree'
 import { TreeLayerProps } from './TreeLayer'
 import { maxEntries, SingleChildGitTree } from './util'
 import classNames from 'classnames'
+import { FileDecoration } from 'sourcegraph'
+import { FileDecorationsByPath } from '../../../shared/src/api/extension/flatExtensionApi'
 
 interface SingleChildTreeLayerProps extends TreeLayerProps {
     childrenEntries: SingleChildGitTree[]
+
+    fileDecorationsByPath: FileDecorationsByPath
+
+    fileDecorations?: FileDecoration[]
 }
 
 /**
@@ -107,11 +113,12 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
     }
 
     public render(): JSX.Element | null {
+        const isSelectedNode = this.node === this.props.selectedNode
         const className = classNames(
             'tree__row',
             this.props.isExpanded && 'tree__row--expanded',
             this.node === this.props.activeNode && 'tree__row--active',
-            this.node === this.props.selectedNode && 'tree__row--selected'
+            isSelectedNode && 'tree__row--selected'
         )
 
         return (
@@ -129,6 +136,8 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
                             handleTreeClick={this.handleTreeClick}
                             noopRowClick={this.noopRowClick}
                             linkRowClick={this.linkRowClick}
+                            fileDecorations={this.props.fileDecorations}
+                            isSelected={isSelectedNode}
                         />
                         {this.props.isExpanded && (
                             <tr>

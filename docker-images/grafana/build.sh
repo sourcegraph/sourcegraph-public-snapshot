@@ -12,16 +12,21 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# We copy just the monitoring directory and the root go.mod/go.sum so that we
-# do not need to send the entire repository as build context to Docker. Additionally,
-# we do not use a separate go.mod/go.sum in the monitoring/ directory because
-# editor tooling would occassionally include and not include it in the root
-# go.mod/go.sum.
+# Copy assets
 cp -R . "$BUILDDIR"
-cp -R ../../monitoring "$BUILDDIR"/
-cp ../../go.* "$BUILDDIR"/monitoring
 
-cd "$BUILDDIR"
+# Build args for Go cross-compilation.
+export GO111MODULE=on
+export GOARCH=amd64
+export GOOS=linux
+export CGO_ENABLED=0
+
+# Cross-compile monitoring generator before building the image.
+go build \
+  -trimpath \
+  -o "$BUILDDIR"/.bin/monitoring-generator ../../monitoring
+
+pushd "$BUILDDIR"
 
 # Enable image build caching via CACHE=true (the jsonnet builds can take a long time)
 BUILD_CACHE="--no-cache"
@@ -37,4 +42,4 @@ docker build ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/grafana}" . \
   --build-arg VERSION
 
 # cd out of $BUILDDIR for cleanup
-cd -
+popd

@@ -34,6 +34,11 @@ describe('TreeEntriesSection', () => {
                             url: '/github.com/sourcegraph/codeintellify/-/blob/.eslintrc.json',
                         },
                     ]}
+                    fileDecorationsByPath={{
+                        src: [{ uri: 'git://test/src', after: { contentText: 'src decoration' } }],
+                        testdata: [{ uri: 'git://test/testdata', after: { contentText: 'testdata decoration' } }],
+                    }}
+                    isLightTheme={true}
                 />
             )
         ).toMatchSnapshot()
@@ -69,6 +74,22 @@ describe('TreeEntriesSection', () => {
                             url: '/github.com/sourcegraph/codeintellify/-/blob/src/helpers.ts',
                         },
                     ]}
+                    fileDecorationsByPath={{
+                        'src/testutils': [
+                            { uri: 'git://test/src/testutils', after: { contentText: 'testutils decoration' } },
+                        ],
+                        'src/typings': [
+                            { uri: 'git://test/src/typings', after: { contentText: 'typings decoration' } },
+                        ],
+                        'src/errors.ts': [
+                            {
+                                uri: 'git://test/src/errors.ts',
+                                where: 'sidebar',
+                                after: { contentText: 'errors decoration' },
+                            }, // This shouldn't be rendered
+                        ],
+                    }}
+                    isLightTheme={true}
                 />
             )
         ).toMatchSnapshot()
@@ -110,6 +131,11 @@ describe('TreeEntriesSection', () => {
                             url: '/github.com/vanadium/core/-/blob/x/ref/envvar.go',
                         },
                     ]}
+                    fileDecorationsByPath={{
+                        'x/ref': [{ uri: 'git://test/x/ref', after: { contentText: 'ref decoration' } }],
+                        'x/ref/cmd': [{ uri: 'git://test/x/ref/cmd', after: { contentText: 'cmd decoration' } }],
+                    }}
+                    isLightTheme={true}
                 />
             )
         ).toMatchSnapshot()

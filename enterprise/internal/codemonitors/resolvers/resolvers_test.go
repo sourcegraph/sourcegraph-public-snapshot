@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -36,9 +37,9 @@ func TestCreateCodeMonitor(t *testing.T) {
 	want := &monitor{
 		id:              1,
 		createdBy:       userID,
-		createdAt:       r.clock(),
+		createdAt:       r.Now(),
 		changedBy:       userID,
-		changedAt:       r.clock(),
+		changedAt:       r.Now(),
 		description:     "test monitor",
 		enabled:         true,
 		namespaceUserID: &userID,
@@ -215,9 +216,10 @@ func TestQueryMonitor(t *testing.T) {
 	userName := "cm-user1"
 	userID := insertTestUser(t, dbconn.Global, userName, true)
 
-	// Create a monitor
+	// Create a monitor and make sure the trigger query is enqueued.
 	ctx = actor.WithActor(ctx, actor.FromUser(userID))
-	_, err := r.insertTestMonitorWithOpts(ctx, t)
+	postHookOpt := WithPostHooks([]hook{func() error { return r.store.EnqueueTriggerQueries(ctx) }})
+	_, err := r.insertTestMonitorWithOpts(ctx, t, postHookOpt)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,6 +235,7 @@ func TestQueryMonitor(t *testing.T) {
 	response := apitest.Response{}
 	campaignApitest.MustExec(actorCtx, t, schema, input, &response, queryMonitor)
 
+	triggerEventEndCursor := string(relay.MarshalID(monitorTriggerEventKind, 1))
 	want := apitest.Response{
 		User: apitest.User{
 			Monitors: apitest.MonitorConnection{
@@ -243,10 +246,25 @@ func TestQueryMonitor(t *testing.T) {
 					Enabled:     true,
 					Owner:       apitest.UserOrg{Name: userName},
 					CreatedBy:   apitest.UserOrg{Name: userName},
-					CreatedAt:   marshalDateTime(t, r.clock()),
+					CreatedAt:   marshalDateTime(t, r.Now()),
 					Trigger: apitest.Trigger{
 						Id:    string(relay.MarshalID(monitorTriggerQueryKind, 1)),
 						Query: "repo:foo",
+						Events: apitest.TriggerEventConnection{
+							Nodes: []apitest.TriggerEvent{
+								{
+									Id:        string(relay.MarshalID(monitorTriggerEventKind, 1)),
+									Status:    "PENDING",
+									Timestamp: r.Now().UTC().Format(time.RFC3339),
+									Message:   nil,
+								},
+							},
+							TotalCount: 1,
+							PageInfo: apitest.PageInfo{
+								HasNextPage: true,
+								EndCursor:   &triggerEventEndCursor,
+							},
+						},
 					},
 					Actions: apitest.ActionConnection{
 						TotalCount: 1,
@@ -296,6 +314,19 @@ query($userName: String!){
 					... on MonitorQuery {
 						id
 						query
+						events {
+							totalCount
+							nodes {
+								id
+								status
+								timestamp
+								message
+							}
+							pageInfo {
+								hasNextPage
+								endCursor
+							}
+						}
 					}
 				}
 				actions{
@@ -391,7 +422,7 @@ func TestEditCodeMonitor(t *testing.T) {
 			CreatedBy: apitest.UserOrg{
 				Name: user1Name,
 			},
-			CreatedAt: marshalDateTime(t, r.clock()),
+			CreatedAt: marshalDateTime(t, r.store.Now()),
 			Trigger: apitest.Trigger{
 				Id:    string(relay.MarshalID(monitorTriggerQueryKind, 1)),
 				Query: "repo:bar",

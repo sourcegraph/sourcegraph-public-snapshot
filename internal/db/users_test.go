@@ -623,6 +623,43 @@ func TestUsers_Delete(t *testing.T) {
 	}
 }
 
+func TestUsers_HasTag(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	var id int32
+	if err := dbconn.Global.QueryRowContext(ctx, "INSERT INTO users (username, tags) VALUES ('karim', '{\"foo\", \"bar\"}') RETURNING id").Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+
+	// lookup existing tag
+	ok, err := Users.HasTag(ctx, id, "foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("expected tag to be found")
+	}
+
+	// lookup non-existing tag
+	ok, err = Users.HasTag(ctx, id, "baz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ok {
+		t.Fatal("expected tag to be not found")
+	}
+
+	// lookup non-existing user
+	ok, err = Users.HasTag(ctx, id+1, "bar")
+	if err == nil || ok {
+		t.Fatal("expected user to be not found")
+	}
+}
+
 func TestUsers_InvalidateSessions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

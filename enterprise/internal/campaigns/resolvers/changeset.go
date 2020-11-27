@@ -335,13 +335,7 @@ func (r *changesetResolver) CurrentSpec(ctx context.Context) (graphqlbackend.Vis
 		return nil, err
 	}
 
-	return &changesetSpecResolver{
-		store:                r.store,
-		httpFactory:          r.httpFactory,
-		changesetSpec:        spec,
-		preloadedRepo:        r.repo,
-		attemptedPreloadRepo: true,
-	}, nil
+	return NewChangesetSpecResolverWithRepo(r.store, r.httpFactory, r.repo, spec), nil
 }
 
 func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {

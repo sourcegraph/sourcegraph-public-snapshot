@@ -64,6 +64,20 @@ type RecipientsConnection struct {
 }
 
 type Trigger struct {
-	Id    string
-	Query string
+	Id     string
+	Query  string
+	Events TriggerEventConnection
+}
+
+type TriggerEventConnection struct {
+	Nodes      []TriggerEvent
+	TotalCount int
+	PageInfo   PageInfo
+}
+
+type TriggerEvent struct {
+	Id        string
+	Status    string
+	Timestamp string
+	Message   *string
 }

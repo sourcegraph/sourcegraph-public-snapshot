@@ -169,12 +169,6 @@ func (s *Syncer) TriggerEnqueueSyncJobs() {
 	s.enqueueSignal.Trigger()
 }
 
-const (
-	// If the owner of an external service has this tag, the syncer
-	// will sync private repositories.
-	TagAllowUserExternalServicePrivate = "AllowUserExternalServicePrivate"
-)
-
 // SyncExternalService syncs repos using the supplied external service.
 func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServiceID int64, minSyncInterval time.Duration) (err error) {
 	var diff Diff
@@ -248,20 +242,12 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	// Unless explicitly specified with the "all" setting or the owner of the service has the "AllowUserExternalServicePrivate" tag,
 	// user added external services should only sync public code.
 	if isUserOwned && conf.ExternalServiceUserMode() != conf.ExternalServiceModeAll {
-		syncPublicOnly := true
-
-		user, err := db.Users.GetByID(ctx, svc.NamespaceUserID)
+		ok, err := db.Users.HasTag(ctx, svc.NamespaceUserID, db.TagAllowUserExternalServicePrivate)
 		if err != nil {
-			return errors.Wrap(err, "getting service owner")
-		}
-		for _, t := range user.Tags {
-			if t == TagAllowUserExternalServicePrivate {
-				syncPublicOnly = false
-				break
-			}
+			return errors.Wrap(err, "checking user tag")
 		}
 
-		if syncPublicOnly {
+		if !ok {
 			sourced = sourced.Filter(func(r *Repo) bool { return !r.Private })
 		}
 	}
@@ -478,6 +464,7 @@ func (s *Syncer) insertIfNew(ctx context.Context, store Store, publicOnly bool, 
 	return err
 }
 
+// syncRepo syncs a single repo that has been sourced from a single external service.
 func (s *Syncer) syncRepo(ctx context.Context, store Store, insertOnly bool, publicOnly bool, sourcedRepo *Repo) (diff Diff, err error) {
 	if publicOnly && sourcedRepo.Private {
 		return Diff{}, nil
@@ -495,6 +482,18 @@ func (s *Syncer) syncRepo(ctx context.Context, store Store, insertOnly bool, pub
 
 	if insertOnly && len(storedSubset) > 0 {
 		return Diff{}, nil
+	}
+
+	// sourcedRepo only knows about one source so we need to add in the remaining stored
+	// sources
+	if len(storedSubset) == 1 {
+		for k, v := range storedSubset[0].Sources {
+			// Don't update the source from sourcedRepo
+			if _, ok := sourcedRepo.Sources[k]; ok {
+				continue
+			}
+			sourcedRepo.Sources[k] = v
+		}
 	}
 
 	// NewDiff modifies the stored slice so we clone it before passing it
