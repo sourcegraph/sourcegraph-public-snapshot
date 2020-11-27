@@ -81,13 +81,16 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
             </label>
             {/* eslint-disable-next-line react/forbid-elements */}
             <form className="form-inline" onSubmit={onSubmit} noValidate={true}>
-                <LoaderInput className={deriveInputClassName(emailState)} loading={emailState.kind === 'LOADING'}>
+                <LoaderInput
+                    className={(deriveInputClassName(emailState), 'mr-sm-2')}
+                    loading={emailState.kind === 'LOADING'}
+                >
                     <input
                         id="AddUserEmailForm-email"
                         type="email"
                         name="email"
                         className={classNames(
-                            'form-control mr-sm-2 test-user-email-add-input',
+                            'form-control test-user-email-add-input',
                             deriveInputClassName(emailState)
                         )}
                         onChange={nextEmailFieldChange}
