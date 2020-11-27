@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import * as H from 'history'
 import {
     ChangesetExternalState,
@@ -15,6 +15,8 @@ import {
 } from '../../utils'
 import classNames from 'classnames'
 import { upperFirst, lowerCase } from 'lodash'
+import { Form } from 'reactstrap'
+import { SearchButton } from '../../../../search/input/SearchButton'
 
 export interface ChangesetFilters {
     externalState: ChangesetExternalState | null
@@ -22,6 +24,7 @@ export interface ChangesetFilters {
     checkState: ChangesetCheckState | null
     reconcilerState: ChangesetReconcilerState[] | null
     publicationState: ChangesetPublicationState | null
+    search: string | null
 }
 
 export interface ChangesetFilterRowProps {
@@ -35,6 +38,7 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
     location,
     onFiltersChange,
 }) => {
+    const searchElement = useRef<HTMLInputElement | null>(null)
     const searchParameters = new URLSearchParams(location.search)
     const [uiState, setUIState] = useState<ChangesetUIState | undefined>(() => {
         const value = searchParameters.get('status')
@@ -46,6 +50,10 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
     })
     const [checkState, setCheckState] = useState<ChangesetCheckState | undefined>(() => {
         const value = searchParameters.get('check_state')
+        return value && isValidChangesetCheckState(value) ? value : undefined
+    })
+    const [search, setSearch] = useState<string | undefined>(() => {
+        const value = searchParameters.get('search')
         return value && isValidChangesetCheckState(value) ? value : undefined
     })
     useEffect(() => {
@@ -65,6 +73,11 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
         } else {
             searchParameters.delete('check_state')
         }
+        if (search) {
+            searchParameters.set('search', search)
+        } else {
+            searchParameters.delete('search')
+        }
         if (location.search !== searchParameters.toString()) {
             history.replace({ ...location, search: searchParameters.toString() })
         }
@@ -79,32 +92,57 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
                   }),
             reviewState: reviewState || null,
             checkState: checkState || null,
+            search: search || null,
         })
         // We cannot depend on the history, since it's modified by this hook and that would cause an infinite render loop.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [uiState, reviewState, checkState])
+    }, [uiState, reviewState, checkState, search])
+
+    const onSubmit = useCallback(
+        (event?: React.FormEvent<HTMLFormElement>): void => {
+            event?.preventDefault()
+            setSearch(searchElement.current?.value)
+        },
+        [setSearch, searchElement]
+    )
+
     return (
-        <div className="form-inline m-0 my-2">
-            <ChangesetUIStateFilter
-                values={Object.values(ChangesetUIState)}
-                selected={uiState}
-                onChange={setUIState}
-                className="mr-2"
-            />
-            <ChangesetFilter<ChangesetCheckState>
-                values={Object.values(ChangesetCheckState)}
-                label="Check state"
-                selected={checkState}
-                onChange={setCheckState}
-                className="mr-2"
-            />
-            <ChangesetFilter<ChangesetReviewState>
-                values={Object.values(ChangesetReviewState)}
-                label="Review state"
-                selected={reviewState}
-                onChange={setReviewState}
-            />
-        </div>
+        <>
+            <div className="form-inline flex-grow-1 m-0 my-2">
+                <Form className="w-100 d-flex" onSubmit={onSubmit}>
+                    <input
+                        className="form-control w-100 changeset-filter__search"
+                        type="text"
+                        ref={searchElement}
+                        defaultValue={search}
+                        placeholder="Search"
+                    />
+                    <SearchButton noHelp={true} />
+                </Form>
+            </div>
+            <div className="flex-grow-1" />
+            <div className="form-inline m-0 my-2">
+                <ChangesetUIStateFilter
+                    values={Object.values(ChangesetUIState)}
+                    selected={uiState}
+                    onChange={setUIState}
+                    className="mr-2"
+                />
+                <ChangesetFilter<ChangesetCheckState>
+                    values={Object.values(ChangesetCheckState)}
+                    label="Check state"
+                    selected={checkState}
+                    onChange={setCheckState}
+                    className="mr-2"
+                />
+                <ChangesetFilter<ChangesetReviewState>
+                    values={Object.values(ChangesetReviewState)}
+                    label="Review state"
+                    selected={reviewState}
+                    onChange={setReviewState}
+                />
+            </div>
+        </>
     )
 }
 
@@ -152,41 +190,18 @@ export const ChangesetUIStateFilter: React.FunctionComponent<ChangesetUIStateFil
     onChange,
     className,
 }) => (
-    <>
-        {/* lg and up get a button bar. */}
-        <div className={classNames('d-none d-lg-block btn-group flex-wrap', className)} role="group">
-            <button
-                type="button"
-                className={classNames('btn btn-outline-secondary', selected === undefined && 'active')}
-                onClick={() => onChange(undefined)}
-            >
-                All
-            </button>
-            {values.map(value => (
-                <button
-                    type="button"
-                    className={classNames('btn btn-outline-secondary', selected === value && 'active')}
-                    onClick={() => onChange(value)}
-                    key={value}
-                >
-                    {upperFirst(lowerCase(value))}
-                </button>
-            ))}
-        </div>
-        {/* Below, we just use a select, like for the other states. */}
-        <ChangesetFilter
-            className="d-block d-lg-none mr-2"
-            label="Changeset state"
-            values={values}
-            selected={selected}
-            onChange={onChange}
-        />
-    </>
+    <ChangesetFilter
+        className="d-block mr-2"
+        label="Changeset state"
+        values={values}
+        selected={selected}
+        onChange={onChange}
+    />
 )
 
 function changesetUIStateToChangesetFilters(
     state: ChangesetUIState
-): Omit<ChangesetFilters, 'checkState' | 'reviewState'> {
+): Omit<ChangesetFilters, 'checkState' | 'reviewState' | 'search'> {
     switch (state) {
         case ChangesetUIState.OPEN:
             return {

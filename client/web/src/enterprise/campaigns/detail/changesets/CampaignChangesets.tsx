@@ -66,6 +66,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
         reviewState: null,
         publicationState: null,
         reconcilerState: null,
+        search: null,
     })
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArguments) =>
@@ -79,6 +80,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                 after: args.after ?? null,
                 campaign: campaignID,
                 onlyPublishedByThisCampaign: null,
+                search: changesetFilters.search,
             }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
         [
             campaignID,
@@ -87,6 +89,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
             changesetFilters.checkState,
             changesetFilters.reconcilerState,
             changesetFilters.publicationState,
+            changesetFilters.search,
             queryChangesets,
         ]
     )
@@ -148,7 +151,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     return (
         <>
             {!hideFilters && (
-                <div className="d-flex justify-content-end">
+                <div className="d-sm-flex justify-content-end">
                     <ChangesetFilterRow history={history} location={location} onFiltersChange={setChangesetFilters} />
                 </div>
             )}
@@ -206,6 +209,7 @@ function filtersSelected(filters: ChangesetFilters): boolean {
         filters.externalState !== null ||
         filters.publicationState !== null ||
         filters.reconcilerState !== null ||
-        filters.reviewState !== null
+        filters.reviewState !== null ||
+        !!filters.search
     )
 }
