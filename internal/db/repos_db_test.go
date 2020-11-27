@@ -10,16 +10,15 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/db/query"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 /*
@@ -288,11 +287,6 @@ func TestRepos_List(t *testing.T) {
 		t.Skip()
 	}
 
-	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-		return repos, nil
-	}
-	defer func() { MockAuthzFilter = nil }()
-
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -356,14 +350,8 @@ func Test_GetUserAddedRepos(t *testing.T) {
 		t.Skip()
 	}
 
-	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-		return repos, nil
-	}
-	defer func() { MockAuthzFilter = nil }()
-
 	dbtesting.SetupGlobalTestDB(t)
-
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 
 	// Create a user
 	user, err := Users.Create(ctx, NewUser{
@@ -447,10 +435,6 @@ func TestRepos_List_fork(t *testing.T) {
 		t.Skip()
 	}
 
-	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-		return repos, nil
-	}
-	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -492,10 +476,6 @@ func TestRepos_List_cloned(t *testing.T) {
 		t.Skip()
 	}
 
-	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-		return repos, nil
-	}
-	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -529,13 +509,8 @@ func TestRepos_List_ids(t *testing.T) {
 		t.Skip()
 	}
 
-	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-		return repos, nil
-	}
-	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{})
+	ctx := actor.WithInternalActor(context.Background())
 
 	mine := types.Repos(mustCreate(ctx, t, types.MakeGithubRepo(), types.MakeGitlabRepo()))
 	yours := types.Repos(mustCreate(ctx, t, types.MakeGitoliteRepo()))
@@ -567,13 +542,8 @@ func TestRepos_List_serviceTypes(t *testing.T) {
 		t.Skip()
 	}
 
-	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-		return repos, nil
-	}
-	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{})
+	ctx := actor.WithInternalActor(context.Background())
 
 	mine := mustCreate(ctx, t, types.MakeGithubRepo())
 	yours := mustCreate(ctx, t, types.MakeGitlabRepo())
@@ -608,10 +578,6 @@ func TestRepos_List_pagination(t *testing.T) {
 		t.Skip()
 	}
 
-	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-		return repos, nil
-	}
-	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -659,10 +625,6 @@ func TestRepos_List_query1(t *testing.T) {
 		t.Skip()
 	}
 
-	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-		return repos, nil
-	}
-	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -701,10 +663,6 @@ func TestRepos_List_query2(t *testing.T) {
 		t.Skip()
 	}
 
-	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-		return repos, nil
-	}
-	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -746,10 +704,6 @@ func TestRepos_List_sort(t *testing.T) {
 		t.Skip()
 	}
 
-	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-		return repos, nil
-	}
-	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -819,10 +773,6 @@ func TestRepos_List_patterns(t *testing.T) {
 		t.Skip()
 	}
 
-	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-		return repos, nil
-	}
-	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -875,10 +825,6 @@ func TestRepos_List_patterns(t *testing.T) {
 // TestRepos_List_patterns tests the behavior of Repos.List when called with
 // a QueryPattern.
 func TestRepos_List_queryPattern(t *testing.T) {
-	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-		return repos, nil
-	}
-	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -1055,13 +1001,8 @@ func TestRepos_List_useOr(t *testing.T) {
 		t.Skip()
 	}
 
-	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-		return repos, nil
-	}
-	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{})
+	ctx := actor.WithInternalActor(context.Background())
 
 	archived := types.Repos{types.MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })
 	archived = types.Repos(mustCreate(ctx, t, archived...))
@@ -1100,13 +1041,8 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 		t.Skip()
 	}
 
-	MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-		return repos, nil
-	}
-	defer func() { MockAuthzFilter = nil }()
 	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{})
+	ctx := actor.WithInternalActor(context.Background())
 
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}

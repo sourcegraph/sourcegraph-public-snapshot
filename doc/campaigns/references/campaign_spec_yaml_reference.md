@@ -75,7 +75,7 @@ on:
 
 A specific repository (and branch) that is added to the list of repositories that the campaign will be run on.
 
-A `branch` attribute specifies the branch on the repository to propose changes to. If unset, the repository's default branch is used.
+A `branch` attribute specifies the branch on the repository to propose changes to. If unset, the repository's default branch is used. If set, it overwrites earlier values to be used for the repository's branch.
 
 ### Examples
 
@@ -90,6 +90,27 @@ on:
     branch: 3.19-beta
   - repository: github.com/sourcegraph/src-cli
 ```
+
+In the following example, the `repositoriesMatchingQuery` returns both repositories with their default branch, but the `3.23` branch is used for `github.com/sourcegraph/sourcegraph`, since it is more specific:
+
+```yaml
+on:
+  - repositoriesMatchingQuery: repo:sourcegraph\/(sourcegraph|src-cli)$
+  - repository: github.com/sourcegraph/sourcegraph
+    branch: 3.23
+```
+
+In this example, `3.19-beta` branch is used, since it was named last:
+
+```yaml
+on:
+  - repositoriesMatchingQuery: repo:sourcegraph\/(sourcegraph|src-cli)$
+  - repository: github.com/sourcegraph/sourcegraph
+    branch: 3.23
+  - repository: github.com/sourcegraph/sourcegraph
+    branch: 3.19-beta
+```
+
 
 ## [`steps`](#steps)
 
@@ -140,11 +161,61 @@ It is executed using `docker` on the machine on which the [Sourcegraph CLI (`src
 
 Environment variables to set in the environment when running this command.
 
+These may be defined either as an [object](#environment-object) or (in Sourcegraph 3.23 and later) as an [array](#environment-array).
+
 <aside class="experimental">
 <span class="badge badge-experimental">Experimental</span> The value for each entry in <code>steps.env</code> can include <a href="campaign_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
 </aside>
 
-## [`steps.files`](#steps-env)
+### Environment object
+
+In this case, `steps.env` is an object, where the key is the name of the environment variable and the value is the value.
+
+#### Examples
+
+```yaml
+steps:
+  - run: echo $MESSAGE >> README.md
+    container: alpine:3
+    env:
+      MESSAGE: Hello world!
+```
+
+### Environment array
+
+> NOTE: This feature is only available in Sourcegraph 3.23 and later.
+
+In this case, `steps.env` is an array. Each array item is either:
+
+1. An object with a single property, in which case the key is used as the environment variable name and the value the value, or
+2. A string that defines an environment variable to include from the environment `src` is being run within. This is useful to define secrets that you don't want to include in the spec file, but this makes the spec dependent on your environment, means that the local execution cache will be invalidated each time the environment variable changes, and means that the campaign spec file is no longer [the sole source of truth intended by the campaigns design](../explanations/campaigns_design.md).
+
+#### Examples
+
+This example is functionally the same as the [object](#environment-object) example above:
+
+```yaml
+steps:
+  - run: echo $MESSAGE >> README.md
+    container: alpine:3
+    env:
+      - MESSAGE: Hello world!
+```
+
+This example pulls in the `USER` environment variable and uses it to construct the line that will be appended to `README.md`:
+
+```yaml
+steps:
+  - run: echo $MESSAGE from $USER >> README.md
+    container: alpine:3
+    env:
+      - MESSAGE: Hello world!
+      - USER
+```
+
+For instance, if `USER` is set to `adam`, this would append `Hello world! from adam` to `README.md`.
+
+## [`steps.files`](#steps-files)
 
 > NOTE: This feature is only available in Sourcegraph 3.22 and later.
 

@@ -189,7 +189,7 @@ func (r *campaignSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.Di
 
 func (r *campaignSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlbackend.CampaignResolver, error) {
 	svc := ee.NewService(r.store, r.httpFactory)
-	campaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, r.store, r.campaignSpec)
+	campaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, r.campaignSpec)
 	if err != nil {
 		return nil, err
 	}

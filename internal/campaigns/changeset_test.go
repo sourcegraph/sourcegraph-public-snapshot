@@ -6,10 +6,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func TestChangeset_DiffStat(t *testing.T) {
@@ -493,7 +495,7 @@ func TestChangeset_Labels(t *testing.T) {
 }
 
 func TestChangesetMetadata(t *testing.T) {
-	now := time.Now().UTC().Truncate(time.Microsecond)
+	now := timeutil.Now()
 
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",

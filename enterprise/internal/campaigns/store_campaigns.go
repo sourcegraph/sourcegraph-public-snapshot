@@ -21,7 +21,6 @@ var campaignColumns = []*sqlf.Query{
 	sqlf.Sprintf("campaigns.namespace_org_id"),
 	sqlf.Sprintf("campaigns.created_at"),
 	sqlf.Sprintf("campaigns.updated_at"),
-	sqlf.Sprintf("campaigns.changeset_ids"),
 	sqlf.Sprintf("campaigns.closed_at"),
 	sqlf.Sprintf("campaigns.campaign_spec_id"),
 }
@@ -39,7 +38,6 @@ var campaignInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("namespace_org_id"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
-	sqlf.Sprintf("changeset_ids"),
 	sqlf.Sprintf("closed_at"),
 	sqlf.Sprintf("campaign_spec_id"),
 }
@@ -59,16 +57,11 @@ func (s *Store) CreateCampaign(ctx context.Context, c *campaigns.Campaign) error
 var createCampaignQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CreateCampaign
 INSERT INTO campaigns (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
 func (s *Store) createCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) {
-	changesetIDs, err := jsonSetColumn(c.ChangesetIDs)
-	if err != nil {
-		return nil, err
-	}
-
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = s.now()
 	}
@@ -89,7 +82,6 @@ func (s *Store) createCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) 
 		nullInt32Column(c.NamespaceOrgID),
 		c.CreatedAt,
 		c.UpdatedAt,
-		changesetIDs,
 		nullTimeColumn(c.ClosedAt),
 		c.CampaignSpecID,
 		sqlf.Join(campaignColumns, ", "),
@@ -109,17 +101,12 @@ func (s *Store) UpdateCampaign(ctx context.Context, c *campaigns.Campaign) error
 var updateCampaignQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:UpdateCampaign
 UPDATE campaigns
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING %s
 `
 
 func (s *Store) updateCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) {
-	changesetIDs, err := jsonSetColumn(c.ChangesetIDs)
-	if err != nil {
-		return nil, err
-	}
-
 	c.UpdatedAt = s.now()
 
 	return sqlf.Sprintf(
@@ -134,7 +121,6 @@ func (s *Store) updateCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) 
 		nullInt32Column(c.NamespaceOrgID),
 		c.CreatedAt,
 		c.UpdatedAt,
-		changesetIDs,
 		nullTimeColumn(c.ClosedAt),
 		c.CampaignSpecID,
 		c.ID,
@@ -171,41 +157,45 @@ func (s *Store) CountCampaigns(ctx context.Context, opts CountCampaignsOpts) (in
 
 var countCampaignsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CountCampaigns
-SELECT COUNT(id)
+SELECT COUNT(campaigns.id)
 FROM campaigns
+%s
 WHERE %s
 `
 
 func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
-	var preds []*sqlf.Query
+	joins := []*sqlf.Query{}
+	preds := []*sqlf.Query{}
+
 	if opts.ChangesetID != 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_ids ? %s", opts.ChangesetID))
+		joins = append(joins, sqlf.Sprintf("INNER JOIN changesets ON changesets.campaign_ids ? campaigns.id::TEXT"))
+		preds = append(preds, sqlf.Sprintf("changesets.id = %s", opts.ChangesetID))
 	}
 
 	switch opts.State {
 	case campaigns.CampaignStateOpen:
-		preds = append(preds, sqlf.Sprintf("closed_at IS NULL"))
+		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NULL"))
 	case campaigns.CampaignStateClosed:
-		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
+		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NOT NULL"))
 	}
 
 	if opts.InitialApplierID != 0 {
-		preds = append(preds, sqlf.Sprintf("initial_applier_id = %d", opts.InitialApplierID))
+		preds = append(preds, sqlf.Sprintf("campaigns.initial_applier_id = %d", opts.InitialApplierID))
 	}
 
 	if opts.NamespaceUserID != 0 {
-		preds = append(preds, sqlf.Sprintf("namespace_user_id = %s", opts.NamespaceUserID))
+		preds = append(preds, sqlf.Sprintf("campaigns.namespace_user_id = %s", opts.NamespaceUserID))
 	}
 
 	if opts.NamespaceOrgID != 0 {
-		preds = append(preds, sqlf.Sprintf("namespace_org_id = %s", opts.NamespaceOrgID))
+		preds = append(preds, sqlf.Sprintf("campaigns.namespace_org_id = %s", opts.NamespaceOrgID))
 	}
 
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	return sqlf.Sprintf(countCampaignsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	return sqlf.Sprintf(countCampaignsQueryFmtstr, sqlf.Join(joins, "\n"), sqlf.Join(preds, "\n AND "))
 }
 
 // GetCampaignOpts captures the query options needed for getting a Campaign
@@ -318,30 +308,33 @@ func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs [
 var listCampaignsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListCampaigns
 SELECT %s FROM campaigns
+%s
 WHERE %s
 ORDER BY id DESC
 `
 
 func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
+	joins := []*sqlf.Query{}
 	preds := []*sqlf.Query{}
 
 	if opts.Cursor != 0 {
-		preds = append(preds, sqlf.Sprintf("id <= %s", opts.Cursor))
+		preds = append(preds, sqlf.Sprintf("campaigns.id <= %s", opts.Cursor))
 	}
 
 	if opts.ChangesetID != 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_ids ? %s", opts.ChangesetID))
+		joins = append(joins, sqlf.Sprintf("INNER JOIN changesets ON changesets.campaign_ids ? campaigns.id::TEXT"))
+		preds = append(preds, sqlf.Sprintf("changesets.id = %s", opts.ChangesetID))
 	}
 
 	switch opts.State {
 	case campaigns.CampaignStateOpen:
-		preds = append(preds, sqlf.Sprintf("closed_at IS NULL"))
+		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NULL"))
 	case campaigns.CampaignStateClosed:
-		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
+		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NOT NULL"))
 	}
 
 	if opts.InitialApplierID != 0 {
-		preds = append(preds, sqlf.Sprintf("initial_applier_id = %d", opts.InitialApplierID))
+		preds = append(preds, sqlf.Sprintf("campaigns.initial_applier_id = %d", opts.InitialApplierID))
 	}
 
 	if opts.NamespaceUserID != 0 {
@@ -359,6 +352,7 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	return sqlf.Sprintf(
 		listCampaignsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(campaignColumns, ", "),
+		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -375,7 +369,6 @@ func scanCampaign(c *campaigns.Campaign, s scanner) error {
 		&dbutil.NullInt32{N: &c.NamespaceOrgID},
 		&c.CreatedAt,
 		&c.UpdatedAt,
-		&dbutil.JSONInt64Set{Set: &c.ChangesetIDs},
 		&dbutil.NullTime{Time: &c.ClosedAt},
 		&c.CampaignSpecID,
 	)

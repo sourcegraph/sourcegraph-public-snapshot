@@ -52,6 +52,10 @@ describe('SiteAdminOverviewPage', () => {
                 _fetchOverview={() =>
                     of({
                         repositories: 0,
+                        repositoryStats: {
+                            gitDirBytes: 1825299556,
+                            indexedLinesCount: 2616264,
+                        },
                         users: 1,
                         orgs: 1,
                         surveyResponses: {
@@ -84,6 +88,10 @@ describe('SiteAdminOverviewPage', () => {
                 _fetchOverview={() =>
                     of({
                         repositories: 100,
+                        repositoryStats: {
+                            gitDirBytes: 1825299556,
+                            indexedLinesCount: 2616264,
+                        },
                         users: 1,
                         orgs: 1,
                         surveyResponses: {
@@ -123,6 +131,10 @@ describe('SiteAdminOverviewPage', () => {
                 _fetchOverview={() =>
                     of({
                         repositories: 100,
+                        repositoryStats: {
+                            gitDirBytes: 1825299556,
+                            indexedLinesCount: 2616264,
+                        },
                         users: 10,
                         orgs: 5,
                         surveyResponses: {

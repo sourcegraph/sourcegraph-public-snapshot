@@ -17,13 +17,14 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hubspot"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // pubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
@@ -34,17 +35,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	//version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.21.2")
+	latestReleaseDockerServerImageBuild = newBuild("3.22.0")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.21.2")
+	latestReleaseKubernetesBuild = newBuild("3.22.0")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("3.21.2")
+	latestReleaseDockerComposeOrPureDocker = newBuild("3.22.0")
 )
 
 func getLatestRelease(deployType string) build {
@@ -182,7 +183,9 @@ type pingRequest struct {
 	HomepagePanels       json.RawMessage `json:"homepagePanels"`
 	SearchOnboarding     json.RawMessage `json:"searchOnboarding"`
 	Repositories         json.RawMessage `json:"repositories"`
+	RetentionStatistics  json.RawMessage `json:"retentionStatistics"`
 	CodeIntelUsage       json.RawMessage `json:"codeIntelUsage"`
+	NewCodeIntelUsage    json.RawMessage `json:"newCodeIntelUsage"`
 	SearchUsage          json.RawMessage `json:"searchUsage"`
 	InitialAdminEmail    string          `json:"initAdmin"`
 	TotalUsers           int32           `json:"totalUsers"`
@@ -276,10 +279,12 @@ type pingPayload struct {
 	SiteActivity         json.RawMessage `json:"site_activity"`
 	CampaignsUsage       json.RawMessage `json:"automation_usage"`
 	CodeIntelUsage       json.RawMessage `json:"code_intel_usage"`
+	NewCodeIntelUsage    json.RawMessage `json:"new_code_intel_usage"`
 	SearchUsage          json.RawMessage `json:"search_usage"`
 	GrowthStatistics     json.RawMessage `json:"growth_statistics"`
 	SavedSearches        json.RawMessage `json:"saved_searches"`
 	HomepagePanels       json.RawMessage `json:"homepage_panels"`
+	RetentionStatistics  json.RawMessage `json:"retention_statistics"`
 	Repositories         json.RawMessage `json:"repositories"`
 	SearchOnboarding     json.RawMessage `json:"search_onboarding"`
 	DependencyVersions   json.RawMessage `json:"dependency_versions"`
@@ -336,7 +341,7 @@ func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
 }
 
 func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Time) ([]byte, error) {
-	codeIntelUsage, err := reserializeCodeIntelUsage(pr.CodeIntelUsage)
+	codeIntelUsage, err := reserializeCodeIntelUsage(pr.NewCodeIntelUsage, pr.CodeIntelUsage)
 	if err != nil {
 		return nil, errors.Wrap(err, "malformed code intel usage")
 	}
@@ -355,11 +360,12 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		UniqueUsersToday:     strconv.FormatInt(int64(pr.UniqueUsers), 10),
 		SiteActivity:         pr.Activity,       // no change in schema
 		CampaignsUsage:       pr.CampaignsUsage, // no change in schema
-		CodeIntelUsage:       codeIntelUsage,
+		NewCodeIntelUsage:    codeIntelUsage,
 		SearchUsage:          searchUsage,
 		GrowthStatistics:     pr.GrowthStatistics,
 		SavedSearches:        pr.SavedSearches,
 		HomepagePanels:       pr.HomepagePanels,
+		RetentionStatistics:  pr.RetentionStatistics,
 		Repositories:         pr.Repositories,
 		SearchOnboarding:     pr.SearchOnboarding,
 		InstallerEmail:       pr.InitialAdminEmail,
@@ -377,16 +383,21 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 	})
 }
 
-// reserializeCodeIntelUsage will reserialize a code intel usage statistics
-// struct with only the first period in each period type. This reduces the
-// complexity required in the BigQuery schema and downstream ETL transform
-// logic.
-func reserializeCodeIntelUsage(payload json.RawMessage) (json.RawMessage, error) {
-	if len(payload) == 0 {
-		return nil, nil
+// reserializeCodeIntelUsage returns the given data in the shape of the current code intel
+// usage statistics format. The given payload should be populated with either the new-style
+func reserializeCodeIntelUsage(payload, fallbackPayload json.RawMessage) (json.RawMessage, error) {
+	if len(payload) != 0 {
+		return reserializeNewCodeIntelUsage(payload)
+	}
+	if len(fallbackPayload) != 0 {
+		return reserializeOldCodeIntelUsage(fallbackPayload)
 	}
 
-	var codeIntelUsage *types.CodeIntelUsageStatistics
+	return nil, nil
+}
+
+func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, error) {
+	var codeIntelUsage *types.NewCodeIntelUsageStatistics
 	if err := json.Unmarshal(payload, &codeIntelUsage); err != nil {
 		return nil, err
 	}
@@ -394,23 +405,88 @@ func reserializeCodeIntelUsage(payload json.RawMessage) (json.RawMessage, error)
 		return nil, nil
 	}
 
-	singlePeriodUsage := struct {
-		Daily   *types.CodeIntelUsagePeriod
-		Weekly  *types.CodeIntelUsagePeriod
-		Monthly *types.CodeIntelUsagePeriod
-	}{}
-
-	if len(codeIntelUsage.Daily) > 0 {
-		singlePeriodUsage.Daily = codeIntelUsage.Daily[0]
-	}
-	if len(codeIntelUsage.Weekly) > 0 {
-		singlePeriodUsage.Weekly = codeIntelUsage.Weekly[0]
-	}
-	if len(codeIntelUsage.Monthly) > 0 {
-		singlePeriodUsage.Monthly = codeIntelUsage.Monthly[0]
+	var eventSummaries []jsonEventSummary
+	for _, es := range codeIntelUsage.EventSummaries {
+		eventSummaries = append(eventSummaries, translateEventSummary(es))
 	}
 
-	return json.Marshal(singlePeriodUsage)
+	return json.Marshal(jsonCodeIntelUsage{
+		StartOfWeek:    codeIntelUsage.StartOfWeek,
+		WAUs:           &codeIntelUsage.WAUs,
+		EventSummaries: eventSummaries,
+	})
+}
+
+func reserializeOldCodeIntelUsage(payload json.RawMessage) (json.RawMessage, error) {
+	var codeIntelUsage *types.OldCodeIntelUsageStatistics
+	if err := json.Unmarshal(payload, &codeIntelUsage); err != nil {
+		return nil, err
+	}
+	if codeIntelUsage == nil || len(codeIntelUsage.Weekly) == 0 {
+		return nil, nil
+	}
+
+	unwrap := func(i *int32) int32 {
+		if i == nil {
+			return 0
+		}
+		return *i
+	}
+
+	week := codeIntelUsage.Weekly[0]
+	hover := week.Hover
+	definitions := week.Definitions
+	references := week.References
+
+	return json.Marshal(jsonCodeIntelUsage{
+		StartOfWeek: week.StartTime,
+		WAUs:        nil,
+		EventSummaries: []jsonEventSummary{
+			{Action: "hover", Source: "precise", WAUs: hover.LSIF.UsersCount, TotalActions: unwrap(hover.LSIF.EventsCount)},
+			{Action: "hover", Source: "search", WAUs: hover.Search.UsersCount, TotalActions: unwrap(hover.Search.EventsCount)},
+			{Action: "definitions", Source: "precise", WAUs: definitions.LSIF.UsersCount, TotalActions: unwrap(definitions.LSIF.EventsCount)},
+			{Action: "definitions", Source: "search", WAUs: definitions.Search.UsersCount, TotalActions: unwrap(definitions.Search.EventsCount)},
+			{Action: "references", Source: "precise", WAUs: references.LSIF.UsersCount, TotalActions: unwrap(references.LSIF.EventsCount)},
+			{Action: "references", Source: "search", WAUs: references.Search.UsersCount, TotalActions: unwrap(references.Search.EventsCount)},
+		},
+	})
+}
+
+type jsonCodeIntelUsage struct {
+	StartOfWeek    time.Time          `json:"start_time"`
+	WAUs           *int32             `json:"waus"`
+	EventSummaries []jsonEventSummary `json:"event_summaries"`
+}
+
+type jsonEventSummary struct {
+	Action          string `json:"action"`
+	Source          string `json:"source"`
+	LanguageID      string `json:"language_id"`
+	CrossRepository bool   `json:"cross_repository"`
+	WAUs            int32  `json:"waus"`
+	TotalActions    int32  `json:"total_actions"`
+}
+
+var codeIntelActionNames = map[types.CodeIntelAction]string{
+	types.HoverAction:       "hover",
+	types.DefinitionsAction: "definitions",
+	types.ReferencesAction:  "references",
+}
+
+var codeIntelSourceNames = map[types.CodeIntelSource]string{
+	types.PreciseSource: "precise",
+	types.SearchSource:  "search",
+}
+
+func translateEventSummary(es types.CodeIntelEventSummary) jsonEventSummary {
+	return jsonEventSummary{
+		Action:          codeIntelActionNames[es.Action],
+		Source:          codeIntelSourceNames[es.Source],
+		LanguageID:      es.LanguageID,
+		CrossRepository: es.CrossRepository,
+		WAUs:            es.WAUs,
+		TotalActions:    es.TotalActions,
+	}
 }
 
 // reserializeSearchUsage will reserialize a code intel usage statistics

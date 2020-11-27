@@ -7,6 +7,7 @@ import { replaceRange } from './strings'
 import { discreteValueAliases } from '../search/parser/filters'
 import { tryCatch } from './errors'
 import { SearchPatternType } from '../graphql-operations'
+import { findGlobalFilter } from '../search/parser/validate'
 
 export interface RepoSpec {
     /**
@@ -585,49 +586,35 @@ export function buildSearchURLQuery(
     searchParametersList?: { key: string; value: string }[]
 ): string {
     const searchParameters = new URLSearchParams()
-    let fullQuery = query
+    let queryParameter = query
+    let patternTypeParameter: string = patternType
+    let caseParameter: string = caseSensitive ? 'yes' : 'no'
 
     if (filtersInQuery && !isEmpty(filtersInQuery)) {
-        fullQuery = [generateFiltersQuery(filtersInQuery), fullQuery].filter(query => query.length > 0).join(' ')
+        queryParameter = [generateFiltersQuery(filtersInQuery), queryParameter]
+            .filter(query => query.length > 0)
+            .join(' ')
     }
 
-    const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
-    if (patternTypeInQuery) {
-        const { start, end } = patternTypeInQuery.range
-        fullQuery = replaceRange(fullQuery, { start: Math.max(0, start - 1), end }).trim()
-        searchParameters.set('q', fullQuery)
-        searchParameters.set('patternType', patternTypeInQuery.value)
-    } else {
-        searchParameters.set('q', fullQuery)
-        searchParameters.set('patternType', patternType)
+    const globalPatternType = findGlobalFilter(queryParameter, 'patterntype')
+    if (globalPatternType?.value && globalPatternType.value.type === 'literal') {
+        const { start, end } = globalPatternType.range
+        patternTypeParameter = query.slice(globalPatternType.value.range.start, end)
+        queryParameter = replaceRange(queryParameter, { start: Math.max(0, start - 1), end }).trim()
     }
 
-    const caseInQuery = parseCaseSensitivityFromQuery(fullQuery)
-    if (caseInQuery) {
-        fullQuery = replaceRange(fullQuery, caseInQuery.range)
-        searchParameters.set('q', fullQuery)
+    const globalCase = findGlobalFilter(queryParameter, 'case')
+    if (globalCase?.value && globalCase.value.type === 'literal') {
+        // When case:value is explicit in the query, override any previous value of caseParameter.
+        caseParameter = discreteValueAliases.yes.includes(globalCase.value.value) ? 'yes' : 'no'
+        queryParameter = replaceRange(queryParameter, globalCase.range)
+    }
 
-        if (discreteValueAliases.yes.includes(caseInQuery.value)) {
-            fullQuery = replaceRange(fullQuery, caseInQuery.range)
-            searchParameters.set('case', caseInQuery.value)
-        } else {
-            // For now, remove case when case:no, since it's the default behavior. Avoids
-            // queries breaking when only `repo:` filters are specified.
-            //
-            // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
-            searchParameters.delete('case')
-        }
-    } else {
-        searchParameters.set('q', fullQuery)
-        if (caseSensitive) {
-            searchParameters.set('case', 'yes')
-        } else {
-            // For now, remove case when case:no, since it's the default behavior. Avoids
-            // queries breaking when only `repo:` filters are specified.
-            //
-            // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
-            searchParameters.delete('case')
-        }
+    searchParameters.set('q', queryParameter)
+    searchParameters.set('patternType', patternTypeParameter)
+
+    if (caseParameter === 'yes') {
+        searchParameters.set('case', caseParameter)
     }
 
     if (versionContext) {
@@ -659,14 +646,10 @@ export function parsePatternTypeFromQuery(query: string): { range: CharacterRang
     const scannedQuery = scanSearchQuery(query)
     if (scannedQuery.type === 'success') {
         for (const token of scannedQuery.term) {
-            if (
-                token.type === 'filter' &&
-                token.filterType.value.toLowerCase() === 'patterntype' &&
-                token.filterValue
-            ) {
+            if (token.type === 'filter' && token.field.value.toLowerCase() === 'patterntype' && token.value) {
                 return {
-                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
-                    value: query.slice(token.filterValue.range.start, token.filterValue.range.end),
+                    range: { start: token.field.range.start, end: token.value.range.end },
+                    value: query.slice(token.value.range.start, token.value.range.end),
                 }
             }
         }
@@ -679,10 +662,10 @@ export function parseCaseSensitivityFromQuery(query: string): { range: Character
     const scannedQuery = scanSearchQuery(query)
     if (scannedQuery.type === 'success') {
         for (const token of scannedQuery.term) {
-            if (token.type === 'filter' && token.filterType.value.toLowerCase() === 'case' && token.filterValue) {
+            if (token.type === 'filter' && token.field.value.toLowerCase() === 'case' && token.value) {
                 return {
-                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
-                    value: query.slice(token.filterValue.range.start, token.filterValue.range.end),
+                    range: { start: token.field.range.start, end: token.value.range.end },
+                    value: query.slice(token.value.range.start, token.value.range.end),
                 }
             }
         }

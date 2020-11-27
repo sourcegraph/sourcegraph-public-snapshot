@@ -8,6 +8,7 @@ import (
 	"github.com/efritz/glock"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -197,7 +198,14 @@ func (w *Worker) handle(tx Store, record Record) (err error) {
 		err = tx.Done(err)
 	}()
 
-	if handleErr := w.handler.Handle(ctx, tx, record); handleErr != nil {
+	handleErr := w.handler.Handle(ctx, tx, record)
+	if errcode.IsNonRetryable(handleErr) {
+		if marked, markErr := tx.MarkFailed(ctx, record.RecordID(), handleErr.Error()); markErr != nil {
+			return errors.Wrap(markErr, "store.MarkFailed")
+		} else if marked {
+			log15.Warn("Marked record as failed", "name", w.options.Name, "id", record.RecordID(), "err", handleErr)
+		}
+	} else if handleErr != nil {
 		if marked, markErr := tx.MarkErrored(ctx, record.RecordID(), handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkErrored")
 		} else if marked {

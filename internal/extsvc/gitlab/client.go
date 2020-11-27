@@ -268,6 +268,10 @@ func (err HTTPError) Error() string {
 	return fmt.Sprintf("HTTP error status %d", err)
 }
 
+func (err HTTPError) Unauthorized() bool {
+	return err == http.StatusUnauthorized
+}
+
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
 // this package. Otherwise it returns 0.
 func HTTPErrorCode(err error) int {

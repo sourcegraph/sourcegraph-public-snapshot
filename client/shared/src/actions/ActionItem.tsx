@@ -218,6 +218,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 }
                 className={classNames(
                     'action-item',
+                    'test-action-item',
                     this.props.className,
                     showLoadingSpinner && 'action-item--loading',
                     variantClassName,

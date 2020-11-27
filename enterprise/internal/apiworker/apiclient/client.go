@@ -95,6 +95,19 @@ func (c *Client) MarkErrored(ctx context.Context, queueName string, jobID int, e
 	return c.client.DoAndDrop(ctx, req)
 }
 
+func (c *Client) MarkFailed(ctx context.Context, queueName string, jobID int, errorMessage string) error {
+	req, err := c.makeRequest("POST", fmt.Sprintf("%s/markFailed", queueName), MarkErroredRequest{
+		ExecutorName: c.options.ExecutorName,
+		JobID:        jobID,
+		ErrorMessage: errorMessage,
+	})
+	if err != nil {
+		return err
+	}
+
+	return c.client.DoAndDrop(ctx, req)
+}
+
 func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) error {
 	req, err := c.makeRequest("POST", "heartbeat", HeartbeatRequest{
 		ExecutorName: c.options.ExecutorName,

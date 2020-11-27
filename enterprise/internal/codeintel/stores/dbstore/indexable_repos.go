@@ -70,11 +70,11 @@ func scanIndexableRepositories(rows *sql.Rows, queryErr error) (_ []IndexableRep
 // IndexableRepositories returns the metadata of all indexable repositories.
 func (s *Store) IndexableRepositories(ctx context.Context, opts IndexableRepositoryQueryOptions) (_ []IndexableRepository, err error) {
 	ctx, endObservation := s.operations.indexableRepositories.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("opts.Limit", opts.Limit),
-		log.Int("opts.MinimumSearchCount", opts.MinimumSearchCount),
-		log.Float64("opts.MinimumSearchRatio", opts.MinimumSearchRatio),
-		log.Int("opts.MinimumPreciseCount", opts.MinimumPreciseCount),
-		log.String("opts.MinimumTimeSinceLastEnqueue", fmt.Sprintf("%s", opts.MinimumTimeSinceLastEnqueue)),
+		log.Int("limit", opts.Limit),
+		log.Int("minimumSearchCount", opts.MinimumSearchCount),
+		log.Float64("minimumSearchRatio", opts.MinimumSearchRatio),
+		log.Int("minimumPreciseCount", opts.MinimumPreciseCount),
+		log.String("minimumTimeSinceLastEnqueue", fmt.Sprintf("%s", opts.MinimumTimeSinceLastEnqueue)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -133,7 +133,7 @@ func (s *Store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 // already marked as indexable, a new record will be created.
 func (s *Store) UpdateIndexableRepository(ctx context.Context, indexableRepository UpdateableIndexableRepository, now time.Time) (err error) {
 	ctx, endObservation := s.operations.updateIndexableRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("indexableRepository.RepositoryID", indexableRepository.RepositoryID),
+		log.Int("repositoryID", indexableRepository.RepositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 

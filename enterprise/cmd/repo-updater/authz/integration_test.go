@@ -8,7 +8,6 @@ import (
 	"os"
 	"regexp"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -24,6 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	extsvcGitHub "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
@@ -69,15 +70,11 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	testDB := dbtest.NewDB(t, *dsn)
 	ctx := context.Background()
 
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
-
 	reposStore := repos.NewDBStore(testDB, sql.TxOptions{})
 
-	svc := repos.ExternalService{
+	svc := types.ExternalService{
 		Kind:      extsvc.KindGitHub,
-		CreatedAt: clock(),
+		CreatedAt: timeutil.Now(),
 		Config:    `{"url": "https://github.com", "authorization": {}}`,
 	}
 	err = reposStore.UpsertExternalServices(ctx, &svc)
@@ -125,8 +122,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	permsStore := edb.NewPermsStore(testDB, clock)
-	syncer := NewPermsSyncer(reposStore, permsStore, clock, nil)
+	permsStore := edb.NewPermsStore(testDB, timeutil.Now)
+	syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
 
 	err = syncer.syncRepoPerms(ctx, repo.ID, false)
 	if err != nil {

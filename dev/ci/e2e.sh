@@ -43,8 +43,6 @@ set -e
 echo "Waiting for $URL... done"
 
 echo "--- yarn run test-e2e"
-# `-pix_fmt yuv420p` makes a QuickTime-compatible mp4.
-ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp4 >ffmpeg.log 2>&1 &
 env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run cover-e2e
 
 yarn nyc report -r json

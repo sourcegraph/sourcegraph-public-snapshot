@@ -79,7 +79,7 @@ export const createResolveRevisionResult = (treeUrl: string, oid = '1'.repeat(40
         mirrorInfo: { cloneInProgress: false, cloneProgress: '', cloned: true },
         commit: {
             oid,
-            tree: { url: treeUrl },
+            tree: { url: '/' + treeUrl },
         },
         defaultBranch: { abbrevName: 'master' },
     },

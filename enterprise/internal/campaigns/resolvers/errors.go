@@ -20,6 +20,16 @@ func (e ErrCampaignsDisabled) Extensions() map[string]interface{} {
 	return map[string]interface{}{"code": "ErrCampaignsDisabled"}
 }
 
+type ErrCampaignsDisabledForUser struct{}
+
+func (e ErrCampaignsDisabledForUser) Error() string {
+	return "campaigns are disabled for non-site-admin users"
+}
+
+func (e ErrCampaignsDisabledForUser) Extensions() map[string]interface{} {
+	return map[string]interface{}{"code": "ErrCampaignsDisabledForUser"}
+}
+
 type ErrCampaignsDotCom struct{}
 
 func (e ErrCampaignsDotCom) Error() string {

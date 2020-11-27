@@ -8,6 +8,7 @@ import { CodeEditorWithPartialModel } from './viewerService'
 import { DocumentFeatureProviderRegistry } from './registry'
 import { MaybeLoadingResult, LOADING } from '@sourcegraph/codeintellify'
 import { finallyReleaseProxy } from '../api/common'
+import { isNot, allOf, isExactly } from '../../../util/types'
 
 /**
  * Function signature for retrieving related locations given a location (e.g., definition, implementation, and type
@@ -154,7 +155,9 @@ export function getLocationsFromProviders<
             ).pipe(
                 map(locationsFromProviders => ({
                     isLoading: locationsFromProviders.some(locations => locations === LOADING),
-                    result: locationsFromProviders.filter<L[]>(Array.isArray).flat(),
+                    result: locationsFromProviders
+                        .filter(allOf(isNot(isExactly('loading' as const)), isNot(isExactly(null))))
+                        .flat(),
                 }))
             )
         )

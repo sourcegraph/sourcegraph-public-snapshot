@@ -23,4 +23,3 @@ Bring your extension's features for code viewed on GitHub, GitLab and other code
 ## Next steps
 
 * [Creating a Sourcegraph extension](creating.md)
-* [Developing Sourcegraph extensions locally](local_development.md)

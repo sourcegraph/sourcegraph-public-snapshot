@@ -15,6 +15,11 @@
         border-bottom: 1px solid var(--border-color);
     }
 
+    &__tabs {
+        // Large value so that infobar doesn't grow when side by side with tabs but does grow when wrapped
+        flex-grow: 9999;
+    }
+
     // In narrow windows, make the results flush with the left/right sides,
     // but we still need padding for the header and alerts.
     @include media-breakpoint-down(lg) {

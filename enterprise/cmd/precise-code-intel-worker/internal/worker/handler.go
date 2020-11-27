@@ -12,7 +12,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/correlation"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/correlation"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -181,7 +181,7 @@ func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, 
 	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", id)
 
 	// Pull raw uploaded data from bucket
-	rc, err := uploadStore.Get(ctx, uploadFilename, 0)
+	rc, err := uploadStore.Get(ctx, uploadFilename)
 	if err != nil {
 		return errors.Wrap(err, "uploadStore.Get")
 	}
@@ -205,7 +205,7 @@ func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, 
 }
 
 // writeData transactionally writes the given grouped bundle data into the given LSIF store.
-func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleData *correlation.GroupedBundleData) (err error) {
+func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleData *correlation.GroupedBundleDataChans) (err error) {
 	tx, err := lsifStore.Transact(ctx)
 	if err != nil {
 		return err

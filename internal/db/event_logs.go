@@ -11,10 +11,11 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -600,13 +601,39 @@ FROM (
 GROUP BY current_month, current_week, current_day
 `
 
+// CodeIntelligenceCombinedWAU returns the WAU (current week) with any code intelligence event.
+func (l *eventLogs) CodeIntelligenceCombinedWAU(ctx context.Context) (int, error) {
+	return l.codeIntelligenceCombinedWAU(ctx, time.Now().UTC())
+}
+
+func (l *eventLogs) codeIntelligenceCombinedWAU(ctx context.Context, now time.Time) (wau int, _ error) {
+	query := sqlf.Sprintf(codeIntelWeeklyUsersQuery, now)
+
+	if err := dbconn.Global.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).Scan(
+		&wau,
+	); err != nil {
+		return 0, err
+	}
+
+	return wau, nil
+}
+
+var codeIntelWeeklyUsersQuery = `
+-- source: internal/db/event_logs.go:CodeIntelligenceCombinedWAU
+SELECT COUNT(DISTINCT ` + userIDQueryFragment + `)
+FROM event_logs
+WHERE
+  timestamp >= ` + makeDateTruncExpression("week", "%s::timestamp") + `
+  AND name IN (` + strings.Join(codeIntelEventNames, ", ") + `);
+`
+
 // AggregatedCodeIntelEvents calculates AggregatedEvent for each every unique event type related to code intel.
-func (l *eventLogs) AggregatedCodeIntelEvents(ctx context.Context) ([]types.AggregatedEvent, error) {
+func (l *eventLogs) AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error) {
 	return l.aggregatedCodeIntelEvents(ctx, time.Now().UTC())
 }
 
-func (l *eventLogs) aggregatedCodeIntelEvents(ctx context.Context, now time.Time) (events []types.AggregatedEvent, err error) {
-	query := sqlf.Sprintf(aggregatedCodeIntelEventsQuery, now, now, now, now)
+func (l *eventLogs) aggregatedCodeIntelEvents(ctx context.Context, now time.Time) (events []types.CodeIntelAggregatedEvent, err error) {
+	query := sqlf.Sprintf(aggregatedCodeIntelEventsQuery, now, now)
 
 	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
@@ -615,21 +642,13 @@ func (l *eventLogs) aggregatedCodeIntelEvents(ctx context.Context, now time.Time
 	defer rows.Close()
 
 	for rows.Next() {
-		var event types.AggregatedEvent
+		var event types.CodeIntelAggregatedEvent
 		err := rows.Scan(
 			&event.Name,
-			&event.Month,
+			&event.LanguageID,
 			&event.Week,
-			&event.Day,
-			&event.TotalMonth,
 			&event.TotalWeek,
-			&event.TotalDay,
-			&event.UniquesMonth,
 			&event.UniquesWeek,
-			&event.UniquesDay,
-			pq.Array(&event.LatenciesMonth),
-			pq.Array(&event.LatenciesWeek),
-			pq.Array(&event.LatenciesDay),
 		)
 		if err != nil {
 			return nil, err
@@ -649,9 +668,13 @@ var codeIntelEventNames = []string{
 	"'codeintel.lsifHover'",
 	"'codeintel.searchHover'",
 	"'codeintel.lsifDefinitions'",
+	"'codeintel.lsifDefinitions.xrepo'",
 	"'codeintel.searchDefinitions'",
+	"'codeintel.searchDefinitions.xrepo'",
 	"'codeintel.lsifReferences'",
+	"'codeintel.lsifReferences.xrepo'",
 	"'codeintel.searchReferences'",
+	"'codeintel.searchReferences.xrepo'",
 }
 
 var aggregatedCodeIntelEventsQuery = `
@@ -659,35 +682,21 @@ var aggregatedCodeIntelEventsQuery = `
 WITH events AS (
   SELECT
     name,
-    -- Postgres 9.6 needs to go from text to integer (i.e. can't go directly to integer)
-    (argument->'durationMs')::text::integer as latency,
+    (argument->>'languageId')::text as language_id,
     ` + aggregatedUserIDQueryFragment + ` AS user_id,
-    ` + makeDateTruncExpression("month", "timestamp") + ` as month,
-    ` + makeDateTruncExpression("week", "timestamp") + ` as week,
-    ` + makeDateTruncExpression("day", "timestamp") + ` as day,
-    ` + makeDateTruncExpression("month", "%s::timestamp") + ` as current_month,
-    ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week,
-    ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
+    ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week
   FROM event_logs
   WHERE
-    timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
-	AND name IN (` + strings.Join(codeIntelEventNames, ", ") + `)
+    timestamp >= ` + makeDateTruncExpression("week", "%s::timestamp") + `
+    AND name IN (` + strings.Join(codeIntelEventNames, ", ") + `)
 )
 SELECT
   name,
-  current_month,
+  language_id,
   current_week,
-  current_day,
-  COUNT(*) FILTER (WHERE month = current_month) AS total_month,
-  COUNT(*) FILTER (WHERE week = current_week) AS total_week,
-  COUNT(*) FILTER (WHERE day = current_day) AS total_day,
-  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
-  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
-  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
-  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE month = current_month) AS latencies_month,
-  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE week = current_week) AS latencies_week,
-  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE day = current_day) AS latencies_day
-FROM events GROUP BY name, current_month, current_week, current_day
+  COUNT(*) AS total_week,
+  COUNT(DISTINCT user_id) AS uniques_week
+FROM events GROUP BY name, current_week, language_id;
 `
 
 // AggregatedSearchEvents calculates AggregatedEvent for each every unique event type related to search.
@@ -782,8 +791,8 @@ SELECT
 FROM events GROUP BY name, current_month, current_week, current_day
 `
 
-// userIDQueryFragment is a query fragment that can be used to return the anonymous user id.
-// If no anonymous user id is set then the user id is returned.
+// userIDQueryFragment is a query fragment that can be used to return the anonymous user ID
+// when the user ID is not set (i.e. 0).
 const userIDQueryFragment = `
 CASE WHEN user_id = 0
   THEN anonymous_user_id
@@ -792,7 +801,7 @@ END
 `
 
 // aggregatedUserIDQueryFragment is a query fragment that can be used to canonicalize the
-// values of the  user_id and anonymous_user_id fields (assumed in scope) int a unified value.
+// values of the user_id and anonymous_user_id fields (assumed in scope) int a unified value.
 const aggregatedUserIDQueryFragment = `
 CASE WHEN user_id = 0
   -- It's faster to group by an int rather than text, so we convert

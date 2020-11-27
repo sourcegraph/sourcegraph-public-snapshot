@@ -9,11 +9,11 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/secret"
 )
 
 // UserCredential represents a row in the `user_credentials` table.
@@ -48,6 +48,8 @@ func (UserCredentialNotFoundErr) NotFound() bool {
 // userCredentials provides access to the `user_credentials` table.
 type userCredentials struct{}
 
+// UserCredentialScope represents the unique scope for a credential. Only one
+// credential may exist within a scope.
 type UserCredentialScope struct {
 	Domain              string
 	UserID              int32
@@ -55,6 +57,9 @@ type UserCredentialScope struct {
 	ExternalServiceID   string
 }
 
+// Create creates a new user credential based on the given scope and
+// authenticator. If the scope already has a credential, an error will be
+// returned.
 func (*userCredentials) Create(ctx context.Context, scope UserCredentialScope, credential auth.Authenticator) (*UserCredential, error) {
 	if Mocks.UserCredentials.Create != nil {
 		return Mocks.UserCredentials.Create(ctx, scope, credential)
@@ -71,7 +76,7 @@ func (*userCredentials) Create(ctx context.Context, scope UserCredentialScope, c
 		scope.UserID,
 		scope.ExternalServiceType,
 		scope.ExternalServiceID,
-		secret.StringValue{S: &raw},
+		raw,
 		sqlf.Join(userCredentialsColumns, ", "),
 	)
 
@@ -84,6 +89,9 @@ func (*userCredentials) Create(ctx context.Context, scope UserCredentialScope, c
 	return &cred, nil
 }
 
+// Delete deletes the given user credential. Note that there is no concept of a
+// soft delete with user credentials: once deleted, the relevant records are
+// _gone_, so that we don't hold any sensitive data unexpectedly. 💀
 func (*userCredentials) Delete(ctx context.Context, id int64) error {
 	if Mocks.UserCredentials.Delete != nil {
 		return Mocks.UserCredentials.Delete(ctx, id)
@@ -104,6 +112,8 @@ func (*userCredentials) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
+// GetByID returns the user credential matching the given ID, or
+// UserCredentialNotFoundErr if no such credential exists.
 func (*userCredentials) GetByID(ctx context.Context, id int64) (*UserCredential, error) {
 	if Mocks.UserCredentials.GetByID != nil {
 		return Mocks.UserCredentials.GetByID(ctx, id)
@@ -126,6 +136,8 @@ func (*userCredentials) GetByID(ctx context.Context, id int64) (*UserCredential,
 	return &cred, nil
 }
 
+// GetByScope returns the user credential matching the given scope, or
+// UserCredentialNotFoundErr if no such credential exists.
 func (*userCredentials) GetByScope(ctx context.Context, scope UserCredentialScope) (*UserCredential, error) {
 	if Mocks.UserCredentials.GetByScope != nil {
 		return Mocks.UserCredentials.GetByScope(ctx, scope)
@@ -152,7 +164,7 @@ func (*userCredentials) GetByScope(ctx context.Context, scope UserCredentialScop
 }
 
 // UserCredentialsListOpts provide the options when listing credentials. At
-// least one option must be set.
+// least one field in Scope must be set.
 type UserCredentialsListOpts struct {
 	*LimitOffset
 	Scope UserCredentialScope
@@ -168,6 +180,7 @@ func (opts *UserCredentialsListOpts) sql() *sqlf.Query {
 	return (&LimitOffset{Limit: opts.Limit + 1, Offset: opts.Offset}).SQL()
 }
 
+// List returns all user credentials matching the given options.
 func (*userCredentials) List(ctx context.Context, opts UserCredentialsListOpts) ([]*UserCredential, int, error) {
 	if Mocks.UserCredentials.List != nil {
 		return Mocks.UserCredentials.List(ctx, opts)
@@ -303,7 +316,7 @@ func scanUserCredential(cred *UserCredential, s interface {
 		&cred.UserID,
 		&cred.ExternalServiceType,
 		&cred.ExternalServiceID,
-		&secret.StringValue{S: &raw},
+		&raw,
 		&cred.CreatedAt,
 		&cred.UpdatedAt,
 	); err != nil {

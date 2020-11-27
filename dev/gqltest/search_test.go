@@ -122,6 +122,37 @@ func TestSearch(t *testing.T) {
 		}
 	})
 
+	t.Run("lang: filter", func(t *testing.T) {
+		// On our test repositories, `function` has results for go, ts, python, html
+		results, err := client.SearchFiles("function lang:go")
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Make sure we only got .go files
+		for _, r := range results.Results {
+			if !strings.Contains(r.File.Name, ".go") {
+				t.Fatalf("Found file name does not end with .go: %s", r.File.Name)
+			}
+		}
+	})
+
+	t.Run("excluding repositories", func(t *testing.T) {
+		results, err := client.SearchFiles("fmt.Sprintf -repo:jsonrpc2")
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Make sure we got some results
+		if len(results.Results) == 0 {
+			t.Fatal("Want non-zero results but got 0")
+		}
+		// Make sure we got no results from the excluded repository
+		for _, r := range results.Results {
+			if strings.Contains(r.Repository.Name, "jsonrpc2") {
+				t.Fatal("Got results for excluded repository")
+			}
+		}
+	})
+
 	t.Run("multiple revisions per repository", func(t *testing.T) {
 		results, err := client.SearchFiles("repo:sgtest/go-diff$@master:print-options:*refs/heads/ func NewHunksReader")
 		if err != nil {
@@ -257,6 +288,10 @@ func TestSearch(t *testing.T) {
 					"github.com/sgtest/mux",
 				},
 			},
+			{
+				name:  `Structural search returns repo results if patterntype set but pattern is empty`,
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ patterntype:structural`,
+			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
@@ -306,6 +341,10 @@ func TestSearch(t *testing.T) {
 				name:          "something with more than 1000 results and use count:1000",
 				query:         ". count:1000",
 				minMatchCount: 1001,
+			},
+			{
+				name:  "repohasfile returns results for global search",
+				query: "repohasfile:README",
 			},
 			{
 				name:  "regular expression without indexed search",

@@ -1,3 +1,4 @@
+import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { LoaderInput } from './LoaderInput'
@@ -13,11 +14,9 @@ const { add } = storiesOf('branded/LoaderInput', module).addDecorator(story => (
 add('Interactive', () => (
     <BrandedStory>
         {() => (
-            <div>
-                <LoaderInput loading={boolean('loading', false)}>
-                    <input type="text" placeholder="Loader input" className="form-control" />
-                </LoaderInput>
-            </div>
+            <LoaderInput loading={boolean('loading', true)}>
+                <input type="text" placeholder="Loader input" className="form-control" />
+            </LoaderInput>
         )}
     </BrandedStory>
 ))

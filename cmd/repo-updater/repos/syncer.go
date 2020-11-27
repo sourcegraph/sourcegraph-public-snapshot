@@ -17,7 +17,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -237,9 +239,17 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 		return errors.Wrap(err, "syncer.sync.sourced")
 	}
 
-	// Unless explicitly specified with "all", user added external services should only sync public code
+	// Unless explicitly specified with the "all" setting or the owner of the service has the "AllowUserExternalServicePrivate" tag,
+	// user added external services should only sync public code.
 	if isUserOwned && conf.ExternalServiceUserMode() != conf.ExternalServiceModeAll {
-		sourced = sourced.Filter(func(r *Repo) bool { return !r.Private })
+		ok, err := db.Users.HasTag(ctx, svc.NamespaceUserID, db.TagAllowUserExternalServicePrivate)
+		if err != nil {
+			return errors.Wrap(err, "checking user tag")
+		}
+
+		if !ok {
+			sourced = sourced.Filter(func(r *Repo) bool { return !r.Private })
+		}
 	}
 
 	var storedServiceRepos Repos
@@ -454,6 +464,7 @@ func (s *Syncer) insertIfNew(ctx context.Context, store Store, publicOnly bool, 
 	return err
 }
 
+// syncRepo syncs a single repo that has been sourced from a single external service.
 func (s *Syncer) syncRepo(ctx context.Context, store Store, insertOnly bool, publicOnly bool, sourcedRepo *Repo) (diff Diff, err error) {
 	if publicOnly && sourcedRepo.Private {
 		return Diff{}, nil
@@ -471,6 +482,18 @@ func (s *Syncer) syncRepo(ctx context.Context, store Store, insertOnly bool, pub
 
 	if insertOnly && len(storedSubset) > 0 {
 		return Diff{}, nil
+	}
+
+	// sourcedRepo only knows about one source so we need to add in the remaining stored
+	// sources
+	if len(storedSubset) == 1 {
+		for k, v := range storedSubset[0].Sources {
+			// Don't update the source from sourcedRepo
+			if _, ok := sourcedRepo.Sources[k]; ok {
+				continue
+			}
+			sourcedRepo.Sources[k] = v
+		}
 	}
 
 	// NewDiff modifies the stored slice so we clone it before passing it
@@ -683,7 +706,7 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	return newDiff(nil, sourced, stored)
 }
 
-func newDiff(svc *ExternalService, sourced, stored []*Repo) (diff Diff) {
+func newDiff(svc *types.ExternalService, sourced, stored []*Repo) (diff Diff) {
 	// Sort sourced so we merge deterministically
 	sort.Sort(Repos(sourced))
 
@@ -754,7 +777,7 @@ func merge(o, n *Repo) {
 	o.Update(n)
 }
 
-func (s *Syncer) sourced(ctx context.Context, svcs []*ExternalService, onSourced ...func(*Repo) error) ([]*Repo, error) {
+func (s *Syncer) sourced(ctx context.Context, svcs []*types.ExternalService, onSourced ...func(*Repo) error) ([]*Repo, error) {
 	srcs, err := s.Sourcer(svcs...)
 	if err != nil {
 		return nil, err

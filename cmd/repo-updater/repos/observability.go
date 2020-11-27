@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // ObservedSource returns a decorator that wraps a Source
@@ -443,7 +444,7 @@ func (o *ObservedStore) Done(err error) error {
 }
 
 // GetExternalService calls into the inner Store and registers the observed results.
-func (o *ObservedStore) GetExternalService(ctx context.Context, id int64) (es *ExternalService, err error) {
+func (o *ObservedStore) GetExternalService(ctx context.Context, id int64) (es *types.ExternalService, err error) {
 	tr, ctx := o.trace(ctx, "Store.GetExternalService")
 	tr.LogFields(
 		otlog.Object("id", id),
@@ -471,7 +472,7 @@ func (o *ObservedStore) GetExternalService(ctx context.Context, id int64) (es *E
 }
 
 // ListExternalServices calls into the inner Store and registers the observed results.
-func (o *ObservedStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (es []*ExternalService, err error) {
+func (o *ObservedStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (es []*types.ExternalService, err error) {
 	tr, ctx := o.trace(ctx, "Store.ListExternalServices")
 	tr.LogFields(
 		otlog.Object("args.ids", args.IDs),
@@ -490,8 +491,8 @@ func (o *ObservedStore) ListExternalServices(ctx context.Context, args StoreList
 
 		tr.LogFields(
 			otlog.Int("count", len(es)),
-			otlog.Object("names", ExternalServices(es).DisplayNames()),
-			otlog.Object("urns", ExternalServices(es).URNs()),
+			otlog.Object("names", types.ExternalServices(es).DisplayNames()),
+			otlog.Object("urns", types.ExternalServices(es).URNs()),
 		)
 		tr.SetError(err)
 		tr.Finish()
@@ -501,12 +502,12 @@ func (o *ObservedStore) ListExternalServices(ctx context.Context, args StoreList
 }
 
 // UpsertExternalServices calls into the inner Store and registers the observed results.
-func (o *ObservedStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) (err error) {
+func (o *ObservedStore) UpsertExternalServices(ctx context.Context, svcs ...*types.ExternalService) (err error) {
 	tr, ctx := o.trace(ctx, "Store.UpsertExternalServices")
 	tr.LogFields(
 		otlog.Int("count", len(svcs)),
-		otlog.Object("names", ExternalServices(svcs).DisplayNames()),
-		otlog.Object("urns", ExternalServices(svcs).URNs()),
+		otlog.Object("names", types.ExternalServices(svcs).DisplayNames()),
+		otlog.Object("urns", types.ExternalServices(svcs).URNs()),
 	)
 
 	defer func(began time.Time) {
@@ -516,7 +517,7 @@ func (o *ObservedStore) UpsertExternalServices(ctx context.Context, svcs ...*Ext
 		o.metrics.UpsertExternalServices.Observe(secs, count, &err)
 		logging.Log(o.log, "store.upsert-external-services", &err,
 			"count", len(svcs),
-			"names", ExternalServices(svcs).DisplayNames(),
+			"names", types.ExternalServices(svcs).DisplayNames(),
 		)
 
 		tr.SetError(err)

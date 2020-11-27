@@ -19,6 +19,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="extensions"
       href="/extensions"
     >
       <svg
@@ -56,6 +57,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
@@ -194,7 +196,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button btn btn-link "
+      class="command-list__popover-button test-command-list-button btn btn-link "
       id="command-list-popover-button-7"
       role="button"
     >
@@ -442,6 +444,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="extensions"
       href="/extensions"
     >
       <svg
@@ -479,6 +482,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
@@ -617,7 +621,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button btn btn-link "
+      class="command-list__popover-button test-command-list-button btn btn-link "
       id="command-list-popover-button-8"
       role="button"
     >
@@ -875,6 +879,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="extensions"
       href="/extensions"
     >
       <svg
@@ -912,6 +917,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
@@ -1050,7 +1056,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button btn btn-link "
+      class="command-list__popover-button test-command-list-button btn btn-link "
       id="command-list-popover-button-5"
       role="button"
     >
@@ -1279,6 +1285,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="extensions"
       href="/extensions"
     >
       <svg
@@ -1316,6 +1323,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
@@ -1454,7 +1462,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button btn btn-link "
+      class="command-list__popover-button test-command-list-button btn btn-link "
       id="command-list-popover-button-6"
       role="button"
     >
@@ -1693,6 +1701,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="extensions"
       href="/extensions"
     >
       <svg
@@ -1730,6 +1739,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
@@ -1831,7 +1841,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button btn btn-link "
+      class="command-list__popover-button test-command-list-button btn btn-link "
       id="command-list-popover-button-3"
       role="button"
     >
@@ -1871,6 +1881,7 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="extensions"
       href="/extensions"
     >
       <svg
@@ -1908,6 +1919,7 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
@@ -2009,7 +2021,7 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button btn btn-link "
+      class="command-list__popover-button test-command-list-button btn btn-link "
       id="command-list-popover-button-4"
       role="button"
     >
@@ -2059,6 +2071,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="extensions"
       href="/extensions"
     >
       <svg
@@ -2096,6 +2109,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
@@ -2185,7 +2199,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button btn btn-link "
+      class="command-list__popover-button test-command-list-button btn btn-link "
       id="command-list-popover-button-1"
       role="button"
     >
@@ -2225,6 +2239,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="extensions"
       href="/extensions"
     >
       <svg
@@ -2262,6 +2277,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
   >
     <a
       class="nav-link btn btn-link px-1 text-decoration-none d-flex align-items-center"
+      data-testid="campaigns"
       href="/campaigns"
     >
       <svg
@@ -2351,7 +2367,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button btn btn-link "
+      class="command-list__popover-button test-command-list-button btn btn-link "
       id="command-list-popover-button-2"
       role="button"
     >

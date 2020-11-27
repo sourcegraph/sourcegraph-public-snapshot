@@ -38,6 +38,36 @@ func (h changesetHistory) StatesAtTime(t time.Time) (changesetStatesAtTime, bool
 	return states, found
 }
 
+// RequiredEventTypesForHistory keeps track of all event kinds required for calculating the history of a changeset.
+//
+// We specifically ignore ChangesetEventKindGitHubReviewDismissed
+// events since GitHub updates the original
+// ChangesetEventKindGitHubReviewed event when a review has been
+// dismissed.
+// See: https://github.com/sourcegraph/sourcegraph/pull/9461
+var RequiredEventTypesForHistory = []campaigns.ChangesetEventKind{
+	campaigns.ChangesetEventKindGitLabUnmarkWorkInProgress,
+	campaigns.ChangesetEventKindGitHubReadyForReview,
+	campaigns.ChangesetEventKindGitLabMarkWorkInProgress,
+	campaigns.ChangesetEventKindGitHubConvertToDraft,
+	campaigns.ChangesetEventKindGitHubClosed,
+	campaigns.ChangesetEventKindBitbucketServerDeclined,
+	campaigns.ChangesetEventKindGitLabClosed,
+	campaigns.ChangesetEventKindGitHubMerged,
+	campaigns.ChangesetEventKindBitbucketServerMerged,
+	campaigns.ChangesetEventKindGitLabMerged,
+	campaigns.ChangesetEventKindGitHubReopened,
+	campaigns.ChangesetEventKindBitbucketServerReopened,
+	campaigns.ChangesetEventKindGitLabReopened,
+	campaigns.ChangesetEventKindGitHubReviewed,
+	campaigns.ChangesetEventKindBitbucketServerApproved,
+	campaigns.ChangesetEventKindBitbucketServerReviewed,
+	campaigns.ChangesetEventKindGitLabApproved,
+	campaigns.ChangesetEventKindBitbucketServerUnapproved,
+	campaigns.ChangesetEventKindBitbucketServerDismissed,
+	campaigns.ChangesetEventKindGitLabUnapproved,
+}
+
 type changesetStatesAtTime struct {
 	t             time.Time
 	externalState campaigns.ChangesetExternalState
@@ -59,6 +89,11 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 		currentReviewState = campaigns.ChangesetReviewStatePending
 
 		lastReviewByAuthor = map[string]campaigns.ChangesetReviewState{}
+		// The draft state is tracked alongside the "external state" on GitHub and GitLab,
+		// that means we need to take changes to this state into account separately. On reopen,
+		// we cannot simply say it's open, because it could be it was converted to a draft while
+		// it was closed. Hence, we need to track the state using this variable.
+		isDraft = currentExtState == campaigns.ChangesetExternalStateDraft
 	)
 
 	pushStates := func(t time.Time) {
@@ -81,6 +116,7 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 			continue
 		}
 
+		// NOTE: If you add any kinds here, make sure they also appear in `RequiredEventTypesForHistory`.
 		switch e.Kind {
 		case campaigns.ChangesetEventKindGitHubClosed,
 			campaigns.ChangesetEventKindBitbucketServerDeclined,
@@ -98,6 +134,7 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 			pushStates(et)
 
 		case campaigns.ChangesetEventKindGitLabMarkWorkInProgress:
+			isDraft = true
 			// This event only matters when the changeset is open, otherwise a change in the title won't change the overall external state.
 			if currentExtState == campaigns.ChangesetExternalStateOpen {
 				currentExtState = campaigns.ChangesetExternalStateDraft
@@ -105,13 +142,16 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 			}
 
 		case campaigns.ChangesetEventKindGitHubConvertToDraft:
+			isDraft = true
 			// Merged is a final state. We can ignore everything after.
 			if currentExtState != campaigns.ChangesetExternalStateMerged {
 				currentExtState = campaigns.ChangesetExternalStateDraft
 				pushStates(et)
 			}
 
-		case campaigns.ChangesetEventKindGitLabUnmarkWorkInProgress:
+		case campaigns.ChangesetEventKindGitLabUnmarkWorkInProgress,
+			campaigns.ChangesetEventKindGitHubReadyForReview:
+			isDraft = false
 			// This event only matters when the changeset is open, otherwise a change in the title won't change the overall external state.
 			if currentExtState == campaigns.ChangesetExternalStateDraft {
 				currentExtState = campaigns.ChangesetExternalStateOpen
@@ -120,11 +160,14 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 
 		case campaigns.ChangesetEventKindGitHubReopened,
 			campaigns.ChangesetEventKindBitbucketServerReopened,
-			campaigns.ChangesetEventKindGitLabReopened,
-			campaigns.ChangesetEventKindGitHubReadyForReview:
+			campaigns.ChangesetEventKindGitLabReopened:
 			// Merged is a final state. We can ignore everything after.
 			if currentExtState != campaigns.ChangesetExternalStateMerged {
-				currentExtState = campaigns.ChangesetExternalStateOpen
+				if isDraft {
+					currentExtState = campaigns.ChangesetExternalStateDraft
+				} else {
+					currentExtState = campaigns.ChangesetExternalStateOpen
+				}
 				pushStates(et)
 			}
 
@@ -170,14 +213,6 @@ func computeHistory(ch *campaigns.Changeset, ce ChangesetEvents) (changesetHisto
 				currentReviewState = newReviewState
 				pushStates(et)
 			}
-
-		case campaigns.ChangesetEventKindGitHubReviewDismissed:
-			// We specifically ignore ChangesetEventKindGitHubReviewDismissed
-			// events since GitHub updates the original
-			// ChangesetEventKindGitHubReviewed event when a review has been
-			// dismissed.
-			// See: https://github.com/sourcegraph/sourcegraph/pull/9461
-			continue
 
 		case campaigns.ChangesetEventKindBitbucketServerUnapproved,
 			campaigns.ChangesetEventKindBitbucketServerDismissed,

@@ -3,9 +3,9 @@ package db
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // GrantPendingPermissionsArgs contains required arguments to grant pending permissions for a user

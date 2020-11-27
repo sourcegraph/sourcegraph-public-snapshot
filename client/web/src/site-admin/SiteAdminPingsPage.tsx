@@ -134,12 +134,25 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         <li>Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)</li>
                     </ul>
                 </li>
+                <li>Total number of code intelligence queries (e.g., hover tooltips) per week grouped by language</li>
+                <li>
+                    Number of users performing code intelligence queries (e.g., hover tooltips) per week grouped by
+                    language
+                </li>
                 <li>
                     Campaign usage data
                     <ul>
+                        <li>Total count of page views on the campaign apply page</li>
+                        <li>Total count of page views on the campaign details page after creating a campaige</li>
+                        <li>Total count of page views on the campaign details page after updating a campaige</li>
+                        <li>Total count of created changeset specs</li>
+                        <li>Total count of created campaign specs</li>
                         <li>Total count of created campaigns</li>
+                        <li>Total count of closed campaigns</li>
                         <li>Total count of changesets created by campaigns</li>
+                        <li>Aggregate counts of lines changed, added, deleted in changeset</li>
                         <li>Total count of changesets created by campaigns that have been merged</li>
+                        <li>Aggregate counts of lines changed, added, deleted in merged changeset</li>
                         <li>Total count of changesets manually added to a campaign</li>
                         <li>Total count of changesets manually added to a campaign that have been merged</li>
                     </ul>
@@ -178,6 +191,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         <li>Total count of unique users engaging with the panels</li>
                     </ul>
                 </li>
+                <li>Weekly retention rates for user cohorts created in the last 12 weeks</li>
                 <li>
                     Search onboarding engagement
                     <ul>

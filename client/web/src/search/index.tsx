@@ -8,6 +8,7 @@ import { SearchPatternType } from '../../../shared/src/graphql-operations'
 import { Observable } from 'rxjs'
 import { ISavedSearch } from '../../../shared/src/graphql/schema'
 import { EventLogResult } from './backend'
+import { AggregateStreamingSearchResults } from './stream'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -181,7 +182,12 @@ export interface HomePanelsProps {
 }
 
 export interface SearchStreamingProps {
-    searchStreaming: boolean
+    streamSearch: (
+        query: string,
+        version: string,
+        patternType: SearchPatternType,
+        versionContext: string | undefined
+    ) => Observable<AggregateStreamingSearchResults>
 }
 
 /**

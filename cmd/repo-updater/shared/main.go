@@ -31,11 +31,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -53,11 +55,6 @@ func Main(enterpriseInit EnterpriseInit) {
 	logging.Init()
 	tracer.Init()
 	trace.Init(true)
-
-	err := secret.Init()
-	if err != nil {
-		log.Fatalf("Failed to initialize secrets encryption: %v", err)
-	}
 
 	clock := func() time.Time { return time.Now().UTC() }
 
@@ -140,7 +137,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		server.SourcegraphDotComMode = true
 
 		es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
-			// On Cloud we want to fetch our admin owned external service only here
+			// On Cloud we want to fetch only site level external services here
 			NamespaceUserID: -1,
 			Kinds:           []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		})
@@ -155,13 +152,14 @@ func Main(enterpriseInit EnterpriseInit) {
 				log.Fatalf("bad external service config: %v", err)
 			}
 
+			// We only allow one external service per kind to be flagged as CloudGlobal, so pick those.
 			switch c := cfg.(type) {
 			case *schema.GitHubConnection:
-				if strings.HasPrefix(c.Url, "https://github.com") && c.Token != "" {
+				if strings.HasPrefix(c.Url, "https://github.com") && c.Token != "" && c.CloudGlobal {
 					server.GithubDotComSource, err = repos.NewGithubSource(e, cf)
 				}
 			case *schema.GitLabConnection:
-				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" {
+				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" && c.CloudGlobal {
 					server.GitLabDotComSource, err = repos.NewGitLabSource(e, cf)
 				}
 			}
@@ -332,8 +330,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	},
 	)
 
-	srv := &http.Server{Addr: addr, Handler: handler}
-	log.Fatal(srv.ListenAndServe())
+	httpSrv := httpserver.NewFromAddr(addr, &http.Server{Handler: ot.Middleware(handler)})
+	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }
 
 type scheduler interface {

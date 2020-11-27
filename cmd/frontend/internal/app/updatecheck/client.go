@@ -167,6 +167,17 @@ func getAndMarshalRepositoriesJSON(ctx context.Context) (_ json.RawMessage, err 
 	return json.Marshal(repos)
 }
 
+func getAndMarshalRetentionStatisticsJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalRetentionStatisticsJSON")(&err)
+
+	retentionStatistics, err := usagestats.GetRetentionStatistics(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(retentionStatistics)
+}
+
 func getAndMarshalSearchOnboardingJSON(ctx context.Context) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalSearchOnboardingJSON")(&err)
 
@@ -273,12 +284,14 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		ClientVersionString: version.Version(),
 		LicenseKey:          conf.Get().LicenseKey,
 		CodeIntelUsage:      []byte("{}"),
+		NewCodeIntelUsage:   []byte("{}"),
 		SearchUsage:         []byte("{}"),
 		CampaignsUsage:      []byte("{}"),
 		GrowthStatistics:    []byte("{}"),
 		SavedSearches:       []byte("{}"),
 		HomepagePanels:      []byte("{}"),
 		Repositories:        []byte("{}"),
+		RetentionStatistics: []byte("{}"),
 		SearchOnboarding:    []byte("{}"),
 	}
 
@@ -351,6 +364,11 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
 		}
 
+		r.RetentionStatistics, err = getAndMarshalRetentionStatisticsJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalRetentionStatisticsJSON failed", "error", err)
+		}
+
 		r.ExternalServices, err = externalServiceKinds(ctx)
 		if err != nil {
 			logFunc("telemetry: externalServicesKinds failed", "error", err)
@@ -377,7 +395,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			r.CodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx)
+			r.NewCodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx)
 			if err != nil {
 				logFunc("telemetry: updatecheck.getAndMarshalAggregatedCodeIntelUsageJSON failed", "error", err)
 			}
@@ -394,6 +412,11 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 
 		wg.Wait()
 	} else {
+		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
+		}
+
 		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, true)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
@@ -410,7 +433,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		URL:             "",
 		AnonymousUserID: "backend",
 		Source:          "BACKEND",
-		Argument:        json.RawMessage(contents),
+		Argument:        contents,
 		Timestamp:       time.Now().UTC(),
 	})
 

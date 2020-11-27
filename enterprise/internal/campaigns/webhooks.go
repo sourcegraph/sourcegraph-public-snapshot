@@ -15,13 +15,30 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
+)
+
+var (
+	// githubEvents is the set of events this webhook handler listens to
+	// you can find info about what these events contain here:
+	// https://docs.github.com/en/free-pro-team@latest/developers/webhooks-and-events/webhook-events-and-payloads
+	githubEvents = []string{
+		"issue_comment",
+		"pull_request",
+		"pull_request_review",
+		"pull_request_review_comment",
+		"status",
+		"check_suite",
+		"check_run",
+	}
 )
 
 type Webhook struct {
@@ -66,7 +83,7 @@ func (h Webhook) getRepoForPR(
 	return rs[0], nil
 }
 
-func extractExternalServiceID(extSvc *repos.ExternalService) (string, error) {
+func extractExternalServiceID(extSvc *types.ExternalService) (string, error) {
 	c, err := extSvc.Configuration()
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to get external service config")
@@ -198,101 +215,36 @@ func NewGitHubWebhook(store *Store, repos repos.Store, now func() time.Time) *Gi
 	return &GitHubWebhook{&Webhook{store, repos, now, extsvc.TypeGitHub}}
 }
 
-// ServeHTTP implements the http.Handler interface.
-func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	e, extSvc, httpErr := h.parseEvent(r)
-	if httpErr != nil {
-		respond(w, httpErr.code, httpErr)
-		return
-	}
+// Register registers this webhook handler to handle events with the passed webhook router
+func (h *GitHubWebhook) Register(router *webhooks.GitHubWebhook) {
+	router.Register(
+		h.handleGitHubWebhook,
+		githubEvents...,
+	)
+}
 
+// handleGithubWebhook is the entry point for webhooks from the webhook router, see the events
+// it's registered to handle in GitHubWebhook.Register
+func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
+	m := new(multierror.Error)
 	externalServiceID, err := extractExternalServiceID(extSvc)
 	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
+		return err
 	}
 
-	prs, ev := h.convertEvent(r.Context(), externalServiceID, e)
-	if len(prs) == 0 || ev == nil {
-		respond(w, http.StatusOK, nil) // Nothing to do
-		return
-	}
+	prs, ev := h.convertEvent(ctx, externalServiceID, payload)
 
-	m := new(multierror.Error)
 	for _, pr := range prs {
 		if pr == (PR{}) {
 			continue
 		}
 
-		err := h.upsertChangesetEvent(r.Context(), externalServiceID, pr, ev)
+		err := h.upsertChangesetEvent(ctx, externalServiceID, pr, ev)
 		if err != nil {
 			m = multierror.Append(m, err)
 		}
 	}
-	if m.ErrorOrNil() != nil {
-		respond(w, http.StatusInternalServerError, m)
-	}
-}
-
-func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *repos.ExternalService, *httpError) {
-	payload, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return nil, nil, &httpError{http.StatusInternalServerError, err}
-	}
-
-	// 🚨 SECURITY: Try to authenticate the request with any of the stored secrets
-	// in GitHub external services config. Since n is usually small here,
-	// it's ok for this to be have linear complexity.
-	// If there are no secrets or no secret managed to authenticate the request,
-	// we return a 401 to the client.
-	args := repos.StoreListExternalServicesArgs{Kinds: []string{extsvc.KindGitHub}}
-	es, err := h.Repos.ListExternalServices(r.Context(), args)
-	if err != nil {
-		return nil, nil, &httpError{http.StatusInternalServerError, err}
-	}
-
-	sig := r.Header.Get("X-Hub-Signature")
-
-	rawID := r.FormValue(extsvc.IDParam)
-	var externalServiceID int64
-	// If a webhook was setup before we introduced the externalServiceID as part of the URL,
-	// the webhook requests may not contain the external service ID, so we need to fall back.
-	if rawID != "" {
-		externalServiceID, err = strconv.ParseInt(rawID, 10, 64)
-		if err != nil {
-			return nil, nil, &httpError{http.StatusBadRequest, errors.Wrap(err, "invalid external service id")}
-		}
-	}
-
-	var extSvc *repos.ExternalService
-	for _, e := range es {
-		if externalServiceID != 0 && e.ID != externalServiceID {
-			continue
-		}
-
-		c, _ := e.Configuration()
-		for _, hook := range c.(*schema.GitHubConnection).Webhooks {
-			if hook.Secret == "" {
-				continue
-			}
-
-			if err = gh.ValidateSignature(sig, payload, []byte(hook.Secret)); err == nil {
-				extSvc = e
-				break
-			}
-		}
-	}
-
-	if extSvc == nil || err != nil {
-		return nil, nil, &httpError{http.StatusUnauthorized, err}
-	}
-
-	e, err := gh.ParseWebHook(gh.WebHookType(r), payload)
-	if err != nil {
-		return nil, nil, &httpError{http.StatusBadRequest, err}
-	}
-
-	return e, extSvc, nil
+	return m.ErrorOrNil()
 }
 
 func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID string, theirs interface{}) (prs []PR, ours keyer) {
@@ -855,7 +807,7 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repos.ExternalService, *httpError) {
+func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *types.ExternalService, *httpError) {
 	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
@@ -882,7 +834,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
 	}
 
-	var extSvc *repos.ExternalService
+	var extSvc *types.ExternalService
 	for _, e := range es {
 		if externalServiceID != 0 && e.ID != externalServiceID {
 			continue

@@ -5,9 +5,10 @@ import (
 	"errors"
 
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type CodeIntelResolver interface {
@@ -134,8 +135,20 @@ type LSIFIndexResolver interface {
 	Failure() *string
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
+	DockerSteps() []DockerStepResolver
+	InputRoot() string
+	Indexer() string
+	IndexerArgs() []string
+	Outfile() *string
+	LogContents(ctx context.Context) (*string, error)
 	PlaceInQueue() *int32
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
+}
+
+type DockerStepResolver interface {
+	Root() string
+	Image() string
+	Commands() []string
 }
 
 type LSIFIndexConnectionResolver interface {

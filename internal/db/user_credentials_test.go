@@ -12,14 +12,14 @@ import (
 	"github.com/gomodule/oauth1/oauth"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/secret"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestUserCredentials_Create(t *testing.T) {
@@ -76,30 +76,6 @@ func TestUserCredentials_Create(t *testing.T) {
 			}
 			if cred.UpdatedAt.IsZero() {
 				t.Errorf("unexpected zero update time")
-			}
-
-			// Ensure that the credential we put into the database was really
-			// encrypted when running the tests with encryption enabled.
-			if secret.ConfiguredToEncrypt() {
-				t.Run("encryption", func(t *testing.T) {
-					clear, err := marshalCredential(auth)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					var cipher string
-					q := sqlf.Sprintf(
-						`SELECT credential FROM user_credentials WHERE id = %s`,
-						cred.ID,
-					)
-					row := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-					if err := row.Scan(&cipher); err != nil {
-						t.Fatal(err)
-					}
-					if cipher == clear {
-						t.Errorf("ciphertext matches cleartext: clear=%q cipher=%q", clear, cipher)
-					}
-				})
 			}
 
 			// Ensure that trying to insert again fails.
@@ -405,7 +381,7 @@ func TestUserCredentials_Invalid(t *testing.T) {
 				user.ID,
 				"type",
 				"id",
-				secret.StringValue{S: &raw},
+				raw,
 				sqlf.Sprintf("id"),
 			)
 

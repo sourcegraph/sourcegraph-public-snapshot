@@ -2,9 +2,12 @@ package resolvers
 
 import (
 	"context"
+	"time"
 
+	"github.com/opentracing/opentracing-go/log"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // Resolver is the main interface to code intel-related operations exposed to the GraphQL API.
@@ -27,15 +30,17 @@ type resolver struct {
 	lsifStore    LSIFStore
 	codeIntelAPI CodeIntelAPI
 	hunkCache    HunkCache
+	operations   *operations
 }
 
 // NewResolver creates a new resolver with the given services.
-func NewResolver(dbStore DBStore, lsifStore LSIFStore, codeIntelAPI CodeIntelAPI, hunkCache HunkCache) Resolver {
+func NewResolver(dbStore DBStore, lsifStore LSIFStore, codeIntelAPI CodeIntelAPI, hunkCache HunkCache, observationContext *observation.Context) Resolver {
 	return &resolver{
 		dbStore:      dbStore,
 		lsifStore:    lsifStore,
 		codeIntelAPI: codeIntelAPI,
 		hunkCache:    hunkCache,
+		operations:   makeOperations(observationContext),
 	}
 }
 
@@ -65,10 +70,23 @@ func (r *resolver) DeleteIndexByID(ctx context.Context, id int) error {
 	return err
 }
 
+const slowQueryResolverRequestThreshold = time.Second
+
 // QueryResolver determines the set of dumps that can answer code intel queries for the
 // given repository, commit, and path, then constructs a new query resolver instance which
 // can be used to answer subsequent queries.
-func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error) {
+func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (_ QueryResolver, err error) {
+	ctx, endObservation := observeResolver(ctx, &err, "QueryResolver", r.operations.queryResolver, slowQueryResolverRequestThreshold, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", int(args.Repo.ID)),
+			log.String("commit", string(args.Commit)),
+			log.String("path", args.Path),
+			log.Bool("exactPath", args.ExactPath),
+			log.String("toolName", args.ToolName),
+		},
+	})
+	defer endObservation()
+
 	dumps, err := r.codeIntelAPI.FindClosestDumps(
 		ctx,
 		int(args.Repo.ID),
@@ -90,5 +108,6 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 		string(args.Commit),
 		args.Path,
 		dumps,
+		r.operations,
 	), nil
 }

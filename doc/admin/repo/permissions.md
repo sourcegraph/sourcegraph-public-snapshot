@@ -207,6 +207,20 @@ A complete sync means a repository or user has done a repository-centric or user
 
 An incremental sync is in fact a side effect of a complete sync because a user may grant or lose access to repositories and we react to such changes as soon as we know to improve permissions accuracy.
 
+## Faster permissions syncing via GitHub webhooks
+
+Sourcegraph 3.22+ can speed up permissions syncing by receiving webhooks from GitHub for events related to user and repo permissions. To set up webhooks, follow the guide in the [GitHub Code Host Docs](../external_service/github.md#webhooks). These events will enqueue permissions syncs for the repositories or users mentioned, meaning things like publicising / privatising repos, or adding collaborators will be reflected in your Sourcegraph searches more quickly. For this to work the user must have logged in via the [GitHub OAuth provider](../auth.md#github) 
+
+The events we consume are:
+
+* [public](https://developer.github.com/webhooks/event-payloads/#public)
+* [repository](https://developer.github.com/webhooks/event-payloads/#repository)
+* [member](https://developer.github.com/webhooks/event-payloads/#member)
+* [membership](https://developer.github.com/webhooks/event-payloads/#membership)
+* [team_add](https://developer.github.com/webhooks/event-payloads/#team_add)
+* [organization](https://developer.github.com/webhooks/event-payloads/#organization)
+
+
 ## Explicit permissions API
 
 Sourcegraph exposes a GraphQL API to explicitly set repository permissions. This will become the primary

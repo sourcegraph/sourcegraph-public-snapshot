@@ -9,6 +9,15 @@ import execa from 'execa'
 import commandExists from 'command-exists'
 const mkdtemp = promisify(original_mkdtemp)
 
+export async function getAuthenticatedGitHubClient(): Promise<Octokit> {
+    const githubPAT = await readLine(
+        'Enter a GitHub personal access token with "repo" scope (https://github.com/settings/tokens/new): ',
+        '.secrets/github.txt'
+    )
+    const trimmedGithubPAT = githubPAT.trim()
+    return new Octokit({ auth: trimmedGithubPAT })
+}
+
 function dateMarkdown(date: Date, name: string): string {
     return `[${formatDate(date)}](${timezoneLink(date, name)})`
 }
@@ -31,7 +40,7 @@ const templates = {
  * Ensures a release ($MAJOR.$MINOR) tracking issue has been created with the given
  * parameters using `templates.releaseIssue`.
  */
-export async function ensureTrackingIssue({
+export async function ensureReleaseTrackingIssue({
     version,
     assignees,
     releaseDateTime,
@@ -70,20 +79,18 @@ export async function ensureTrackingIssue({
             dateMarkdown(oneWorkingDayBeforeRelease, `One working day before ${majorMinor} release`)
         )
 
-    const milestoneTitle = `${version.major}.${version.minor}`
-    const milestones = await octokit.issues.listMilestonesForRepo({
-        owner: 'sourcegraph',
-        repo: 'sourcegraph',
-        per_page: 100,
-        direction: 'desc',
-    })
-    const milestone = milestones.data.filter(milestone => milestone.title === milestoneTitle)
-    if (milestone.length === 0) {
+    // Release milestones are not as emphasised now as they used to be, since most teams
+    // use sprints shorter than releases to track their work. For reference, if one is
+    // available we apply it to this tracking issue, otherwise just leave it without a
+    // milestone.
+    let milestoneNumber: number | undefined
+    const milestone = await getReleaseMilestone(octokit, version)
+    if (!milestone) {
         console.log(
-            `Milestone ${JSON.stringify(
-                milestoneTitle
-            )} is closed or not found—you'll need to manually create it and add this issue to it.`
+            `Milestone ${JSON.stringify(releaseMilestoneName(version))} is closed or not found — omitting from issue.`
         )
+    } else {
+        milestoneNumber = milestone ? milestone.number : undefined
     }
 
     return ensureIssue(
@@ -94,8 +101,8 @@ export async function ensureTrackingIssue({
             repo: 'sourcegraph',
             assignees,
             body: releaseIssueBody,
-            milestone: milestone.length > 0 ? milestone[0].number : undefined,
-            labels: ['release-tracker'],
+            milestone: milestoneNumber,
+            labels: ['release-tracking'],
         },
         dryRun
     )
@@ -184,9 +191,9 @@ async function ensureIssue(
         console.log(`With body: ${body}`)
         return { url: '', created: false }
     }
-    const url = await getIssueByTitle(octokit, title)
-    if (url) {
-        return { url, created: false }
+    const issue = await getIssueByTitle(octokit, title)
+    if (issue) {
+        return { url: issue.url, created: false }
     }
     const createdIssue = await octokit.issues.create({ body, ...issueData })
     return { url: createdIssue.data.html_url, created: true }
@@ -199,26 +206,66 @@ export async function listIssues(
     return (await octokit.search.issuesAndPullRequests({ per_page: 100, q: query })).data.items
 }
 
-export function trackingIssueTitle(version: semver.SemVer): string {
+export interface Issue {
+    number: number
+    url: string
+
+    // Repository
+    owner: string
+    repo: string
+}
+
+export async function getTrackingIssue(client: Octokit, release: semver.SemVer): Promise<Issue | null> {
+    return getIssueByTitle(client, trackingIssueTitle(release))
+}
+
+function releaseMilestoneName(release: semver.SemVer): string {
+    return `${release.major}.${release.minor}${release.patch !== 0 ? `.${release.patch}` : ''}`
+}
+
+interface Milestone {
+    number: number
+    url: string
+
+    // Repository
+    owner: string
+    repo: string
+}
+
+async function getReleaseMilestone(client: Octokit, release: semver.SemVer): Promise<Milestone | null> {
+    const owner = 'sourcegraph'
+    const repo = 'sourcegraph'
+    const milestoneTitle = releaseMilestoneName(release)
+    const milestones = await client.issues.listMilestonesForRepo({
+        owner,
+        repo,
+        per_page: 100,
+        direction: 'desc',
+    })
+    const milestone = milestones.data.filter(milestone => milestone.title === milestoneTitle)
+    return milestone.length > 0
+        ? {
+              number: milestone[0].number,
+              url: milestone[0].html_url,
+              owner,
+              repo,
+          }
+        : null
+}
+
+function trackingIssueTitle(version: semver.SemVer): string {
     if (!version.patch) {
         return `${version.major}.${version.minor} release tracking issue`
     }
     return `${version.version} patch release tracking issue`
 }
 
-export async function getAuthenticatedGitHubClient(): Promise<Octokit> {
-    const githubPAT = await readLine(
-        'Enter a GitHub personal access token with "repo" scope (https://github.com/settings/tokens/new): ',
-        '.secrets/github.txt'
-    )
-    const trimmedGithubPAT = githubPAT.trim()
-    return new Octokit({ auth: trimmedGithubPAT })
-}
-
-export async function getIssueByTitle(octokit: Octokit, title: string): Promise<string | null> {
+async function getIssueByTitle(octokit: Octokit, title: string): Promise<Issue | null> {
+    const owner = 'sourcegraph'
+    const repo = 'sourcegraph'
     const response = await octokit.search.issuesAndPullRequests({
         per_page: 100,
-        q: `type:issue repo:sourcegraph/sourcegraph is:open ${JSON.stringify(title)}`,
+        q: `type:issue repo:${owner}/${repo} is:open ${JSON.stringify(title)}`,
     })
 
     const matchingIssues = response.data.items.filter(issue => issue.title === title)
@@ -228,7 +275,7 @@ export async function getIssueByTitle(octokit: Octokit, title: string): Promise<
     if (matchingIssues.length > 1) {
         throw new Error(`Multiple issues matched issue title ${JSON.stringify(title)}`)
     }
-    return matchingIssues[0].html_url
+    return { number: matchingIssues[0].number, url: matchingIssues[0].html_url, owner, repo }
 }
 
 export type EditFunc = (d: string) => void
@@ -267,18 +314,27 @@ export async function createChangesets(options: ChangesetsOptions): Promise<Crea
         }
     }
     const octokit = await getAuthenticatedGitHubClient()
+    if (options.dryRun) {
+        console.log('Changesets dry run enabled - diffs and pull requests will be printed instead')
+    } else {
+        console.log('Generating changes and publishing as pull requests')
+    }
 
-    // Generate changes
+    // Generate and push changes
+    for (const change of options.changes) {
+        const repository = `${change.owner}/${change.repo}`
+        console.log(`${repository}: Preparing change for on '${change.base}' to '${change.head}'`)
+        await createBranchWithChanges(octokit, { ...change, dryRun: options.dryRun })
+    }
+
+    // Publish changes as pull requests only if all changes are successfully created
     const results: CreatedChangeset[] = []
     for (const change of options.changes) {
         const repository = `${change.owner}/${change.repo}`
-        console.log(`Preparing change for ${repository} on '${change.base}' to '${change.head}'
+        console.log(`${repository}: Preparing pull request for change from '${change.base}' to '${change.head}':
 
 Title: ${change.title}
-Body: ${change.body || 'none'}
-Dryrun: ${options.dryRun || false}`)
-        await createBranchWithChanges(octokit, { ...change, dryRun: options.dryRun })
-
+Body: ${change.body || 'none'}`)
         let pullRequest: { url: string; number: number } = { url: '', number: -1 }
         if (!options.dryRun) {
             pullRequest = await createPR(octokit, change)
@@ -300,41 +356,60 @@ Dryrun: ${options.dryRun || false}`)
     return results
 }
 
-async function createBranchWithChanges(
+async function cloneRepo(
     octokit: Octokit,
-    { owner, repo, base: baseRevision, head: headBranch, commitMessage, edits, dryRun }: CreateBranchWithChangesOptions
-): Promise<void> {
+    owner: string,
+    repo: string,
+    checkout: {
+        revision: string
+        revisionMustExist?: boolean
+    }
+): Promise<{
+    workdir: string
+}> {
     const tmpdir = await mkdtemp(path.join(os.tmpdir(), `sg-release-${owner}-${repo}-`))
     console.log(`Created temp directory ${tmpdir}`)
-    const depthFlag = '--depth 10'
+    const fetchFlags = '--depth 10'
 
     // Determine whether or not to create the base branch, or use the existing one
-    let baseExists = true
-    try {
-        await octokit.repos.getBranch({ branch: baseRevision, owner, repo })
-    } catch (error) {
-        if (error.status === 404) {
-            console.log(`Base ${baseRevision} does not exist`)
-            baseExists = false
-        } else {
-            throw error
+    let revisionExists = true
+    if (!checkout.revisionMustExist) {
+        try {
+            await octokit.repos.getBranch({ branch: checkout.revision, owner, repo })
+        } catch (error) {
+            if (error.status === 404) {
+                console.log(`Target revision ${checkout.revision} does not exist, this branch will be created`)
+                revisionExists = false
+            } else {
+                throw error
+            }
         }
     }
     const checkoutCommand =
-        baseExists === true
-            ? // check out the existing branch - fetch fails if we are already checked out, in which case just check out
-              `git fetch ${depthFlag} origin ${baseRevision}:${baseRevision} || git checkout ${baseRevision}`
-            : // create and publish base branch if it does not yet exist
-              `git checkout -b ${baseRevision}`
+        revisionExists === true
+            ? // for an existing branch - fetch fails if we are already checked out, so ignore errors optimistically
+              `git fetch ${fetchFlags} origin ${checkout.revision}:${checkout.revision} || true ; git checkout ${checkout.revision}`
+            : // create from HEAD and publish base branch if it does not yet exist
+              `git checkout -b ${checkout.revision} ; git push origin ${checkout.revision}:${checkout.revision}`
 
     // Set up repository
     const setupScript = `set -ex
 
-    git clone ${depthFlag} git@github.com:${owner}/${repo} || git clone ${depthFlag} https://github.com/${owner}/${repo};
-    cd ./${repo};
-    ${checkoutCommand};`
+git clone ${fetchFlags} git@github.com:${owner}/${repo} || git clone ${fetchFlags} https://github.com/${owner}/${repo};
+cd ${repo};
+${checkoutCommand};`
     await execa('bash', ['-c', setupScript], { stdio: 'inherit', cwd: tmpdir })
-    const workdir = path.join(tmpdir, repo)
+    return {
+        workdir: path.join(tmpdir, repo),
+    }
+}
+
+async function createBranchWithChanges(
+    octokit: Octokit,
+    { owner, repo, base: baseRevision, head: headBranch, commitMessage, edits, dryRun }: CreateBranchWithChangesOptions
+): Promise<void> {
+    // Set up repository
+    const { workdir } = await cloneRepo(octokit, owner, repo, { revision: baseRevision })
 
     // Apply edits
     for (const edit of edits) {
@@ -358,12 +433,12 @@ async function createBranchWithChanges(
         git --no-pager diff;`
         await execa('bash', ['-c', showChangesScript], { stdio: 'inherit', cwd: workdir })
     } else {
-        // Publish changes
+        // Publish changes. We force push to ensure that the generated changes are applied.
         const publishScript = `set -ex
 
         git add :/;
         git commit -a -m ${JSON.stringify(commitMessage)};
-        git push origin HEAD:${headBranch};`
+        git push --force origin HEAD:${headBranch};`
         await execa('bash', ['-c', publishScript], { stdio: 'inherit', cwd: workdir })
     }
 }
@@ -384,4 +459,33 @@ async function createPR(
         url: response.data.html_url,
         number: response.data.number,
     }
+}
+
+export interface TagOptions {
+    owner: string
+    repo: string
+    branch: string
+    tag: string
+}
+
+/**
+ * Creates a tag on a remote branch for the given repository.
+ *
+ * The target branch must exist on the remote.
+ */
+export async function createTag(
+    octokit: Octokit,
+    { owner, repo, branch: rawBranch, tag: rawTag }: TagOptions,
+    dryRun: boolean
+): Promise<void> {
+    const { workdir } = await cloneRepo(octokit, owner, repo, { revision: rawBranch, revisionMustExist: true })
+    const branch = JSON.stringify(rawBranch)
+    const tag = JSON.stringify(rawTag)
+    const finalizeTag = dryRun ? `git --no-pager show ${tag} --no-patch` : `git push origin ${tag}`
+    console.log(
+        dryRun
+            ? `Dry-run enabled - creating and printing tag ${tag} on ${owner}/${repo}@${branch}`
+            : `Creating and pushing tag ${tag} on ${owner}/${repo}@${branch}`
+    )
+    await execa('bash', ['-c', `git tag -a ${tag} -m ${tag} && ${finalizeTag}`], { stdio: 'inherit', cwd: workdir })
 }

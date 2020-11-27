@@ -22,14 +22,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/internal/secret"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // A Store exposes methods to read and write repos and external services.
 type Store interface {
-	GetExternalService(ctx context.Context, id int64) (*ExternalService, error)
-	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
-	UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) error
+	GetExternalService(ctx context.Context, id int64) (*types.ExternalService, error)
+	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*types.ExternalService, error)
+	UpsertExternalServices(ctx context.Context, svcs ...*types.ExternalService) error
 
 	ListRepos(context.Context, StoreListReposArgs) ([]*Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
@@ -203,12 +203,12 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 	return &DBStore{Store: txBase}, nil
 }
 
-func (s *DBStore) GetExternalService(ctx context.Context, id int64) (*ExternalService, error) {
+func (s *DBStore) GetExternalService(ctx context.Context, id int64) (*types.ExternalService, error) {
 	query := sqlf.Sprintf(
 		getExternalServiceQueryFmtstr,
 		id,
 	)
-	svc := ExternalService{}
+	svc := types.ExternalService{}
 	err := scanExternalService(&svc, s.QueryRow(ctx, query))
 	return &svc, err
 }
@@ -233,13 +233,13 @@ AND deleted_at IS NULL
 `
 
 // ListExternalServices lists all stored external services matching the given args.
-func (s *DBStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (svcs []*ExternalService, _ error) {
+func (s *DBStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (svcs []*types.ExternalService, _ error) {
 	if args.PerPage <= 0 {
 		args.PerPage = DefaultListExternalServicesPerPage
 	}
 	return svcs, s.paginate(ctx, args.Limit, args.PerPage, args.Cursor, listExternalServicesQuery(args),
 		func(sc scanner) (last, count int64, err error) {
-			var svc ExternalService
+			var svc types.ExternalService
 			err = scanExternalService(&svc, sc)
 			if err != nil {
 				return 0, 0, err
@@ -335,7 +335,7 @@ func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuer
 }
 
 // UpsertExternalServices updates or inserts the given ExternalServices.
-func (s *DBStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) error {
+func (s *DBStore) UpsertExternalServices(ctx context.Context, svcs ...*types.ExternalService) error {
 	if len(svcs) == 0 {
 		return nil
 	}
@@ -356,7 +356,7 @@ func (s *DBStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalS
 	return err
 }
 
-func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
+func upsertExternalServicesQuery(svcs []*types.ExternalService) *sqlf.Query {
 	vals := make([]*sqlf.Query, 0, len(svcs))
 	for _, s := range svcs {
 		vals = append(vals, sqlf.Sprintf(
@@ -546,6 +546,10 @@ insert_sources AS (
     repo_id,
     clone_url
   FROM sources_list
+  ON CONFLICT ON CONSTRAINT external_service_repos_repo_id_external_service_id_unique
+  DO
+    UPDATE SET clone_url = EXCLUDED.clone_url
+    WHERE external_service_repos.clone_url != EXCLUDED.clone_url
 )
 SELECT id FROM inserted_repos_with_ids;
 `
@@ -766,9 +770,9 @@ ORDER BY id ASC LIMIT %s
 }
 
 type externalServiceRepo struct {
-	ExternalServiceID int64              `json:"external_service_id"`
-	RepoID            int64              `json:"repo_id"`
-	CloneURL          secret.StringValue `json:"clone_url"`
+	ExternalServiceID int64  `json:"external_service_id"`
+	RepoID            int64  `json:"repo_id"`
+	CloneURL          string `json:"clone_url"`
 }
 
 func (s *DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]SourceInfo) error {
@@ -783,7 +787,7 @@ func (s *DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes m
 				srcs = append(srcs, externalServiceRepo{
 					ExternalServiceID: info.ExternalServiceID(),
 					RepoID:            int64(rid),
-					CloneURL:          secret.StringValue{S: &info.CloneURL},
+					CloneURL:          info.CloneURL,
 				})
 			}
 		}
@@ -877,6 +881,10 @@ INSERT INTO external_service_repos (
   repo_id,
   clone_url
 FROM inserted_sources_list
+ON CONFLICT ON CONSTRAINT external_service_repos_repo_id_external_service_id_unique
+DO
+  UPDATE SET clone_url = EXCLUDED.clone_url
+  WHERE external_service_repos.clone_url != EXCLUDED.clone_url
 `
 
 // SetClonedRepos updates cloned status for all repositories.
@@ -1348,7 +1356,7 @@ func sourcesColumn(repoID api.RepoID, sources map[string]*SourceInfo) (json.RawM
 		records = append(records, externalServiceRepo{
 			ExternalServiceID: src.ExternalServiceID(),
 			RepoID:            int64(repoID),
-			CloneURL:          secret.StringValue{S: &src.CloneURL},
+			CloneURL:          src.CloneURL,
 		})
 	}
 
@@ -1385,12 +1393,12 @@ func closeErr(c io.Closer, err *error) {
 	}
 }
 
-func scanExternalService(svc *ExternalService, s scanner) error {
+func scanExternalService(svc *types.ExternalService, s scanner) error {
 	return s.Scan(
 		&svc.ID,
 		&svc.Kind,
 		&svc.DisplayName,
-		&secret.StringValue{S: &svc.Config},
+		&svc.Config,
 		&svc.CreatedAt,
 		&dbutil.NullTime{Time: &svc.UpdatedAt},
 		&dbutil.NullTime{Time: &svc.DeletedAt},
@@ -1428,7 +1436,7 @@ func scanRepo(r *Repo, s scanner) error {
 
 	type sourceInfo struct {
 		ID       int64
-		CloneURL secret.StringValue
+		CloneURL string
 		Kind     string
 	}
 	r.Sources = make(map[string]*SourceInfo)
@@ -1442,7 +1450,7 @@ func scanRepo(r *Repo, s scanner) error {
 			urn := extsvc.URN(src.Kind, src.ID)
 			r.Sources[urn] = &SourceInfo{
 				ID:       urn,
-				CloneURL: *src.CloneURL.S,
+				CloneURL: src.CloneURL,
 			}
 		}
 	}

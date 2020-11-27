@@ -2,11 +2,13 @@ import { SettingsCascade } from '../settings/settings'
 import { SettingsEdit } from './client/services/settings'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Remote, ProxyMarked } from 'comlink'
-import { Unsubscribable, DocumentHighlight } from 'sourcegraph'
+import { Unsubscribable, DocumentHighlight, FileDecorationContext } from 'sourcegraph'
 import { ProxySubscribable } from './extension/api/common'
 import { TextDocumentPositionParameters } from './protocol'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { HoverMerged } from './client/types/hover'
+import { GraphQLResult } from '../graphql/graphql'
+import { FileDecorationsByPath } from './extension/flatExtensionApi'
 
 /**
  * This is exposed from the extension host thread to the main thread
@@ -32,6 +34,9 @@ export interface FlatExtensionHostAPI {
     getDefinition: (
         parameters: TextDocumentPositionParameters
     ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
+
+    // Tree
+    getFileDecorations: (parameters: FileDecorationContext) => ProxySubscribable<FileDecorationsByPath>
 }
 
 /**
@@ -44,6 +49,11 @@ export interface MainThreadAPI {
      * Applies a settings update from extensions.
      */
     applySettingsEdit: (edit: SettingsEdit) => Promise<void>
+
+    /**
+     * GraphQL request API
+     */
+    requestGraphQL: (request: string, variables: any) => Promise<GraphQLResult<any>>
 
     // Commands
     executeCommand: (command: string, args: any[]) => Promise<any>

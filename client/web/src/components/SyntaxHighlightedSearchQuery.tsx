@@ -11,11 +11,9 @@ export const SyntaxHighlightedSearchQuery: React.FunctionComponent<{ query: stri
                       return (
                           <Fragment key={token.range.start}>
                               <span className="search-filter-keyword">
-                                  {query.slice(token.filterType.range.start, token.filterType.range.end)}:
+                                  {query.slice(token.field.range.start, token.field.range.end)}:
                               </span>
-                              {token.filterValue ? (
-                                  <>{query.slice(token.filterValue.range.start, token.filterValue.range.end)}</>
-                              ) : null}
+                              {token.value ? <>{query.slice(token.value.range.start, token.value.range.end)}</> : null}
                           </Fragment>
                       )
                   }

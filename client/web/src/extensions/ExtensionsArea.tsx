@@ -12,7 +12,7 @@ import { ExtensionsAreaHeader, ExtensionsAreaHeaderActionButton } from './Extens
 import { ThemeProps } from '../../../shared/src/theme'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../auth'
-import { useBreadcrumbs, Breadcrumbs, BreadcrumbSetters } from '../components/Breadcrumbs'
+import { useBreadcrumbs, BreadcrumbSetters } from '../components/Breadcrumbs'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -78,32 +78,29 @@ export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = prop
     }
 
     return (
-        <div className="extensions-area">
-            <Breadcrumbs breadcrumbs={breadcrumbs} location={props.location} />
-            <div className="web-content">
-                <ExtensionsAreaHeader
-                    {...props}
-                    {...context}
-                    actionButtons={props.extensionsAreaHeaderActionButtons}
-                    isPrimaryHeader={props.location.pathname === props.match.path}
-                />
-                <Switch>
-                    {props.routes.map(
-                        /* eslint-disable react/jsx-no-bind */
-                        ({ path, exact, condition = () => true, render }) =>
-                            condition(context) && (
-                                <Route
-                                    key="hardcoded-key"
-                                    path={props.match.url + path}
-                                    exact={exact}
-                                    render={routeComponentProps => render({ ...context, ...routeComponentProps })}
-                                />
-                            )
-                        /* eslint-enable react/jsx-no-bind */
-                    )}
-                    <Route key="hardcoded-key" component={NotFoundPage} />
-                </Switch>
-            </div>
+        <div className="extensions-area web-content">
+            <ExtensionsAreaHeader
+                {...props}
+                {...context}
+                actionButtons={props.extensionsAreaHeaderActionButtons}
+                isPrimaryHeader={props.location.pathname === props.match.path}
+            />
+            <Switch>
+                {props.routes.map(
+                    /* eslint-disable react/jsx-no-bind */
+                    ({ path, exact, condition = () => true, render }) =>
+                        condition(context) && (
+                            <Route
+                                key="hardcoded-key"
+                                path={props.match.url + path}
+                                exact={exact}
+                                render={routeComponentProps => render({ ...context, ...routeComponentProps })}
+                            />
+                        )
+                    /* eslint-enable react/jsx-no-bind */
+                )}
+                <Route key="hardcoded-key" component={NotFoundPage} />
+            </Switch>
         </div>
     )
 }

@@ -130,7 +130,7 @@ describe('observableFromAsyncIterable', () => {
         )
 
         const values: number[] = []
-        await new Promise(complete => observable.subscribe({ next: value => values.push(value), complete }))
+        await new Promise<void>(complete => observable.subscribe({ next: value => values.push(value), complete }))
         expect(values).toStrictEqual([1, 2, 3, 4, 5])
     })
 
@@ -152,7 +152,7 @@ describe('observableFromAsyncIterable', () => {
         const observable = observableFromAsyncIterable(test())
 
         const collectedValues: number[] = []
-        await new Promise(resolve => {
+        await new Promise<void>(resolve => {
             const subscription = observable.subscribe({
                 next: value => {
                     collectedValues.push(value)

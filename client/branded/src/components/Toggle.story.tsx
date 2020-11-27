@@ -3,22 +3,15 @@ import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
 import { Toggle } from './Toggle'
 import webStyles from '../../../web/src/main.scss'
-import { radios } from '@storybook/addon-knobs'
 
 const onToggle = action('onToggle')
 
-const { add } = storiesOf('branded/Toggle', module).addDecorator(story => {
-    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
-    document.body.classList.toggle('theme-light', theme === 'light')
-    document.body.classList.toggle('theme-dark', theme === 'dark')
-
-    return (
-        <>
-            <div>{story()}</div>
-            <style>{webStyles}</style>
-        </>
-    )
-})
+const { add } = storiesOf('branded/Toggle', module).addDecorator(story => (
+    <>
+        <div>{story()}</div>
+        <style>{webStyles}</style>
+    </>
+))
 
 add(
     'Interactive',

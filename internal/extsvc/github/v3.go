@@ -173,6 +173,10 @@ func (e *APIError) Error() string {
 	return fmt.Sprintf("request to %s returned status %d: %s", e.URL, e.Code, e.Message)
 }
 
+func (e *APIError) Unauthorized() bool {
+	return e.Code == http.StatusUnauthorized
+}
+
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
 // this package. Otherwise it returns 0.
 func HTTPErrorCode(err error) int {

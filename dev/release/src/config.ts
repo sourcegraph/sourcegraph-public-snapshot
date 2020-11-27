@@ -3,6 +3,9 @@ import * as semver from 'semver'
 import { readFileSync } from 'fs'
 import { parse as parseJSONC } from '@sqs/jsonc-parser'
 
+/**
+ * Release configuration file format
+ */
 export interface Config {
     teamEmail: string
 
@@ -20,6 +23,7 @@ export interface Config {
     slackAnnounceChannel: string
 
     dryRun: {
+        tags?: boolean
         changesets?: boolean
         trackingIssues?: boolean
     }
@@ -67,7 +71,7 @@ export async function releaseVersions(
     }
     if (semver.neq(parsedConfirmed, parsedUpcoming)) {
         throw new Error(
-            `Provided version '${confirmVersion}' and config.upcomingRelease '${config.upcomingRelease}' to not match - please update the release configuration`
+            `Provided version '${confirmVersion}' and config.upcomingRelease '${config.upcomingRelease}' to not match - please update the release configuration, or confirm the version in your cached answer (in ${cachedVersion})`
         )
     }
 
