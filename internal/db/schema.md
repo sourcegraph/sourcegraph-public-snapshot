@@ -248,6 +248,27 @@ Referenced by:
 
 ```
 
+# Table "public.cm_action_jobs"
+```
+     Column      |           Type           |                          Modifiers                          
+-----------------+--------------------------+-------------------------------------------------------------
+ id              | integer                  | not null default nextval('cm_action_jobs_id_seq'::regclass)
+ email           | bigint                   | not null
+ state           | text                     | default 'queued'::text
+ failure_message | text                     | 
+ started_at      | timestamp with time zone | 
+ finished_at     | timestamp with time zone | 
+ process_after   | timestamp with time zone | 
+ num_resets      | integer                  | not null default 0
+ num_failures    | integer                  | not null default 0
+ log_contents    | text                     | 
+Indexes:
+    "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "cm_action_jobs_email_fk" FOREIGN KEY (email) REFERENCES cm_emails(id) ON DELETE CASCADE
+
+```
+
 # Table "public.cm_emails"
 ```
    Column   |           Type           |                       Modifiers                        
@@ -268,6 +289,7 @@ Foreign-key constraints:
     "cm_emails_created_by_fk" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
     "cm_emails_monitor" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
 Referenced by:
+    TABLE "cm_action_jobs" CONSTRAINT "cm_action_jobs_email_fk" FOREIGN KEY (email) REFERENCES cm_emails(id) ON DELETE CASCADE
     TABLE "cm_recipients" CONSTRAINT "cm_recipients_emails" FOREIGN KEY (email) REFERENCES cm_emails(id) ON DELETE CASCADE
 
 ```
