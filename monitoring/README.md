@@ -54,9 +54,11 @@ At Sourcegraph, routing based on team ownership (as defined by [`ObservableOwner
 
 The Sourcegraph monitoring generator consists of three components:
 
-* The [main program](./main.go).
+* The [main program](./main.go) - this is the primary entrypoint to the generator.
 * *Definitions*, defined in the top-level [`monitoring/definitions` package](./definitions/).
   This is where the all service monitoring definitions lives.
   If you are editing monitoring, this is probably where you want to look - see the [Sourcegraph monitoring developer guide](https://about.sourcegraph.com/handbook/engineering/observability/monitoring).
 * *Generator*, defined in the nested [`monitoring/monitoring` package](./monitoring/README.md) package.
   This is where the API for service monitoring definitions is defined, as well as the generator code.
+
+All features and capabilities for developed for the generator should align with the [Sourcegraph monitoring pillars](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_pillars).
