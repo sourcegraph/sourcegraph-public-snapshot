@@ -568,9 +568,7 @@ func (s *Store) CancelQueuedCampaignChangesets(ctx context.Context, campaignID i
 	q := sqlf.Sprintf(
 		cancelQueuedCampaignChangesetsFmtstr,
 		campaignID,
-		ReconcilerMaxNumRetries,
 		canceledChangesetFailureMessage,
-		ReconcilerMaxNumRetries,
 	)
 	return s.Store.Exec(ctx, q)
 }
@@ -582,17 +580,14 @@ WITH changeset_ids AS (
   WHERE
     owned_by_campaign_id = %s
   AND
-    (reconciler_state = 'queued' OR
-	 reconciler_state = 'processing' OR
-	 (reconciler_state = 'errored' AND num_failures < %d))
+    reconciler_state IN ('queued', 'processing', 'errored')
   FOR UPDATE
 )
 UPDATE
   changesets
 SET
-  reconciler_state = 'errored',
-  failure_message = %s,
-  num_failures = %d
+  reconciler_state = 'failed',
+  failure_message = %s
 WHERE id IN (SELECT id FROM changeset_ids);
 `
 
