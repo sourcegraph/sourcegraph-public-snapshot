@@ -37,6 +37,12 @@ type changesetSpecResolver struct {
 }
 
 func NewChangesetSpecResolver(ctx context.Context, store *ee.Store, cf *httpcli.Factory, changesetSpec *campaigns.ChangesetSpec) (*changesetSpecResolver, error) {
+	resolver := &changesetSpecResolver{
+		store:         store,
+		httpFactory:   cf,
+		changesetSpec: changesetSpec,
+	}
+
 	// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
 	// In case we don't find a repository, it might be because it's deleted
@@ -45,18 +51,13 @@ func NewChangesetSpecResolver(ctx context.Context, store *ee.Store, cf *httpcli.
 	if err != nil {
 		return nil, err
 	}
-	var repo *types.Repo
+
 	// Not found is ok, the resolver will disguise as a HiddenChangesetResolver.
 	if len(rs) == 1 {
-		repo = rs[0]
+		resolver.repo = rs[0]
 	}
 
-	return &changesetSpecResolver{
-		store:         store,
-		httpFactory:   cf,
-		repo:          repo,
-		changesetSpec: changesetSpec,
-	}, nil
+	return resolver, nil
 }
 
 func NewChangesetSpecResolverWithRepo(store *ee.Store, cf *httpcli.Factory, repo *types.Repo, changesetSpec *campaigns.ChangesetSpec) *changesetSpecResolver {
