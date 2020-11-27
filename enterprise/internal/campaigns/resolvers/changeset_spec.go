@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -33,7 +34,12 @@ type changesetSpecResolver struct {
 
 	changesetSpec *campaigns.ChangesetSpec
 
-	repo *types.Repo
+	fetcher *changesetSpecPreviewer
+	repo    *types.Repo
+
+	planOnce sync.Once
+	plan     *ee.ReconcilerPlan
+	planErr  error
 }
 
 func NewChangesetSpecResolver(ctx context.Context, store *ee.Store, cf *httpcli.Factory, changesetSpec *campaigns.ChangesetSpec) (*changesetSpecResolver, error) {
@@ -41,6 +47,10 @@ func NewChangesetSpecResolver(ctx context.Context, store *ee.Store, cf *httpcli.
 		store:         store,
 		httpFactory:   cf,
 		changesetSpec: changesetSpec,
+		fetcher: &changesetSpecPreviewer{
+			store:          store,
+			campaignSpecID: changesetSpec.CampaignSpecID,
+		},
 	}
 
 	// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
@@ -66,7 +76,16 @@ func NewChangesetSpecResolverWithRepo(store *ee.Store, cf *httpcli.Factory, repo
 		httpFactory:   cf,
 		repo:          repo,
 		changesetSpec: changesetSpec,
+		fetcher: &changesetSpecPreviewer{
+			store:          store,
+			campaignSpecID: changesetSpec.CampaignSpecID,
+		},
 	}
+}
+
+func (r *changesetSpecResolver) WithRewirerMappingFetcher(mappingFetcher *changesetSpecPreviewer) *changesetSpecResolver {
+	r.fetcher = mappingFetcher
+	return r
 }
 
 func (r *changesetSpecResolver) ID() graphql.ID {
@@ -94,27 +113,42 @@ func (r *changesetSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.changesetSpec.ExpiresAt()}
 }
 
-func (r *changesetSpecResolver) Operations() ([]campaigns.ReconcilerOperation, error) {
-	return []campaigns.ReconcilerOperation{
-		campaigns.ReconcilerOperationPush,
-		campaigns.ReconcilerOperationUpdate,
-		campaigns.ReconcilerOperationUndraft,
-		campaigns.ReconcilerOperationPublish,
-		campaigns.ReconcilerOperationPublishDraft,
-		campaigns.ReconcilerOperationSync,
-		campaigns.ReconcilerOperationImport,
-		campaigns.ReconcilerOperationClose,
-		campaigns.ReconcilerOperationReopen,
-		campaigns.ReconcilerOperationSleep,
-	}, nil
+func (r *changesetSpecResolver) Operations(ctx context.Context) ([]campaigns.ReconcilerOperation, error) {
+	plan, err := r.computePlan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ops := plan.Ops.ExecutionOrder()
+	return ops, nil
 }
 
-func (r *changesetSpecResolver) Delta() (graphqlbackend.ChangesetSpecDeltaResolver, error) {
-	return &changesetSpecDeltaResolver{}, nil
+func (r *changesetSpecResolver) Delta(ctx context.Context) (graphqlbackend.ChangesetSpecDeltaResolver, error) {
+	plan, err := r.computePlan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if plan.Delta == nil {
+		return &changesetSpecDeltaResolver{}, nil
+	}
+	return &changesetSpecDeltaResolver{delta: *plan.Delta}, nil
 }
 
-func (r *changesetSpecResolver) Changeset() (graphqlbackend.ChangesetResolver, error) {
-	return nil, nil
+func (r *changesetSpecResolver) computePlan(ctx context.Context) (*ee.ReconcilerPlan, error) {
+	r.planOnce.Do(func() {
+		r.plan, r.planErr = r.fetcher.PlanForChangesetSpec(ctx, r.changesetSpec)
+	})
+	return r.plan, r.planErr
+}
+
+func (r *changesetSpecResolver) Changeset(ctx context.Context) (graphqlbackend.ChangesetResolver, error) {
+	changeset, err := r.fetcher.ChangesetForChangesetSpec(ctx, r.changesetSpec.ID)
+	if err != nil {
+		return nil, err
+	}
+	if changeset == nil {
+		return nil, nil
+	}
+	return NewChangesetResolver(r.store, r.httpFactory, changeset, r.repo), nil
 }
 
 func (r *changesetSpecResolver) repoAccessible() bool {
@@ -261,5 +295,5 @@ func (c *changesetSpecDeltaResolver) AuthorNameChanged() bool {
 	return c.delta.AuthorNameChanged
 }
 func (c *changesetSpecDeltaResolver) AuthorEmailChanged() bool {
-	return c.delta.TitleChanged
+	return c.delta.AuthorEmailChanged
 }

@@ -820,7 +820,7 @@ func TestReconcilerProcess(t *testing.T) {
 	}
 }
 
-func TestDeterminePlan(t *testing.T) {
+func TestReconcilerDeterminePlan(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
@@ -845,7 +845,7 @@ func TestDeterminePlan(t *testing.T) {
 		previousSpec   testSpecOpts
 		currentSpec    testSpecOpts
 		changeset      testChangesetOpts
-		wantOperations operations
+		wantOperations ReconcilerOperations
 	}{
 		{
 			name: "GitHub publish",
@@ -857,7 +857,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish},
+			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish},
 		},
 		{
 			name: "GitHub publish as draft",
@@ -869,7 +869,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublishDraft},
+			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublishDraft},
 		},
 		{
 			name: "GitHub publish false",
@@ -881,7 +881,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{},
+			wantOperations: ReconcilerOperations{},
 		},
 		{
 			name: "set to draft but unsupported",
@@ -894,7 +894,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState:    campaigns.ChangesetPublicationStateUnpublished,
 				repo:                bbsRepo.ID,
 			},
-			wantOperations: operations{},
+			wantOperations: ReconcilerOperations{},
 		},
 		{
 			name: "set from draft to publish true",
@@ -910,7 +910,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{campaigns.ReconcilerOperationUndraft},
+			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationUndraft},
 		},
 		{
 			name: "set from draft to publish true on unpublished",
@@ -926,7 +926,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish},
+			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish},
 		},
 		{
 			name: "changeset spec changed attribute, needs update",
@@ -944,7 +944,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{campaigns.ReconcilerOperationUpdate},
+			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationUpdate},
 		},
 		{
 			name: "changeset spec changed, needs new commit but no update",
@@ -962,7 +962,7 @@ func TestDeterminePlan(t *testing.T) {
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationSleep, campaigns.ReconcilerOperationSync},
+			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationSleep, campaigns.ReconcilerOperationSync},
 		},
 		{
 			name: "changeset merged and spec changed is noop",
@@ -981,7 +981,7 @@ func TestDeterminePlan(t *testing.T) {
 				externalState:    campaigns.ChangesetExternalStateMerged,
 				repo:             githubRepo.ID,
 			},
-			wantOperations: operations{},
+			wantOperations: ReconcilerOperations{},
 		},
 		{
 			name: "changeset closed-and-detached will reopen",
@@ -1000,7 +1000,7 @@ func TestDeterminePlan(t *testing.T) {
 				ownedByCampaign:  campaign.ID,
 				campaignIDs:      []int64{campaign.ID},
 			},
-			wantOperations: operations{campaigns.ReconcilerOperationReopen},
+			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationReopen},
 		},
 	}
 
@@ -1020,11 +1020,11 @@ func TestDeterminePlan(t *testing.T) {
 			currentSpec := createChangesetSpec(t, ctx, tx, tc.currentSpec)
 			tc.changeset.currentSpec = currentSpec.ID
 			cs := createChangeset(t, ctx, tx, tc.changeset)
-			plan, err := determinePlan(previousSpec, currentSpec, cs)
+			plan, err := DetermineReconcilerPlan(previousSpec, currentSpec, cs)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if have, want := plan.ops, tc.wantOperations; !have.Equal(want) {
+			if have, want := plan.Ops, tc.wantOperations; !have.Equal(want) {
 				t.Fatalf("incorrect plan determined, want=%v have=%v", want, have)
 			}
 		})
@@ -1489,7 +1489,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	fakeSource := &ct.FakeChangesetSource{Svc: extSvc}
 	sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
-	plan := &plan{}
+	plan := &ReconcilerPlan{}
 	plan.AddOp(campaigns.ReconcilerOperationPush)
 
 	tests := []struct {

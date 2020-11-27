@@ -499,21 +499,15 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// We apply the spec and expect 1 changeset
-			_, changesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 1)
+			applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 1)
 
 			// But the changeset was not published yet.
 			// And now we apply a new spec without any changesets.
 			campaignSpec2 := createCampaignSpec(t, ctx, store, "unpublished-changesets", admin.ID)
 
-			// That should close no changesets, but leave the campaign with 0 changesets
+			// That should close no changesets, but leave the campaign with 0 changesets,
+			// and the unpublished changesets should be detached
 			applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 0)
-
-			// And the unpublished changesets should be deleted
-			toBeDeleted := changesets[0]
-			_, err := store.GetChangeset(ctx, GetChangesetOpts{ID: toBeDeleted.ID})
-			if err != ErrNoResults {
-				t.Fatalf("expected changeset to be deleted but was not")
-			}
 		})
 
 		t.Run("campaign with changeset that wasn't processed before reapply", func(t *testing.T) {
@@ -572,7 +566,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// Make sure the reconciler wants to update this changeset.
-			plan, err := determinePlan(
+			plan, err := DetermineReconcilerPlan(
 				// changesets[0].PreviousSpecID
 				spec1,
 				// changesets[0].CurrentSpecID
@@ -582,8 +576,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !plan.ops.Equal(operations{campaigns.ReconcilerOperationUpdate}) {
-				t.Fatalf("Got invalid reconciler operations: %q", plan.ops.String())
+			if !plan.Ops.Equal(ReconcilerOperations{campaigns.ReconcilerOperationUpdate}) {
+				t.Fatalf("Got invalid reconciler operations: %q", plan.Ops.String())
 			}
 
 			// And now we apply a new spec before the reconciler could process the changeset.
@@ -610,7 +604,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// Make sure the reconciler would still update this changeset.
-			plan, err = determinePlan(
+			plan, err = DetermineReconcilerPlan(
 				// changesets[0].PreviousSpecID
 				spec1,
 				// changesets[0].CurrentSpecID
@@ -620,8 +614,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !plan.ops.Equal(operations{campaigns.ReconcilerOperationUpdate}) {
-				t.Fatalf("Got invalid reconciler operations: %q", plan.ops.String())
+			if !plan.Ops.Equal(ReconcilerOperations{campaigns.ReconcilerOperationUpdate}) {
+				t.Fatalf("Got invalid reconciler operations: %q", plan.Ops.String())
 			}
 
 			// Now test that it still updates when this update failed.
@@ -650,7 +644,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// Make sure the reconciler would still update this changeset.
-			plan, err = determinePlan(
+			plan, err = DetermineReconcilerPlan(
 				// changesets[0].PreviousSpecID
 				spec1,
 				// changesets[0].CurrentSpecID
@@ -660,8 +654,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !plan.ops.Equal(operations{campaigns.ReconcilerOperationUpdate}) {
-				t.Fatalf("Got invalid reconciler operations: %q", plan.ops.String())
+			if !plan.Ops.Equal(ReconcilerOperations{campaigns.ReconcilerOperationUpdate}) {
+				t.Fatalf("Got invalid reconciler operations: %q", plan.Ops.String())
 			}
 		})
 
@@ -766,7 +760,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// Make sure the reconciler would still publish this changeset.
-			plan, err := determinePlan(
+			plan, err := DetermineReconcilerPlan(
 				// c2.previousSpec is 0
 				nil,
 				// c2.currentSpec is newSpec2
@@ -776,8 +770,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !plan.ops.Equal(operations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish}) {
-				t.Fatalf("Got invalid reconciler operations: %q", plan.ops.String())
+			if !plan.Ops.Equal(ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish}) {
+				t.Fatalf("Got invalid reconciler operations: %q", plan.Ops.String())
 			}
 		})
 
