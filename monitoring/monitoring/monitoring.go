@@ -1,5 +1,12 @@
-// Package monitoring declares types for Sourcegraph's monitoring generator as well as the generator implementation itself.
+/*
+Package monitoring declares types for Sourcegraph's monitoring generator as well as the generator implementation itself.
+
+To learn more about developing monitoring, see the guide: https://about.sourcegraph.com/handbook/engineering/observability/monitoring
+
+To learn more about the generator, see the top-level program: https://github.com/sourcegraph/sourcegraph/tree/main/monitoring
+*/
 //nolint:golint,gocritic
+//go:generate go run github.com/princjef/gomarkdoc/cmd/gomarkdoc . -o README.md
 package monitoring
 
 import (
@@ -16,9 +23,14 @@ import (
 
 	"github.com/grafana-tools/sdk"
 	"github.com/prometheus/common/model"
+
+	// Pin version of godoc-to-markdown generator
+	_ "github.com/princjef/gomarkdoc"
 )
 
 // Container describes a Docker container to be observed.
+//
+// These correspond to dashboards in Grafana.
 type Container struct {
 	// Name of the Docker container, e.g. "syntect-server".
 	Name string
@@ -53,6 +65,8 @@ func (c *Container) validate() error {
 }
 
 // Group describes a group of observable information about a container.
+//
+// These correspond to collapsible sections in a Grafana dashboard.
 type Group struct {
 	// Title of the group, briefly summarizing what this group is about, or
 	// "General" if the group is just about the container in general.
@@ -83,6 +97,8 @@ func (g Group) validate() error {
 }
 
 // Row of observable metrics.
+//
+// These correspond to a row of Grafana graphs.
 type Row []Observable
 
 func (r Row) validate() error {
@@ -112,6 +128,8 @@ const (
 )
 
 // Observable describes a metric about a container that can be observed. For example, memory usage.
+//
+// These correspond to Grafana graphs.
 type Observable struct {
 	// Name is a short and human-readable lower_snake_case name describing what is being observed.
 	//
@@ -174,7 +192,7 @@ type Observable struct {
 	// Warning and Critical alert definitions.
 	// Consider adding at least a Warning or Critical alert to each Observable to make it easy to
 	// identify when the target of this metric is missbehaving.
-	Warning, Critical *alertDefinition
+	Warning, Critical *ObservableAlertDefinition
 
 	// NoAlerts is used by Observables that don't need any alerts.
 	// We want to be explicit about this to ensure alerting is considered and if we choose not to Alert,
@@ -209,7 +227,7 @@ type Observable struct {
 	PossibleSolutions string
 
 	// PanelOptions describes some options for how to render the metric in the Grafana panel.
-	PanelOptions panelOptions
+	PanelOptions ObservablePanelOptions
 }
 
 func (o Observable) validate() error {
@@ -240,12 +258,13 @@ func (o Observable) validate() error {
 	return nil
 }
 
-func Alert() *alertDefinition {
-	return &alertDefinition{}
+// Alert provides a builder for defining alerting on an Observable.
+func Alert() *ObservableAlertDefinition {
+	return &ObservableAlertDefinition{}
 }
 
-// alertDefinition defines when an alert would be considered firing.
-type alertDefinition struct {
+// ObservableAlertDefinition defines when an alert would be considered firing.
+type ObservableAlertDefinition struct {
 	// GreaterOrEqual, when non-zero, indicates the alert should fire when
 	// greater or equal to this value.
 	greaterOrEqual *float64
@@ -259,23 +278,23 @@ type alertDefinition struct {
 	duration time.Duration
 }
 
-func (a *alertDefinition) GreaterOrEqual(f float64) *alertDefinition {
+func (a *ObservableAlertDefinition) GreaterOrEqual(f float64) *ObservableAlertDefinition {
 	a.greaterOrEqual = &f
 	return a
 }
 
-func (a *alertDefinition) LessOrEqual(f float64) *alertDefinition {
+func (a *ObservableAlertDefinition) LessOrEqual(f float64) *ObservableAlertDefinition {
 	a.lessOrEqual = &f
 	return a
 }
 
-func (a *alertDefinition) For(d time.Duration) *alertDefinition {
+func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinition {
 	a.duration = d
 	return a
 }
 
-func (a *alertDefinition) isEmpty() bool {
-	return a == nil || (*a == alertDefinition{}) || (a.greaterOrEqual == nil && a.lessOrEqual == nil)
+func (a *ObservableAlertDefinition) isEmpty() bool {
+	return a == nil || (*a == ObservableAlertDefinition{}) || (a.greaterOrEqual == nil && a.lessOrEqual == nil)
 }
 
 // UnitType for controlling the unit type display on graphs.
@@ -323,7 +342,7 @@ const (
 	BitsPerSecond UnitType = "bps"
 )
 
-type panelOptions struct {
+type ObservablePanelOptions struct {
 	min, max     *float64
 	minAuto      bool
 	legendFormat string
@@ -332,7 +351,7 @@ type panelOptions struct {
 }
 
 // Min sets the minimum value of the Y axis on the panel. The default is zero.
-func (p panelOptions) Min(min float64) panelOptions {
+func (p ObservablePanelOptions) Min(min float64) ObservablePanelOptions {
 	p.min = &min
 	return p
 }
@@ -341,36 +360,36 @@ func (p panelOptions) Min(min float64) panelOptions {
 // the default zero.
 //
 // This is generally only useful if trying to show negative numbers.
-func (p panelOptions) MinAuto() panelOptions {
+func (p ObservablePanelOptions) MinAuto() ObservablePanelOptions {
 	p.minAuto = true
 	return p
 }
 
 // Max sets the maximum value of the Y axis on the panel. The default is auto.
-func (p panelOptions) Max(max float64) panelOptions {
+func (p ObservablePanelOptions) Max(max float64) ObservablePanelOptions {
 	p.max = &max
 	return p
 }
 
 // LegendFormat sets the panel's legend format, which may use Go template strings to select
 // labels from the Prometheus query.
-func (p panelOptions) LegendFormat(format string) panelOptions {
+func (p ObservablePanelOptions) LegendFormat(format string) ObservablePanelOptions {
 	p.legendFormat = format
 	return p
 }
 
 // Unit sets the panel's Y axis unit type.
-func (p panelOptions) Unit(t UnitType) panelOptions {
+func (p ObservablePanelOptions) Unit(t UnitType) ObservablePanelOptions {
 	p.unitType = t
 	return p
 }
 
-func (p panelOptions) Interval(ms int) panelOptions {
+func (p ObservablePanelOptions) Interval(ms int) ObservablePanelOptions {
 	p.interval = fmt.Sprintf("%dms", ms)
 	return p
 }
 
-func (p panelOptions) withDefaults() panelOptions {
+func (p ObservablePanelOptions) withDefaults() ObservablePanelOptions {
 	if p.min == nil && !p.minAuto {
 		defaultMin := 0.0
 		p.min = &defaultMin
@@ -393,7 +412,8 @@ func (p panelOptions) withDefaults() panelOptions {
 	return p
 }
 
-func PanelOptions() panelOptions { return panelOptions{} }
+// PanelOptions provides a builder for customizing an Observable.
+func PanelOptions() ObservablePanelOptions { return ObservablePanelOptions{} }
 
 // dashboard generates the Grafana dashboard for this container.
 func (c *Container) dashboard() *sdk.Board {
@@ -628,7 +648,7 @@ func (c *Container) dashboard() *sdk.Board {
 }
 
 // alertDescription generates an alert description for the specified coontainer's alert.
-func (c *Container) alertDescription(o Observable, alert *alertDefinition) string {
+func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinition) string {
 	if alert.isEmpty() {
 		panic("never here")
 	}
@@ -667,7 +687,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 	for _, g := range c.Groups {
 		for _, r := range g.Rows {
 			for _, o := range r {
-				for level, a := range map[string]*alertDefinition{
+				for level, a := range map[string]*ObservableAlertDefinition{
 					"warning":  o.Warning,
 					"critical": o.Critical,
 				} {
@@ -683,11 +703,11 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							// make sure the prometheus alert description only describes one bound
 							name = fmt.Sprintf("%s_%s", o.Name, bound)
 							if bound == "high" {
-								description = c.alertDescription(o, &alertDefinition{
+								description = c.alertDescription(o, &ObservableAlertDefinition{
 									greaterOrEqual: a.greaterOrEqual,
 								})
 							} else if bound == "low" {
-								description = c.alertDescription(o, &alertDefinition{
+								description = c.alertDescription(o, &ObservableAlertDefinition{
 									lessOrEqual: a.lessOrEqual,
 								})
 							} else {
@@ -883,7 +903,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 					var prometheusAlertNames []string
 					for _, alert := range []struct {
 						level     string
-						threshold *alertDefinition
+						threshold *ObservableAlertDefinition
 					}{
 						{level: "warning", threshold: o.Warning},
 						{level: "critical", threshold: o.Critical},
