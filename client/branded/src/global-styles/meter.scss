@@ -23,19 +23,28 @@ meter {
     }
 
     // Optimum value styles
-    &:-moz-meter-optimum::-moz-meter-bar,
+    &:-moz-meter-optimum::-moz-meter-bar {
+        background-color: var(--success);
+    }
+
     &::-webkit-meter-optimum-value {
         background-color: var(--success);
     }
 
     // Suboptimum value styles
-    &:-moz-meter-sub-optimum::-moz-meter-bar,
+    &:-moz-meter-sub-optimum::-moz-meter-bar {
+        background-color: var(--warning);
+    }
+
     &::-webkit-meter-sub-optimum-value {
         background-color: var(--warning);
     }
 
     // Horrible value styles
-    &:-moz-meter-sub-sub-optimum::-moz-meter-bar,
+    &:-moz-meter-sub-sub-optimum::-moz-meter-bar {
+        background-color: var(--danger);
+    }
+
     &::-webkit-meter-even-less-good-value {
         background-color: var(--danger);
     }

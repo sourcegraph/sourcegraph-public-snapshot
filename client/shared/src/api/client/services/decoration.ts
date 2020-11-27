@@ -62,15 +62,15 @@ export function decorationStyleForTheme(
 export function fileDecorationColorForTheme(
     after: NonNullable<FileDecoration['after']>,
     isLightTheme: boolean,
-    isSelected?: boolean
+    isActive?: boolean
 ): string | undefined {
     const overrides = isLightTheme ? after.light : after.dark
     // Discard non-ThemableFileDecorationStyle properties so they aren't included in result.
     const { light, dark, contentText, hoverMessage, ...base } = after
     const merged = { ...base, ...overrides }
 
-    // fall back to default color if selected color isn't specified
-    return isSelected ? merged.selectedColor ?? merged.color : merged.color
+    // fall back to default color if active color isn't specified
+    return isActive ? merged.activeColor ?? merged.color : merged.color
 }
 
 /**
