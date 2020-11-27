@@ -200,7 +200,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 				test.setup(t)
 			}
 
-			err := ExternalServices.ValidateConfig(context.Background(), ValidateExternalServiceConfigOptions{
+			_, err := ExternalServices.ValidateConfig(context.Background(), ValidateExternalServiceConfigOptions{
 				Kind:         test.kind,
 				Config:       test.config,
 				HasNamespace: test.hasNamespace,
@@ -247,6 +247,21 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 			},
 			wantUnrestricted: false,
+		},
+		{
+			name: "with authorization in comments",
+			externalService: &types.ExternalService{
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "GITHUB #3",
+				Config: `
+{
+	"url": "https://github.com",
+	"repositoryQuery": ["none"],
+	"token": "abc",
+	// "authorization": {}
+}`,
+			},
+			wantUnrestricted: true,
 		},
 	}
 	for _, test := range tests {
@@ -336,6 +351,20 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			update: &ExternalServiceUpdate{
 				DisplayName: strptr("GITHUB (updated) #2"),
 				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+			},
+			wantUnrestricted: true,
+		},
+		{
+			name: "update with authorization in comments",
+			update: &ExternalServiceUpdate{
+				DisplayName: strptr("GITHUB (updated) #3"),
+				Config: strptr(`
+{
+	"url": "https://github.com",
+	"repositoryQuery": ["none"],
+	"token": "def",
+	// "authorization": {}
+}`),
 			},
 			wantUnrestricted: true,
 		},
