@@ -18,7 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Password reset link expiration can be customized via `auth.passwordResetLinkExpiry` in the site config. [#13999](https://github.com/sourcegraph/sourcegraph/issues/13999)
 - Campaign steps may now include environment variables from outside of the campaign spec using [array syntax](http://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#environment-array). [#15822](https://github.com/sourcegraph/sourcegraph/issues/15822)
 - Extensions can now add decorations to files on the sidebar tree view and tree page through the experimental `FileDecoration` API. [#15833](https://github.com/sourcegraph/sourcegraph/pull/15833)
-- The extension API now has a dedicated GraphQL method. Extensions previously had to execute an untyped command to interact with the Sourcegraph GraphQL API. [#15566](https://github.com/sourcegraph/sourcegraph/pull/15566)
+- Extensions can now easily query the Sourcegraph GraphQL API through a dedicated API method. [#15566](https://github.com/sourcegraph/sourcegraph/pull/15566)
 
 ### Changed
 
