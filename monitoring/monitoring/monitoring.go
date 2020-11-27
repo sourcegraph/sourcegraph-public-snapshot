@@ -879,7 +879,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 					fmt.Fprintf(&b, `<p class="subtitle">%s: %s</p>`, o.Owner, o.Description)
 
 					// Render descriptions of various levels of this alert
-					fmt.Fprintf(&b, "**Descriptions:**\n\n")
+					fmt.Fprintf(&b, "\n\n**Descriptions:**\n\n")
 					var prometheusAlertNames []string
 					for _, alert := range []struct {
 						level     string
@@ -910,7 +910,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ]`, strings.Join(prometheusAlertNames, ",\n")))
 
 					// Render break for readability
-					fmt.Fprint(&b, "<br />\n")
+					fmt.Fprint(&b, "<br />\n\n")
 				}
 			}
 		}
