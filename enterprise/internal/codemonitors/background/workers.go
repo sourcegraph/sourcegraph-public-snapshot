@@ -66,7 +66,7 @@ func createDBWorkerStore(s *cm.Store) dbworkerstore.Store {
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     3,
-		OrderByExpression: sqlf.Sprintf("cm_trigger_jobs DESC"),
+		OrderByExpression: sqlf.Sprintf("id"),
 	})
 }
 
