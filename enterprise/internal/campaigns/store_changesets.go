@@ -450,7 +450,7 @@ var listChangesetsWithTextSearchQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListChangesets
 SELECT %s FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
-INNER JOIN changeset_specs ON changesets.current_spec_id = changeset_specs.id
+LEFT JOIN changeset_specs ON changesets.current_spec_id = changeset_specs.id
 WHERE %s
 ORDER BY id ASC
 `
@@ -549,9 +549,17 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 			preds = append(
 				preds,
 				sqlf.Sprintf(
+					// There are a couple of things going on in this predicate.
+					//
+					// The COALESCE() is required to handle the actual title on
+					// the changeset, if it has been published or if it's
+					// tracked. Unfortunately, the metadata field isn't
+					// standard, so we have to get both variations that exist
+					// between the code hosts we support.
+					//
 					// The ugly ('\m'||%s||'\M') construction gives us a regex
 					// that only matches on word boundaries.
-					`(changeset_specs.spec->>'title' %s ('\m'||%s||'\M') %s repo.name %s ('\m'||%s||'\M'))`,
+					`(COALESCE(changesets.metadata->>'Title', changesets.metadata->>'title', changeset_specs.spec->>'title') %s ('\m'||%s||'\M') %s repo.name %s ('\m'||%s||'\M'))`,
 					textOp,
 					term,
 					boolOp,
