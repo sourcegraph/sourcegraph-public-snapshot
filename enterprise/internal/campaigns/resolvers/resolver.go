@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -21,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
@@ -640,6 +643,48 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaign
 
 		opts.OwnedByCampaignID = campaignID
 		opts.PublicationState = &published
+	}
+	if args.Search != nil {
+		// TODO: move to a separate function for testing; shit, possibly move to
+		// a separate package, because this evil needs to be far, far away from
+		// the resolver
+		tree, err := syntax.Parse(*args.Search)
+		if err != nil {
+			return opts, false, errors.Wrap(err, "parsing search")
+		}
+
+		opts.TextSearch = make([]ee.ListChangesetsTextSearchExpr, 0)
+		var errs *multierror.Error
+		for _, expr := range tree {
+			if expr.Field != "" {
+				// Eventually, we'll support some field types and these will
+				// override other options above. For now, though, this is an
+				// error.
+				errs = multierror.Append(errs, errors.Errorf("unsupported field of type %q at position %d", expr.Field, expr.Pos))
+				continue
+			}
+
+			switch expr.ValueType {
+			case syntax.TokenLiteral:
+				opts.TextSearch = append(opts.TextSearch, ee.ListChangesetsTextSearchExpr{
+					Term: expr.Value,
+					Not:  expr.Not,
+				})
+			case syntax.TokenQuoted:
+				opts.TextSearch = append(opts.TextSearch, ee.ListChangesetsTextSearchExpr{
+					Term: strings.Trim(expr.Value, `"`),
+					Not:  expr.Not,
+				})
+			// If we ever want to support regex patterns, this would be where
+			// we'd hook it in (by matching TokenPattern).
+			default:
+				errs = multierror.Append(errs, errors.Errorf("unsupported value type %q at position %d", expr.ValueType.String(), expr.Pos))
+			}
+		}
+
+		if err := errs.ErrorOrNil(); err != nil {
+			return opts, false, errors.Wrap(err, "parsing search")
+		}
 	}
 
 	return opts, safe, nil

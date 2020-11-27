@@ -1523,6 +1523,12 @@ type Campaign implements Node {
         Only return changesets that have been published by this campaign. Imported changesets will be omitted.
         """
         onlyPublishedByThisCampaign: Boolean
+        """
+        Search for changesets matching this query.
+
+        TODO: add notes about what syntax is supported
+        """
+        search: String
     ): ChangesetConnection!
 
     """

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"regexp"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
@@ -388,8 +389,10 @@ func listChangesetSyncDataQuery(opts ListChangesetSyncDataOpts) *sqlf.Query {
 	return sqlf.Sprintf(listChangesetSyncDataQueryFmtstr, sqlf.Join(preds, "\n AND"))
 }
 
-// ListChangesetsOpts captures the query options needed for
-// listing changesets.
+// ListChangesetsOpts captures the query options needed for listing changesets.
+//
+// Note that TextSearch is potentially expensive, and should only be specified
+// in conjunction with at least one other option (most likely, CampaignID).
 type ListChangesetsOpts struct {
 	LimitOpts
 	Cursor               int64
@@ -405,6 +408,12 @@ type ListChangesetsOpts struct {
 	OnlyWithoutDiffStats bool
 	OnlySynced           bool
 	ExternalServiceID    string
+	TextSearch           []ListChangesetsTextSearchExpr
+}
+
+type ListChangesetsTextSearchExpr struct {
+	Term string
+	Not  bool
 }
 
 // ListChangesets lists Changesets with the given filters.
@@ -437,7 +446,17 @@ WHERE %s
 ORDER BY id ASC
 `
 
+var listChangesetsWithTextSearchQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:ListChangesets
+SELECT %s FROM changesets
+INNER JOIN repo ON repo.id = changesets.repo_id
+INNER JOIN changeset_specs ON changesets.current_spec_id = changeset_specs.id
+WHERE %s
+ORDER BY id ASC
+`
+
 func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
+	fmtstr := listChangesetsQueryFmtstr
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("changesets.id >= %s", opts.Cursor),
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
@@ -496,8 +515,55 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("repo.external_service_id = %s", opts.ExternalServiceID))
 	}
 
+	if len(opts.TextSearch) != 0 {
+		// Text searches require an extra join to access the changeset spec, so
+		// let's go ahead and switch out the query format string.
+		fmtstr = listChangesetsWithTextSearchQueryFmtstr
+
+		for _, expr := range opts.TextSearch {
+			// The general query format is for a positive query is:
+			//
+			// (field ~* value OR field ~* value)
+			//
+			// For negative queries, we negate both the regex and boolean
+			//
+			// (field !~* value AND field !~* value)
+			//
+			// Note that we're using the case insensitive versions of the regex
+			// operators here.
+			var boolOp *sqlf.Query
+			var textOp *sqlf.Query
+			if expr.Not {
+				boolOp = sqlf.Sprintf("AND")
+				textOp = sqlf.Sprintf("!~*")
+			} else {
+				boolOp = sqlf.Sprintf("OR")
+				textOp = sqlf.Sprintf("~*")
+			}
+
+			// Since we're using regular expressions here, we need to ensure the
+			// search term is correctly quoted to avoid issues with escape
+			// characters having unexpected meaning in searches.
+			term := regexp.QuoteMeta(expr.Term)
+
+			preds = append(
+				preds,
+				sqlf.Sprintf(
+					// The ugly ('\m'||%s||'\M') construction gives us a regex
+					// that only matches on word boundaries.
+					`(changeset_specs.spec->>'title' %s ('\m'||%s||'\M') %s repo.name %s ('\m'||%s||'\M'))`,
+					textOp,
+					term,
+					boolOp,
+					textOp,
+					term,
+				),
+			)
+		}
+	}
+
 	return sqlf.Sprintf(
-		listChangesetsQueryFmtstr+opts.LimitOpts.ToDB(),
+		fmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(ChangesetColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
