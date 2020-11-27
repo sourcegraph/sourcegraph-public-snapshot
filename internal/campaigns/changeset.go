@@ -539,6 +539,16 @@ func (c *Changeset) BaseRef() (string, error) {
 	}
 }
 
+// AttachedTo returns true if the changeset is currently attached to the campaign with the given campaignID.
+func (c *Changeset) AttachedTo(campaignID int64) bool {
+	for _, cid := range c.CampaignIDs {
+		if cid == campaignID {
+			return true
+		}
+	}
+	return false
+}
+
 // SupportsLabels returns whether the code host on which the changeset is
 // hosted supports labels and whether it's safe to call the
 // (*Changeset).Labels() method.
