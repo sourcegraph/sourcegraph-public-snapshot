@@ -299,7 +299,7 @@
     "pretty-bytes": "^5.3.0",
     "react": "^16.14.0",
     "react-circular-progressbar": "^2.0.3",
-    "react-dom": "npm:@hot-loader/react-dom@^16.13.0",
+    "react-dom": "npm:@hot-loader/react-dom@^16.14.0",
     "react-dom-confetti": "^0.1.4",
     "react-focus-lock": "^2.4.1",
     "react-grid-layout": "^0.18.3",
