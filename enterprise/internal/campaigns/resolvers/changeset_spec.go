@@ -82,6 +82,7 @@ func (r *changesetSpecResolver) Type() campaigns.ChangesetSpecDescriptionType {
 func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend.ChangesetDescription, error) {
 	descriptionResolver := &changesetDescriptionResolver{
 		desc:         r.changesetSpec.Spec,
+		// Note: r.repo can never be nil, because Description is a VisibleChangesetSpecResolver-only field.
 		repoResolver: graphqlbackend.NewRepositoryResolver(r.repo),
 		diffStat:     r.changesetSpec.DiffStat(),
 	}
