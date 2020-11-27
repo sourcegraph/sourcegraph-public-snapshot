@@ -899,6 +899,10 @@ func TestServiceApplyCampaign(t *testing.T) {
 				assertions.previousSpec = spec1.ID
 				c = reloadAndAssertChangeset(t, ctx, store, c, assertions)
 
+				if len(c.CampaignIDs) != 0 {
+					t.Fatal("Expected changeset to be detached from campaign, but wasn't")
+				}
+
 				// Now we update the changeset to simulate that closing failed.
 				setChangesetFailed(t, ctx, store, c)
 				assertions.closing = true
