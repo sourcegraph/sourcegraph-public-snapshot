@@ -826,7 +826,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                 }`}
             >
                 {(!this.props.hideSearch || this.props.filters) && (
-                    <Form className="w-100 d-inline-flex justify-content-between flex-row filtered-connection__form" onSubmit={this.onSubmit}>
+                    <Form
+                        className="w-100 d-inline-flex justify-content-between flex-row filtered-connection__form"
+                        onSubmit={this.onSubmit}
+                    >
                         {this.props.filters && (
                             <FilteredConnectionFilterControl
                                 filters={this.props.filters}
