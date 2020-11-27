@@ -255,7 +255,7 @@
     "yarn-deduplicate": "^2.1.1"
   },
   "dependencies": {
-    "@hot-loader/react-dom": "^16.13.0",
+    "@hot-loader/react-dom": "^16.14.0",
     "@primer/octicons-react": "^9.6.0",
     "@reach/accordion": "^0.10.2",
     "@reach/dialog": "^0.11.2",
