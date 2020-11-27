@@ -68,7 +68,6 @@ func TestServiceApplyCampaign(t *testing.T) {
 				InitialApplierID: admin.ID,
 				LastApplierID:    admin.ID,
 				LastAppliedAt:    now,
-				ChangesetIDs:     []int64{},
 				NamespaceUserID:  campaignSpec.NamespaceUserID,
 				CampaignSpecID:   campaignSpec.ID,
 

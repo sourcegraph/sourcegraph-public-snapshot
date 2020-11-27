@@ -1204,7 +1204,6 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	for _, cs := range changesets {
 		c := &campaigns.Campaign{
 			Name:           "ListChangesetSyncData test",
-			ChangesetIDs:   []int64{cs.ID},
 			NamespaceOrgID: 23,
 			LastApplierID:  1,
 			LastAppliedAt:  time.Now(),
@@ -1323,16 +1322,6 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		openCampaignID := changesets[1].CampaignIDs[0]
 		changesets[0].CampaignIDs = []int64{closedCampaignID, openCampaignID}
 		err = s.UpdateChangeset(ctx, changesets[0])
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c1, err := s.GetCampaign(ctx, GetCampaignOpts{ID: openCampaignID})
-		if err != nil {
-			t.Fatal(err)
-		}
-		c1.ChangesetIDs = []int64{changesets[0].ID, changesets[1].ID}
-		err = s.UpdateCampaign(ctx, c1)
 		if err != nil {
 			t.Fatal(err)
 		}

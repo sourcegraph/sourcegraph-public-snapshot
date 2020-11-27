@@ -75,11 +75,6 @@ func TestServicePermissionLevels(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		campaign.ChangesetIDs = append(campaign.ChangesetIDs, changeset.ID)
-		if err := s.UpdateCampaign(ctx, campaign); err != nil {
-			t.Fatal(err)
-		}
-
 		return campaign, changeset, spec
 	}
 
@@ -316,11 +311,6 @@ func TestService(t *testing.T) {
 
 		changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
 		if err := store.CreateChangeset(ctx, changeset); err != nil {
-			t.Fatal(err)
-		}
-
-		campaign.ChangesetIDs = []int64{changeset.ID}
-		if err := store.UpdateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 
