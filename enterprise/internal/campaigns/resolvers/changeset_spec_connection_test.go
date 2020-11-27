@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -39,13 +40,14 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	repoStore := db.NewRepoStoreWith(store)
 
 	repos := make([]*types.Repo, 0, 3)
 	for i := 0; i < cap(repos); i++ {
 		name := fmt.Sprintf("github.com/sourcegraph/repo-%d", i)
-		r := newGitHubTestRepo(name, newGitHubExternalService(t, reposStore))
-		if err := reposStore.InsertRepos(ctx, r); err != nil {
+		r := newGitHubTestRepo(name, newGitHubExternalService(t, rstore))
+		if err := repoStore.Create(ctx, r); err != nil {
 			t.Fatal(err)
 		}
 		repos = append(repos, r)

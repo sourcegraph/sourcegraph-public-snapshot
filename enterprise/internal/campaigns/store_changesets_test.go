@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -46,7 +47,9 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	otherRepo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
 	gitlabRepo := ct.TestRepo(t, reposStore, extsvc.KindGitLab)
 
-	if err := reposStore.InsertRepos(ctx, repo, otherRepo, gitlabRepo); err != nil {
+	rs := db.NewRepoStoreWith(s.Store)
+
+	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
 	deletedRepo := otherRepo.With(repos.Opt.RepoDeletedAt(clock.now()))
@@ -1164,7 +1167,9 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 
 	githubRepo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
 	gitlabRepo := ct.TestRepo(t, reposStore, extsvc.KindGitLab)
-	if err := reposStore.InsertRepos(ctx, githubRepo, gitlabRepo); err != nil {
+
+	rs := db.NewRepoStoreWith(s.Store)
+	if err := rs.Create(ctx, githubRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
 
