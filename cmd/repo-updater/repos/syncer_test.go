@@ -1599,9 +1599,9 @@ func testSyncRepoMaintainsOtherSources(db *sql.DB) func(t *testing.T, store repo
 				t.Fatal(err)
 			}
 
-			githubRepo := &repos.Repo{
-				Name:     "github.com/org/foo",
-				Metadata: &github.Repository{},
+			githubRepo := &types.Repo{
+				Name:       "github.com/org/foo",
+				RepoFields: &types.RepoFields{Metadata: &github.Repository{}},
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "foo-external-12345",
 					ServiceID:   "https://github.com/",
@@ -1640,7 +1640,7 @@ func testSyncRepoMaintainsOtherSources(db *sql.DB) func(t *testing.T, store repo
 
 			// Run syncRepo with only one source
 			urn := extsvc.URN(extsvc.KindGitHub, svc1.ID)
-			githubRepo.Sources = map[string]*repos.SourceInfo{
+			githubRepo.Sources = map[string]*types.SourceInfo{
 				urn: {
 					ID:       urn,
 					CloneURL: "cloneURL",
