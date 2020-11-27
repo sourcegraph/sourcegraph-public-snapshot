@@ -5,14 +5,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/RoaringBitmap/roaring"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
+	eedb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -682,7 +685,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				user:         user.ID,
 				repo:         repos[1].ID, // Not authorized to access this repository
 				campaignSpec: campaignSpec.ID,
-				headRef:      "refs/heads/my-branch",
+				headRef:      "refs/heads/my-branch-2",
 			})
 
 			_, err := svc.ApplyCampaign(userCtx, ApplyCampaignOpts{
@@ -696,6 +699,49 @@ func TestServiceApplyCampaign(t *testing.T) {
 				t.Fatalf("expected RepoNotFoundErr but got: %s", err)
 			}
 			if notFoundErr.ID != repos[1].ID {
+				t.Fatalf("wrong repository ID in RepoNotFoundErr: %d", notFoundErr.ID)
+			}
+
+			// Now apply something that the user HAS access to.
+			campaignSpec2 := createCampaignSpec(t, userCtx, store, "missing-permissions", user.ID)
+
+			createChangesetSpec(t, userCtx, store, testSpecOpts{
+				user:         user.ID,
+				repo:         repos[0].ID,
+				campaignSpec: campaignSpec2.ID,
+				externalID:   "1234",
+			})
+
+			// Expect that to work. Campaign should have 1 changeset now.
+			applyAndListChangesets(userCtx, t, svc, campaignSpec2.RandID, 1)
+
+			// Lose permission to repo[0]:
+			permsStore := eedb.NewPermsStore(dbconn.Global, time.Now)
+			if err := permsStore.SetRepoPermissions(ctx,
+				&authz.RepoPermissions{
+					RepoID:  int32(repos[0].ID),
+					Perm:    authz.Read,
+					UserIDs: &roaring.Bitmap{},
+				},
+			); err != nil {
+				t.Fatal(err)
+			}
+
+			// And reapply with an empty list of changeset specs.
+			// The changeset would be closed, if the user had access to that repo.
+			// Since the user doesn't, we expect a permission error.
+			campaignSpec3 := createCampaignSpec(t, userCtx, store, "missing-permissions", user.ID)
+			_, err = svc.ApplyCampaign(userCtx, ApplyCampaignOpts{
+				CampaignSpecRandID: campaignSpec3.RandID,
+			})
+			if err == nil {
+				t.Fatal("expected error, but got none")
+			}
+			notFoundErr, ok = err.(*db.RepoNotFoundErr)
+			if !ok {
+				t.Fatalf("expected RepoNotFoundErr but got: %s", err)
+			}
+			if notFoundErr.ID != repos[0].ID {
 				t.Fatalf("wrong repository ID in RepoNotFoundErr: %d", notFoundErr.ID)
 			}
 		})

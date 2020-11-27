@@ -129,15 +129,18 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 	changesets = []*campaigns.Changeset{}
 
 	for _, m := range r.mappings {
+		// If we don't have access to a repository, we return an error. Why not
+		// simply skip the repository? If we skip it, the user can't reapply
+		// the same campaign spec, since it's already applied and re-applying
+		// would require a new spec.
+		repo, ok := associations.accessibleReposByID[m.RepoID]
+		if !ok {
+			return nil, &db.RepoNotFoundErr{ID: m.RepoID}
+		}
+
 		// If a Changeset that's currently attached to the campaign wasn't matched to a ChangesetSpec, it needs to be closed/detached.
 		if m.ChangesetSpecID == 0 {
 			changeset := m.Changeset
-
-			// If we don't have access to a repository, we don't detach nor close the changeset.
-			_, ok := associations.accessibleReposByID[m.RepoID]
-			if !ok {
-				continue
-			}
 
 			// If the changeset is currently not attached to this campaign, we don't want to modify it.
 			if !changeset.AttachedTo(r.campaign.ID) {
@@ -152,15 +155,6 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 		}
 
 		spec := m.ChangesetSpec
-
-		// If we don't have access to a repository, we return an error. Why not
-		// simply skip the repository? If we skip it, the user can't reapply
-		// the same campaign spec, since it's already applied and re-applying
-		// would require a new spec.
-		repo, ok := associations.accessibleReposByID[m.RepoID]
-		if !ok {
-			return nil, &db.RepoNotFoundErr{ID: m.RepoID}
-		}
 
 		if err := checkRepoSupported(repo); err != nil {
 			return nil, err
