@@ -6313,22 +6313,57 @@ type User implements Node & SettingsSubject & Namespace {
         """
         after: String
     ): MonitorConnection!
+
+    repositories(
+        """
+        Returns the first n repositories from the list.
+        """
+        first: Int
+        """
+        Return repositories whose names match the query.
+        """
+        query: String
+        """
+        An opaque cursor that is used for pagination.
+        """
+        after: String
+        """
+        Include cloned repositories.
+        """
+        cloned: Boolean = true
+        """
+        Include repositories that are not yet cloned and for which cloning is not in progress.
+        """
+        notCloned: Boolean = true
+        """
+        Include repositories that have a text search index.
+        """
+        indexed: Boolean = true
+        """
+        Include repositories that do not have a text search index.
+        """
+        notIndexed: Boolean = true
+        """
+        Only include repositories from this external service URL.
+        """
+        externalServiceID: ID
+): RepositoryConnection!
 }
 
 """
 An access token that grants to the holder the privileges of the user who created it.
 """
 type AccessToken implements Node {
-    """
-    The unique ID for the access token.
-    """
-    id: ID!
-    """
-    The user whose privileges the access token grants.
-    """
-    subject: User!
-    """
-    The scopes that define the allowed set of operations that can be performed using this access token.
+"""
+The unique ID for the access token.
+"""
+id: ID!
+"""
+The user whose privileges the access token grants.
+"""
+subject: User!
+"""
+The scopes that define the allowed set of operations that can be performed using this access token.
     """
     scopes: [String!]!
     """
