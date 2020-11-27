@@ -81,10 +81,14 @@ func TestPermissionLevels(t *testing.T) {
 			LastApplierID:    userID,
 			LastAppliedAt:    time.Now(),
 			CampaignSpecID:   campaignSpecID,
-			// We attach the changeset to the campaign so we can test syncChangeset
-			ChangesetIDs: []int64{changeset.ID},
 		}
 		if err := s.CreateCampaign(ctx, c); err != nil {
+			t.Fatal(err)
+		}
+
+		// We attach the changeset to the campaign so we can test syncChangeset
+		changeset.CampaignIDs = append(changeset.CampaignIDs, c.ID)
+		if err := s.UpdateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
 
@@ -826,12 +830,11 @@ func TestRepositoryPermissions(t *testing.T) {
 			LastApplierID:    userID,
 			LastAppliedAt:    time.Now(),
 			CampaignSpecID:   spec.ID,
-			// We attach the two changesets to the campaign
-			ChangesetIDs: changesetIDs,
 		}
 		if err := store.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
+		// We attach the two changesets to the campaign
 		for _, c := range changesets {
 			c.CampaignIDs = []int64{campaign.ID}
 			if err := store.UpdateChangeset(ctx, c); err != nil {

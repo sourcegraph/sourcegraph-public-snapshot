@@ -174,7 +174,7 @@ func TestChangesetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Associate the changeset with a campaign, so it's considered in syncer logic.
-	addChangeset(t, ctx, store, campaign, syncedGitHubChangeset.ID)
+	addChangeset(t, ctx, store, syncedGitHubChangeset, campaign.ID)
 
 	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
 	if err != nil {

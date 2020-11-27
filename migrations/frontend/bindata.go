@@ -146,6 +146,8 @@
 // 1528395755_cm_trigger_jobs_add_colums.up.sql (137B)
 // 1528395756_alter_orphaned_repo_trigger.down.sql (953B)
 // 1528395756_alter_orphaned_repo_trigger.up.sql (938B)
+// 1528395757_drop_campaigns_changeset_ids.down.sql (1kB)
+// 1528395757_drop_campaigns_changeset_ids.up.sql (227B)
 
 package migrations
 
@@ -3134,6 +3136,46 @@ func _1528395756_alter_orphaned_repo_triggerUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395757_drop_campaigns_changeset_idsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x93\x4f\x6f\xa3\x3c\x10\xc6\xef\xfe\x14\x73\x88\x94\x20\xf5\xed\x07\x00\x55\x95\x0b\x03\xb1\x5e\xc7\xae\x8c\xad\xe4\x66\x25\xc1\x65\xa9\xb2\x24\x1b\x58\xa9\xab\xed\x7e\xf7\x15\xce\x96\x7f\xea\xa1\x9c\xec\x19\xcd\x33\xcf\xfc\x3c\x3c\x61\xc6\x44\x44\x08\xe5\x1a\x15\x68\xfa\xc4\x11\x8e\xfb\xef\x97\x7d\x55\xd6\x0d\xd0\x24\x81\x58\x72\xb3\x11\xc0\x52\x10\x52\x03\xee\x58\xae\x73\x38\x7e\xdb\xd7\xa5\x6b\x5c\x6b\xab\xa2\x81\xd7\xe6\x5c\x1f\x7c\x5a\x18\xce\x21\xc1\x94\x1a\xae\x61\xf9\xfb\xcf\x32\x0c\x6f\xc9\x78\x8d\xf1\xff\xb0\xf2\x17\xdb\xfe\xba\xb8\xf3\xcb\x6a\x22\x12\xc0\x03\x2c\xcf\x87\x57\x77\x6c\x97\x61\xd8\xba\xb7\x36\x88\x48\xac\x90\x6a\x04\x26\x12\xdc\xcd\x1d\x7c\x98\xb4\x13\x19\x5b\x56\xb5\xad\x8a\x37\x90\x62\x34\x87\xc9\x99\xc8\x20\x63\x02\x56\x9f\x38\xb7\xe7\x4b\x13\x44\x84\x6c\x99\x5e\x0f\x93\x35\x40\x73\x58\x11\x00\x80\x1c\x39\xc6\x1a\xaa\xe2\xae\xd7\xf4\xd5\xa9\x92\x9b\x51\x01\x09\x88\x79\x4e\x3a\xc3\x43\xe7\x1c\xf5\x0c\xd6\xc3\xec\xfe\xfe\xfe\xcf\xc5\xe1\x67\x75\x2a\xec\x0d\xc1\x60\xb3\xb9\xaf\x8a\x30\xd4\xb8\xd3\x77\x9e\x6e\x30\xef\x0a\xdb\x35\x2a\x1c\x05\xee\x27\x1e\x1f\x07\x33\xbd\x52\x44\x3e\xc8\xa6\x46\xc4\x9a\x49\x01\x85\x3b\xb9\xd6\x8d\x58\x5e\xdd\x8b\xbb\xba\xfa\xe8\xec\xb9\xb6\xbd\xc4\x2a\x00\x85\xda\x28\x91\x43\x7b\xad\xca\xd2\x5d\x3d\x20\x4e\x45\x66\x68\x86\x70\x39\x5d\xca\xe6\xc7\xc9\x07\x69\x0e\x8b\x85\x3f\xf9\x25\xf3\xa7\xee\xbb\x31\xea\xaf\x30\x18\xec\x63\x39\xea\x71\x7e\xce\xaf\x1f\x68\x9a\xf9\x0f\x24\x4f\xfc\x90\xdd\xfa\xf4\x02\x9e\xcf\x67\xed\x66\xe5\x8f\x93\xf2\x88\xf4\x25\xb7\x89\xbb\x6c\xe4\x63\x28\x92\x88\x2c\x16\x03\x45\xad\x58\x96\xa1\xf2\x48\xec\x17\x49\x02\x4d\xbb\x3f\x2e\x41\x8e\x1a\xfd\xb6\x0e\x2f\x9a\x4a\x05\x48\xe3\x35\x28\xb9\x05\xdc\x61\x6c\x34\xc2\xb3\x92\x31\x26\x46\xe1\xd7\xdf\xaa\x73\x28\x37\x1b\xa6\x23\xf2\x37\x00\x00\xff\xff\x69\x3a\x6b\x4d\xe8\x03\x00\x00")
+
+func _1528395757_drop_campaigns_changeset_idsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395757_drop_campaigns_changeset_idsDownSql,
+		"1528395757_drop_campaigns_changeset_ids.down.sql",
+	)
+}
+
+func _1528395757_drop_campaigns_changeset_idsDownSql() (*asset, error) {
+	bytes, err := _1528395757_drop_campaigns_changeset_idsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395757_drop_campaigns_changeset_ids.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc7, 0x3f, 0xfb, 0x45, 0xd2, 0x57, 0xdb, 0xd4, 0x0, 0x48, 0xea, 0x19, 0x32, 0xf4, 0x51, 0xb4, 0xf3, 0xb1, 0xee, 0xa6, 0x3d, 0x5b, 0x65, 0x4d, 0x5f, 0x9, 0x43, 0xd1, 0x8f, 0x29, 0x6a, 0xc6}}
+	return a, nil
+}
+
+var __1528395757_drop_campaigns_changeset_idsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\xcd\xc1\x0a\x82\x40\x10\x80\xe1\xfb\x3c\xc5\x1c\xeb\x19\xf6\xa4\xb6\xca\x80\xee\xc6\x3a\x42\xb7\x45\x74\x32\xa1\xb6\xd8\xdd\xf7\x27\x28\x48\x8f\xdd\x7f\xbe\xbf\xd4\x0d\x19\x05\x70\x72\xf6\x8c\xec\xa8\x69\xb4\x43\xaa\x51\x5f\xa8\xe7\x1e\x73\x5c\x17\x3f\xcb\x5d\xb2\xf8\xe9\x36\x86\x45\x92\x64\x1f\xe5\x2a\x51\xc2\x24\xfe\x19\xfc\x34\x3e\x5e\xe3\xba\x84\x84\xd6\xe0\xaf\x49\xea\x4b\xd6\x83\xa9\x98\xac\xd9\x99\x7f\x72\x87\xa3\x02\x28\x5a\xd6\x0e\xb9\x28\x5b\x8d\xdb\xe8\x23\x57\xb6\x1d\xba\xbd\xbb\x81\xeb\x9c\x14\x40\x65\xbb\x8e\x58\xc1\x3b\x00\x00\xff\xff\x57\xbd\xf7\x77\xe3\x00\x00\x00")
+
+func _1528395757_drop_campaigns_changeset_idsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395757_drop_campaigns_changeset_idsUpSql,
+		"1528395757_drop_campaigns_changeset_ids.up.sql",
+	)
+}
+
+func _1528395757_drop_campaigns_changeset_idsUpSql() (*asset, error) {
+	bytes, err := _1528395757_drop_campaigns_changeset_idsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395757_drop_campaigns_changeset_ids.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x21, 0x9e, 0x5, 0xee, 0xb6, 0x67, 0x3e, 0x69, 0x98, 0x19, 0xba, 0x92, 0xac, 0x87, 0x45, 0x70, 0xdb, 0x66, 0xea, 0xfd, 0xd1, 0xc8, 0xaa, 0x6f, 0xe9, 0x10, 0x4b, 0xbf, 0x5f, 0xa7, 0xba, 0x6e}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3371,6 +3413,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395755_cm_trigger_jobs_add_colums.up.sql":                                           _1528395755_cm_trigger_jobs_add_columsUpSql,
 	"1528395756_alter_orphaned_repo_trigger.down.sql":                                        _1528395756_alter_orphaned_repo_triggerDownSql,
 	"1528395756_alter_orphaned_repo_trigger.up.sql":                                          _1528395756_alter_orphaned_repo_triggerUpSql,
+	"1528395757_drop_campaigns_changeset_ids.down.sql":                                       _1528395757_drop_campaigns_changeset_idsDownSql,
+	"1528395757_drop_campaigns_changeset_ids.up.sql":                                         _1528395757_drop_campaigns_changeset_idsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3563,6 +3607,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395755_cm_trigger_jobs_add_colums.up.sql":                                           {_1528395755_cm_trigger_jobs_add_columsUpSql, map[string]*bintree{}},
 	"1528395756_alter_orphaned_repo_trigger.down.sql":                                        {_1528395756_alter_orphaned_repo_triggerDownSql, map[string]*bintree{}},
 	"1528395756_alter_orphaned_repo_trigger.up.sql":                                          {_1528395756_alter_orphaned_repo_triggerUpSql, map[string]*bintree{}},
+	"1528395757_drop_campaigns_changeset_ids.down.sql":                                       {_1528395757_drop_campaigns_changeset_idsDownSql, map[string]*bintree{}},
+	"1528395757_drop_campaigns_changeset_ids.up.sql":                                         {_1528395757_drop_campaigns_changeset_idsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

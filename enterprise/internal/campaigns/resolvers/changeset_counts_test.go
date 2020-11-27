@@ -161,16 +161,9 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		campaign.ChangesetIDs = append(campaign.ChangesetIDs, c.ID)
-
 		if err := ee.SyncChangeset(ctx, repoStore, store, githubSrc, githubRepo, c); err != nil {
 			t.Fatal(err)
 		}
-	}
-
-	err = store.UpdateCampaign(ctx, campaign)
-	if err != nil {
-		t.Fatal(err)
 	}
 
 	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
