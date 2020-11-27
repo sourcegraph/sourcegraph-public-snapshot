@@ -18,7 +18,7 @@ interface TreeChildProps extends TreeLayerProps {
 
     fileDecorations?: FileDecoration[]
 
-    isSelected: boolean
+    isActive: boolean
 }
 
 /**
@@ -67,6 +67,7 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                         fileDecorations={props.fileDecorations?.filter(decoration => decoration?.where !== 'page')}
                         className="mr-3"
                         isLightTheme={props.isLightTheme}
+                        isActive={props.isActive}
                     />
                 </div>
                 {props.loading && (
