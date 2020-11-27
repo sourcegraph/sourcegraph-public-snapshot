@@ -142,6 +142,10 @@
 // 1528395753_add_enqueue_table_for_trigger_queries.up.sql (559B)
 // 1528395754_add_cols_next_run_latest_result_to_cm_queries.down.sql (115B)
 // 1528395754_add_cols_next_run_latest_result_to_cm_queries.up.sql (159B)
+// 1528395755_cm_trigger_jobs_add_colums.down.sql (118B)
+// 1528395755_cm_trigger_jobs_add_colums.up.sql (137B)
+// 1528395756_alter_orphaned_repo_trigger.down.sql (953B)
+// 1528395756_alter_orphaned_repo_trigger.up.sql (938B)
 
 package migrations
 
@@ -3050,6 +3054,86 @@ func _1528395754_add_cols_next_run_latest_result_to_cm_queriesUpSql() (*asset, e
 	return a, nil
 }
 
+var __1528395755_cm_trigger_jobs_add_columsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x8d\x2f\x29\xca\x4c\x4f\x4f\x2d\x8a\xcf\xca\x4f\x2a\xe6\x52\x50\x50\x50\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x2c\x4d\x2d\xaa\x8c\x2f\x2e\x29\xca\xcc\x4b\xd7\xc1\xa3\xae\x28\xb5\xb8\x34\xa7\xa4\xd8\x9a\xcb\xd9\xdf\xd7\xd7\x33\xc4\x9a\x0b\x10\x00\x00\xff\xff\xdc\xd1\xaf\x8b\x76\x00\x00\x00")
+
+func _1528395755_cm_trigger_jobs_add_columsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395755_cm_trigger_jobs_add_columsDownSql,
+		"1528395755_cm_trigger_jobs_add_colums.down.sql",
+	)
+}
+
+func _1528395755_cm_trigger_jobs_add_columsDownSql() (*asset, error) {
+	bytes, err := _1528395755_cm_trigger_jobs_add_columsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395755_cm_trigger_jobs_add_colums.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x7c, 0x5c, 0xb0, 0x95, 0xca, 0x34, 0xb9, 0x5b, 0xde, 0xc4, 0xa3, 0xbc, 0xf6, 0xea, 0xea, 0xd7, 0x54, 0x17, 0x33, 0xdf, 0x1e, 0xdb, 0xac, 0xea, 0x20, 0x97, 0xe5, 0xbe, 0xc, 0x46, 0xfa, 0x6a}}
+	return a, nil
+}
+
+var __1528395755_cm_trigger_jobs_add_columsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\xca\x4d\xaa\xc2\x30\x10\x07\xf0\x7d\x4e\xf1\x3f\xc0\xbb\x41\x56\x69\x9b\x27\x81\x7c\x80\x8d\xe0\x2e\x58\x19\x42\xa5\x36\x38\x99\x82\xde\xde\x1b\xb8\xff\x0d\xf6\xe4\xa2\x56\xc6\x67\x7b\x46\x36\x83\xb7\xb8\x3f\x8b\xf0\x5a\x2b\x71\x79\xb4\xa5\x2b\x00\x30\xd3\x84\x31\xf9\x4b\x88\x70\xff\x88\x29\xc3\x5e\xdd\x9c\x67\xbc\x0e\xe2\x4f\xe9\xc2\xeb\x5e\x21\xf4\x96\xbf\xdf\x9e\xa9\x1f\x9b\x74\x2c\xad\x6d\x74\xdb\xb5\x1a\x53\x08\x2e\x6b\xf5\x0d\x00\x00\xff\xff\x21\x09\x59\x3e\x89\x00\x00\x00")
+
+func _1528395755_cm_trigger_jobs_add_columsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395755_cm_trigger_jobs_add_columsUpSql,
+		"1528395755_cm_trigger_jobs_add_colums.up.sql",
+	)
+}
+
+func _1528395755_cm_trigger_jobs_add_columsUpSql() (*asset, error) {
+	bytes, err := _1528395755_cm_trigger_jobs_add_columsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395755_cm_trigger_jobs_add_colums.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x54, 0xa4, 0x29, 0x2b, 0xf3, 0x5e, 0x82, 0x2b, 0x44, 0xb6, 0x1a, 0xbc, 0x80, 0x1e, 0x6, 0x26, 0xd1, 0x5d, 0x99, 0xdd, 0xac, 0xf2, 0x8c, 0xd3, 0xb7, 0x76, 0xe5, 0xce, 0xff, 0xfe, 0x38, 0x22}}
+	return a, nil
+}
+
+var __1528395756_alter_orphaned_repo_triggerDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x52\xcb\x6e\xe2\x3c\x18\xdd\xfb\x29\xce\x82\x05\x48\xa5\x2f\x10\xb1\xc8\x9f\x7c\x50\x4b\xc1\x46\x8e\x23\xba\xb3\xfc\x13\x17\x22\x41\x92\x71\x3c\xa3\xe9\xdb\x8f\x62\x20\xed\x48\xed\x62\xc8\x22\xb7\x73\xf1\xb1\xbf\xf3\x1f\x6d\xb8\x48\x18\xcb\x95\xdc\x61\x5d\x89\x4c\x73\x29\xc0\xd7\xa0\x57\x5e\xea\x12\x43\xf7\x16\x4c\xed\xce\x2e\x38\xd3\xf9\xfe\x64\x5b\xe3\x5d\xdf\x99\xff\xdf\x8d\xfb\x1d\x9c\x6f\xed\xd9\x0c\xce\xff\x6a\x0e\x2e\x02\xc3\x7c\x81\x2c\x2d\xb3\x34\xa7\xe4\x6a\xaa\x15\xdf\x6c\x48\x7d\xf2\x0c\xbe\x39\x9a\x7f\x35\x86\x14\xf8\x7a\xc5\x84\xb1\x4c\x51\xaa\xe9\x23\xff\x23\xa9\x15\xe9\x4a\x89\x6b\xba\xa3\xf3\x0c\x00\x8a\x54\x6c\xaa\x74\x43\xe8\xcf\xfd\x71\xf8\x71\x66\x69\x89\xd9\x8c\xc5\x43\x8b\x84\xe5\x12\xfb\x93\x6b\x61\xdb\x29\x1c\x6e\xc6\x68\x86\x98\x03\x9d\xc7\xc9\xfa\x7a\x79\xcd\x53\x3f\xdd\x85\xbd\xf3\x6f\x9d\xbf\x0c\xb0\x38\x9c\x9d\x6d\xf1\xb3\x47\xe8\xa2\xe6\xc6\xc5\x35\x3b\x62\xc4\x26\x74\xbe\x71\xc3\x73\x94\x57\xbb\x3c\xd5\x14\x5f\xc7\x6b\x24\xc4\x8f\x92\xf4\xf4\xb3\xb5\x17\x87\xd5\xe7\xb3\xa8\xcd\xe4\xf4\x6e\x46\x78\x3e\xde\x16\x4f\x93\xe4\x4e\xb3\x01\x2b\x04\x6f\xdb\xc1\x1e\x42\xd3\xb5\x26\x34\x17\x37\x04\x7b\xe9\xe7\x8b\x48\xde\xbf\x90\xa2\xaf\x64\xbc\x84\xa8\x8a\xe2\x06\xa5\x22\x47\x53\x63\x05\x59\xe4\xcf\x71\x02\x4d\xfd\x37\x24\xa4\x06\x17\x98\x4f\x5e\x25\x15\x94\x69\xe4\xbc\xd4\x5c\x64\x7a\x7e\x53\x2d\xb0\x56\x72\xfb\x4d\x03\xa2\x78\x91\xb0\xf8\xbc\xce\x71\x5c\x31\x61\x24\xf2\x84\xcd\x66\x1f\x0d\xb9\x97\xf1\xa1\x0a\x46\xfb\x74\xad\x49\x21\xa7\x82\x34\x7d\xdf\xc9\x48\x5d\x4b\x05\x4a\xb3\x17\x28\xb9\x07\xbd\x52\x56\x69\xc2\x4e\xc9\x8c\xf2\x4a\xd1\x23\x25\x1d\x37\x22\xb7\x5b\xae\x13\xf6\x27\x00\x00\xff\xff\xbf\xfe\x44\xea\xb9\x03\x00\x00")
+
+func _1528395756_alter_orphaned_repo_triggerDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395756_alter_orphaned_repo_triggerDownSql,
+		"1528395756_alter_orphaned_repo_trigger.down.sql",
+	)
+}
+
+func _1528395756_alter_orphaned_repo_triggerDownSql() (*asset, error) {
+	bytes, err := _1528395756_alter_orphaned_repo_triggerDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395756_alter_orphaned_repo_trigger.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa8, 0x90, 0x10, 0x69, 0xf, 0x75, 0x91, 0x39, 0xbd, 0x53, 0xf0, 0xcb, 0xa7, 0xe7, 0xd3, 0x20, 0xb, 0xaf, 0xe2, 0x91, 0xd3, 0xeb, 0xfb, 0x4b, 0xa6, 0x66, 0xb2, 0x34, 0x6f, 0x7b, 0x8b, 0xff}}
+	return a, nil
+}
+
+var __1528395756_alter_orphaned_repo_triggerUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x52\x4d\x8f\x9b\x30\x10\xbd\xfb\x57\xcc\x21\x87\x44\xda\xec\x1f\x40\x39\xb8\x30\xb0\x48\xc4\x44\xc6\x68\x7b\xb3\xdc\xe0\x4d\x2c\xf1\x55\xdb\xad\xba\xff\xbe\xc2\x04\x36\x87\xe6\xd0\xe4\x10\x0c\xf3\xe6\xbd\x37\x9e\xf7\x0d\xb3\x9c\x45\x84\x24\xbc\x3c\x41\x5a\xb3\x58\xe4\x25\x83\x3c\x05\xfc\x9e\x57\xa2\x02\x37\x7c\x78\xd9\xe8\x56\x7b\x2d\x07\x3b\x5e\x55\x2f\xad\x1e\x07\xf9\xe3\x53\xea\x3f\x5e\xdb\x5e\xb5\xd2\x69\xfb\xdb\x9c\x75\x28\xb8\xed\x0e\x62\x5a\xc5\x34\xc1\x68\x26\x15\x3c\xcf\x32\xe4\x77\x9c\xde\x9a\x8b\xfc\x5f\x62\x28\x19\xfc\x5b\x31\x22\x24\xe6\x48\x05\x7e\xf9\x7f\xc6\x35\x47\x51\x73\x36\xbb\xbb\x68\x4b\x00\x00\x0a\xca\xb2\x9a\x66\x08\x63\x3b\x5e\xdc\xcf\x96\xd0\x0a\x36\x1b\x12\x2e\x2d\x00\xf6\x7b\x78\xbf\xea\x1e\x54\xbf\x9a\x83\x1b\x31\x18\x17\x7c\xc0\x60\xe1\xaa\x6c\xb3\x9f\xfd\x34\x2f\x4b\xe3\xa8\xed\xc7\x60\x3b\x07\x0a\xce\xad\x56\x3d\xfc\x1a\xc1\x0f\xa1\xe7\x86\x85\xd9\x3b\x04\x8b\xc6\x0f\xd6\x68\xf7\x1a\xda\xeb\x53\x42\x05\x86\xe3\xf4\x9b\x00\xe1\xa5\x42\xb1\x7e\xec\x55\xa7\xe1\x70\x7f\x17\x8d\x5c\x99\x3e\xe5\x54\xde\x4e\x7f\xbb\x97\xb5\x65\x81\x29\x0f\x07\xf0\x56\xf5\x4e\x9d\xbd\x19\x7a\xe9\x4d\xa7\x9d\x57\xdd\xb8\xdd\x05\xf0\xfb\x1b\xf2\x45\xfe\xae\x29\xaf\x80\xd5\x45\x71\x2b\x50\x96\x00\x2b\xc5\xb2\xf6\xed\x2a\x53\x61\x81\xb1\x80\x94\x97\xc7\x07\x3b\x9d\x05\xc2\x5c\xd2\x34\x70\x08\xa7\x57\xd3\x04\x8a\x5d\x44\xc2\x73\xde\x58\x50\x8c\x08\xb2\x24\x22\x9b\xcd\x57\x18\x96\xdc\x3d\x95\xb6\xc0\x4f\x53\x81\x1c\x12\x2c\x50\xe0\xe3\xf8\x05\x68\x5a\x72\x40\x1a\xbf\x41\x25\xa8\xc0\x23\xb2\x69\x6a\x8c\x6b\x81\x70\xe2\x65\x8c\x49\xcd\xf1\x99\x54\x4e\xe3\x94\xc7\x63\x2e\x22\xf2\x37\x00\x00\xff\xff\xf7\x1c\xa4\xaa\xaa\x03\x00\x00")
+
+func _1528395756_alter_orphaned_repo_triggerUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395756_alter_orphaned_repo_triggerUpSql,
+		"1528395756_alter_orphaned_repo_trigger.up.sql",
+	)
+}
+
+func _1528395756_alter_orphaned_repo_triggerUpSql() (*asset, error) {
+	bytes, err := _1528395756_alter_orphaned_repo_triggerUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395756_alter_orphaned_repo_trigger.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x64, 0xac, 0x92, 0x6c, 0xc8, 0x9a, 0x90, 0x5f, 0x2f, 0xdb, 0xf5, 0x39, 0xcd, 0x53, 0xf8, 0xc6, 0x1f, 0x86, 0x17, 0x41, 0x87, 0xcc, 0xba, 0x31, 0xca, 0x2c, 0xc, 0x49, 0xb9, 0x5d, 0x2, 0x4c}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3283,6 +3367,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395753_add_enqueue_table_for_trigger_queries.up.sql":                                _1528395753_add_enqueue_table_for_trigger_queriesUpSql,
 	"1528395754_add_cols_next_run_latest_result_to_cm_queries.down.sql":                      _1528395754_add_cols_next_run_latest_result_to_cm_queriesDownSql,
 	"1528395754_add_cols_next_run_latest_result_to_cm_queries.up.sql":                        _1528395754_add_cols_next_run_latest_result_to_cm_queriesUpSql,
+	"1528395755_cm_trigger_jobs_add_colums.down.sql":                                         _1528395755_cm_trigger_jobs_add_columsDownSql,
+	"1528395755_cm_trigger_jobs_add_colums.up.sql":                                           _1528395755_cm_trigger_jobs_add_columsUpSql,
+	"1528395756_alter_orphaned_repo_trigger.down.sql":                                        _1528395756_alter_orphaned_repo_triggerDownSql,
+	"1528395756_alter_orphaned_repo_trigger.up.sql":                                          _1528395756_alter_orphaned_repo_triggerUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3471,6 +3559,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395753_add_enqueue_table_for_trigger_queries.up.sql":                                {_1528395753_add_enqueue_table_for_trigger_queriesUpSql, map[string]*bintree{}},
 	"1528395754_add_cols_next_run_latest_result_to_cm_queries.down.sql":                      {_1528395754_add_cols_next_run_latest_result_to_cm_queriesDownSql, map[string]*bintree{}},
 	"1528395754_add_cols_next_run_latest_result_to_cm_queries.up.sql":                        {_1528395754_add_cols_next_run_latest_result_to_cm_queriesUpSql, map[string]*bintree{}},
+	"1528395755_cm_trigger_jobs_add_colums.down.sql":                                         {_1528395755_cm_trigger_jobs_add_columsDownSql, map[string]*bintree{}},
+	"1528395755_cm_trigger_jobs_add_colums.up.sql":                                           {_1528395755_cm_trigger_jobs_add_columsUpSql, map[string]*bintree{}},
+	"1528395756_alter_orphaned_repo_trigger.down.sql":                                        {_1528395756_alter_orphaned_repo_triggerDownSql, map[string]*bintree{}},
+	"1528395756_alter_orphaned_repo_trigger.up.sql":                                          {_1528395756_alter_orphaned_repo_triggerUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

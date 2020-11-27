@@ -10,29 +10,31 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 // NewResolver returns a new Resolver that uses the given db
 func NewResolver(db dbutil.DB) graphqlbackend.CodeMonitorsResolver {
-	return &Resolver{db: basestore.NewWithDB(db, sql.TxOptions{}), clock: timeutil.Now}
+	return &Resolver{store: cm.NewStore(db)}
 }
 
 // newResolverWithClock is used in tests to set the clock manually.
 func newResolverWithClock(db dbutil.DB, clock func() time.Time) graphqlbackend.CodeMonitorsResolver {
-	return &Resolver{db: basestore.NewWithDB(db, sql.TxOptions{}), clock: clock}
+	return &Resolver{store: cm.NewStoreWithClock(db, clock)}
 }
 
 type Resolver struct {
-	db    *basestore.Store
-	clock func() time.Time
+	store *cm.Store
+}
+
+func (r *Resolver) Now() time.Time {
+	return r.store.Now()
 }
 
 func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) (graphqlbackend.MonitorConnectionResolver, error) {
@@ -40,7 +42,7 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.Query(ctx, q)
+	rows, err := r.store.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -62,18 +64,16 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	if err != nil {
 		return nil, err
 	}
-
 	// start transaction
-	var txStore *basestore.Store
-	txStore, err = r.db.Transact(ctx)
+	var txStore *cm.Store
+	txStore, err = r.store.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 	tx := Resolver{
-		db:    txStore,
-		clock: r.clock,
+		store: txStore,
 	}
-	defer func() { err = tx.db.Done(err) }()
+	defer func() { err = tx.store.Done(err) }()
 
 	// create code monitor
 	var q *sqlf.Query
@@ -91,37 +91,17 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	if err != nil {
 		return nil, err
 	}
-	err = tx.db.Exec(ctx, q)
+	err = tx.store.Exec(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
 	// create actions
-	for i, action := range args.Actions {
-		if action.Email != nil {
-			q, err = tx.createActionEmailQuery(ctx, m.(*monitor).id, action.Email)
-			if err != nil {
-				return nil, err
-			}
-			var e graphqlbackend.MonitorEmailResolver
-			e, err = tx.runEmailQuery(ctx, q)
-			if err != nil {
-				return nil, err
-			}
-
-			// insert recipients
-			q, err = tx.createRecipientsQuery(ctx, action.Email.Recipients, e.(*monitorEmail).id)
-			if err != nil {
-				return nil, err
-			}
-			err = tx.db.Exec(ctx, q)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, fmt.Errorf("missing email object for action %d", i)
-		}
+	err = tx.createActions(ctx, args.Actions, m.(*monitor).id)
+	if err != nil {
+		return nil, err
 	}
+
 	// Hydrate monitor with Resolver.
 	m.(*monitor).Resolver = r
 	return m, nil
@@ -148,7 +128,7 @@ func (r *Resolver) DeleteCodeMonitor(ctx context.Context, args *graphqlbackend.D
 	if err != nil {
 		return nil, err
 	}
-	if err := r.db.Exec(ctx, q); err != nil {
+	if err := r.store.Exec(ctx, q); err != nil {
 		return nil, err
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
@@ -183,7 +163,7 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = tx.db.Done(err) }()
+	defer func() { err = tx.store.Done(err) }()
 
 	err = tx.deleteActionsInt64(ctx, toDelete, monitorID)
 	if err != nil {
@@ -233,7 +213,7 @@ func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int
 
 func (r *Resolver) actionIDsForMonitorIDINT64SinglePage(ctx context.Context, q *sqlf.Query, limit int) (IDs []graphql.ID, cursor *string, err error) {
 	var rows *sql.Rows
-	rows, err = r.db.Query(ctx, q)
+	rows, err = r.store.Query(ctx, q)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -304,7 +284,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	if err != nil {
 		return nil, err
 	}
-	err = r.db.Exec(ctx, q)
+	err = r.store.Exec(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -326,7 +306,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		if err != nil {
 			return nil, err
 		}
-		err = r.db.Exec(ctx, q)
+		err = r.store.Exec(ctx, q)
 		if err != nil {
 			return nil, err
 		}
@@ -342,7 +322,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		if err != nil {
 			return nil, err
 		}
-		err = r.db.Exec(ctx, q)
+		err = r.store.Exec(ctx, q)
 		if err != nil {
 			return nil, err
 		}
@@ -367,7 +347,7 @@ func (r *Resolver) createActions(ctx context.Context, args []*graphqlbackend.Cre
 		if err != nil {
 			return err
 		}
-		err = r.db.Exec(ctx, q)
+		err = r.store.Exec(ctx, q)
 		if err != nil {
 			return err
 		}
@@ -384,7 +364,7 @@ func (r *Resolver) deleteActionsInt64(ctx context.Context, actionIDs []int64, mo
 	if err != nil {
 		return err
 	}
-	err = r.db.Exec(ctx, q)
+	err = r.store.Exec(ctx, q)
 	if err != nil {
 		return err
 	}
@@ -392,18 +372,17 @@ func (r *Resolver) deleteActionsInt64(ctx context.Context, actionIDs []int64, mo
 }
 
 func (r *Resolver) transact(ctx context.Context) (*Resolver, error) {
-	txStore, err := r.db.Transact(ctx)
+	txStore, err := r.store.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &Resolver{
-		db:    txStore,
-		clock: r.clock,
+		store: txStore,
 	}, nil
 }
 
 func (r *Resolver) runMonitorQuery(ctx context.Context, q *sqlf.Query) (graphqlbackend.MonitorResolver, error) {
-	rows, err := r.db.Query(ctx, q)
+	rows, err := r.store.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -419,7 +398,7 @@ func (r *Resolver) runMonitorQuery(ctx context.Context, q *sqlf.Query) (graphqlb
 }
 
 func (r *Resolver) runEmailQuery(ctx context.Context, q *sqlf.Query) (graphqlbackend.MonitorEmailResolver, error) {
-	rows, err := r.db.Query(ctx, q)
+	rows, err := r.store.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -435,7 +414,7 @@ func (r *Resolver) runEmailQuery(ctx context.Context, q *sqlf.Query) (graphqlbac
 }
 
 func (r *Resolver) runTriggerQuery(ctx context.Context, q *sqlf.Query) (*cm.MonitorQuery, error) {
-	rows, err := r.db.Query(ctx, q)
+	rows, err := r.store.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -569,7 +548,7 @@ AND id > %s
 ORDER BY id ASC
 LIMIT %s
 `
-	after, err := unmarshallAfter(args.After)
+	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
 	}
@@ -595,7 +574,7 @@ RETURNING %s;
 	if err != nil {
 		return nil, err
 	}
-	now := r.clock()
+	now := r.Now()
 	a := actor.FromContext(ctx)
 	return sqlf.Sprintf(
 		InsertCodeMonitorQuery,
@@ -629,7 +608,7 @@ RETURNING %s;
 	if err != nil {
 		return nil, err
 	}
-	now := r.clock()
+	now := r.Now()
 	a := actor.FromContext(ctx)
 	var monitorID int64
 	err = relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
@@ -667,7 +646,7 @@ INSERT INTO cm_queries
 VALUES (%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
-	now := r.clock()
+	now := r.Now()
 	a := actor.FromContext(ctx)
 	return sqlf.Sprintf(
 		insertQueryQuery,
@@ -691,7 +670,7 @@ WHERE id = %s
 AND monitor = %s
 RETURNING %s;
 `
-	now := r.clock()
+	now := r.Now()
 	a := actor.FromContext(ctx)
 
 	var triggerID int64
@@ -719,7 +698,7 @@ RETURNING %s;
 
 func (r *Resolver) triggerQueryByMonitorQuery(ctx context.Context, monitorID int64) (*sqlf.Query, error) {
 	const triggerQueryByMonitorQuery = `
-SELECT id, monitor, query, next_run, created_by, created_at, changed_by, changed_at
+SELECT id, monitor, query, next_run, latest_result, created_by, created_at, changed_by, changed_at
 FROM cm_queries
 WHERE monitor = %s;
 `
@@ -748,7 +727,7 @@ INSERT INTO cm_emails
 VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
-	now := r.clock()
+	now := r.Now()
 	a := actor.FromContext(ctx)
 	return sqlf.Sprintf(
 		insertEmailQuery,
@@ -791,7 +770,7 @@ RETURNING %s;
 	if err != nil {
 		return nil, err
 	}
-	now := r.clock()
+	now := r.Now()
 	a := actor.FromContext(ctx)
 	return sqlf.Sprintf(
 		updateMonitorActionEmailQuery,
@@ -815,7 +794,7 @@ AND id > %s
 LIMIT %s;
 ;
 `
-	after, err := unmarshallAfter(args.After)
+	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
 	}
@@ -888,7 +867,7 @@ AND id > %s
 ORDER BY id ASC
 LIMIT %s;
 `
-	after, err := unmarshallAfter(args.After)
+	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
 	}
@@ -919,7 +898,7 @@ RETURNING %s
 		toggleCodeMonitorQuery,
 		args.Enabled,
 		actorUID,
-		r.clock(),
+		r.Now(),
 		monitorID,
 		sqlf.Join(monitorColumns, ", "),
 	)
@@ -987,7 +966,7 @@ func (r *Resolver) ownerForID64(ctx context.Context, monitorID int64) (owner gra
 	if err != nil {
 		return "", err
 	}
-	rows, err = r.db.Query(ctx, q)
+	rows, err = r.store.Query(ctx, q)
 	if err != nil {
 		return "", err
 	}
@@ -1119,7 +1098,7 @@ func (m *monitor) Actions(ctx context.Context, args *graphqlbackend.ListActionAr
 	return m.actionConnectionResolverWithTriggerID(ctx, nil, m.id, args)
 }
 
-func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, triggerEventID *int64, monitorID int64, args *graphqlbackend.ListActionArgs) (c graphqlbackend.MonitorActionConnectionResolver, err error) {
+func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, triggerEventID *int32, monitorID int64, args *graphqlbackend.ListActionArgs) (c graphqlbackend.MonitorActionConnectionResolver, err error) {
 	// For now, we only support emails as actions. Once we add other actions such as
 	// webhooks, we have to query those tables here too.
 	var q *sqlf.Query
@@ -1127,7 +1106,7 @@ func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, tr
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.Query(ctx, q)
+	rows, err := r.store.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -1177,8 +1156,20 @@ func (q *monitorQuery) Query() string {
 	return q.QueryString
 }
 
-func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) graphqlbackend.MonitorTriggerEventConnectionResolver {
-	return &monitorTriggerEventConnection{monitorID: relay.MarshalID(monitorKind, q.Monitor), userID: relay.MarshalID("User", actor.FromContext(ctx).UID)}
+func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) (graphqlbackend.MonitorTriggerEventConnectionResolver, error) {
+	es, err := q.Resolver.store.GetEventsForQueryIDInt64(ctx, q.Id, args)
+	if err != nil {
+		return nil, err
+	}
+	events := make([]graphqlbackend.MonitorTriggerEventResolver, 0, len(es))
+	for _, e := range es {
+		events = append(events, graphqlbackend.MonitorTriggerEventResolver(&monitorTriggerEvent{
+			Resolver:    q.Resolver,
+			monitorID:   q.Monitor,
+			TriggerJobs: e,
+		}))
+	}
+	return &monitorTriggerEventConnection{q.Resolver, events}, nil
 }
 
 //
@@ -1186,28 +1177,22 @@ func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEven
 //
 type monitorTriggerEventConnection struct {
 	*Resolver
-	monitorID graphql.ID
-	userID    graphql.ID // TODO: remove this. Just for stub implementation
+	events []graphqlbackend.MonitorTriggerEventResolver
 }
 
 func (a *monitorTriggerEventConnection) Nodes(ctx context.Context) ([]graphqlbackend.MonitorTriggerEventResolver, error) {
-	return []graphqlbackend.MonitorTriggerEventResolver{&monitorTriggerEvent{
-		Resolver:  a.Resolver,
-		id:        42,
-		status:    "SUCCESS",
-		message:   nil,
-		timestamp: graphqlbackend.DateTime{Time: time.Now()},
-		monitorID: a.monitorID,
-		userID:    a.userID,
-	}}, nil
+	return a.events, nil
 }
 
 func (a *monitorTriggerEventConnection) TotalCount(ctx context.Context) (int32, error) {
-	return 1, nil
+	return int32(len(a.events)), nil
 }
 
 func (a *monitorTriggerEventConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(false), nil
+	if len(a.events) == 0 {
+		return graphqlutil.HasNextPage(false), nil
+	}
+	return graphqlutil.NextPageCursor(string(a.events[len(a.events)-1].ID())), nil
 }
 
 //
@@ -1215,33 +1200,44 @@ func (a *monitorTriggerEventConnection) PageInfo(ctx context.Context) (*graphqlu
 //
 type monitorTriggerEvent struct {
 	*Resolver
-	id        int64
-	status    string
-	message   *string
-	timestamp graphqlbackend.DateTime
-	monitorID graphql.ID
-
-	userID graphql.ID // TODO: remove this. Just for stub implementation
+	*cm.TriggerJobs
+	monitorID int64
 }
 
 func (m *monitorTriggerEvent) ID() graphql.ID {
-	return relay.MarshalID(monitorTriggerEventKind, m.id)
+	return relay.MarshalID(monitorTriggerEventKind, m.Id)
 }
 
-func (m *monitorTriggerEvent) Status() string {
-	return m.status
+// stateToStatus maps the state of the dbworker job to the public GraphQL status of
+// events.
+var stateToStatus = map[string]string{
+	"completed":  "SUCCESS",
+	"queued":     "PENDING",
+	"processing": "PENDING",
+	"errored":    "ERROR",
+	"failed":     "ERROR",
+}
+
+func (m *monitorTriggerEvent) Status() (string, error) {
+	if v, ok := stateToStatus[m.State]; ok {
+		return v, nil
+	}
+	return "", fmt.Errorf("unknown status: %s", m.State)
 }
 
 func (m *monitorTriggerEvent) Message() *string {
-	return m.message
+	return m.FailureMessage
 }
 
-func (m *monitorTriggerEvent) Timestamp() graphqlbackend.DateTime {
-	return m.timestamp
+func (m *monitorTriggerEvent) Timestamp() (graphqlbackend.DateTime, error) {
+	if m.FinishedAt == nil {
+		return graphqlbackend.DateTime{Time: m.store.Now()}, nil
+	}
+	return graphqlbackend.DateTime{Time: *m.FinishedAt}, nil
 }
 
 func (m *monitorTriggerEvent) Actions(ctx context.Context, args *graphqlbackend.ListActionArgs) (graphqlbackend.MonitorActionConnectionResolver, error) {
-	return m.actionConnectionResolverWithTriggerID(ctx, &m.id, m.id, args)
+	return m.actionConnectionResolverWithTriggerID(ctx, &m.Id, m.monitorID, args)
 }
 
 // ActionConnection
@@ -1250,7 +1246,7 @@ type monitorActionConnection struct {
 	actions []graphqlbackend.MonitorAction
 
 	// triggerEventID is used to link action events to a trigger event
-	triggerEventID *int64
+	triggerEventID *int32
 }
 
 func (a *monitorActionConnection) Nodes(ctx context.Context) ([]graphqlbackend.MonitorAction, error) {
@@ -1309,7 +1305,7 @@ func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.List
 	if err != nil {
 		return nil, err
 	}
-	rows, err := m.db.Query(ctx, q)
+	rows, err := m.store.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -1431,7 +1427,7 @@ func (m *monitorActionEvent) Timestamp() graphqlbackend.DateTime {
 	return m.timestamp
 }
 
-func unmarshallAfter(after *string) (int64, error) {
+func unmarshalAfter(after *string) (int64, error) {
 	var a int64
 	if after == nil {
 		a = 0

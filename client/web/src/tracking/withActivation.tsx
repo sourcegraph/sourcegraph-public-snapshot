@@ -28,6 +28,10 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
                       repositories {
                           totalCount
                       }
+                      repositoryStats {
+                          gitDirBytes
+                          indexedLinesCount
+                      }
                       viewerSettings {
                           final
                       }

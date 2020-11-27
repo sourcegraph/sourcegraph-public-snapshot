@@ -13,6 +13,9 @@ import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/scr
 import * as path from 'path'
 import { DiffHunkLineType } from '../graphql-operations'
 import { encodeURIComponentExceptSlashes } from '../../../shared/src/util/url'
+import { ExtensionManifest } from '../../../shared/src/extensions/extensionManifest'
+import { Settings } from '../../../shared/src/settings/settings'
+import type * as sourcegraph from 'sourcegraph'
 
 describe('Repository', () => {
     let driver: Driver
@@ -53,7 +56,7 @@ describe('Repository', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
-                ResolveRev: () => createResolveRevisionResult(repositorySourcegraphUrl),
+                ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
                 FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
                 TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, fileEntries),
                 Blob: () => createBlobContentResult('mock file blob'),
@@ -356,7 +359,7 @@ describe('Repository', () => {
                 Date.now = () => mockMs
             })
 
-            await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/' + repositoryName)
 
             await driver.page.waitForSelector('h2.tree-page__title')
 
@@ -378,7 +381,7 @@ describe('Repository', () => {
             }, 'Blob')
 
             await driver.page.waitForSelector('.test-repo-blob')
-            await driver.assertWindowLocation(`${repositorySourcegraphUrl}/-/blob/${clickedFileName}`)
+            await driver.assertWindowLocation(`/${repositoryName}/-/blob/${clickedFileName}`)
 
             // Assert breadcrumb order
             await driver.page.waitForSelector('.test-breadcrumb')
@@ -390,6 +393,7 @@ describe('Repository', () => {
             // Return to repo page
             await driver.page.waitForSelector('a.repo-header__repo')
             await driver.page.click('a.repo-header__repo')
+
             await driver.page.waitForSelector('h2.tree-page__title')
             await assertSelectorHasText('h2.tree-page__title', ' ' + shortRepositoryName)
             await driver.assertWindowLocation(repositorySourcegraphUrl)
@@ -524,6 +528,434 @@ describe('Repository', () => {
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
             )
             assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', 'readme.md'])
+        })
+    })
+
+    // Describes the ways the directory viewer and tree sidebar can be extended through Sourcegraph extensions.
+    describe('extensibility', () => {
+        const repoName = 'github.com/sourcegraph/file-decs'
+
+        beforeEach(() => {
+            const userSettings: Settings = {
+                extensions: {
+                    'test/test': true,
+                },
+            }
+            const extensionManifest: ExtensionManifest = {
+                url: new URL('/-/static/extension/0001-test-test.js?hash--test-test', driver.sourcegraphBaseUrl).href,
+                activationEvents: ['*'],
+            }
+
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+                ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
+                FileExternalLinks: ({ filePath, repoName, revision }) =>
+                    createFileExternalLinksResult(
+                        `https://${encodeURIComponentExceptSlashes(repoName)}/blob/${encodeURIComponentExceptSlashes(
+                            revision
+                        )}/${encodeURIComponentExceptSlashes(filePath)}`
+                    ),
+                ViewerSettings: () => ({
+                    viewerSettings: {
+                        final: JSON.stringify(userSettings),
+                        subjects: [
+                            {
+                                __typename: 'User',
+                                displayName: 'Test User',
+                                id: 'TestUserSettingsID',
+                                latestSettings: {
+                                    id: 123,
+                                    contents: JSON.stringify(userSettings),
+                                },
+                                username: 'test',
+                                viewerCanAdminister: true,
+                                settingsURL: '/users/test/settings',
+                            },
+                        ],
+                    },
+                }),
+                TreeEntries: ({ filePath, repoName }) => {
+                    if (filePath === '') {
+                        return {
+                            repository: {
+                                commit: {
+                                    tree: {
+                                        isRoot: true,
+                                        url: `/${repoName}`,
+                                        entries: [
+                                            {
+                                                isDirectory: true,
+                                                isSingleChild: true,
+                                                name: 'nested',
+                                                path: 'nested',
+                                                url: `/${repoName}/-/tree/nested`,
+                                                submodule: null,
+                                            },
+                                            // recursiveSingleChild is always true in the web app
+                                            {
+                                                name: 'test.ts',
+                                                path: 'nested/test.ts',
+                                                isDirectory: false,
+                                                url: `/${repoName}/-/blob/nested/test.ts`,
+                                                submodule: null,
+                                                isSingleChild: false,
+                                            },
+                                            {
+                                                name: 'ReactComponent.tsx',
+                                                path: 'nested/ReactComponent.tsx',
+                                                isDirectory: false,
+                                                url: `/${repoName}/-/blob/nested/ReactComponent.tsx`,
+                                                submodule: null,
+                                                isSingleChild: false,
+                                            },
+                                            {
+                                                name: 'doubly-nested',
+                                                path: 'nested/doubly-nested',
+                                                isDirectory: true,
+                                                url: `/${repoName}/-/tree/nested/doubly-nested`,
+                                                submodule: null,
+                                                isSingleChild: false,
+                                            },
+                                        ],
+                                    },
+                                },
+                            },
+                        }
+                    }
+
+                    if (filePath === 'nested') {
+                        return {
+                            repository: {
+                                commit: {
+                                    tree: {
+                                        isRoot: false,
+                                        url: `/${repoName}/-/tree/nested`,
+                                        entries: [
+                                            {
+                                                name: 'test.ts',
+                                                path: 'nested/test.ts',
+                                                isDirectory: false,
+                                                url: `/${repoName}/-/blob/nested/test.ts`,
+                                                submodule: null,
+                                                isSingleChild: false,
+                                            },
+                                            {
+                                                name: 'ReactComponent.tsx',
+                                                path: 'nested/ReactComponent.tsx',
+                                                isDirectory: false,
+                                                url: `/${repoName}/-/blob/nested/ReactComponent.tsx`,
+                                                submodule: null,
+                                                isSingleChild: false,
+                                            },
+                                            {
+                                                name: 'doubly-nested',
+                                                path: 'nested/doubly-nested',
+                                                isDirectory: true,
+                                                url: `/${repoName}/-/tree/nested/doubly-nested`,
+                                                submodule: null,
+                                                isSingleChild: false,
+                                            },
+                                        ],
+                                    },
+                                },
+                            },
+                        }
+                    }
+
+                    if (filePath === 'nested/doubly-nested') {
+                        return {
+                            repository: {
+                                commit: {
+                                    tree: {
+                                        isRoot: false,
+                                        url: `/${repoName}/-/tree/nested/doubly-nested`,
+                                        entries: [
+                                            {
+                                                name: 'triply-nested.ts',
+                                                path: 'nested/doubly-nested/triply-nested.ts',
+                                                isDirectory: false,
+                                                url: `/${repoName}/-/blob/nested/doubly-nested/triply-nested.ts`,
+                                                submodule: null,
+                                                isSingleChild: false,
+                                            },
+                                        ],
+                                    },
+                                },
+                            },
+                        }
+                    }
+
+                    // unknown
+                    return {
+                        repository: {
+                            commit: {
+                                tree: {
+                                    isRoot: false,
+                                    url: `/${repoName}/${filePath}`,
+                                    entries: [],
+                                },
+                            },
+                        },
+                    }
+                },
+                TreeCommits: () => ({
+                    node: {
+                        __typename: 'Repository',
+                        commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false } } },
+                    },
+                }),
+                Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}`),
+                Extensions: () => ({
+                    extensionRegistry: {
+                        extensions: {
+                            nodes: [
+                                {
+                                    id: 'TestExtensionID',
+                                    extensionID: 'test/test',
+                                    manifest: {
+                                        raw: JSON.stringify(extensionManifest),
+                                    },
+                                    url: '/extensions/test/test',
+                                    viewerCanAdminister: false,
+                                },
+                            ],
+                        },
+                    },
+                }),
+            })
+
+            // Serve a mock extension bundle with a simple file decoration provider
+            testContext.server
+                .get(new URL(extensionManifest.url, driver.sourcegraphBaseUrl).href)
+                .intercept((request, response) => {
+                    function extensionBundle(): void {
+                        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+                        const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
+
+                        const vowels = 'aeiouAEIOU'
+
+                        function activate(context: sourcegraph.ExtensionContext): void {
+                            context.subscriptions.add(
+                                sourcegraph.app.registerFileDecorationProvider({
+                                    provideFileDecorations: ({ files }) =>
+                                        files.map(file => {
+                                            const fragments = file.path.split('/')
+                                            const name = fragments[fragments.length - 1]
+                                            return {
+                                                uri: file.uri,
+                                                after: {
+                                                    contentText: `${
+                                                        name.split('').filter(char => vowels.includes(char)).length
+                                                    } vowels`,
+                                                    color: file.isDirectory ? 'red' : 'blue',
+                                                },
+                                                meter: {
+                                                    value: file.isDirectory ? 50 : 100,
+                                                },
+                                            }
+                                        }),
+                                })
+                            )
+                        }
+
+                        exports.activate = activate
+                    }
+                    // Create an immediately-invoked function expression for the extensionBundle function
+                    const extensionBundleString = `(${extensionBundle.toString()})()`
+                    response.type('application/javascript; charset=utf-8').send(extensionBundleString)
+                })
+        })
+        async function getDecorationsByFilename(
+            pageOrSidebar: 'page' | 'sidebar',
+            filename: string
+        ): Promise<{ textContent?: string | null; percentage?: string | null } | null> {
+            return driver.page.evaluate(
+                ({ pageOrSidebar, filename }) => {
+                    const decorable = [
+                        ...document.querySelectorAll('.test-' + String(pageOrSidebar) + '-file-decorable'),
+                    ].find(decorable =>
+                        decorable?.querySelector('.test-file-decorable-name')?.textContent?.includes(filename)
+                    )
+
+                    if (!decorable) {
+                        return null
+                    }
+
+                    return {
+                        textContent: decorable.querySelector('.test-file-decoration-text')?.textContent,
+                        percentage: decorable.querySelector('.test-file-decoration-meter')?.getAttribute('value'),
+                    }
+                },
+                { pageOrSidebar, filename }
+            )
+        }
+
+        it('file decorations work on tree page and sidebar', async () => {
+            await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repoName}`)
+
+            try {
+                await driver.page.waitForSelector('.test-file-decoration-container', { timeout: 5000 })
+            } catch {
+                throw new Error('Expected to see file decorations')
+            }
+
+            // TREE SIDEBAR ASSERTIONS
+
+            const nestedDecorations = await getDecorationsByFilename('sidebar', 'nested')
+
+            assert.deepStrictEqual(
+                nestedDecorations,
+                {
+                    textContent: '2 vowels',
+                    percentage: '50', // dirs are 50% in mock extension
+                },
+                'Incorrect decorations for nested on tree sidebar'
+            )
+
+            // Since nested is a single child, its children should be visible and decorated as well
+
+            const testDecorations = await getDecorationsByFilename('sidebar', 'test.ts')
+
+            assert.deepStrictEqual(
+                testDecorations,
+                {
+                    textContent: '1 vowels',
+                    percentage: '100', // files are 100% in mock extension
+                },
+                'Incorrect decorations for test.ts on tree sidebar'
+            )
+
+            const doublyNestedDecorations = await getDecorationsByFilename('sidebar', 'doubly-nested')
+
+            assert.deepStrictEqual(
+                doublyNestedDecorations,
+                {
+                    textContent: '4 vowels',
+                    percentage: '50',
+                },
+                'Incorrect decorations for doubly-nested on tree sidebar'
+            )
+
+            // Expand directory. we want to trigger "noopRowClick" handler in order to not navigate to new tree page
+            await driver.page.evaluate(() =>
+                ([...document.querySelectorAll('.test-sidebar-file-decorable')]
+                    .find(directory => directory.textContent?.includes('doubly-nested'))
+                    ?.querySelector('.test-tree-noop-link') as HTMLAnchorElement | undefined)?.click()
+            )
+
+            // Wait for file decorations to be sent from extension host
+            try {
+                await driver.page.waitForFunction(
+                    () =>
+                        !![...document.querySelectorAll('.test-sidebar-file-decorable')]
+                            .find(file =>
+                                file.querySelector('.test-file-decorable-name')?.textContent?.includes('triply-nested')
+                            )
+                            ?.querySelector('.test-file-decoration-container'),
+                    { timeout: 5000 }
+                )
+            } catch {
+                throw new Error('Timed out waiting for "triply-nested" decorations in tree sidebar')
+            }
+            const triplyNestedDecorations = await getDecorationsByFilename('sidebar', 'triply-nested')
+
+            assert.deepStrictEqual(
+                triplyNestedDecorations,
+                {
+                    textContent: '3 vowels',
+                    percentage: '100',
+                },
+                'Incorrect decorations for triply-nested.ts on tree sidebar'
+            )
+
+            // TREE PAGE ASSERTIONS
+
+            try {
+                await driver.findElementWithText('nested', {
+                    selector: '.test-page-file-decorable .test-file-decorable-name',
+                    fuzziness: 'contains',
+                    wait: {
+                        timeout: 3000,
+                    },
+                })
+            } catch {
+                throw new Error('timed out waiting for "nested" in tree page')
+            }
+
+            // Wait for decorations
+            try {
+                await driver.page.waitForSelector('.test-page-file-decorable .test-file-decoration-container')
+            } catch {
+                throw new Error('Timed out waiting for "nested" decorations in tree page')
+            }
+
+            await driver.page.evaluate(() =>
+                ([...document.querySelectorAll('.test-page-file-decorable .test-file-decorable-name')].find(name =>
+                    name?.textContent?.includes('nested')
+                ) as HTMLAnchorElement | undefined)?.click()
+            )
+
+            // Wait for decorations
+            try {
+                await driver.page.waitForSelector('.test-page-file-decorable .test-file-decoration-container')
+            } catch {
+                throw new Error('Timed out waiting for "ReactComponent.tsx" decorations in tree page')
+            }
+
+            const reactDecorations = await getDecorationsByFilename('page', 'ReactComponent.tsx')
+            assert.deepStrictEqual(
+                reactDecorations,
+                {
+                    textContent: '5 vowels',
+                    percentage: '100',
+                },
+                'Incorrect decorations for ReactComponent.tsx on tree page'
+            )
+
+            const doublyNestedPageDecorations = await getDecorationsByFilename('page', 'doubly-nested')
+            // This should be equal to its sidebar decorations
+            assert.deepStrictEqual(
+                doublyNestedPageDecorations,
+                {
+                    textContent: '4 vowels',
+                    percentage: '50',
+                },
+                'Incorrect decorations for doubly-nested on tree page'
+            )
+
+            await driver.page.evaluate(() =>
+                ([...document.querySelectorAll('.test-page-file-decorable .test-file-decorable-name')].find(name =>
+                    name?.textContent?.includes('doubly-nested')
+                ) as HTMLAnchorElement | undefined)?.click()
+            )
+
+            // Wait for new tree page
+            await driver.findElementWithText('triply-nested', {
+                selector: '.test-page-file-decorable .test-file-decorable-name',
+                fuzziness: 'contains',
+                wait: {
+                    timeout: 3000,
+                },
+            })
+
+            // Wait for decorations
+            try {
+                await driver.page.waitForSelector('.test-page-file-decorable .test-file-decoration-container')
+            } catch {
+                throw new Error('Timed out waiting for "triply-nested" decorations in tree page')
+            }
+
+            const triplyNestedPageDecorations = await getDecorationsByFilename('page', 'triply-nested.ts')
+            // This should be equal to its sidebar decorations
+            assert.deepStrictEqual(
+                triplyNestedPageDecorations,
+                {
+                    textContent: '3 vowels',
+                    percentage: '100',
+                },
+                'Incorrect decorations for triply-nested.ts on tree page'
+            )
         })
     })
 })

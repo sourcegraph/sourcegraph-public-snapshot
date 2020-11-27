@@ -27,6 +27,10 @@ interface Props extends ActivationProps, ThemeProps {
     /** For testing only */
     _fetchOverview?: () => Observable<{
         repositories: number | null
+        repositoryStats: {
+            gitDirBytes: number
+            indexedLinesCount: number
+        }
         users: number
         orgs: number
         surveyResponses: {
@@ -40,6 +44,10 @@ interface Props extends ActivationProps, ThemeProps {
 
 const fetchOverview = (): Observable<{
     repositories: number | null
+    repositoryStats: {
+        gitDirBytes: number
+        indexedLinesCount: number
+    }
     users: number
     orgs: number
     surveyResponses: {
@@ -51,6 +59,10 @@ const fetchOverview = (): Observable<{
         query Overview {
             repositories {
                 totalCount(precise: true)
+            }
+            repositoryStats {
+                gitDirBytes
+                indexedLinesCount
             }
             users {
                 totalCount
@@ -67,6 +79,7 @@ const fetchOverview = (): Observable<{
         map(dataOrThrowErrors),
         map(data => ({
             repositories: data.repositories.totalCount,
+            repositoryStats: data.repositoryStats,
             users: data.users.totalCount,
             orgs: data.organizations.totalCount,
             surveyResponses: data.surveyResponses,
@@ -174,6 +187,28 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                             >
                                 {numberWithCommas(info.repositories)}{' '}
                                 {pluralize('repository', info.repositories, 'repositories')}
+                            </Link>
+                        )}
+                        {info.repositoryStats !== null && (
+                            <Link
+                                to="/site-admin/repositories"
+                                className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+                            >
+                                {numberWithCommas(info.repositoryStats.gitDirBytes)}{' '}
+                                {pluralize('byte stored', info.repositoryStats.gitDirBytes, 'bytes stored')}
+                            </Link>
+                        )}
+                        {info.repositoryStats !== null && (
+                            <Link
+                                to="/site-admin/repositories"
+                                className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+                            >
+                                {numberWithCommas(info.repositoryStats.indexedLinesCount)}{' '}
+                                {pluralize(
+                                    'line of code indexed',
+                                    info.repositoryStats.indexedLinesCount,
+                                    'lines of code indexed'
+                                )}
                             </Link>
                         )}
                         {info.users > 1 && (

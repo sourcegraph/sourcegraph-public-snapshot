@@ -2655,6 +2655,10 @@ type Query {
     FOR INTERNAL USE ONLY: Lists all status messages
     """
     statusMessages: [StatusMessage!]!
+    """
+    FOR INTERNAL USE ONLY: Query repository statistics for the site.
+    """
+    repositoryStats: RepositoryStats!
 
     """
     Look up a namespace by ID.
@@ -8669,6 +8673,20 @@ type SyncError {
 FOR INTERNAL USE ONLY: A status message
 """
 union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
+
+"""
+FOR INTERNAL USE ONLY: A repository statistic
+"""
+type RepositoryStats {
+    """
+    The amount of bytes stored in .git directories
+    """
+    gitDirBytes: Int!
+    """
+    The number of lines indexed
+    """
+    indexedLinesCount: Int!
+}
 
 """
 An RFC 3339-encoded UTC date string, such as 1973-11-29T21:33:09Z. This value can be parsed into a
