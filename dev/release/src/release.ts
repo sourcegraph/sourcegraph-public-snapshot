@@ -346,8 +346,12 @@ If you have changes that should go into this patch release, <${patchRequestTempl
 
             // default PR content
             const defaultPRMessage = `release: sourcegraph@${release.version}`
-            const prBodyAndDraftState = (actionItems: string[]): { draft: boolean; body: string } => {
+            const prBodyAndDraftState = (
+                actionItems: string[],
+                customMessage?: string
+            ): { draft: boolean; body: string } => {
                 const defaultBody = `This pull request is part of the Sourcegraph ${release.version} release.
+${customMessage || ''}
 
 * [Release campaign](${campaignURL})
 * ${trackingIssue ? `[Tracking issue](${trackingIssue.url})` : 'No tracking issue exists for this release'}`
@@ -416,6 +420,18 @@ cc @${config.captainGitHubUsername}
                                 return items
                             })()
                         ),
+                    },
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'about',
+                        base: 'main',
+                        head: `publish-${release.version}`,
+                        commitMessage: defaultPRMessage,
+                        title: defaultPRMessage,
+                        edits: [
+                            `${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' 'website/src/components/GetStarted.tsx'`,
+                        ],
+                        ...prBodyAndDraftState([], 'Note that this PR does *not* include the release blog post.'),
                     },
                     {
                         owner: 'sourcegraph',
