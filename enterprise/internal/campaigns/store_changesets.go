@@ -442,21 +442,12 @@ var listChangesetsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListChangesets
 SELECT %s FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
-WHERE %s
-ORDER BY id ASC
-`
-
-var listChangesetsWithTextSearchQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:ListChangesets
-SELECT %s FROM changesets
-INNER JOIN repo ON repo.id = changesets.repo_id
 LEFT JOIN changeset_specs ON changesets.current_spec_id = changeset_specs.id
 WHERE %s
 ORDER BY id ASC
 `
 
 func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
-	fmtstr := listChangesetsQueryFmtstr
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("changesets.id >= %s", opts.Cursor),
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
@@ -516,10 +507,6 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	}
 
 	if len(opts.TextSearch) != 0 {
-		// Text searches require an extra join to access the changeset spec, so
-		// let's go ahead and switch out the query format string.
-		fmtstr = listChangesetsWithTextSearchQueryFmtstr
-
 		for _, expr := range opts.TextSearch {
 			// The general query format is for a positive query is:
 			//
@@ -571,7 +558,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		fmtstr+opts.LimitOpts.ToDB(),
+		listChangesetsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(ChangesetColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
