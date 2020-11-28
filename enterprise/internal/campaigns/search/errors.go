@@ -6,21 +6,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
 
-// ErrExprError is a base type for errors that occur in a specific expression
+// ErrExpr is a base type for errors that occur in a specific expression
 // within a parse tree, and is intended to be embedded within other error types.
-type ErrExprError struct {
+type ErrExpr struct {
 	Pos   int
 	Input string
 }
 
-func createErrExprError(input string, expr *syntax.Expr) ErrExprError {
-	return ErrExprError{
+func createErrExpr(input string, expr *syntax.Expr) ErrExpr {
+	return ErrExpr{
 		Pos:   expr.Pos,
 		Input: input,
 	}
 }
 
-func (e ErrExprError) Error() string {
+func (e ErrExpr) Error() string {
 	preceding := ""
 	if e.Pos > 0 {
 		preceding = e.Input[0:e.Pos]
@@ -38,24 +38,24 @@ func (e ErrExprError) Error() string {
 }
 
 type ErrUnsupportedField struct {
-	ErrExprError
+	ErrExpr
 	Field string
 }
 
 func (e ErrUnsupportedField) Error() string {
-	return fmt.Sprintf("Fields of type `%s` are unsupported. %s", e.Field, e.ErrExprError.Error())
+	return fmt.Sprintf("Fields of type `%s` are unsupported. %s", e.Field, e.ErrExpr.Error())
 }
 
 type ErrUnsupportedValueType struct {
-	ErrExprError
+	ErrExpr
 	ValueType syntax.TokenType
 }
 
 func (e ErrUnsupportedValueType) Error() string {
 	switch e.ValueType {
 	case syntax.TokenPattern:
-		return fmt.Sprintf("Regular expressions are unsupported. %s", e.ErrExprError.Error())
+		return fmt.Sprintf("Regular expressions are unsupported. %s", e.ErrExpr.Error())
 	default:
-		return fmt.Sprintf("Values of type `%s` are unsupported. %s", e.ValueType.String(), e.ErrExprError.Error())
+		return fmt.Sprintf("Values of type `%s` are unsupported. %s", e.ValueType.String(), e.ErrExpr.Error())
 	}
 }

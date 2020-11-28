@@ -26,11 +26,11 @@ func ParseChangesetSearch(search string) (*campaigns.ListChangesetsOpts, error) 
 	var errs *multierror.Error
 	for _, expr := range tree {
 		if expr.Field != "" {
-			// Eventually, we'll support some field types and these will
-			// override other options above. For now, though, this is an error.
+			// Eventually, we'll support some field types and these will set
+			// other options in the result. For now, though, this is an error.
 			errs = multierror.Append(errs, ErrUnsupportedField{
-				ErrExprError: createErrExprError(search, expr),
-				Field:        expr.Field,
+				ErrExpr: createErrExpr(search, expr),
+				Field:   expr.Field,
 			})
 			continue
 		}
@@ -50,8 +50,8 @@ func ParseChangesetSearch(search string) (*campaigns.ListChangesetsOpts, error) 
 		// hook it in (by matching TokenPattern).
 		default:
 			errs = multierror.Append(errs, ErrUnsupportedValueType{
-				ErrExprError: createErrExprError(search, expr),
-				ValueType:    expr.ValueType,
+				ErrExpr:   createErrExpr(search, expr),
+				ValueType: expr.ValueType,
 			})
 		}
 	}
