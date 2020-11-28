@@ -6,7 +6,7 @@ import { CompletionList } from 'sourcegraph'
 import { CompletionWidget, CompletionWidgetProps } from './CompletionWidget'
 import webStyles from '../../../../web/src/main.scss'
 
-const onSelectItem = action('onSelectItem')
+const onSelectItem = () => action('onSelectItem')
 
 // Disable keyboard shortcuts because in CompletionWidget the cursor is in a contenteditable element,
 // which Storybook doesn't consider to be an input, so it intercepts keyboard shortcuts instead of
@@ -50,7 +50,7 @@ add('interactive', () => {
                             { items: [{ label: 'alice' }, { label: 'bob' }, { label: 'carol' }] } as CompletionList
                         }
                         textArea={element}
-                        onSelectItem={onSelectItem}
+                        onSelectItem={onSelectItem()}
                         listClassName="list-unstyled"
                     />
                 )}

@@ -31,14 +31,6 @@ type GitserverClient interface {
 	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error)
 }
 
-// ReconcilerMaxNumRetries is the maximum number of attempts the reconciler
-// makes to process a changeset when it fails.
-const ReconcilerMaxNumRetries = 60
-
-// ReconcilerMaxNumResets is the maximum number of attempts the reconciler
-// makes to process a changeset when it stalls (process crashes, etc.).
-const ReconcilerMaxNumResets = 60
-
 // Reconciler processes changesets and reconciles their current state — in
 // Sourcegraph or on the code host — with that described in the current
 // ChangesetSpec associated with the changeset.
