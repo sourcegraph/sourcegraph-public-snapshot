@@ -71,24 +71,12 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	t.Run("Create", func(t *testing.T) {
 		var i int
 		for i = 0; i < cap(changesets); i++ {
-			spec := &cmpgn.ChangesetSpec{
-				Spec: &cmpgn.ChangesetSpecDescription{
-					Title: fmt.Sprintf("%s title-%d", githubPR.Title, i),
-				},
-			}
-			if err := s.CreateChangesetSpec(ctx, spec); err != nil {
-				t.Fatalf("creating changeset spec: %v", err)
-			}
-
-			metadata := *githubPR
-			metadata.Title = spec.Spec.Title
-
 			failureMessage := fmt.Sprintf("failure-%d", i)
 			th := &cmpgn.Changeset{
 				RepoID:              repo.ID,
 				CreatedAt:           clock.now(),
 				UpdatedAt:           clock.now(),
-				Metadata:            &metadata,
+				Metadata:            githubPR,
 				CampaignIDs:         []int64{int64(i) + 1},
 				ExternalID:          fmt.Sprintf("foobar-%d", i),
 				ExternalServiceType: extsvc.TypeGitHub,
@@ -98,7 +86,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
 				ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
 
-				CurrentSpecID:     spec.ID,
+				CurrentSpecID:     int64(i) + 1,
 				PreviousSpecID:    int64(i) + 1,
 				OwnedByCampaignID: int64(i) + 1,
 				PublicationState:  cmpgn.ChangesetPublicationStatePublished,
@@ -638,104 +626,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 					OnlySynced: true,
 				},
 				wantCount: 1,
-			},
-			{
-				// Find a single changeset based on the changing part of the
-				// title.
-				opts: ListChangesetsOpts{
-					TextSearch: []ListChangesetsTextSearchExpr{
-						{Term: "title-1", Not: false},
-					},
-				},
-				wantCount: 1,
-			},
-			{
-				// Find all changesets based on an invariant part of the title.
-				opts: ListChangesetsOpts{
-					TextSearch: []ListChangesetsTextSearchExpr{
-						{Term: "bunch of bugs", Not: false},
-					},
-				},
-				wantCount: len(changesets),
-			},
-			{
-				// Find all the changesets based on the repo name.
-				opts: ListChangesetsOpts{
-					TextSearch: []ListChangesetsTextSearchExpr{
-						{Term: repo.URI, Not: false},
-					},
-				},
-				wantCount: len(changesets),
-			},
-			{
-				// Find a single changeset based on the changing part of the
-				// title and the repo name.
-				opts: ListChangesetsOpts{
-					TextSearch: []ListChangesetsTextSearchExpr{
-						{Term: "title-1", Not: false},
-						{Term: repo.URI, Not: false},
-					},
-				},
-				wantCount: 1,
-			},
-			{
-				// Find no changesets based on conflicting requirements.
-				opts: ListChangesetsOpts{
-					TextSearch: []ListChangesetsTextSearchExpr{
-						{Term: "title-1", Not: false},
-						{Term: "title-2", Not: false},
-					},
-				},
-				wantCount: 0,
-			},
-			{
-				// Find no changesets based on text that doesn't exist anywhere
-				// in our search scope.
-				opts: ListChangesetsOpts{
-					TextSearch: []ListChangesetsTextSearchExpr{
-						{Term: "she dreamt she was a bulldozer", Not: false},
-					},
-				},
-				wantCount: 0,
-			},
-			{
-				// Find no changesets by searching for subsets of words only.
-				opts: ListChangesetsOpts{
-					TextSearch: []ListChangesetsTextSearchExpr{
-						{Term: "bug", Not: false},
-					},
-				},
-				wantCount: 0,
-			},
-			{
-				// Find all but one changeset when using a negative search for
-				// the title.
-				opts: ListChangesetsOpts{
-					TextSearch: []ListChangesetsTextSearchExpr{
-						{Term: "title-1", Not: true},
-					},
-				},
-				wantCount: len(changesets) - 1,
-			},
-			{
-				// Find no changesets by negating the repo name.
-				opts: ListChangesetsOpts{
-					TextSearch: []ListChangesetsTextSearchExpr{
-						{Term: repo.URI, Not: true},
-					},
-				},
-				wantCount: 0,
-			},
-			{
-				// Find no changesets by negating the repo name, even though the
-				// title would match.
-				opts: ListChangesetsOpts{
-					TextSearch: []ListChangesetsTextSearchExpr{
-						{Term: "title-1", Not: true},
-						{Term: repo.URI, Not: true},
-					},
-				},
-				wantCount: 0,
 			},
 		}
 
