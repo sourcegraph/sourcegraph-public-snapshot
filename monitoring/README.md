@@ -30,7 +30,7 @@ The generator automatically generates and ships dashboards from monitoring defin
 It also takes care of the following:
 
 - Graphs within rows are sized appropriately
-- Alerts visualization through the [`ObservableAlertDefinitions` API](./monitoring/README.md#observablealertdefinition):
+- Alerts visualization through the [`ObservableAlertDefinition` API](./monitoring/README.md#type-observablealertdefinition):
   - Overview graphs for alerts (both Sourcegraph-wide and per-service)
   - Threshold lines for alerts of all levels are rendered in graphs
 - Formatting of units, labels, and more (using either the defaults, or the [`ObservablePanelOptions` API](./monitoring/README.md#type-observablepaneloptions))
@@ -48,7 +48,7 @@ Generated Prometheus recording rules are leveraged by the [Grafana integration](
 
 The generator's [Prometheus integration](#prometheus-integration) is a critical part of the [Sourcegraph's alerting capabilities](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_architecture#alert-notifications), which handles alert routing by level and formatting of alert messages to include links to [documentation](#documentation-generation) and [dashboards](#grafana-integration). Learn more about using Sourcegraph alerting in the [alerting documentation](https://docs.sourcegraph.com/admin/observability/alerting).
 
-At Sourcegraph, routing based on team ownership (as defined by [`ObservableOwner`](./README.md#type-observableowner)) is used to route customer support requests and [on-call events through OpsGenie](https://about.sourcegraph.com/handbook/engineering/incidents/on_call).
+At Sourcegraph, routing based on team ownership (as defined by [`ObservableOwner`](./monitoring/README.md#type-observableowner)) is used to route customer support requests and [on-call events through OpsGenie](https://about.sourcegraph.com/handbook/engineering/incidents/on_call).
 
 ## Development
 

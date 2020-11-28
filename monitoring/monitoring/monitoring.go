@@ -1,12 +1,3 @@
-/*
-Package monitoring declares types for Sourcegraph's monitoring generator as well as the generator implementation itself.
-
-To learn more about developing monitoring, see the guide: https://about.sourcegraph.com/handbook/engineering/observability/monitoring
-
-To learn more about the generator, see the top-level program: https://github.com/sourcegraph/sourcegraph/tree/main/monitoring
-*/
-//nolint:golint,gocritic
-//go:generate go run github.com/princjef/gomarkdoc/cmd/gomarkdoc . -o README.md
 package monitoring
 
 import (
@@ -23,9 +14,6 @@ import (
 
 	"github.com/grafana-tools/sdk"
 	"github.com/prometheus/common/model"
-
-	// Pin version of godoc-to-markdown generator
-	_ "github.com/princjef/gomarkdoc"
 )
 
 // Container describes a Docker container to be observed.
