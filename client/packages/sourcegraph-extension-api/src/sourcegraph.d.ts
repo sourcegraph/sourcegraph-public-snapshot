@@ -1059,6 +1059,38 @@ declare module 'sourcegraph' {
     }
 
     /**
+     * @template TState TODO(tj): thorough explanation
+     */
+    export interface WorkbenchView<TState extends object> {
+        state: TState
+
+        update: (nextState: Partial<TState>) => void
+    }
+
+    // TODO(tj): better types
+    export type WorkbenchViewType = 'statusBarItem'
+
+    export interface StatusBarItemState {
+        /**
+         * Whether to show the status bar item.
+         *
+         * @default true
+         */
+        visible: boolean
+
+        /** Text to display in the status bar. This will be prepended by the status bar item's `id`. */
+        contentText: string
+
+        /** Tooltip text to display when hovering over the status bar item. */
+        hoverMessage?: string
+
+        /** If set, the status bar item becomes a link with this destination URL. */
+        linkURL?: string
+    }
+
+    export interface StatusBarItem extends Unsubscribable, WorkbenchView<StatusBarItemState> {}
+
+    /**
      * The client application that is running the extension.
      */
     export namespace app {
@@ -1091,6 +1123,15 @@ declare module 'sourcegraph' {
          * @returns The panel view.
          */
         export function createPanelView(id: string): PanelView
+
+        /**
+         * Create a status bar item with the given {@link id}.
+         *
+         * @param id The ID of the status bar item. This may be shown to the user (e.g., in the URL fragment when the panel is
+         * active).
+         * @param options TODO(tj): Consider whether alignment and/or priority options are necessary
+         */
+        export function createStatusBarItem(id: string): StatusBarItem
 
         /**
          * Creates a decorationType that can be used to add decorations to code views.

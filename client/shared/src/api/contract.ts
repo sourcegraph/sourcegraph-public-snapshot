@@ -2,7 +2,7 @@ import { SettingsCascade } from '../settings/settings'
 import { SettingsEdit } from './client/services/settings'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Remote, ProxyMarked } from 'comlink'
-import { Unsubscribable, DocumentHighlight, FileDecorationContext } from 'sourcegraph'
+import { Unsubscribable, DocumentHighlight, FileDecorationContext, StatusBarItemState } from 'sourcegraph'
 import { ProxySubscribable } from './extension/api/common'
 import { TextDocumentPositionParameters } from './protocol'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
@@ -37,6 +37,9 @@ export interface FlatExtensionHostAPI {
 
     // Tree
     getFileDecorations: (parameters: FileDecorationContext) => ProxySubscribable<FileDecorationsByPath>
+
+    // Workbench views
+    getStatusBarItems: () => ProxySubscribable<Map<string, StatusBarItemState>>
 }
 
 /**

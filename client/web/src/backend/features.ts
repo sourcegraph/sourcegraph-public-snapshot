@@ -12,7 +12,7 @@ import {
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { switchMap } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
-import { DocumentHighlight } from 'sourcegraph'
+import { DocumentHighlight, StatusBarItemState } from 'sourcegraph'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { Remote } from 'comlink'
 import { FlatExtensionHostAPI } from '../../../shared/src/api/contract'
@@ -119,3 +119,10 @@ const getFileDecorationsFromHost = memoizeObservable(
         ),
     ({ parentNodeUri, files }) => `parentNodeUri:${parentNodeUri} files:${files.length}`
 )
+
+export const getStatusBarItems = ({
+    extensionsController,
+}: ExtensionsControllerProps): Observable<Map<string, StatusBarItemState>> =>
+    from(extensionsController.extHostAPI).pipe(
+        switchMap(extensionHost => wrapRemoteObservable(extensionHost.getStatusBarItems()))
+    )

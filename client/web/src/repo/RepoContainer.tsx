@@ -61,6 +61,7 @@ import { InstallBrowserExtensionAlert } from './actions/InstallBrowserExtensionA
 import { IS_CHROME } from '../marketing/util'
 import { useLocalStorage } from '../util/useLocalStorage'
 import { Settings } from '../schema/settings.schema'
+import { getStatusBarItems } from '../backend/features'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -373,6 +374,17 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         onExtensionAlertDismissed()
         setHasDismissedExtensionAlert(true)
     }, [onExtensionAlertDismissed, setHasDismissedExtensionAlert])
+
+    /**
+     * TODO(tj):
+     * - Maintain action items bar open/close state here. useLocalStorage
+     * - get action items OUT of RepoHeader, and into action items bar (icon/toggling) + status bar (static info)
+     */
+    useEffect(() => {
+        getStatusBarItems({ extensionsController: props.extensionsController }).subscribe(statusBarItems => {
+            console.log({ statusBarItems })
+        })
+    }, [props.extensionsController])
 
     if (!repoOrError) {
         // Render nothing while loading

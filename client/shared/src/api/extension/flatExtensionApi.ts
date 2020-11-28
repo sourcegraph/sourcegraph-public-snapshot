@@ -4,7 +4,7 @@ import * as sourcegraph from 'sourcegraph'
 import { BehaviorSubject, Subject, of, Observable, from, concat, EMPTY } from 'rxjs'
 import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
 import { syncSubscription } from '../util'
-import { switchMap, mergeMap, map, defaultIfEmpty, catchError, distinctUntilChanged } from 'rxjs/operators'
+import { switchMap, mergeMap, map, defaultIfEmpty, catchError, distinctUntilChanged, filter } from 'rxjs/operators'
 import { proxySubscribable, providerResultToObservable } from './api/common'
 import { TextDocumentIdentifier, match } from '../client/types/textDocument'
 import { getModeFromPath } from '../../languages'
@@ -18,6 +18,8 @@ import { castArray, groupBy, identity, isEqual } from 'lodash'
 import { fromHoverMerged } from '../client/types/hover'
 import { isNot, isExactly, isDefined } from '../../util/types'
 import { validateFileDecoration } from './api/decorations'
+import { createWorkbenchViewScheduler, ExtensionStatusBarItem } from './workbench'
+import iterate from 'iterare'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -40,6 +42,9 @@ export interface ExtensionHostState {
 
     // Decorations
     fileDecorationProviders: BehaviorSubject<sourcegraph.FileDecorationProvider[]>
+
+    // Workbench views
+    statusBarItemInstances: Map<string, ExtensionStatusBarItem>
 }
 
 export interface RegisteredProvider<T> {
@@ -48,6 +53,7 @@ export interface RegisteredProvider<T> {
 }
 
 export interface InitResult extends Pick<typeof sourcegraph['app'], 'registerFileDecorationProvider'> {
+    app: Pick<typeof sourcegraph['app'], 'createStatusBarItem'>
     configuration: sourcegraph.ConfigurationService
     workspace: PartialWorkspaceNamespace
     exposedToMain: FlatExtensionHostAPI
@@ -96,6 +102,7 @@ export const initNewExtensionAPI = (
         ),
         definitionProviders: new BehaviorSubject<RegisteredProvider<sourcegraph.DefinitionProvider>[]>([]),
         fileDecorationProviders: new BehaviorSubject<sourcegraph.FileDecorationProvider[]>([]),
+        statusBarItemInstances: new Map<string, ExtensionStatusBarItem>(),
     }
 
     const configChanges = new BehaviorSubject<void>(undefined)
@@ -106,6 +113,9 @@ export const initNewExtensionAPI = (
     const rootChanges = new Subject<void>()
 
     const versionContextChanges = new Subject<string | undefined>()
+
+    // Workbench view changes
+    const workbenchViewChanges = new Subject<Set<sourcegraph.WorkbenchViewType>>()
 
     const exposedToMain: FlatExtensionHostAPI = {
         // Configuration
@@ -210,6 +220,24 @@ export const initNewExtensionAPI = (
                           )
                       )
             ),
+
+        // Workbench views
+        getStatusBarItems: () => {
+            console.log('getting status bar items')
+            // Memoize in client?
+
+            getWorkbenchViewsState(state.statusBarItemInstances)
+
+            return proxySubscribable(
+                concat(
+                    of(getWorkbenchViewsState(state.statusBarItemInstances)),
+                    workbenchViewChanges.pipe(
+                        filter(updatedViewTypes => updatedViewTypes.has('statusBarItem')),
+                        map(() => getWorkbenchViewsState(state.statusBarItemInstances))
+                    )
+                )
+            )
+        },
     }
 
     // Configuration
@@ -267,6 +295,24 @@ export const initNewExtensionAPI = (
         execute: (query, variables) => mainAPI.requestGraphQL(query, variables),
     }
 
+    // Workbench views
+    const workbenchViewScheduler = createWorkbenchViewScheduler(function onFlush(updatedViewTypes) {
+        workbenchViewChanges.next(updatedViewTypes)
+    })
+
+    const createStatusBarItem = (id: string): sourcegraph.StatusBarItem => {
+        const statusBarItemInstance = new ExtensionStatusBarItem(workbenchViewScheduler, function unsubscribe() {
+            state.statusBarItemInstances.delete(id)
+            workbenchViewScheduler.schedule({ type: 'deletion', viewType: 'statusBarItem' })
+        })
+        state.statusBarItemInstances.set(id, statusBarItemInstance)
+
+        // Notify UI when extension creates an instance.
+        // Whether to display an empty view is up to the UIs discretion.
+        workbenchViewScheduler.schedule({ type: 'creation', viewType: 'statusBarItem' })
+        return statusBarItemInstance
+    }
+
     return {
         configuration: Object.assign(configChanges.asObservable(), {
             get: getConfiguration,
@@ -283,6 +329,9 @@ export const initNewExtensionAPI = (
         },
         registerFileDecorationProvider,
         graphQL,
+        app: {
+            createStatusBarItem,
+        },
     }
 }
 
@@ -391,4 +440,14 @@ export function mergeProviderResults<TProviderResultElement>(
         .filter(isNot(isExactly(LOADING)))
         .flatMap(castArray)
         .filter(isDefined)
+}
+
+/**
+ * Helper function to abstract common logic of transforming map of workbench view instances
+ * to map of workbench view states
+ *
+ * @param workbenchViewInstances
+ */
+function getWorkbenchViewsState<T>(workbenchViewInstances: Map<string, sourcegraph.WorkbenchView<T>>): Map<string, T> {
+    return new Map([...workbenchViewInstances].map(([id, instance]) => [id, instance.state]))
 }

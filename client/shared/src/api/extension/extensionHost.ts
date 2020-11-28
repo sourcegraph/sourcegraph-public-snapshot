@@ -150,6 +150,7 @@ function createExtensionAPI(
         languages: { registerHoverProvider, registerDocumentHighlightProvider, registerDefinitionProvider },
         registerFileDecorationProvider,
         graphQL,
+        app: { createStatusBarItem },
     } = initNewExtensionAPI(proxy, initData.initialSettings, documents)
 
     // Expose the extension host API to the client (main thread)
@@ -193,6 +194,7 @@ function createExtensionAPI(
                 return windows.getAll()
             },
             createPanelView: (id: string) => views.createPanelView(id),
+            createStatusBarItem,
             createDecorationType,
             registerViewProvider: (id, provider) => views.registerViewProvider(id, provider),
             registerFileDecorationProvider,
@@ -270,5 +272,26 @@ function createExtensionAPI(
             clientApplication: initData.clientApplication,
         },
     }
+
+    /**
+     * TEST STATUS BAR ITEM API
+     * Calling APIs directly for easy collaboration (no need to sideload extension)
+     * Move this to extensionHost so I can subscribe to text document changes
+     *
+     * TODO(tj): Remove this
+     */
+    setTimeout(() => {
+        const bar = createStatusBarItem('fun-item')
+        bar.update({ contentText: 'an update in the same tick!' })
+
+        // setTimeout(() => {
+        //     bar.unsubscribe()
+        // }, 1000)
+    }, 3000)
+
+    setTimeout(() => {
+        createStatusBarItem('test-item-2')
+    }, 3000)
+
     return { extensionHostAPI, extensionAPI, subscription }
 }
