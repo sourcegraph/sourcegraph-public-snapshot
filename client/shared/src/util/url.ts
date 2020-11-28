@@ -2,7 +2,6 @@ import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { FiltersToTypeAndValue } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
-import { scanSearchQuery, CharacterRange } from '../search/parser/scanner'
 import { replaceRange } from './strings'
 import { discreteValueAliases } from '../search/parser/filters'
 import { tryCatch } from './errors'
@@ -640,37 +639,6 @@ export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): str
         .filter(filter => filter.value.trim().length > 0)
         .map(filter => `${filter.negated ? '-' : ''}${filter.type}:${filter.value}`)
         .join(' ')
-}
-
-export function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
-    const scannedQuery = scanSearchQuery(query)
-    if (scannedQuery.type === 'success') {
-        for (const token of scannedQuery.term) {
-            if (token.type === 'filter' && token.field.value.toLowerCase() === 'patterntype' && token.value) {
-                return {
-                    range: { start: token.field.range.start, end: token.value.range.end },
-                    value: query.slice(token.value.range.start, token.value.range.end),
-                }
-            }
-        }
-    }
-
-    return undefined
-}
-
-export function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
-    const scannedQuery = scanSearchQuery(query)
-    if (scannedQuery.type === 'success') {
-        for (const token of scannedQuery.term) {
-            if (token.type === 'filter' && token.field.value.toLowerCase() === 'case' && token.value) {
-                return {
-                    range: { start: token.field.range.start, end: token.value.range.end },
-                    value: query.slice(token.value.range.start, token.value.range.end),
-                }
-            }
-        }
-    }
-    return undefined
 }
 
 /**
