@@ -168,9 +168,9 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                             ) : (
                                 <TreePage {...context} {...repoRevisionProps} />
                             )}
+                            <StatusBar extensionsController={context.extensionsController} />
                         </div>
                     )}
-                    <StatusBar extensionsController={context.extensionsController} />
                 </>
             )
         },

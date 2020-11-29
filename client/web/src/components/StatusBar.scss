@@ -1,0 +1,18 @@
+.status-bar {
+    height: 1.5rem;
+    background-color: var(--color-bg-2);
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.0625rem; // 1px
+
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+
+    // TODO(tj): truncation
+
+    &__item {
+        &:not(:last-child) {
+            margin-right: 1rem;
+        }
+    }
+}

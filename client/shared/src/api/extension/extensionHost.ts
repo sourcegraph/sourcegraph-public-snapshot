@@ -278,23 +278,25 @@ function createExtensionAPI(
      * Calling APIs directly for easy collaboration (no need to sideload extension)
      * Move this to extensionHost so I can subscribe to text document changes
      *
+     * Note that these individual timeouts only result in one render :D
+     *
      * TODO(tj): Remove this
      */
-    setTimeout(() => {
-        const bar = createStatusBarItem('fun-item')
-        bar.update({ contentText: 'an update in the same *frame!' })
-
-        // setTimeout(() => {
-        //     bar.unsubscribe()
-        // }, 1000)
-    }, 3000)
 
     setTimeout(() => {
-        for (let index = 1; index < 10; index++) {
-            const item = createStatusBarItem(`test-item-${index}`)
-            item.update({ contentText: `content for item ${index}` })
-        }
-    }, 3000)
+        const item = createStatusBarItem('codecov')
+        item.update({ contentText: '89%', title: 'Codecov coverage' })
+    }, 500)
+
+    setTimeout(() => {
+        const item = createStatusBarItem('git-extras')
+        item.update({ contentText: 'Felix Becker, Rob Rhyne', title: '2 authors' })
+    }, 501)
+
+    setTimeout(() => {
+        const item = createStatusBarItem('char-count')
+        item.update({ contentText: '12356', title: 'Characters' })
+    }, 502)
 
     return { extensionHostAPI, extensionAPI, subscription }
 }

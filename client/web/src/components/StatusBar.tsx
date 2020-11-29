@@ -21,12 +21,23 @@ export const StatusBar: React.FunctionComponent<Props> = ({ extensionsController
         return null
     }
 
-    return (
-        <div className={classNames(className)}>
-            {iterate(statusBarItems)
-                .filter(([, item]) => item.visible && !!item.contentText)
-                .map(([id, item]) => <p key={id}>{item.contentText}</p>)
-                .toArray()}
-        </div>
-    )
+    const renderedItems = iterate(statusBarItems)
+        .filter(
+            ([, item]) =>
+                item.visible &&
+                !!item.contentText &&
+                typeof item.contentText === 'string' &&
+                (typeof item.title !== 'object' || item.title === null)
+        )
+        .map(([id, item]) => (
+            <small key={id} className="status-bar__item">
+                {item.title && <small className="text-muted">{item.title}: </small>}
+                {item.contentText}
+            </small>
+        ))
+        .toArray()
+
+    return renderedItems.length > 0 ? (
+        <div className={classNames(className, 'status-bar d-flex align-items-center px-2')}>{renderedItems}</div>
+    ) : null
 }

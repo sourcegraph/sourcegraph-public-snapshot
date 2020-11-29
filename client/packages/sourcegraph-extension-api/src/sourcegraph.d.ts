@@ -1081,6 +1081,9 @@ declare module 'sourcegraph' {
         /** Text to display in the status bar. This will be prepended by the status bar item's `id`. */
         contentText: string
 
+        /** Title text that is prepended to `contentText` */
+        title?: string
+
         /** Tooltip text to display when hovering over the status bar item. */
         hoverMessage?: string
 
