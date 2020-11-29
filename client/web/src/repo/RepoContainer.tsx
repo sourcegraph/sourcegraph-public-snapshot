@@ -375,13 +375,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         setHasDismissedExtensionAlert(true)
     }, [onExtensionAlertDismissed, setHasDismissedExtensionAlert])
 
-    /**
-     * TODO(tj):
-     * - Maintain action items bar open/close state here. useLocalStorage.
-     * - nvm, always render <ActionItemsBar> on search + repo pages. it maintains
-     * its own state. Replace `ActionsNavItems` in the web app
-     */
-
     if (!repoOrError) {
         // Render nothing while loading
         return null

@@ -47,9 +47,7 @@
         min-width: 0;
 
         background-color: var(--body-bg);
-    }
 
-    &__status-bar {
-        // TODO(tj)
+        padding-bottom: var(--repo-content-padding-bottom);
     }
 }

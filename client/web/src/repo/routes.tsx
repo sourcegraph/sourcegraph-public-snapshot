@@ -2,7 +2,6 @@ import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { getModeFromPath } from '../../../shared/src/languages'
 import { isLegacyFragment, parseHash, toRepoURL } from '../../../shared/src/util/url'
-import { StatusBar } from '../components/StatusBar'
 import { lazyComponent } from '../util/lazyComponent'
 import { formatHash } from '../util/url'
 import { RepoContainerRoute } from './RepoContainer'
@@ -12,6 +11,7 @@ const BlobPage = lazyComponent(() => import('./blob/BlobPage'), 'BlobPage')
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
 const RepoRevisionSidebar = lazyComponent(() => import('./RepoRevisionSidebar'), 'RepoRevisionSidebar')
 const TreePage = lazyComponent(() => import('./tree/TreePage'), 'TreePage')
+const StatusBar = lazyComponent(() => import('../components/StatusBar'), 'StatusBar')
 
 const RepositoryGitDataContainer = lazyComponent(
     () => import('./RepositoryGitDataContainer'),
@@ -144,6 +144,8 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 versionContext,
                 globbing,
             }
+            // TODO(tj): Might have to extract a RepoRevisionContent component to elegantly change content padding based on
+            // whether the status bar is rendered. Currently using CSS custom property that `StatusBar` sets on visibility changes
 
             return (
                 <>

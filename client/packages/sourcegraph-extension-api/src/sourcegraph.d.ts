@@ -1078,7 +1078,7 @@ declare module 'sourcegraph' {
          */
         visible: boolean
 
-        /** Text to display in the status bar. This will be prepended by the status bar item's `id`. */
+        /** Text to display in the status bar. */
         contentText: string
 
         /** Title text that is prepended to `contentText` */

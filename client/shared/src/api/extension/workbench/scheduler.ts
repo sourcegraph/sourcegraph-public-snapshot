@@ -25,7 +25,6 @@ export function createWorkbenchViewScheduler(
     let updateScheduled = false
 
     function flush(): void {
-        console.log('flush called')
         onFlush(updatedViewTypes)
         updatedViewTypes = new Set<WorkbenchViewType>()
         updateScheduled = false
@@ -34,11 +33,9 @@ export function createWorkbenchViewScheduler(
     schedulerInstance = {
         schedule: (update: ViewUpdate): void => {
             updatedViewTypes.add(update.viewType)
-            console.log('schedule called')
 
             if (!updateScheduled) {
                 requestAnimationFrame(flush)
-                console.log('requested frame')
                 updateScheduled = true
             }
         },
