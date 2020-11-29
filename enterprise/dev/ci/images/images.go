@@ -1,8 +1,13 @@
-package ci
+/*
+Package images describes the publishing scheme for Sourcegraph images.
+
+It is published as a standalone module to enable tooling in other repositories to more
+easily use these definitions.
+*/
+package images
 
 import (
 	"fmt"
-	"os"
 )
 
 const (
@@ -52,11 +57,10 @@ var SourcegraphDockerImages = []string{
 	"minio",
 }
 
-// candidateImageTag provides the tag for a candidate image built for this Buildkite run.
+// CandidateImageTag provides the tag for a candidate image built for this Buildkite run.
 //
 // Note that the availability of this image depends on whether a candidate gets built,
 // as determined in `addDockerImages()`.
-func candidateImageTag(c Config) string {
-	buildNumber := os.Getenv("BUILDKITE_BUILD_NUMBER")
-	return fmt.Sprintf("%s_%s_candidate", c.commit, buildNumber)
+func CandidateImageTag(commit, buildNumber string) string {
+	return fmt.Sprintf("%s_%s_candidate", commit, buildNumber)
 }
