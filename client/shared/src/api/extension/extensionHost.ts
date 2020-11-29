@@ -282,7 +282,7 @@ function createExtensionAPI(
      */
     setTimeout(() => {
         const bar = createStatusBarItem('fun-item')
-        bar.update({ contentText: 'an update in the same tick!' })
+        bar.update({ contentText: 'an update in the same *frame!' })
 
         // setTimeout(() => {
         //     bar.unsubscribe()
@@ -290,7 +290,10 @@ function createExtensionAPI(
     }, 3000)
 
     setTimeout(() => {
-        createStatusBarItem('test-item-2')
+        for (let index = 1; index < 10; index++) {
+            const item = createStatusBarItem(`test-item-${index}`)
+            item.update({ contentText: `content for item ${index}` })
+        }
     }, 3000)
 
     return { extensionHostAPI, extensionAPI, subscription }

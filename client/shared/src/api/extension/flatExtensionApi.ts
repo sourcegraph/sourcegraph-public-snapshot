@@ -222,13 +222,8 @@ export const initNewExtensionAPI = (
             ),
 
         // Workbench views
-        getStatusBarItems: () => {
-            console.log('getting status bar items')
-            // Memoize in client?
-
-            getWorkbenchViewsState(state.statusBarItemInstances)
-
-            return proxySubscribable(
+        getStatusBarItems: () =>
+            proxySubscribable(
                 concat(
                     of(getWorkbenchViewsState(state.statusBarItemInstances)),
                     workbenchViewChanges.pipe(
@@ -236,8 +231,7 @@ export const initNewExtensionAPI = (
                         map(() => getWorkbenchViewsState(state.statusBarItemInstances))
                     )
                 )
-            )
-        },
+            ),
     }
 
     // Configuration
@@ -448,6 +442,8 @@ export function mergeProviderResults<TProviderResultElement>(
  *
  * @param workbenchViewInstances
  */
-function getWorkbenchViewsState<T>(workbenchViewInstances: Map<string, sourcegraph.WorkbenchView<T>>): Map<string, T> {
+function getWorkbenchViewsState<TState extends object>(
+    workbenchViewInstances: Map<string, sourcegraph.WorkbenchView<TState>>
+): Map<string, TState> {
     return new Map([...workbenchViewInstances].map(([id, instance]) => [id, instance.state]))
 }

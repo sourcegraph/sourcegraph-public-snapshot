@@ -377,14 +377,10 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     /**
      * TODO(tj):
-     * - Maintain action items bar open/close state here. useLocalStorage
-     * - get action items OUT of RepoHeader, and into action items bar (icon/toggling) + status bar (static info)
+     * - Maintain action items bar open/close state here. useLocalStorage.
+     * - nvm, always render <ActionItemsBar> on search + repo pages. it maintains
+     * its own state. Replace `ActionsNavItems` in the web app
      */
-    useEffect(() => {
-        getStatusBarItems({ extensionsController: props.extensionsController }).subscribe(statusBarItems => {
-            console.log({ statusBarItems })
-        })
-    }, [props.extensionsController])
 
     if (!repoOrError) {
         // Render nothing while loading

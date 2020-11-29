@@ -2,6 +2,7 @@ import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { getModeFromPath } from '../../../shared/src/languages'
 import { isLegacyFragment, parseHash, toRepoURL } from '../../../shared/src/util/url'
+import { StatusBar } from '../components/StatusBar'
 import { lazyComponent } from '../util/lazyComponent'
 import { formatHash } from '../util/url'
 import { RepoContainerRoute } from './RepoContainer'
@@ -169,6 +170,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                             )}
                         </div>
                     )}
+                    <StatusBar extensionsController={context.extensionsController} />
                 </>
             )
         },
