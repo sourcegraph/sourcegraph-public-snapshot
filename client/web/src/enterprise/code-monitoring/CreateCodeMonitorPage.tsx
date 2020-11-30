@@ -139,7 +139,7 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                     <div>
                         <input
                             type="text"
-                            className="form-control my-2"
+                            className="form-control my-2 test-name-input"
                             required={true}
                             onChange={event => {
                                 onNameChange(event.target.value)
@@ -357,13 +357,13 @@ const TriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     to={buildSearchURLQuery(query, SearchPatternType.literal, false)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="create-monitor-page__query-input-preview-link"
+                                    className="create-monitor-page__query-input-preview-link test-preview-link"
                                 >
                                     Preview results <OpenInNewIcon />
                                 </Link>
                             )}
                             {queryState.kind === 'INVALID' && (
-                                <small className="invalid-feedback mb-4">{queryState.reason}</small>
+                                <small className="invalid-feedback mb-4 test-trigger-error">{queryState.reason}</small>
                             )}
                             {(queryState.kind === 'NOT_VALIDATED' || queryState.kind === 'VALID') && (
                                 <div className="d-flex mb-4 flex-column">
@@ -478,7 +478,7 @@ const ActionArea: React.FunctionComponent<ActionAreaProps> = ({
                     <>
                         <div className="font-weight-bold">Send email notifications</div>
                         <span className="text-muted">Deliver email notifications to specified recipients.</span>
-                        <div className="mt-4">
+                        <div className="mt-4 test-action-form">
                             Recipients
                             <input
                                 type="text"
