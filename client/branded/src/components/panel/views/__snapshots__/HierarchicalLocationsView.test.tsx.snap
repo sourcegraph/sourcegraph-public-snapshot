@@ -167,9 +167,9 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               className="hierarchical-locations-view__item-name-text"
             >
                
-              <strong>
+              <span>
                 file1.txt
-              </strong>
+              </span>
             </span>
           </span>
           <span
@@ -190,9 +190,9 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               className="hierarchical-locations-view__item-name-text"
             >
                
-              <strong>
+              <span>
                 file2.txt
-              </strong>
+              </span>
             </span>
           </span>
           <span

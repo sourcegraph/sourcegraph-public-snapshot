@@ -20,28 +20,35 @@ export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, Tele
 
 const filters: FilteredConnectionFilter[] = [
     {
-        label: 'All',
-        id: 'all',
-        tooltip: 'Show all indexes',
-        args: {},
-    },
-    {
-        label: 'Completed',
-        id: 'completed',
-        tooltip: 'Show completed indexes only',
-        args: { state: LSIFIndexState.COMPLETED },
-    },
-    {
-        label: 'Errored',
-        id: 'errored',
-        tooltip: 'Show errored indexes only',
-        args: { state: LSIFIndexState.ERRORED },
-    },
-    {
-        label: 'Queued',
-        id: 'queued',
-        tooltip: 'Show queued indexes only',
-        args: { state: LSIFIndexState.QUEUED },
+        id: 'filters',
+        label: 'Filters',
+        type: 'radio',
+        values: [
+            {
+                label: 'All',
+                value: 'all',
+                tooltip: 'Show all indexes',
+                args: {},
+            },
+            {
+                label: 'Completed',
+                value: 'completed',
+                tooltip: 'Show completed indexes only',
+                args: { state: LSIFIndexState.COMPLETED },
+            },
+            {
+                label: 'Errored',
+                value: 'errored',
+                tooltip: 'Show errored indexes only',
+                args: { state: LSIFIndexState.ERRORED },
+            },
+            {
+                label: 'Queued',
+                value: 'queued',
+                tooltip: 'Show queued indexes only',
+                args: { state: LSIFIndexState.QUEUED },
+            },
+        ],
     },
 ]
 

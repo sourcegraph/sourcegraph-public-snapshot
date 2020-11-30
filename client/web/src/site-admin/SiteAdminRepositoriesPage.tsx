@@ -69,28 +69,35 @@ interface Props extends RouteComponentProps<{}>, TelemetryProps {}
 
 const FILTERS: FilteredConnectionFilter[] = [
     {
-        label: 'All',
-        id: 'all',
-        tooltip: 'Show all repositories',
-        args: {},
-    },
-    {
-        label: 'Cloned',
-        id: 'cloned',
-        tooltip: 'Show cloned repositories only',
-        args: { cloned: true, notCloned: false },
-    },
-    {
-        label: 'Not cloned',
-        id: 'not-cloned',
-        tooltip: 'Show only repositories that have not been cloned yet',
-        args: { cloned: false, notCloned: true },
-    },
-    {
-        label: 'Needs index',
-        id: 'needs-index',
-        tooltip: 'Show only repositories that need to be indexed',
-        args: { indexed: false },
+        id: 'status',
+        label: 'Status',
+        type: 'radio',
+        values: [
+            {
+                label: 'All',
+                value: 'all',
+                tooltip: 'Show all repositories',
+                args: {},
+            },
+            {
+                label: 'Cloned',
+                value: 'cloned',
+                tooltip: 'Show cloned repositories only',
+                args: { cloned: true, notCloned: false },
+            },
+            {
+                label: 'Not cloned',
+                value: 'not-cloned',
+                tooltip: 'Show only repositories that have not been cloned yet',
+                args: { cloned: false, notCloned: true },
+            },
+            {
+                label: 'Needs index',
+                value: 'needs-index',
+                tooltip: 'Show only repositories that need to be indexed',
+                args: { indexed: false },
+            },
+        ],
     },
 ]
 
