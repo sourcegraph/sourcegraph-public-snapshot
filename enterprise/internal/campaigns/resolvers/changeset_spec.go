@@ -117,6 +117,10 @@ func (r *changesetSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 }
 
 func (r *changesetSpecResolver) Operations(ctx context.Context) ([]campaigns.ReconcilerOperation, error) {
+	if !r.repoAccessible() {
+		// If the repo is inaccessible, no operations would be taken, since the changeset is not created/updated.
+		return []campaigns.ReconcilerOperation{}, nil
+	}
 	plan, err := r.computePlan(ctx)
 	if err != nil {
 		return nil, err
@@ -126,6 +130,10 @@ func (r *changesetSpecResolver) Operations(ctx context.Context) ([]campaigns.Rec
 }
 
 func (r *changesetSpecResolver) Delta(ctx context.Context) (graphqlbackend.ChangesetSpecDeltaResolver, error) {
+	if !r.repoAccessible() {
+		// If the repo is inaccessible, no comparison is made, since the changeset is not created/updated.
+		return &changesetSpecDeltaResolver{}, nil
+	}
 	plan, err := r.computePlan(ctx)
 	if err != nil {
 		return nil, err
