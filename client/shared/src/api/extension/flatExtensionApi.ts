@@ -19,7 +19,6 @@ import { fromHoverMerged } from '../client/types/hover'
 import { isNot, isExactly, isDefined } from '../../util/types'
 import { validateFileDecoration } from './api/decorations'
 import { createWorkbenchViewScheduler, ExtensionStatusBarItem } from './workbench'
-import iterate from 'iterare'
 
 /**
  * Holds the entire state exposed to the extension host
