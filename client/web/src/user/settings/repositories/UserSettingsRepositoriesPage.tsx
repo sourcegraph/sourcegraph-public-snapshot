@@ -40,7 +40,7 @@ const StatusIcon: React.FunctionComponent<StatusIconProps> = ({ node }) => {
             </small>
         )
     }
-    if (!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned) {
+    if (!node.mirrorInfo.cloned) {
         return (
             <small
                 className="mr-2 text-muted"
@@ -52,7 +52,7 @@ const StatusIcon: React.FunctionComponent<StatusIconProps> = ({ node }) => {
     }
     return (
         <small className="mr-2">
-            <TickIcon className="icon-inline" />
+            <TickIcon className="icon-inline check-icon" />
         </small>
     )
 }
@@ -66,19 +66,19 @@ const CodeHostIcon: React.FunctionComponent<CodeHostIconProps> = ({ hostType }) 
         case 'github':
             return (
                 <small className="mr-2">
-                    <GithubIcon className="icon-inline" />
+                    <GithubIcon className="icon-inline github-icon" />
                 </small>
             )
         case 'gitlab':
             return (
                 <small className="mr-2">
-                    <GitlabIcon className="icon-inline gitlab-fill" />
+                    <GitlabIcon className="icon-inline gitlab-icon" />
                 </small>
             )
-        case 'bitbucket':
+        case 'bitbucketCloud':
             return (
                 <small className="mr-2">
-                    <BitbucketIcon className="icon-inline" />
+                    <BitbucketIcon className="icon-inline bitbucket-icon" />
                 </small>
             )
     }
@@ -95,17 +95,19 @@ const UserSettingsRepositoryNode: React.FunctionComponent<UserSettingsRepository
         data-test-repository={node.name}
         data-test-cloned={node.mirrorInfo.cloned}
     >
-        <td className="w-100 d-flex justify-content-between align-items-baseline">
-            <div>
-                <StatusIcon node={node} />
-                <CodeHostIcon hostType={node.externalRepository.serviceType} />
-                <RepoLink className="text-muted" repoClassName="text-primary" repoName={node.name} to={node.url} />
-            </div>
-            <div>
-                {node.isPrivate && <div className="badge badge-secondary text-muted">Private</div>}
-                <ChevronRightIcon className="icon-inline ml-2" />
-            </div>
-        </td>
+        <a className="w-100 " href={node.url}>
+            <td className="w-100 d-flex justify-content-between align-items-baseline">
+                <div>
+                    <StatusIcon node={node} />
+                    <CodeHostIcon hostType={node.externalRepository.serviceType} />
+                    <RepoLink className="text-muted" repoClassName="text-primary" repoName={node.name} to={node.url} />
+                </div>
+                <div>
+                    {node.isPrivate && <div className="badge badge-secondary text-muted">Private</div>}
+                    <ChevronRightIcon className="icon-inline ml-2 caret-icon" />
+                </div>
+            </td>
+        </a>
     </tr>
 )
 
