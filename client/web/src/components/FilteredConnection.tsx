@@ -543,18 +543,18 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             activeValuesChanges
                 .pipe(
                     tap(values => {
-                        if (this.props.filters === undefined) {
+                        if (this.props.filters === undefined || this.props.onValueSelect === undefined) {
                             return
                         }
-                        this.props.filters.map((filter, index) => {
+                        for (const filter of this.props.filters) {
                             if (this.props.onValueSelect) {
                                 const value = values.get(filter.id)
                                 if (value === undefined) {
-                                    return
+                                    continue
                                 }
                                 this.props.onValueSelect(filter, value)
                             }
-                        })
+                        }
                     })
                 )
                 .subscribe()
@@ -776,20 +776,20 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             searchParameters.set('first', String(first))
         }
         if (values && this.props.filters) {
-            this.props.filters.map(filter => {
+            for (const filter of this.props.filters) {
                 if (values === undefined) {
-                    return
+                    continue
                 }
                 const value = values.get(filter.id)
                 if (value === undefined) {
-                    return
+                    continue
                 }
                 if (value !== filter.values[0]) {
                     searchParameters.set(filter.id, value.value)
                 } else {
                     searchParameters.delete(filter.id)
                 }
-            })
+            }
         }
         if (visible !== 0 && visible !== first) {
             searchParameters.set('visible', String(visible))
@@ -841,7 +841,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         )}
                         {!this.props.hideSearch && (
                             <input
-                                className="form-control filtered-connection__filter w-30"
+                                className="form-control filtered-connection__filter"
                                 type="search"
                                 placeholder={`Search ${this.props.pluralNoun}...`}
                                 name="query"
@@ -970,17 +970,17 @@ function getFilterFromURL(
     if (filters === undefined || filters.length === 0) {
         return values
     }
-    filters.map(filter => {
+    for (const filter of filters) {
         const urlValue = searchParameters.get(filter.id)
         if (urlValue !== null) {
             const value = filter.values.find(value => value.value === urlValue)
             if (value !== undefined) {
                 values.set(filter.id, value)
-                return
+                continue
             }
         }
         // couldn't find a value, add default
         values.set(filter.id, filter.values[0])
-    })
+    }
     return values
 }
