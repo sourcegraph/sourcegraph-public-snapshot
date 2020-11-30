@@ -1,6 +1,10 @@
-package main
+package definitions
 
-import "time"
+import (
+	"time"
+
+	. "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+)
 
 const (
 	codeintel = "codeintel-db"
@@ -26,7 +30,6 @@ func Postgres() *Container {
 							DataMayNotBeNaN:   false,
 							Warning:           Alert().LessOrEqual(5).For(5 * time.Minute),
 							PossibleSolutions: "none",
-							PanelOptions:      panelOptions{},
 						},
 						Observable{
 							Name:              "transactions",
@@ -37,7 +40,6 @@ func Postgres() *Container {
 							DataMayNotBeNaN:   false,
 							Warning:           Alert().GreaterOrEqual(300),
 							PossibleSolutions: "none",
-							PanelOptions:      panelOptions{},
 						},
 					},
 				},
@@ -55,7 +57,6 @@ func Postgres() *Container {
 						DataMayNotBeNaN:   true,
 						Critical:          Alert().LessOrEqual(0).For(5 * time.Minute),
 						PossibleSolutions: "none",
-						PanelOptions:      panelOptions{},
 					},
 					Observable{
 						Name:              "pg_exporter_err",
@@ -66,15 +67,8 @@ func Postgres() *Container {
 						DataMayNotBeNaN:   true,
 						Warning:           Alert().GreaterOrEqual(1).For(5 * time.Minute),
 						PossibleSolutions: "none",
-						PanelOptions:      panelOptions{},
 					},
-				},
-					{
-						postgresVersion(db, ObservableOwnerCloud),
-						postgresMaxConnections(db, ObservableOwnerCloud),
-						postgresSharedBuffers(db, ObservableOwnerCloud),
-						postgresEffectiveCacheBytes(db, ObservableOwnerCloud)},
-				},
+				}},
 			},
 
 			{
@@ -82,12 +76,20 @@ func Postgres() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("pgsql", ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageLongTerm("pgsql", ObservableOwnerCloud),
+						sharedProvisioningCPUUsageLongTerm(db, ObservableOwnerCloud),
+						sharedProvisioningMemoryUsageLongTerm(db, ObservableOwnerCloud),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("pgsql", ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageShortTerm("pgsql", ObservableOwnerCloud),
+						sharedProvisioningCPUUsageShortTerm(db, ObservableOwnerCloud),
+						sharedProvisioningMemoryUsageShortTerm(db, ObservableOwnerCloud),
+					},
+					{
+						sharedProvisioningCPUUsageLongTerm(codeintel, ObservableOwnerCloud),
+						sharedProvisioningMemoryUsageLongTerm(codeintel, ObservableOwnerCloud),
+					},
+					{
+						sharedProvisioningCPUUsageShortTerm(codeintel, ObservableOwnerCloud),
+						sharedProvisioningMemoryUsageShortTerm(codeintel, ObservableOwnerCloud),
 					},
 				},
 			},
