@@ -314,7 +314,9 @@ type changesetSpecPreviewer struct {
 	campaignErr  error
 }
 
+// PlanForChangesetSpec computes the ReconcilerPlan for the given changeset spec, based on the current state of the database.
 func (c *changesetSpecPreviewer) PlanForChangesetSpec(ctx context.Context, changesetSpec *campaigns.ChangesetSpec) (*ee.ReconcilerPlan, error) {
+	// To get the plan, we first need to determine the changeset_spec => changeset mapping.
 	mapping, err := c.mappingForChangesetSpec(ctx, changesetSpec.ID)
 	if err != nil {
 		return nil, err
@@ -323,23 +325,24 @@ func (c *changesetSpecPreviewer) PlanForChangesetSpec(ctx context.Context, chang
 	if err != nil {
 		return nil, err
 	}
+	// And then dry-run the rewirer to simulate how the changeset would look like after an _apply_ operation.
 	rewirer := ee.NewChangesetRewirer(ee.RewirerMappings{mapping}, campaign, repos.NewDBStore(c.store.DB(), sql.TxOptions{}))
 	changesets, err := rewirer.Rewire(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var changeset *campaigns.Changeset
 	if len(changesets) != 1 {
 		return nil, errors.New("rewirer did not return changeset")
-	} else {
-		changeset = changesets[0]
 	}
+	changeset := changesets[0]
 
 	// Detached changesets would still appear here, but since they'll never match one of the new specs, they don't actually appear here.
 	// Once we have a way to have changeset specs for detached changesets, this would be the place to do a "will be detached" check.
 	// TBD: How we represent that in the API.
 
+	// The rewirer takes previous and current spec into account to determine actions to take,
+	// so we need to find out which specs we need to pass to the planner.
 	var previousSpec, currentSpec *campaigns.ChangesetSpec
 	if changeset.PreviousSpecID != 0 {
 		previousSpec, err = c.store.GetChangesetSpecByID(ctx, changeset.PreviousSpecID)
@@ -348,12 +351,14 @@ func (c *changesetSpecPreviewer) PlanForChangesetSpec(ctx context.Context, chang
 		}
 	}
 	if changeset.CurrentSpecID != 0 {
+		// If the current spec was not unset by the rewirer, it will be this resolvers spec.
 		currentSpec = changesetSpec
 	}
 	return ee.DetermineReconcilerPlan(previousSpec, currentSpec, changeset)
 }
 
-// ChangesetForChangesetSpec can return nil
+// ChangesetForChangesetSpec returns the changeset for the target changeset of the changeset spec. It can return nil, if no changeset
+// exists yet.
 func (c *changesetSpecPreviewer) ChangesetForChangesetSpec(ctx context.Context, changesetSpecID int64) (*campaigns.Changeset, error) {
 	mapping, err := c.mappingForChangesetSpec(ctx, changesetSpecID)
 	if err != nil {
@@ -363,7 +368,7 @@ func (c *changesetSpecPreviewer) ChangesetForChangesetSpec(ctx context.Context, 
 }
 
 func (c *changesetSpecPreviewer) mappingForChangesetSpec(ctx context.Context, id int64) (*ee.RewirerMapping, error) {
-	mappingByID, err := c.compute(ctx)
+	mappingByID, err := c.computeMappings(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -388,7 +393,7 @@ func (c *changesetSpecPreviewer) computeCampaign(ctx context.Context) (*campaign
 	return c.campaign, c.campaignErr
 }
 
-func (c *changesetSpecPreviewer) compute(ctx context.Context) (map[int64]*ee.RewirerMapping, error) {
+func (c *changesetSpecPreviewer) computeMappings(ctx context.Context) (map[int64]*ee.RewirerMapping, error) {
 	c.mappingOnce.Do(func() {
 		campaign, err := c.computeCampaign(ctx)
 		if err != nil {
