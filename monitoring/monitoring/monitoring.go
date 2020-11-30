@@ -1,33 +1,24 @@
-//go:generate echo "Regenerating monitoring..."
-//go:generate go build -o /tmp/monitoring-generator
-//go:generate /tmp/monitoring-generator
-
-//nolint:golint,gocritic
-package main
+package monitoring
 
 import (
 	"bytes"
-	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/rand"
-	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 	"unicode"
 
 	"github.com/grafana-tools/sdk"
 	"github.com/prometheus/common/model"
-	"gopkg.in/yaml.v2"
 )
 
 // Container describes a Docker container to be observed.
+//
+// These correspond to dashboards in Grafana.
 type Container struct {
 	// Name of the Docker container, e.g. "syntect-server".
 	Name string
@@ -62,6 +53,8 @@ func (c *Container) validate() error {
 }
 
 // Group describes a group of observable information about a container.
+//
+// These correspond to collapsible sections in a Grafana dashboard.
 type Group struct {
 	// Title of the group, briefly summarizing what this group is about, or
 	// "General" if the group is just about the container in general.
@@ -92,6 +85,8 @@ func (g Group) validate() error {
 }
 
 // Row of observable metrics.
+//
+// These correspond to a row of Grafana graphs.
 type Row []Observable
 
 func (r Row) validate() error {
@@ -121,6 +116,8 @@ const (
 )
 
 // Observable describes a metric about a container that can be observed. For example, memory usage.
+//
+// These correspond to Grafana graphs.
 type Observable struct {
 	// Name is a short and human-readable lower_snake_case name describing what is being observed.
 	//
@@ -183,7 +180,7 @@ type Observable struct {
 	// Warning and Critical alert definitions.
 	// Consider adding at least a Warning or Critical alert to each Observable to make it easy to
 	// identify when the target of this metric is missbehaving.
-	Warning, Critical *alertDefinition
+	Warning, Critical *ObservableAlertDefinition
 
 	// NoAlerts is used by Observables that don't need any alerts.
 	// We want to be explicit about this to ensure alerting is considered and if we choose not to Alert,
@@ -218,7 +215,7 @@ type Observable struct {
 	PossibleSolutions string
 
 	// PanelOptions describes some options for how to render the metric in the Grafana panel.
-	PanelOptions panelOptions
+	PanelOptions ObservablePanelOptions
 }
 
 func (o Observable) validate() error {
@@ -249,12 +246,13 @@ func (o Observable) validate() error {
 	return nil
 }
 
-func Alert() *alertDefinition {
-	return &alertDefinition{}
+// Alert provides a builder for defining alerting on an Observable.
+func Alert() *ObservableAlertDefinition {
+	return &ObservableAlertDefinition{}
 }
 
-// alertDefinition defines when an alert would be considered firing.
-type alertDefinition struct {
+// ObservableAlertDefinition defines when an alert would be considered firing.
+type ObservableAlertDefinition struct {
 	// GreaterOrEqual, when non-zero, indicates the alert should fire when
 	// greater or equal to this value.
 	greaterOrEqual *float64
@@ -268,23 +266,23 @@ type alertDefinition struct {
 	duration time.Duration
 }
 
-func (a *alertDefinition) GreaterOrEqual(f float64) *alertDefinition {
+func (a *ObservableAlertDefinition) GreaterOrEqual(f float64) *ObservableAlertDefinition {
 	a.greaterOrEqual = &f
 	return a
 }
 
-func (a *alertDefinition) LessOrEqual(f float64) *alertDefinition {
+func (a *ObservableAlertDefinition) LessOrEqual(f float64) *ObservableAlertDefinition {
 	a.lessOrEqual = &f
 	return a
 }
 
-func (a *alertDefinition) For(d time.Duration) *alertDefinition {
+func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinition {
 	a.duration = d
 	return a
 }
 
-func (a *alertDefinition) isEmpty() bool {
-	return a == nil || (*a == alertDefinition{}) || (a.greaterOrEqual == nil && a.lessOrEqual == nil)
+func (a *ObservableAlertDefinition) isEmpty() bool {
+	return a == nil || (*a == ObservableAlertDefinition{}) || (a.greaterOrEqual == nil && a.lessOrEqual == nil)
 }
 
 // UnitType for controlling the unit type display on graphs.
@@ -332,7 +330,7 @@ const (
 	BitsPerSecond UnitType = "bps"
 )
 
-type panelOptions struct {
+type ObservablePanelOptions struct {
 	min, max     *float64
 	minAuto      bool
 	legendFormat string
@@ -341,7 +339,7 @@ type panelOptions struct {
 }
 
 // Min sets the minimum value of the Y axis on the panel. The default is zero.
-func (p panelOptions) Min(min float64) panelOptions {
+func (p ObservablePanelOptions) Min(min float64) ObservablePanelOptions {
 	p.min = &min
 	return p
 }
@@ -350,36 +348,36 @@ func (p panelOptions) Min(min float64) panelOptions {
 // the default zero.
 //
 // This is generally only useful if trying to show negative numbers.
-func (p panelOptions) MinAuto() panelOptions {
+func (p ObservablePanelOptions) MinAuto() ObservablePanelOptions {
 	p.minAuto = true
 	return p
 }
 
 // Max sets the maximum value of the Y axis on the panel. The default is auto.
-func (p panelOptions) Max(max float64) panelOptions {
+func (p ObservablePanelOptions) Max(max float64) ObservablePanelOptions {
 	p.max = &max
 	return p
 }
 
 // LegendFormat sets the panel's legend format, which may use Go template strings to select
 // labels from the Prometheus query.
-func (p panelOptions) LegendFormat(format string) panelOptions {
+func (p ObservablePanelOptions) LegendFormat(format string) ObservablePanelOptions {
 	p.legendFormat = format
 	return p
 }
 
 // Unit sets the panel's Y axis unit type.
-func (p panelOptions) Unit(t UnitType) panelOptions {
+func (p ObservablePanelOptions) Unit(t UnitType) ObservablePanelOptions {
 	p.unitType = t
 	return p
 }
 
-func (p panelOptions) Interval(ms int) panelOptions {
+func (p ObservablePanelOptions) Interval(ms int) ObservablePanelOptions {
 	p.interval = fmt.Sprintf("%dms", ms)
 	return p
 }
 
-func (p panelOptions) withDefaults() panelOptions {
+func (p ObservablePanelOptions) withDefaults() ObservablePanelOptions {
 	if p.min == nil && !p.minAuto {
 		defaultMin := 0.0
 		p.min = &defaultMin
@@ -402,7 +400,8 @@ func (p panelOptions) withDefaults() panelOptions {
 	return p
 }
 
-func PanelOptions() panelOptions { return panelOptions{} }
+// PanelOptions provides a builder for customizing an Observable.
+func PanelOptions() ObservablePanelOptions { return ObservablePanelOptions{} }
 
 // dashboard generates the Grafana dashboard for this container.
 func (c *Container) dashboard() *sdk.Board {
@@ -637,7 +636,7 @@ func (c *Container) dashboard() *sdk.Board {
 }
 
 // alertDescription generates an alert description for the specified coontainer's alert.
-func (c *Container) alertDescription(o Observable, alert *alertDefinition) string {
+func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinition) string {
 	if alert.isEmpty() {
 		panic("never here")
 	}
@@ -676,7 +675,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 	for _, g := range c.Groups {
 		for _, r := range g.Rows {
 			for _, o := range r {
-				for level, a := range map[string]*alertDefinition{
+				for level, a := range map[string]*ObservableAlertDefinition{
 					"warning":  o.Warning,
 					"critical": o.Critical,
 				} {
@@ -692,11 +691,11 @@ func (c *Container) promAlertsFile() *promRulesFile {
 							// make sure the prometheus alert description only describes one bound
 							name = fmt.Sprintf("%s_%s", o.Name, bound)
 							if bound == "high" {
-								description = c.alertDescription(o, &alertDefinition{
+								description = c.alertDescription(o, &ObservableAlertDefinition{
 									greaterOrEqual: a.greaterOrEqual,
 								})
 							} else if bound == "low" {
-								description = c.alertDescription(o, &alertDefinition{
+								description = c.alertDescription(o, &ObservableAlertDefinition{
 									lessOrEqual: a.lessOrEqual,
 								})
 							} else {
@@ -812,213 +811,6 @@ func withPeriod(s string) string {
 	return s
 }
 
-func generateDocs(containers []*Container) []byte {
-	var b bytes.Buffer
-	fmt.Fprintf(&b, `# Alert solutions
-
-This document contains possible solutions for when you find alerts are firing in Sourcegraph's monitoring.
-If your alert isn't mentioned here, or if the solution doesn't help, [contact us](mailto:support@sourcegraph.com)
-for assistance.
-
-To learn more about Sourcegraph's alerting, see [our alerting documentation](https://docs.sourcegraph.com/admin/observability/alerting).
-
-<!-- DO NOT EDIT: generated via: go generate ./monitoring -->
-
-`)
-	for _, c := range containers {
-		for _, g := range c.Groups {
-			for _, r := range g.Rows {
-				for _, o := range r {
-					if o.Warning == nil && o.Critical == nil {
-						continue
-					}
-
-					fmt.Fprintf(&b, "## %s: %s\n\n", c.Name, o.Name)
-					fmt.Fprintf(&b, `<p class="subtitle">%s: %s</p>`, o.Owner, o.Description)
-
-					// Render descriptions of various levels of this alert
-					fmt.Fprintf(&b, "**Descriptions:**\n\n")
-					var prometheusAlertNames []string
-					for _, alert := range []struct {
-						level     string
-						threshold *alertDefinition
-					}{
-						{level: "warning", threshold: o.Warning},
-						{level: "critical", threshold: o.Critical},
-					} {
-						if alert.threshold.isEmpty() {
-							continue
-						}
-						fmt.Fprintf(&b, "- _%s_\n", c.alertDescription(o, alert.threshold))
-						prometheusAlertNames = append(prometheusAlertNames,
-							fmt.Sprintf("  \"%s\"", prometheusAlertName(alert.level, c.Name, o.Name)))
-					}
-					fmt.Fprint(&b, "\n")
-
-					// Render solutions for dealing with this alert
-					fmt.Fprintf(&b, "**Possible solutions:**\n\n")
-					if o.PossibleSolutions != "none" {
-						possibleSolutions, _ := goMarkdown(o.PossibleSolutions)
-						fmt.Fprintf(&b, "%s\n", possibleSolutions)
-					}
-					// add silencing configuration as another solution
-					fmt.Fprintf(&b, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:\n\n")
-					fmt.Fprintf(&b, "```json\n%s\n```\n\n", fmt.Sprintf(`"observability.silenceAlerts": [
-%s
-]`, strings.Join(prometheusAlertNames, ",\n")))
-
-					// Render break for readability
-					fmt.Fprint(&b, "<br />\n")
-				}
-			}
-		}
-	}
-	return b.Bytes()
-}
-
-func goMarkdown(m string) (string, error) {
-	m = strings.TrimPrefix(m, "\n")
-
-	// Replace single quotes with backticks.
-	// Replace escaped single quotes with single quotes.
-	m = strings.Replace(m, `\'`, `$ESCAPED_SINGLE_QUOTE`, -1)
-	m = strings.Replace(m, `'`, "`", -1)
-	m = strings.Replace(m, `$ESCAPED_SINGLE_QUOTE`, "'", -1)
-
-	// Unindent based on the indention of the last line.
-	lines := strings.Split(m, "\n")
-	baseIndention := lines[len(lines)-1]
-	if strings.TrimSpace(baseIndention) == "" {
-		if strings.Contains(baseIndention, " ") {
-			return "", errors.New("go string literal indention must be tabs")
-		}
-		indentionLevel := strings.Count(baseIndention, "\t")
-		removeIndention := strings.Repeat("\t", indentionLevel+1)
-		for i, l := range lines[:len(lines)-1] {
-			newLine := strings.TrimPrefix(l, removeIndention)
-			if l == newLine {
-				return "", fmt.Errorf("inconsistent indention (line %d %q expected to start with %q)", i, l, removeIndention)
-			}
-			lines[i] = newLine
-		}
-		m = strings.Join(lines[:len(lines)-1], "\n")
-	}
-
-	// If result is not a list, make it a list, so we can add items.
-	if !strings.HasPrefix(m, "-") && !strings.HasPrefix(m, "*") {
-		m = fmt.Sprintf("- %s", m)
-	}
-
-	return m, nil
-}
-
-var isDev, _ = strconv.ParseBool(os.Getenv("DEV"))
-
-const alertSuffix = "_alert_rules.yml"
-
-func main() {
-	grafanaDir, ok := os.LookupEnv("GRAFANA_DIR")
-	if !ok {
-		grafanaDir = "../docker-images/grafana/config/provisioning/dashboards/sourcegraph/"
-	}
-	prometheusDir, ok := os.LookupEnv("PROMETHEUS_DIR")
-	if !ok {
-		prometheusDir = "../docker-images/prometheus/config/"
-	}
-	docSolutionsFile, ok := os.LookupEnv("DOC_SOLUTIONS_FILE")
-	if !ok {
-		docSolutionsFile = "../doc/admin/observability/alert_solutions.md"
-	}
-
-	reloadValue, ok := os.LookupEnv("RELOAD")
-	if !ok && isDev {
-		reloadValue = "true"
-	}
-	reload, _ := strconv.ParseBool(reloadValue)
-
-	containers := []*Container{
-		Frontend(),
-		GitServer(),
-		GitHubProxy(),
-		PreciseCodeIntelWorker(),
-		QueryRunner(),
-		RepoUpdater(),
-		Searcher(),
-		Symbols(),
-		SyntectServer(),
-		ZoektIndexServer(),
-		ZoektWebServer(),
-		Prometheus(),
-		ExecutorAndExecutorQueue(),
-	}
-	var filelist []string
-	for _, container := range containers {
-		if err := container.validate(); err != nil {
-			log.Fatal(fmt.Sprintf("container %q: %+v", container.Name, err))
-		}
-		if grafanaDir != "" {
-			board := container.dashboard()
-			data, err := json.MarshalIndent(board, "", "  ")
-			if err != nil {
-				log.Fatal(err)
-			}
-			// #nosec G306  prometheus runs as nobody
-			err = ioutil.WriteFile(filepath.Join(grafanaDir, container.Name+".json"), data, 0666)
-			if err != nil {
-				log.Fatal(err)
-			}
-			filelist = append(filelist, container.Name+".json")
-
-			if reload {
-				ctx := context.Background()
-				client := sdk.NewClient("http://127.0.0.1:3370", "admin:admin", sdk.DefaultHTTPClient)
-				_, err := client.SetDashboard(ctx, *board, sdk.SetDashboardParams{Overwrite: true})
-				if err != nil {
-					log.Fatal("updating dashboard:", err)
-				}
-			}
-		}
-
-		if prometheusDir != "" {
-			promAlertsFile := container.promAlertsFile()
-			data, err := yaml.Marshal(promAlertsFile)
-			if err != nil {
-				log.Fatal(err)
-			}
-			fileName := strings.Replace(container.Name, "-", "_", -1) + alertSuffix
-			filelist = append(filelist, fileName)
-			// #nosec G306  grafana runs as UID 472
-			err = ioutil.WriteFile(filepath.Join(prometheusDir, fileName), data, 0666)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
-	deleteRemnants(filelist, grafanaDir, prometheusDir)
-
-	if prometheusDir != "" && reload {
-		resp, err := http.Post("http://127.0.0.1:9090/-/reload", "", nil)
-		if err != nil {
-			log.Fatal("reloading Prometheus rules, got error:", err)
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != 200 {
-			log.Fatal("reloading Prometheus rules, got status code:", resp.StatusCode)
-		}
-	}
-	if reload && grafanaDir != "" && prometheusDir != "" {
-		fmt.Println("Reloaded Prometheus rules & Grafana dashboards")
-	}
-
-	if docSolutionsFile != "" {
-		solutions := generateDocs(containers)
-		// #nosec G306
-		err := ioutil.WriteFile(docSolutionsFile, solutions, 0666)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-}
 func deleteRemnants(filelist []string, grafanaDir, promDir string) {
 	err := filepath.Walk(grafanaDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -1068,6 +860,106 @@ func deleteRemnants(filelist []string, grafanaDir, promDir string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func generateDocs(containers []*Container) []byte {
+	var b bytes.Buffer
+	fmt.Fprintf(&b, `# Alert solutions
+
+This document contains possible solutions for when you find alerts are firing in Sourcegraph's monitoring.
+If your alert isn't mentioned here, or if the solution doesn't help, [contact us](mailto:support@sourcegraph.com)
+for assistance.
+
+To learn more about Sourcegraph's alerting, see [our alerting documentation](https://docs.sourcegraph.com/admin/observability/alerting).
+
+<!-- DO NOT EDIT: generated via: go generate ./monitoring -->
+
+`)
+	for _, c := range containers {
+		for _, g := range c.Groups {
+			for _, r := range g.Rows {
+				for _, o := range r {
+					if o.Warning == nil && o.Critical == nil {
+						continue
+					}
+
+					fmt.Fprintf(&b, "## %s: %s\n\n", c.Name, o.Name)
+					fmt.Fprintf(&b, `<p class="subtitle">%s: %s</p>`, o.Owner, o.Description)
+
+					// Render descriptions of various levels of this alert
+					fmt.Fprintf(&b, "\n\n**Descriptions:**\n\n")
+					var prometheusAlertNames []string
+					for _, alert := range []struct {
+						level     string
+						threshold *ObservableAlertDefinition
+					}{
+						{level: "warning", threshold: o.Warning},
+						{level: "critical", threshold: o.Critical},
+					} {
+						if alert.threshold.isEmpty() {
+							continue
+						}
+						fmt.Fprintf(&b, "- _%s_\n", c.alertDescription(o, alert.threshold))
+						prometheusAlertNames = append(prometheusAlertNames,
+							fmt.Sprintf("  \"%s\"", prometheusAlertName(alert.level, c.Name, o.Name)))
+					}
+					fmt.Fprint(&b, "\n")
+
+					// Render solutions for dealing with this alert
+					fmt.Fprintf(&b, "**Possible solutions:**\n\n")
+					if o.PossibleSolutions != "none" {
+						possibleSolutions, _ := goMarkdown(o.PossibleSolutions)
+						fmt.Fprintf(&b, "%s\n", possibleSolutions)
+					}
+					// add silencing configuration as another solution
+					fmt.Fprintf(&b, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:\n\n")
+					fmt.Fprintf(&b, "```json\n%s\n```\n\n", fmt.Sprintf(`"observability.silenceAlerts": [
+%s
+]`, strings.Join(prometheusAlertNames, ",\n")))
+
+					// Render break for readability
+					fmt.Fprint(&b, "<br />\n\n")
+				}
+			}
+		}
+	}
+	return b.Bytes()
+}
+
+func goMarkdown(m string) (string, error) {
+	m = strings.TrimPrefix(m, "\n")
+
+	// Replace single quotes with backticks.
+	// Replace escaped single quotes with single quotes.
+	m = strings.Replace(m, `\'`, `$ESCAPED_SINGLE_QUOTE`, -1)
+	m = strings.Replace(m, `'`, "`", -1)
+	m = strings.Replace(m, `$ESCAPED_SINGLE_QUOTE`, "'", -1)
+
+	// Unindent based on the indention of the last line.
+	lines := strings.Split(m, "\n")
+	baseIndention := lines[len(lines)-1]
+	if strings.TrimSpace(baseIndention) == "" {
+		if strings.Contains(baseIndention, " ") {
+			return "", errors.New("go string literal indention must be tabs")
+		}
+		indentionLevel := strings.Count(baseIndention, "\t")
+		removeIndention := strings.Repeat("\t", indentionLevel+1)
+		for i, l := range lines[:len(lines)-1] {
+			newLine := strings.TrimPrefix(l, removeIndention)
+			if l == newLine {
+				return "", fmt.Errorf("inconsistent indention (line %d %q expected to start with %q)", i, l, removeIndention)
+			}
+			lines[i] = newLine
+		}
+		m = strings.Join(lines[:len(lines)-1], "\n")
+	}
+
+	// If result is not a list, make it a list, so we can add items.
+	if !strings.HasPrefix(m, "-") && !strings.HasPrefix(m, "*") {
+		m = fmt.Sprintf("- %s", m)
+	}
+
+	return m, nil
 }
 
 // promRulesFile represents a Prometheus recording rules file (which we use for defining our alerts)

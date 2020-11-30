@@ -1,6 +1,7 @@
 package codemonitors
 
 import (
+	"context"
 	"database/sql"
 	"time"
 
@@ -38,4 +39,19 @@ func (s *Store) With(other basestore.ShareableStore) *Store {
 // Clock returns the clock of the underlying store.
 func (s *Store) Clock() func() time.Time {
 	return s.now
+}
+
+func (s *Store) Now() time.Time {
+	return s.now()
+}
+
+// Transact creates a new transaction.
+// It's required to implement this method and wrap the Transact method of the
+// underlying basestore.Store.
+func (s *Store) Transact(ctx context.Context) (*Store, error) {
+	txBase, err := s.Store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &Store{Store: txBase, now: s.now}, nil
 }

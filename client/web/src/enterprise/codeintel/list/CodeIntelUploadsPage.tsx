@@ -20,34 +20,41 @@ export interface CodeIntelUploadsPageProps extends RouteComponentProps<{}>, Tele
 
 const filters: FilteredConnectionFilter[] = [
     {
-        label: 'All',
-        id: 'all',
-        tooltip: 'Show all uploads',
-        args: {},
-    },
-    {
-        label: 'Current',
-        id: 'current',
-        tooltip: 'Show current uploads only',
-        args: { isLatestForRepo: true },
-    },
-    {
-        label: 'Completed',
-        id: 'completed',
-        tooltip: 'Show completed uploads only',
-        args: { state: LSIFUploadState.COMPLETED },
-    },
-    {
-        label: 'Errored',
-        id: 'errored',
-        tooltip: 'Show errored uploads only',
-        args: { state: LSIFUploadState.ERRORED },
-    },
-    {
-        label: 'Queued',
-        id: 'queued',
-        tooltip: 'Show queued uploads only',
-        args: { state: LSIFUploadState.QUEUED },
+        id: 'filter',
+        type: 'radio',
+        label: 'Filter',
+        values: [
+            {
+                label: 'All',
+                value: 'all',
+                tooltip: 'Show all uploads',
+                args: {},
+            },
+            {
+                label: 'Current',
+                value: 'current',
+                tooltip: 'Show current uploads only',
+                args: { isLatestForRepo: true },
+            },
+            {
+                label: 'Completed',
+                value: 'completed',
+                tooltip: 'Show completed uploads only',
+                args: { state: LSIFUploadState.COMPLETED },
+            },
+            {
+                label: 'Errored',
+                value: 'errored',
+                tooltip: 'Show errored uploads only',
+                args: { state: LSIFUploadState.ERRORED },
+            },
+            {
+                label: 'Queued',
+                value: 'queued',
+                tooltip: 'Show queued uploads only',
+                args: { state: LSIFUploadState.QUEUED },
+            },
+        ],
     },
 ]
 

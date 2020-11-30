@@ -882,7 +882,7 @@ func testStoreListRepos(t *testing.T, store *internal.Store) func(*testing.T) {
 			stored: repositories,
 			args: func(types.Repos) internaldb.ReposListOptions {
 				return internaldb.ReposListOptions{
-					ExternalServiceID: servicesPerKind[extsvc.KindGitHub].ID,
+					ExternalServiceIDs: []int64{servicesPerKind[extsvc.KindGitHub].ID},
 				}
 			},
 			repos: types.Assert.ReposEqual(github),

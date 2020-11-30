@@ -28,7 +28,7 @@ const nodes: ChangesetSpecFields[] = [
     ...Object.values(hiddenChangesetSpecStories),
 ]
 
-const campaignSpec: CampaignSpecFields = {
+const campaignSpec = (): CampaignSpecFields => ({
     appliesToCampaign: null,
     createdAt: subDays(new Date(), 5).toISOString(),
     creator: {
@@ -55,13 +55,13 @@ const campaignSpec: CampaignSpecFields = {
         totalCount: 0,
         nodes: [],
     },
-}
+})
 
-const fetchCampaignSpecCreate: typeof fetchCampaignSpecById = () => of(campaignSpec)
+const fetchCampaignSpecCreate: typeof fetchCampaignSpecById = () => of(campaignSpec())
 
 const fetchCampaignSpecMissingCredentials: typeof fetchCampaignSpecById = () =>
     of({
-        ...campaignSpec,
+        ...campaignSpec(),
         viewerCampaignsCodeHosts: {
             totalCount: 2,
             nodes: [
@@ -79,7 +79,7 @@ const fetchCampaignSpecMissingCredentials: typeof fetchCampaignSpecById = () =>
 
 const fetchCampaignSpecUpdate: typeof fetchCampaignSpecById = () =>
     of({
-        ...campaignSpec,
+        ...campaignSpec(),
         appliesToCampaign: {
             id: 'somecampaign',
             name: 'awesome-campaign',

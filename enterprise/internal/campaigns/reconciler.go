@@ -31,14 +31,6 @@ type GitserverClient interface {
 	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error)
 }
 
-// ReconcilerMaxNumRetries is the maximum number of attempts the reconciler
-// makes to process a changeset when it fails.
-const ReconcilerMaxNumRetries = 60
-
-// ReconcilerMaxNumResets is the maximum number of attempts the reconciler
-// makes to process a changeset when it stalls (process crashes, etc.).
-const ReconcilerMaxNumResets = 60
-
 // Reconciler processes changesets and reconciles their current state — in
 // Sourcegraph or on the code host — with that described in the current
 // ChangesetSpec associated with the changeset.
@@ -818,19 +810,10 @@ func reopenAfterDetach(ch *campaigns.Changeset) bool {
 		return false
 	}
 
-	// Check if it's (re-)attached to the campaign that created it.
-	attachedToOwner := false
-	for _, campaignID := range ch.CampaignIDs {
-		if campaignID == ch.OwnedByCampaignID {
-			attachedToOwner = true
-		}
-	}
-
-	// At this point the changeset is closed and not marked as to-be-closed and
-	// attached to the owning campaign.
-	return attachedToOwner
+	// At this point the changeset is closed and not marked as to-be-closed.
 
 	// TODO: What if somebody closed the changeset on purpose on the codehost?
+	return ch.AttachedTo(ch.OwnedByCampaignID)
 }
 
 func loadRepo(ctx context.Context, tx RepoStore, id api.RepoID) (*repos.Repo, error) {

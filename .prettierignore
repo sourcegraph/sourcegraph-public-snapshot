@@ -29,3 +29,4 @@ docker-images/grafana/config/provisioning/dashboards/sourcegraph/
 storybook-static/
 browser/code-intel-extensions/
 !/.storybook/**
+monitoring/monitoring/README.md

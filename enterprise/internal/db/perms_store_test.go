@@ -2326,7 +2326,11 @@ func testPermsStore_ReposIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 			sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
 			sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'private_repo_2', TRUE)`),
 			sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(3, 'private_repo_3', TRUE, NOW())`),
+			sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config) VALUES(1, 'GitHub #1', 'GITHUB', '{}')`),
+			sqlf.Sprintf(`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url)
+                                 VALUES(1, 1, ''), (2, 1, ''), (3, 1, '')`),
 		}
+
 		for _, q := range qs {
 			if err := s.execute(ctx, q); err != nil {
 				t.Fatal(err)

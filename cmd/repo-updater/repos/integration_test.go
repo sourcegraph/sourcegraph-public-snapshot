@@ -82,6 +82,7 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/Syncer/NameConflictDiscardNew", testNameOnConflictDiscardNew(db)},
 		{"DBStore/Syncer/NameConflictOnRename", testNameOnConflictOnRename(db)},
 		{"DBStore/Syncer/ConflictingSyncers", testConflictingSyncers(db)},
+		{"DBStore/Syncer/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources(db)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Cleanup(func() {

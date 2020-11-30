@@ -59,18 +59,15 @@ Referenced by:
  namespace_org_id   | integer                  | 
  created_at         | timestamp with time zone | not null default now()
  updated_at         | timestamp with time zone | not null default now()
- changeset_ids      | jsonb                    | not null default '{}'::jsonb
  closed_at          | timestamp with time zone | 
  campaign_spec_id   | bigint                   | not null
  last_applier_id    | bigint                   | 
  last_applied_at    | timestamp with time zone | not null
 Indexes:
     "campaigns_pkey" PRIMARY KEY, btree (id)
-    "campaigns_changeset_ids_gin_idx" gin (changeset_ids)
     "campaigns_namespace_org_id" btree (namespace_org_id)
     "campaigns_namespace_user_id" btree (namespace_user_id)
 Check constraints:
-    "campaigns_changeset_ids_check" CHECK (jsonb_typeof(changeset_ids) = 'object'::text)
     "campaigns_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
     "campaigns_name_not_blank" CHECK (name <> ''::text)
 Foreign-key constraints:
@@ -211,8 +208,6 @@ Foreign-key constraints:
     "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
     TABLE "changeset_events" CONSTRAINT "changeset_events_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
-Triggers:
-    trig_delete_changeset_reference_on_campaigns AFTER DELETE ON changesets FOR EACH ROW EXECUTE PROCEDURE delete_changeset_reference_on_campaigns()
 
 ```
 
@@ -358,6 +353,8 @@ Foreign-key constraints:
  num_resets      | integer                  | not null default 0
  num_failures    | integer                  | not null default 0
  log_contents    | text                     | 
+ query_string    | text                     | 
+ results         | boolean                  | 
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -540,7 +537,7 @@ Foreign-key constraints:
     "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
     "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Triggers:
-    trig_soft_delete_orphan_repo_by_external_service_repo AFTER DELETE ON external_service_repos FOR EACH ROW EXECUTE PROCEDURE soft_delete_orphan_repo_by_external_service_repos()
+    trig_soft_delete_orphan_repo_by_external_service_repo AFTER DELETE ON external_service_repos FOR EACH STATEMENT EXECUTE PROCEDURE soft_delete_orphan_repo_by_external_service_repos()
 
 ```
 

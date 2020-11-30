@@ -46,6 +46,8 @@ import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { TreeEntriesSection } from './TreeEntriesSection'
 import { GitCommitFields } from '../../graphql-operations'
+import { getFileDecorations } from '../../backend/features'
+import { FileDecorationsByPath } from '../../../../shared/src/api/extension/flatExtensionApi'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -184,6 +186,23 @@ export const TreePage: React.FunctionComponent<Props> = ({
             [repoName, commitID, revision, filePath]
         )
     )
+
+    const fileDecorationsByPath =
+        useObservable<FileDecorationsByPath>(
+            useMemo(
+                () =>
+                    treeOrError && !isErrorLike(treeOrError)
+                        ? getFileDecorations({
+                              files: treeOrError.entries,
+                              extensionsController: props.extensionsController,
+                              repoName,
+                              commitID,
+                              parentNodeUri: treeOrError.url,
+                          })
+                        : EMPTY,
+                [treeOrError, repoName, commitID, props.extensionsController]
+            )
+        ) ?? {}
 
     const { services } = props.extensionsController
 
@@ -361,7 +380,12 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     )}
                     <section className="tree-page__section test-tree-entries">
                         <h3 className="tree-page__section-header">Files and directories</h3>
-                        <TreeEntriesSection parentPath={filePath} entries={treeOrError.entries} />
+                        <TreeEntriesSection
+                            parentPath={filePath}
+                            entries={treeOrError.entries}
+                            fileDecorationsByPath={fileDecorationsByPath}
+                            isLightTheme={props.isLightTheme}
+                        />
                     </section>
                     {/* eslint-disable react/jsx-no-bind */}
                     <ActionsContainer
