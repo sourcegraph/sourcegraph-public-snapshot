@@ -533,3 +533,104 @@ mutation ($monitorID: ID!, $triggerID: ID!, $actionID: ID!, $user1ID: ID!, $user
   }
 }
 `
+
+func TestRecipientsPaging(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+	r := newTestResolver(t)
+
+	// Create 2 test users.
+	user1Name := "cm-user1"
+	user1ID := insertTestUser(t, dbconn.Global, user1Name, true)
+	ns1 := relay.MarshalID("User", user1ID)
+
+	user2Name := "cm-user2"
+	user2ID := insertTestUser(t, dbconn.Global, user2Name, true)
+	ns2 := relay.MarshalID("User", user2ID)
+
+	// Create a code monitor with 1 trigger, and 1 action with two recipients.
+	ctx = actor.WithActor(ctx, actor.FromUser(user1ID))
+	actionOpt := WithActions([]*graphqlbackend.CreateActionArgs{
+		{
+			Email: &graphqlbackend.CreateActionEmailArgs{
+				Enabled:    true,
+				Priority:   "NORMAL",
+				Recipients: []graphql.ID{ns1, ns2},
+				Header:     "header action 1",
+			},
+		},
+	})
+	_, err := r.insertTestMonitorWithOpts(ctx, t, actionOpt)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	queryInput := map[string]interface{}{
+		"userName":        user1Name,
+		"recipientCursor": string(relay.MarshalID(monitorActionEmailRecipientKind, 1)),
+	}
+	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := apitest.Response{}
+	campaignApitest.MustExec(ctx, t, schema, queryInput, &got, queryRecipients)
+
+	want := apitest.Response{
+		User: apitest.User{
+			Monitors: apitest.MonitorConnection{
+				TotalCount: 1,
+				Nodes: []apitest.Monitor{{
+					Actions: apitest.ActionConnection{
+						Nodes: []apitest.Action{{
+							ActionEmail: apitest.ActionEmail{
+								Recipients: apitest.RecipientsConnection{
+									TotalCount: 2,
+									Nodes: []apitest.UserOrg{{
+										Name: user2Name,
+									}},
+								},
+							},
+						}},
+					},
+				}},
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(&got, &want) {
+		t.Fatalf("\ngot:\t%+v\nwant:\t%+v\n", got, want)
+	}
+}
+
+const queryRecipients = `
+fragment u on User { id, username }
+fragment o on Org { id, name }
+
+query($userName: String!, $recipientCursor: String!){
+	user(username:$userName){
+		monitors{
+			totalCount
+			nodes{
+				actions{
+					nodes{
+						... on MonitorEmail{
+							recipients(first:1, after:$recipientCursor){
+								totalCount
+								nodes {
+									... on User { ...u }
+									... on Org { ...o }
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+`
