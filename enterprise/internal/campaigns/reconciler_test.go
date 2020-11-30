@@ -820,7 +820,7 @@ func TestReconcilerProcess(t *testing.T) {
 	}
 }
 
-func TestReconcilerDeterminePlan(t *testing.T) {
+func TestDetermineReconcilerPlan(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
