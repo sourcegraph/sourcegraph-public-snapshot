@@ -6325,6 +6325,9 @@ type User implements Node & SettingsSubject & Namespace {
         after: String
     ): MonitorConnection!
 
+    """
+    Repositories from external services owned by this user.
+    """
     repositories(
         """
         Returns the first n repositories from the list.
@@ -6355,26 +6358,26 @@ type User implements Node & SettingsSubject & Namespace {
         """
         notIndexed: Boolean = true
         """
-        Only include repositories from this external service URL.
+        Only include repositories from this external service.
         """
         externalServiceID: ID
-): RepositoryConnection!
+    ): RepositoryConnection!
 }
 
 """
 An access token that grants to the holder the privileges of the user who created it.
 """
 type AccessToken implements Node {
-"""
-The unique ID for the access token.
-"""
-id: ID!
-"""
-The user whose privileges the access token grants.
-"""
-subject: User!
-"""
-The scopes that define the allowed set of operations that can be performed using this access token.
+    """
+    The unique ID for the access token.
+    """
+    id: ID!
+    """
+    The user whose privileges the access token grants.
+    """
+    subject: User!
+    """
+    The scopes that define the allowed set of operations that can be performed using this access token.
     """
     scopes: [String!]!
     """
