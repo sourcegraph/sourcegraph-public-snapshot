@@ -33,8 +33,7 @@ export const Timeline: FunctionComponent<TimelineProps> = ({ stages, now, classN
 
                     const previousDate = stages
                         .map(stage => stage.date)
-                        .filter((date, index) => !!date && index < stageIndex)
-                        .pop()
+                        .find((date, index) => !!date && index < stageIndex)
 
                     const meta = (
                         <div className="d-flex align-items-center">
