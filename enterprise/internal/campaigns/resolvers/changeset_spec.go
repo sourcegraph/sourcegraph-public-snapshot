@@ -37,7 +37,7 @@ type changesetSpecResolver struct {
 
 	changesetSpec *campaigns.ChangesetSpec
 
-	fetcher *changesetSpecPreviewer
+	fetcher ChangesetSpecPreviewer
 	repo    *types.Repo
 
 	planOnce sync.Once
@@ -86,7 +86,7 @@ func NewChangesetSpecResolverWithRepo(store *ee.Store, cf *httpcli.Factory, repo
 	}
 }
 
-func (r *changesetSpecResolver) WithRewirerMappingFetcher(mappingFetcher *changesetSpecPreviewer) *changesetSpecResolver {
+func (r *changesetSpecResolver) WithRewirerMappingFetcher(mappingFetcher ChangesetSpecPreviewer) *changesetSpecResolver {
 	r.fetcher = mappingFetcher
 	return r
 }
@@ -309,6 +309,11 @@ func (c *changesetSpecDeltaResolver) AuthorEmailChanged() bool {
 	return c.delta.AuthorEmailChanged
 }
 
+type ChangesetSpecPreviewer interface {
+	PlanForChangesetSpec(context.Context, *campaigns.ChangesetSpec) (*ee.ReconcilerPlan, error)
+	ChangesetForChangesetSpec(context.Context, int64) (*campaigns.Changeset, error)
+}
+
 type changesetSpecPreviewer struct {
 	store          *ee.Store
 	campaignSpecID int64
@@ -321,6 +326,9 @@ type changesetSpecPreviewer struct {
 	campaign     *campaigns.Campaign
 	campaignErr  error
 }
+
+// Type guard.
+var _ ChangesetSpecPreviewer = &changesetSpecPreviewer{}
 
 // PlanForChangesetSpec computes the ReconcilerPlan for the given changeset spec, based on the current state of the database.
 func (c *changesetSpecPreviewer) PlanForChangesetSpec(ctx context.Context, changesetSpec *campaigns.ChangesetSpec) (*ee.ReconcilerPlan, error) {
