@@ -13,7 +13,14 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { resetAllMemoizationCaches } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
 import { Settings } from '../../../shared/src/settings/settings'
-import { RepositoriesVariables, RepositoriesResult, ExternalServiceKind, UserActivePeriod } from '../graphql-operations'
+import {
+    UserRepositoriesResult,
+    UserRepositoriesVariables,
+    RepositoriesVariables,
+    RepositoriesResult,
+    ExternalServiceKind,
+    UserActivePeriod,
+} from '../graphql-operations'
 
 /**
  * Fetches all users.
@@ -95,13 +102,79 @@ const siteAdminRepositoryFieldsFragment = gql`
         createdAt
         viewerCanAdminister
         url
+        isPrivate
         mirrorInfo {
             cloned
             cloneInProgress
             updatedAt
         }
+        externalRepository {
+            serviceType
+            serviceID
+        }
     }
 `
+
+export function listUserRepositories(
+    args: Partial<UserRepositoriesVariables>
+): Observable<NonNullable<UserRepositoriesResult['node']>['repositories']> {
+    return requestGraphQL<UserRepositoriesResult, UserRepositoriesVariables>(
+        gql`
+            query UserRepositories(
+                $id: ID!
+                $first: Int
+                $query: String
+                $cloned: Boolean
+                $notCloned: Boolean
+                $indexed: Boolean
+                $notIndexed: Boolean
+                $externalServiceID: ID
+            ) {
+                node(id: $id) {
+                    ... on User {
+                        repositories(
+                            first: $first
+                            query: $query
+                            cloned: $cloned
+                            notCloned: $notCloned
+                            indexed: $indexed
+                            notIndexed: $notIndexed
+                            externalServiceID: $externalServiceID
+                        ) {
+                            nodes {
+                                ...SiteAdminRepositoryFields
+                            }
+                            totalCount(precise: true)
+                            pageInfo {
+                                hasNextPage
+                            }
+                        }
+                    }
+                }
+            }
+
+            ${siteAdminRepositoryFieldsFragment}
+        `,
+        {
+            id: args.id!,
+            cloned: args.cloned ?? true,
+            notCloned: args.notCloned ?? true,
+            indexed: args.indexed ?? true,
+            notIndexed: args.notIndexed ?? true,
+            first: args.first ?? null,
+            query: args.query ?? null,
+            externalServiceID: args.externalServiceID! ?? null,
+        }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (data.node === null) {
+                throw new Error('user not found')
+            }
+            return data.node.repositories
+        })
+    )
+}
 
 /**
  * Fetches all repositories.
