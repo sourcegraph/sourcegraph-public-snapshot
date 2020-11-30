@@ -74,7 +74,7 @@ func main() {
 			for _, info := range r.Sources {
 				return info.CloneURL, nil
 			}
-			return "", fmt.Errorf("internal error no sources for %s", repo)
+			return "", fmt.Errorf("no sources for %q", repo)
 		},
 	}
 	gitserver.RegisterMetrics()
@@ -157,7 +157,7 @@ func getRepoStore() (*db.RepoStore, error) {
 	//
 	// START FLAILING
 
-	// Gitserver only does internal actor. We rely on the frontend to do authz
+	// Gitserver is an internal actor. We rely on the frontend to do authz
 	// checks for user requests.
 	authz.SetProviders(true, []authz.Provider{})
 
