@@ -68,6 +68,7 @@ func transformRecord(index store.Index, config *Config) (apiclient.Job, error) {
 				},
 			},
 		},
+		RedactedValues: nil, // TODO
 	}, nil
 }
 
