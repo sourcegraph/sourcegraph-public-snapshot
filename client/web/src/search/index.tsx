@@ -103,6 +103,8 @@ export function parseSearchURL(
             caseSensitive = false
         }
     }
+    // Invariant: If case:value was in the query, it is erased at this point. Add case:yes if needed.
+    finalQuery = caseSensitive ? `${finalQuery} case:yes` : finalQuery
 
     return {
         query: finalQuery,
