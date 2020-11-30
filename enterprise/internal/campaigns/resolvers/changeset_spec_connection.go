@@ -63,7 +63,7 @@ func (r *changesetSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlb
 		return nil, err
 	}
 
-	fetcher := &changesetSpecPreviewer{
+	previewer := &changesetSpecPreviewer{
 		store:          r.store,
 		campaignSpecID: r.campaignSpecID,
 	}
@@ -76,7 +76,7 @@ func (r *changesetSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlb
 		// In that case we'll set it anyway to nil and changesetSpecResolver
 		// will treat it as "hidden".
 
-		resolvers = append(resolvers, NewChangesetSpecResolverWithRepo(r.store, r.httpFactory, repo, c).WithPreviewer(fetcher))
+		resolvers = append(resolvers, NewChangesetSpecResolverWithRepo(r.store, r.httpFactory, repo, c).WithPreviewer(previewer))
 	}
 
 	return resolvers, nil
