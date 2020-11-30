@@ -208,11 +208,24 @@ interface LogOutputProps {
 }
 
 const LogOutput: FunctionComponent<LogOutputProps> = ({ text, className }) => (
-    <pre className={classNames('bg-code rounded p-3 mb-0', className)}>
-        <code>
-            {/* {text.split('\n').map(line => line.replace(/^std(out|err): /, '')).join('\n')} */}
-            {text}
-        </code>
+    <pre className={classNames('code-intel-index-timeline-log-output', 'bg-code rounded p-3 mb-0', className)}>
+        {
+            // Use index as key because log lines may not be unique. This is OK
+            // here because this list will not be updated during this component's
+            // lifetime.
+            /* eslint-disable react/no-array-index-key */
+            text.split('\n').map((line, index) => (
+                <code
+                    key={index}
+                    className={classNames(
+                        'code-intel-index-timeline-log-output__line',
+                        line.startsWith('stdout:') ? 'stdout' : line.startsWith('stderr:') ? 'stderr' : ''
+                    )}
+                >
+                    {line.replace(/^std(out|err): /, '')}
+                </code>
+            ))
+        }
     </pre>
 )
 

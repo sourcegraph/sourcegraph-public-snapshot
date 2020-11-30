@@ -3,3 +3,13 @@
         width: 5rem;
     }
 }
+
+.code-intel-index-timeline-log-output {
+    &__line {
+        display: block;
+    }
+}
+
+.stderr {
+    color: var(--danger);
+}
