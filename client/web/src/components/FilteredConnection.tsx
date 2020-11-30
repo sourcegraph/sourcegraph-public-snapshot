@@ -46,7 +46,7 @@ class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, F
         return (
             <div className="filtered-connection-filter-control">
                 {this.props.filters.map(filter => (
-                    <div className="d-inline-flex flex-row" key={filter.id}>
+                    <div className="d-inline-flex flex-row radio-buttons" key={filter.id}>
                         {filter.type === 'radio' &&
                             filter.values.map(value => (
                                 <label key={value.value} className="radio-buttons__item" title={value.tooltip}>
