@@ -1,7 +1,7 @@
 import * as sourcegraph from 'sourcegraph'
 import { WorkbenchViewScheduler } from './scheduler'
 
-abstract class WorkbenchView<TState extends object> {
+export abstract class WorkbenchView<TState extends object> {
     abstract state: TState
 
     constructor(private scheduler: WorkbenchViewScheduler, private viewType: sourcegraph.WorkbenchViewType) {}

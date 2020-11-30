@@ -276,26 +276,36 @@ function createExtensionAPI(
     /**
      * TEST STATUS BAR ITEM API
      * Calling APIs directly for easy collaboration (no need to sideload extension)
-     * Move this to extensionHost so I can subscribe to text document changes
      *
      * Note that these individual timeouts only result in one render :D
      *
      * TODO(tj): Remove this
      */
+    setTimeout(() => {
+        const item = createStatusBarItem('char-count')
+        item.update({ contentText: '12356', title: 'Characters' })
+
+        // eslint-disable-next-line rxjs/no-ignored-subscription
+        windows.activeWindow.activeViewComponentChanges.subscribe(viewComponent => {
+            if (viewComponent?.type === 'CodeEditor') {
+                item.update({ contentText: String(viewComponent.document.text?.length ?? 0) })
+            }
+        })
+    }, 500)
 
     setTimeout(() => {
         const item = createStatusBarItem('codecov')
-        item.update({ contentText: '89%', title: 'Codecov coverage' })
-    }, 500)
+
+        item.update({
+            contentText: '89%',
+            title: 'Codecov coverage',
+            hoverMessage: 'The code coverage of this file is',
+        })
+    }, 501)
 
     setTimeout(() => {
         const item = createStatusBarItem('git-extras')
         item.update({ contentText: 'Felix Becker, Rob Rhyne', title: '2 authors' })
-    }, 501)
-
-    setTimeout(() => {
-        const item = createStatusBarItem('char-count')
-        item.update({ contentText: '12356', title: 'Characters' })
     }, 502)
 
     return { extensionHostAPI, extensionAPI, subscription }
