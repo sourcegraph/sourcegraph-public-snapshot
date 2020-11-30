@@ -2,14 +2,11 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"strconv"
 	"sync"
 
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -100,119 +97,4 @@ func (r *changesetSpecConnectionResolver) compute(ctx context.Context) (campaign
 	})
 
 	return r.changesetSpecs, r.reposByID, r.next, r.err
-}
-
-type changesetSpecPreviewer struct {
-	store          *ee.Store
-	campaignSpecID int64
-
-	mappingOnce sync.Once
-	mappingByID map[int64]*ee.RewirerMapping
-	mappingErr  error
-
-	campaignOnce sync.Once
-	campaign     *campaigns.Campaign
-	campaignErr  error
-}
-
-func (c *changesetSpecPreviewer) PlanForChangesetSpec(ctx context.Context, changesetSpec *campaigns.ChangesetSpec) (*ee.ReconcilerPlan, error) {
-	mapping, err := c.mappingForChangesetSpec(ctx, changesetSpec.ID)
-	if err != nil {
-		return nil, err
-	}
-	campaign, err := c.computeCampaign(ctx)
-	if err != nil {
-		return nil, err
-	}
-	rewirer := ee.NewChangesetRewirer(ee.RewirerMappings{mapping}, campaign, repos.NewDBStore(c.store.DB(), sql.TxOptions{}))
-	changesets, err := rewirer.Rewire(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	var changeset *campaigns.Changeset
-	if len(changesets) != 1 {
-		return nil, errors.New("rewirer did not return changeset")
-	} else {
-		changeset = changesets[0]
-	}
-
-	// Detached changesets would still appear here, but since they'll never match one of the new specs, they don't actually appear here.
-	// Once we have a way to have changeset specs for detached changesets, this would be the place to do a "will be detached" check.
-	// TBD: How we represent that in the API.
-
-	var previousSpec, currentSpec *campaigns.ChangesetSpec
-	if changeset.PreviousSpecID != 0 {
-		previousSpec, err = c.store.GetChangesetSpecByID(ctx, changeset.PreviousSpecID)
-	}
-	if changeset.CurrentSpecID != 0 {
-		currentSpec = changesetSpec
-	}
-	return ee.DetermineReconcilerPlan(previousSpec, currentSpec, changeset)
-}
-
-// ChangesetForChangesetSpec can return nil
-func (c *changesetSpecPreviewer) ChangesetForChangesetSpec(ctx context.Context, changesetSpecID int64) (*campaigns.Changeset, error) {
-	mapping, err := c.mappingForChangesetSpec(ctx, changesetSpecID)
-	if err != nil {
-		return nil, err
-	}
-	return mapping.Changeset, nil
-}
-
-func (c *changesetSpecPreviewer) mappingForChangesetSpec(ctx context.Context, id int64) (*ee.RewirerMapping, error) {
-	mappingByID, err := c.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-	mapping, ok := mappingByID[id]
-	if !ok {
-		return nil, errors.New("couldn't find mapping for changeset")
-	}
-
-	return mapping, nil
-}
-
-func (c *changesetSpecPreviewer) computeCampaign(ctx context.Context) (*campaigns.Campaign, error) {
-	c.campaignOnce.Do(func() {
-		svc := ee.NewService(c.store, nil)
-		campaignSpec, err := c.store.GetCampaignSpec(ctx, ee.GetCampaignSpecOpts{ID: c.campaignSpecID})
-		if err != nil {
-			c.campaignErr = err
-			return
-		}
-		c.campaign, _, c.campaignErr = svc.ReconcileCampaign(ctx, campaignSpec)
-	})
-	return c.campaign, c.campaignErr
-}
-
-func (c *changesetSpecPreviewer) compute(ctx context.Context) (map[int64]*ee.RewirerMapping, error) {
-	c.mappingOnce.Do(func() {
-		campaign, err := c.computeCampaign(ctx)
-		if err != nil {
-			c.mappingErr = err
-			return
-		}
-		mappings, err := c.store.GetRewirerMappings(ctx, ee.GetRewirerMappingsOpts{
-			CampaignSpecID: c.campaignSpecID,
-			CampaignID:     campaign.ID,
-		})
-		if err != nil {
-			c.mappingErr = err
-			return
-		}
-		if err := mappings.Hydrate(ctx, c.store); err != nil {
-			c.mappingErr = err
-			return
-		}
-
-		c.mappingByID = make(map[int64]*ee.RewirerMapping)
-		for _, m := range mappings {
-			if m.ChangesetSpecID == 0 {
-				continue
-			}
-			c.mappingByID[m.ChangesetSpecID] = m
-		}
-	})
-	return c.mappingByID, c.mappingErr
 }
