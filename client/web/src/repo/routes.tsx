@@ -6,6 +6,7 @@ import { lazyComponent } from '../util/lazyComponent'
 import { formatHash } from '../util/url'
 import { RepoContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
+import classNames from 'classnames'
 
 const BlobPage = lazyComponent(() => import('./blob/BlobPage'), 'BlobPage')
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
@@ -144,8 +145,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 versionContext,
                 globbing,
             }
-            // TODO(tj): Might have to extract a RepoRevisionContent component to elegantly change content padding based on
-            // whether the status bar is rendered. Currently using CSS custom property that `StatusBar` sets on visibility changes
 
             return (
                 <>
@@ -157,7 +156,12 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                         defaultBranch={defaultBranch || 'HEAD'}
                     />
                     {!hideRepoRevisionContent && (
-                        <div className="repo-revision-container__content">
+                        <div
+                            className={classNames(
+                                'repo-revision-container__content',
+                                context.statusBarContainerClassName
+                            )}
+                        >
                             {objectType === 'blob' ? (
                                 <BlobPage
                                     {...context}
@@ -170,7 +174,10 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                             ) : (
                                 <TreePage {...context} {...repoRevisionProps} />
                             )}
-                            <StatusBar extensionsController={context.extensionsController} />
+                            <StatusBar
+                                extensionsController={context.extensionsController}
+                                onStatusBarVisiblityChange={context.onStatusBarVisiblityChange}
+                            />
                         </div>
                     )}
                 </>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { useObservable } from '../../../shared/src/util/useObservable'
 import { getStatusBarItems } from '../backend/features'
@@ -6,8 +6,16 @@ import classNames from 'classnames'
 import iterate from 'iterare'
 import { isString } from 'lodash'
 
-interface Props extends ExtensionsControllerProps {
+interface Props extends StatusBarProps, ExtensionsControllerProps {
     className?: string
+}
+
+export interface StatusBarProps {
+    onStatusBarVisiblityChange: (visible: boolean) => void
+}
+
+export interface StatusBarContainerProps {
+    statusBarContainerClassName: string
 }
 
 /**
@@ -15,7 +23,7 @@ interface Props extends ExtensionsControllerProps {
  *
  * Memoized since its props are not likely to change.
  */
-export const StatusBar = React.memo<Props>(({ extensionsController, className }) => {
+export const StatusBar = React.memo<Props>(({ extensionsController, className, onStatusBarVisiblityChange }) => {
     const statusBarItems = useObservable(
         useMemo(() => getStatusBarItems({ extensionsController }), [extensionsController])
     )
@@ -35,18 +43,19 @@ export const StatusBar = React.memo<Props>(({ extensionsController, className })
     const shouldDisplayStatusBar = renderedItems && renderedItems.length > 0
 
     useEffect(() => {
-        // Increase repo revision container content margin-bottom when status bar is visible.
-        document.documentElement.style.setProperty(
-            '--repo-content-padding-bottom',
-            shouldDisplayStatusBar ? '1.5rem' : '0'
-        )
-
-        return () => {
-            document.documentElement.style.setProperty('--repo-content-padding-bottom', '0')
-        }
-    }, [shouldDisplayStatusBar])
+        onStatusBarVisiblityChange(!!shouldDisplayStatusBar)
+    }, [shouldDisplayStatusBar, onStatusBarVisiblityChange])
 
     return shouldDisplayStatusBar ? (
         <div className={classNames(className, 'status-bar d-flex align-items-center px-2')}>{renderedItems}</div>
     ) : null
 })
+
+export function useStatusBar(): StatusBarProps & StatusBarContainerProps {
+    const [isStatusBarVisible, setIsStatusBarVisible] = useState(false)
+
+    return {
+        statusBarContainerClassName: isStatusBarVisible ? 'pb-4' : '',
+        onStatusBarVisiblityChange: setIsStatusBarVisible,
+    }
+}

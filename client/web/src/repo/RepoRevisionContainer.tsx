@@ -37,6 +37,7 @@ import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { StatusBarProps, StatusBarContainerProps, useStatusBar } from '../components/StatusBar'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -57,7 +58,9 @@ export interface RepoRevisionContainerContext
         CopyQueryButtonProps,
         VersionContextProps,
         RevisionSpec,
-        BreadcrumbSetters {
+        BreadcrumbSetters,
+        StatusBarProps,
+        StatusBarContainerProps {
     repo: GQL.IRepository
     resolvedRev: ResolvedRevision
 
@@ -168,6 +171,8 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
         ])
     )
 
+    const statusBarProps = useStatusBar()
+
     if (!props.resolvedRevisionOrError) {
         // Render nothing while loading
         return null
@@ -216,6 +221,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
     const context: RepoRevisionContainerContext = {
         ...props,
         ...breadcrumbSetters,
+        ...statusBarProps,
         resolvedRev: props.resolvedRevisionOrError,
     }
 
