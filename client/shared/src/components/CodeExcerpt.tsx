@@ -48,6 +48,9 @@ interface State {
     blobLinesOrError?: string[] | ErrorLike
 }
 
+/**
+ * A code excerpt that displays syntax highlighting and match range highlighting.
+ */
 export class CodeExcerpt extends React.PureComponent<Props, State> {
     public state: State = {}
     private tableContainerElement: HTMLElement | null = null
