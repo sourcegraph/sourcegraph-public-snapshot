@@ -16,6 +16,7 @@ import (
 	frontendAuthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	campaignsBackground "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/background"
+	codemonitorsBackground "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -43,6 +44,8 @@ func enterpriseInit(
 	server *repoupdater.Server,
 ) (debugDumpers []debugserver.Dumper) {
 	ctx := context.Background()
+
+	codemonitorsBackground.StartBackgroundJobs(ctx, db)
 
 	campaignsStore := campaigns.NewStoreWithClock(db, timeutil.Now)
 
