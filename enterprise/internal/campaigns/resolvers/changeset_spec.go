@@ -343,6 +343,9 @@ func (c *changesetSpecPreviewer) PlanForChangesetSpec(ctx context.Context, chang
 	var previousSpec, currentSpec *campaigns.ChangesetSpec
 	if changeset.PreviousSpecID != 0 {
 		previousSpec, err = c.store.GetChangesetSpecByID(ctx, changeset.PreviousSpecID)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if changeset.CurrentSpecID != 0 {
 		currentSpec = changesetSpec
