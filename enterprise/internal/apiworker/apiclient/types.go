@@ -1,5 +1,7 @@
 package apiclient
 
+import "github.com/sourcegraph/sourcegraph/internal/workerutil"
+
 // Job describes a series of steps to perform within an executor.
 type Job struct {
 	// ID is the unique identifier of a job within the source queue. Note
@@ -61,10 +63,10 @@ type DequeueRequest struct {
 	ExecutorName string `json:"executorName"`
 }
 
-type SetLogRequest struct {
+type AddExecutionLogEntryRequest struct {
 	ExecutorName string `json:"executorName"`
 	JobID        int    `json:"jobId"`
-	Contents     string `json:"payload"`
+	workerutil.ExecutionLogEntry
 }
 
 type MarkCompleteRequest struct {
