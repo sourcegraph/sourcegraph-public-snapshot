@@ -213,6 +213,7 @@ type CampaignSpec struct {
 	ExpiresAt *graphqlbackend.DateTime
 }
 
+// ChangesetSpecDelta is the delta between two ChangesetSpecs describing the same Changeset.
 type ChangesetSpecDelta struct {
 	TitleChanged         bool
 	BodyChanged          bool
