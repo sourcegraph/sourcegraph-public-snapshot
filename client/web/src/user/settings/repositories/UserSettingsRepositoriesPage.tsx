@@ -22,7 +22,7 @@ import GitlabIcon from 'mdi-react/GitlabIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import AddIcon from 'mdi-react/AddIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon';
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 interface UserSettingsRepositoryNodeProps {
     node: SiteAdminRepositoryFields
@@ -103,7 +103,7 @@ const UserSettingsRepositoryNode: React.FunctionComponent<UserSettingsRepository
             </div>
             <div>
                 {node.isPrivate && <div className="badge badge-secondary text-muted">Private</div>}
-                <ChevronRightIcon className="icon-inline ml-2"/>
+                <ChevronRightIcon className="icon-inline ml-2" />
             </div>
         </td>
     </tr>
@@ -197,30 +197,39 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
     let body: JSX.Element
     if (state.filters[1] && state.filters[1].values.length === 1) {
-        body = <div className="card p-3 m-2">
-            <h3 className="mb-1">You have not added any repositories to Sourcegraph</h3>
-            <p className="text-muted mb-0"><a className="text-primary" href={ routingPrefix +'/external-services' }>Connect a code host</a> to start adding your repositories to Sourcegraph.</p>
-        </div>
+        body = (
+            <div className="card p-3 m-2">
+                <h3 className="mb-1">You have not added any repositories to Sourcegraph</h3>
+                <p className="text-muted mb-0">
+                    <a className="text-primary" href={routingPrefix + '/external-services'}>
+                        Connect a code host
+                    </a>{' '}
+                    to start adding your repositories to Sourcegraph.
+                </p>
+            </div>
+        )
     } else {
-        body = <FilteredConnection<SiteAdminRepositoryFields, Omit<UserSettingsRepositoryNodeProps, 'node'>>
-            className="table mt-3"
-            defaultFirst={15}
-            compact={false}
-            noun="repository"
-            pluralNoun="repositories"
-            queryConnection={queryRepositories}
-            nodeComponent={UserSettingsRepositoryNode}
-            listComponent="table"
-            listClassName="w-100"
-            filters={state.filters}
-            history={history}
-            location={location}
-        />
+        body = (
+            <FilteredConnection<SiteAdminRepositoryFields, Omit<UserSettingsRepositoryNodeProps, 'node'>>
+                className="table mt-3"
+                defaultFirst={15}
+                compact={false}
+                noun="repository"
+                pluralNoun="repositories"
+                queryConnection={queryRepositories}
+                nodeComponent={UserSettingsRepositoryNode}
+                listComponent="table"
+                listClassName="w-100"
+                filters={state.filters}
+                history={history}
+                location={location}
+            />
+        )
     }
 
     return (
         <div className="user-settings-repositories-page">
-                <PageTitle title="Repositories" />
+            <PageTitle title="Repositories" />
             <div className="d-flex justify-content-between align-items-center">
                 <h2 className="mb-2">Repositories</h2>
                 {state.filters[1] && state.filters[1].values.length !== 1 && (
@@ -233,7 +242,10 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 )}
             </div>
             <p className="text-muted">
-                All repositories synced with Sourcegraph from <a className="text-primary" href={routingPrefix+'/external-services'}>connected code hosts</a>
+                All repositories synced with Sourcegraph from{' '}
+                <a className="text-primary" href={routingPrefix + '/external-services'}>
+                    connected code hosts
+                </a>
             </p>
             {body}
         </div>
