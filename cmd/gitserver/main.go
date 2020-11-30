@@ -66,7 +66,7 @@ func main() {
 		ReposDir:                reposDir,
 		DeleteStaleRepositories: runRepoCleanup,
 		DesiredPercentFree:      wantPctFree2,
-		GetRemoteURL: func(ctx context.Context, repo api.RepoName) (string, error) {
+		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
 			r, err := repoStore.GetByName(ctx, repo)
 			if err != nil {
 				return "", err

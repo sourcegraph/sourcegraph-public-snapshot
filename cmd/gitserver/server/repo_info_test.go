@@ -16,8 +16,8 @@ import (
 
 func TestServer_handleRepoInfo(t *testing.T) {
 	s := &Server{
-		ReposDir:     "/testroot",
-		GetRemoteURL: staticGetRemoteURL("u"),
+		ReposDir:         "/testroot",
+		GetRemoteURLFunc: staticGetRemoteURL("u"),
 	}
 	h := s.Handler()
 	_, ok := s.locker.TryAcquire("/testroot/a/.git", "test status")

@@ -190,8 +190,8 @@ func TestCleanupExpired(t *testing.T) {
 	repoBoomRecloneTime := recloneTime(repoBoom)
 
 	s := &Server{
-		ReposDir:     root,
-		GetRemoteURL: getRemoteURL,
+		ReposDir:         root,
+		GetRemoteURLFunc: getRemoteURL,
 	}
 	s.Handler() // Handler as a side-effect sets up Server
 	s.cleanupRepos()

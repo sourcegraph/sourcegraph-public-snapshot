@@ -117,7 +117,15 @@ type Server struct {
 	// DiskSizer tells how much disk is free and how large the disk is.
 	DiskSizer DiskSizer
 
-	GetRemoteURL func(context.Context, api.RepoName) (string, error)
+	// GetRemoteURLFunc is a function which returns the remote URL for a
+	// repository. This is used when cloning or fetching a repository. In
+	// production this will speak to the database to look up the clone URL. In
+	// tests this is usually set to clone a local repository or intentionally
+	// error.
+	//
+	// Note: internal uses should call getRemoteURL which will handle
+	// GetRemoteURLFunc being nil.
+	GetRemoteURLFunc func(context.Context, api.RepoName) (string, error)
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
@@ -293,6 +301,13 @@ func (s *Server) serverContext() (context.Context, context.CancelFunc) {
 	}
 }
 
+func (s *Server) getRemoteURL(ctx context.Context, name api.RepoName) (string, error) {
+	if s.GetRemoteURLFunc == nil {
+		return "", errors.New("gitserver GetRemoteURLFunc is unset")
+	}
+	return s.GetRemoteURLFunc(ctx, name)
+}
+
 // acquireCloneLimiter() acquires a cancellable context associated with the
 // clone limiter.
 func (s *Server) acquireCloneLimiter(ctx context.Context) (context.Context, context.CancelFunc, error) {
@@ -354,7 +369,7 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 
 		// BACKCOMPAT: Determine URL from the existing repo on disk if the client didn't send it.
 		var err error
-		req.URL, err = s.GetRemoteURL(r.Context(), req.Repo)
+		req.URL, err = s.getRemoteURL(r.Context(), req.Repo)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -773,7 +788,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return progress, nil
 	}
 
-	url, err := s.GetRemoteURL(ctx, repo)
+	url, err := s.getRemoteURL(ctx, repo)
 	if err != nil {
 		return "", err
 	}
@@ -1339,7 +1354,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName) error {
 	repo = protocol.NormalizeRepo(repo)
 	dir := s.dir(repo)
 
-	url, err := s.GetRemoteURL(ctx, repo)
+	url, err := s.getRemoteURL(ctx, repo)
 	if err != nil {
 		return errors.Wrap(err, "failed to determine Git remote URL")
 	}

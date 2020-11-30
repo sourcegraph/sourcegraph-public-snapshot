@@ -24,7 +24,7 @@ func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.Rep
 		// TODO(keegancsmith,tsenart) the only user of this information is the
 		// site admin settings page for a repo. That page should just ask the
 		// DB for the remote URL.
-		remoteURL, err := s.GetRemoteURL(ctx, repo)
+		remoteURL, err := s.getRemoteURL(ctx, repo)
 		if err != nil {
 			return nil, err
 		}

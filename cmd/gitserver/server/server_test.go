@@ -105,7 +105,7 @@ func TestRequest(t *testing.T) {
 	s := &Server{
 		ReposDir:          "/testroot",
 		skipCloneForTests: true,
-		GetRemoteURL: func(ctx context.Context, name api.RepoName) (string, error) {
+		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 			return "https://" + string(name) + ".git", nil
 		},
 	}
@@ -391,7 +391,7 @@ func TestCloneRepo(t *testing.T) {
 
 	s := &Server{
 		ReposDir:         reposDir,
-		GetRemoteURL:     staticGetRemoteURL(remote),
+		GetRemoteURLFunc: staticGetRemoteURL(remote),
 		ctx:              context.Background(),
 		locker:           &RepositoryLocker{},
 		cloneLimiter:     mutablelimiter.New(1),
@@ -511,7 +511,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 
 		server := &Server{
 			ReposDir:         reposDir,
-			GetRemoteURL:     staticGetRemoteURL(remote),
+			GetRemoteURLFunc: staticGetRemoteURL(remote),
 			ctx:              ctx,
 			locker:           &RepositoryLocker{},
 			cloneLimiter:     mutablelimiter.New(1),
@@ -536,7 +536,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 
 		server := &Server{
 			ReposDir:         reposDir,
-			GetRemoteURL:     staticGetRemoteURL(remote),
+			GetRemoteURLFunc: staticGetRemoteURL(remote),
 			ctx:              ctx,
 			locker:           &RepositoryLocker{},
 			cloneLimiter:     mutablelimiter.New(1),
@@ -563,7 +563,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 
 		s := &Server{
 			ReposDir:         reposDir,
-			GetRemoteURL:     staticGetRemoteURL(remote),
+			GetRemoteURLFunc: staticGetRemoteURL(remote),
 			ctx:              ctx,
 			locker:           &RepositoryLocker{},
 			cloneLimiter:     mutablelimiter.New(1),
@@ -610,7 +610,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 
 		s := &Server{
 			ReposDir:         reposDir,
-			GetRemoteURL:     staticGetRemoteURL(remote),
+			GetRemoteURLFunc: staticGetRemoteURL(remote),
 			ctx:              ctx,
 			locker:           &RepositoryLocker{},
 			cloneLimiter:     mutablelimiter.New(1),
