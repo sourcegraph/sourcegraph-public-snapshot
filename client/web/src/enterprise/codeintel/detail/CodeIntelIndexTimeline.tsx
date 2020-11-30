@@ -171,17 +171,17 @@ const ExecutionLogEntry: FunctionComponent<ExecutionLogEntryProps> = ({ logEntry
             {meta && (
                 <table className="table mt-4 mb-0 docker-command-spec">
                     <tr>
-                        <th>Image</th>
+                        <th className="docker-command-spec__header">Image</th>
                         <td>{meta.image}</td>
                     </tr>
                     <tr>
-                        <th>Commands</th>
+                        <th className="docker-command-spec__header">Commands</th>
                         <td>
                             <code>{meta.commands.join(' ')}</code>
                         </td>
                     </tr>
                     <tr>
-                        <th>Root</th>
+                        <th className="docker-command-spec__header">Root</th>
                         <td>/{meta.root}</td>
                     </tr>
                 </table>
