@@ -229,16 +229,37 @@ const LogOutput: FunctionComponent<LogOutputProps> = ({ text, className }) => (
     </pre>
 )
 
-const formatMilliseconds = (milliseconds: number): string => {
-    if (milliseconds < 1000) {
-        return `${milliseconds} milliseconds`
-    }
-    if (milliseconds < 1000 * 60) {
-        return `${milliseconds / 1000} seconds`
-    }
-    if (milliseconds < 1000 * 60 * 60) {
-        return `${milliseconds / (1000 * 60)} minutes`
-    }
+const timeOrders: [number, string][] = [
+    [1000 * 60 * 60 * 24, 'day'],
+    [1000 * 60 * 60, 'hour'],
+    [1000 * 60, 'minute'],
+    [1000, 'second'],
+    [1, 'millisecond'],
+]
 
-    return `${milliseconds / (1000 * 60 * 60)} hours`
+const formatMilliseconds = (milliseconds: number): string => {
+    const parts: string[] = []
+
+    // Construct a list of parts like `1 day` or `7 hours` in descending
+    // order. If the value is zero, an empty string is added to the list.`
+    timeOrders.reduce((msRemaining, [denominator, suffix]) => {
+        // Determine how many units can fit into the current value
+        const part = Math.floor(msRemaining / denominator)
+        // Format this part (pluralize if value is more than one)
+        parts.push(part > 0 ? `${part} ${suffix}${part > 1 ? 's' : ''}` : '')
+        // Remove this order's contribution to the current value
+        return msRemaining - part * denominator
+    }, milliseconds)
+
+    return (
+        parts
+            // Trim leading zero-valued parts
+            .slice(parts.findIndex(part => part !== ''))
+            // Keep only two consecutive non-zero parts
+            .slice(0, 2)
+            // Re-filter zero-valued parts
+            .filter(part => part !== '')
+            // If there are two parts, join them
+            .join(' and ')
+    )
 }
