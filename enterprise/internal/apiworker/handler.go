@@ -35,7 +35,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	// interpolate into the command. No command that we run on the host leaks environment
 	// variables, and the user-specified commands (which could leak their environment) are
 	// run in a clean VM.
-	logger := command.NewLogger(h.options.RedactedValues...)
+	logger := command.NewLogger(h.options.RedactedValues)
 
 	defer func() {
 		if err := s.SetLogContents(ctx, record.RecordID(), logger.String()); err != nil {

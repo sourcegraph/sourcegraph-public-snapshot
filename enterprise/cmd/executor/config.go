@@ -57,6 +57,9 @@ func (c *Config) APIWorkerOptions(transport http.RoundTripper) apiworker.Options
 		ResourceOptions:    c.ResourceOptions(),
 		GitServicePath:     "/.executors/git",
 		ClientOptions:      c.ClientOptions(transport),
+		RedactedValues: map[string]string{
+			c.FrontendPassword: "******",
+		},
 	}
 }
 
