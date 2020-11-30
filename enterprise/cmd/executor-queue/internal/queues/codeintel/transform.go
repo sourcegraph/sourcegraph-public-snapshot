@@ -36,7 +36,7 @@ func transformRecord(index store.Index, config *Config) (apiclient.Job, error) {
 		return apiclient.Job{}, err
 	}
 
-	fakeSrcEndpoint, err := makeURL(config.FrontendURL, "USERNAME_REMOVED", "PASSWORD_REMOVED")
+	redactedSrcEndpoint, err := makeURL(config.FrontendURL, "USERNAME_REMOVED", "PASSWORD_REMOVED")
 	if err != nil {
 		return apiclient.Job{}, err
 	}
@@ -77,7 +77,7 @@ func transformRecord(index store.Index, config *Config) (apiclient.Job, error) {
 			// 🚨 SECURITY: Catch leak of upload endpoint. This is necessary in addition
 			// to the below in case the username or password contains illegal URL characters,
 			// which are then urlencoded and are not replaceable via byte comparison.
-			srcEndpoint: fakeSrcEndpoint,
+			srcEndpoint: redactedSrcEndpoint,
 
 			// 🚨 SECURITY: Catch uses of fragments pulled from URL to construct another target
 			// (in src-cli). We only pass the constructed URL to src-cli, which we trust not to
