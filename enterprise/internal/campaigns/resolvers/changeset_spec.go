@@ -37,8 +37,8 @@ type changesetSpecResolver struct {
 
 	changesetSpec *campaigns.ChangesetSpec
 
-	fetcher ChangesetSpecPreviewer
-	repo    *types.Repo
+	previewer ChangesetSpecPreviewer
+	repo      *types.Repo
 
 	planOnce sync.Once
 	plan     *ee.ReconcilerPlan
@@ -50,7 +50,7 @@ func NewChangesetSpecResolver(ctx context.Context, store *ee.Store, cf *httpcli.
 		store:         store,
 		httpFactory:   cf,
 		changesetSpec: changesetSpec,
-		fetcher: &changesetSpecPreviewer{
+		previewer: &changesetSpecPreviewer{
 			store:          store,
 			campaignSpecID: changesetSpec.CampaignSpecID,
 		},
@@ -79,15 +79,15 @@ func NewChangesetSpecResolverWithRepo(store *ee.Store, cf *httpcli.Factory, repo
 		httpFactory:   cf,
 		repo:          repo,
 		changesetSpec: changesetSpec,
-		fetcher: &changesetSpecPreviewer{
+		previewer: &changesetSpecPreviewer{
 			store:          store,
 			campaignSpecID: changesetSpec.CampaignSpecID,
 		},
 	}
 }
 
-func (r *changesetSpecResolver) WithRewirerMappingFetcher(mappingFetcher ChangesetSpecPreviewer) *changesetSpecResolver {
-	r.fetcher = mappingFetcher
+func (r *changesetSpecResolver) WithPreviewer(previewer ChangesetSpecPreviewer) *changesetSpecResolver {
+	r.previewer = previewer
 	return r
 }
 
@@ -146,13 +146,13 @@ func (r *changesetSpecResolver) Delta(ctx context.Context) (graphqlbackend.Chang
 
 func (r *changesetSpecResolver) computePlan(ctx context.Context) (*ee.ReconcilerPlan, error) {
 	r.planOnce.Do(func() {
-		r.plan, r.planErr = r.fetcher.PlanForChangesetSpec(ctx, r.changesetSpec)
+		r.plan, r.planErr = r.previewer.PlanForChangesetSpec(ctx, r.changesetSpec)
 	})
 	return r.plan, r.planErr
 }
 
 func (r *changesetSpecResolver) Changeset(ctx context.Context) (graphqlbackend.ChangesetResolver, error) {
-	changeset, err := r.fetcher.ChangesetForChangesetSpec(ctx, r.changesetSpec.ID)
+	changeset, err := r.previewer.ChangesetForChangesetSpec(ctx, r.changesetSpec.ID)
 	if err != nil {
 		return nil, err
 	}
