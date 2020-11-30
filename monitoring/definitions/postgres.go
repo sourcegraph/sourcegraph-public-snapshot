@@ -84,12 +84,12 @@ func Postgres() *Container {
 						sharedProvisioningMemoryUsageShortTerm(db, ObservableOwnerCloud),
 					},
 					{
-						sharedProvisioningCPUUsageLongTerm(codeintel, ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageLongTerm(codeintel, ObservableOwnerCloud),
+						sharedProvisioningCPUUsageLongTerm(codeintel, ObservableOwnerCodeIntel),
+						sharedProvisioningMemoryUsageLongTerm(codeintel, ObservableOwnerCodeIntel),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm(codeintel, ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageShortTerm(codeintel, ObservableOwnerCloud),
+						sharedProvisioningCPUUsageShortTerm(codeintel, ObservableOwnerCodeIntel),
+						sharedProvisioningMemoryUsageShortTerm(codeintel, ObservableOwnerCodeIntel),
 					},
 				},
 			},
