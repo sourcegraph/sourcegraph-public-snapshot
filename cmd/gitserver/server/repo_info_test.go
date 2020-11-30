@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -16,7 +15,10 @@ import (
 )
 
 func TestServer_handleRepoInfo(t *testing.T) {
-	s := &Server{ReposDir: "/testroot"}
+	s := &Server{
+		ReposDir:         "/testroot",
+		GetRemoteURLFunc: staticGetRemoteURL("u"),
+	}
 	h := s.Handler()
 	_, ok := s.locker.TryAcquire("/testroot/a/.git", "test status")
 	if !ok {
@@ -88,10 +90,6 @@ func TestServer_handleRepoInfo(t *testing.T) {
 		repoLastChanged = func(dir GitDir) (time.Time, error) { return lastChanged, nil }
 		defer func() { repoLastChanged = origRepoLastChanged }()
 
-		origRepoRemoteURL := repoRemoteURL
-		repoRemoteURL = func(context.Context, GitDir) (string, error) { return "u", nil }
-		defer func() { repoRemoteURL = origRepoRemoteURL }()
-
 		want := protocol.RepoInfoResponse{
 			Results: map[api.RepoName]*protocol.RepoInfo{
 				"x": {
@@ -102,8 +100,8 @@ func TestServer_handleRepoInfo(t *testing.T) {
 				},
 			},
 		}
-		if got := getRepoInfo(t, "x"); !reflect.DeepEqual(got, want) {
-			t.Errorf("got %+v, want %+v", got, want)
+		if diff := cmp.Diff(want, getRepoInfo(t, "x")); diff != "" {
+			t.Errorf("(-want +got):\n%s", diff)
 		}
 	})
 
