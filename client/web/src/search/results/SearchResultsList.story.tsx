@@ -6,6 +6,7 @@ import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemet
 import {
     extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
+    MULTIPLE_SEARCH_REQUEST,
     SEARCH_REQUEST,
 } from '../../../../shared/src/util/searchTestHelpers'
 import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
@@ -71,6 +72,10 @@ const { add } = storiesOf('web/search/results/SearchResultsList', module).addPar
 add('loading', () => <WebStory>{() => <SearchResultsList {...defaultProps} resultsOrError={undefined} />}</WebStory>)
 
 add('single result', () => <WebStory>{() => <SearchResultsList {...defaultProps} />}</WebStory>)
+
+add('multiple results', () => (
+    <WebStory>{() => <SearchResultsList {...defaultProps} resultsOrError={MULTIPLE_SEARCH_REQUEST()} />}</WebStory>
+))
 
 add('no results with quote tip in infobar', () => {
     const resultsOrError: ISearchResults = {

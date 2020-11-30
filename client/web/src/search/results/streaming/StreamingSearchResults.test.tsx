@@ -5,14 +5,24 @@ import { act } from 'react-dom/test-utils'
 import { BrowserRouter } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
+import { FileMatch } from '../../../../../shared/src/components/FileMatch'
 import { SearchPatternType } from '../../../../../shared/src/graphql-operations'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
-import { extensionsController, MULTIPLE_SEARCH_RESULT } from '../../../../../shared/src/util/searchTestHelpers'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import { AggregateStreamingSearchResults } from '../../stream'
 import { SearchResultsInfoBar } from '../SearchResultsInfoBar'
 import { VersionContextWarning } from '../VersionContextWarning'
 import { StreamingProgress } from './progress/StreamingProgress'
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
+import {
+    extensionsController,
+    HIGHLIGHTED_FILE_LINES_REQUEST,
+    MULTIPLE_SEARCH_RESULT,
+    REPO_MATCH_RESULT,
+    RESULT,
+} from '../../../../../shared/src/util/searchTestHelpers'
+import { VirtualList } from '../../../../../shared/src/components/VirtualList'
+import { SearchResult } from '../../../components/SearchResult'
 
 describe('StreamingSearchResults', () => {
     const history = createBrowserHistory()
@@ -55,6 +65,9 @@ describe('StreamingSearchResults', () => {
         platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER },
 
         streamSearch: () => of(streamingSearchResult),
+
+        fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_REQUEST,
+        isLightTheme: true,
     }
 
     it('should call streaming search API with the right parameters from URL', () => {
@@ -365,18 +378,24 @@ describe('StreamingSearchResults', () => {
 
         let infobar = element.find(SearchResultsInfoBar)
         expect(infobar.prop('allExpanded')).toBe(false)
+        let results = element.find(FileMatch)
+        expect(results.map(result => result.prop('allExpanded'))).not.toContain(true)
 
         act(() => infobar.prop('onExpandAllResultsToggle')())
         element.update()
 
         infobar = element.find(SearchResultsInfoBar)
         expect(infobar.prop('allExpanded')).toBe(true)
+        results = element.find(FileMatch)
+        expect(results.map(result => result.prop('allExpanded'))).not.toContain(false)
 
         act(() => infobar.prop('onExpandAllResultsToggle')())
         element.update()
 
         infobar = element.find(SearchResultsInfoBar)
         expect(infobar.prop('allExpanded')).toBe(false)
+        results = element.find(FileMatch)
+        expect(results.map(result => result.prop('allExpanded'))).not.toContain(true)
 
         element.unmount()
     })
@@ -427,6 +446,47 @@ describe('StreamingSearchResults', () => {
 
         const warning = element.find(VersionContextWarning)
         expect(warning.length).toBe(0)
+
+        element.unmount()
+    })
+
+    it('should render correct components for file match and repository match', () => {
+        const results: AggregateStreamingSearchResults = {
+            ...streamingSearchResult,
+            results: [RESULT, REPO_MATCH_RESULT] as GQL.SearchResult[],
+        }
+        const element = mount(
+            <BrowserRouter>
+                <StreamingSearchResults {...defaultProps} streamSearch={() => of(results)} />
+            </BrowserRouter>
+        )
+
+        const renderedResultsList = element.find(VirtualList).prop('items')
+        expect(renderedResultsList.length).toBe(2)
+        expect(renderedResultsList[0].type).toBe(FileMatch)
+        expect(renderedResultsList[1].type).toBe(SearchResult)
+
+        element.unmount()
+    })
+
+    it('should log event when clicking on search result', () => {
+        const logSpy = sinon.spy()
+        const telemetryService = {
+            ...NOOP_TELEMETRY_SERVICE,
+            log: logSpy,
+        }
+
+        const element = mount(
+            <BrowserRouter>
+                <StreamingSearchResults {...defaultProps} telemetryService={telemetryService} />
+            </BrowserRouter>
+        )
+
+        const item = element.find(FileMatch).first()
+        act(() => item.prop('onSelect')())
+
+        sinon.assert.calledOnce(logSpy)
+        sinon.assert.calledWith(logSpy, 'SearchResultClicked')
 
         element.unmount()
     })

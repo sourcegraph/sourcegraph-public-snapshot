@@ -103,6 +103,56 @@ func TestWorkerHandlerFailure(t *testing.T) {
 	}
 }
 
+type nonRetryableTestErr struct{}
+
+func (e nonRetryableTestErr) Error() string      { return "just retry me and see what happens" }
+func (e nonRetryableTestErr) NonRetryable() bool { return true }
+
+func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
+	store := NewMockStore()
+	handler := NewMockHandler()
+	clock := glock.NewMockClock()
+	options := WorkerOptions{
+		NumHandlers: 1,
+		Interval:    time.Second,
+		Metrics: WorkerMetrics{
+			HandleOperation: observation.TestContext.Operation(observation.Op{}),
+		},
+	}
+
+	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
+	store.DequeueFunc.SetDefaultReturn(nil, nil, false, nil)
+	store.MarkFailedFunc.SetDefaultReturn(true, nil)
+
+	testErr := nonRetryableTestErr{}
+	handler.HandleFunc.SetDefaultReturn(testErr)
+
+	worker := newWorker(context.Background(), store, handler, options, clock)
+	go func() { worker.Start() }()
+	clock.BlockingAdvance(time.Second)
+	worker.Stop()
+
+	if callCount := len(handler.HandleFunc.History()); callCount != 1 {
+		t.Errorf("unexpected handle call count. want=%d have=%d", 1, callCount)
+	} else if arg := handler.HandleFunc.History()[0].Arg2; arg.RecordID() != 42 {
+		t.Errorf("unexpected record. want=%d have=%d", 42, arg.RecordID())
+	}
+
+	if callCount := len(store.MarkFailedFunc.History()); callCount != 1 {
+		t.Errorf("unexpected mark failed call count. want=%d have=%d", 1, callCount)
+	} else if id := store.MarkFailedFunc.History()[0].Arg1; id != 42 {
+		t.Errorf("unexpected id argument to mark failed. want=%v have=%v", 42, id)
+	} else if failureMessage := store.MarkFailedFunc.History()[0].Arg2; failureMessage != testErr.Error() {
+		t.Errorf("unexpected failure message argument to mark failed. want=%q have=%q", testErr.Error(), failureMessage)
+	}
+
+	if callCount := len(store.DoneFunc.History()); callCount != 1 {
+		t.Errorf("unexpected done call count. want=%d have=%d", 1, callCount)
+	} else if err := store.DoneFunc.History()[0].Arg0; err != nil {
+		t.Errorf("unexpected error argument to done. want=%v have=%v", nil, err)
+	}
+}
+
 func TestWorkerConcurrent(t *testing.T) {
 	NumTestRecords := 50
 

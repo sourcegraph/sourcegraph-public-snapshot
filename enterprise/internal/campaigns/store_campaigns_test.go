@@ -3,7 +3,6 @@ package campaigns
 import (
 	"context"
 	"fmt"
-	"sort"
 	"testing"
 	"time"
 
@@ -28,7 +27,6 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				LastAppliedAt:    clock.now(),
 				LastApplierID:    int32(i) + 99,
 
-				ChangesetIDs:   []int64{int64(i) + 1},
 				CampaignSpecID: 1742 + int64(i),
 				ClosedAt:       clock.now(),
 			}
@@ -78,7 +76,11 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
 
-		count, err = s.CountCampaigns(ctx, CountCampaignsOpts{ChangesetID: 1})
+		changeset := createChangeset(t, ctx, s, testChangesetOpts{
+			campaignIDs: []int64{campaigns[0].ID},
+		})
+
+		count, err = s.CountCampaigns(ctx, CountCampaignsOpts{ChangesetID: changeset.ID})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -151,7 +153,10 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 	t.Run("List", func(t *testing.T) {
 		t.Run("By ChangesetID", func(t *testing.T) {
 			for i := 1; i <= len(campaigns); i++ {
-				opts := ListCampaignsOpts{ChangesetID: int64(i)}
+				changeset := createChangeset(t, ctx, s, testChangesetOpts{
+					campaignIDs: []int64{campaigns[i-1].ID},
+				})
+				opts := ListCampaignsOpts{ChangesetID: changeset.ID}
 
 				ts, next, err := s.ListCampaigns(ctx, opts)
 				if err != nil {
@@ -340,44 +345,6 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			want.UpdatedAt = clock.now()
 
 			have := c.Clone()
-			if err := s.UpdateCampaign(ctx, have); err != nil {
-				t.Fatal(err)
-			}
-
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
-
-			// Test that duplicates are not introduced.
-			have.ChangesetIDs = append(have.ChangesetIDs, have.ChangesetIDs...)
-			if err := s.UpdateCampaign(ctx, have); err != nil {
-				t.Fatal(err)
-			}
-
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
-
-			// Test we can add to the set.
-			have.ChangesetIDs = append(have.ChangesetIDs, 42)
-			want.ChangesetIDs = append(want.ChangesetIDs, 42)
-
-			if err := s.UpdateCampaign(ctx, have); err != nil {
-				t.Fatal(err)
-			}
-
-			sort.Slice(have.ChangesetIDs, func(a, b int) bool {
-				return have.ChangesetIDs[a] < have.ChangesetIDs[b]
-			})
-
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
-			}
-
-			// Test we can remove from the set.
-			have.ChangesetIDs = have.ChangesetIDs[:0]
-			want.ChangesetIDs = want.ChangesetIDs[:0]
-
 			if err := s.UpdateCampaign(ctx, have); err != nil {
 				t.Fatal(err)
 			}

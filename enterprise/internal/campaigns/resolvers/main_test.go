@@ -236,11 +236,11 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 	t.Cleanup(func() { git.Mocks.MergeBase = nil })
 }
 
-func addChangeset(t *testing.T, ctx context.Context, s *ee.Store, c *campaigns.Campaign, changeset int64) {
+func addChangeset(t *testing.T, ctx context.Context, s *ee.Store, c *campaigns.Changeset, campaign int64) {
 	t.Helper()
 
-	c.ChangesetIDs = append(c.ChangesetIDs, changeset)
-	if err := s.UpdateCampaign(ctx, c); err != nil {
+	c.CampaignIDs = append(c.CampaignIDs, campaign)
+	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatal(err)
 	}
 }

@@ -331,6 +331,78 @@ func (r *UserResolver) Campaigns(ctx context.Context, args *ListCampaignsArgs) (
 	return EnterpriseResolvers.campaignsResolver.Campaigns(ctx, args)
 }
 
+type ListUserRepositoriesArgs struct {
+	First             *int32
+	Query             *string
+	After             *string
+	Cloned            bool
+	NotCloned         bool
+	Indexed           bool
+	NotIndexed        bool
+	ExternalServiceID *graphql.ID
+	OrderBy           *string
+	Descending        bool
+}
+
+func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositoriesArgs) (RepositoryConnectionResolver, error) {
+	opt := db.ReposListOptions{}
+	if args.Query != nil {
+		opt.Query = *args.Query
+	}
+	if args.First != nil {
+		opt.LimitOffset = &db.LimitOffset{Limit: int(*args.First)}
+	}
+	if args.After != nil {
+		cursor, err := unmarshalRepositoryCursor(args.After)
+		if err != nil {
+			return nil, err
+		}
+		opt.CursorColumn = cursor.Column
+		opt.CursorValue = cursor.Value
+		opt.CursorDirection = cursor.Direction
+	} else {
+		opt.CursorValue = ""
+		opt.CursorDirection = "next"
+	}
+	if args.OrderBy != nil {
+		opt.OrderBy = db.RepoListOrderBy{{
+			Field:      toDBRepoListColumn(*args.OrderBy),
+			Descending: args.Descending,
+		}}
+	}
+	extSvcs, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{
+		NamespaceUserID: r.user.ID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if args.ExternalServiceID == nil {
+		ids := make([]int64, 0, len(extSvcs))
+		for _, svc := range extSvcs {
+			ids = append(ids, svc.ID)
+		}
+		if len(ids) == 0 {
+			ids = []int64{-1}
+		}
+		opt.ExternalServiceIDs = ids
+	} else {
+		id, err := unmarshalExternalServiceID(*args.ExternalServiceID)
+		if err != nil {
+			return nil, err
+		}
+		opt.ExternalServiceIDs = []int64{id}
+	}
+
+	return &repositoryConnectionResolver{
+		opt:        opt,
+		cloned:     args.Cloned,
+		notCloned:  args.NotCloned,
+		indexed:    args.Indexed,
+		notIndexed: args.NotIndexed,
+	}, nil
+}
+
 func (r *UserResolver) CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error) {
 	args.UserID = r.user.ID
 	return EnterpriseResolvers.campaignsResolver.CampaignsCodeHosts(ctx, args)

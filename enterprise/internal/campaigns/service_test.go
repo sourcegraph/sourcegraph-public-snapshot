@@ -75,11 +75,6 @@ func TestServicePermissionLevels(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		campaign.ChangesetIDs = append(campaign.ChangesetIDs, changeset.ID)
-		if err := s.UpdateCampaign(ctx, campaign); err != nil {
-			t.Fatal(err)
-		}
-
 		return campaign, changeset, spec
 	}
 
@@ -316,11 +311,6 @@ func TestService(t *testing.T) {
 
 		changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
 		if err := store.CreateChangeset(ctx, changeset); err != nil {
-			t.Fatal(err)
-		}
-
-		campaign.ChangesetIDs = []int64{changeset.ID}
-		if err := store.UpdateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 
@@ -719,7 +709,7 @@ func TestService(t *testing.T) {
 	t.Run("GetCampaignMatchingCampaignSpec", func(t *testing.T) {
 		campaignSpec := createCampaignSpec(t, ctx, store, "matching-campaign-spec", admin.ID)
 
-		haveCampaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, store, campaignSpec)
+		haveCampaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, campaignSpec)
 		if err != nil {
 			t.Fatalf("unexpected error: %s\n", err)
 		}
@@ -741,7 +731,7 @@ func TestService(t *testing.T) {
 			t.Fatalf("failed to create campaign: %s\n", err)
 		}
 
-		haveCampaign, err = svc.GetCampaignMatchingCampaignSpec(ctx, store, campaignSpec)
+		haveCampaign, err = svc.GetCampaignMatchingCampaignSpec(ctx, campaignSpec)
 		if err != nil {
 			t.Fatalf("unexpected error: %s\n", err)
 		}

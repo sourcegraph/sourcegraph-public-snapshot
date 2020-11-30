@@ -261,6 +261,7 @@ type ListChangesetSpecsOpts struct {
 
 	CampaignSpecID int64
 	RandIDs        []string
+	IDs            []int64
 }
 
 // ListChangesetSpecs lists ChangesetSpecs with the given filters.
@@ -311,6 +312,16 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 			}
 		}
 		preds = append(preds, sqlf.Sprintf("changeset_specs.rand_id IN (%s)", sqlf.Join(ids, ",")))
+	}
+
+	if len(opts.IDs) != 0 {
+		ids := make([]*sqlf.Query, 0, len(opts.IDs))
+		for _, id := range opts.IDs {
+			if id != 0 {
+				ids = append(ids, sqlf.Sprintf("%s", id))
+			}
+		}
+		preds = append(preds, sqlf.Sprintf("changeset_specs.id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
 	return sqlf.Sprintf(
@@ -380,3 +391,138 @@ func scanChangesetSpec(c *campaigns.ChangesetSpec, s scanner) error {
 
 	return nil
 }
+
+type GetRewirerMappingsOpts struct {
+	CampaignSpecID int64
+	CampaignID     int64
+}
+
+// GetRewirerMappings returns RewirerMappings between changeset specs and changesets.
+//
+// We have two imaginary lists, the current changesets in the campaign and the new changeset specs:
+//
+// ┌───────────────────────────────────────┐   ┌───────────────────────────────┐
+// │Changeset 1 | Repo A | #111 | run-gofmt│   │  Spec 1 | Repo A | run-gofmt  │
+// └───────────────────────────────────────┘   └───────────────────────────────┘
+// ┌───────────────────────────────────────┐   ┌───────────────────────────────┐
+// │Changeset 2 | Repo B |      | run-gofmt│   │  Spec 2 | Repo B | run-gofmt  │
+// └───────────────────────────────────────┘   └───────────────────────────────┘
+// ┌───────────────────────────────────────┐   ┌───────────────────────────────────┐
+// │Changeset 3 | Repo C | #222 | run-gofmt│   │  Spec 3 | Repo C | run-goimports  │
+// └───────────────────────────────────────┘   └───────────────────────────────────┘
+// ┌───────────────────────────────────────┐   ┌───────────────────────────────┐
+// │Changeset 4 | Repo C | #333 | older-pr │   │    Spec 4 | Repo C | #333     │
+// └───────────────────────────────────────┘   └───────────────────────────────┘
+//
+// We need to:
+// 1. Find out whether our new specs should _update_ an existing
+//    changeset (ChangesetSpec != 0, Changeset != 0), or whether we need to create a new one.
+// 2. Since we can have multiple changesets per repository, we need to match
+//    based on repo and external ID for imported changesets and on repo and head_ref for 'branch' changesets.
+// 3. If a changeset wasn't published yet, it doesn't have an external ID nor does it have an external head_ref.
+//    In that case, we need to check whether the branch on which we _might_
+//    push the commit (because the changeset might not be published
+//    yet) is the same or compare the external IDs in the current and new specs.
+//
+// What we want:
+//
+// ┌───────────────────────────────────────┐    ┌───────────────────────────────┐
+// │Changeset 1 | Repo A | #111 | run-gofmt│───▶│  Spec 1 | Repo A | run-gofmt  │
+// └───────────────────────────────────────┘    └───────────────────────────────┘
+// ┌───────────────────────────────────────┐    ┌───────────────────────────────┐
+// │Changeset 2 | Repo B |      | run-gofmt│───▶│  Spec 2 | Repo B | run-gofmt  │
+// └───────────────────────────────────────┘    └───────────────────────────────┘
+// ┌───────────────────────────────────────┐
+// │Changeset 3 | Repo C | #222 | run-gofmt│
+// └───────────────────────────────────────┘
+// ┌───────────────────────────────────────┐    ┌───────────────────────────────┐
+// │Changeset 4 | Repo C | #333 | older-pr │───▶│    Spec 4 | Repo C | #333     │
+// └───────────────────────────────────────┘    └───────────────────────────────┘
+// ┌───────────────────────────────────────┐    ┌───────────────────────────────────┐
+// │Changeset 5 | Repo C | | run-goimports │───▶│  Spec 3 | Repo C | run-goimports  │
+// └───────────────────────────────────────┘    └───────────────────────────────────┘
+//
+// Spec 1 should be attached to Changeset 1 and (possibly) update its title/body/diff. (ChangesetSpec = 1, Changeset = 1)
+// Spec 2 should be attached to Changeset 2 and publish it on the code host. (ChangesetSpec = 2, Changeset = 2)
+// Spec 3 should get a new Changeset, since its branch doesn't match Changeset 3's branch. (ChangesetSpec = 3, Changeset = 0)
+// Spec 4 should be attached to Changeset 4, since it tracks PR #333 in Repo C. (ChangesetSpec = 4, Changeset = 4)
+// Changeset 3 doesn't have a matching spec and should be detached from the campaign (and closed) (ChangesetSpec == 0, Changeset = 3).
+func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsOpts) (mappings RewirerMappings, err error) {
+	q := getRewirerMappingsQuery(opts)
+
+	err = s.query(ctx, q, func(sc scanner) error {
+		var c RewirerMapping
+		if err := sc.Scan(&c.ChangesetSpecID, &c.ChangesetID, &c.RepoID); err != nil {
+			return err
+		}
+		mappings = append(mappings, &c)
+		return nil
+	})
+	return mappings, err
+}
+
+func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) *sqlf.Query {
+	return sqlf.Sprintf(
+		getRewirerMappingsQueryFmtstr,
+		opts.CampaignSpecID,
+		opts.CampaignID,
+		opts.CampaignSpecID,
+		opts.CampaignID,
+		opts.CampaignID,
+	)
+}
+
+var getRewirerMappingsQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store_changeset_specs.go:GetRewirerMappings
+WITH
+	-- Fetch all changeset specs in the campaign spec that want to import/track an ChangesetSpecDescriptionTypeExisting changeset.
+	-- Match the entries to changesets in the target campaign by external ID and repo.
+	tracked_mappings AS (
+		SELECT changeset_specs.id AS changeset_spec_id, COALESCE(changesets.id, 0) AS changeset_id, changeset_specs.repo_id AS repo_id
+		FROM changeset_specs
+		LEFT JOIN changesets ON changesets.repo_id = changeset_specs.repo_id AND changesets.external_id = changeset_specs.spec->>'externalID'
+		INNER JOIN repo ON changeset_specs.repo_id = repo.id
+		WHERE
+		changeset_specs.campaign_spec_id = %s AND
+		changeset_specs.spec->>'externalID' IS NOT NULL AND changeset_specs.spec->>'externalID' != '' AND
+		repo.deleted_at IS NULL
+	),
+	-- Fetch all changeset specs in the campaign spec that are of type ChangesetSpecDescriptionTypeBranch.
+	-- Match the entries to changesets in the target campaign by head ref and repo.
+	branch_mappings AS (
+		SELECT changeset_specs.id AS changeset_spec_id, COALESCE(changesets.id, 0) AS changeset_id, changeset_specs.repo_id AS repo_id
+		FROM changeset_specs
+		LEFT JOIN changesets ON
+			changesets.repo_id = changeset_specs.repo_id AND
+			changesets.current_spec_id IS NOT NULL AND
+			changesets.owned_by_campaign_id = %s AND
+			(SELECT spec FROM changeset_specs WHERE changeset_specs.id = changesets.current_spec_id)->>'headRef' = changeset_specs.spec->>'headRef'
+		INNER JOIN repo ON changeset_specs.repo_id = repo.id
+		WHERE
+			changeset_specs.campaign_spec_id = %s AND
+			--- We look at a ChangesetSpecDescriptionTypeBranch changeset.
+			(changeset_specs.spec->>'externalID' IS NULL OR changeset_specs.spec->>'externalID' = '') AND
+			repo.deleted_at IS NULL
+)
+
+SELECT changeset_spec_id, changeset_id, repo_id FROM tracked_mappings
+
+UNION ALL
+
+SELECT changeset_spec_id, changeset_id, repo_id FROM branch_mappings
+
+UNION ALL
+
+-- Finally, fetch all changesets that didn't match a changeset spec in the campaign spec and that aren't part of tracked_mappings and branch_mappings. Those are to be closed.
+SELECT 0 as changeset_spec_id, changesets.id as changeset_id, changesets.repo_id as repo_id
+FROM changesets
+INNER JOIN repo ON changesets.repo_id = repo.id
+WHERE
+	repo.deleted_at IS NULL AND
+ 	changesets.id NOT IN (
+		 SELECT changeset_id FROM tracked_mappings WHERE changeset_id != 0
+		 UNION
+		 SELECT changeset_id FROM branch_mappings WHERE changeset_id != 0
+ 	) AND
+ 	((changesets.campaign_ids ? %s) OR changesets.owned_by_campaign_id = %s)
+`

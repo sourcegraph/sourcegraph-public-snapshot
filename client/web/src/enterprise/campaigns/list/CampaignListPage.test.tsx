@@ -4,7 +4,7 @@ import { CampaignListPage } from './CampaignListPage'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { of } from 'rxjs'
 import { shallow } from 'enzyme'
-import { nodes } from './CampaignNode.story'
+import { nodes } from './testData'
 
 const history = H.createMemoryHistory()
 

@@ -13,6 +13,7 @@ func TestWIP(t *testing.T) {
 		tests := []struct{ title, want string }{
 			{title: "My perfect changeset", want: "WIP: My perfect changeset"},
 			{title: "WIP: My perfect changeset", want: "WIP: My perfect changeset"},
+			{title: "Draft: My perfect changeset", want: "Draft: My perfect changeset"},
 		}
 		for _, tc := range tests {
 			if have, want := SetWIP(tc.title), tc.want; have != want {
@@ -23,6 +24,7 @@ func TestWIP(t *testing.T) {
 	t.Run("UnsetWIP", func(t *testing.T) {
 		tests := []struct{ title, want string }{
 			{title: "WIP: My perfect changeset", want: "My perfect changeset"},
+			{title: "Draft: My perfect changeset", want: "My perfect changeset"},
 			{title: "My perfect changeset", want: "My perfect changeset"},
 		}
 		for _, tc := range tests {

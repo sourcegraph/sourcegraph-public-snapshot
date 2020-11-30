@@ -1,3 +1,5 @@
+@import './FileDecorator.scss';
+
 .tree {
     isolation: isolate;
     flex: 1 1 auto;
@@ -72,6 +74,8 @@
         &-text {
             display: flex;
             align-items: center;
+            justify-content: space-between;
+            width: 100%;
         }
     }
 

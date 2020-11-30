@@ -154,7 +154,7 @@ func (e ChangesetNotFoundError) Error() string {
 	return fmt.Sprintf("Changeset with external ID %s not found", e.Changeset.Changeset.ExternalID)
 }
 
-func (e ChangesetNotFoundError) Terminal() bool { return true }
+func (e ChangesetNotFoundError) NonRetryable() bool { return true }
 
 // A SourceResult is sent by a Source over a channel for each repository it
 // yields when listing repositories

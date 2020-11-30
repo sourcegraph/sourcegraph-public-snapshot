@@ -95,7 +95,7 @@ export const RepoSettingsArea: React.FunctionComponent<Props> = ({
     return (
         <div className="repo-settings-area container d-flex mt-3">
             <RepoSettingsSidebar className="flex-0 mr-3" {...props} {...context} />
-            <div className="flex-1">
+            <div className="flex-bounded">
                 <Switch>
                     {props.repoSettingsAreaRoutes.map(
                         ({ render, path, exact, condition = () => true }) =>

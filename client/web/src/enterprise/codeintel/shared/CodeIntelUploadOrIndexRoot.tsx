@@ -1,6 +1,6 @@
 import React, { FunctionComponent } from 'react'
 import { Link } from '../../../../../shared/src/components/Link'
-import { LsifUploadFields, LsifIndexFields } from '../../../graphql-operations'
+import { LsifIndexFields, LsifUploadFields } from '../../../graphql-operations'
 
 export interface CodeIntelUploadOrIndexRootProps {
     node: LsifUploadFields | LsifIndexFields

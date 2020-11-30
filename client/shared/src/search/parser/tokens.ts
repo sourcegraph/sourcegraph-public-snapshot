@@ -27,6 +27,7 @@ export enum RegexpMetaKind {
 export interface RegexpMeta {
     type: 'regexpMeta'
     range: CharacterRange
+    groupRange?: CharacterRange
     kind: RegexpMetaKind
     value: string
 }
@@ -50,7 +51,7 @@ export interface Field {
 
 export type MetaToken = RegexpMeta | StructuralMeta
 
-type DecoratedToken = Token | Field | MetaToken
+export type DecoratedToken = Token | Field | MetaToken
 
 const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
     const tokens: DecoratedToken[] = []
@@ -101,6 +102,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                 tokens.push({
                     type: 'regexpMeta',
                     range: { start: offset + node.start, end: offset + node.start + 1 },
+                    groupRange: { start: offset + node.start, end: offset + node.end },
                     value: '(',
                     kind: RegexpMetaKind.Delimited,
                 })
@@ -108,6 +110,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                 tokens.push({
                     type: 'regexpMeta',
                     range: { start: offset + node.end - 1, end: offset + node.end },
+                    groupRange: { start: offset + node.start, end: offset + node.end },
                     value: ')',
                     kind: RegexpMetaKind.Delimited,
                 })
@@ -121,17 +124,20 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                 })
             },
             onCharacterClassEnter(node: CharacterClass) {
+                const negatedOffset = node.negate ? 1 : 0
                 // Push the leading '['
                 tokens.push({
                     type: 'regexpMeta',
-                    range: { start: offset + node.start, end: offset + node.start + 1 },
-                    value: '[',
+                    range: { start: offset + node.start, end: offset + node.start + 1 + negatedOffset },
+                    groupRange: { start: offset + node.start, end: offset + node.end },
+                    value: node.negate ? '[^' : '[',
                     kind: RegexpMetaKind.CharacterClass,
                 })
                 // Push the trailing ']'
                 tokens.push({
                     type: 'regexpMeta',
                     range: { start: offset + node.end - 1, end: offset + node.end },
+                    groupRange: { start: offset + node.start, end: offset + node.end },
                     value: ']',
                     kind: RegexpMetaKind.CharacterClass,
                 })
@@ -167,7 +173,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                             start: offset + node.end - 1 - lazyQuantifierOffset,
                             end: offset + node.end - lazyQuantifierOffset,
                         },
-                        value: node.raw,
+                        value: quantifier,
                         kind: RegexpMetaKind.RangeQuantifier,
                     })
                 } else {
@@ -182,8 +188,8 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                     }
                     tokens.push({
                         type: 'regexpMeta',
-                        range: { start: offset + openBrace, end: offset + node.end },
-                        value: pattern.value.slice(offset + openBrace, offset + node.end - lazyQuantifierOffset),
+                        range: { start: offset + openBrace, end: offset + node.end - lazyQuantifierOffset },
+                        value: pattern.value.slice(openBrace, node.end - lazyQuantifierOffset),
                         kind: RegexpMetaKind.RangeQuantifier,
                     })
                 }
@@ -365,7 +371,7 @@ export const hasRegexpValue = (field: string): boolean => {
     }
 }
 
-const decorateTokens = (tokens: Token[]): DecoratedToken[] => {
+export const decorateTokens = (tokens: Token[]): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     for (const token of tokens) {
         switch (token.type) {
@@ -385,7 +391,7 @@ const decorateTokens = (tokens: Token[]): DecoratedToken[] => {
             case 'filter': {
                 decorated.push({
                     type: 'field',
-                    range: token.range,
+                    range: token.field.range,
                     value: token.field.value,
                 })
                 if (token.value && token.value.type === 'literal' && hasRegexpValue(token.field.value)) {

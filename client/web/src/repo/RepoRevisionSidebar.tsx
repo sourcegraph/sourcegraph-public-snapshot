@@ -17,10 +17,11 @@ import { AbsoluteRepoFile } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
+import { ThemeProps } from '../../../shared/src/theme'
 
 type SidebarTabID = 'files' | 'symbols' | 'history'
 
-interface Props extends AbsoluteRepoFile, ExtensionsControllerProps {
+interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps {
     repoID: GQL.ID
     isDir: boolean
     defaultBranch: string
@@ -124,6 +125,8 @@ export class RepoRevisionSidebar extends React.PureComponent<Props, State> {
                             activePath={this.props.filePath}
                             activePathIsDir={this.props.isDir}
                             sizeKey={`Resizable:${STORAGE_KEY}`}
+                            extensionsController={this.props.extensionsController}
+                            isLightTheme={this.props.isLightTheme}
                         />
                         <RepoRevisionSidebarSymbols
                             key="symbols"

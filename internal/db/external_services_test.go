@@ -163,7 +163,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			kind:         extsvc.KindGitHub,
 			config:       `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
 			hasNamespace: true,
-			wantErr:      `users are only allowed to add external service for https://github.com/, https://gitlab.com/ and https://bitbucket.org/`,
+			wantErr:      `users are only allowed to add external service for https://github.com/ and https://gitlab.com/`,
 		},
 		{
 			name:         "gjson handles comments",
@@ -200,7 +200,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 				test.setup(t)
 			}
 
-			err := ExternalServices.ValidateConfig(context.Background(), ValidateExternalServiceConfigOptions{
+			_, err := ExternalServices.ValidateConfig(context.Background(), ValidateExternalServiceConfigOptions{
 				Kind:         test.kind,
 				Config:       test.config,
 				HasNamespace: test.hasNamespace,
@@ -247,6 +247,21 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 			},
 			wantUnrestricted: false,
+		},
+		{
+			name: "with authorization in comments",
+			externalService: &types.ExternalService{
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "GITHUB #3",
+				Config: `
+{
+	"url": "https://github.com",
+	"repositoryQuery": ["none"],
+	"token": "abc",
+	// "authorization": {}
+}`,
+			},
+			wantUnrestricted: true,
 		},
 	}
 	for _, test := range tests {
@@ -339,6 +354,20 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			},
 			wantUnrestricted: true,
 		},
+		{
+			name: "update with authorization in comments",
+			update: &ExternalServiceUpdate{
+				DisplayName: strptr("GITHUB (updated) #3"),
+				Config: strptr(`
+{
+	"url": "https://github.com",
+	"repositoryQuery": ["none"],
+	"token": "def",
+	// "authorization": {}
+}`),
+			},
+			wantUnrestricted: true,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -379,12 +408,22 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	es := &types.ExternalService{
+	es1 := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
-	err := ExternalServices.Create(ctx, confGet, es)
+	err := ExternalServices.Create(ctx, confGet, es1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	es2 := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #2",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`,
+	}
+	err = ExternalServices.Create(ctx, confGet, es2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -402,26 +441,26 @@ VALUES (2, 'github.com/user/repo2', '', FALSE);
 		t.Fatal(err)
 	}
 
-	// Insert a row to `external_service_repos` table to test the trigger.
+	// Insert rows to `external_service_repos` table to test the trigger.
 	q := sqlf.Sprintf(`
 INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
-VALUES (%d, 1, '')
-`, es.ID)
+VALUES (%d, 1, ''), (%d, 2, '')
+`, es1.ID, es2.ID)
 	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Delete this external service
-	err = ExternalServices.Delete(ctx, es.ID)
+	err = ExternalServices.Delete(ctx, es1.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Delete again should get externalServiceNotFoundError
-	err = ExternalServices.Delete(ctx, es.ID)
+	err = ExternalServices.Delete(ctx, es1.ID)
 	gotErr := fmt.Sprintf("%v", err)
-	wantErr := fmt.Sprintf("external service not found: %v", es.ID)
+	wantErr := fmt.Sprintf("external service not found: %v", es1.ID)
 	if gotErr != wantErr {
 		t.Errorf("error: want %q but got %q", wantErr, gotErr)
 	}

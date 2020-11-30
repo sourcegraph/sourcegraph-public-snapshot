@@ -1,5 +1,5 @@
-import { radios } from '@storybook/addon-knobs'
 import React, { useMemo } from 'react'
+import { useDarkMode } from 'storybook-dark-mode'
 import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from 'react-router'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { ThemeProps } from '../../../shared/src/theme'
@@ -22,19 +22,13 @@ export const WebStory: React.FunctionComponent<
         webStyles?: string
     }
 > = ({ children, webStyles = _webStyles, ...memoryRouterProps }) => {
-    const theme = radios('Theme', { Light: 'light', Dark: 'dark' }, 'light')
-    document.body.classList.toggle('theme-light', theme === 'light')
-    document.body.classList.toggle('theme-dark', theme === 'dark')
+    const isLightTheme = !useDarkMode()
     const breadcrumbSetters = useBreadcrumbs()
     const Children = useMemo(() => withRouter(children), [children])
     return (
         <MemoryRouter {...memoryRouterProps}>
             <Tooltip />
-            <Children
-                {...breadcrumbSetters}
-                isLightTheme={theme === 'light'}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-            />
+            <Children {...breadcrumbSetters} isLightTheme={isLightTheme} telemetryService={NOOP_TELEMETRY_SERVICE} />
             <style title="Webapp CSS">{webStyles}</style>
         </MemoryRouter>
     )

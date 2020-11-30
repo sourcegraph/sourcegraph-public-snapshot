@@ -40,6 +40,7 @@ type operations struct {
 	lock                                  *observation.Operation
 	markComplete                          *observation.Operation
 	markErrored                           *observation.Operation
+	markFailed                            *observation.Operation
 	markIndexComplete                     *observation.Operation
 	markIndexErrored                      *observation.Operation
 	markQueued                            *observation.Operation
@@ -108,6 +109,7 @@ func makeOperations(observationContext *observation.Context) *operations {
 		lock:                                  op("Lock"),
 		markComplete:                          op("MarkComplete"),
 		markErrored:                           op("MarkErrored"),
+		markFailed:                            op("MarkFailed"),
 		markIndexComplete:                     op("MarkIndexComplete"),
 		markIndexErrored:                      op("MarkIndexErrored"),
 		markQueued:                            op("MarkQueued"),
