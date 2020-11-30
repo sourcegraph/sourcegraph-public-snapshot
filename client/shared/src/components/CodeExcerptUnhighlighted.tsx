@@ -16,7 +16,10 @@ interface Props {
     onSelect: () => void
 }
 
-export class CodeExcerpt2 extends React.PureComponent<Props> {
+/**
+ * A code excerpt that displays match range highlighting, but no syntax highlighting.
+ */
+export class CodeExcerptUnhighlighted extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         const maxDigits = this.props.items.reduce((digitsTotal, { line }) => {
             const digits = (line + 1).toString().length
