@@ -150,6 +150,8 @@
 // 1528395757_drop_campaigns_changeset_ids.up.sql (227B)
 // 1528395758_cm_actions_jobs_add_table.down.sql (52B)
 // 1528395758_cm_actions_jobs_add_table.up.sql (556B)
+// 1528395759_drop_repo_id_index_on_external_service_repos.down.sql (111B)
+// 1528395759_drop_repo_id_index_on_external_service_repos.up.sql (70B)
 
 package migrations
 
@@ -3218,6 +3220,46 @@ func _1528395758_cm_actions_jobs_add_tableUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395759_drop_repo_id_index_on_external_service_reposDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x0e\x72\x75\x0c\x71\x55\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\xf0\xf3\x0f\x51\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x8d\x2f\x4a\x2d\xc8\x2f\x06\x93\xf1\x99\x29\x0a\xfe\x7e\x38\x54\x68\x40\x55\x68\x82\x8c\xf7\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x89\x5b\xd5\x9f\x6f\x00\x00\x00")
+
+func _1528395759_drop_repo_id_index_on_external_service_reposDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395759_drop_repo_id_index_on_external_service_reposDownSql,
+		"1528395759_drop_repo_id_index_on_external_service_repos.down.sql",
+	)
+}
+
+func _1528395759_drop_repo_id_index_on_external_service_reposDownSql() (*asset, error) {
+	bytes, err := _1528395759_drop_repo_id_index_on_external_service_reposDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395759_drop_repo_id_index_on_external_service_repos.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x20, 0xc1, 0x8d, 0x1, 0x44, 0x9d, 0x5d, 0x4b, 0xea, 0xa6, 0x87, 0xe0, 0x85, 0x96, 0xbf, 0x7, 0x78, 0xae, 0x52, 0x83, 0xd1, 0xe1, 0xb7, 0x89, 0xa, 0xf9, 0xcc, 0xee, 0x4f, 0x20, 0x71, 0x79}}
+	return a, nil
+}
+
+var __1528395759_drop_repo_id_index_on_external_service_reposUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x8d\x2f\x4a\x2d\xc8\x2f\x06\x93\xf1\x99\x29\xd6\x5c\x5c\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\xb3\x3b\x43\x2c\x46\x00\x00\x00")
+
+func _1528395759_drop_repo_id_index_on_external_service_reposUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395759_drop_repo_id_index_on_external_service_reposUpSql,
+		"1528395759_drop_repo_id_index_on_external_service_repos.up.sql",
+	)
+}
+
+func _1528395759_drop_repo_id_index_on_external_service_reposUpSql() (*asset, error) {
+	bytes, err := _1528395759_drop_repo_id_index_on_external_service_reposUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395759_drop_repo_id_index_on_external_service_repos.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x59, 0x3a, 0x99, 0xc2, 0x25, 0xaa, 0xf4, 0x1a, 0x1d, 0xfe, 0x39, 0xf3, 0x92, 0x93, 0x3d, 0x8b, 0xb6, 0x46, 0x4b, 0x17, 0x13, 0xe2, 0x47, 0x1a, 0x45, 0x61, 0xf4, 0x4f, 0x78, 0xc2, 0x77, 0x56}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3459,6 +3501,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395757_drop_campaigns_changeset_ids.up.sql":                                         _1528395757_drop_campaigns_changeset_idsUpSql,
 	"1528395758_cm_actions_jobs_add_table.down.sql":                                          _1528395758_cm_actions_jobs_add_tableDownSql,
 	"1528395758_cm_actions_jobs_add_table.up.sql":                                            _1528395758_cm_actions_jobs_add_tableUpSql,
+	"1528395759_drop_repo_id_index_on_external_service_repos.down.sql":                       _1528395759_drop_repo_id_index_on_external_service_reposDownSql,
+	"1528395759_drop_repo_id_index_on_external_service_repos.up.sql":                         _1528395759_drop_repo_id_index_on_external_service_reposUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3655,6 +3699,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395757_drop_campaigns_changeset_ids.up.sql":                                         {_1528395757_drop_campaigns_changeset_idsUpSql, map[string]*bintree{}},
 	"1528395758_cm_actions_jobs_add_table.down.sql":                                          {_1528395758_cm_actions_jobs_add_tableDownSql, map[string]*bintree{}},
 	"1528395758_cm_actions_jobs_add_table.up.sql":                                            {_1528395758_cm_actions_jobs_add_tableUpSql, map[string]*bintree{}},
+	"1528395759_drop_repo_id_index_on_external_service_repos.down.sql":                       {_1528395759_drop_repo_id_index_on_external_service_reposDownSql, map[string]*bintree{}},
+	"1528395759_drop_repo_id_index_on_external_service_repos.up.sql":                         {_1528395759_drop_repo_id_index_on_external_service_reposUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
