@@ -4129,10 +4129,10 @@
     "@types/d3-shape" "^1"
     "@types/react" "*"
 
-"@types/resize-observer-browser@0.1.3":
-  version "0.1.3"
-  resolved "https://registry.npmjs.org/@types/resize-observer-browser/-/resize-observer-browser-0.1.3.tgz#5cca2445e6fc34a380760bd6ef8c492863469c47"
-  integrity sha512-3tGjLIDH8L57fWOfC7NVn/BbGQD7pXwbkk2+8Z4hK/S7kOIv1MUN4nkKjfx0qg4ctkukjzp3Bgr/Z+Hq5ZQZTQ==
+"@types/resize-observer-browser@0.1.4":
+  version "0.1.4"
+  resolved "https://registry.npmjs.org/@types/resize-observer-browser/-/resize-observer-browser-0.1.4.tgz#84879a4d6d4aaefde53d4b29c91c0c4cbcffc26f"
+  integrity sha512-rPvqs+1hL/5hbES/0HTdUu4lvNmneiwKwccbWe7HGLWbnsLdqKnQHyWLg4Pj0AMO7PLHCwBM1Cs8orChdkDONg==
 
 "@types/responselike@*", "@types/responselike@^1.0.0":
   version "1.0.0"
