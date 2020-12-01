@@ -3,13 +3,15 @@ package background
 import (
 	"context"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 )
 
 func TestCommitUpdater(t *testing.T) {
-	graph := map[string][]string{
-		"a": nil,
-		"b": {"a"},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		"a",
+		"b a",
+	})
 
 	mockDBStore := NewMockDBStore()
 	mockDBStore.DirtyRepositoriesFunc.SetDefaultReturn(map[int]int{42: 15}, nil)
