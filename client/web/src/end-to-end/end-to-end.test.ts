@@ -337,24 +337,6 @@ describe('e2e test suite', () => {
             await percySnapshot(driver.page, 'Repositories list')
         })
 
-        test('Search results repo', async () => {
-            await driver.page.goto(
-                sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/gorilla/mux%24&patternType=regexp'
-            )
-            await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
-            // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
-            // await percySnapshot(page, 'Search results repo')
-        })
-
-        test('Search results file', async () => {
-            await driver.page.goto(
-                sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/gorilla/mux%24+file:%5Emux.go%24&patternType=regexp'
-            )
-            await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
-            // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
-            // await percySnapshot(page, 'Search results file')
-        })
-
         test('Search visibility:private|public', async () => {
             const privateRepos = ['github.com/sourcegraph/e2e-test-private-repository']
 
@@ -387,16 +369,6 @@ describe('e2e test suite', () => {
                 )
             )
             expect(anyResults).toEqual(expect.arrayContaining(privateRepos))
-        })
-
-        test('Search results code', async () => {
-            await driver.page.goto(
-                sourcegraphBaseUrl +
-                    '/search?q=repo:^github.com/gorilla/mux$&patternType=regexp file:mux.go "func NewRouter"'
-            )
-            await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
-            // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
-            // await percySnapshot(page, 'Search results code')
         })
 
         test('Site admin overview', async () => {
@@ -987,20 +959,6 @@ describe('e2e test suite', () => {
                             visible: true,
                         })
                     })
-
-                    // basic code intel doesn't support cross-repo jump-to-definition yet.
-                    // If this test gets re-enabled `sourcegraph/vcsstore` and
-                    // `sourcegraph/go-vcs` need to be cloned.
-                    test.skip('does navigation (external repo)', async () => {
-                        await driver.page.goto(
-                            sourcegraphBaseUrl +
-                                '/github.com/sourcegraph/vcsstore@267289226b15e5b03adedc9746317455be96e44c/-/blob/server/diff.go#L27:30'
-                        )
-                        await clickHoverJ2D()
-                        await driver.assertWindowLocation(
-                            '/github.com/sourcegraph/go-vcs@aa7c38442c17a3387b8a21f566788d8555afedd0/-/blob/vcs/repository.go#L103:6'
-                        )
-                    })
                 })
 
                 describe('find references', () => {
@@ -1038,58 +996,7 @@ describe('e2e test suite', () => {
                         // verify all the matches highlight a `MultiFileDiffReader` token
                         await driver.assertAllHighlightedTokens('MultiFileDiffReader')
                     })
-
-                    // TODO unskip this once basic-code-intel looks for external
-                    // references even when local references are found.
-                    test.skip('opens widget and fetches external references', async () => {
-                        await driver.page.goto(
-                            sourcegraphBaseUrl +
-                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L32:16&tab=references'
-                        )
-
-                        // verify some external refs are fetched (we cannot assert how many, but we can check that the matched results
-                        // look like they're for the appropriate token)
-                        await driver.assertNonemptyExternalRefs()
-
-                        // verify all the matches highlight a `Reader` token
-                        await driver.assertAllHighlightedTokens('Reader')
-                    })
                 })
-            })
-        })
-
-        describe.skip('godoc.org "Uses" links', () => {
-            test('resolves standard library function', async () => {
-                // https://godoc.org/bytes#Compare
-                await driver.page.goto(sourcegraphBaseUrl + '/-/godoc/refs?def=Compare&pkg=bytes&repo=')
-                await driver.assertWindowLocationPrefix('/github.com/golang/go/-/blob/src/bytes/bytes_decl.go')
-                await driver.assertStickyHighlightedToken('Compare')
-                await driver.assertNonemptyLocalRefs()
-                await driver.assertAllHighlightedTokens('Compare')
-            })
-
-            test('resolves standard library function (from stdlib repo)', async () => {
-                // https://godoc.org/github.com/golang/go/src/bytes#Compare
-                await driver.page.goto(
-                    sourcegraphBaseUrl +
-                        '/-/godoc/refs?def=Compare&pkg=github.com%2Fgolang%2Fgo%2Fsrc%2Fbytes&repo=github.com%2Fgolang%2Fgo'
-                )
-                await driver.assertWindowLocationPrefix('/github.com/golang/go/-/blob/src/bytes/bytes_decl.go')
-                await driver.assertStickyHighlightedToken('Compare')
-                await driver.assertNonemptyLocalRefs()
-                await driver.assertAllHighlightedTokens('Compare')
-            })
-
-            test('resolves external package function (from gorilla/mux)', async () => {
-                // https://godoc.org/github.com/gorilla/mux#Router
-                await driver.page.goto(
-                    sourcegraphBaseUrl +
-                        '/-/godoc/refs?def=Router&pkg=github.com%2Fgorilla%2Fmux&repo=github.com%2Fgorilla%2Fmux'
-                )
-                await driver.assertWindowLocationPrefix('/github.com/gorilla/mux/-/blob/mux.go')
-                await driver.assertStickyHighlightedToken('Router')
-                await driver.assertNonemptyLocalRefs()
-                await driver.assertAllHighlightedTokens('Router')
             })
         })
     })
