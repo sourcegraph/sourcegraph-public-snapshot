@@ -5,12 +5,14 @@ import (
 	"errors"
 
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
 type CodeMonitorsResolver interface {
 	// Query
 	Monitors(ctx context.Context, userID int32, args *ListMonitorsArgs) (MonitorConnectionResolver, error)
+	MonitorByID(ctx context.Context, id graphql.ID) (MonitorResolver, error)
 
 	// Mutations
 	CreateCodeMonitor(ctx context.Context, args *CreateCodeMonitorArgs) (MonitorResolver, error)
@@ -43,7 +45,7 @@ type MonitorTrigger interface {
 type MonitorQueryResolver interface {
 	ID() graphql.ID
 	Query() string
-	Events(ctx context.Context, args *ListEventsArgs) MonitorTriggerEventConnectionResolver
+	Events(ctx context.Context, args *ListEventsArgs) (MonitorTriggerEventConnectionResolver, error)
 }
 
 type MonitorTriggerEventConnectionResolver interface {
@@ -54,9 +56,9 @@ type MonitorTriggerEventConnectionResolver interface {
 
 type MonitorTriggerEventResolver interface {
 	ID() graphql.ID
-	Status() string
+	Status() (string, error)
 	Message() *string
-	Timestamp() DateTime
+	Timestamp() (DateTime, error)
 	Actions(ctx context.Context, args *ListActionArgs) (MonitorActionConnectionResolver, error)
 }
 
@@ -188,6 +190,10 @@ var DefaultCodeMonitorsResolver = &defaultCodeMonitorsResolver{}
 var codeMonitorsOnlyInEnterprise = errors.New("code monitors are only available in enterprise")
 
 type defaultCodeMonitorsResolver struct {
+}
+
+func (d defaultCodeMonitorsResolver) MonitorByID(ctx context.Context, id graphql.ID) (MonitorResolver, error) {
+	return nil, codeMonitorsOnlyInEnterprise
 }
 
 func (d defaultCodeMonitorsResolver) Monitors(ctx context.Context, userID int32, args *ListMonitorsArgs) (MonitorConnectionResolver, error) {

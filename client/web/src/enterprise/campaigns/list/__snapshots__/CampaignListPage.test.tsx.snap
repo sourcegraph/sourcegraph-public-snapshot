@@ -34,26 +34,33 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 0 1`] = `
     filters={
       Array [
         Object {
-          "args": Object {
-            "state": "OPEN",
-          },
-          "id": "open",
-          "label": "Open",
-          "tooltip": "Show only campaigns that are open",
-        },
-        Object {
-          "args": Object {
-            "state": "CLOSED",
-          },
-          "id": "closed",
-          "label": "Closed",
-          "tooltip": "Show only campaigns that are closed",
-        },
-        Object {
-          "args": Object {},
-          "id": "all",
-          "label": "All",
-          "tooltip": "Show all campaigns",
+          "id": "status",
+          "label": "Status",
+          "type": "radio",
+          "values": Array [
+            Object {
+              "args": Object {
+                "state": "OPEN",
+              },
+              "label": "Open",
+              "tooltip": "Show only campaigns that are open",
+              "value": "open",
+            },
+            Object {
+              "args": Object {
+                "state": "CLOSED",
+              },
+              "label": "Closed",
+              "tooltip": "Show only campaigns that are closed",
+              "value": "closed",
+            },
+            Object {
+              "args": Object {},
+              "label": "All",
+              "tooltip": "Show all campaigns",
+              "value": "all",
+            },
+          ],
         },
       ]
     }
@@ -118,26 +125,33 @@ exports[`CampaignListPage renders for non-siteadmin and totalCount: 1 1`] = `
     filters={
       Array [
         Object {
-          "args": Object {
-            "state": "OPEN",
-          },
-          "id": "open",
-          "label": "Open",
-          "tooltip": "Show only campaigns that are open",
-        },
-        Object {
-          "args": Object {
-            "state": "CLOSED",
-          },
-          "id": "closed",
-          "label": "Closed",
-          "tooltip": "Show only campaigns that are closed",
-        },
-        Object {
-          "args": Object {},
-          "id": "all",
-          "label": "All",
-          "tooltip": "Show all campaigns",
+          "id": "status",
+          "label": "Status",
+          "type": "radio",
+          "values": Array [
+            Object {
+              "args": Object {
+                "state": "OPEN",
+              },
+              "label": "Open",
+              "tooltip": "Show only campaigns that are open",
+              "value": "open",
+            },
+            Object {
+              "args": Object {
+                "state": "CLOSED",
+              },
+              "label": "Closed",
+              "tooltip": "Show only campaigns that are closed",
+              "value": "closed",
+            },
+            Object {
+              "args": Object {},
+              "label": "All",
+              "tooltip": "Show all campaigns",
+              "value": "all",
+            },
+          ],
         },
       ]
     }
@@ -202,26 +216,33 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 0 1`] = `
     filters={
       Array [
         Object {
-          "args": Object {
-            "state": "OPEN",
-          },
-          "id": "open",
-          "label": "Open",
-          "tooltip": "Show only campaigns that are open",
-        },
-        Object {
-          "args": Object {
-            "state": "CLOSED",
-          },
-          "id": "closed",
-          "label": "Closed",
-          "tooltip": "Show only campaigns that are closed",
-        },
-        Object {
-          "args": Object {},
-          "id": "all",
-          "label": "All",
-          "tooltip": "Show all campaigns",
+          "id": "status",
+          "label": "Status",
+          "type": "radio",
+          "values": Array [
+            Object {
+              "args": Object {
+                "state": "OPEN",
+              },
+              "label": "Open",
+              "tooltip": "Show only campaigns that are open",
+              "value": "open",
+            },
+            Object {
+              "args": Object {
+                "state": "CLOSED",
+              },
+              "label": "Closed",
+              "tooltip": "Show only campaigns that are closed",
+              "value": "closed",
+            },
+            Object {
+              "args": Object {},
+              "label": "All",
+              "tooltip": "Show all campaigns",
+              "value": "all",
+            },
+          ],
         },
       ]
     }
@@ -286,26 +307,33 @@ exports[`CampaignListPage renders for siteadmin and totalCount: 1 1`] = `
     filters={
       Array [
         Object {
-          "args": Object {
-            "state": "OPEN",
-          },
-          "id": "open",
-          "label": "Open",
-          "tooltip": "Show only campaigns that are open",
-        },
-        Object {
-          "args": Object {
-            "state": "CLOSED",
-          },
-          "id": "closed",
-          "label": "Closed",
-          "tooltip": "Show only campaigns that are closed",
-        },
-        Object {
-          "args": Object {},
-          "id": "all",
-          "label": "All",
-          "tooltip": "Show all campaigns",
+          "id": "status",
+          "label": "Status",
+          "type": "radio",
+          "values": Array [
+            Object {
+              "args": Object {
+                "state": "OPEN",
+              },
+              "label": "Open",
+              "tooltip": "Show only campaigns that are open",
+              "value": "open",
+            },
+            Object {
+              "args": Object {
+                "state": "CLOSED",
+              },
+              "label": "Closed",
+              "tooltip": "Show only campaigns that are closed",
+              "value": "closed",
+            },
+            Object {
+              "args": Object {},
+              "label": "All",
+              "tooltip": "Show all campaigns",
+              "value": "all",
+            },
+          ],
         },
       ]
     }

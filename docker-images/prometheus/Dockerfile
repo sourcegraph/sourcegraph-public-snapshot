@@ -1,11 +1,3 @@
-FROM golang:1.13-alpine@sha256:ed003971a4809c9ae45afe2d318c24b9e3f6b30864a322877c69a46c504d852c AS builder
-
-COPY monitoring /go/src/monitoring-generator
-WORKDIR /go/src/monitoring-generator
-RUN CGO_ENABLED=0 go build -o /go/bin/monitoring-generator
-RUN mkdir -p /generated/prometheus
-RUN DOC_SOLUTIONS_FILE='' PROMETHEUS_DIR=/generated/prometheus GRAFANA_DIR='' /go/bin/monitoring-generator
-
 # This Dockerfile is adapted from https://github.com/prometheus/prometheus/blob/v2.15.2/Dockerfile with
 # our own customizations.
 #
@@ -19,6 +11,14 @@ FROM prom/prometheus:v2.21.0@sha256:f3ada803723ccbc443ebea19f7ab24d3323def496e22
 # When upgrading alertmanager, make sure to make similar checks to the one above.
 FROM prom/alertmanager:v0.21.0@sha256:913293083cb14085bfc01018bb30d1dcbbc9ed197ae21ef2ca917b0d29265198 AS am_upstream
 
+# Build monitoring definitions
+FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d AS monitoring_builder
+RUN mkdir -p '/generated/prometheus'
+COPY ./.bin/monitoring-generator /bin/monitoring-generator
+RUN PROMETHEUS_DIR='/generated/prometheus' GRAFANA_DIR='' DOC_SOLUTIONS_FILE='' NO_PRUNE=true /bin/monitoring-generator
+RUN ls '/generated/prometheus'
+
+# Prepare final image
 # hadolint ignore=DL3007
 FROM quay.io/prometheus/busybox-linux-amd64:latest@sha256:248b7ec76e03e6b4fbb796fc3cdd2f91dad45546a6d7dee61c322475e0e8a08f
 
@@ -69,10 +69,12 @@ RUN mkdir -p /prometheus && chown -R sourcegraph:sourcegraph /prometheus
 RUN mkdir -p /alertmanager && chown -R sourcegraph:sourcegraph /alertmanager
 USER sourcegraph
 
-COPY --from=builder /generated/prometheus/* /sg_config_prometheus/
 COPY ./.bin/prom-wrapper /bin/prom-wrapper
 COPY ./prometheus.sh /prometheus.sh
 COPY ./alertmanager.sh /alertmanager.sh
+
+# Copy config
+COPY --from=monitoring_builder /generated/prometheus/* /sg_config_prometheus/
 COPY config/*_rules.yml /sg_config_prometheus/
 COPY config/prometheus.yml /sg_config_prometheus/
 COPY config/alertmanager.yml /sg_config_prometheus/

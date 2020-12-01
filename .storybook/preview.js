@@ -2,13 +2,12 @@ import 'focus-visible'
 
 import { configureActions } from '@storybook/addon-actions'
 import { withConsole } from '@storybook/addon-console'
-import { withKnobs } from '@storybook/addon-knobs'
 import { setLinkComponent, AnchorLink } from '../client/shared/src/components/Link'
 import { withDesign } from 'storybook-addon-designs'
 import isChromatic from 'chromatic/isChromatic'
 import * as themes from './themes'
 
-export const decorators = [withKnobs, withDesign, (storyFn, context) => withConsole()(storyFn)(context)]
+export const decorators = [withDesign, (storyFn, context) => withConsole()(storyFn)(context)]
 
 export const parameters = {
   darkMode: {

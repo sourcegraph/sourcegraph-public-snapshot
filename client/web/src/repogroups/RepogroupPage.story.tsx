@@ -56,57 +56,58 @@ const authUser: AuthenticatedUser = {
     databaseID: 0,
 }
 
-const commonProps = subtypeOf<Partial<RepogroupPageProps>>()({
-    settingsCascade: {
-        ...NOOP_SETTINGS_CASCADE,
-        subjects: [],
-        final: {
-            'search.repositoryGroups': {
-                python: [
-                    'github.com/python/test',
-                    'github.com/python/test2',
-                    'github.com/python/test3',
-                    'github.com/python/test4',
-                ],
+const commonProps = () =>
+    subtypeOf<Partial<RepogroupPageProps>>()({
+        settingsCascade: {
+            ...NOOP_SETTINGS_CASCADE,
+            subjects: [],
+            final: {
+                'search.repositoryGroups': {
+                    python: [
+                        'github.com/python/test',
+                        'github.com/python/test2',
+                        'github.com/python/test3',
+                        'github.com/python/test4',
+                    ],
+                },
             },
         },
-    },
-    onThemePreferenceChange: action('onThemePreferenceChange'),
-    patternType: SearchPatternType.literal,
-    setPatternType: action('setPatternType'),
-    caseSensitive: false,
-    copyQueryButton: false,
-    extensionsController: { ...EXTENSIONS_CONTROLLER, services: {} as Services },
-    platformContext: PLATFORM_CONTEXT,
-    filtersInQuery: {},
-    interactiveSearchMode: false,
-    keyboardShortcuts: [],
-    onFiltersInQueryChange: action('onFiltersInQueryChange'),
-    setCaseSensitivity: action('setCaseSensitivity'),
-    splitSearchModes: false,
-    telemetryService: NOOP_TELEMETRY_SERVICE,
-    toggleSearchMode: action('toggleSearchMode'),
-    versionContext: undefined,
-    activation: undefined,
-    isSourcegraphDotCom: true,
-    setVersionContext: action('setVersionContext'),
-    availableVersionContexts: [],
-    authRequired: false,
-    showCampaigns: false,
-    authenticatedUser: authUser,
-    repogroupMetadata: python2To3Metadata,
-    globbing: false,
-    enableSmartQuery: false,
-    showOnboardingTour: false,
-    showQueryBuilder: false,
-})
+        onThemePreferenceChange: action('onThemePreferenceChange'),
+        patternType: SearchPatternType.literal,
+        setPatternType: action('setPatternType'),
+        caseSensitive: false,
+        copyQueryButton: false,
+        extensionsController: { ...EXTENSIONS_CONTROLLER, services: {} as Services },
+        platformContext: PLATFORM_CONTEXT,
+        filtersInQuery: {},
+        interactiveSearchMode: false,
+        keyboardShortcuts: [],
+        onFiltersInQueryChange: action('onFiltersInQueryChange'),
+        setCaseSensitivity: action('setCaseSensitivity'),
+        splitSearchModes: false,
+        telemetryService: NOOP_TELEMETRY_SERVICE,
+        toggleSearchMode: action('toggleSearchMode'),
+        versionContext: undefined,
+        activation: undefined,
+        isSourcegraphDotCom: true,
+        setVersionContext: action('setVersionContext'),
+        availableVersionContexts: [],
+        authRequired: false,
+        showCampaigns: false,
+        authenticatedUser: authUser,
+        repogroupMetadata: python2To3Metadata,
+        globbing: false,
+        enableSmartQuery: false,
+        showOnboardingTour: false,
+        showQueryBuilder: false,
+    })
 
 add('Refactor Python 2 to 3', () => (
     <WebStory>
         {webProps => (
             <RepogroupPage
                 {...webProps}
-                {...commonProps}
+                {...commonProps()}
                 themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
             />
         )}
@@ -118,7 +119,7 @@ add('CNCF', () => (
         {webProps => (
             <RepogroupPage
                 {...webProps}
-                {...commonProps}
+                {...commonProps()}
                 repogroupMetadata={cncf}
                 themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
             />

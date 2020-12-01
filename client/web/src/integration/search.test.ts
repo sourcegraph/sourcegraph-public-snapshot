@@ -338,7 +338,7 @@ describe('Search', () => {
         // Skip streaming search tests until streaming search UI is properly implemented
         test.skip('Streaming search with single repo result', async () => {
             const searchStreamEvents: SearchEvent[] = [
-                { type: 'repomatches', data: [{ repository: 'github.com/sourcegraph/sourcegraph' }] },
+                { type: 'matches', data: [{ type: 'repo', repository: 'github.com/sourcegraph/sourcegraph' }] },
                 { type: 'done', data: {} },
             ]
 

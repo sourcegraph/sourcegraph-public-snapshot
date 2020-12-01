@@ -57,59 +57,16 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 
 	resultsStream, resultsStreamDone := newResultsStream(ctx, search)
 
-	const filematchesChunk = 1000
-	filematchesBuf := make([]eventFileMatch, 0, filematchesChunk)
-	flushFileMatchesBuf := func() {
-		if len(filematchesBuf) > 0 {
-			if err := eventWriter.Event("filematches", filematchesBuf); err != nil {
+	const matchesChunk = 1000
+	matchesBuf := make([]interface{}, 0, matchesChunk)
+	flushMatchesBuf := func() {
+		if len(matchesBuf) > 0 {
+			if err := eventWriter.Event("matches", matchesBuf); err != nil {
 				// EOF
 				return
 			}
-			filematchesBuf = filematchesBuf[:0]
+			matchesBuf = matchesBuf[:0]
 		}
-	}
-
-	const symbolmatchesChunk = 1000
-	symbolmatchesBuf := make([]eventSymbolMatch, 0, symbolmatchesChunk)
-	flushSymbolMatchesBuf := func() {
-		if len(symbolmatchesBuf) > 0 {
-			if err := eventWriter.Event("symbolmatches", symbolmatchesBuf); err != nil {
-				// EOF
-				return
-			}
-			symbolmatchesBuf = symbolmatchesBuf[:0]
-		}
-	}
-
-	const repomatchesChunk = 1000
-	repomatchesBuf := make([]eventRepoMatch, 0, repomatchesChunk)
-	flushRepoMatchesBuf := func() {
-		if len(repomatchesBuf) > 0 {
-			if err := eventWriter.Event("repomatches", repomatchesBuf); err != nil {
-				// EOF
-				return
-			}
-			repomatchesBuf = repomatchesBuf[:0]
-		}
-	}
-
-	const commitmatchesChunk = 1000
-	commitmatchesBuf := make([]eventCommitMatch, 0, commitmatchesChunk)
-	flushCommitMatchesBuf := func() {
-		if len(commitmatchesBuf) > 0 {
-			if err := eventWriter.Event("commitmatches", commitmatchesBuf); err != nil {
-				// EOF
-				return
-			}
-			commitmatchesBuf = commitmatchesBuf[:0]
-		}
-	}
-
-	flushAll := func() {
-		flushFileMatchesBuf()
-		flushSymbolMatchesBuf()
-		flushRepoMatchesBuf()
-		flushCommitMatchesBuf()
 	}
 
 	flushTicker := time.NewTicker(100 * time.Millisecond)
@@ -122,7 +79,7 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		case results, ok = <-resultsStream:
 		case <-flushTicker.C:
 			ok = true
-			flushAll()
+			flushMatchesBuf()
 		}
 
 		if !ok {
@@ -147,33 +104,24 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 							Kind:          sym.Kind(),
 						})
 					}
-					symbolmatchesBuf = append(symbolmatchesBuf, fromSymbolMatch(fm, symbols))
-					if len(symbolmatchesBuf) == cap(symbolmatchesBuf) {
-						flushSymbolMatchesBuf()
-					}
+					matchesBuf = append(matchesBuf, fromSymbolMatch(fm, symbols))
 				} else {
-					filematchesBuf = append(filematchesBuf, fromFileMatch(fm))
-					if len(filematchesBuf) == cap(filematchesBuf) {
-						flushFileMatchesBuf()
-					}
+					matchesBuf = append(matchesBuf, fromFileMatch(fm))
 				}
 			}
 			if repo, ok := result.ToRepository(); ok {
-				repomatchesBuf = append(repomatchesBuf, fromRepository(repo))
-				if len(repomatchesBuf) == cap(repomatchesBuf) {
-					flushRepoMatchesBuf()
-				}
+				matchesBuf = append(matchesBuf, fromRepository(repo))
 			}
 			if commit, ok := result.ToCommitSearchResult(); ok {
-				commitmatchesBuf = append(commitmatchesBuf, fromCommit(commit))
-				if len(commitmatchesBuf) == cap(commitmatchesBuf) {
-					flushCommitMatchesBuf()
-				}
+				matchesBuf = append(matchesBuf, fromCommit(commit))
+			}
+			if len(matchesBuf) == cap(matchesBuf) {
+				flushMatchesBuf()
 			}
 		}
 	}
 
-	flushAll()
+	flushMatchesBuf()
 
 	final := <-resultsStreamDone
 	resultsResolver, err := final.resultsResolver, final.err
@@ -317,6 +265,7 @@ func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
 	}
 
 	return eventFileMatch{
+		Type:        fileMatch,
 		Path:        fm.JPath,
 		Repository:  fm.Repo.Name(),
 		Branches:    branches,
@@ -332,6 +281,7 @@ func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []symbol) eve
 	}
 
 	return eventSymbolMatch{
+		Type:       symbolMatch,
 		Path:       fm.JPath,
 		Repository: fm.Repo.Name(),
 		Branches:   branches,
@@ -347,6 +297,7 @@ func fromRepository(repo *graphqlbackend.RepositoryResolver) eventRepoMatch {
 	}
 
 	return eventRepoMatch{
+		Type:       repoMatch,
 		Repository: repo.Name(),
 		Branches:   branches,
 	}
@@ -365,6 +316,7 @@ func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) eventCommitMa
 		}
 	}
 	return eventCommitMatch{
+		Type:    commitMatch,
 		Icon:    commit.Icon(),
 		Label:   commit.Label().Text(),
 		URL:     commit.URL(),
@@ -376,6 +328,9 @@ func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) eventCommitMa
 
 // eventFileMatch is a subset of zoekt.FileMatch for our event API.
 type eventFileMatch struct {
+	// Type is always fileMatch. Included here for marshalling.
+	Type matchType `json:"type"`
+
 	Path       string   `json:"name"`
 	Repository string   `json:"repository"`
 	Branches   []string `json:"branches,omitempty"`
@@ -393,12 +348,18 @@ type eventLineMatch struct {
 
 // eventRepoMatch is a subset of zoekt.FileMatch for our event API.
 type eventRepoMatch struct {
+	// Type is always repoMatch. Included here for marshalling.
+	Type matchType `json:"type"`
+
 	Repository string   `json:"repository"`
 	Branches   []string `json:"branches,omitempty"`
 }
 
 // eventSymbolMatch is eventFileMatch but with Symbols instead of LineMatches
 type eventSymbolMatch struct {
+	// Type is always symbolMatch. Included here for marshalling.
+	Type matchType `json:"type"`
+
 	Path       string   `json:"name"`
 	Repository string   `json:"repository"`
 	Branches   []string `json:"branches,omitempty"`
@@ -419,6 +380,9 @@ type symbol struct {
 // into what is actually useful in a commit result / or if we should have a
 // "type" for that.
 type eventCommitMatch struct {
+	// Type is always commitMatch. Included here for marshalling.
+	Type matchType `json:"type"`
+
 	Icon    string `json:"icon"`
 	Label   string `json:"label"`
 	URL     string `json:"url"`

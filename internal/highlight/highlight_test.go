@@ -218,3 +218,50 @@ line3`
 		t.Fatalf("wrong highlighted lines: %s", diff)
 	}
 }
+
+func Test_normalizeFilepath(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "normalize_path",
+			input: "a/b/c/FOO.TXT",
+			want:  "a/b/c/FOO.txt",
+		},
+		{
+			name:  "normalize_partial_path",
+			input: "FOO.Sh",
+			want:  "FOO.sh",
+		},
+		{
+			name:  "unmodified_path",
+			input: "a/b/c/FOO.txt",
+			want:  "a/b/c/FOO.txt",
+		},
+		{
+			name:  "unmodified_path_no_extension",
+			input: "a/b/c/Makefile",
+			want:  "a/b/c/Makefile",
+		},
+		{
+			name:  "unmodified_partial_path_no_extension",
+			input: "Makefile",
+			want:  "Makefile",
+		},
+		{
+			name:  "unmodified_partial_path_extension",
+			input: "Makefile.am",
+			want:  "Makefile.am",
+		},
+	}
+	for _, tst := range tests {
+		t.Run(tst.name, func(t *testing.T) {
+			got := normalizeFilepath(tst.input)
+			if diff := cmp.Diff(got, tst.want); diff != "" {
+				t.Fatalf("mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}

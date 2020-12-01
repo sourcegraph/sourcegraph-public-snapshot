@@ -100,12 +100,12 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         useMemo(
             () =>
                 streamSearch(
-                    caseSensitive ? `${query} case:yes` : query,
+                    query,
                     LATEST_VERSION,
                     patternType ?? SearchPatternType.literal,
                     resolveVersionContext(versionContext, availableVersionContexts)
                 ),
-            [streamSearch, caseSensitive, query, patternType, versionContext, availableVersionContexts]
+            [streamSearch, query, patternType, versionContext, availableVersionContexts]
         )
     )
 

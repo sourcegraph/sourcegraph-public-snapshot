@@ -1073,9 +1073,9 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 		opt  ReposListOptions
 		want []*types.Repo
 	}{
-		{"Some", ReposListOptions{ExternalServiceID: service1.ID}, mine},
+		{"Some", ReposListOptions{ExternalServiceIDs: []int64{service1.ID}}, mine},
 		{"Default", ReposListOptions{}, append(mine, yours...)},
-		{"NonExistant", ReposListOptions{ExternalServiceID: 1000}, nil},
+		{"NonExistant", ReposListOptions{ExternalServiceIDs: []int64{1000}}, nil},
 	}
 
 	for _, test := range tests {

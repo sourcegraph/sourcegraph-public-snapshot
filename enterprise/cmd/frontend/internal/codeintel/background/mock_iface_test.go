@@ -97,7 +97,7 @@ type MockDBStore struct {
 func NewMockDBStore() *MockDBStore {
 	return &MockDBStore{
 		CalculateVisibleUploadsFunc: &DBStoreCalculateVisibleUploadsFunc{
-			defaultHook: func(context.Context, int, map[string][]string, string, int) error {
+			defaultHook: func(context.Context, int, *gitserver.CommitGraph, string, int) error {
 				return nil
 			},
 		},
@@ -286,15 +286,15 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 // CalculateVisibleUploads method of the parent MockDBStore instance is
 // invoked.
 type DBStoreCalculateVisibleUploadsFunc struct {
-	defaultHook func(context.Context, int, map[string][]string, string, int) error
-	hooks       []func(context.Context, int, map[string][]string, string, int) error
+	defaultHook func(context.Context, int, *gitserver.CommitGraph, string, int) error
+	hooks       []func(context.Context, int, *gitserver.CommitGraph, string, int) error
 	history     []DBStoreCalculateVisibleUploadsFuncCall
 	mutex       sync.Mutex
 }
 
 // CalculateVisibleUploads delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockDBStore) CalculateVisibleUploads(v0 context.Context, v1 int, v2 map[string][]string, v3 string, v4 int) error {
+func (m *MockDBStore) CalculateVisibleUploads(v0 context.Context, v1 int, v2 *gitserver.CommitGraph, v3 string, v4 int) error {
 	r0 := m.CalculateVisibleUploadsFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.CalculateVisibleUploadsFunc.appendCall(DBStoreCalculateVisibleUploadsFuncCall{v0, v1, v2, v3, v4, r0})
 	return r0
@@ -303,7 +303,7 @@ func (m *MockDBStore) CalculateVisibleUploads(v0 context.Context, v1 int, v2 map
 // SetDefaultHook sets function that is called when the
 // CalculateVisibleUploads method of the parent MockDBStore instance is
 // invoked and the hook queue is empty.
-func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultHook(hook func(context.Context, int, map[string][]string, string, int) error) {
+func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultHook(hook func(context.Context, int, *gitserver.CommitGraph, string, int) error) {
 	f.defaultHook = hook
 }
 
@@ -311,7 +311,7 @@ func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultHook(hook func(context.Co
 // CalculateVisibleUploads method of the parent MockDBStore instance inovkes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *DBStoreCalculateVisibleUploadsFunc) PushHook(hook func(context.Context, int, map[string][]string, string, int) error) {
+func (f *DBStoreCalculateVisibleUploadsFunc) PushHook(hook func(context.Context, int, *gitserver.CommitGraph, string, int) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -320,7 +320,7 @@ func (f *DBStoreCalculateVisibleUploadsFunc) PushHook(hook func(context.Context,
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, map[string][]string, string, int) error {
+	f.SetDefaultHook(func(context.Context, int, *gitserver.CommitGraph, string, int) error {
 		return r0
 	})
 }
@@ -328,12 +328,12 @@ func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBStoreCalculateVisibleUploadsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, map[string][]string, string, int) error {
+	f.PushHook(func(context.Context, int, *gitserver.CommitGraph, string, int) error {
 		return r0
 	})
 }
 
-func (f *DBStoreCalculateVisibleUploadsFunc) nextHook() func(context.Context, int, map[string][]string, string, int) error {
+func (f *DBStoreCalculateVisibleUploadsFunc) nextHook() func(context.Context, int, *gitserver.CommitGraph, string, int) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -375,7 +375,7 @@ type DBStoreCalculateVisibleUploadsFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 map[string][]string
+	Arg2 *gitserver.CommitGraph
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 string
@@ -2743,7 +2743,7 @@ func NewMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		CommitGraphFunc: &GitserverClientCommitGraphFunc{
-			defaultHook: func(context.Context, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
+			defaultHook: func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error) {
 				return nil, nil
 			},
 		},
@@ -2911,15 +2911,15 @@ func (c GitserverClientCommitDateFuncCall) Results() []interface{} {
 // GitserverClientCommitGraphFunc describes the behavior when the
 // CommitGraph method of the parent MockGitserverClient instance is invoked.
 type GitserverClientCommitGraphFunc struct {
-	defaultHook func(context.Context, int, gitserver.CommitGraphOptions) (map[string][]string, error)
-	hooks       []func(context.Context, int, gitserver.CommitGraphOptions) (map[string][]string, error)
+	defaultHook func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)
+	hooks       []func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)
 	history     []GitserverClientCommitGraphFuncCall
 	mutex       sync.Mutex
 }
 
 // CommitGraph delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverClient) CommitGraph(v0 context.Context, v1 int, v2 gitserver.CommitGraphOptions) (map[string][]string, error) {
+func (m *MockGitserverClient) CommitGraph(v0 context.Context, v1 int, v2 gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error) {
 	r0, r1 := m.CommitGraphFunc.nextHook()(v0, v1, v2)
 	m.CommitGraphFunc.appendCall(GitserverClientCommitGraphFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -2928,7 +2928,7 @@ func (m *MockGitserverClient) CommitGraph(v0 context.Context, v1 int, v2 gitserv
 // SetDefaultHook sets function that is called when the CommitGraph method
 // of the parent MockGitserverClient instance is invoked and the hook queue
 // is empty.
-func (f *GitserverClientCommitGraphFunc) SetDefaultHook(hook func(context.Context, int, gitserver.CommitGraphOptions) (map[string][]string, error)) {
+func (f *GitserverClientCommitGraphFunc) SetDefaultHook(hook func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)) {
 	f.defaultHook = hook
 }
 
@@ -2936,7 +2936,7 @@ func (f *GitserverClientCommitGraphFunc) SetDefaultHook(hook func(context.Contex
 // CommitGraph method of the parent MockGitserverClient instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientCommitGraphFunc) PushHook(hook func(context.Context, int, gitserver.CommitGraphOptions) (map[string][]string, error)) {
+func (f *GitserverClientCommitGraphFunc) PushHook(hook func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2944,21 +2944,21 @@ func (f *GitserverClientCommitGraphFunc) PushHook(hook func(context.Context, int
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *GitserverClientCommitGraphFunc) SetDefaultReturn(r0 map[string][]string, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
+func (f *GitserverClientCommitGraphFunc) SetDefaultReturn(r0 *gitserver.CommitGraph, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *GitserverClientCommitGraphFunc) PushReturn(r0 map[string][]string, r1 error) {
-	f.PushHook(func(context.Context, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
+func (f *GitserverClientCommitGraphFunc) PushReturn(r0 *gitserver.CommitGraph, r1 error) {
+	f.PushHook(func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientCommitGraphFunc) nextHook() func(context.Context, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
+func (f *GitserverClientCommitGraphFunc) nextHook() func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3002,7 +3002,7 @@ type GitserverClientCommitGraphFuncCall struct {
 	Arg2 gitserver.CommitGraphOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 map[string][]string
+	Result0 *gitserver.CommitGraph
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

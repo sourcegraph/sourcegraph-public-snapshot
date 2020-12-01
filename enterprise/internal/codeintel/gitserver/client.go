@@ -56,6 +56,14 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 	return time.Parse(time.RFC3339, strings.TrimSpace(out))
 }
 
+type CommitGraph struct {
+	graph map[string][]string
+	order []string
+}
+
+func (c *CommitGraph) Graph() map[string][]string { return c.graph }
+func (c *CommitGraph) Order() []string            { return c.order }
+
 type CommitGraphOptions struct {
 	Commit string
 	Limit  int
@@ -65,7 +73,7 @@ type CommitGraphOptions struct {
 // CommitGraph returns the commit graph for the given repository as a mapping from a commit
 // to its parents. If a commit is supplied, the returned graph will be rooted at the given
 // commit. If a non-zero limit is supplied, at most that many commits will be returned.
-func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitGraphOptions) (_ map[string][]string, err error) {
+func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitGraphOptions) (_ *CommitGraph, err error) {
 	ctx, endObservation := c.operations.commitGraph.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", opts.Commit),
@@ -73,7 +81,7 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitG
 	}})
 	defer endObservation(1, observation.Args{})
 
-	commands := []string{"log", "--all", "--pretty=%H %P"}
+	commands := []string{"log", "--all", "--pretty=%H %P", "--topo-order"}
 	if opts.Commit != "" {
 		commands = append(commands, opts.Commit)
 	}
@@ -89,15 +97,28 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitG
 		return nil, err
 	}
 
-	return parseParents(strings.Split(out, "\n")), nil
+	return ParseCommitGraph(strings.Split(out, "\n")), nil
 }
 
-// parseParents converts the output of git log into a map from commits to parent commits.
-// If a commit is listed but has no ancestors then its parent slice is empty but is still
-// present in the map.
-func parseParents(pair []string) map[string][]string {
-	commits := map[string][]string{}
+// ParseCommitGraph converts the output of git log into a map from commits to parent commits,
+// and a topological ordering of commits such that parents come before children. If a commit
+// is listed but has no ancestors then its parent slice is empty, but is still present in
+// the map and the ordering. If the ordering is to be correct, the git log output must be
+// formatted with --topo-order.
+func ParseCommitGraph(pair []string) *CommitGraph {
+	// Process lines backwards so that we see all parents before children.
+	// We get a topological ordering by simply scraping the keys off in
+	// this order.
 
+	n := len(pair) - 1
+	for i := 0; i < len(pair)/2; i++ {
+		pair[i], pair[n-i] = pair[n-i], pair[i]
+	}
+
+	graph := make(map[string][]string, len(pair))
+	order := make([]string, 0, len(pair))
+
+	var prefix []string
 	for _, pair := range pair {
 		line := strings.TrimSpace(pair)
 		if line == "" {
@@ -105,16 +126,27 @@ func parseParents(pair []string) map[string][]string {
 		}
 
 		parts := strings.Split(line, " ")
-		commits[parts[0]] = append(commits[parts[0]], parts[1:]...)
+
+		if len(parts) == 1 {
+			graph[parts[0]] = []string{}
+		} else {
+			graph[parts[0]] = parts[1:]
+		}
+
+		order = append(order, parts[0])
 
 		for _, part := range parts[1:] {
-			if _, ok := commits[part]; !ok {
-				commits[part] = []string{}
+			if _, ok := graph[part]; !ok {
+				graph[part] = []string{}
+				prefix = append(prefix, part)
 			}
 		}
 	}
 
-	return commits
+	return &CommitGraph{
+		graph: graph,
+		order: append(prefix, order...),
+	}
 }
 
 // RawContents returns the contents of a file in a particular commit of a repository.

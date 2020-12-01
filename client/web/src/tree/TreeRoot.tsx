@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import * as React from 'react'
-import { merge, of, Subject, Subscription } from 'rxjs'
+import { EMPTY, merge, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
     debounceTime,
@@ -21,6 +21,10 @@ import { TreeNode } from './Tree'
 import { hasSingleChild, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
 import { ErrorAlert } from '../components/alerts'
 import { TreeFields } from '../graphql-operations'
+import { getFileDecorations } from '../backend/features'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import { ThemeProps } from '../../../shared/src/theme'
+import { FileDecorationsByPath } from '../../../shared/src/api/extension/flatExtensionApi'
 
 const maxEntries = 2500
 
@@ -28,7 +32,7 @@ const errorWidth = (width?: string): { width: string } => ({
     width: width ? `${width}px` : 'auto',
 })
 
-export interface TreeRootProps extends AbsoluteRepo {
+export interface TreeRootProps extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps {
     history: H.History
     location: H.Location
     activeNode: TreeNode
@@ -51,6 +55,7 @@ export interface TreeRootProps extends AbsoluteRepo {
 const LOADING = 'loading' as const
 interface TreeRootState {
     treeOrError?: typeof LOADING | TreeFields | ErrorLike
+    fileDecorationsByPath: FileDecorationsByPath
 }
 
 export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
@@ -68,44 +73,69 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
             path: '',
             url: '',
         }
-        this.state = {}
+        this.state = {
+            fileDecorationsByPath: {},
+        }
     }
 
     public componentDidMount(): void {
         // Set this row as a childNode of its TreeLayer parent
         this.props.setChildNodes(this.node, this.node.index)
 
+        const treeOrErrors = this.componentUpdates.pipe(
+            distinctUntilChanged(
+                (a, b) =>
+                    a.repoName === b.repoName &&
+                    a.revision === b.revision &&
+                    a.commitID === b.commitID &&
+                    a.parentPath === b.parentPath &&
+                    a.isExpanded === b.isExpanded &&
+                    a.location === b.location
+            ),
+            filter(props => props.isExpanded),
+            switchMap(props => {
+                const treeFetch = fetchTreeEntries({
+                    repoName: props.repoName,
+                    revision: props.revision,
+                    commitID: props.commitID,
+                    filePath: props.parentPath || '',
+                    first: maxEntries,
+                }).pipe(
+                    catchError(error => [asError(error)]),
+                    share()
+                )
+                return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
+            })
+        )
+
         this.subscriptions.add(
-            this.componentUpdates
+            treeOrErrors.subscribe(
+                treeOrError => {
+                    // clear file decorations before latest file decorations come
+                    this.setState({ treeOrError, fileDecorationsByPath: {} })
+                },
+                error => console.error(error)
+            )
+        )
+
+        this.subscriptions.add(
+            treeOrErrors
                 .pipe(
-                    distinctUntilChanged(
-                        (a, b) =>
-                            a.repoName === b.repoName &&
-                            a.revision === b.revision &&
-                            a.commitID === b.commitID &&
-                            a.parentPath === b.parentPath &&
-                            a.isExpanded === b.isExpanded &&
-                            a.location === b.location
-                    ),
-                    filter(props => props.isExpanded),
-                    switchMap(props => {
-                        const treeFetch = fetchTreeEntries({
-                            repoName: props.repoName,
-                            revision: props.revision,
-                            commitID: props.commitID,
-                            filePath: props.parentPath || '',
-                            first: maxEntries,
-                        }).pipe(
-                            catchError(error => [asError(error)]),
-                            share()
-                        )
-                        return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
-                    })
+                    switchMap(treeOrError =>
+                        treeOrError !== 'loading' && !isErrorLike(treeOrError)
+                            ? getFileDecorations({
+                                  files: treeOrError.entries,
+                                  repoName: this.props.repoName,
+                                  commitID: this.props.commitID,
+                                  extensionsController: this.props.extensionsController,
+                                  parentNodeUri: treeOrError.url,
+                              })
+                            : EMPTY
+                    )
                 )
-                .subscribe(
-                    treeOrError => this.setState({ treeOrError }),
-                    error => console.error(error)
-                )
+                .subscribe(fileDecorationsByPath => {
+                    this.setState({ fileDecorationsByPath })
+                })
         )
 
         // This handles pre-fetching when a user
@@ -184,6 +214,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                                                 childrenEntries={singleChildTreeEntry.children}
                                                 onHover={this.fetchChildContents}
                                                 setChildNodes={this.setChildNode}
+                                                fileDecorationsByPath={this.state.fileDecorationsByPath}
                                             />
                                         )
                                     )}

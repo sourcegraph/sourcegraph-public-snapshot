@@ -104,10 +104,10 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		campaign:            campaign.ID,
 	})
 
-	addChangeset(t, ctx, store, campaign, changeset1.ID)
-	addChangeset(t, ctx, store, campaign, changeset2.ID)
-	addChangeset(t, ctx, store, campaign, changeset3.ID)
-	addChangeset(t, ctx, store, campaign, changeset4.ID)
+	addChangeset(t, ctx, store, changeset1, campaign.ID)
+	addChangeset(t, ctx, store, changeset2, campaign.ID)
+	addChangeset(t, ctx, store, changeset3, campaign.ID)
+	addChangeset(t, ctx, store, changeset4, campaign.ID)
 
 	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
 	if err != nil {

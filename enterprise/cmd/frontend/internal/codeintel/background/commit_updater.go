@@ -85,7 +85,7 @@ func (u *CommitUpdater) tryUpdate(ctx context.Context, repositoryID, dirtyToken 
 		return errors.Wrap(err, "store.OldestDumpForRepository")
 	}
 
-	var graph map[string][]string
+	var graph *gitserver.CommitGraph
 	if ok {
 		oldestCommitDateWithUpload, err := u.gitserverClient.CommitDate(ctx, repositoryID, dump.Commit)
 		if err != nil {
@@ -105,6 +105,8 @@ func (u *CommitUpdater) tryUpdate(ctx context.Context, repositoryID, dirtyToken 
 		if err != nil {
 			return errors.Wrap(err, "gitserver.CommitGraph")
 		}
+	} else {
+		graph = gitserver.ParseCommitGraph(nil)
 	}
 
 	tipCommit, err := u.gitserverClient.Head(ctx, repositoryID)

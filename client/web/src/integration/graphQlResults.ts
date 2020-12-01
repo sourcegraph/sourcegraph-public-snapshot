@@ -84,6 +84,10 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
 
     SiteAdminActivationStatus: () => ({
         externalServices: { totalCount: 3 },
+        repositoryStats: {
+            gitDirBytes: 1825299556,
+            indexedLinesCount: 2616264,
+        },
         repositories: { totalCount: 9 },
         viewerSettings: {
             final: JSON.stringify({}),

@@ -31,14 +31,6 @@ type GitserverClient interface {
 	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error)
 }
 
-// ReconcilerMaxNumRetries is the maximum number of attempts the reconciler
-// makes to process a changeset when it fails.
-const ReconcilerMaxNumRetries = 60
-
-// ReconcilerMaxNumResets is the maximum number of attempts the reconciler
-// makes to process a changeset when it stalls (process crashes, etc.).
-const ReconcilerMaxNumResets = 60
-
 // Reconciler processes changesets and reconciles their current state — in
 // Sourcegraph or on the code host — with that described in the current
 // ChangesetSpec associated with the changeset.
@@ -135,7 +127,7 @@ type executor struct {
 
 	ch    *campaigns.Changeset
 	spec  *campaigns.ChangesetSpec
-	delta *changesetSpecDelta
+	delta *ChangesetSpecDelta
 }
 
 // ExecutePlan executes the given reconciler plan.
@@ -171,34 +163,34 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 	upsertChangesetEvents := true
 	for _, op := range plan.ops.ExecutionOrder() {
 		switch op {
-		case operationSync:
+		case campaigns.ReconcilerOperationSync:
 			err = e.syncChangeset(ctx)
 
-		case operationImport:
+		case campaigns.ReconcilerOperationImport:
 			err = e.importChangeset(ctx)
 
-		case operationPush:
+		case campaigns.ReconcilerOperationPush:
 			err = e.pushChangesetPatch(ctx)
 
-		case operationPublish:
+		case campaigns.ReconcilerOperationPublish:
 			err = e.publishChangeset(ctx, false)
 
-		case operationPublishDraft:
+		case campaigns.ReconcilerOperationPublishDraft:
 			err = e.publishChangeset(ctx, true)
 
-		case operationReopen:
+		case campaigns.ReconcilerOperationReopen:
 			err = e.reopenChangeset(ctx)
 
-		case operationUpdate:
+		case campaigns.ReconcilerOperationUpdate:
 			err = e.updateChangeset(ctx)
 
-		case operationUndraft:
+		case campaigns.ReconcilerOperationUndraft:
 			err = e.undraftChangeset(ctx)
 
-		case operationClose:
+		case campaigns.ReconcilerOperationClose:
 			err = e.closeChangeset(ctx)
 
-		case operationSleep:
+		case campaigns.ReconcilerOperationSleep:
 			e.sleep()
 
 		default:
@@ -630,36 +622,20 @@ func (e ErrNoPushCredentials) Error() string {
 
 func (e ErrNoPushCredentials) NonRetryable() bool { return true }
 
-// operation is an enum to distinguish between different reconciler operations.
-type operation string
-
-const (
-	operationPush         operation = "push"
-	operationUpdate       operation = "update"
-	operationUndraft      operation = "undraft"
-	operationPublish      operation = "publish"
-	operationPublishDraft operation = "publish-draft"
-	operationSync         operation = "sync"
-	operationImport       operation = "import"
-	operationClose        operation = "close"
-	operationReopen       operation = "reopen"
-	operationSleep        operation = "sleep"
-)
-
-var operationPrecedence = map[operation]int{
-	operationPush:         0,
-	operationImport:       1,
-	operationPublish:      1,
-	operationPublishDraft: 1,
-	operationClose:        1,
-	operationReopen:       2,
-	operationUndraft:      3,
-	operationUpdate:       4,
-	operationSleep:        5,
-	operationSync:         6,
+var operationPrecedence = map[campaigns.ReconcilerOperation]int{
+	campaigns.ReconcilerOperationPush:         0,
+	campaigns.ReconcilerOperationImport:       1,
+	campaigns.ReconcilerOperationPublish:      1,
+	campaigns.ReconcilerOperationPublishDraft: 1,
+	campaigns.ReconcilerOperationClose:        1,
+	campaigns.ReconcilerOperationReopen:       2,
+	campaigns.ReconcilerOperationUndraft:      3,
+	campaigns.ReconcilerOperationUpdate:       4,
+	campaigns.ReconcilerOperationSleep:        5,
+	campaigns.ReconcilerOperationSync:         6,
 }
 
-type operations []operation
+type operations []campaigns.ReconcilerOperation
 
 func (ops operations) IsNone() bool {
 	return len(ops) == 0
@@ -669,7 +645,7 @@ func (ops operations) Equal(b operations) bool {
 	if len(ops) != len(b) {
 		return false
 	}
-	bEntries := make(map[operation]struct{})
+	bEntries := make(map[campaigns.ReconcilerOperation]struct{})
 	for _, e := range b {
 		bEntries[e] = struct{}{}
 	}
@@ -690,16 +666,16 @@ func (ops operations) String() string {
 	eo := ops.ExecutionOrder()
 	ss := make([]string, len(eo))
 	for i, val := range eo {
-		ss[i] = string(val)
+		ss[i] = strings.ToLower(string(val))
 	}
 	return strings.Join(ss, " => ")
 }
 
-func (ops operations) ExecutionOrder() []operation {
-	uniqueOps := []operation{}
+func (ops operations) ExecutionOrder() []campaigns.ReconcilerOperation {
+	uniqueOps := []campaigns.ReconcilerOperation{}
 
 	// Make sure ops are unique.
-	seenOps := make(map[operation]struct{})
+	seenOps := make(map[campaigns.ReconcilerOperation]struct{})
 	for _, op := range ops {
 		if _, ok := seenOps[op]; ok {
 			continue
@@ -724,11 +700,11 @@ type plan struct {
 
 	// The delta between a possible previous ChangesetSpec and the current
 	// ChangesetSpec.
-	delta *changesetSpecDelta
+	delta *ChangesetSpecDelta
 }
 
-func (p *plan) AddOp(op operation) { p.ops = append(p.ops, op) }
-func (p *plan) SetOp(op operation) { p.ops = operations{op} }
+func (p *plan) AddOp(op campaigns.ReconcilerOperation) { p.ops = append(p.ops, op) }
+func (p *plan) SetOp(op campaigns.ReconcilerOperation) { p.ops = operations{op} }
 
 // determinePlan looks at the given changeset to determine what action the
 // reconciler should take.
@@ -742,14 +718,14 @@ func determinePlan(previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campa
 	// anything.
 	if currentSpec == nil {
 		if ch.Unsynced {
-			pl.SetOp(operationImport)
+			pl.SetOp(campaigns.ReconcilerOperationImport)
 		}
 		return pl, nil
 	}
 
 	// If it's marked as closing, we don't need to look at the specs.
 	if ch.Closing {
-		pl.SetOp(operationClose)
+		pl.SetOp(campaigns.ReconcilerOperationClose)
 		return pl, nil
 	}
 
@@ -762,28 +738,32 @@ func determinePlan(previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campa
 	switch ch.PublicationState {
 	case campaigns.ChangesetPublicationStateUnpublished:
 		if currentSpec.Spec.Published.True() {
-			pl.SetOp(operationPublish)
-			pl.AddOp(operationPush)
+			pl.SetOp(campaigns.ReconcilerOperationPublish)
+			pl.AddOp(campaigns.ReconcilerOperationPush)
 		} else if currentSpec.Spec.Published.Draft() && ch.SupportsDraft() {
 			// If configured to be opened as draft, and the changeset supports
 			// draft mode, publish as draft. Otherwise, take no action.
-			pl.SetOp(operationPublishDraft)
-			pl.AddOp(operationPush)
+			pl.SetOp(campaigns.ReconcilerOperationPublishDraft)
+			pl.AddOp(campaigns.ReconcilerOperationPush)
 		}
 
 	case campaigns.ChangesetPublicationStatePublished:
+		// Don't take any actions for merged changesets.
+		if ch.ExternalState == campaigns.ChangesetExternalStateMerged {
+			return pl, nil
+		}
 		if reopenAfterDetach(ch) {
-			pl.SetOp(operationReopen)
+			pl.SetOp(campaigns.ReconcilerOperationReopen)
 		}
 
 		// Only do undraft, when the codehost supports draft changesets.
-		if delta.undraft && campaigns.ExternalServiceSupports(ch.ExternalServiceType, campaigns.CodehostCapabilityDraftChangesets) {
-			pl.AddOp(operationUndraft)
+		if delta.Undraft && campaigns.ExternalServiceSupports(ch.ExternalServiceType, campaigns.CodehostCapabilityDraftChangesets) {
+			pl.AddOp(campaigns.ReconcilerOperationUndraft)
 		}
 
 		if delta.AttributesChanged() {
 			if delta.NeedCommitUpdate() {
-				pl.AddOp(operationPush)
+				pl.AddOp(campaigns.ReconcilerOperationPush)
 			}
 
 			// If we only need to update the diff and we didn't change the state of the changeset,
@@ -799,12 +779,12 @@ func determinePlan(previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campa
 				// That's why we give them 3 seconds to update the changesets.
 				//
 				// Why 3 seconds? Well... 1 or 2 seem to be too short and 4 too long?
-				pl.AddOp(operationSleep)
-				pl.AddOp(operationSync)
+				pl.AddOp(campaigns.ReconcilerOperationSleep)
+				pl.AddOp(campaigns.ReconcilerOperationSync)
 			} else {
 				// Otherwise, we need to update the pull request on the code host or, if we
 				// need to reopen it, update it to make sure it has the newest state.
-				pl.AddOp(operationUpdate)
+				pl.AddOp(campaigns.ReconcilerOperationUpdate)
 			}
 		}
 
@@ -830,19 +810,10 @@ func reopenAfterDetach(ch *campaigns.Changeset) bool {
 		return false
 	}
 
-	// Check if it's (re-)attached to the campaign that created it.
-	attachedToOwner := false
-	for _, campaignID := range ch.CampaignIDs {
-		if campaignID == ch.OwnedByCampaignID {
-			attachedToOwner = true
-		}
-	}
-
-	// At this point the changeset is closed and not marked as to-be-closed and
-	// attached to the owning campaign.
-	return attachedToOwner
+	// At this point the changeset is closed and not marked as to-be-closed.
 
 	// TODO: What if somebody closed the changeset on purpose on the codehost?
+	return ch.AttachedTo(ch.OwnedByCampaignID)
 }
 
 func loadRepo(ctx context.Context, tx RepoStore, id api.RepoID) (*repos.Repo, error) {
@@ -1002,27 +973,27 @@ func namespaceURL(ns *db.Namespace) string {
 	return prefix + ns.Name
 }
 
-func compareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changesetSpecDelta, error) {
-	delta := &changesetSpecDelta{}
+func compareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*ChangesetSpecDelta, error) {
+	delta := &ChangesetSpecDelta{}
 
 	if previous == nil {
 		return delta, nil
 	}
 
 	if previous.Spec.Title != current.Spec.Title {
-		delta.titleChanged = true
+		delta.TitleChanged = true
 	}
 	if previous.Spec.Body != current.Spec.Body {
-		delta.bodyChanged = true
+		delta.BodyChanged = true
 	}
 	if previous.Spec.BaseRef != current.Spec.BaseRef {
-		delta.baseRefChanged = true
+		delta.BaseRefChanged = true
 	}
 
 	// If was set to "draft" and now "true", need to undraft the changeset.
 	// We currently ignore going from "true" to "draft".
 	if previous.Spec.Published.Draft() && current.Spec.Published.True() {
-		delta.undraft = true
+		delta.Undraft = true
 	}
 
 	// Diff
@@ -1035,7 +1006,7 @@ func compareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changes
 		return nil, err
 	}
 	if previousDiff != currentDiff {
-		delta.diffChanged = true
+		delta.DiffChanged = true
 	}
 
 	// CommitMessage
@@ -1048,7 +1019,7 @@ func compareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changes
 		return nil, err
 	}
 	if previousCommitMessage != currentCommitMessage {
-		delta.commitMessageChanged = true
+		delta.CommitMessageChanged = true
 	}
 
 	// AuthorName
@@ -1061,7 +1032,7 @@ func compareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changes
 		return nil, err
 	}
 	if previousAuthorName != currentAuthorName {
-		delta.authorNameChanged = true
+		delta.AuthorNameChanged = true
 	}
 
 	// AuthorEmail
@@ -1074,33 +1045,33 @@ func compareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*changes
 		return nil, err
 	}
 	if previousAuthorEmail != currentAuthorEmail {
-		delta.authorEmailChanged = true
+		delta.AuthorEmailChanged = true
 	}
 
 	return delta, nil
 }
 
-type changesetSpecDelta struct {
-	titleChanged         bool
-	bodyChanged          bool
-	undraft              bool
-	baseRefChanged       bool
-	diffChanged          bool
-	commitMessageChanged bool
-	authorNameChanged    bool
-	authorEmailChanged   bool
+type ChangesetSpecDelta struct {
+	TitleChanged         bool
+	BodyChanged          bool
+	Undraft              bool
+	BaseRefChanged       bool
+	DiffChanged          bool
+	CommitMessageChanged bool
+	AuthorNameChanged    bool
+	AuthorEmailChanged   bool
 }
 
-func (d *changesetSpecDelta) String() string { return fmt.Sprintf("%#v", d) }
+func (d *ChangesetSpecDelta) String() string { return fmt.Sprintf("%#v", d) }
 
-func (d *changesetSpecDelta) NeedCommitUpdate() bool {
-	return d.diffChanged || d.commitMessageChanged || d.authorNameChanged || d.authorEmailChanged
+func (d *ChangesetSpecDelta) NeedCommitUpdate() bool {
+	return d.DiffChanged || d.CommitMessageChanged || d.AuthorNameChanged || d.AuthorEmailChanged
 }
 
-func (d *changesetSpecDelta) NeedCodeHostUpdate() bool {
-	return d.titleChanged || d.bodyChanged || d.baseRefChanged
+func (d *ChangesetSpecDelta) NeedCodeHostUpdate() bool {
+	return d.TitleChanged || d.BodyChanged || d.BaseRefChanged
 }
 
-func (d *changesetSpecDelta) AttributesChanged() bool {
+func (d *ChangesetSpecDelta) AttributesChanged() bool {
 	return d.NeedCommitUpdate() || d.NeedCodeHostUpdate()
 }

@@ -1,41 +1,12 @@
 import { DocumentHighlight } from 'sourcegraph'
 import { Range } from '@sourcegraph/extension-api-classes'
-import { initNewExtensionAPI, mergeDocumentHighlightResults } from './flatExtensionApi'
+import { initNewExtensionAPI } from './flatExtensionApi'
 import { pretendRemote } from '../util'
 import { MainThreadAPI } from '../contract'
 import { SettingsCascade } from '../../settings/settings'
 import { Observer } from 'rxjs'
 import { ProxyMarked, proxyMarker, Remote } from 'comlink'
 import { ExtensionDocuments } from './api/documents'
-import { LOADING } from '@sourcegraph/codeintellify'
-
-const range1 = new Range(1, 2, 3, 4)
-const range2 = new Range(2, 3, 4, 5)
-const range3 = new Range(3, 4, 5, 6)
-
-describe('mergeDocumentHighlightResults', () => {
-    it('merges non DocumentHighlight values into empty arrays', () => {
-        expect(mergeDocumentHighlightResults([LOADING])).toStrictEqual([])
-        expect(mergeDocumentHighlightResults([null])).toStrictEqual([])
-        expect(mergeDocumentHighlightResults([undefined])).toStrictEqual([])
-        // and yes, there can be several
-        expect(mergeDocumentHighlightResults([null, LOADING])).toStrictEqual([])
-    })
-
-    it('merges a DocumentHighlight into result', () => {
-        const highlight1: DocumentHighlight = { range: range1 }
-        const highlight2: DocumentHighlight = { range: range2 }
-        const highlight3: DocumentHighlight = { range: range3 }
-        const merged: DocumentHighlight[] = [highlight1, highlight2, highlight3]
-        expect(mergeDocumentHighlightResults([[highlight1], [highlight2, highlight3]])).toEqual(merged)
-    })
-
-    it('omits non DocumentHighlight values from document highlight result', () => {
-        const highlight: DocumentHighlight = { range: range1 }
-        const merged: DocumentHighlight[] = [highlight]
-        expect(mergeDocumentHighlightResults([[highlight], null, LOADING, undefined])).toEqual(merged)
-    })
-})
 
 describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e feel', () => {
     // integration(ish) tests for scenarios not covered by providers tests

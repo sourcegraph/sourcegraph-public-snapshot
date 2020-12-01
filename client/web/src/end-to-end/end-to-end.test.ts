@@ -1092,165 +1092,9 @@ describe('e2e test suite', () => {
                 await driver.assertAllHighlightedTokens('Router')
             })
         })
-
-        describe('external code host links', () => {
-            test('on repo navbar ("View on GitHub")', async () => {
-                await driver.page.goto(
-                    sourcegraphBaseUrl +
-                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L19',
-                    { waitUntil: 'domcontentloaded' }
-                )
-                await driver.page.waitForSelector('.nav-link[href*="https://github"]', {
-                    visible: true,
-                    timeout: 300000,
-                })
-                await retry(async () =>
-                    expect(
-                        await driver.page.evaluate(
-                            () =>
-                                (document.querySelector('.nav-link[href*="https://github"]') as HTMLAnchorElement).href
-                        )
-                    ).toEqual(
-                        'https://github.com/sourcegraph/go-diff/blob/3f415a150aec0685cb81b73cc201e762e075006d/diff/parse.go#L19'
-                    )
-                )
-            })
-        })
     })
 
     describe('Search component', () => {
-        test('can execute search with search operators', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/go-diff')
-
-            const operators: { [key: string]: string } = {
-                repo: '^github.com/sourcegraph/go-diff$',
-                count: '1000',
-                type: 'file',
-                file: '.go',
-                '-file': '.md',
-            }
-
-            const operatorsQuery = Object.keys(operators)
-                .map(operator => `${operator}:${operators[operator]}`)
-                .join('+')
-
-            await driver.page.goto(`${sourcegraphBaseUrl}/search?q=diff+${operatorsQuery}&patternType=regexp`)
-            await driver.page.waitForSelector('.test-search-results-stats', { visible: true })
-            await retry(async () => {
-                const label = await driver.page.evaluate(
-                    () => document.querySelector('.test-search-results-stats')!.textContent || ''
-                )
-                expect(label.includes('results')).toEqual(true)
-            })
-            await driver.page.waitForSelector('.test-file-match-children-item', { visible: true })
-        })
-
-        test('renders results for sourcegraph/go-diff (no search group)', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/go-diff')
-            await driver.page.goto(
-                sourcegraphBaseUrl +
-                    '/search?q=diff+repo:sourcegraph/go-diff%403f415a150aec0685cb81b73cc201e762e075006d+type:file&patternType=regexp'
-            )
-            await driver.page.waitForSelector('.test-search-results-stats', { visible: true })
-            await retry(async () => {
-                const label = await driver.page.evaluate(
-                    () => document.querySelector('.test-search-results-stats')!.textContent || ''
-                )
-                expect(label.includes('results')).toEqual(true)
-            })
-
-            const firstFileMatchHref = await driver.page.$eval(
-                '.test-file-match-children-item',
-                a => (a as HTMLAnchorElement).href
-            )
-
-            // navigate to result on click
-            await driver.page.click('.test-file-match-children-item')
-
-            await retry(async () => {
-                expect(await driver.page.evaluate(() => window.location.href)).toEqual(firstFileMatchHref)
-            })
-        })
-
-        describe('multiple revisions per repository', () => {
-            let previousExperimentalFeatures: any
-            before(async () => {
-                await driver.setConfig(['experimentalFeatures'], previous => {
-                    previousExperimentalFeatures = previous?.value
-                    return { searchMultipleRevisionsPerRepository: true }
-                })
-                // Wait for configuration to be applied.
-                await new Promise(resolve => setTimeout(resolve, 6000))
-            })
-            after(async () => {
-                await driver.setConfig(['experimentalFeatures'], () => previousExperimentalFeatures)
-            })
-
-            test('searches', async () => {
-                await driver.page.goto(
-                    sourcegraphBaseUrl +
-                        '/search?q=repo:sourcegraph/go-diff%24%40master:print-options:*refs/heads/+func+NewHunksReader&patternType=regexp'
-                )
-                await driver.page.waitForSelector('.test-search-results-stats', { visible: true })
-                await retry(async () => {
-                    const label = await driver.page.evaluate(
-                        () => document.querySelector('.test-search-results-stats')!.textContent || ''
-                    )
-                    expect(label.includes('results')).toEqual(true)
-                })
-
-                const fileMatchHrefs = (
-                    await driver.page.$$eval('.test-file-match-children-item', as =>
-                        as.map(a => (a as HTMLAnchorElement).pathname)
-                    )
-                ).sort()
-
-                // Only check for specific branches, so that the test doesn't break when new
-                // branches are added (it's an active repository).
-                const checkBranches = [
-                    'master',
-                    'print-options',
-
-                    // These next 2 branches are included because of the *refs/heads/ in the query.
-                    // If they are ever deleted from the actual live repository, replace them with
-                    // any other branches that still exist.
-                    'test-already-exist-pr',
-                    'bug-fix-wip',
-                ].sort()
-                expect(
-                    fileMatchHrefs.filter(href => checkBranches.some(branch => href.includes(`@${branch}/`)))
-                ).toEqual(checkBranches.map(branch => `/github.com/sourcegraph/go-diff@${branch}/-/blob/diff/parse.go`))
-            })
-        })
-
-        test('accepts query for sourcegraph/jsonrpc2', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/search')
-
-            // Update the input value
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
-            await driver.page.keyboard.type('test repo:sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
-
-            // TODO: test search scopes
-
-            // Submit the search
-            await driver.page.click('.search-button')
-
-            await driver.page.waitForSelector('.test-search-results-stats', { visible: true })
-            await retry(async () => {
-                const label = await driver.page.evaluate(
-                    () => document.querySelector('.test-search-results-stats')!.textContent || ''
-                )
-                const match = /(\d+) results?/.exec(label)
-                if (!match) {
-                    throw new Error(
-                        `.test-search-results-stats textContent did not match regex '(\\d+) results': '${label}'`
-                    )
-                }
-                const numberOfResults = parseInt(match[1], 10)
-                expect(numberOfResults).toBeGreaterThan(0)
-            })
-        })
-
         test('redirects to a URL with &patternType=regexp if no patternType in URL', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=test')
             await driver.assertWindowLocation('/search?q=test&patternType=regexp')
@@ -1268,32 +1112,6 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.test-regexp-toggle')
             await driver.page.click('.test-regexp-toggle')
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=literal')
-        })
-    })
-
-    describe.skip('Search pattern type setting', () => {
-        test('Search pattern type setting correctly sets default pattern type', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/users/test/settings')
-            await driver.replaceText({
-                selector: '.test-settings-file .monaco-editor',
-                newText: JSON.stringify({
-                    'search.defaultPatternType': 'regexp',
-                }),
-                selectMethod: 'keyboard',
-            })
-            await driver.page.click('.test-settings-file .test-save-toolbar-save')
-
-            await driver.page.goto(sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
-            await driver.page.waitForSelector('.test-regexp-toggle', { visible: true })
-
-            const activeToggle = await driver.page.evaluate(
-                () => document.querySelectorAll('.test-regexp-toggle--active').length
-            )
-            expect(activeToggle).toEqual(1)
-            await driver.page.keyboard.type('test')
-            await driver.page.click('.search-button')
-            await driver.assertWindowLocation('/search?q=test&patternType=regexp')
         })
     })
 
@@ -1320,16 +1138,6 @@ describe('e2e test suite', () => {
                 () => document.querySelector('.test-search-result-tab--active')!.textContent || ''
             )
             expect(label).toEqual('Code')
-        })
-
-        test.skip('Clicking search results tabs updates query and URL', async () => {
-            for (const searchType of ['diff', 'commit', 'symbol', 'repo']) {
-                await driver.page.waitForSelector(`.test-search-result-tab-${searchType}`)
-                await driver.page.click(`.test-search-result-tab-${searchType}`)
-                await driver.assertWindowLocation(
-                    `/search?q=repo:%5Egithub.com/gorilla/mux%24+type:${searchType}&patternType=regexp`
-                )
-            }
         })
     })
 

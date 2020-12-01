@@ -68,7 +68,6 @@ func TestServiceApplyCampaign(t *testing.T) {
 				InitialApplierID: admin.ID,
 				LastApplierID:    admin.ID,
 				LastAppliedAt:    now,
-				ChangesetIDs:     []int64{},
 				NamespaceUserID:  campaignSpec.NamespaceUserID,
 				CampaignSpecID:   campaignSpec.ID,
 
@@ -340,14 +339,20 @@ func TestServiceApplyCampaign(t *testing.T) {
 			wantClosed := oldChangesets.Find(campaigns.WithCurrentSpecID(oldSpec4.ID))
 			setChangesetPublished(t, ctx, store, wantClosed, "98765", oldSpec4.Spec.HeadRef)
 
+			changeset3 := oldChangesets.Find(campaigns.WithCurrentSpecID(oldSpec3.ID))
+			setChangesetPublished(t, ctx, store, changeset3, "12345", oldSpec3.Spec.HeadRef)
+
 			// Apply and expect 5 changesets
 			campaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 5)
 
 			// This changeset we want marked as "to be closed"
 			reloadAndAssertChangeset(t, ctx, store, wantClosed, changesetAssertions{
-				repo:             repos[2].ID,
-				currentSpec:      oldSpec4.ID,
-				externalID:       wantClosed.ExternalID,
+				repo:         repos[2].ID,
+				currentSpec:  oldSpec4.ID,
+				previousSpec: oldSpec4.ID,
+				externalID:   wantClosed.ExternalID,
+				// It's still open, just _marked as to be closed_.
+				externalState:    campaigns.ChangesetExternalStateOpen,
 				externalBranch:   wantClosed.ExternalBranch,
 				ownedByCampaign:  campaign.ID,
 				reconcilerState:  campaigns.ReconcilerStateQueued,
@@ -380,12 +385,16 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 			c3 := cs.Find(campaigns.WithCurrentSpecID(spec3.ID))
 			assertChangeset(t, c3, changesetAssertions{
-				repo:             repos[1].ID,
-				currentSpec:      spec3.ID,
+				repo:           repos[1].ID,
+				currentSpec:    spec3.ID,
+				externalID:     changeset3.ExternalID,
+				externalBranch: changeset3.ExternalBranch,
+				externalState:  campaigns.ChangesetExternalStateOpen,
+				// Has a previous spec, because it succeeded publishing.
 				previousSpec:     oldSpec3.ID,
 				ownedByCampaign:  campaign.ID,
 				reconcilerState:  campaigns.ReconcilerStateQueued,
-				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				publicationState: campaigns.ChangesetPublicationStatePublished,
 				diffStat:         testChangsetSpecDiffStat,
 			})
 
@@ -445,6 +454,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ownedByCampaign:  ownerCampaign.ID,
 				externalBranch:   c.ExternalBranch,
 				externalID:       c.ExternalID,
+				externalState:    campaigns.ChangesetExternalStateOpen,
 				reconcilerState:  campaigns.ReconcilerStateCompleted,
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				diffStat:         testChangsetSpecDiffStat,
@@ -506,6 +516,155 @@ func TestServiceApplyCampaign(t *testing.T) {
 			}
 		})
 
+		t.Run("campaign with changeset that wasn't processed before reapply", func(t *testing.T) {
+			campaignSpec1 := createCampaignSpec(t, ctx, store, "queued-changesets", admin.ID)
+
+			specOpts := testSpecOpts{
+				user:         admin.ID,
+				repo:         repos[3].ID,
+				campaignSpec: campaignSpec1.ID,
+				title:        "Spec1",
+				headRef:      "refs/heads/queued",
+				published:    true,
+			}
+			spec1 := createChangesetSpec(t, ctx, store, specOpts)
+
+			// We apply the spec and expect 1 changeset
+			campaign, changesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 1)
+
+			// And publish it.
+			setChangesetPublished(t, ctx, store, changesets[0], "123-queued", "refs/heads/queued")
+
+			reloadAndAssertChangeset(t, ctx, store, changesets[0], changesetAssertions{
+				reconcilerState:  campaigns.ReconcilerStateCompleted,
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalBranch:   "refs/heads/queued",
+				externalID:       "123-queued",
+				externalState:    campaigns.ChangesetExternalStateOpen,
+				repo:             repos[3].ID,
+				currentSpec:      spec1.ID,
+				ownedByCampaign:  campaign.ID,
+				diffStat:         testChangsetSpecDiffStat,
+			})
+
+			// Apply again so that an update to the changeset is pending.
+			campaignSpec2 := createCampaignSpec(t, ctx, store, "queued-changesets", admin.ID)
+
+			specOpts.campaignSpec = campaignSpec2.ID
+			specOpts.title = "Spec2"
+			spec2 := createChangesetSpec(t, ctx, store, specOpts)
+
+			// That should still want to publish the changeset
+			_, changesets = applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
+
+			reloadAndAssertChangeset(t, ctx, store, changesets[0], changesetAssertions{
+				reconcilerState:  campaigns.ReconcilerStateQueued,
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalBranch:   "refs/heads/queued",
+				externalID:       "123-queued",
+				externalState:    campaigns.ChangesetExternalStateOpen,
+				repo:             repos[3].ID,
+				currentSpec:      spec2.ID,
+				// Track the previous spec.
+				previousSpec:    spec1.ID,
+				ownedByCampaign: campaign.ID,
+				diffStat:        testChangsetSpecDiffStat,
+			})
+
+			// Make sure the reconciler wants to update this changeset.
+			plan, err := determinePlan(
+				// changesets[0].PreviousSpecID
+				spec1,
+				// changesets[0].CurrentSpecID
+				spec2,
+				changesets[0],
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !plan.ops.Equal(operations{campaigns.ReconcilerOperationUpdate}) {
+				t.Fatalf("Got invalid reconciler operations: %q", plan.ops.String())
+			}
+
+			// And now we apply a new spec before the reconciler could process the changeset.
+			campaignSpec3 := createCampaignSpec(t, ctx, store, "queued-changesets", admin.ID)
+
+			// No change this time, just reapplying.
+			specOpts.campaignSpec = campaignSpec3.ID
+			spec3 := createChangesetSpec(t, ctx, store, specOpts)
+
+			_, changesets = applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 1)
+
+			reloadAndAssertChangeset(t, ctx, store, changesets[0], changesetAssertions{
+				reconcilerState:  campaigns.ReconcilerStateQueued,
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalBranch:   "refs/heads/queued",
+				externalID:       "123-queued",
+				externalState:    campaigns.ChangesetExternalStateOpen,
+				repo:             repos[3].ID,
+				currentSpec:      spec3.ID,
+				// Still be pointing at the first spec, since the second was never applied.
+				previousSpec:    spec1.ID,
+				ownedByCampaign: campaign.ID,
+				diffStat:        testChangsetSpecDiffStat,
+			})
+
+			// Make sure the reconciler would still update this changeset.
+			plan, err = determinePlan(
+				// changesets[0].PreviousSpecID
+				spec1,
+				// changesets[0].CurrentSpecID
+				spec3,
+				changesets[0],
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !plan.ops.Equal(operations{campaigns.ReconcilerOperationUpdate}) {
+				t.Fatalf("Got invalid reconciler operations: %q", plan.ops.String())
+			}
+
+			// Now test that it still updates when this update failed.
+			setChangesetFailed(t, ctx, store, changesets[0])
+
+			campaignSpec4 := createCampaignSpec(t, ctx, store, "queued-changesets", admin.ID)
+
+			// No change this time, just reapplying.
+			specOpts.campaignSpec = campaignSpec4.ID
+			spec4 := createChangesetSpec(t, ctx, store, specOpts)
+
+			_, changesets = applyAndListChangesets(adminCtx, t, svc, campaignSpec4.RandID, 1)
+
+			reloadAndAssertChangeset(t, ctx, store, changesets[0], changesetAssertions{
+				reconcilerState:  campaigns.ReconcilerStateQueued,
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				externalBranch:   "refs/heads/queued",
+				externalID:       "123-queued",
+				externalState:    campaigns.ChangesetExternalStateOpen,
+				repo:             repos[3].ID,
+				currentSpec:      spec4.ID,
+				// Still be pointing at the first spec, since the second and third were never applied.
+				previousSpec:    spec1.ID,
+				ownedByCampaign: campaign.ID,
+				diffStat:        testChangsetSpecDiffStat,
+			})
+
+			// Make sure the reconciler would still update this changeset.
+			plan, err = determinePlan(
+				// changesets[0].PreviousSpecID
+				spec1,
+				// changesets[0].CurrentSpecID
+				spec4,
+				changesets[0],
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !plan.ops.Equal(operations{campaigns.ReconcilerOperationUpdate}) {
+				t.Fatalf("Got invalid reconciler operations: %q", plan.ops.String())
+			}
+		})
+
 		t.Run("missing repository permissions", func(t *testing.T) {
 			ct.MockRepoPermissions(t, user.ID, repos[0].ID, repos[2].ID, repos[3].ID)
 
@@ -549,6 +708,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				repo:         repos[0].ID,
 				campaignSpec: campaignSpec1.ID,
 				externalID:   "1234",
+				published:    true,
 			}
 			createChangesetSpec(t, ctx, store, spec1Opts)
 
@@ -557,8 +717,9 @@ func TestServiceApplyCampaign(t *testing.T) {
 				repo:         repos[1].ID,
 				campaignSpec: campaignSpec1.ID,
 				headRef:      "refs/heads/repo-1-branch-1",
+				published:    true,
 			}
-			oldSpec2 := createChangesetSpec(t, ctx, store, spec2Opts)
+			createChangesetSpec(t, ctx, store, spec2Opts)
 
 			_, oldChangesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 2)
 
@@ -591,9 +752,10 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 			c2 := cs.Find(campaigns.WithCurrentSpecID(newSpec2.ID))
 			assertChangeset(t, c2, changesetAssertions{
-				repo:             newSpec2.RepoID,
-				currentSpec:      newSpec2.ID,
-				previousSpec:     oldSpec2.ID,
+				repo:        newSpec2.RepoID,
+				currentSpec: newSpec2.ID,
+				// An errored changeset doesn't get the specs rotated, to prevent https://github.com/sourcegraph/sourcegraph/issues/16041.
+				previousSpec:     0,
 				ownedByCampaign:  campaign.ID,
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 				diffStat:         testChangsetSpecDiffStat,
@@ -602,6 +764,80 @@ func TestServiceApplyCampaign(t *testing.T) {
 				failureMessage:  nil,
 				numFailures:     0,
 			})
+
+			// Make sure the reconciler would still publish this changeset.
+			plan, err := determinePlan(
+				// c2.previousSpec is 0
+				nil,
+				// c2.currentSpec is newSpec2
+				newSpec2,
+				c2,
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !plan.ops.Equal(operations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish}) {
+				t.Fatalf("Got invalid reconciler operations: %q", plan.ops.String())
+			}
+		})
+
+		t.Run("closed and detached changeset not re-enqueued for close", func(t *testing.T) {
+			campaignSpec1 := createCampaignSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
+
+			specOpts := testSpecOpts{
+				user:         admin.ID,
+				repo:         repos[0].ID,
+				campaignSpec: campaignSpec1.ID,
+				headRef:      "refs/heads/detached-closed",
+			}
+			spec1 := createChangesetSpec(t, ctx, store, specOpts)
+
+			// STEP 1: We apply the spec and expect 1 changeset.
+			campaign, changesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 1)
+
+			// Now we update the changeset so it looks like it's been published
+			// on the code host.
+			c := changesets[0]
+			setChangesetPublished(t, ctx, store, c, "995544", specOpts.headRef)
+
+			assertions := changesetAssertions{
+				repo:             c.RepoID,
+				currentSpec:      spec1.ID,
+				externalID:       c.ExternalID,
+				externalBranch:   c.ExternalBranch,
+				externalState:    campaigns.ChangesetExternalStateOpen,
+				ownedByCampaign:  campaign.ID,
+				reconcilerState:  campaigns.ReconcilerStateCompleted,
+				publicationState: campaigns.ChangesetPublicationStatePublished,
+				diffStat:         testChangsetSpecDiffStat,
+			}
+			c = reloadAndAssertChangeset(t, ctx, store, c, assertions)
+
+			// STEP 2: Now we apply a new spec without any changesets.
+			campaignSpec2 := createCampaignSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
+			applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 0)
+
+			// Our previously published changeset should be marked as "to be closed"
+			assertions.closing = true
+			assertions.reconcilerState = campaigns.ReconcilerStateQueued
+			// And the previous spec is recorded, because the previous run finished with reconcilerState completed.
+			assertions.previousSpec = spec1.ID
+			c = reloadAndAssertChangeset(t, ctx, store, c, assertions)
+
+			// Now we update the changeset to make it look closed.
+			setChangesetClosed(t, ctx, store, c)
+			assertions.closing = false
+			assertions.reconcilerState = campaigns.ReconcilerStateCompleted
+			assertions.externalState = campaigns.ChangesetExternalStateClosed
+			c = reloadAndAssertChangeset(t, ctx, store, c, assertions)
+
+			// STEP 3: We apply a new campaign spec and expect that the detached changeset record is not re-enqueued.
+			campaignSpec3 := createCampaignSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
+
+			applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 0)
+
+			// Assert that the changeset record is still completed and closed.
+			reloadAndAssertChangeset(t, ctx, store, c, assertions)
 		})
 
 		t.Run("campaign with changeset that is detached and reattached", func(t *testing.T) {
@@ -622,13 +858,14 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// Now we update the changeset so it looks like it's been published
 				// on the code host.
 				c := changesets[0]
-				setChangesetPublished(t, ctx, store, c, "995544", specOpts.headRef)
+				setChangesetPublished(t, ctx, store, c, "995533", specOpts.headRef)
 
 				assertions := changesetAssertions{
 					repo:             c.RepoID,
 					currentSpec:      spec1.ID,
 					externalID:       c.ExternalID,
 					externalBranch:   c.ExternalBranch,
+					externalState:    campaigns.ChangesetExternalStateOpen,
 					ownedByCampaign:  campaign.ID,
 					reconcilerState:  campaigns.ReconcilerStateCompleted,
 					publicationState: campaigns.ChangesetPublicationStatePublished,
@@ -643,6 +880,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// Our previously published changeset should be marked as "to be closed"
 				assertions.closing = true
 				assertions.reconcilerState = campaigns.ReconcilerStateQueued
+				// And the previous spec is recorded.
+				assertions.previousSpec = spec1.ID
 				c = reloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 				// Now we update the changeset to make it look closed.
@@ -669,8 +908,92 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 				// Assert that the changeset has been updated to point to the new spec
 				assertions.currentSpec = spec2.ID
+				// Assert that the previous spec is still spec 1
 				assertions.previousSpec = spec1.ID
 				assertions.reconcilerState = campaigns.ReconcilerStateQueued
+				assertChangeset(t, attachedChangeset, assertions)
+			})
+
+			t.Run("changeset has failed closing before re-attaching", func(t *testing.T) {
+				campaignSpec1 := createCampaignSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID)
+
+				specOpts := testSpecOpts{
+					user:         admin.ID,
+					repo:         repos[0].ID,
+					campaignSpec: campaignSpec1.ID,
+					headRef:      "refs/heads/detached-reattach-failed",
+				}
+				spec1 := createChangesetSpec(t, ctx, store, specOpts)
+
+				// STEP 1: We apply the spec and expect 1 changeset.
+				campaign, changesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 1)
+
+				// Now we update the changeset so it looks like it's been published
+				// on the code host.
+				c := changesets[0]
+				setChangesetPublished(t, ctx, store, c, "80022", specOpts.headRef)
+
+				assertions := changesetAssertions{
+					repo:             c.RepoID,
+					currentSpec:      spec1.ID,
+					externalID:       c.ExternalID,
+					externalBranch:   c.ExternalBranch,
+					externalState:    campaigns.ChangesetExternalStateOpen,
+					ownedByCampaign:  campaign.ID,
+					reconcilerState:  campaigns.ReconcilerStateCompleted,
+					publicationState: campaigns.ChangesetPublicationStatePublished,
+					diffStat:         testChangsetSpecDiffStat,
+				}
+				reloadAndAssertChangeset(t, ctx, store, c, assertions)
+
+				// STEP 2: Now we apply a new spec without any changesets.
+				campaignSpec2 := createCampaignSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID)
+				applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 0)
+
+				// Our previously published changeset should be marked as "to be closed"
+				assertions.closing = true
+				assertions.reconcilerState = campaigns.ReconcilerStateQueued
+				// And the previous spec is recorded.
+				assertions.previousSpec = spec1.ID
+				c = reloadAndAssertChangeset(t, ctx, store, c, assertions)
+
+				if len(c.CampaignIDs) != 0 {
+					t.Fatal("Expected changeset to be detached from campaign, but wasn't")
+				}
+
+				// Now we update the changeset to simulate that closing failed.
+				setChangesetFailed(t, ctx, store, c)
+				assertions.closing = true
+				assertions.reconcilerState = campaigns.ReconcilerStateErrored
+				assertions.externalState = campaigns.ChangesetExternalStateOpen
+
+				// Side-effects of setChangesetFailed.
+				assertions.failureMessage = c.FailureMessage
+				assertions.numFailures = c.NumFailures
+				reloadAndAssertChangeset(t, ctx, store, c, assertions)
+
+				// STEP 3: We apply a new campaign spec with a changeset spec that
+				// matches the old changeset and expect _the same changeset_ to be
+				// re-attached.
+				campaignSpec3 := createCampaignSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID)
+
+				specOpts.campaignSpec = campaignSpec3.ID
+				spec2 := createChangesetSpec(t, ctx, store, specOpts)
+
+				_, changesets = applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 1)
+
+				attachedChangeset := changesets[0]
+				if have, want := attachedChangeset.ID, c.ID; have != want {
+					t.Fatalf("attached changeset has wrong ID. want=%d, have=%d", want, have)
+				}
+
+				// Assert that the changeset has been updated to point to the new spec
+				assertions.currentSpec = spec2.ID
+				// Assert that the previous spec is still spec 1
+				assertions.previousSpec = spec1.ID
+				assertions.reconcilerState = campaigns.ReconcilerStateQueued
+				assertions.failureMessage = nil
+				assertions.numFailures = 0
 				assertChangeset(t, attachedChangeset, assertions)
 			})
 
@@ -700,6 +1023,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 					currentSpec:      spec1.ID,
 					externalID:       c.ExternalID,
 					externalBranch:   c.ExternalBranch,
+					externalState:    campaigns.ChangesetExternalStateOpen,
 					ownedByCampaign:  campaign.ID,
 					reconcilerState:  campaigns.ReconcilerStateCompleted,
 					publicationState: campaigns.ChangesetPublicationStatePublished,
@@ -714,6 +1038,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// Our previously published changeset should be marked as "to be closed"
 				assertions.closing = true
 				assertions.reconcilerState = campaigns.ReconcilerStateQueued
+				// And the previous spec is recorded.
+				assertions.previousSpec = spec1.ID
 				reloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 				// STEP 3: We apply a new campaign spec with a changeset spec that
@@ -733,6 +1059,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 				// Assert that the changeset has been updated to point to the new spec
 				assertions.currentSpec = spec2.ID
+				// Assert that the previous spec is still spec 1
 				assertions.previousSpec = spec1.ID
 				assertions.reconcilerState = campaigns.ReconcilerStateQueued
 				assertChangeset(t, attachedChangeset, assertions)
@@ -924,6 +1251,7 @@ func setChangesetPublished(t *testing.T, ctx context.Context, s *Store, c *campa
 	c.ExternalID = externalID
 	c.PublicationState = campaigns.ChangesetPublicationStatePublished
 	c.ReconcilerState = campaigns.ReconcilerStateCompleted
+	c.ExternalState = campaigns.ChangesetExternalStateOpen
 	c.Unsynced = false
 
 	if err := s.UpdateChangeset(ctx, c); err != nil {

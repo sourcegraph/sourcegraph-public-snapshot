@@ -134,12 +134,7 @@ func (s *Server) cleanupRepos() {
 			log15.Warn("setting backed off reclone time failed", "repo", repo, "cloned", recloneTime, "reason", reason, "error", err)
 		}
 
-		remoteURL, err := repoRemoteURL(ctx, dir)
-		if err != nil {
-			return false, errors.Wrap(err, "failed to get remote URL")
-		}
-
-		if _, err := s.cloneRepo(ctx, repo, remoteURL, &cloneOptions{Block: true, Overwrite: true}); err != nil {
+		if _, err := s.cloneRepo(ctx, repo, &cloneOptions{Block: true, Overwrite: true}); err != nil {
 			return true, err
 		}
 		reposRecloned.Inc()

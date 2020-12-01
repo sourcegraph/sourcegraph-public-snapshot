@@ -10,8 +10,9 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import Shepherd from 'shepherd.js'
-import { defaultTourOptions, generateStepTooltip } from './SearchOnboardingTour'
+import { defaultTourOptions, generateStepTooltip, HAS_CANCELLED_TOUR_KEY } from './SearchOnboardingTour'
 import { eventLogger } from '../../tracking/eventLogger'
+import { useLocalStorage } from '../../util/useLocalStorage'
 
 interface Props
     extends ActivationProps,
@@ -30,6 +31,7 @@ interface Props
     enableSmartQuery: boolean
 }
 
+const HAS_COMPLETED_TOUR_KEY = 'has-completed-onboarding-tour'
 /**
  * The search item in the navbar
  */
@@ -43,6 +45,8 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
     )
 
     const tour = useMemo(() => new Shepherd.Tour(defaultTourOptions), [])
+    const [hasCancelledTour, setHasCancelledTour] = useLocalStorage(HAS_CANCELLED_TOUR_KEY, false)
+    const [hasCompletedTour, setHasCompletedTour] = useLocalStorage(HAS_COMPLETED_TOUR_KEY, false)
 
     useEffect(() => {
         tour.addSteps([
@@ -70,10 +74,39 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
 
     useEffect(() => {
         const url = new URLSearchParams(props.location.search)
-        if (url.has('onboardingTour') && props.showOnboardingTour) {
+        if (
+            url.has('onboardingTour') &&
+            props.showOnboardingTour &&
+            hasCancelledTour !== true &&
+            hasCompletedTour !== true
+        ) {
             tour.show('view-search-reference')
         }
-    }, [tour, props.showOnboardingTour, props.location.search])
+    }, [tour, props.showOnboardingTour, props.location.search, hasCancelledTour, hasCompletedTour])
+
+    useEffect(() => {
+        const onCancelled = (): void => setHasCancelledTour(true)
+        const onCompleted = (): void => setHasCompletedTour(true)
+        tour.on('cancel', onCancelled)
+        tour.on('complete', onCompleted)
+        return () => {
+            tour.off('cancel', onCancelled)
+            tour.off('complete', onCompleted)
+        }
+    }, [tour, props.location, props.history, setHasCompletedTour, setHasCancelledTour])
+
+    useEffect(() => {
+        if (hasCancelledTour || hasCompletedTour) {
+            const queryParameters = new URLSearchParams(props.location.search)
+            if (queryParameters.has('onboardingTour')) {
+                queryParameters.delete('onboardingTour')
+                props.history.replace({
+                    search: queryParameters.toString(),
+                    hash: props.history.location.hash,
+                })
+            }
+        }
+    }, [hasCancelledTour, hasCompletedTour, props.history, props.location.search])
 
     useEffect(
         () => () => {

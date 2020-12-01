@@ -196,12 +196,7 @@ func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 		return nil, err
 	}
 
-	return &changesetSpecResolver{
-		store:         r.store,
-		httpFactory:   r.httpFactory,
-		changesetSpec: changesetSpec,
-		repoCtx:       ctx,
-	}, nil
+	return NewChangesetSpecResolver(ctx, r.store, r.httpFactory, changesetSpec)
 }
 
 func (r *Resolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignsCredentialResolver, error) {
@@ -418,13 +413,7 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 		return nil, err
 	}
 
-	resolver := &changesetSpecResolver{
-		store:         r.store,
-		httpFactory:   r.httpFactory,
-		changesetSpec: spec,
-		repoCtx:       ctx,
-	}
-	return resolver, nil
+	return NewChangesetSpecResolver(ctx, r.store, r.httpFactory, spec)
 }
 
 func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCampaignArgs) (graphqlbackend.CampaignResolver, error) {

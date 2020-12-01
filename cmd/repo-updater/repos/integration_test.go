@@ -9,6 +9,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -45,6 +46,11 @@ func TestIntegration(t *testing.T) {
 
 	userID := insertTestUser(t, db)
 
+	dbconn.Global = db
+	defer func() {
+		dbconn.Global = nil
+	}()
+
 	for _, tc := range []struct {
 		name string
 		test func(*testing.T, repos.Store) func(*testing.T)
@@ -76,6 +82,7 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/Syncer/NameConflictDiscardNew", testNameOnConflictDiscardNew(db)},
 		{"DBStore/Syncer/NameConflictOnRename", testNameOnConflictOnRename(db)},
 		{"DBStore/Syncer/ConflictingSyncers", testConflictingSyncers(db)},
+		{"DBStore/Syncer/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources(db)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Cleanup(func() {

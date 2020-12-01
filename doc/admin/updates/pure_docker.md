@@ -9,11 +9,13 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
-## 3.21 -> 3.22
+## 3.21.2 -> 3.22.0
 
 To upgrade, please perform the changes in the following diff:
 
-https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/0d49904f0958fec6c7d34a4c72135f16af9e86c6
+https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/223c11dacffafb985c2d29b6c6a9b84bcc8255be
+
+This upgrade removes the `code intel bundle manager`. This service has been deprecated and all references to it have been removed. 
 
 ## 3.20.1 -> 3.21.2
 
