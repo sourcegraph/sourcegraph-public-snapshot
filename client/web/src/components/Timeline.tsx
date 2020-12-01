@@ -31,19 +31,6 @@ export const Timeline: FunctionComponent<TimelineProps> = ({ stages, now, classN
 
                 const previousDate = stages.map(stage => stage.date).find((date, index) => !!date && index < stageIndex)
 
-                const meta = (
-                    <div className="d-flex align-items-center">
-                        <div className="flex-0 m-2">
-                            <div className={classNames('timeline__executor-task-icon', stage.className)}>
-                                {stage.icon}
-                            </div>
-                        </div>
-                        <div className="flex-1">
-                            {stage.text} <Timestamp date={stage.date} now={now} noAbout={true} />
-                        </div>
-                    </div>
-                )
-
                 return (
                     // Use index as key because the values in each step may not be unique. This is
                     // OK here because this list will not be updated during this component's lifetime.
@@ -65,7 +52,7 @@ export const Timeline: FunctionComponent<TimelineProps> = ({ stages, now, classN
                         {stage.details ? (
                             <>
                                 <Collapsible
-                                    title={meta}
+                                    title={<TimelineMeta stage={stage} now={now} />}
                                     className="p-0 font-weight-normal"
                                     buttonClassName="mb-0"
                                     titleAtStart={true}
@@ -75,11 +62,29 @@ export const Timeline: FunctionComponent<TimelineProps> = ({ stages, now, classN
                                 </Collapsible>
                             </>
                         ) : (
-                            meta
+                            <TimelineMeta stage={{ ...stage, date: stage.date }} now={now} />
                         )}
                     </div>
                 )
             })}
+        </div>
+    </>
+)
+
+export interface TimelineMetaProps {
+    stage: TimelineStage & { date: string }
+    now?: () => Date
+}
+
+export const TimelineMeta: FunctionComponent<TimelineMetaProps> = ({ stage, now }) => (
+    <>
+        <div className="d-flex align-items-center">
+            <div className="flex-0 m-2">
+                <div className={classNames('timeline__executor-task-icon', stage.className)}>{stage.icon}</div>
+            </div>
+            <div className="flex-1">
+                {stage.text} <Timestamp date={stage.date} now={now} noAbout={true} />
+            </div>
         </div>
     </>
 )

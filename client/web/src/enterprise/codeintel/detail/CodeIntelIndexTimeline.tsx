@@ -11,6 +11,7 @@ import { Collapsible } from '../../../components/Collapsible'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { Timeline, TimelineStage } from '../../../components/Timeline'
 import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
+import { pluralize } from '../../../../../shared/src/util/strings'
 
 export interface CodeIntelIndexTimelineProps {
     index: LsifIndexFields
@@ -208,20 +209,14 @@ interface LogOutputProps {
 }
 
 const LogOutput: FunctionComponent<LogOutputProps> = ({ text, className }) => (
-    <pre className={classNames('code-intel-index-timeline-log-output', 'bg-code rounded p-3 mb-0', className)}>
+    <pre className={classNames('bg-code rounded p-3 mb-0', className)}>
         {
             // Use index as key because log lines may not be unique. This is OK
             // here because this list will not be updated during this component's
             // lifetime.
             /* eslint-disable react/no-array-index-key */
             text.split('\n').map((line, index) => (
-                <code
-                    key={index}
-                    className={classNames(
-                        'code-intel-index-timeline-log-output__line',
-                        line.startsWith('stdout:') ? 'stdout' : line.startsWith('stderr:') ? 'stderr' : ''
-                    )}
-                >
+                <code key={index} className={classNames('d-block', line.startsWith('stderr:') ? 'text-danger' : '')}>
                     {line.replace(/^std(out|err): /, '')}
                 </code>
             ))
@@ -237,6 +232,16 @@ const timeOrders: [number, string][] = [
     [1, 'millisecond'],
 ]
 
+/**
+ * This is essentially to date-fns/formatDistance with support for milliseconds.
+ * The output of this function has the following properties:
+ *
+ * - Consists of one unit (e.g. `x days`) or two units (e.g. `x days and y hours`).
+ * - If there are more than one unit, they are adjacent (e.g. never `x days and y minutes`).
+ * - If there is a greater unit, the value will not exceed the next threshold (e.g. `2 minutes and 5 seconds`, never `125 seconds`).
+ *
+ * @param milliseconds The number of milliseconds elapsed.
+ */
 const formatMilliseconds = (milliseconds: number): string => {
     const parts: string[] = []
 
@@ -246,7 +251,7 @@ const formatMilliseconds = (milliseconds: number): string => {
         // Determine how many units can fit into the current value
         const part = Math.floor(msRemaining / denominator)
         // Format this part (pluralize if value is more than one)
-        parts.push(part > 0 ? `${part} ${suffix}${part > 1 ? 's' : ''}` : '')
+        parts.push(part > 0 ? `${part} ${pluralize(suffix, part)}` : '')
         // Remove this order's contribution to the current value
         return msRemaining - part * denominator
     }, milliseconds)
