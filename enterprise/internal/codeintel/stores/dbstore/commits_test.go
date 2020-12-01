@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
@@ -129,16 +131,16 @@ func TestCalculateVisibleUploads(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(1)},
-		makeCommit(4): {makeCommit(3)},
-		makeCommit(5): {makeCommit(2), makeCommit(4)},
-		makeCommit(6): {makeCommit(5)},
-		makeCommit(7): {makeCommit(6)},
-		makeCommit(8): {makeCommit(6)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(8), makeCommit(6)}, " "),
+		strings.Join([]string{makeCommit(7), makeCommit(6)}, " "),
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(2), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(8), 0); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
@@ -183,16 +185,16 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(2)},
-		makeCommit(4): {makeCommit(1)},
-		makeCommit(5): {makeCommit(4)},
-		makeCommit(6): {makeCommit(5)},
-		makeCommit(7): {makeCommit(4)},
-		makeCommit(8): {makeCommit(7)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(8), makeCommit(7)}, " "),
+		strings.Join([]string{makeCommit(7), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 0); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
@@ -229,10 +231,10 @@ func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(2), 0); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
@@ -291,14 +293,14 @@ func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(2)},
-		makeCommit(4): {makeCommit(2)},
-		makeCommit(5): {makeCommit(3), makeCommit(4)},
-		makeCommit(6): {makeCommit(5)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(3), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(6), 0); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
@@ -344,13 +346,13 @@ func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(2)},
-		makeCommit(4): {makeCommit(3)},
-		makeCommit(5): {makeCommit(4)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(5), 0); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
@@ -401,11 +403,11 @@ func TestCalculateVisibleUploadsResetsDirtyFlag(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(2)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	for i := 0; i < 3; i++ {
 		// Set dirty token to 3

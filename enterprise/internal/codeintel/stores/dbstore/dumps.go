@@ -8,6 +8,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -162,23 +163,23 @@ func (s *Store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 
 // FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
 // path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestDumps for additional details.
-func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph map[string][]string) (_ []Dump, err error) {
+func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph *gitserver.CommitGraph) (_ []Dump, err error) {
 	ctx, endObservation := s.operations.findClosestDumpsFromGraphFragment.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 		log.String("path", path),
 		log.Bool("rootMustEnclosePath", rootMustEnclosePath),
 		log.String("indexer", indexer),
-		log.Int("numKeys", len(graph)),
+		log.Int("numKeys", len(graph.Order())),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if len(graph) == 0 {
+	if len(graph.Order()) == 0 {
 		return nil, nil
 	}
 
-	commits := make([]*sqlf.Query, 0, len(graph))
-	for commit := range graph {
+	commits := make([]*sqlf.Query, 0, len(graph.Graph()))
+	for commit := range graph.Graph() {
 		commits = append(commits, sqlf.Sprintf("%s", commit))
 	}
 
