@@ -1,10 +1,16 @@
-
-# Sourcegraph specific customization
-pg_sg:
-    query: "SELECT dirty::int as db_dirty FROM schema_migrations"
+pg_cache:
+    query: "SELECT sum(heap_blks_read) as heap_read, sum(heap_blks_hit)  as heap_hit, (sum(heap_blks_hit) - sum(heap_blks_read)) / sum(heap_blks_hit) as ratio FROM pg_statio_user_tables"
     master: true
     metrics:
-        - db_dirty:
+        - ratio:
+              usage: "GAUGE"
+              description: "cache hit rate"
+
+pg_sg_db_migrations:
+    query: "SELECT dirty::int as db_migration FROM schema_migrations"
+    master: true
+    metrics:
+        - db_migration:
               usage: "GAUGE"
               description: "Whether the migration applied successfully"
 

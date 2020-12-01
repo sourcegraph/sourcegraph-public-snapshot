@@ -40,6 +40,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
   DATA_SOURCE_NAME="postgresql://${PGUSER}:${PGPASSWORD}@${ADJUSTED_HOST}:${PGPORT}/${PGDATABASE}?sslmode=${PGSSLMODE:-disable}"
 fi
 
+set -x
 
 exec docker run --rm -p9187:9187 ${NET_ARG} --name="$CONTAINER"  \
      -e DATA_SOURCE_NAME="${DATA_SOURCE_NAME}" \
