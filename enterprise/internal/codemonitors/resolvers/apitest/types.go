@@ -13,6 +13,10 @@ type User struct {
 	Monitors MonitorConnection
 }
 
+type Node struct {
+	Node Monitor
+}
+
 type MonitorConnection struct {
 	Nodes      []Monitor
 	TotalCount int

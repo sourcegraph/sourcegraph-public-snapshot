@@ -58,6 +58,32 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 	return &monitorConnection{r, ms}, nil
 }
 
+const monitorByIDFmtStr = `
+SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id, namespace_org_id
+FROM cm_monitors
+WHERE id = %s
+`
+
+func (r *Resolver) MonitorByID(ctx context.Context, ID graphql.ID) (m graphqlbackend.MonitorResolver, err error) {
+	err = r.isAllowedToEdit(ctx, ID)
+	if err != nil {
+		return nil, err
+	}
+	var monitorID int64
+	err = relay.UnmarshalSpec(ID, &monitorID)
+	if err != nil {
+		return nil, err
+	}
+	q := sqlf.Sprintf(monitorByIDFmtStr, monitorID)
+	m, err = r.runMonitorQuery(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	// Hydrate monitor with resolver.
+	m.(*monitor).Resolver = r
+	return m, nil
+}
+
 func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (m graphqlbackend.MonitorResolver, err error) {
 	err = r.isAllowedToCreate(ctx, args.Monitor.Namespace)
 	if err != nil {
