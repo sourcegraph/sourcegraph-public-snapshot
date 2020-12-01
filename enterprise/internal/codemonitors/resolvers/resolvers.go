@@ -76,6 +76,9 @@ func (r *Resolver) MonitorByID(ctx context.Context, ID graphql.ID) (m graphqlbac
 	}
 	q := sqlf.Sprintf(monitorByIDFmtStr, monitorID)
 	m, err = r.runMonitorQuery(ctx, q)
+	if err != nil {
+		return nil, err
+	}
 	// Hydrate monitor with resolver.
 	m.(*monitor).Resolver = r
 	return m, nil
