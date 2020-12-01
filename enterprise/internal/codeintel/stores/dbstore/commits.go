@@ -6,6 +6,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/batch"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -121,10 +122,10 @@ func (s *Store) DirtyRepositories(ctx context.Context) (_ map[int]int, err error
 // If dirtyToken is supplied, the repository will be unmarked when the supplied token does matches the most recent
 // token stored in the database, the flag will not be cleared as another request for update has come in since this
 // token has been read.
-func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, graph map[string][]string, tipCommit string, dirtyToken int) (err error) {
+func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, graph *gitserver.CommitGraph, tipCommit string, dirtyToken int) (err error) {
 	ctx, endObservation := s.operations.calculateVisibleUploads.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
-		log.Int("numKeys", len(graph)),
+		log.Int("numKeys", len(graph.Order())),
 		log.String("tipCommit", tipCommit),
 		log.Int("dirtyToken", dirtyToken),
 	}})
@@ -137,7 +138,7 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 	defer func() { err = tx.Done(err) }()
 
 	// Pull all queryable upload metadata known to this repository so we can correlate
-	// it with the current  commit graph.
+	// it with the current commit graph.
 	uploadMeta, err := scanUploadMeta(tx.Store.Query(ctx, sqlf.Sprintf(`
 		SELECT id, commit, root, indexer, 0 as distance, true as ancestor_visible, false as overwritten
 		FROM lsif_uploads
