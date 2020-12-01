@@ -70,10 +70,10 @@ func TestHandle(t *testing.T) {
 	}
 
 	if value := len(runner.SetupFunc.History()); value != 1 {
-		t.Fatalf("unexpected number of Setup calls. want=%d have=%d", 1, value)
+		t.Errorf("unexpected number of Setup calls. want=%d have=%d", 1, value)
 	}
 	if value := len(runner.TeardownFunc.History()); value != 1 {
-		t.Fatalf("unexpected number of Teardown calls. want=%d have=%d", 1, value)
+		t.Errorf("unexpected number of Teardown calls. want=%d have=%d", 1, value)
 	}
 	if value := len(runner.RunFunc.History()); value != 4 {
 		t.Fatalf("unexpected number of Run calls. want=%d have=%d", 4, value)
@@ -92,9 +92,5 @@ func TestHandle(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedCommands, commands); diff != "" {
 		t.Errorf("unexpected commands (-want +got):\n%s", diff)
-	}
-
-	if value := len(store.SetLogContentsFunc.History()); value != 1 {
-		t.Fatalf("expected SetLogContents to be called")
 	}
 }

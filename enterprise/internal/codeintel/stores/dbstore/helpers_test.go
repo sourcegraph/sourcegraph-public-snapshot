@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type printableRank struct{ value *int }
@@ -147,7 +148,7 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 				indexer,
 				indexer_args,
 				outfile,
-				log_contents
+				execution_logs
 			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			index.ID,
@@ -166,7 +167,7 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 			index.Indexer,
 			pq.Array(index.IndexerArgs),
 			index.Outfile,
-			index.LogContents,
+			pq.Array(dbworkerstore.ExecutionLogEntries(index.ExecutionLogs)),
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {

@@ -15,11 +15,9 @@ import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifIndexFields } from '../../../graphql-operations'
 import { CodeIntelStateBanner } from '../shared/CodeIntelStateBanner'
-import { CodeIntelUploadOrIndexTimeline } from '../shared/CodeIntelUploadOrIndexTimeline'
 import { deleteLsifIndex, fetchLsifIndex as defaultFetchLsifIndex } from './backend'
 import { CodeIntelIndexMeta } from './CodeIntelIndexMeta'
-import { DockerSteps } from './DockerSteps'
-import { ExecutorLogs } from './ExecutorLogs'
+import { CodeIntelIndexTimeline } from './CodeIntelIndexTimeline'
 
 export interface CodeIntelIndexPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
     fetchLsifIndex?: typeof defaultFetchLsifIndex
@@ -117,18 +115,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
                             <CodeIntelIndexMeta node={indexOrError} now={now} />
                         </div>
                     </div>
-                    <CodeIntelUploadOrIndexTimeline node={indexOrError} now={now} className="mb-3" />
-                    <DockerSteps
-                        steps={indexOrError.dockerSteps.concat([
-                            {
-                                root: indexOrError.inputRoot,
-                                image: indexOrError.indexer,
-                                commands: indexOrError.indexerArgs,
-                            },
-                        ])}
-                        className="mb-3"
-                    />
-                    <ExecutorLogs index={indexOrError} />
+                    <CodeIntelIndexTimeline index={indexOrError} now={now} className="mb-3" />
                 </>
             )}
         </div>

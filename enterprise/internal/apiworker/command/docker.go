@@ -14,21 +14,25 @@ import (
 func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) command {
 	if spec.Image == "" {
 		return command{
+			Key:      spec.Key,
 			Commands: spec.Commands,
 			Dir:      filepath.Join(dir, spec.Dir),
 			Env:      spec.Env,
 		}
 	}
 
-	return newCommand(
-		"docker", "run", "--rm",
-		dockerResourceFlags(options.ResourceOptions),
-		dockerVolumeFlags(dir),
-		dockerWorkingdirectoryFlags(spec.Dir),
-		dockerEnvFlags(spec.Env),
-		spec.Image,
-		spec.Commands,
-	)
+	return command{
+		Key: spec.Key,
+		Commands: flatten(
+			"docker", "run", "--rm",
+			dockerResourceFlags(options.ResourceOptions),
+			dockerVolumeFlags(dir),
+			dockerWorkingdirectoryFlags(spec.Dir),
+			dockerEnvFlags(spec.Env),
+			spec.Image,
+			spec.Commands,
+		),
+	}
 }
 
 func dockerResourceFlags(options ResourceOptions) []string {
