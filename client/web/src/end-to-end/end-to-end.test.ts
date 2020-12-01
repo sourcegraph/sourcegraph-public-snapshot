@@ -2,26 +2,16 @@ import { describe, test, before, beforeEach, after } from 'mocha'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { afterEachRecordCoverage } from '../../../shared/src/testing/coverage'
 import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
-import MockDate from 'mockdate'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { getConfig } from '../../../shared/src/testing/config'
 
 const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
 
-describe('e2e test suite', () => {
+describe('End-to-end test suite', () => {
     let driver: Driver
 
-    before(async function () {
-        // Cloning the repositories takes ~1 minute, so give initialization 2
-        // minutes instead of 1 (which would be inherited from
-        // `jest.setTimeout(1 * 60 * 1000)` above).
-        this.timeout(5 * 60 * 1000)
-
-        // Reset date mocking
-        MockDate.reset()
-
+    before(async () => {
         const config = getConfig('headless', 'slowMo', 'testUserPassword')
-
         // Start browser
         driver = await createDriverForTest({
             sourcegraphBaseUrl,
@@ -127,56 +117,6 @@ describe('e2e test suite', () => {
 
             await driver.page.click('#test-EditUserProfileForm__save')
             await driver.page.waitForSelector('.test-EditUserProfileForm__success', { visible: true })
-        })
-    })
-
-    describe('External services', () => {
-        test('External service add, edit, delete', async () => {
-            const displayName = 'test-github-test-2'
-            await driver.ensureHasExternalService({
-                kind: ExternalServiceKind.GITHUB,
-                displayName,
-                config:
-                    '{"url": "https://github.myenterprise.com", "token": "initial-token", "repositoryQuery": ["none"]}',
-            })
-            await driver.page.goto(sourcegraphBaseUrl + '/site-admin/external-services')
-            await (
-                await driver.page.waitForSelector(
-                    `[data-test-external-service-name="${displayName}"] .test-edit-external-service-button`
-                )
-            ).click()
-
-            // Type in a new external service configuration.
-            await driver.replaceText({
-                selector: '.test-external-service-editor .monaco-editor',
-                newText:
-                    '{"url": "https://github.myenterprise.com", "token": "second-token", "repositoryQuery": ["none"]}',
-                selectMethod: 'selectall',
-                enterTextMethod: 'paste',
-            })
-            await driver.page.click('.test-update-external-service-button')
-            // Must wait for the operation to complete, or else a "Discard changes?" dialog will pop up
-            await driver.page.waitForSelector('.test-update-external-service-button:not([disabled])', { visible: true })
-
-            await (
-                await driver.page.waitForSelector('.list-group-item[href="/site-admin/external-services"]', {
-                    visible: true,
-                })
-            ).click()
-
-            await Promise.all([
-                driver.acceptNextDialog(),
-                (
-                    await driver.page.waitForSelector(
-                        '[data-test-external-service-name="test-github-test-2"] .test-delete-external-service-button',
-                        { visible: true }
-                    )
-                ).click(),
-            ])
-
-            await driver.page.waitFor(
-                () => !document.querySelector('[data-test-external-service-name="test-github-test-2"]')
-            )
         })
     })
 })
