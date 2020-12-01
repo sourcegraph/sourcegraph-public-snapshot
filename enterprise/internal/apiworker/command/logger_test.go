@@ -13,7 +13,10 @@ import (
 )
 
 func TestLogger(t *testing.T) {
-	logger := NewLogger("baz2", "BAR2")
+	logger := NewLogger(map[string]string{
+		"baz2": "xxxxxx",
+		"BAR2": "******",
+	})
 
 	for i := 0; i < 3; i++ {
 		outReader, outWriter := io.Pipe()
@@ -42,7 +45,7 @@ func TestLogger(t *testing.T) {
 		stderr: FOO2 ******
 		stderr: FOO3 BAR3
 		stdout: baz1
-		stdout: ******
+		stdout: xxxxxx
 		stdout: baz3
 		stdout: foo1 bar1
 		stdout: foo2 bar2

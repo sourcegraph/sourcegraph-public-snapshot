@@ -12,9 +12,9 @@ import (
 // Logger tracks command invocations and stores the command's output and
 // error stream values.
 type Logger struct {
-	m              sync.Mutex
-	redactedValues []string
-	logs           []*log
+	m            sync.Mutex
+	replacements map[string]string
+	logs         []*log
 }
 
 type log struct {
@@ -22,12 +22,12 @@ type log struct {
 	out     *bytes.Buffer
 }
 
-// NewLogger creates a new logger instance with the given redacted values.
-// When the log messages are serialized, any occurrence of the values are
-// replaced with a canned string.
-func NewLogger(redactedValues ...string) *Logger {
+// NewLogger creates a new logger instance with the given replacement map.
+// When the log messages are serialized, any occurrence of sensitive values
+// are replace with a non-sensitive value.
+func NewLogger(replacements map[string]string) *Logger {
 	return &Logger{
-		redactedValues: redactedValues,
+		replacements: replacements,
 	}
 }
 
@@ -66,8 +66,8 @@ func (l *Logger) String() string {
 	for _, log := range l.logs {
 		payload := fmt.Sprintf("%s\n%s\n", strings.Join(log.command, " "), log.out)
 
-		for _, v := range l.redactedValues {
-			payload = strings.Replace(payload, v, "******", -1)
+		for k, v := range l.replacements {
+			payload = strings.Replace(payload, k, v, -1)
 		}
 
 		buf.WriteString(payload)

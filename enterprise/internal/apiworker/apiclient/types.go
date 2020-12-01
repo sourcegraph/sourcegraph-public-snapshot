@@ -26,6 +26,12 @@ type Job struct {
 	// These run after all docker commands have been completed successfully. This
 	// may be done inside or outside of a Firecracker virtual machine.
 	CliSteps []CliStep `json:"cliSteps"`
+
+	// RedactedValues is a map from strings to replace to their replacement in the command
+	// output before sending it to the underlying job store. This should contain all worker
+	// environment variables, as well as secret values passed along with the dequeued job
+	// payload, which may be sensitive (e.g. shared API tokens, URLs with credentials).
+	RedactedValues map[string]string `json:"redactedValues"`
 }
 
 func (j Job) RecordID() int {
