@@ -15,7 +15,7 @@ export type SearchEvent =
     | { type: 'filters'; data: Filter[] }
     | { type: 'alert'; data: Alert }
     | { type: 'error'; data: Error }
-    | { type: 'done'; data: {} }
+    | { type: 'done'; data: Progress }
 
 type Match = FileMatch | RepositoryMatch | CommitMatch | FileSymbolMatch
 
@@ -345,27 +345,27 @@ const switchAggregateSearchResults: OperatorFunction<SearchEvent, AggregateStrea
     defaultIfEmpty(emptyAggregateResults)
 )
 
+const foo = <T extends SearchEvent>(type: T['type'], eventSource: EventSource): Observable<SearchEvent> =>
+    fromEvent(eventSource, type).pipe(
+        map((event: Event) => {
+            if (!(event instanceof MessageEvent)) {
+                throw new TypeError(`internal error: expected MessageEvent in streaming search ${type}`)
+            }
+            try {
+                const parsedData = JSON.parse(event.data) as T['data']
+                return parsedData
+            } catch {
+                throw new Error(`Could not parse ${type} message data in streaming search`)
+            }
+        }),
+        map(data => ({ type, data } as T))
+    )
+
 const observeMessages = <T extends SearchEvent>(
     type: T['type'],
     eventSource: EventSource,
     observer: Subscriber<SearchEvent>
-): Subscription =>
-    fromEvent(eventSource, type)
-        .pipe(
-            map((event: Event) => {
-                if (!(event instanceof MessageEvent)) {
-                    throw new TypeError(`internal error: expected MessageEvent in streaming search ${type}`)
-                }
-                try {
-                    const parsedData = JSON.parse(event.data) as T['data']
-                    return parsedData
-                } catch {
-                    throw new Error(`Could not parse ${type} message data in streaming search`)
-                }
-            }),
-            map(data => ({ type, data } as T))
-        )
-        .subscribe(observer)
+): Subscription => foo(type, eventSource).subscribe(observer)
 
 type MessageHandler<EventType extends SearchEvent['type'] = SearchEvent['type']> = (
     type: EventType,
@@ -377,6 +377,9 @@ const messageHandlers: {
     [EventType in SearchEvent['type']]: MessageHandler<EventType>
 } = {
     done: (type, eventSource, observer) =>
+        foo(type, eventSource).pipe(
+            tap// TODO don't know WTF I am doing. I want to emit the single progress message here and then close the eventsource and complete the observer.
+        )
         fromEvent(eventSource, type).subscribe(() => {
             observer.complete()
             eventSource.close()
