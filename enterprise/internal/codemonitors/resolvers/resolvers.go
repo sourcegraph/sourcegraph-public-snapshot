@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -97,7 +96,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	}
 
 	// create actions
-	err = tx.createActions(ctx, args.Actions, m.(*monitor).id)
+	err = tx.store.CreateActions(ctx, args.Actions, m.(*monitor).id)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +168,7 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	if err != nil {
 		return nil, err
 	}
-	err = tx.createActions(ctx, toCreate, monitorID)
+	err = tx.store.CreateActions(ctx, toCreate, monitorID)
 	if err != nil {
 		return nil, err
 	}
@@ -316,20 +315,6 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		}
 	}
 	return m, nil
-}
-
-func (r *Resolver) createActions(ctx context.Context, args []*graphqlbackend.CreateActionArgs, monitorID int64) (err error) {
-	for _, a := range args {
-		e, err := r.store.CreateActionEmail(ctx, monitorID, a)
-		if err != nil {
-			return err
-		}
-		err = r.store.CreateRecipients(ctx, a.Email.Recipients, e.Id)
-		if err != nil {
-			return err
-		}
-	}
-	return err
 }
 
 func (r *Resolver) transact(ctx context.Context) (*Resolver, error) {
@@ -589,73 +574,6 @@ WHERE monitor = %s;
 	return sqlf.Sprintf(
 		triggerQueryByMonitorQuery,
 		monitorID,
-	), nil
-}
-
-var recipientsColumns = []*sqlf.Query{
-	sqlf.Sprintf("cm_recipients.id"),
-	sqlf.Sprintf("cm_recipients.email"),
-	sqlf.Sprintf("cm_recipients.namespace_user_id"),
-	sqlf.Sprintf("cm_recipients.namespace_org_id"),
-}
-
-// createRecipientsQuery returns a query that inserts several recipients at once.
-func createRecipientsQuery(ctx context.Context, namespaces []graphql.ID, emailID int64) (*sqlf.Query, error) {
-	const header = `
-INSERT INTO cm_recipients (email, namespace_user_id, namespace_org_id)
-VALUES`
-	const values = `
-(%s,%s,%s),`
-	var (
-		userID        int32
-		orgID         int32
-		combinedQuery string
-		args          []interface{}
-	)
-	combinedQuery = header
-	for range namespaces {
-		combinedQuery += values
-	}
-	combinedQuery = strings.TrimSuffix(combinedQuery, ",") + ";"
-	for _, ns := range namespaces {
-		err := graphqlbackend.UnmarshalNamespaceID(ns, &userID, &orgID)
-		if err != nil {
-			return nil, err
-		}
-		args = append(args, emailID, nilOrInt32(userID), nilOrInt32(orgID))
-	}
-	return sqlf.Sprintf(
-		combinedQuery,
-		args...,
-	), nil
-}
-
-func (r *Resolver) deleteRecipientsQuery(ctx context.Context, emailId int64) (*sqlf.Query, error) {
-	const deleteRecipientQuery = `DELETE FROM cm_recipients WHERE email = %s`
-	return sqlf.Sprintf(
-		deleteRecipientQuery,
-		emailId,
-	), nil
-}
-
-func (r *Resolver) readRecipientQuery(ctx context.Context, emailId int64, args *graphqlbackend.ListRecipientsArgs) (*sqlf.Query, error) {
-	const readRecipientQuery = `
-SELECT id, email, namespace_user_id, namespace_org_id
-FROM cm_recipients
-WHERE email = %s
-AND id > %s
-ORDER BY id ASC
-LIMIT %s;
-`
-	after, err := unmarshalAfter(args.After)
-	if err != nil {
-		return nil, err
-	}
-	return sqlf.Sprintf(
-		readRecipientQuery,
-		emailId,
-		after,
-		args.First,
 	), nil
 }
 
