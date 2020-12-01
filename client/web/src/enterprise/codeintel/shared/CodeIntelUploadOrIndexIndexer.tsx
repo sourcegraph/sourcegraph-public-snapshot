@@ -1,9 +1,9 @@
 import React, { FunctionComponent } from 'react'
 
 export interface CodeIntelUploadOrIndexIndexerProps {
-    node: { indexer?: string; inputIndexer?: string }
+    node: { inputIndexer?: string }
 }
 
 export const CodeIntelUploadOrIndexIndexer: FunctionComponent<CodeIntelUploadOrIndexIndexerProps> = ({ node }) => (
-    <span>{node.indexer || node.inputIndexer}</span>
+    <span>{node.inputIndexer}</span>
 )

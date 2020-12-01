@@ -1,9 +1,5 @@
 package command
 
-func newCommand(values ...interface{}) command {
-	return command{Commands: flatten(values...)}
-}
-
 // flatten combines string values and (non-recursive) string slice values
 // into a single string slice.
 func flatten(values ...interface{}) []string {

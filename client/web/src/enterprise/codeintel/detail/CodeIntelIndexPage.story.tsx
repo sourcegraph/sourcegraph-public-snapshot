@@ -33,6 +33,15 @@ const commonProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
+const executionLog = {
+    key: 'log',
+    command: ['lsif-go', '-v'],
+    startTime: '2020-06-15T15:25:00+00:00',
+    exitCode: 0,
+    out: 'foo\nbar\baz\n',
+    durationMilliseconds: 123456,
+}
+
 const index: Omit<LsifIndexFields, 'state' | 'queuedAt' | 'startedAt' | 'finishedAt' | 'failure' | 'placeInQueue'> = {
     __typename: 'LSIFIndex',
     id: '1234',
@@ -51,14 +60,21 @@ const index: Omit<LsifIndexFields, 'state' | 'queuedAt' | 'startedAt' | 'finishe
     },
     inputCommit: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
     inputRoot: 'web/',
-    indexer: 'lsif-tsc',
-    indexerArgs: ['-p', '.'],
-    outfile: 'index.lsif',
-    logContents: 'Indexing\nUploading\nDone.\n',
-    dockerSteps: [
-        { root: '/', image: 'node:alpine', commands: ['yarn'] },
-        { root: '/web', image: 'node:alpine', commands: ['yarn'] },
-    ],
+    inputIndexer: 'lsif-tsc',
+    steps: {
+        setup: [executionLog],
+        preIndex: [
+            { root: '/', image: 'node:alpine', commands: ['yarn'], logEntry: executionLog },
+            { root: '/web', image: 'node:alpine', commands: ['yarn'], logEntry: executionLog },
+        ],
+        index: {
+            indexerArgs: ['-p', '.'],
+            outfile: 'index.lsif',
+            logEntry: executionLog,
+        },
+        upload: executionLog,
+        teardown: [executionLog],
+    },
 }
 
 add('Completed', () => (
