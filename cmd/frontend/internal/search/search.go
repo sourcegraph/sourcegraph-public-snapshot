@@ -167,7 +167,9 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	// TODO stats
+	_ = eventWriter.Event("progress", progressFromResolver(resultsResolver))
+
+	// TODO done event includes progress
 	_ = eventWriter.Event("done", map[string]interface{}{})
 }
 
@@ -199,6 +201,10 @@ func parseURLQuery(q url.Values) (*args, error) {
 	}
 
 	return &a, nil
+}
+
+func intPtr(i int) *int {
+	return &i
 }
 
 func strPtr(s string) *string {

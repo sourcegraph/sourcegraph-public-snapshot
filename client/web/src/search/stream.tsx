@@ -73,11 +73,6 @@ type RepositoryMatch = { type: 'repo' } & Pick<FileMatch, 'repository' | 'branch
  */
 export interface Progress {
     /**
-     * True if this is the final progress update for this stream
-     */
-    done: boolean
-
-    /**
      * The number of repositories matching the repo: filter. Is set once they
      * are resolved.
      */
@@ -285,7 +280,6 @@ const emptyAggregateResults: AggregateStreamingSearchResults = {
     results: [],
     filters: [],
     progress: {
-        done: false,
         durationMs: 0,
         matchCount: 0,
         skipped: [],
