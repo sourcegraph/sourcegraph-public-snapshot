@@ -62,37 +62,6 @@ describe('End-to-end test suite', () => {
     })
 
     describe('Core functionality', () => {
-        test('Check settings are saved and applied', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/users/test/settings')
-            await driver.page.waitForSelector('.test-settings-file .monaco-editor')
-
-            const message = 'A wild notice appears!'
-            await driver.replaceText({
-                selector: '.test-settings-file .monaco-editor',
-                newText: JSON.stringify({
-                    notices: [
-                        {
-                            dismissable: false,
-                            location: 'top',
-                            message,
-                        },
-                    ],
-                }),
-                selectMethod: 'keyboard',
-            })
-            await driver.page.click('.test-settings-file .test-save-toolbar-save')
-            await driver.page.waitForSelector('.test-global-alert .notices .global-alerts__alert', { visible: true })
-            await driver.page.evaluate((message: string) => {
-                const element = document.querySelector<HTMLElement>('.test-global-alert .notices .global-alerts__alert')
-                if (!element) {
-                    throw new Error('No .test-global-alert .notices .global-alerts__alert element found')
-                }
-                if (!element.textContent?.includes(message)) {
-                    throw new Error(`Expected "${message}" message, but didn't find it`)
-                }
-            }, message)
-        })
-
         test('Check allowed usernames', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/users/test/settings/profile')
             await driver.page.waitForSelector('.test-UserProfileFormFields-username')
