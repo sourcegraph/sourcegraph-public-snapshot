@@ -36,19 +36,29 @@ f635b8d1 e66e8f9b
 `
 
 func TestInternalCalculateVisibleUploads(t *testing.T) {
+	commitGraphView := NewCommitGraphView()
+	commitGraphView.Add(UploadMeta{UploadID: 50}, "e66e8f9b", "sub1/:lsif-go")
+	commitGraphView.Add(UploadMeta{UploadID: 51}, "5971b083", "sub2/:lsif-go")
+	commitGraphView.Add(UploadMeta{UploadID: 52}, "f635b8d1", "sub3/:lsif-go")
+	commitGraphView.Add(UploadMeta{UploadID: 53}, "d6e54842", "sub3/:lsif-go")
+	commitGraphView.Add(UploadMeta{UploadID: 54}, "5340d471", "sub3/:lsif-go")
+	commitGraphView.Add(UploadMeta{UploadID: 55}, "95dd4b2b", "sub3/:lsif-go")
+	commitGraphView.Add(UploadMeta{UploadID: 56}, "0ed556d3", "sub3/:lsif-go")
+
 	testGraph := gitserver.ParseCommitGraph(strings.Split(logOutput, "\n"))
+	// visibleUploads, err := calculateVisibleUploads(testGraph, commitGraphView)
 
-	uploads := map[string][]UploadMeta{
-		"e66e8f9b": {{UploadID: 50, Root: "sub1/", Indexer: "lsif-go"}},
-		"f635b8d1": {{UploadID: 52, Root: "sub3/", Indexer: "lsif-go"}},
-		"d6e54842": {{UploadID: 53, Root: "sub3/", Indexer: "lsif-go"}},
-		"5340d471": {{UploadID: 54, Root: "sub3/", Indexer: "lsif-go"}},
-		"95dd4b2b": {{UploadID: 55, Root: "sub3/", Indexer: "lsif-go"}},
-		"5971b083": {{UploadID: 51, Root: "sub2/", Indexer: "lsif-go"}},
-		"0ed556d3": {{UploadID: 56, Root: "sub3/", Indexer: "lsif-go"}},
-	}
+	// uploads := map[string][]UploadMeta{
+	// 	"e66e8f9b": {{UploadID: 50, Root: "sub1/", Indexer: "lsif-go"}},
+	// 	"f635b8d1": {{UploadID: 52, Root: "sub3/", Indexer: "lsif-go"}},
+	// 	"d6e54842": {{UploadID: 53, Root: "sub3/", Indexer: "lsif-go"}},
+	// 	"5340d471": {{UploadID: 54, Root: "sub3/", Indexer: "lsif-go"}},
+	// 	"95dd4b2b": {{UploadID: 55, Root: "sub3/", Indexer: "lsif-go"}},
+	// 	"5971b083": {{UploadID: 51, Root: "sub2/", Indexer: "lsif-go"}},
+	// 	"0ed556d3": {{UploadID: 56, Root: "sub3/", Indexer: "lsif-go"}},
+	// }
 
-	visibleUploads, err := calculateVisibleUploads(testGraph, uploads)
+	visibleUploads, err := calculateVisibleUploads(testGraph, commitGraphView)
 	if err != nil {
 		t.Fatalf("unexpected error calculating visible uploads: %s", err)
 	}
@@ -60,64 +70,19 @@ func TestInternalCalculateVisibleUploads(t *testing.T) {
 	}
 
 	expectedVisibleUploads := map[string][]UploadMeta{
-		"e66e8f9b": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 0},
-			{UploadID: 51, Root: "sub2/", Indexer: "lsif-go", Distance: 2},
-			{UploadID: 52, Root: "sub3/", Indexer: "lsif-go", Distance: 1},
-		},
-		"0c5a779c": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 1},
-			{UploadID: 51, Root: "sub2/", Indexer: "lsif-go", Distance: 1},
-		},
-		"f635b8d1": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 1},
-			{UploadID: 51, Root: "sub2/", Indexer: "lsif-go", Distance: 4},
-			{UploadID: 52, Root: "sub3/", Indexer: "lsif-go", Distance: 0},
-		},
-		"4d36f88b": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 2},
-			{UploadID: 52, Root: "sub3/", Indexer: "lsif-go", Distance: 1},
-		},
-		"026b8df9": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 2},
-			{UploadID: 51, Root: "sub2/", Indexer: "lsif-go", Distance: 3},
-			{UploadID: 52, Root: "sub3/", Indexer: "lsif-go", Distance: 1},
-		},
-		"6c301adb": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 3},
-			{UploadID: 52, Root: "sub3/", Indexer: "lsif-go", Distance: 2},
-		},
-		"d6e54842": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 3},
-			{UploadID: 51, Root: "sub2/", Indexer: "lsif-go", Distance: 2},
-			{UploadID: 53, Root: "sub3/", Indexer: "lsif-go", Distance: 0},
-		},
-		"5340d471": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 4},
-			{UploadID: 54, Root: "sub3/", Indexer: "lsif-go", Distance: 0},
-		},
-		"cbc5cf7c": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 5},
-			{UploadID: 54, Root: "sub3/", Indexer: "lsif-go", Distance: 1},
-		},
-		"95dd4b2b": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 4},
-			{UploadID: 51, Root: "sub2/", Indexer: "lsif-go", Distance: 1},
-			{UploadID: 55, Root: "sub3/", Indexer: "lsif-go", Distance: 0},
-		},
-		"5971b083": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 2},
-			{UploadID: 51, Root: "sub2/", Indexer: "lsif-go", Distance: 0},
-			{UploadID: 55, Root: "sub3/", Indexer: "lsif-go", Distance: 1},
-		},
-		"7cb4a974": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 5},
-			{UploadID: 55, Root: "sub3/", Indexer: "lsif-go", Distance: 1},
-		},
-		"0ed556d3": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 6},
-			{UploadID: 56, Root: "sub3/", Indexer: "lsif-go", Distance: 0},
-		},
+		"e66e8f9b": {{UploadID: 50, Flags: 0}, {UploadID: 51, Flags: 2}, {UploadID: 52, Flags: 1}},
+		"0c5a779c": {{UploadID: 50, Flags: 1}, {UploadID: 51, Flags: 1}},
+		"f635b8d1": {{UploadID: 50, Flags: 1}, {UploadID: 51, Flags: 4}, {UploadID: 52, Flags: 0}},
+		"4d36f88b": {{UploadID: 50, Flags: 2}, {UploadID: 52, Flags: 1}},
+		"026b8df9": {{UploadID: 50, Flags: 2}, {UploadID: 51, Flags: 3}, {UploadID: 52, Flags: 1}},
+		"6c301adb": {{UploadID: 50, Flags: 3}, {UploadID: 52, Flags: 2}},
+		"d6e54842": {{UploadID: 50, Flags: 3}, {UploadID: 51, Flags: 2}, {UploadID: 53, Flags: 0}},
+		"5340d471": {{UploadID: 50, Flags: 4}, {UploadID: 54, Flags: 0}},
+		"cbc5cf7c": {{UploadID: 50, Flags: 5}, {UploadID: 54, Flags: 1}},
+		"95dd4b2b": {{UploadID: 50, Flags: 4}, {UploadID: 51, Flags: 1}, {UploadID: 55, Flags: 0}},
+		"5971b083": {{UploadID: 50, Flags: 2}, {UploadID: 51, Flags: 0}, {UploadID: 55, Flags: 1}},
+		"7cb4a974": {{UploadID: 50, Flags: 5}, {UploadID: 55, Flags: 1}},
+		"0ed556d3": {{UploadID: 50, Flags: 6}, {UploadID: 56, Flags: 0}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, visibleUploads, UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected graph (-want +got):\n%s", diff)
