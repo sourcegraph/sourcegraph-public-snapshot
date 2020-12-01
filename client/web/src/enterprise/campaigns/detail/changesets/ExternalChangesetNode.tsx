@@ -17,6 +17,7 @@ import { ChangesetReviewStatusCell } from './ChangesetReviewStatusCell'
 import { ErrorAlert } from '../../../../components/alerts'
 import { ChangesetFileDiff } from './ChangesetFileDiff'
 import { ExternalChangesetInfoCell } from './ExternalChangesetInfoCell'
+import { DownloadDiffButton } from './DownloadDiffButton'
 
 export interface ExternalChangesetNodeProps extends ThemeProps {
     node: ExternalChangesetFields
@@ -102,6 +103,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
             {isExpanded && (
                 <>
                     <div />
+                    <DownloadDiffButton changesetID={node.id} />
                     <div className="external-changeset-node__expanded-section p-2">
                         {node.error && <ErrorAlert error={node.error} history={history} />}
                         <ChangesetFileDiff

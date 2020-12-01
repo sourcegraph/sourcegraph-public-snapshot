@@ -19,6 +19,8 @@ import {
     DeleteCampaignVariables,
     CampaignByNamespaceResult,
     CampaignByNamespaceVariables,
+    ChangesetDiffResult,
+    ChangesetDiffVariables,
 } from '../../../graphql-operations'
 import { requestGraphQL } from '../../../backend/graphql'
 
@@ -424,4 +426,54 @@ export async function deleteCampaign(campaign: Scalars['ID']): Promise<void> {
         { campaign }
     ).toPromise()
     dataOrThrowErrors(result)
+}
+
+const changesetDiffFragment = gql`
+    fragment ChangesetDiffFields on ExternalChangeset {
+        currentSpec {
+            description {
+                ... on GitBranchChangesetDescription {
+                    commits {
+                        diff
+                    }
+                }
+            }
+        }
+    }
+`
+
+export async function getChangesetDiff(changeset: Scalars['ID']): Promise<string> {
+    return requestGraphQL<ChangesetDiffResult, ChangesetDiffVariables>(
+        gql`
+            query ChangesetDiff($changeset: ID!) {
+                node(id: $changeset) {
+                    __typename
+                    ...ChangesetDiffFields
+                }
+            }
+
+            ${changesetDiffFragment}
+        `,
+        { changeset }
+    )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(({ node }) => {
+                if (!node) {
+                    throw new Error(`Changeset with ID ${changeset} does not exist`)
+                } else if (node.__typename !== 'ExternalChangeset') {
+                    throw new Error(`The given ID is a ${node.__typename}, not an ExternalChangeset`)
+                }
+
+                const commits = node.currentSpec?.description.commits
+                if (!commits) {
+                    throw new Error(`No commit available for changeset ID ${changeset}`)
+                } else if (commits.length !== 1) {
+                    throw new Error(`Unexpected number of commits on changeset ${changeset}: ${commits.length}`)
+                }
+
+                return commits[0].diff
+            })
+        )
+        .toPromise()
 }
