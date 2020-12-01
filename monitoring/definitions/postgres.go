@@ -3,7 +3,7 @@ package definitions
 import (
 	"time"
 
-	. "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
 const (
