@@ -2810,8 +2810,7 @@
   integrity sha512-KWxkyphmlwam8kfYPSmoitKQRMGQCsr1ZRmNZgijT7ABKaVyk/+I5ezt2J213tM04Hi0vyg4L7iH1VCkNvm2Jw==
 
 "@sourcegraph/extension-api-types@link:client/packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "2.1.0"
 
 "@sourcegraph/prettierrc@^3.0.3":
   version "3.0.3"
@@ -4115,10 +4114,10 @@
     "@types/react" "*"
     popper.js "^1.14.1"
 
-"@types/recharts@1.8.16":
-  version "1.8.16"
-  resolved "https://registry.npmjs.org/@types/recharts/-/recharts-1.8.16.tgz#3ac3f5513ed61152910f2e828157b21a2761df22"
-  integrity sha512-xBXjOsSJJVP2xGtq/kML4rHGyKxA4x8ZqIU7iwbmWrperpSXzoQ1PWjqf4cBdmcLAWaidDHPJxUVHkZr3R/PEA==
+"@types/recharts@1.8.17":
+  version "1.8.17"
+  resolved "https://registry.npmjs.org/@types/recharts/-/recharts-1.8.17.tgz#93016aeef7209d545a213d1b71d8c1f6b3e96cff"
+  integrity sha512-M3tONAszItN8EkI6k+Gbqy89LhSyyEkATJG1SRuKJ5/RHcgBRKPDlZJzh6elAmA+lObdCx4Nfpu2viEPtq1tJg==
   dependencies:
     "@types/d3-shape" "^1"
     "@types/react" "*"
@@ -20680,8 +20679,7 @@ sourcegraph@^24.0.0:
   integrity sha512-PlGvkdBy5r5iHdKAVNY/jsPgWb3oY+2iAdIQ3qR83UHhvBFVgoctDAnyfJ1eMstENY3etBWtAJ8Kleoar3ecaA==
 
 "sourcegraph@link:client/packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "24.7.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
