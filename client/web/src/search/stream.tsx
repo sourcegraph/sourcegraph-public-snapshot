@@ -1,6 +1,6 @@
 /* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber } from 'rxjs'
-import { defaultIfEmpty, map, scan } from 'rxjs/operators'
+import { defaultIfEmpty, first, map, scan } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SearchPatternType } from '../graphql-operations'
 
@@ -345,7 +345,7 @@ const switchAggregateSearchResults: OperatorFunction<SearchEvent, AggregateStrea
     defaultIfEmpty(emptyAggregateResults)
 )
 
-const foo = <T extends SearchEvent>(type: T['type'], eventSource: EventSource): Observable<SearchEvent> =>
+const observeMessages = <T extends SearchEvent>(type: T['type'], eventSource: EventSource): Observable<SearchEvent> =>
     fromEvent(eventSource, type).pipe(
         map((event: Event) => {
             if (!(event instanceof MessageEvent)) {
@@ -361,11 +361,11 @@ const foo = <T extends SearchEvent>(type: T['type'], eventSource: EventSource): 
         map(data => ({ type, data } as T))
     )
 
-const observeMessages = <T extends SearchEvent>(
-    type: T['type'],
+const subscribeToMessages = (
+    type: SearchEvent['type'],
     eventSource: EventSource,
     observer: Subscriber<SearchEvent>
-): Subscription => foo(type, eventSource).subscribe(observer)
+): Subscription => observeMessages(type, eventSource).subscribe(observer)
 
 type MessageHandler<EventType extends SearchEvent['type'] = SearchEvent['type']> = (
     type: EventType,
@@ -377,22 +377,22 @@ const messageHandlers: {
     [EventType in SearchEvent['type']]: MessageHandler<EventType>
 } = {
     done: (type, eventSource, observer) =>
-        foo(type, eventSource).pipe(
-            tap// TODO don't know WTF I am doing. I want to emit the single progress message here and then close the eventsource and complete the observer.
-        )
-        fromEvent(eventSource, type).subscribe(() => {
-            observer.complete()
-            eventSource.close()
-        }),
+        observeMessages(type, eventSource)
+            .pipe(first())
+            .subscribe(searchEvent => {
+                observer.next(searchEvent)
+                observer.complete()
+                eventSource.close()
+            }),
     error: (type, eventSource, observer) =>
         fromEvent(eventSource, type).subscribe(error => {
             observer.error(error)
             eventSource.close()
         }),
-    matches: observeMessages,
-    progress: observeMessages,
-    filters: observeMessages,
-    alert: observeMessages,
+    matches: subscribeToMessages,
+    progress: subscribeToMessages,
+    filters: subscribeToMessages,
+    alert: subscribeToMessages,
 }
 
 /**
