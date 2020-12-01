@@ -1506,6 +1506,28 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <br />
 
+## github-proxy: github_proxy_waiting_requests
+
+<p class="subtitle">cloud: number of requests waiting on the global mutex</p>
+
+**Descriptions:**
+
+- _github-proxy: 100+ number of requests waiting on the global mutex for 5m0s_
+
+**Possible solutions:**
+
+-                                 - **Check github-proxy logs for network connection issues.
+                                - **Check github status.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_github-proxy_github_proxy_waiting_requests"
+]
+```
+
+<br />
+
 ## github-proxy: container_cpu_usage
 
 <p class="subtitle">cloud: container cpu usage total (1m average) across all cores by instance</p>

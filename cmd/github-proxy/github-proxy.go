@@ -40,10 +40,16 @@ var rateLimitRemainingGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Help: "Number of calls to GitHub's API remaining before hitting the rate limit.",
 }, []string{"resource"})
 
+var waitRequestGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+	Name: "github_proxy_waiting_requests",
+	Help: "Number of proxy requests waiting on the mutex",
+})
+
 func init() {
 	rateLimitRemainingGauge.WithLabelValues("core").Set(5000)
 	rateLimitRemainingGauge.WithLabelValues("search").Set(30)
 	prometheus.MustRegister(rateLimitRemainingGauge)
+	prometheus.MustRegister(waitRequestGauge)
 }
 
 // list obtained from httputil of headers not to forward.
@@ -104,7 +110,9 @@ func main() {
 			Header: h2,
 		}
 
+		waitRequestGauge.Inc()
 		requestMu.Lock()
+		waitRequestGauge.Dec()
 		resp, err := client.Do(req2)
 		requestMu.Unlock()
 		if err != nil {
