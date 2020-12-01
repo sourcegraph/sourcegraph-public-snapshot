@@ -36,34 +36,32 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
     const fetchEmails = useCallback(async (): Promise<void> => {
         setStatusOrError('loading')
 
-        try {
-            const fetchedEmails = dataOrThrowErrors(
-                await requestGraphQL<UserEmailsResult, UserEmailsVariables>(
-                    gql`
-                        query UserEmails($user: ID!) {
-                            node(id: $user) {
-                                ... on User {
-                                    emails {
-                                        email
-                                        isPrimary
-                                        verified
-                                        verificationPending
-                                        viewerCanManuallyVerify
-                                    }
+        const fetchedEmails = dataOrThrowErrors(
+            await requestGraphQL<UserEmailsResult, UserEmailsVariables>(
+                gql`
+                    query UserEmails($user: ID!) {
+                        node(id: $user) {
+                            ... on User {
+                                emails {
+                                    email
+                                    isPrimary
+                                    verified
+                                    verificationPending
+                                    viewerCanManuallyVerify
                                 }
                             }
                         }
-                    `,
-                    { user: user.id }
-                ).toPromise()
-            )
+                    }
+                `,
+                { user: user.id }
+            ).toPromise()
+        )
 
-            if (fetchedEmails?.node?.emails) {
-                setEmails(fetchedEmails.node.emails)
-                setStatusOrError('loaded')
-            }
-        } catch (error) {
-            setStatusOrError(asError(error))
+        if (fetchedEmails?.node?.emails) {
+            setEmails(fetchedEmails.node.emails)
+            setStatusOrError('loaded')
+        } else {
+            setStatusOrError(asError("Sorry, we couldn't fetch user emails. Try again?"))
         }
     }, [user, setStatusOrError, setEmails])
 

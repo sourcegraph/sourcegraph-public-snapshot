@@ -32,12 +32,8 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
     const [primaryEmail, setPrimaryEmail] = useState<string>(findPrimaryEmail(emails))
     const [statusOrError, setStatusOrError] = useState<Status>()
 
-    const options = emails.reduce((accumulator: string[], email) => {
-        if (email.verified) {
-            accumulator.push(email.email)
-        }
-        return accumulator
-    }, [])
+    // options should include all verified emails + a primary one
+    const options = emails.filter(email => email.verified || email.isPrimary).map(email => email.email)
 
     const onPrimaryEmailSelect: React.ChangeEventHandler<HTMLSelectElement> = event =>
         setPrimaryEmail(event.target.value)

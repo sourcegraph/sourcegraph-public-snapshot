@@ -96,21 +96,18 @@ export const UserEmail: FunctionComponent<Props> = ({
         }
     }
 
-    let verifiedLinkFragment: React.ReactFragment
-    if (verified) {
-        verifiedLinkFragment = <span className="badge badge-success mr-1">Verified</span>
-    } else if (verificationPending) {
-        verifiedLinkFragment = <span className="badge badge-info mr-1">Verification pending</span>
-    } else {
-        verifiedLinkFragment = <span className="badge badge-secondary mr-1">Not verified</span>
-    }
-
     return (
         <>
             <div className="d-flex align-items-center justify-content-between">
                 <div>
                     <span className="mr-2">{email}</span>
-                    {verifiedLinkFragment}
+                    {verified ? (
+                        <span className="badge badge-success mr-1">Verified</span>
+                    ) : verificationPending ? (
+                        <span className="badge badge-info mr-1">Verification pending</span>
+                    ) : (
+                        <span className="badge badge-secondary mr-1">Not verified</span>
+                    )}
                     {isPrimary && <span className="badge badge-primary">Primary</span>}
                 </div>
                 <div>
