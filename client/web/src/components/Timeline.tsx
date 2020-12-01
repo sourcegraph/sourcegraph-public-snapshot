@@ -31,6 +31,8 @@ export const Timeline: FunctionComponent<TimelineProps> = ({ stages, now, classN
 
                 const previousDate = stages.map(stage => stage.date).find((date, index) => !!date && index < stageIndex)
 
+                const meta = <TimelineMeta stage={{ ...stage, date: stage.date }} now={now} />
+
                 return (
                     // Use index as key because the values in each step may not be unique. This is
                     // OK here because this list will not be updated during this component's lifetime.
@@ -52,7 +54,7 @@ export const Timeline: FunctionComponent<TimelineProps> = ({ stages, now, classN
                         {stage.details ? (
                             <>
                                 <Collapsible
-                                    title={<TimelineMeta stage={stage} now={now} />}
+                                    title={meta}
                                     className="p-0 font-weight-normal"
                                     buttonClassName="mb-0"
                                     titleAtStart={true}
@@ -62,7 +64,7 @@ export const Timeline: FunctionComponent<TimelineProps> = ({ stages, now, classN
                                 </Collapsible>
                             </>
                         ) : (
-                            <TimelineMeta stage={{ ...stage, date: stage.date }} now={now} />
+                            meta
                         )}
                     </div>
                 )

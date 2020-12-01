@@ -208,12 +208,12 @@ interface LogOutputProps {
     className?: string
 }
 
-const LogOutput: FunctionComponent<LogOutputProps> = ({ text, className }) => (
+const LogOutput: FunctionComponent<LogOutputProps> = React.memo(({ text, className }) => (
     <pre className={classNames('bg-code rounded p-3 mb-0', className)}>
         {
             // Use index as key because log lines may not be unique. This is OK
             // here because this list will not be updated during this component's
-            // lifetime.
+            // lifetime (note: it's also memoized).
             /* eslint-disable react/no-array-index-key */
             text.split('\n').map((line, index) => (
                 <code key={index} className={classNames('d-block', line.startsWith('stderr:') ? 'text-danger' : '')}>
@@ -222,7 +222,7 @@ const LogOutput: FunctionComponent<LogOutputProps> = ({ text, className }) => (
             ))
         }
     </pre>
-)
+))
 
 const timeOrders: [number, string][] = [
     [1000 * 60 * 60 * 24, 'day'],
