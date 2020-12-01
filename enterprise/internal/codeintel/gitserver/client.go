@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -39,6 +40,22 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, err erro
 	return c.execGitCommand(ctx, repositoryID, "rev-parse", "HEAD")
 }
 
+// CommitDate returns the time that the given commit was committed.
+func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string) (_ time.Time, err error) {
+	ctx, endObservation := c.operations.commitDate.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	out, err := c.execGitCommand(ctx, repositoryID, "show", "-s", "--format=%cI", commit)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return time.Parse(time.RFC3339, strings.TrimSpace(out))
+}
+
 type CommitGraph struct {
 	graph map[string][]string
 	order []string
@@ -50,6 +67,7 @@ func (c *CommitGraph) Order() []string            { return c.order }
 type CommitGraphOptions struct {
 	Commit string
 	Limit  int
+	Since  *time.Time
 }
 
 // CommitGraph returns the commit graph for the given repository as a mapping from a commit
@@ -66,6 +84,9 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitG
 	commands := []string{"log", "--all", "--pretty=%H %P", "--topo-order"}
 	if opts.Commit != "" {
 		commands = append(commands, opts.Commit)
+	}
+	if opts.Since != nil {
+		commands = append(commands, fmt.Sprintf("--since=%s", opts.Since.Format(time.RFC3339)))
 	}
 	if opts.Limit > 0 {
 		commands = append(commands, fmt.Sprintf("-%d", opts.Limit))
