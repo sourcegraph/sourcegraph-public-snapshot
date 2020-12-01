@@ -5,7 +5,6 @@ import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
 import MockDate from 'mockdate'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { getConfig } from '../../../shared/src/testing/config'
-import expect from 'expect'
 
 const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
 
@@ -203,67 +202,6 @@ describe('e2e test suite', () => {
             // Make sure repository slug without path pattern redirects to path pattern
             await driver.page.goto(sourcegraphBaseUrl + '/' + slug)
             await driver.assertWindowLocationPrefix('/' + pathPatternSlug)
-        })
-
-        const awsAccessKeyID = process.env.AWS_ACCESS_KEY_ID
-        const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
-        const awsCodeCommitUsername = process.env.AWS_CODE_COMMIT_GIT_USERNAME
-        const awsCodeCommitPassword = process.env.AWS_CODE_COMMIT_GIT_PASSWORD
-
-        const testIfAwsCredentialsSet =
-            awsSecretAccessKey && awsAccessKeyID && awsCodeCommitUsername && awsCodeCommitPassword
-                ? test
-                : test.skip.bind(test)
-
-        testIfAwsCredentialsSet('AWS CodeCommit', async () => {
-            await driver.ensureHasExternalService({
-                kind: ExternalServiceKind.AWSCODECOMMIT,
-                displayName: 'test-aws-code-commit',
-                config: JSON.stringify({
-                    region: 'us-west-1',
-                    accessKeyID: awsAccessKeyID,
-                    secretAccessKey: awsSecretAccessKey,
-                    repositoryPathPattern: 'aws/{name}',
-                    gitCredentials: {
-                        username: awsCodeCommitUsername,
-                        password: awsCodeCommitPassword,
-                    },
-                }),
-                ensureRepos: ['aws/test'],
-            })
-            await driver.page.goto(sourcegraphBaseUrl + '/aws/test/-/blob/README')
-            const blob = (await (
-                await driver.page.waitFor(() => document.querySelector<HTMLElement>('.test-repo-blob')?.textContent)
-            ).jsonValue()) as string | null
-
-            expect(blob).toBe('README\n\nchange')
-        })
-
-        const bbsURL = process.env.BITBUCKET_SERVER_URL
-        const bbsToken = process.env.BITBUCKET_SERVER_TOKEN
-        const bbsUsername = process.env.BITBUCKET_SERVER_USERNAME
-
-        const testIfBBSCredentialsSet = bbsURL && bbsToken && bbsUsername ? test : test.skip.bind(test)
-
-        testIfBBSCredentialsSet('Bitbucket Server', async () => {
-            await driver.ensureHasExternalService({
-                kind: ExternalServiceKind.BITBUCKETSERVER,
-                displayName: 'test-bitbucket-server',
-                config: JSON.stringify({
-                    url: bbsURL,
-                    token: bbsToken,
-                    username: bbsUsername,
-                    repos: ['SOURCEGRAPH/jsonrpc2'],
-                    repositoryPathPattern: 'bbs/{projectKey}/{repositorySlug}',
-                }),
-                ensureRepos: ['bbs/SOURCEGRAPH/jsonrpc2'],
-            })
-            await driver.page.goto(sourcegraphBaseUrl + '/bbs/SOURCEGRAPH/jsonrpc2/-/blob/.travis.yml')
-            const blob = (await (
-                await driver.page.waitFor(() => document.querySelector<HTMLElement>('.test-repo-blob')?.textContent)
-            ).jsonValue()) as string | null
-
-            expect(blob).toBe('language: go\ngo: \n - 1.x\n\nscript:\n - go test -race -v ./...')
         })
     })
 })
