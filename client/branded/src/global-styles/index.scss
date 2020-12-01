@@ -137,6 +137,7 @@ $hr-margin-y: 0.25rem;
 @import './forms';
 @import './highlight';
 @import './web-content';
+@import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 * {
     box-sizing: border-box;
