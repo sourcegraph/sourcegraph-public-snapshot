@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -83,7 +84,7 @@ func (s *Store) GetEventsForQueryIDInt64(ctx context.Context, queryID int64, arg
 }
 
 type TriggerJobs struct {
-	Id    int32
+	Id    int
 	Query int64
 
 	// The query we ran including after: filter.
@@ -104,7 +105,7 @@ type TriggerJobs struct {
 }
 
 func (r *TriggerJobs) RecordID() int {
-	return int(r.Id)
+	return r.Id
 }
 
 func ScanTriggerJobs(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
