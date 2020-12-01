@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 // Client is the client used to communicate with a remote job queue API.
@@ -57,11 +59,11 @@ func (c *Client) Dequeue(ctx context.Context, queueName string, job *Job) (bool,
 	return c.client.DoAndDecode(ctx, req, &job)
 }
 
-func (c *Client) SetLogContents(ctx context.Context, queueName string, jobID int, contents string) error {
-	req, err := c.makeRequest("POST", fmt.Sprintf("%s/setLogContents", queueName), SetLogRequest{
-		ExecutorName: c.options.ExecutorName,
-		JobID:        jobID,
-		Contents:     contents,
+func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry workerutil.ExecutionLogEntry) error {
+	req, err := c.makeRequest("POST", fmt.Sprintf("%s/addExecutionLogEntry", queueName), AddExecutionLogEntryRequest{
+		ExecutorName:      c.options.ExecutorName,
+		JobID:             jobID,
+		ExecutionLogEntry: entry,
 	})
 	if err != nil {
 		return err
