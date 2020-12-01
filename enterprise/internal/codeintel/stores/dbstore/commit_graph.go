@@ -3,18 +3,15 @@ package dbstore
 import (
 	"sync"
 
-	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 )
 
 // calculateVisibleUploads transforms the given commit graph and the set of LSIF uploads
 // defined on each commit with LSIF upload into a map from a commit to the set of uploads
 // which are visible from that commit.
-func calculateVisibleUploads(graph map[string][]string, commitGraphView *CommitGraphView) (map[string][]UploadMeta, error) {
-	// Order parents before children
-	ordering, err := topologicalSort(graph)
-	if err != nil {
-		return nil, err
-	}
+func calculateVisibleUploads(commitGraph *gitserver.CommitGraph, commitGraphView *CommitGraphView) (map[string][]UploadMeta, error) {
+	graph := commitGraph.Graph()
+	order := commitGraph.Order()
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -39,7 +36,7 @@ func calculateVisibleUploads(graph map[string][]string, commitGraphView *CommitG
 			}
 		}
 
-		for _, commit := range ordering {
+		for _, commit := range order {
 			uploads := ancestorVisibleUploads[commit]
 			for _, parent := range graph[commit] {
 				for _, upload := range ancestorVisibleUploads[parent] {
@@ -76,8 +73,8 @@ func calculateVisibleUploads(graph map[string][]string, commitGraphView *CommitG
 		// Calculate mapping from commits to their children
 		reverseGraph := reverseGraph(graph)
 
-		for i := len(ordering) - 1; i >= 0; i-- {
-			commit := ordering[i]
+		for i := len(order) - 1; i >= 0; i-- {
+			commit := order[i]
 			uploads := descendantVisibleUploads[commit]
 			for _, child := range reverseGraph[commit] {
 				for _, upload := range descendantVisibleUploads[child] {
@@ -168,61 +165,4 @@ func reverseGraph(graph map[string][]string) map[string][]string {
 	}
 
 	return reverse
-}
-
-type sortMarker int
-
-const (
-	markTemp sortMarker = iota
-	markPermenant
-)
-
-var ErrCyclicCommitGraph = errors.New("commit graph contains cycles")
-
-// topologicalSort returns an ordering of the vertices of the given graph such that
-// each vertex occurs before all of its children. The input graph is expected to be
-// represented as a mapping from a vertex to its parents (a la git log) rather than
-// a mapping of children. If the graph is not acyclic an error is returned as no
-// such ordering can exist.
-func topologicalSort(graph map[string][]string) (_ []string, err error) {
-	commits := make([]string, 0, len(graph))
-	visited := make(map[string]sortMarker, len(graph))
-
-	for commit := range graph {
-		if commits, err = visitForTopologicalSort(graph, commits, visited, commit); err != nil {
-			return nil, err
-		}
-	}
-
-	return commits, nil
-}
-
-// visitForTopologicalSort performs a post-order DFS traversal of the given graph
-// from the given target commit. Commits are uniquely appended to the commits slice
-// only after all of their descendants have been added.
-func visitForTopologicalSort(graph map[string][]string, commits []string, visited map[string]sortMarker, commit string) (_ []string, err error) {
-	if mark, ok := visited[commit]; ok {
-		if mark == markTemp {
-			return nil, ErrCyclicCommitGraph
-		}
-
-		return commits, nil
-	}
-
-	parents, ok := graph[commit]
-	if !ok {
-		return commits, nil
-	}
-
-	visited[commit] = markTemp
-
-	for _, parent := range parents {
-		if commits, err = visitForTopologicalSort(graph, commits, visited, parent); err != nil {
-			return nil, err
-		}
-	}
-
-	visited[commit] = markPermenant
-	commits = append(commits, commit)
-	return commits, nil
 }

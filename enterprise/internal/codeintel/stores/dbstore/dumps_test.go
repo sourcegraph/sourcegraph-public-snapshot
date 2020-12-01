@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
@@ -142,16 +144,16 @@ func TestFindClosestDumps(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(1)},
-		makeCommit(4): {makeCommit(3)},
-		makeCommit(5): {makeCommit(2), makeCommit(4)},
-		makeCommit(6): {makeCommit(5)},
-		makeCommit(7): {makeCommit(6)},
-		makeCommit(8): {makeCommit(6)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(8), makeCommit(6)}, " "),
+		strings.Join([]string{makeCommit(7), makeCommit(6)}, " "),
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(2), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	visibleUploads, err := calculateVisibleUploads(graph, toCommitGraphView(uploads))
 	if err != nil {
@@ -205,16 +207,16 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(2)},
-		makeCommit(4): {makeCommit(1)},
-		makeCommit(5): {makeCommit(4)},
-		makeCommit(6): {makeCommit(5)},
-		makeCommit(7): {makeCommit(4)},
-		makeCommit(8): {makeCommit(7)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(8), makeCommit(7)}, " "),
+		strings.Join([]string{makeCommit(7), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	visibleUploads, err := calculateVisibleUploads(graph, toCommitGraphView(uploads))
 	if err != nil {
@@ -266,10 +268,10 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	visibleUploads, err := calculateVisibleUploads(graph, toCommitGraphView(uploads))
 	if err != nil {
@@ -334,14 +336,14 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(2)},
-		makeCommit(4): {makeCommit(2)},
-		makeCommit(5): {makeCommit(3), makeCommit(4)},
-		makeCommit(6): {makeCommit(5)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(3), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	visibleUploads, err := calculateVisibleUploads(graph, toCommitGraphView(uploads))
 	if err != nil {
@@ -393,13 +395,13 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(2)},
-		makeCommit(4): {makeCommit(3)},
-		makeCommit(5): {makeCommit(4)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	visibleUploads, err := calculateVisibleUploads(graph, toCommitGraphView(uploads))
 	if err != nil {
@@ -461,9 +463,9 @@ func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	visibleUploads, err := calculateVisibleUploads(graph, toCommitGraphView(uploads))
 	if err != nil {
@@ -506,13 +508,13 @@ func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	currentGraph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(2)},
-		makeCommit(5): {makeCommit(1)},
-		makeCommit(6): {makeCommit(5)},
-	}
+	currentGraph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	visibleUploads, err := calculateVisibleUploads(currentGraph, toCommitGraphView(uploads))
 	if err != nil {
@@ -531,12 +533,12 @@ func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
-	graphFragment := map[string][]string{
-		makeCommit(3): {},
-		makeCommit(6): {},
-		makeCommit(4): {makeCommit(3)},
-		makeCommit(7): {makeCommit(4), makeCommit(6)},
-	}
+	graphFragment := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(7), makeCommit(4), makeCommit(6)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
+		strings.Join([]string{makeCommit(6)}, " "),
+		strings.Join([]string{makeCommit(3)}, " "),
+	})
 
 	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
 		// Note: Can't query anything outside of the graph fragment
@@ -615,7 +617,7 @@ type FindClosestDumpsTestCase struct {
 	file                string
 	rootMustEnclosePath bool
 	indexer             string
-	graph               map[string][]string
+	graph               *gitserver.CommitGraph
 	graphFragmentOnly   bool
 	anyOfIDs            []int
 	allOfIDs            []int
