@@ -13,7 +13,6 @@
     "test:regression:extensions": "mocha ./src/regression/extensions.test.ts",
     "test:regression:init": "mocha ./src/regression/init.test.ts",
     "test:regression:integrations": "mocha ./src/regression/integrations.test.ts",
-    "test:regression:onboarding": "mocha ./src/regression/onboarding.test.ts",
     "test:regression:org": "mocha ./src/regression/org.test.ts",
     "test:regression:search": "mocha ./src/regression/search.test.ts",
     "test-e2e-sgdev": "env SOURCEGRAPH_BASE_URL=https://sourcegraph.sgdev.org OVERRIDE_AUTH_SECRET=${SGDEV_OVERRIDE_AUTH_SECRET} mocha ./end-to-end/end-to-end.test.ts",
