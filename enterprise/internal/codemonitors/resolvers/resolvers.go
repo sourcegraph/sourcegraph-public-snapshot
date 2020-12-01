@@ -1000,6 +1000,9 @@ func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.List
 		} else {
 			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, *r.NamespaceOrgID)
 		}
+		if err != nil {
+			return nil, err
+		}
 		ns = append(ns, n)
 	}
 

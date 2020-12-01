@@ -3,7 +3,6 @@ package codemonitors
 import (
 	"context"
 	"database/sql"
-	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/sqlf"
@@ -18,22 +17,12 @@ type Recipient struct {
 	NamespaceOrgID  *int32
 }
 
-var recipientsColumns = []*sqlf.Query{
-	sqlf.Sprintf("cm_recipients.id"),
-	sqlf.Sprintf("cm_recipients.email"),
-	sqlf.Sprintf("cm_recipients.namespace_user_id"),
-	sqlf.Sprintf("cm_recipients.namespace_org_id"),
-}
-
-func (s *Store) CreateRecipients(ctx context.Context, recipients []graphql.ID, monitorID int64) (err error) {
-	var q *sqlf.Query
-	q, err = createRecipientsQuery(ctx, recipients, monitorID)
-	if err != nil {
-		return err
-	}
-	err = s.Exec(ctx, q)
-	if err != nil {
-		return err
+func (s *Store) CreateRecipients(ctx context.Context, recipients []graphql.ID, emailID int64) (err error) {
+	for _, r := range recipients {
+		err = s.createRecipient(ctx, r, emailID)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -52,7 +41,7 @@ func (s *Store) DeleteRecipients(ctx context.Context, emailID int64) (err error)
 }
 
 func (s *Store) RecipientsForEmailIDInt64(ctx context.Context, emailID int64, args *graphqlbackend.ListRecipientsArgs) ([]*Recipient, error) {
-	q, err := s.ReadRecipientQuery(ctx, emailID, args)
+	q, err := readRecipientQuery(ctx, emailID, args)
 	if err != nil {
 		return nil, err
 	}
@@ -61,25 +50,14 @@ func (s *Store) RecipientsForEmailIDInt64(ctx context.Context, emailID int64, ar
 		return nil, err
 	}
 	defer rows.Close()
-	ms, err := ScanRecipients(rows)
+	ms, err := scanRecipients(rows)
 	if err != nil {
 		return nil, err
 	}
 	return ms, nil
 }
 
-const totalCountRecipientsFmtStr = `
-SELECT COUNT(*)
-FROM cm_recipients
-WHERE email = %s
-`
-
-func (s *Store) TotalCountRecipients(ctx context.Context, emailID int64) (count int32, err error) {
-	err = s.QueryRow(ctx, sqlf.Sprintf(totalCountRecipientsFmtStr, emailID)).Scan(&count)
-	return count, err
-}
-
-func ScanRecipients(rows *sql.Rows) (ms []*Recipient, err error) {
+func scanRecipients(rows *sql.Rows) (ms []*Recipient, err error) {
 	for rows.Next() {
 		m := &Recipient{}
 		if err := rows.Scan(
@@ -102,35 +80,31 @@ func ScanRecipients(rows *sql.Rows) (ms []*Recipient, err error) {
 	return ms, nil
 }
 
-// CreateRecipientsQuery returns a query that inserts several recipients at once.
-func createRecipientsQuery(ctx context.Context, namespaces []graphql.ID, emailID int64) (*sqlf.Query, error) {
-	const header = `
+const createRecipientFmtStr = `
 INSERT INTO cm_recipients (email, namespace_user_id, namespace_org_id)
-VALUES`
-	const values = `
-(%s,%s,%s),`
+VALUES (%s,%s,%s)`
+
+func (s *Store) createRecipient(ctx context.Context, recipient graphql.ID, emailID int64) (err error) {
 	var (
-		userID        int32
-		orgID         int32
-		combinedQuery string
-		args          []interface{}
+		userID int32
+		orgID  int32
 	)
-	combinedQuery = header
-	for range namespaces {
-		combinedQuery += values
+	err = graphqlbackend.UnmarshalNamespaceID(recipient, &userID, &orgID)
+	if err != nil {
+		return err
 	}
-	combinedQuery = strings.TrimSuffix(combinedQuery, ",") + ";"
-	for _, ns := range namespaces {
-		err := graphqlbackend.UnmarshalNamespaceID(ns, &userID, &orgID)
-		if err != nil {
-			return nil, err
-		}
-		args = append(args, emailID, nilOrInt32(userID), nilOrInt32(orgID))
-	}
-	return sqlf.Sprintf(
-		combinedQuery,
-		args...,
-	), nil
+	return s.Exec(ctx, sqlf.Sprintf(createRecipientFmtStr, emailID, nilOrInt32(userID), nilOrInt32(orgID)))
+}
+
+const totalCountRecipientsFmtStr = `
+SELECT COUNT(*)
+FROM cm_recipients
+WHERE email = %s
+`
+
+func (s *Store) TotalCountRecipients(ctx context.Context, emailID int64) (count int32, err error) {
+	err = s.QueryRow(ctx, sqlf.Sprintf(totalCountRecipientsFmtStr, emailID)).Scan(&count)
+	return count, err
 }
 
 const deleteRecipientFmtStr = `DELETE FROM cm_recipients WHERE email = %s`
@@ -151,7 +125,7 @@ ORDER BY id ASC
 LIMIT %s;
 `
 
-func (s *Store) ReadRecipientQuery(ctx context.Context, emailId int64, args *graphqlbackend.ListRecipientsArgs) (*sqlf.Query, error) {
+func readRecipientQuery(ctx context.Context, emailId int64, args *graphqlbackend.ListRecipientsArgs) (*sqlf.Query, error) {
 	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
