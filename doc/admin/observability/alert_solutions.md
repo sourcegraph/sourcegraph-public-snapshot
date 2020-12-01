@@ -1746,6 +1746,305 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <br />
 
+## postgres: connections
+
+<p class="subtitle">cloud: connections</p>
+
+**Descriptions:**
+
+- _postgres: less than 5 connections for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_connections"
+]
+```
+
+<br />
+
+## postgres: transactions
+
+<p class="subtitle">cloud: transaction_durations</p>
+
+**Descriptions:**
+
+- _postgres: 300ms+ transaction_durations for 5m0s_
+- _postgres: 500ms+ transaction_durations for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_transactions",
+  "critical_postgres_transactions"
+]
+```
+
+<br />
+
+## postgres: postgres_up
+
+<p class="subtitle">cloud: current db status</p>
+
+**Descriptions:**
+
+- _postgres: less than 0 current db status for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_postgres_postgres_up"
+]
+```
+
+<br />
+
+## postgres: pg_exporter_err
+
+<p class="subtitle">cloud: error scraping postgres exporter</p>
+
+**Descriptions:**
+
+- _postgres: 1+ error scraping postgres exporter for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_pg_exporter_err"
+]
+```
+
+<br />
+
+## postgres: database_migration_status
+
+<p class="subtitle">cloud: schema migration status</p>
+
+**Descriptions:**
+
+- _postgres: 1+ schema migration status for 5m0s_
+
+**Possible solutions:**
+
+- A database migration has been in progress for 5 minutes, ensure that the migration has succeeded or contact Sourcegraph
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_postgres_database_migration_status"
+]
+```
+
+<br />
+
+## postgres: cache_hit_ratio
+
+<p class="subtitle">cloud: ratio of cache hits (should be 99%)</p>
+
+**Descriptions:**
+
+- _postgres: less than 0.98 ratio of cache hits (should be 99%) for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_cache_hit_ratio"
+]
+```
+
+<br />
+
+## postgres: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">cloud: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+
+**Descriptions:**
+
+- _postgres: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the pgsql service.
+- **Docker Compose:** Consider increasing `cpus:` of the pgsql container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_provisioning_container_cpu_usage_long_term"
+]
+```
+
+<br />
+
+## postgres: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">cloud: container memory usage (1d maximum) by instance</p>
+
+**Descriptions:**
+
+- _postgres: 80%+ container memory usage (1d maximum) by instance for 336h0m0s_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the pgsql service.
+- **Docker Compose:** Consider increasing `memory:` of the pgsql container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_provisioning_container_memory_usage_long_term"
+]
+```
+
+<br />
+
+## postgres: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">cloud: container cpu usage total (5m maximum) across all cores by instance</p>
+
+**Descriptions:**
+
+- _postgres: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the pgsql container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_provisioning_container_cpu_usage_short_term"
+]
+```
+
+<br />
+
+## postgres: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">cloud: container memory usage (5m maximum) by instance</p>
+
+**Descriptions:**
+
+- _postgres: 90%+ container memory usage (5m maximum) by instance_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of pgsql container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_provisioning_container_memory_usage_short_term"
+]
+```
+
+<br />
+
+## postgres: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+
+**Descriptions:**
+
+- _postgres: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the codeintel-db service.
+- **Docker Compose:** Consider increasing `cpus:` of the codeintel-db container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_provisioning_container_cpu_usage_long_term"
+]
+```
+
+<br />
+
+## postgres: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>
+
+**Descriptions:**
+
+- _postgres: 80%+ container memory usage (1d maximum) by instance for 336h0m0s_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the codeintel-db service.
+- **Docker Compose:** Consider increasing `memory:` of the codeintel-db container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_provisioning_container_memory_usage_long_term"
+]
+```
+
+<br />
+
+## postgres: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">code-intel: container cpu usage total (5m maximum) across all cores by instance</p>
+
+**Descriptions:**
+
+- _postgres: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the codeintel-db container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_provisioning_container_cpu_usage_short_term"
+]
+```
+
+<br />
+
+## postgres: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">code-intel: container memory usage (5m maximum) by instance</p>
+
+**Descriptions:**
+
+- _postgres: 90%+ container memory usage (5m maximum) by instance_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of codeintel-db container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_provisioning_container_memory_usage_short_term"
+]
+```
+
+<br />
+
 ## precise-code-intel-worker: upload_queue_size
 
 <p class="subtitle">code-intel: upload queue size</p>

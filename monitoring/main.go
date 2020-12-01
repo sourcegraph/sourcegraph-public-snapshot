@@ -14,6 +14,7 @@ func main() {
 		definitions.Frontend(),
 		definitions.GitServer(),
 		definitions.GitHubProxy(),
+		definitions.Postgres(),
 		definitions.PreciseCodeIntelWorker(),
 		definitions.QueryRunner(),
 		definitions.RepoUpdater(),
