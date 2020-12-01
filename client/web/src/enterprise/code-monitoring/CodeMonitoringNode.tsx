@@ -1,5 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useState, useCallback } from 'react'
+import * as H from 'history'
 import { Observable, concat, of } from 'rxjs'
 import { switchMap, catchError, startWith, takeUntil, tap, delay } from 'rxjs/operators'
 import { Toggle } from '../../../../branded/src/components/Toggle'
@@ -9,13 +10,17 @@ import { useEventObservable } from '../../../../shared/src/util/useObservable'
 import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
 import { toggleCodeMonitorEnabled } from './backend'
 
-interface CodeMonitorNodeProps {
+export interface CodeMonitorNodeProps {
     node: CodeMonitorFields
+    location: H.Location
 }
 
 const LOADING = 'LOADING' as const
 
-export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({ node }: CodeMonitorNodeProps) => {
+export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
+    location,
+    node,
+}: CodeMonitorNodeProps) => {
     const [enabled, setEnabled] = useState<boolean>(node.enabled)
 
     const [toggleMonitor, toggleMonitorOrError] = useEventObservable(
@@ -65,7 +70,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                             <Toggle value={enabled} className="mr-3" disabled={toggleMonitorOrError === LOADING} />
                         </div>
                         {/** TODO: link to edit pages. */}
-                        <Link to="/">Edit</Link>
+                        <Link to={`${location.pathname}/${node.id}`}>Edit</Link>
                     </div>
                 </div>
             </div>

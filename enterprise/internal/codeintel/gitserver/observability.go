@@ -8,6 +8,7 @@ import (
 )
 
 type operations struct {
+	commitDate        *observation.Operation
 	commitGraph       *observation.Operation
 	directoryChildren *observation.Operation
 	fileExists        *observation.Operation
@@ -33,6 +34,7 @@ func makeOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
+		commitDate:        op("CommitDate"),
 		commitGraph:       op("CommitGraph"),
 		directoryChildren: op("DirectoryChildren"),
 		fileExists:        op("FileExists"),

@@ -7,7 +7,7 @@ import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { toPositionOrRangeHash, appendSubtreeQueryParameter } from '../util/url'
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
-import { CodeExcerpt2 } from './CodeExcerpt2'
+import { CodeExcerptUnhighlighted } from './CodeExcerptUnhighlighted'
 import { IFileMatch, IMatchItem } from './FileMatch'
 import { mergeContext } from './FileMatchContext'
 import { Link } from './Link'
@@ -87,7 +87,13 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
     )
 
     if (NO_SEARCH_HIGHLIGHTING) {
-        return <CodeExcerpt2 urlWithoutPosition={props.result.file.url} items={showItems} onSelect={props.onSelect} />
+        return (
+            <CodeExcerptUnhighlighted
+                urlWithoutPosition={props.result.file.url}
+                items={showItems}
+                onSelect={props.onSelect}
+            />
+        )
     }
 
     const groupsOfItems = mergeContext(

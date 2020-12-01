@@ -96,7 +96,7 @@ func setMockDBStoreFindClosestDumps(t *testing.T, mockDBStore *MockDBStore, expe
 }
 
 func setMockDBStoreFindClosestDumpsFromGraphFragment(t *testing.T, mockDBStore *MockDBStore, expectedRepositoryID int, expectedCommit, expectedFile string, expectedrootMustEnclosePath bool, expectedIndexer string, expectedGraph map[string][]string, dumps []store.Dump) {
-	mockDBStore.FindClosestDumpsFromGraphFragmentFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file string, rootMustEnclosePath bool, indexer string, graph map[string][]string) ([]store.Dump, error) {
+	mockDBStore.FindClosestDumpsFromGraphFragmentFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file string, rootMustEnclosePath bool, indexer string, graph *gitserver.CommitGraph) ([]store.Dump, error) {
 		if repositoryID != expectedRepositoryID {
 			t.Errorf("unexpected repository id for FindClosestDumps. want=%d have=%d", expectedRepositoryID, repositoryID)
 		}
@@ -112,7 +112,7 @@ func setMockDBStoreFindClosestDumpsFromGraphFragment(t *testing.T, mockDBStore *
 		if indexer != expectedIndexer {
 			t.Errorf("unexpected indexer for FindClosestDumps. want=%s have=%s", expectedIndexer, indexer)
 		}
-		if diff := cmp.Diff(expectedGraph, graph); diff != "" {
+		if diff := cmp.Diff(expectedGraph, graph.Graph()); diff != "" {
 			t.Errorf("unexpected graph (-want +got):\n%s", diff)
 		}
 		return dumps, nil
@@ -434,8 +434,8 @@ func readTestFilter(t *testing.T, dirname, filename string) []byte {
 	return raw
 }
 
-func setMockGitserverCommitGraph(t *testing.T, mockGitserverClient *MockGitserverClient, expectedRepositoryID int, graph map[string][]string) {
-	mockGitserverClient.CommitGraphFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (map[string][]string, error) {
+func setMockGitserverCommitGraph(t *testing.T, mockGitserverClient *MockGitserverClient, expectedRepositoryID int, graph *gitserver.CommitGraph) {
+	mockGitserverClient.CommitGraphFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error) {
 		if repositoryID != expectedRepositoryID {
 			t.Errorf("unexpected repository identifier for CommitGraph. want=%d have=%d", expectedRepositoryID, repositoryID)
 		}

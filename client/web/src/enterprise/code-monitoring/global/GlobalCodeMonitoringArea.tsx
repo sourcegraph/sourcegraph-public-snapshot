@@ -34,6 +34,11 @@ const CreateCodeMonitorPage = lazyComponent<CreateCodeMonitorPageProps, 'CreateC
     'CreateCodeMonitorPage'
 )
 
+const ManageCodeMonitorPage = lazyComponent<{}, 'ManageCodeMonitorPage'>(
+    () => import('../ManageCodeMonitorPage'),
+    'ManageCodeMonitorPage'
+)
+
 /**
  * The global code monitoring area.
  */
@@ -70,6 +75,11 @@ export const AuthenticatedCodeMonitoringArea = withAuthenticatedUser<Authenticat
                     <Route
                         path={`${match.url}/new`}
                         render={props => <CreateCodeMonitorPage {...outerProps} {...props} {...breadcrumbSetters} />}
+                        exact={true}
+                    />
+                    <Route
+                        path={`${match.path}/:id`}
+                        render={props => <ManageCodeMonitorPage {...outerProps} {...props} {...breadcrumbSetters} />}
                         exact={true}
                     />
                 </Switch>
