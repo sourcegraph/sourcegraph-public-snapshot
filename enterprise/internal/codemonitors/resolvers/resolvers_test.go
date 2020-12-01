@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -633,4 +635,126 @@ query($userName: String!, $recipientCursor: String!){
 		}
 	}
 }
+`
+
+func TestQueryMonitorByID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+	r := newTestResolver(t)
+
+	userName := "cm-user1"
+	userID := insertTestUser(t, dbconn.Global, userName, true)
+
+	// Create a monitor.
+	ctx = actor.WithActor(ctx, actor.FromUser(userID))
+	m, err := r.insertTestMonitorWithOpts(ctx, t)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	input := map[string]interface{}{
+		"id": m.ID(),
+	}
+	response := apitest.Node{}
+	campaignApitest.MustExec(actorCtx, t, schema, input, &response, queryMonitorByID)
+
+	want := apitest.Node{
+		Node: apitest.Monitor{
+			Id:          string(relay.MarshalID(monitorKind, 1)),
+			Description: "test monitor",
+			Enabled:     true,
+			Owner:       apitest.UserOrg{Name: userName},
+			CreatedBy:   apitest.UserOrg{Name: userName},
+			CreatedAt:   marshalDateTime(t, r.Now()),
+			Trigger: apitest.Trigger{
+				Id:    string(relay.MarshalID(monitorTriggerQueryKind, 1)),
+				Query: "repo:foo",
+			},
+			Actions: apitest.ActionConnection{
+				TotalCount: 1,
+				Nodes: []apitest.Action{{
+					ActionEmail: apitest.ActionEmail{
+						Id:       string(relay.MarshalID(monitorActionEmailKind, 1)),
+						Enabled:  true,
+						Priority: "NORMAL",
+						Recipients: apitest.RecipientsConnection{
+							TotalCount: 1,
+							Nodes: []apitest.UserOrg{{
+								Name: userName,
+							}},
+						},
+						Header: "test header",
+					},
+				}},
+			},
+		},
+	}
+	if diff := cmp.Diff(response, want); diff != "" {
+		t.Fatalf("diff: %s", diff)
+	}
+}
+
+const queryMonitorByID = `
+fragment u on User { id, username }
+fragment o on Org { id, name }
+
+query ($id: ID!) {
+  node(id: $id) {
+    ... on Monitor {
+      id
+      description
+      enabled
+      owner {
+        ... on User {
+          ...u
+        }
+        ... on Org {
+          ...o
+        }
+      }
+      createdBy {
+        ...u
+      }
+      createdAt
+      trigger {
+        ... on MonitorQuery {
+          id
+          query
+        }
+      }
+      actions {
+        totalCount
+        nodes {
+          ... on MonitorEmail {
+            id
+            priority
+            header
+            enabled
+            recipients {
+              totalCount
+              nodes {
+                ... on User {
+                  ...u
+                }
+                ... on Org {
+                  ...o
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 `
