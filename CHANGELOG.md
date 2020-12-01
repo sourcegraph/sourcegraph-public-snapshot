@@ -19,6 +19,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- Two race conditions in the terminal UI of `src campaign [apply|preview]` have been fixed. [#399](https://github.com/sourcegraph/src-cli/pull/399)
+
 ### Removed
 
 ## 3.22.4

@@ -7,11 +7,14 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/src-cli/internal/campaigns"
 	"github.com/sourcegraph/src-cli/internal/output"
+	"golang.org/x/sync/semaphore"
 )
 
 func newCampaignProgressPrinter(out *output.Output, verbose bool, numParallelism int) *campaignProgressPrinter {
 	return &campaignProgressPrinter{
 		out: out,
+
+		sem: semaphore.NewWeighted(1),
 
 		verbose: verbose,
 
@@ -27,6 +30,8 @@ func newCampaignProgressPrinter(out *output.Output, verbose bool, numParallelism
 
 type campaignProgressPrinter struct {
 	out *output.Output
+
+	sem *semaphore.Weighted
 
 	verbose bool
 
@@ -84,6 +89,13 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 		return
 	}
 
+	// Try to acquire semaphore. If that fails, another PrintStatuses is still
+	// running and we return, since it will be called again.
+	if !p.sem.TryAcquire(1) {
+		return
+	}
+	defer p.sem.Release(1)
+
 	if p.progress == nil {
 		p.numStatusBars = p.initProgressBar(statuses)
 	}
@@ -128,11 +140,13 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 	statusBarIndex := 0
 	for _, ts := range currentlyRunning {
 		if _, ok := p.runningTasks[ts.RepoName]; ok {
+			// Update the status
+			p.runningTasks[ts.RepoName] = ts
 			continue
 		}
 
-		newlyStarted[ts.RepoName] = ts
 		p.runningTasks[ts.RepoName] = ts
+		newlyStarted[ts.RepoName] = ts
 
 		// Find free status bar slot
 		_, ok := p.statusBarRepo[statusBarIndex]

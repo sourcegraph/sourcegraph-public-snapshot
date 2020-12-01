@@ -217,16 +217,14 @@ func (svc *Service) SetDockerImages(ctx context.Context, spec *CampaignSpec, pro
 }
 
 func (svc *Service) ExecuteCampaignSpec(ctx context.Context, repos []*graphql.Repository, x Executor, spec *CampaignSpec, progress func([]*TaskStatus), skipErrors bool) ([]*ChangesetSpec, error) {
-	statuses := make([]*TaskStatus, 0, len(repos))
 	for _, repo := range repos {
-		ts := x.AddTask(repo, spec.Steps, spec.ChangesetTemplate)
-		statuses = append(statuses, ts)
+		x.AddTask(repo, spec.Steps, spec.ChangesetTemplate)
 	}
 
 	done := make(chan struct{})
 	if progress != nil {
 		go func() {
-			progress(statuses)
+			x.LockedTaskStatuses(progress)
 
 			ticker := time.NewTicker(1 * time.Second)
 			defer ticker.Stop()
@@ -234,7 +232,7 @@ func (svc *Service) ExecuteCampaignSpec(ctx context.Context, repos []*graphql.Re
 			for {
 				select {
 				case <-ticker.C:
-					progress(statuses)
+					x.LockedTaskStatuses(progress)
 
 				case <-done:
 					return
@@ -248,7 +246,7 @@ func (svc *Service) ExecuteCampaignSpec(ctx context.Context, repos []*graphql.Re
 	x.Start(ctx)
 	specs, err := x.Wait()
 	if progress != nil {
-		progress(statuses)
+		x.LockedTaskStatuses(progress)
 		done <- struct{}{}
 	}
 	if err != nil {

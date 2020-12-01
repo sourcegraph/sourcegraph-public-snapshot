@@ -40,10 +40,16 @@ func (e TaskExecutionErr) StatusText() string {
 }
 
 type Executor interface {
-	AddTask(repo *graphql.Repository, steps []Step, template *ChangesetTemplate) *TaskStatus
+	AddTask(repo *graphql.Repository, steps []Step, template *ChangesetTemplate)
 	LogFiles() []string
 	Start(ctx context.Context)
 	Wait() ([]*ChangesetSpec, error)
+
+	// LockedTaskStatuses calls the given function with the current state of
+	// the task statuses. Before calling the function, the statuses are locked
+	// to provide a consistent view of all statuses, but that also means the
+	// callback should be as fast as possible.
+	LockedTaskStatuses(func([]*TaskStatus))
 }
 
 type Task struct {
@@ -74,6 +80,11 @@ type TaskStatus struct {
 	Err           error
 }
 
+func (ts *TaskStatus) Clone() *TaskStatus {
+	clone := *ts
+	return &clone
+}
+
 func (ts *TaskStatus) IsRunning() bool {
 	return !ts.StartedAt.IsZero() && ts.FinishedAt.IsZero()
 }
@@ -94,8 +105,12 @@ type executor struct {
 	features featureFlags
 	logger   *LogManager
 	creator  *WorkspaceCreator
-	tasks    sync.Map
-	tempDir  string
+
+	tasks      []*Task
+	statuses   map[*Task]*TaskStatus
+	statusesMu sync.RWMutex
+
+	tempDir string
 
 	par           *parallel.Run
 	doneEnqueuing chan struct{}
@@ -115,14 +130,18 @@ func newExecutor(opts ExecutorOpts, client api.Client, features featureFlags) *e
 		logger:        NewLogManager(opts.TempDir, opts.KeepLogs),
 		tempDir:       opts.TempDir,
 		par:           parallel.NewRun(opts.Parallelism),
+		tasks:         []*Task{},
+		statuses:      map[*Task]*TaskStatus{},
 	}
 }
 
-func (x *executor) AddTask(repo *graphql.Repository, steps []Step, template *ChangesetTemplate) *TaskStatus {
+func (x *executor) AddTask(repo *graphql.Repository, steps []Step, template *ChangesetTemplate) {
 	task := &Task{repo, steps, template}
-	ts := &TaskStatus{RepoName: repo.Name, EnqueuedAt: time.Now()}
-	x.tasks.Store(task, ts)
-	return ts
+	x.tasks = append(x.tasks, task)
+
+	x.statusesMu.Lock()
+	x.statuses[task] = &TaskStatus{RepoName: repo.Name, EnqueuedAt: time.Now()}
+	x.statusesMu.Unlock()
 }
 
 func (x *executor) LogFiles() []string {
@@ -130,10 +149,10 @@ func (x *executor) LogFiles() []string {
 }
 
 func (x *executor) Start(ctx context.Context) {
-	x.tasks.Range(func(k, v interface{}) bool {
+	for _, task := range x.tasks {
 		select {
 		case <-ctx.Done():
-			return false
+			break
 		default:
 		}
 
@@ -151,10 +170,8 @@ func (x *executor) Start(ctx context.Context) {
 					x.par.Error(err)
 				}
 			}
-		}(k.(*Task))
-
-		return true
-	})
+		}(task)
+	}
 
 	close(x.doneEnqueuing)
 }
@@ -168,24 +185,19 @@ func (x *executor) Wait() ([]*ChangesetSpec, error) {
 }
 
 func (x *executor) do(ctx context.Context, task *Task) (err error) {
-	// Set up the task status so we can update it as we progress.
-	ts, _ := x.tasks.LoadOrStore(task, &TaskStatus{})
-	status, ok := ts.(*TaskStatus)
-	if !ok {
-		return errors.Errorf("unexpected non-TaskStatus value of type %T: %+v", ts, ts)
-	}
-
 	// Ensure that the status is updated when we're done.
 	defer func() {
-		status.FinishedAt = time.Now()
-		status.CurrentlyExecuting = ""
-		status.Err = err
-		x.updateTaskStatus(task, status)
+		x.updateTaskStatus(task, func(status *TaskStatus) {
+			status.FinishedAt = time.Now()
+			status.CurrentlyExecuting = ""
+			status.Err = err
+		})
 	}()
 
 	// We're away!
-	status.StartedAt = time.Now()
-	x.updateTaskStatus(task, status)
+	x.updateTaskStatus(task, func(status *TaskStatus) {
+		status.StartedAt = time.Now()
+	})
 
 	// Check if the task is cached.
 	cacheKey := task.cacheKey()
@@ -214,23 +226,26 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 				diff = result.Commits[0].Diff
 			}
 
-			status.Cached = true
-
 			// If the cached result resulted in an empty diff, we don't need to
 			// add it to the list of specs that are displayed to the user and
 			// send to the server. Instead, we can just report that the task is
 			// complete and move on.
 			if len(diff) == 0 {
-				status.FinishedAt = time.Now()
-				x.updateTaskStatus(task, status)
+				x.updateTaskStatus(task, func(status *TaskStatus) {
+					status.Cached = true
+					status.FinishedAt = time.Now()
+
+				})
 				return
 			}
 
 			spec := createChangesetSpec(task, diff, x.features)
 
-			status.ChangesetSpec = spec
-			status.FinishedAt = time.Now()
-			x.updateTaskStatus(task, status)
+			x.updateTaskStatus(task, func(status *TaskStatus) {
+				status.ChangesetSpec = spec
+				status.Cached = true
+				status.FinishedAt = time.Now()
+			})
 
 			// Add the spec to the executor's list of completed specs.
 			x.specsMu.Lock()
@@ -266,8 +281,10 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 
 	// Actually execute the steps.
 	diff, err := runSteps(runCtx, x.creator, task.Repository, task.Steps, log, x.tempDir, func(currentlyExecuting string) {
-		status.CurrentlyExecuting = currentlyExecuting
-		x.updateTaskStatus(task, status)
+		x.updateTaskStatus(task, func(status *TaskStatus) {
+			status.CurrentlyExecuting = currentlyExecuting
+		})
+
 	})
 	if err != nil {
 		if reachedTimeout(runCtx, err) {
@@ -288,12 +305,12 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 	// If the steps didn't result in any diff, we don't need to add it to the
 	// list of specs that are displayed to the user and send to the server.
 	if len(diff) == 0 {
-		x.updateTaskStatus(task, status)
 		return
 	}
 
-	status.ChangesetSpec = spec
-	x.updateTaskStatus(task, status)
+	x.updateTaskStatus(task, func(status *TaskStatus) {
+		status.ChangesetSpec = spec
+	})
 
 	// Add the spec to the executor's list of completed specs.
 	x.specsMu.Lock()
@@ -302,8 +319,26 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 	return
 }
 
-func (x *executor) updateTaskStatus(task *Task, status *TaskStatus) {
-	x.tasks.Store(task, status)
+func (x *executor) updateTaskStatus(task *Task, update func(status *TaskStatus)) {
+	x.statusesMu.Lock()
+	defer x.statusesMu.Unlock()
+
+	status, ok := x.statuses[task]
+	if ok {
+		update(status)
+	}
+}
+
+func (x *executor) LockedTaskStatuses(callback func([]*TaskStatus)) {
+	x.statusesMu.RLock()
+	defer x.statusesMu.RUnlock()
+
+	var s []*TaskStatus
+	for _, status := range x.statuses {
+		s = append(s, status)
+	}
+
+	callback(s)
 }
 
 type errTimeoutReached struct{ timeout time.Duration }
