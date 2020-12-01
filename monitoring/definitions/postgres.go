@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	codeintel = "codeintel-db"
-	db        = "pgsql"
+	dbCodeIntel   = "codeintel-db"
+	dbSourcegraph = "pgsql"
 )
 
 func Postgres() *Container {
