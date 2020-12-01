@@ -469,7 +469,7 @@ function parseLineOrPosition(
 
 /** Encodes a repository at a revspec for use in a URL. */
 export function encodeRepoRevision({ repoName, revision }: RepoSpec & Partial<RevisionSpec>): string {
-    return revision ? `${encodeURIComponentExceptSlashes(repoName)}@${escapeRevspecForURL(revision)}` : repoName
+    return revision ? `${encodeURIPathComponent(repoName)}@${escapeRevspecForURL(revision)}` : repoName
 }
 
 export function toPrettyBlobURL(
@@ -507,7 +507,7 @@ export function toRepoURL(target: RepoSpec & Partial<RevisionSpec>): string {
  * for (e.g.) branches with slashes look a lot nicer with '/' than '%2F'.
  */
 export function escapeRevspecForURL(revision: string): string {
-    return encodeURIComponentExceptSlashes(revision)
+    return encodeURIPathComponent(revision)
 }
 
 export function toViewStateHashComponent(viewState: string | undefined): string {
@@ -517,17 +517,25 @@ export function toViewStateHashComponent(viewState: string | undefined): string 
 const positionString = (position: Position): string =>
     position.line.toString() + (position.character ? `,${position.character}` : '')
 
-export const encodeURIComponentExceptSlashes = (component: string): string =>
-    component.split('/').map(encodeURIComponent).join('/')
+/**
+ * %-Encodes a path component of a URI.
+ *
+ * It encodes all special characters except forward slashes and the plus sign `+`. The plus sign only has meaning
+ * as a space in the query component of a URL, because its special meaning is defined for the
+ * `application/x-www-form-urlencoded` MIME type, which is used for queries. It is not part of the general
+ * `%`-encoding for URLs.
+ */
+export const encodeURIPathComponent = (component: string): string =>
+    component.split('/').map(encodeURIComponent).join('/').replace(/%2B/g, '+')
 
 /**
  * The inverse of parseRepoURI, this generates a string from parsed values.
  */
 export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
     const revision = parsed.commitID || parsed.revision
-    let uri = `git://${encodeURIComponentExceptSlashes(parsed.repoName)}`
-    uri += revision ? '?' + encodeURIComponentExceptSlashes(revision) : ''
-    uri += parsed.filePath ? '#' + encodeURIComponentExceptSlashes(parsed.filePath) : ''
+    let uri = `git://${encodeURIPathComponent(parsed.repoName)}`
+    uri += revision ? '?' + encodeURIPathComponent(revision) : ''
+    uri += parsed.filePath ? '#' + encodeURIPathComponent(parsed.filePath) : ''
     uri += parsed.position || parsed.range ? ':' : ''
     uri += parsed.position ? positionString(parsed.position) : ''
     uri += parsed.range ? positionString(parsed.range.start) + '-' + positionString(parsed.range.end) : ''
@@ -535,10 +543,10 @@ export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
 }
 
 export const toRootURI = ({ repoName, commitID }: RepoSpec & ResolvedRevisionSpec): string =>
-    `git://${encodeURIComponentExceptSlashes(repoName)}?${commitID}`
+    `git://${encodeURIPathComponent(repoName)}?${commitID}`
 
 export function toURIWithPath({ repoName, filePath, commitID }: RepoSpec & ResolvedRevisionSpec & FileSpec): string {
-    return `git://${encodeURIComponentExceptSlashes(repoName)}?${commitID}#${encodeURIComponentExceptSlashes(filePath)}`
+    return `git://${encodeURIPathComponent(repoName)}?${commitID}#${encodeURIPathComponent(filePath)}`
 }
 
 /**
