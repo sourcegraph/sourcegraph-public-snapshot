@@ -328,7 +328,6 @@ describe('useInputValidation()', () => {
             emailInputReference.current = (inputElement as unknown) as HTMLInputElement
 
             inputElement.changeValue('test-string')
-            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
             nextEmailFieldChange({
                 target: emailInputReference.current,
                 preventDefault: noop,
