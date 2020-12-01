@@ -1,6 +1,7 @@
 package dbstore
 
 import (
+	"fmt"
 	"sort"
 	"testing"
 
@@ -35,17 +36,16 @@ var testGraph = map[string][]string{
 }
 
 func TestInternalCalculateVisibleUploads(t *testing.T) {
-	uploads := map[string][]UploadMeta{
-		"e66e8f9b": {{UploadID: 50, Root: "sub1/", Indexer: "lsif-go"}},
-		"f635b8d1": {{UploadID: 52, Root: "sub3/", Indexer: "lsif-go"}},
-		"d6e54842": {{UploadID: 53, Root: "sub3/", Indexer: "lsif-go"}},
-		"5340d471": {{UploadID: 54, Root: "sub3/", Indexer: "lsif-go"}},
-		"95dd4b2b": {{UploadID: 55, Root: "sub3/", Indexer: "lsif-go"}},
-		"5971b083": {{UploadID: 51, Root: "sub2/", Indexer: "lsif-go"}},
-		"0ed556d3": {{UploadID: 56, Root: "sub3/", Indexer: "lsif-go"}},
-	}
+	commitGraphView := NewCommitGraphView()
+	commitGraphView.Add(UploadMeta{UploadID: 50}, "e66e8f9b", "sub1/:lsif-go")
+	commitGraphView.Add(UploadMeta{UploadID: 51}, "5971b083", "sub2/:lsif-go")
+	commitGraphView.Add(UploadMeta{UploadID: 52}, "f635b8d1", "sub3/:lsif-go")
+	commitGraphView.Add(UploadMeta{UploadID: 53}, "d6e54842", "sub3/:lsif-go")
+	commitGraphView.Add(UploadMeta{UploadID: 54}, "5340d471", "sub3/:lsif-go")
+	commitGraphView.Add(UploadMeta{UploadID: 55}, "95dd4b2b", "sub3/:lsif-go")
+	commitGraphView.Add(UploadMeta{UploadID: 56}, "0ed556d3", "sub3/:lsif-go")
 
-	visibleUploads, err := calculateVisibleUploads(testGraph, uploads)
+	visibleUploads, err := calculateVisibleUploads(testGraph, commitGraphView)
 	if err != nil {
 		t.Fatalf("unexpected error calculating visible uploads: %s", err)
 	}
@@ -57,64 +57,19 @@ func TestInternalCalculateVisibleUploads(t *testing.T) {
 	}
 
 	expectedVisibleUploads := map[string][]UploadMeta{
-		"e66e8f9b": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 0},
-			{UploadID: 51, Root: "sub2/", Indexer: "lsif-go", Distance: 2},
-			{UploadID: 52, Root: "sub3/", Indexer: "lsif-go", Distance: 1},
-		},
-		"0c5a779c": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 1},
-			{UploadID: 51, Root: "sub2/", Indexer: "lsif-go", Distance: 1},
-		},
-		"f635b8d1": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 1},
-			{UploadID: 51, Root: "sub2/", Indexer: "lsif-go", Distance: 4},
-			{UploadID: 52, Root: "sub3/", Indexer: "lsif-go", Distance: 0},
-		},
-		"4d36f88b": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 2},
-			{UploadID: 52, Root: "sub3/", Indexer: "lsif-go", Distance: 1},
-		},
-		"026b8df9": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 2},
-			{UploadID: 51, Root: "sub2/", Indexer: "lsif-go", Distance: 3},
-			{UploadID: 52, Root: "sub3/", Indexer: "lsif-go", Distance: 1},
-		},
-		"6c301adb": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 3},
-			{UploadID: 52, Root: "sub3/", Indexer: "lsif-go", Distance: 2},
-		},
-		"d6e54842": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 3},
-			{UploadID: 51, Root: "sub2/", Indexer: "lsif-go", Distance: 2},
-			{UploadID: 53, Root: "sub3/", Indexer: "lsif-go", Distance: 0},
-		},
-		"5340d471": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 4},
-			{UploadID: 54, Root: "sub3/", Indexer: "lsif-go", Distance: 0},
-		},
-		"cbc5cf7c": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 5},
-			{UploadID: 54, Root: "sub3/", Indexer: "lsif-go", Distance: 1},
-		},
-		"95dd4b2b": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 4},
-			{UploadID: 51, Root: "sub2/", Indexer: "lsif-go", Distance: 1},
-			{UploadID: 55, Root: "sub3/", Indexer: "lsif-go", Distance: 0},
-		},
-		"5971b083": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 2},
-			{UploadID: 51, Root: "sub2/", Indexer: "lsif-go", Distance: 0},
-			{UploadID: 55, Root: "sub3/", Indexer: "lsif-go", Distance: 1},
-		},
-		"7cb4a974": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 5},
-			{UploadID: 55, Root: "sub3/", Indexer: "lsif-go", Distance: 1},
-		},
-		"0ed556d3": {
-			{UploadID: 50, Root: "sub1/", Indexer: "lsif-go", Distance: 6},
-			{UploadID: 56, Root: "sub3/", Indexer: "lsif-go", Distance: 0},
-		},
+		"e66e8f9b": {{UploadID: 50, Flags: 0}, {UploadID: 51, Flags: 2}, {UploadID: 52, Flags: 1}},
+		"0c5a779c": {{UploadID: 50, Flags: 1}, {UploadID: 51, Flags: 1}},
+		"f635b8d1": {{UploadID: 50, Flags: 1}, {UploadID: 51, Flags: 4}, {UploadID: 52, Flags: 0}},
+		"4d36f88b": {{UploadID: 50, Flags: 2}, {UploadID: 52, Flags: 1}},
+		"026b8df9": {{UploadID: 50, Flags: 2}, {UploadID: 51, Flags: 3}, {UploadID: 52, Flags: 1}},
+		"6c301adb": {{UploadID: 50, Flags: 3}, {UploadID: 52, Flags: 2}},
+		"d6e54842": {{UploadID: 50, Flags: 3}, {UploadID: 51, Flags: 2}, {UploadID: 53, Flags: 0}},
+		"5340d471": {{UploadID: 50, Flags: 4}, {UploadID: 54, Flags: 0}},
+		"cbc5cf7c": {{UploadID: 50, Flags: 5}, {UploadID: 54, Flags: 1}},
+		"95dd4b2b": {{UploadID: 50, Flags: 4}, {UploadID: 51, Flags: 1}, {UploadID: 55, Flags: 0}},
+		"5971b083": {{UploadID: 50, Flags: 2}, {UploadID: 51, Flags: 0}, {UploadID: 55, Flags: 1}},
+		"7cb4a974": {{UploadID: 50, Flags: 5}, {UploadID: 55, Flags: 1}},
+		"0ed556d3": {{UploadID: 50, Flags: 6}, {UploadID: 56, Flags: 0}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, visibleUploads, UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected graph (-want +got):\n%s", diff)
@@ -184,6 +139,56 @@ func TestTopologicalSortCycles(t *testing.T) {
 	if _, err := topologicalSort(cyclicTestGraph); err != ErrCyclicCommitGraph {
 		t.Fatalf("unexpected error sorting graph. want=%q have=%q", ErrCyclicCommitGraph, err)
 	}
+}
+
+func BenchmarkCalculateVisibleUploads(b *testing.B) {
+	graph, commitGraphView := makeBenchmarkGraph()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		_, _ = calculateVisibleUploads(graph, commitGraphView)
+	}
+}
+
+func makeBenchmarkGraph() (map[string][]string, *CommitGraphView) {
+	var (
+		numCommits = 5000
+		numUploads = 2000
+		numRoots   = 500
+	)
+
+	var commits []string
+	for i := 0; i < numCommits; i++ {
+		commits = append(commits, fmt.Sprintf("%40d", i))
+	}
+
+	graph := map[string][]string{}
+	for i, commit := range commits {
+		if i == 0 {
+			graph[commit] = nil
+		} else {
+			graph[commit] = commits[i-1 : i]
+		}
+	}
+
+	var roots []string
+	for i := 0; i < numRoots; i++ {
+		roots = append(roots, fmt.Sprintf("sub%d/", i))
+	}
+
+	commitGraphView := NewCommitGraphView()
+
+	for i := 0; i < numUploads; i++ {
+		commitGraphView.Add(
+			UploadMeta{UploadID: i},
+			fmt.Sprintf("%40d", int((float64(i*numUploads)/float64(numCommits)))),
+			fmt.Sprintf("%s:lsif-go", roots[i%numRoots]),
+		)
+	}
+
+	return graph, commitGraphView
 }
 
 func indexOf(ordering []string, commit string) (int, bool) {
