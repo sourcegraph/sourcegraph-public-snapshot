@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -97,7 +96,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	}
 
 	// create actions
-	err = tx.createActions(ctx, args.Actions, m.(*monitor).id)
+	err = tx.store.CreateActions(ctx, args.Actions, m.(*monitor).id)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +168,7 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	if err != nil {
 		return nil, err
 	}
-	err = tx.createActions(ctx, toCreate, monitorID)
+	err = tx.store.CreateActions(ctx, toCreate, monitorID)
 	if err != nil {
 		return nil, err
 	}
@@ -302,11 +301,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		if err != nil {
 			return nil, err
 		}
-		q, err = r.deleteRecipientsQuery(ctx, emailID)
-		if err != nil {
-			return nil, err
-		}
-		err = r.store.Exec(ctx, q)
+		err = r.store.DeleteRecipients(ctx, emailID)
 		if err != nil {
 			return nil, err
 		}
@@ -314,36 +309,12 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		if err != nil {
 			return nil, err
 		}
-		q, err = createRecipientsQuery(ctx, action.Email.Update.Recipients, e.Id)
-		if err != nil {
-			return nil, err
-		}
-		err = r.store.Exec(ctx, q)
+		err = r.store.CreateRecipients(ctx, action.Email.Update.Recipients, e.Id)
 		if err != nil {
 			return nil, err
 		}
 	}
 	return m, nil
-}
-
-func (r *Resolver) createActions(ctx context.Context, args []*graphqlbackend.CreateActionArgs, monitorID int64) (err error) {
-	var q *sqlf.Query
-	for _, a := range args {
-		e, err := r.store.CreateActionEmail(ctx, monitorID, a)
-		if err != nil {
-			return err
-		}
-		// Insert recipients.
-		q, err = createRecipientsQuery(ctx, a.Email.Recipients, e.Id)
-		if err != nil {
-			return err
-		}
-		err = r.store.Exec(ctx, q)
-		if err != nil {
-			return err
-		}
-	}
-	return err
 }
 
 func (r *Resolver) transact(ctx context.Context) (*Resolver, error) {
@@ -413,37 +384,6 @@ func scanMonitors(rows *sql.Rows) ([]graphqlbackend.MonitorResolver, error) {
 	}
 	// Rows.Err will report the last error encountered by Rows.Scan.
 	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return ms, nil
-}
-
-type recipient struct {
-	id              int64
-	email           int64
-	namespaceUserID *int32
-	namespaceOrgID  *int32
-}
-
-func scanRecipients(rows *sql.Rows) (ms []*recipient, err error) {
-	for rows.Next() {
-		m := &recipient{}
-		if err := rows.Scan(
-			&m.id,
-			&m.email,
-			&m.namespaceUserID,
-			&m.namespaceOrgID,
-		); err != nil {
-			return nil, err
-		}
-		ms = append(ms, m)
-	}
-	err = rows.Close()
-	if err != nil {
-		return nil, err
-	}
-	// Rows.Err will report the last error encountered by Rows.Scan.
-	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 	return ms, nil
@@ -634,73 +574,6 @@ WHERE monitor = %s;
 	return sqlf.Sprintf(
 		triggerQueryByMonitorQuery,
 		monitorID,
-	), nil
-}
-
-var recipientsColumns = []*sqlf.Query{
-	sqlf.Sprintf("cm_recipients.id"),
-	sqlf.Sprintf("cm_recipients.email"),
-	sqlf.Sprintf("cm_recipients.namespace_user_id"),
-	sqlf.Sprintf("cm_recipients.namespace_org_id"),
-}
-
-// createRecipientsQuery returns a query that inserts several recipients at once.
-func createRecipientsQuery(ctx context.Context, namespaces []graphql.ID, emailID int64) (*sqlf.Query, error) {
-	const header = `
-INSERT INTO cm_recipients (email, namespace_user_id, namespace_org_id)
-VALUES`
-	const values = `
-(%s,%s,%s),`
-	var (
-		userID        int32
-		orgID         int32
-		combinedQuery string
-		args          []interface{}
-	)
-	combinedQuery = header
-	for range namespaces {
-		combinedQuery += values
-	}
-	combinedQuery = strings.TrimSuffix(combinedQuery, ",") + ";"
-	for _, ns := range namespaces {
-		err := graphqlbackend.UnmarshalNamespaceID(ns, &userID, &orgID)
-		if err != nil {
-			return nil, err
-		}
-		args = append(args, emailID, nilOrInt32(userID), nilOrInt32(orgID))
-	}
-	return sqlf.Sprintf(
-		combinedQuery,
-		args...,
-	), nil
-}
-
-func (r *Resolver) deleteRecipientsQuery(ctx context.Context, emailId int64) (*sqlf.Query, error) {
-	const deleteRecipientQuery = `DELETE FROM cm_recipients WHERE email = %s`
-	return sqlf.Sprintf(
-		deleteRecipientQuery,
-		emailId,
-	), nil
-}
-
-func (r *Resolver) readRecipientQuery(ctx context.Context, emailId int64, args *graphqlbackend.ListRecipientsArgs) (*sqlf.Query, error) {
-	const readRecipientQuery = `
-SELECT id, email, namespace_user_id, namespace_org_id
-FROM cm_recipients
-WHERE email = %s
-AND id > %s
-ORDER BY id ASC
-LIMIT %s;
-`
-	after, err := unmarshalAfter(args.After)
-	if err != nil {
-		return nil, err
-	}
-	return sqlf.Sprintf(
-		readRecipientQuery,
-		emailId,
-		after,
-		args.First,
 	), nil
 }
 
@@ -1114,26 +987,21 @@ type monitorEmail struct {
 }
 
 func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.ListRecipientsArgs) (c graphqlbackend.MonitorActionEmailRecipientsConnectionResolver, err error) {
-	q, err := m.readRecipientQuery(ctx, m.Id, args)
-	if err != nil {
-		return nil, err
-	}
-	rows, err := m.store.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	ms, err := scanRecipients(rows)
+	var ms []*cm.Recipient
+	ms, err = m.store.RecipientsForEmailIDInt64(ctx, m.Id, args)
 	if err != nil {
 		return nil, err
 	}
 	var ns []graphqlbackend.NamespaceResolver
 	for _, r := range ms {
 		n := graphqlbackend.NamespaceResolver{}
-		if r.namespaceOrgID == nil {
-			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, *r.namespaceUserID)
+		if r.NamespaceOrgID == nil {
+			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, *r.NamespaceUserID)
 		} else {
-			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, *r.namespaceOrgID)
+			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, *r.NamespaceOrgID)
+		}
+		if err != nil {
+			return nil, err
 		}
 		ns = append(ns, n)
 	}
@@ -1143,9 +1011,12 @@ func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.List
 	// is easier to just use the id of the recipients table.
 	var nextPageCursor string
 	if len(ms) > 0 {
-		nextPageCursor = string(relay.MarshalID(monitorActionEmailRecipientKind, ms[len(ms)-1].id))
+		nextPageCursor = string(relay.MarshalID(monitorActionEmailRecipientKind, ms[len(ms)-1].ID))
 	}
-	return &monitorActionEmailRecipientsConnection{ns, nextPageCursor}, nil
+
+	var total int32
+	total, err = m.store.TotalCountRecipients(ctx, m.Id)
+	return &monitorActionEmailRecipientsConnection{ns, nextPageCursor, total}, nil
 }
 
 func (m *monitorEmail) Enabled() bool {
@@ -1174,6 +1045,7 @@ func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEven
 type monitorActionEmailRecipientsConnection struct {
 	recipients     []graphqlbackend.NamespaceResolver
 	nextPageCursor string
+	totalCount     int32
 }
 
 func (a *monitorActionEmailRecipientsConnection) Nodes(ctx context.Context) ([]graphqlbackend.NamespaceResolver, error) {
@@ -1181,7 +1053,7 @@ func (a *monitorActionEmailRecipientsConnection) Nodes(ctx context.Context) ([]g
 }
 
 func (a *monitorActionEmailRecipientsConnection) TotalCount(ctx context.Context) (int32, error) {
-	return int32(len(a.recipients)), nil
+	return a.totalCount, nil
 }
 
 func (a *monitorActionEmailRecipientsConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
