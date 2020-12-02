@@ -201,7 +201,7 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 func (sr *SearchResultsResolver) Alert() *searchAlert { return sr.alert }
 
 func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
-	return int32(time.Since(sr.start).Nanoseconds() / int64(time.Millisecond))
+	return int32(time.Since(sr.start).Milliseconds())
 }
 
 // commonFileFilters are common filters used. It is used by DynamicFilters to
