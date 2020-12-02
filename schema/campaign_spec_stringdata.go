@@ -81,11 +81,34 @@ const CampaignSpecSchemaJSON = `{
             "examples": ["alpine:3"]
           },
           "env": {
-            "type": "object",
-            "description": "Environment variables to set in the environment when running this command.",
-            "additionalProperties": {
-              "type": "string"
-            }
+            "description": "Environment variables to set in the step environment.",
+            "oneOf": [
+              {
+                "type": "object",
+                "description": "Environment variables to set in the step environment.",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "description": "An environment variable to set in the step environment: the value will be passed through from the environment src is running within."
+                    },
+                    {
+                      "type": "object",
+                      "description": "An environment variable to set in the step environment: the value will be passed through from the environment src is running within.",
+                      "additionalProperties": { "type": "string" },
+                      "minProperties": 1,
+                      "maxProperties": 1
+                    }
+                  ]
+                }
+              }
+            ]
           },
           "files": {
             "type": "object",

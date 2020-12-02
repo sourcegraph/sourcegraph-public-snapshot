@@ -256,7 +256,7 @@ func initRouter() {
 	}, nil)))
 
 	// streaming search
-	router.Get(routeSearchStream).HandlerFunc(search.ServeStream)
+	router.Get(routeSearchStream).Handler(search.StreamHandler)
 
 	// search badge
 	router.Get(routeSearchBadge).Handler(searchBadgeHandler)

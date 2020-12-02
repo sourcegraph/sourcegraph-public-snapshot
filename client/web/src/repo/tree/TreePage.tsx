@@ -36,7 +36,7 @@ import { ErrorAlert } from '../../components/alerts'
 import { subYears, formatISO } from 'date-fns'
 import { pluralize } from '../../../../shared/src/util/strings'
 import { useObservable } from '../../../../shared/src/util/useObservable'
-import { encodeURIComponentExceptSlashes, toPrettyBlobURL, toURIWithPath } from '../../../../shared/src/util/url'
+import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '../../../../shared/src/util/url'
 import { getViewsForContainer } from '../../../../shared/src/api/client/services/viewService'
 import { Settings } from '../../schema/settings.schema'
 import { ViewGrid } from './ViewGrid'
@@ -46,6 +46,8 @@ import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { TreeEntriesSection } from './TreeEntriesSection'
 import { GitCommitFields } from '../../graphql-operations'
+import { getFileDecorations } from '../../backend/features'
+import { FileDecorationsByPath } from '../../../../shared/src/api/extension/flatExtensionApi'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -185,6 +187,23 @@ export const TreePage: React.FunctionComponent<Props> = ({
         )
     )
 
+    const fileDecorationsByPath =
+        useObservable<FileDecorationsByPath>(
+            useMemo(
+                () =>
+                    treeOrError && !isErrorLike(treeOrError)
+                        ? getFileDecorations({
+                              files: treeOrError.entries,
+                              extensionsController: props.extensionsController,
+                              repoName,
+                              commitID,
+                              parentNodeUri: treeOrError.url,
+                          })
+                        : EMPTY,
+                [treeOrError, repoName, commitID, props.extensionsController]
+            )
+        ) ?? {}
+
     const { services } = props.extensionsController
 
     const codeInsightsEnabled =
@@ -313,13 +332,13 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                     </Link>
                                     <Link
                                         className="btn btn-secondary"
-                                        to={`/${encodeURIComponentExceptSlashes(repoName)}/-/branches`}
+                                        to={`/${encodeURIPathComponent(repoName)}/-/branches`}
                                     >
                                         <SourceBranchIcon className="icon-inline" /> Branches
                                     </Link>
                                     <Link
                                         className="btn btn-secondary"
-                                        to={`/${encodeURIComponentExceptSlashes(repoName)}/-/tags`}
+                                        to={`/${encodeURIPathComponent(repoName)}/-/tags`}
                                     >
                                         <TagIcon className="icon-inline" /> Tags
                                     </Link>
@@ -327,17 +346,17 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                         className="btn btn-secondary"
                                         to={
                                             revision
-                                                ? `/${encodeURIComponentExceptSlashes(
+                                                ? `/${encodeURIPathComponent(
                                                       repoName
                                                   )}/-/compare/...${encodeURIComponent(revision)}`
-                                                : `/${encodeURIComponentExceptSlashes(repoName)}/-/compare`
+                                                : `/${encodeURIPathComponent(repoName)}/-/compare`
                                         }
                                     >
                                         <HistoryIcon className="icon-inline" /> Compare
                                     </Link>
                                     <Link
                                         className="btn btn-secondary"
-                                        to={`/${encodeURIComponentExceptSlashes(repoName)}/-/stats/contributors`}
+                                        to={`/${encodeURIPathComponent(repoName)}/-/stats/contributors`}
                                     >
                                         <UserIcon className="icon-inline" /> Contributors
                                     </Link>
@@ -361,7 +380,12 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     )}
                     <section className="tree-page__section test-tree-entries">
                         <h3 className="tree-page__section-header">Files and directories</h3>
-                        <TreeEntriesSection parentPath={filePath} entries={treeOrError.entries} />
+                        <TreeEntriesSection
+                            parentPath={filePath}
+                            entries={treeOrError.entries}
+                            fileDecorationsByPath={fileDecorationsByPath}
+                            isLightTheme={props.isLightTheme}
+                        />
                     </section>
                     {/* eslint-disable react/jsx-no-bind */}
                     <ActionsContainer

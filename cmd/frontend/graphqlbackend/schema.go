@@ -875,6 +875,91 @@ type CampaignsCredential implements Node {
 }
 
 """
+This enum declares all operations supported by the reconciler.
+"""
+enum ChangesetSpecOperation {
+    """
+    Push a new commit to the code host.
+    """
+    PUSH
+    """
+    Update the existing changeset on the codehost. This is purely the changeset resource on the code host,
+    not the git commit. For updates to the commit, see 'PUSH'.
+    """
+    UPDATE
+    """
+    Move the existing changeset out of being a draft.
+    """
+    UNDRAFT
+    """
+    Publish a changeset to the codehost.
+    """
+    PUBLISH
+    """
+    Publish a changeset to the codehost as a draft changeset. (Only on supported code hosts).
+    """
+    PUBLISH_DRAFT
+    """
+    Sync the changeset with the current state on the codehost.
+    """
+    SYNC
+    """
+    Import an existing changeset from the code host with the ExternalID from the spec.
+    """
+    IMPORT
+    """
+    Close the changeset on the codehost.
+    """
+    CLOSE
+    """
+    Reopen the changeset on the codehost.
+    """
+    REOPEN
+    """
+    Internal operation to get around slow code host updates.
+    """
+    SLEEP
+}
+
+"""
+Description of the current changeset state vs the changeset spec desired state.
+"""
+type ChangesetSpecDelta {
+    """
+    When run, the title of the changeset will be updated.
+    """
+    titleChanged: Boolean!
+    """
+    When run, the body of the changeset will be updated.
+    """
+    bodyChanged: Boolean!
+    """
+    When run, the changeset will be taken out of draft mode.
+    """
+    undraft: Boolean!
+    """
+    When run, the target branch of the changeset will be updated.
+    """
+    baseRefChanged: Boolean!
+    """
+    When run, a new commit will be created on the branch of the changeset.
+    """
+    diffChanged: Boolean!
+    """
+    When run, a new commit will be created on the branch of the changeset.
+    """
+    commitMessageChanged: Boolean!
+    """
+    When run, a new commit in the name of the specified author will be created on the branch of the changeset.
+    """
+    authorNameChanged: Boolean!
+    """
+    When run, a new commit in the name of the specified author will be created on the branch of the changeset.
+    """
+    authorEmailChanged: Boolean!
+}
+
+"""
 The type of the changeset spec.
 """
 enum ChangesetSpecType {
@@ -903,6 +988,21 @@ interface ChangesetSpec {
     spec never expires (and this field is null) if its campaign spec has been applied.
     """
     expiresAt: DateTime
+
+    """
+    The operations to take to achieve the desired state of this changeset spec.
+    """
+    operations: [ChangesetSpecOperation!]!
+
+    """
+    The delta between the current changeset state and what this changeset spec envisions the changeset to look like.
+    """
+    delta: ChangesetSpecDelta!
+
+    """
+    The changeset that this changeset spec will modify. Null, if the changeset spec will create a new changeset.
+    """
+    changeset: Changeset
 }
 
 """
@@ -932,6 +1032,21 @@ type HiddenChangesetSpec implements ChangesetSpec & Node {
     spec never expires (and this field is null) if its campaign spec has been applied.
     """
     expiresAt: DateTime
+
+    """
+    The operations to take to achieve the desired state of this changeset spec.
+    """
+    operations: [ChangesetSpecOperation!]!
+
+    """
+    The delta between the current changeset state and what this changeset spec envisions the changeset to look like.
+    """
+    delta: ChangesetSpecDelta!
+
+    """
+    The changeset that this changeset spec will modify. Null, if the changeset spec will create a new changeset.
+    """
+    changeset: Changeset
 }
 
 """
@@ -966,6 +1081,21 @@ type VisibleChangesetSpec implements ChangesetSpec & Node {
     spec never expires (and this field is null) if its campaign spec has been applied.
     """
     expiresAt: DateTime
+
+    """
+    The operations to take to achieve the desired state of this changeset spec.
+    """
+    operations: [ChangesetSpecOperation!]!
+
+    """
+    The delta between the current changeset state and what this changeset spec envisions the changeset to look like.
+    """
+    delta: ChangesetSpecDelta!
+
+    """
+    The changeset that this changeset spec will modify. Null, if the changeset spec will create a new changeset.
+    """
+    changeset: Changeset
 }
 
 """
@@ -1494,9 +1624,14 @@ enum ChangesetReconcilerState {
 
     """
     The changeset reconciler ran into a problem while processing the
-    changeset.
+    changeset and will retry it for a number of retries.
     """
     ERRORED
+    """
+    The changeset reconciler ran into a problem while processing the
+    changeset that can't be fixed by retrying.
+    """
+    FAILED
 
     """
     The changeset is not enqueued for processing.
@@ -2520,6 +2655,10 @@ type Query {
     FOR INTERNAL USE ONLY: Lists all status messages
     """
     statusMessages: [StatusMessage!]!
+    """
+    FOR INTERNAL USE ONLY: Query repository statistics for the site.
+    """
+    repositoryStats: RepositoryStats!
 
     """
     Look up a namespace by ID.
@@ -6185,6 +6324,44 @@ type User implements Node & SettingsSubject & Namespace {
         """
         after: String
     ): MonitorConnection!
+
+    """
+    Repositories from external services owned by this user.
+    """
+    repositories(
+        """
+        Returns the first n repositories from the list.
+        """
+        first: Int
+        """
+        Return repositories whose names match the query.
+        """
+        query: String
+        """
+        An opaque cursor that is used for pagination.
+        """
+        after: String
+        """
+        Include cloned repositories.
+        """
+        cloned: Boolean = true
+        """
+        Include repositories that are not yet cloned and for which cloning is not in progress.
+        """
+        notCloned: Boolean = true
+        """
+        Include repositories that have a text search index.
+        """
+        indexed: Boolean = true
+        """
+        Include repositories that do not have a text search index.
+        """
+        notIndexed: Boolean = true
+        """
+        Only include repositories from this external service.
+        """
+        externalServiceID: ID
+    ): RepositoryConnection!
 }
 
 """
@@ -7857,6 +8034,16 @@ type LSIFIndex implements Node {
     inputCommit: String!
 
     """
+    The original root supplied at index schedule time.
+    """
+    inputRoot: String!
+
+    """
+    The name of the target indexer Docker image (e.g., sourcegraph/lsif-go@sha256:...).
+    """
+    inputIndexer: String!
+
+    """
     The index's current state.
     """
     state: LSIFIndexState!
@@ -7882,34 +8069,9 @@ type LSIFIndex implements Node {
     failure: String
 
     """
-    A series of pre-indexing steps to perform.
+    The configuration and execution summary (if completed or errored) of this index job.
     """
-    dockerSteps: [DockerStep!]!
-
-    """
-    The original root supplied at index schedule time.
-    """
-    inputRoot: String!
-
-    """
-    The name of the target indexer Docker image (e.g., sourcegraph/lsif-go@sha256:...).
-    """
-    indexer: String!
-
-    """
-    The arguments to supply to the indexer container.
-    """
-    indexerArgs: [String!]!
-
-    """
-    The path to the index file relative to the root directory (dump.lsif by default).
-    """
-    outfile: String
-
-    """
-    The output of the configured docker step, indexer, and src-cli invocations.
-    """
-    logContents: String
+    steps: IndexSteps!
 
     """
     The rank of this index in the queue. The value of this field is null if the index has been processed.
@@ -7918,9 +8080,40 @@ type LSIFIndex implements Node {
 }
 
 """
-A description of a command to run inside of a Docker container.
+Configuration and execution summary of an index job.
 """
-type DockerStep {
+type IndexSteps {
+    """
+    Execution log entries related to setting up the indexing workspace.
+    """
+    setup: [ExecutionLogEntry!]!
+
+    """
+    Configuration and execution summary (if completed or errored) of steps to be performed prior to indexing.
+    """
+    preIndex: [PreIndexStep!]!
+
+    """
+    Configuration and execution summary (if completed or errored) of the indexer.
+    """
+    index: IndexStep!
+
+    """
+    Execution log entry related to uploading the dump produced by the indexing step.
+    This field be missing if the upload step had not been executed.
+    """
+    upload: ExecutionLogEntry
+
+    """
+    Execution log entries related to tearing down the indexing workspace.
+    """
+    teardown: [ExecutionLogEntry!]!
+}
+
+"""
+The configuration and execution summary of a step to be performed prior to indexing.
+"""
+type PreIndexStep {
     """
     The working directory relative to the cloned repository root.
     """
@@ -7935,6 +8128,66 @@ type DockerStep {
     The arguments to supply to the Docker container's entrypoint.
     """
     commands: [String!]!
+
+    """
+    The execution summary (if completed or errored) of the docker command.
+    """
+    logEntry: ExecutionLogEntry
+}
+
+"""
+The configuration and execution summary of the indexer.
+"""
+type IndexStep {
+    """
+    The arguments to supply to the indexer container.
+    """
+    indexerArgs: [String!]!
+
+    """
+    The path to the index file relative to the root directory (dump.lsif by default).
+    """
+    outfile: String
+
+    """
+    The execution summary (if completed or errored) of the index command.
+    """
+    logEntry: ExecutionLogEntry
+}
+
+"""
+A description of a command run inside the executor to during processing of the parent record.
+"""
+type ExecutionLogEntry {
+    """
+    An internal tag used to correlate this log entry with other records.
+    """
+    key: String!
+
+    """
+    The arguments of the command run inside the executor.
+    """
+    command: [String!]!
+
+    """
+    The date when this command started.
+    """
+    startTime: DateTime!
+
+    """
+    The exit code of the command.
+    """
+    exitCode: Int!
+
+    """
+    The combined stdout and stderr logs of the command.
+    """
+    out: String!
+
+    """
+    The duration in milliseconds of the command.
+    """
+    durationMilliseconds: Int!
 }
 
 """
@@ -8534,6 +8787,25 @@ type SyncError {
 FOR INTERNAL USE ONLY: A status message
 """
 union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
+
+"""
+An arbitrarily large integer encoded as a decimal string.
+"""
+scalar BigInt
+
+"""
+FOR INTERNAL USE ONLY: A repository statistic
+"""
+type RepositoryStats {
+    """
+    The amount of bytes stored in .git directories
+    """
+    gitDirBytes: BigInt!
+    """
+    The number of lines indexed
+    """
+    indexedLinesCount: BigInt!
+}
 
 """
 An RFC 3339-encoded UTC date string, such as 1973-11-29T21:33:09Z. This value can be parsed into a

@@ -5,9 +5,13 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
+
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	campaignApitest "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
@@ -36,9 +40,9 @@ func TestCreateCodeMonitor(t *testing.T) {
 	want := &monitor{
 		id:              1,
 		createdBy:       userID,
-		createdAt:       r.clock(),
+		createdAt:       r.Now(),
 		changedBy:       userID,
-		changedAt:       r.clock(),
+		changedAt:       r.Now(),
 		description:     "test monitor",
 		enabled:         true,
 		namespaceUserID: &userID,
@@ -135,6 +139,74 @@ func TestIsAllowedToEdit(t *testing.T) {
 	}
 }
 
+func TestIsAllowedToCreate(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	dbtesting.SetupGlobalTestDB(t)
+
+	// Setup users and org
+	member := insertTestUser(t, dbconn.Global, "cm-user1", false)
+	notMember := insertTestUser(t, dbconn.Global, "cm-user2", false)
+	siteAdmin := insertTestUser(t, dbconn.Global, "cm-user3", true)
+
+	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin))
+	org, err := db.Orgs.Create(admContext, "cm-test-org", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	addUserToOrg(t, dbconn.Global, member, org.ID)
+
+	r := newTestResolver(t)
+
+	tests := []struct {
+		user    int32
+		owner   graphql.ID
+		allowed bool
+	}{
+		{
+			user:    member,
+			owner:   relay.MarshalID("Org", org.ID),
+			allowed: true,
+		},
+		{
+			user:    member,
+			owner:   relay.MarshalID("User", notMember),
+			allowed: false,
+		},
+
+		{
+			user:    notMember,
+			owner:   relay.MarshalID("Org", org.ID),
+			allowed: false,
+		},
+		{
+			user:    siteAdmin,
+			owner:   relay.MarshalID("Org", org.ID),
+			allowed: true,
+		},
+		{
+			user:    siteAdmin,
+			owner:   relay.MarshalID("User", member),
+			allowed: true,
+		},
+		{
+			user:    siteAdmin,
+			owner:   relay.MarshalID("User", notMember),
+			allowed: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("user %d", tt.user), func(t *testing.T) {
+			ctx := actor.WithActor(context.Background(), actor.FromUser(tt.user))
+			if err := r.isAllowedToCreate(ctx, tt.owner); (err != nil) == tt.allowed {
+				t.Fatalf("unexpected permissions for user %d", tt.user)
+			}
+		})
+	}
+}
+
 func TestQueryMonitor(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -147,9 +219,10 @@ func TestQueryMonitor(t *testing.T) {
 	userName := "cm-user1"
 	userID := insertTestUser(t, dbconn.Global, userName, true)
 
-	// Create a monitor
+	// Create a monitor and make sure the trigger query is enqueued.
 	ctx = actor.WithActor(ctx, actor.FromUser(userID))
-	_, err := r.insertTestMonitorWithOpts(ctx, t)
+	postHookOpt := WithPostHooks([]hook{func() error { return r.store.EnqueueTriggerQueries(ctx) }})
+	_, err := r.insertTestMonitorWithOpts(ctx, t, postHookOpt)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,6 +238,7 @@ func TestQueryMonitor(t *testing.T) {
 	response := apitest.Response{}
 	campaignApitest.MustExec(actorCtx, t, schema, input, &response, queryMonitor)
 
+	triggerEventEndCursor := string(relay.MarshalID(monitorTriggerEventKind, 1))
 	want := apitest.Response{
 		User: apitest.User{
 			Monitors: apitest.MonitorConnection{
@@ -175,10 +249,25 @@ func TestQueryMonitor(t *testing.T) {
 					Enabled:     true,
 					Owner:       apitest.UserOrg{Name: userName},
 					CreatedBy:   apitest.UserOrg{Name: userName},
-					CreatedAt:   marshalDateTime(t, r.clock()),
+					CreatedAt:   marshalDateTime(t, r.Now()),
 					Trigger: apitest.Trigger{
 						Id:    string(relay.MarshalID(monitorTriggerQueryKind, 1)),
 						Query: "repo:foo",
+						Events: apitest.TriggerEventConnection{
+							Nodes: []apitest.TriggerEvent{
+								{
+									Id:        string(relay.MarshalID(monitorTriggerEventKind, 1)),
+									Status:    "PENDING",
+									Timestamp: r.Now().UTC().Format(time.RFC3339),
+									Message:   nil,
+								},
+							},
+							TotalCount: 1,
+							PageInfo: apitest.PageInfo{
+								HasNextPage: true,
+								EndCursor:   &triggerEventEndCursor,
+							},
+						},
 					},
 					Actions: apitest.ActionConnection{
 						TotalCount: 1,
@@ -228,6 +317,19 @@ query($userName: String!){
 					... on MonitorQuery {
 						id
 						query
+						events {
+							totalCount
+							nodes {
+								id
+								status
+								timestamp
+								message
+							}
+							pageInfo {
+								hasNextPage
+								endCursor
+							}
+						}
 					}
 				}
 				actions{
@@ -323,7 +425,7 @@ func TestEditCodeMonitor(t *testing.T) {
 			CreatedBy: apitest.UserOrg{
 				Name: user1Name,
 			},
-			CreatedAt: marshalDateTime(t, r.clock()),
+			CreatedAt: marshalDateTime(t, r.store.Now()),
 			Trigger: apitest.Trigger{
 				Id:    string(relay.MarshalID(monitorTriggerQueryKind, 1)),
 				Query: "repo:bar",
@@ -432,4 +534,227 @@ mutation ($monitorID: ID!, $triggerID: ID!, $actionID: ID!, $user1ID: ID!, $user
 	}
   }
 }
+`
+
+func TestRecipientsPaging(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+	r := newTestResolver(t)
+
+	// Create 2 test users.
+	user1Name := "cm-user1"
+	user1ID := insertTestUser(t, dbconn.Global, user1Name, true)
+	ns1 := relay.MarshalID("User", user1ID)
+
+	user2Name := "cm-user2"
+	user2ID := insertTestUser(t, dbconn.Global, user2Name, true)
+	ns2 := relay.MarshalID("User", user2ID)
+
+	// Create a code monitor with 1 trigger, and 1 action with two recipients.
+	ctx = actor.WithActor(ctx, actor.FromUser(user1ID))
+	actionOpt := WithActions([]*graphqlbackend.CreateActionArgs{
+		{
+			Email: &graphqlbackend.CreateActionEmailArgs{
+				Enabled:    true,
+				Priority:   "NORMAL",
+				Recipients: []graphql.ID{ns1, ns2},
+				Header:     "header action 1",
+			},
+		},
+	})
+	_, err := r.insertTestMonitorWithOpts(ctx, t, actionOpt)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	queryInput := map[string]interface{}{
+		"userName":        user1Name,
+		"recipientCursor": string(relay.MarshalID(monitorActionEmailRecipientKind, 1)),
+	}
+	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := apitest.Response{}
+	campaignApitest.MustExec(ctx, t, schema, queryInput, &got, queryRecipients)
+
+	want := apitest.Response{
+		User: apitest.User{
+			Monitors: apitest.MonitorConnection{
+				TotalCount: 1,
+				Nodes: []apitest.Monitor{{
+					Actions: apitest.ActionConnection{
+						Nodes: []apitest.Action{{
+							ActionEmail: apitest.ActionEmail{
+								Recipients: apitest.RecipientsConnection{
+									TotalCount: 2,
+									Nodes: []apitest.UserOrg{{
+										Name: user2Name,
+									}},
+								},
+							},
+						}},
+					},
+				}},
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(&got, &want) {
+		t.Fatalf("\ngot:\t%+v\nwant:\t%+v\n", got, want)
+	}
+}
+
+const queryRecipients = `
+fragment u on User { id, username }
+fragment o on Org { id, name }
+
+query($userName: String!, $recipientCursor: String!){
+	user(username:$userName){
+		monitors{
+			totalCount
+			nodes{
+				actions{
+					nodes{
+						... on MonitorEmail{
+							recipients(first:1, after:$recipientCursor){
+								totalCount
+								nodes {
+									... on User { ...u }
+									... on Org { ...o }
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+`
+
+func TestQueryMonitorByID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+	r := newTestResolver(t)
+
+	userName := "cm-user1"
+	userID := insertTestUser(t, dbconn.Global, userName, true)
+
+	// Create a monitor.
+	ctx = actor.WithActor(ctx, actor.FromUser(userID))
+	m, err := r.insertTestMonitorWithOpts(ctx, t)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	input := map[string]interface{}{
+		"id": m.ID(),
+	}
+	response := apitest.Node{}
+	campaignApitest.MustExec(actorCtx, t, schema, input, &response, queryMonitorByID)
+
+	want := apitest.Node{
+		Node: apitest.Monitor{
+			Id:          string(relay.MarshalID(monitorKind, 1)),
+			Description: "test monitor",
+			Enabled:     true,
+			Owner:       apitest.UserOrg{Name: userName},
+			CreatedBy:   apitest.UserOrg{Name: userName},
+			CreatedAt:   marshalDateTime(t, r.Now()),
+			Trigger: apitest.Trigger{
+				Id:    string(relay.MarshalID(monitorTriggerQueryKind, 1)),
+				Query: "repo:foo",
+			},
+			Actions: apitest.ActionConnection{
+				TotalCount: 1,
+				Nodes: []apitest.Action{{
+					ActionEmail: apitest.ActionEmail{
+						Id:       string(relay.MarshalID(monitorActionEmailKind, 1)),
+						Enabled:  true,
+						Priority: "NORMAL",
+						Recipients: apitest.RecipientsConnection{
+							TotalCount: 1,
+							Nodes: []apitest.UserOrg{{
+								Name: userName,
+							}},
+						},
+						Header: "test header",
+					},
+				}},
+			},
+		},
+	}
+	if diff := cmp.Diff(response, want); diff != "" {
+		t.Fatalf("diff: %s", diff)
+	}
+}
+
+const queryMonitorByID = `
+fragment u on User { id, username }
+fragment o on Org { id, name }
+
+query ($id: ID!) {
+  node(id: $id) {
+    ... on Monitor {
+      id
+      description
+      enabled
+      owner {
+        ... on User {
+          ...u
+        }
+        ... on Org {
+          ...o
+        }
+      }
+      createdBy {
+        ...u
+      }
+      createdAt
+      trigger {
+        ... on MonitorQuery {
+          id
+          query
+        }
+      }
+      actions {
+        totalCount
+        nodes {
+          ... on MonitorEmail {
+            id
+            priority
+            header
+            enabled
+            recipients {
+              totalCount
+              nodes {
+                ... on User {
+                  ...u
+                }
+                ... on Org {
+                  ...o
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 `

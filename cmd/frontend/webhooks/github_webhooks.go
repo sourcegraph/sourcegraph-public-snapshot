@@ -3,17 +3,19 @@ package webhooks
 import (
 	"context"
 	"fmt"
-	"golang.org/x/sync/errgroup"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"sync"
+
+	"golang.org/x/sync/errgroup"
 
 	gh "github.com/google/go-github/v28/github"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -24,7 +26,7 @@ type Registerer interface {
 // WebhookHandler is a handler for a webhook event, the 'event' param could be any of the event types
 // permissible based on the event type(s) the handler was registered against. If you register a handler
 // for many event types, you should do a type switch within your handler
-type WebhookHandler func(ctx context.Context, extSvc *repos.ExternalService, event interface{}) error
+type WebhookHandler func(ctx context.Context, extSvc *types.ExternalService, event interface{}) error
 
 // GitHubWebhook is responsible for handling incoming http requests for github webhooks
 // and routing to any registered WebhookHandlers, events are routed by their event type,
@@ -72,7 +74,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Dispatch accepts an event for a particular event type and dispatches it
 // to the appropriate stack of handlers, if any are configured.
-func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, extSvc *repos.ExternalService, e interface{}) error {
+func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, extSvc *types.ExternalService, e interface{}) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	g := errgroup.Group{}
@@ -100,7 +102,7 @@ func (h *GitHubWebhook) Register(handler WebhookHandler, eventTypes ...string) {
 	}
 }
 
-func (h *GitHubWebhook) getExternalService(r *http.Request, body []byte) (*repos.ExternalService, error) {
+func (h *GitHubWebhook) getExternalService(r *http.Request, body []byte) (*types.ExternalService, error) {
 	var (
 		sig   = r.Header.Get("X-Hub-Signature")
 		rawID = r.FormValue(extsvc.IDParam)
@@ -149,7 +151,7 @@ func (h *GitHubWebhook) getExternalService(r *http.Request, body []byte) (*repos
 // external service, it iterates over all configured external services and attempts to match
 // the signature to the configured secret
 // TODO: delete this once old style webhooks are deprecated
-func (h *GitHubWebhook) findAndValidateExternalService(ctx context.Context, sig string, body []byte) (*repos.ExternalService, error) {
+func (h *GitHubWebhook) findAndValidateExternalService(ctx context.Context, sig string, body []byte) (*types.ExternalService, error) {
 	// 🚨 SECURITY: Try to authenticate the request with any of the stored secrets
 	// in GitHub external services config.
 	// If there are no secrets or no secret managed to authenticate the request,

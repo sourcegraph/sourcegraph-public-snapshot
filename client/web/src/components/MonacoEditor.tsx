@@ -29,10 +29,11 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
         'editorHoverWidget.background': '#1c2736',
         'editorHoverWidget.foreground': '#F2F4F8',
         'editorHoverWidget.border': '#2b3750',
+        'editor.hoverHighlightBackground': '#495057',
     },
     rules: [
         { token: 'identifier', foreground: '#f2f4f8' },
-        { token: 'filterKeyword', foreground: '#569cd6' },
+        { token: 'field', foreground: '#569cd6' },
         { token: 'keyword', foreground: '#da77f2' },
         { token: 'openingParen', foreground: '#da77f2' },
         { token: 'closingParen', foreground: '#da77f2' },
@@ -68,10 +69,11 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
         'editorHoverWidget.background': '#ffffff',
         'editorHoverWidget.foreground': '#2b3750',
         'editorHoverWidget.border': '#cad2e2',
+        'editor.hoverHighlightBackground': '#dee2e6',
     },
     rules: [
         { token: 'identifier', foreground: '#2b3750' },
-        { token: 'filterKeyword', foreground: '#268bd2' },
+        { token: 'field', foreground: '#268bd2' },
         { token: 'keyword', foreground: '#ae3ec9' },
         { token: 'openingParen', foreground: '#ae3ec9' },
         { token: 'closingParen', foreground: '#ae3ec9' },
@@ -137,6 +139,7 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
         }
         this.props.editorWillMount(monaco)
         const editor = monaco.editor.create(element, {
+            hover: { delay: 0 },
             value: this.props.value,
             language: this.props.language,
             theme: this.props.isLightTheme ? SOURCEGRAPH_LIGHT : SOURCEGRAPH_DARK,

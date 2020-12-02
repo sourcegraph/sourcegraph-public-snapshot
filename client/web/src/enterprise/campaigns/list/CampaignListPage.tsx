@@ -32,22 +32,29 @@ export interface CampaignListPageProps extends TelemetryProps, Pick<RouteCompone
 
 const FILTERS: FilteredConnectionFilter[] = [
     {
-        label: 'Open',
-        id: 'open',
-        tooltip: 'Show only campaigns that are open',
-        args: { state: CampaignState.OPEN },
-    },
-    {
-        label: 'Closed',
-        id: 'closed',
-        tooltip: 'Show only campaigns that are closed',
-        args: { state: CampaignState.CLOSED },
-    },
-    {
-        label: 'All',
-        id: 'all',
-        tooltip: 'Show all campaigns',
-        args: {},
+        id: 'status',
+        label: 'Status',
+        type: 'radio',
+        values: [
+            {
+                label: 'Open',
+                value: 'open',
+                tooltip: 'Show only campaigns that are open',
+                args: { state: CampaignState.OPEN },
+            },
+            {
+                label: 'Closed',
+                value: 'closed',
+                tooltip: 'Show only campaigns that are closed',
+                args: { state: CampaignState.CLOSED },
+            },
+            {
+                label: 'All',
+                value: 'all',
+                tooltip: 'Show all campaigns',
+                args: {},
+            },
+        ],
     },
 ]
 

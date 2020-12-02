@@ -57,3 +57,4 @@ To learn about the internals of campaigns, see [Campaigns](../../../dev/backgrou
 - Campaign steps are run locally (in the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli)). Sourcegraph does not yet support executing campaign steps on the server. For this reason, the APIs for creating and updating a campaign require you to upload all of the changeset specs (which are produced by executing the campaign spec locally). {#server-execution}
 - It is not yet possible for multiple users to edit the same campaign that was created under an organization.
 - It is not yet possible to reuse a branch in a repository across multiple campaigns.
+- The only type of user credential supported by Sourcegraph right now is a personal access token. Further credential types may be supported in the future.

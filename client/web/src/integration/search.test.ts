@@ -105,6 +105,32 @@ describe('Search', () => {
     const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
         driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
 
+    describe('Search filters', () => {
+        test('Search filters are shown on search result pages and clicking them triggers a new search', async () => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+            })
+            const dynamicFilters = ['archived:yes', 'repo:^github\\.com/Algorilla/manta-ray$']
+            const origQuery = 'foo'
+            for (const filter of dynamicFilters) {
+                await driver.page.goto(
+                    `${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal`
+                )
+                await driver.page.waitForSelector(`[data-testid="filter-chip"][value=${JSON.stringify(filter)}]`)
+                await driver.page.click(`[data-testid="filter-chip"][value=${JSON.stringify(filter)}]`)
+                await driver.page.waitForFunction(
+                    expectedQuery => {
+                        const url = new URL(document.location.href)
+                        const query = url.searchParams.get('q')
+                        return query && query.trim() === expectedQuery
+                    },
+                    { timeout: 5000 },
+                    `${origQuery} ${filter}`
+                )
+            }
+        })
+    })
+
     describe('Suggestions', () => {
         test('Typing in the search field shows relevant suggestions', async () => {
             testContext.overrideGraphQL({
@@ -312,7 +338,7 @@ describe('Search', () => {
         // Skip streaming search tests until streaming search UI is properly implemented
         test.skip('Streaming search with single repo result', async () => {
             const searchStreamEvents: SearchEvent[] = [
-                { type: 'repomatches', data: [{ repository: 'github.com/sourcegraph/sourcegraph' }] },
+                { type: 'matches', data: [{ type: 'repo', repository: 'github.com/sourcegraph/sourcegraph' }] },
                 { type: 'done', data: {} },
             ]
 

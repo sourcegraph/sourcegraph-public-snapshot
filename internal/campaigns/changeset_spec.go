@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/campaignutils/yaml"
+	jsonutil "github.com/sourcegraph/campaignutils/json"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -102,7 +102,7 @@ var ErrHeadBaseMismatch = errors.New("headRepository does not match baseReposito
 // UnmarshalValidate unmarshals the RawSpec into Spec and validates it against
 // the ChangesetSpec schema and does additional semantic validation.
 func (cs *ChangesetSpec) UnmarshalValidate() error {
-	err := yaml.UnmarshalValidate(schema.ChangesetSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
+	err := jsonutil.UnmarshalValidate(schema.ChangesetSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
 	if err != nil {
 		return err
 	}

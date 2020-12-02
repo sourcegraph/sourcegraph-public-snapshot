@@ -52,18 +52,21 @@ type MergeRequest struct {
 	Pipelines []*Pipeline
 }
 
+// SetWIP ensures a "WIP:" prefix on the given title. If a "Draft:" prefix is found, that one is retained instead.
 func SetWIP(title string) string {
-	if !strings.HasPrefix(title, "WIP:") {
-		return "WIP: " + title
+	if strings.HasPrefix(title, "Draft:") {
+		return title
 	}
-	return title
+	if strings.HasPrefix(title, "WIP:") {
+		return title
+	}
+	return "WIP: " + title
 }
 
+// UnsetWIP removes "WIP:" and "Draft:" prefixes from the given title.
+// Depending on the GitLab version, either of them are used so we need to strip them both.
 func UnsetWIP(title string) string {
-	if strings.HasPrefix(title, "WIP: ") {
-		return strings.TrimPrefix(title, "WIP: ")
-	}
-	return title
+	return strings.TrimPrefix(strings.TrimPrefix(title, "WIP: "), "Draft: ")
 }
 
 type DiffRefs struct {

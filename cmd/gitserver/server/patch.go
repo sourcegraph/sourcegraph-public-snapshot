@@ -62,7 +62,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	if req.Push != nil && req.Push.RemoteURL != "" {
 		remoteURL = req.Push.RemoteURL
 	} else {
-		remoteURL, err = repoRemoteURL(ctx, GitDir(repoGitDir))
+		remoteURL, err = s.getRemoteURL(ctx, req.Repo)
 		if err != nil {
 			log15.Error("Failed to get remote URL", "ref", ref, "err", err)
 			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteURL"))

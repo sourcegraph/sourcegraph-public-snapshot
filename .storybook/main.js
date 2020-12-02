@@ -2,25 +2,48 @@ const path = require('path')
 const { remove } = require('lodash')
 const { DefinePlugin, ProgressPlugin } = require('webpack')
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin')
+const TerserPlugin = require('terser-webpack-plugin')
 
 const monacoEditorPaths = [path.resolve(__dirname, '..', 'node_modules', 'monaco-editor')]
 
+const isChromatic = !!process.env.CHROMATIC
+
 const config = {
   stories: ['../client/**/*.story.tsx'],
-  addons: ['@storybook/addon-knobs', '@storybook/addon-actions', 'storybook-addon-designs'],
+  addons: ['@storybook/addon-knobs', '@storybook/addon-actions', 'storybook-addon-designs', 'storybook-dark-mode'],
+
   /**
    * @param config {import('webpack').Configuration}
    * @returns {import('webpack').Configuration}
    */
   webpackFinal: config => {
     // Include sourcemaps
-    config.mode = 'development'
-    config.devtool = 'cheap-module-eval-source-map'
+    config.mode = isChromatic ? 'production' : 'development'
+    config.devtool = isChromatic ? 'source-map' : 'cheap-module-eval-source-map'
     const definePlugin = config.plugins.find(plugin => plugin instanceof DefinePlugin)
     // @ts-ignore
-    definePlugin.definitions.NODE_ENV = JSON.stringify('development')
+    definePlugin.definitions.NODE_ENV = JSON.stringify(config.mode)
     // @ts-ignore
-    definePlugin.definitions['process.env'].NODE_ENV = JSON.stringify('development')
+    definePlugin.definitions['process.env'].NODE_ENV = JSON.stringify(config.mode)
+
+    if (isChromatic) {
+      config.optimization = {
+        minimize: true,
+        minimizer: [
+          new TerserPlugin({
+            sourceMap: true,
+            terserOptions: {
+              compress: {
+                // // Don't inline functions, which causes name collisions with uglify-es:
+                // https://github.com/mishoo/UglifyJS2/issues/2842
+                inline: 1,
+              },
+            },
+          }),
+        ],
+        namedModules: false,
+      }
+    }
 
     // We don't use Storybook's default Babel config for our repo, it doesn't include everything we need.
     config.module.rules.splice(0, 1)

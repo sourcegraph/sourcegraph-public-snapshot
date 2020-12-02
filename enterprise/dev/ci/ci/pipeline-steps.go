@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
 )
 
@@ -96,6 +97,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.AutomaticRetry(5),
 			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn gulp generate"),
+			bk.Env("CHROMATIC", "1"),
 			bk.Cmd(chromaticCommand))
 
 		// Shared tests
@@ -255,13 +257,13 @@ func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 
 	// Set variables that indicate the tag for 'us.gcr.io/sourcegraph-dev' images built
 	// from this CI run's commit, and credentials to access them.
-	env["CANDIDATE_VERSION"] = candidateImageTag(c)
+	env["CANDIDATE_VERSION"] = c.candidateImageTag()
 	env["VAGRANT_SERVICE_ACCOUNT"] = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
 
 	// Test upgrades from mininum upgradeable Sourcegraph version
 	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.20.0"
 
-	env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(SourcegraphDockerImages)
+	env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(images.SourcegraphDockerImages)
 
 	return func(pipeline *bk.Pipeline) {
 		if !c.shouldRunE2EandQA() {
@@ -321,25 +323,25 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 		switch {
 		// build all images for tagged releases
 		case c.taggedRelease:
-			for _, dockerImage := range SourcegraphDockerImages {
+			for _, dockerImage := range images.SourcegraphDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
 
 		// replicates `main` build but does not deploy `insiders` images
 		case c.isMasterDryRun:
-			for _, dockerImage := range SourcegraphDockerImages {
+			for _, dockerImage := range images.SourcegraphDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
 
 		// deploy `insiders` images for `main`
 		case c.branch == "main":
-			for _, dockerImage := range SourcegraphDockerImages {
+			for _, dockerImage := range images.SourcegraphDockerImages {
 				addDockerImage(c, dockerImage, true)(pipeline)
 			}
 
 		// ensure candidate images are available for testing
 		case c.shouldRunE2EandQA():
-			for _, dockerImage := range SourcegraphDockerImages {
+			for _, dockerImage := range images.SourcegraphDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
 
@@ -385,8 +387,8 @@ func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 			cmds = append(cmds, bk.Cmd(cmdDir+"/build.sh"))
 		}
 
-		devImage := fmt.Sprintf("%s/%s", SourcegraphDockerDevRegistry, image)
-		devTag := candidateImageTag(c)
+		devImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerDevRegistry, image)
+		devTag := c.candidateImageTag()
 		cmds = append(cmds,
 			// Retag the local image for dev registry
 			bk.Cmd(fmt.Sprintf("docker tag %s %s:%s", localImage, devImage, devTag)),
@@ -403,8 +405,8 @@ func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		image := strings.ReplaceAll(app, "/", "-")
-		devImage := fmt.Sprintf("%s/%s", SourcegraphDockerDevRegistry, image)
-		publishImage := fmt.Sprintf("%s/%s", SourcegraphDockerPublishRegistry, image)
+		devImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerDevRegistry, image)
+		publishImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerPublishRegistry, image)
 
 		var images []string
 		for _, image := range []string{publishImage, devImage} {
@@ -421,7 +423,7 @@ func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline)
 			}
 		}
 
-		candidateImage := fmt.Sprintf("%s:%s", devImage, candidateImageTag(c))
+		candidateImage := fmt.Sprintf("%s:%s", devImage, c.candidateImageTag())
 		cmd := fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(images, " "))
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :white_check_mark: %s", app), bk.Cmd(cmd))

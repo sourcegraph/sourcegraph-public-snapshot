@@ -152,6 +152,14 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 	return sqlf.Sprintf(q, vars...), nil
 }
 
+// UpsertChangeset creates or updates the given Changeset.
+func (s *Store) UpsertChangeset(ctx context.Context, c *campaigns.Changeset) error {
+	if c.ID == 0 {
+		return s.CreateChangeset(ctx, c)
+	}
+	return s.UpdateChangeset(ctx, c)
+}
+
 // CreateChangeset creates the given Changeset.
 func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) error {
 	if c.CreatedAt.IsZero() {
@@ -349,7 +357,7 @@ SELECT changesets.id,
 	r.external_service_id
 FROM changesets
 LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
-JOIN campaigns ON campaigns.changeset_ids ? changesets.id::TEXT
+JOIN campaigns ON changesets.campaign_ids ? campaigns.id::TEXT
 JOIN repo r ON changesets.repo_id = r.id
 WHERE %s
 GROUP BY changesets.id, r.id
@@ -495,37 +503,6 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	)
 }
 
-// ListChangesetsAttachedOrOwnedByCampaign lists Changesets that are either
-// attached to the given Campaign or their OwnedByCampaignID points to the
-// campaign.
-func (s *Store) ListChangesetsAttachedOrOwnedByCampaign(ctx context.Context, campaign int64) (cs campaigns.Changesets, err error) {
-	q := sqlf.Sprintf(`
--- source: enterprise/internal/campaigns/store.go:ListChangesetsAttachedOrOwnedByCampaign
-SELECT %s FROM changesets
-INNER JOIN repo ON repo.id = changesets.repo_id
-WHERE
-  ((changesets.campaign_ids ? %s) OR changesets.owned_by_campaign_id = %s)
-AND
-  repo.deleted_at IS NULL
-ORDER BY id ASC
-`,
-		sqlf.Join(ChangesetColumns, ", "),
-		campaign,
-		campaign,
-	)
-
-	err = s.query(ctx, q, func(sc scanner) (err error) {
-		var c campaigns.Changeset
-		if err = scanChangeset(&c, sc); err != nil {
-			return err
-		}
-		cs = append(cs, &c)
-		return nil
-	})
-
-	return cs, err
-}
-
 // UpdateChangeset updates the given Changeset.
 func (s *Store) UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) error {
 	cs.UpdatedAt = s.now()
@@ -591,9 +568,7 @@ func (s *Store) CancelQueuedCampaignChangesets(ctx context.Context, campaignID i
 	q := sqlf.Sprintf(
 		cancelQueuedCampaignChangesetsFmtstr,
 		campaignID,
-		ReconcilerMaxNumRetries,
 		canceledChangesetFailureMessage,
-		ReconcilerMaxNumRetries,
 	)
 	return s.Store.Exec(ctx, q)
 }
@@ -605,17 +580,14 @@ WITH changeset_ids AS (
   WHERE
     owned_by_campaign_id = %s
   AND
-    (reconciler_state = 'queued' OR
-	 reconciler_state = 'processing' OR
-	 (reconciler_state = 'errored' AND num_failures < %d))
+    reconciler_state IN ('queued', 'processing', 'errored')
   FOR UPDATE
 )
 UPDATE
   changesets
 SET
-  reconciler_state = 'errored',
-  failure_message = %s,
-  num_failures = %d
+  reconciler_state = 'failed',
+  failure_message = %s
 WHERE id IN (SELECT id FROM changeset_ids);
 `
 

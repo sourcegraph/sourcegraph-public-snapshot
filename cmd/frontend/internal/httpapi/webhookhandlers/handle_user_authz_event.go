@@ -3,21 +3,22 @@ package webhookhandlers
 import (
 	"context"
 	"fmt"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 
 	gh "github.com/google/go-github/v28/github"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // handleGitHubUserAuthzEvent handles a github webhook for the events described in webhookhandlers/handlers.go
 // extracting a user from the github event and scheduling it for a perms update in repo-updater
-func handleGitHubUserAuthzEvent(ctx context.Context, extSvc *repos.ExternalService, payload interface{}) error {
+func handleGitHubUserAuthzEvent(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
 	if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
 		return nil
 	}
@@ -52,7 +53,7 @@ type membershipGetter interface {
 	GetMembership() *gh.Membership
 }
 
-func scheduleUserUpdate(ctx context.Context, extSvc *repos.ExternalService, githubUser *gh.User) error {
+func scheduleUserUpdate(ctx context.Context, extSvc *types.ExternalService, githubUser *gh.User) error {
 	if githubUser == nil {
 		return nil
 	}

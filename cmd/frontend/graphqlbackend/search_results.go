@@ -23,9 +23,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/src-d/enry/v2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -39,10 +40,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/src-d/enry/v2"
 )
 
 // searchResultsCommon contains fields that should be returned by all funcs
@@ -200,7 +201,7 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 func (sr *SearchResultsResolver) Alert() *searchAlert { return sr.alert }
 
 func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
-	return int32(time.Since(sr.start).Nanoseconds() / int64(time.Millisecond))
+	return int32(time.Since(sr.start).Milliseconds())
 }
 
 // commonFileFilters are common filters used. It is used by DynamicFilters to

@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -432,7 +433,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			})
 
 			t.Run("valid ID", func(t *testing.T) {
-				for id, want := range map[int64]*repos.ExternalService{
+				for id, want := range map[int64]*types.ExternalService{
 					a.ID: a,
 					b.ID: b,
 				} {
@@ -722,7 +723,7 @@ func TestValidateGitLabSecret(t *testing.T) {
 	})
 
 	t.Run("invalid configuration", func(t *testing.T) {
-		es := &repos.ExternalService{}
+		es := &types.ExternalService{}
 		ok, err := validateGitLabSecret(es, "secret")
 		if ok {
 			t.Errorf("unexpected ok: %v", ok)
@@ -733,7 +734,7 @@ func TestValidateGitLabSecret(t *testing.T) {
 	})
 
 	t.Run("not a GitLab connection", func(t *testing.T) {
-		es := &repos.ExternalService{Kind: extsvc.KindGitHub}
+		es := &types.ExternalService{Kind: extsvc.KindGitHub}
 		ok, err := validateGitLabSecret(es, "secret")
 		if ok {
 			t.Errorf("unexpected ok: %v", ok)
@@ -744,7 +745,7 @@ func TestValidateGitLabSecret(t *testing.T) {
 	})
 
 	t.Run("no webhooks", func(t *testing.T) {
-		es := &repos.ExternalService{
+		es := &types.ExternalService{
 			Kind: extsvc.KindGitLab,
 			Config: ct.MarshalJSON(t, &schema.GitLabConnection{
 				Webhooks: []*schema.GitLabWebhook{},
@@ -767,7 +768,7 @@ func TestValidateGitLabSecret(t *testing.T) {
 			"super":      true,
 		} {
 			t.Run(secret, func(t *testing.T) {
-				es := &repos.ExternalService{
+				es := &types.ExternalService{
 					Kind: extsvc.KindGitLab,
 					Config: ct.MarshalJSON(t, &schema.GitLabConnection{
 						Webhooks: []*schema.GitLabWebhook{
@@ -892,8 +893,8 @@ func assertChangesetEventForChangeset(t *testing.T, ctx context.Context, store *
 
 // createGitLabExternalService creates a mock GitLab service with a valid
 // configuration, including the secrets "super" and "secret".
-func createGitLabExternalService(t *testing.T, ctx context.Context, rstore repos.Store) *repos.ExternalService {
-	es := &repos.ExternalService{
+func createGitLabExternalService(t *testing.T, ctx context.Context, rstore repos.Store) *types.ExternalService {
+	es := &types.ExternalService{
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "gitlab",
 		Config: ct.MarshalJSON(t, &schema.GitLabConnection{
@@ -914,7 +915,7 @@ func createGitLabExternalService(t *testing.T, ctx context.Context, rstore repos
 
 // createGitLabRepo creates a mock GitLab repo attached to the given external
 // service.
-func createGitLabRepo(t *testing.T, ctx context.Context, rstore repos.Store, es *repos.ExternalService) *repos.Repo {
+func createGitLabRepo(t *testing.T, ctx context.Context, rstore repos.Store, es *types.ExternalService) *repos.Repo {
 	repo := (&repos.Repo{
 		Name: "gitlab.com/sourcegraph/test",
 		URI:  "gitlab.com/sourcegraph/test",

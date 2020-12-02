@@ -624,6 +624,8 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return r.LSIFUploadByID(ctx, id)
 	case "LSIFIndex":
 		return r.LSIFIndexByID(ctx, id)
+	case "CodeMonitor":
+		return r.MonitorByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}

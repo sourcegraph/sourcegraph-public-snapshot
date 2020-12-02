@@ -13,6 +13,14 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
+// reconcilerMaxNumRetries is the maximum number of attempts the reconciler
+// makes to process a changeset when it fails.
+const reconcilerMaxNumRetries = 60
+
+// reconcilerMaxNumResets is the maximum number of attempts the reconciler
+// makes to process a changeset when it stalls (process crashes, etc.).
+const reconcilerMaxNumResets = 60
+
 // newWorker creates a dbworker.newWorker that fetches enqueued changesets
 // from the database and passes them to the changeset reconciler for
 // processing.
@@ -73,9 +81,9 @@ func createDBWorkerStore(s *campaigns.Store) dbworkerstore.Store {
 		OrderByExpression: sqlf.Sprintf("reconciler_state = 'errored', changesets.updated_at DESC"),
 
 		StalledMaxAge: 60 * time.Second,
-		MaxNumResets:  campaigns.ReconcilerMaxNumResets,
+		MaxNumResets:  reconcilerMaxNumResets,
 
 		RetryAfter:    5 * time.Second,
-		MaxNumRetries: campaigns.ReconcilerMaxNumRetries,
+		MaxNumRetries: reconcilerMaxNumRetries,
 	})
 }

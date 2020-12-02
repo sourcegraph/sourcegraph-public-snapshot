@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 func TestGetIndexByID(t *testing.T) {
@@ -50,8 +51,11 @@ func TestGetIndexByID(t *testing.T) {
 		Indexer:     "sourcegraph/lsif-tsc:latest",
 		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
 		Outfile:     "dump.lsif",
-		LogContents: "Indexing\nUploading\nDone.\n",
-		Rank:        nil,
+		ExecutionLogs: []workerutil.ExecutionLogEntry{
+			{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
+			{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
+		},
+		Rank: nil,
 	}
 
 	insertIndexes(t, dbconn.Global, expected)
@@ -299,7 +303,10 @@ func TestInsertIndex(t *testing.T) {
 		Indexer:     "sourcegraph/lsif-tsc:latest",
 		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
 		Outfile:     "dump.lsif",
-		LogContents: "Indexing\nUploading\nDone.\n",
+		ExecutionLogs: []workerutil.ExecutionLogEntry{
+			{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
+			{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
+		},
 	})
 	if err != nil {
 		t.Fatalf("unexpected error enqueueing index: %s", err)
@@ -326,8 +333,11 @@ func TestInsertIndex(t *testing.T) {
 		Indexer:     "sourcegraph/lsif-tsc:latest",
 		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
 		Outfile:     "dump.lsif",
-		LogContents: "Indexing\nUploading\nDone.\n",
-		Rank:        &rank,
+		ExecutionLogs: []workerutil.ExecutionLogEntry{
+			{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
+			{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
+		},
+		Rank: &rank,
 	}
 
 	if index, exists, err := store.GetIndexByID(context.Background(), id); err != nil {
@@ -354,7 +364,7 @@ func TestMarkIndexComplete(t *testing.T) {
 	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "queued"})
 
 	if err := store.MarkIndexComplete(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error marking index as complete: %s", err)
+		t.Fatalf("unexpected error marking index as completed: %s", err)
 	}
 
 	if index, exists, err := store.GetIndexByID(context.Background(), 1); err != nil {
@@ -376,7 +386,7 @@ func TestMarkIndexErrored(t *testing.T) {
 	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "queued"})
 
 	if err := store.MarkIndexErrored(context.Background(), 1, "oops"); err != nil {
-		t.Fatalf("unexpected error marking index as complete: %s", err)
+		t.Fatalf("unexpected error marking index as completed: %s", err)
 	}
 
 	if index, exists, err := store.GetIndexByID(context.Background(), 1); err != nil {
@@ -385,27 +395,6 @@ func TestMarkIndexErrored(t *testing.T) {
 		t.Fatal("expected record to exist")
 	} else if index.State != "errored" {
 		t.Errorf("unexpected state. want=%q have=%q", "errored", index.State)
-	}
-}
-
-func TestSetIndexLogContents(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	// Add index for updating
-	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "queued"})
-
-	if err := store.SetIndexLogContents(context.Background(), 1, "test payload"); err != nil {
-		t.Fatalf("unexpected error setting index log contents: %s", err)
-	}
-
-	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT log_contents FROM lsif_indexes WHERE id = 1")); err != nil {
-		t.Errorf("unexpected error getting log contents: %s", err)
-	} else if state != "test payload" {
-		t.Errorf("unexpected log contents. want=%s have=%s", "test payload", state)
 	}
 }
 

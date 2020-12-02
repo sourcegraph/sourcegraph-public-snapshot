@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type printableRank struct{ value *int }
@@ -147,7 +148,7 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 				indexer,
 				indexer_args,
 				outfile,
-				log_contents
+				execution_logs
 			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			index.ID,
@@ -166,7 +167,7 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 			index.Indexer,
 			pq.Array(index.IndexerArgs),
 			index.Outfile,
-			index.LogContents,
+			pq.Array(dbworkerstore.ExecutionLogEntries(index.ExecutionLogs)),
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
@@ -226,9 +227,9 @@ func insertNearestUploads(t *testing.T, db *sql.DB, repositoryID int, uploads ma
 				repositoryID,
 				dbutil.CommitBytea(commit),
 				meta.UploadID,
-				meta.Distance,
-				meta.AncestorVisible,
-				meta.Overwritten,
+				meta.Flags&MaxDistance,
+				(meta.Flags&FlagAncestorVisible) != 0,
+				(meta.Flags&FlagOverwritten) != 0,
 			))
 		}
 	}
@@ -242,21 +243,17 @@ func insertNearestUploads(t *testing.T, db *sql.DB, repositoryID int, uploads ma
 	}
 }
 
-func toUploadMeta(uploads []Upload) map[string][]UploadMeta {
-	meta := map[string][]UploadMeta{}
+func toCommitGraphView(uploads []Upload) *CommitGraphView {
+	commitGraphView := NewCommitGraphView()
 	for _, upload := range uploads {
-		meta[upload.Commit] = append(meta[upload.Commit], UploadMeta{
-			UploadID: upload.ID,
-			Root:     upload.Root,
-			Indexer:  upload.Indexer,
-		})
+		commitGraphView.Add(UploadMeta{UploadID: upload.ID}, upload.Commit, fmt.Sprintf("%s:%s", upload.Root, upload.Indexer))
 	}
 
-	return meta
+	return commitGraphView
 }
 
 var UploadMetaComparer = cmp.Comparer(func(x, y UploadMeta) bool {
-	return x.UploadID == y.UploadID && x.Distance == y.Distance
+	return x.UploadID == y.UploadID && (x.Flags&MaxDistance) == (y.Flags&MaxDistance)
 })
 
 func scanVisibleUploads(rows *sql.Rows, queryErr error) (_ map[string][]UploadMeta, err error) {
@@ -269,14 +266,14 @@ func scanVisibleUploads(rows *sql.Rows, queryErr error) (_ map[string][]UploadMe
 	for rows.Next() {
 		var commit string
 		var uploadID int
-		var distance int
+		var distance uint32
 		if err := rows.Scan(&commit, &uploadID, &distance); err != nil {
 			return nil, err
 		}
 
 		uploadMeta[commit] = append(uploadMeta[commit], UploadMeta{
 			UploadID: uploadID,
-			Distance: distance,
+			Flags:    distance,
 		})
 	}
 
@@ -314,7 +311,7 @@ func normalizeVisibleUploads(uploadMetas map[string][]UploadMeta) map[string][]U
 	for commit, uploads := range uploadMetas {
 		var filtered []UploadMeta
 		for _, upload := range uploads {
-			if !upload.Overwritten {
+			if (upload.Flags & FlagOverwritten) == 0 {
 				filtered = append(filtered, upload)
 			}
 		}

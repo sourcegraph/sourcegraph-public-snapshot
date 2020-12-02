@@ -40,6 +40,7 @@ type operations struct {
 	lock                                  *observation.Operation
 	markComplete                          *observation.Operation
 	markErrored                           *observation.Operation
+	markFailed                            *observation.Operation
 	markIndexComplete                     *observation.Operation
 	markIndexErrored                      *observation.Operation
 	markQueued                            *observation.Operation
@@ -52,7 +53,6 @@ type operations struct {
 	requeueIndex                          *observation.Operation
 	resetIndexableRepositories            *observation.Operation
 	sameRepoPager                         *observation.Operation
-	setIndexLogContents                   *observation.Operation
 	softDeleteOldDumps                    *observation.Operation
 	updateIndexableRepository             *observation.Operation
 	updatePackageReferences               *observation.Operation
@@ -108,6 +108,7 @@ func makeOperations(observationContext *observation.Context) *operations {
 		lock:                                  op("Lock"),
 		markComplete:                          op("MarkComplete"),
 		markErrored:                           op("MarkErrored"),
+		markFailed:                            op("MarkFailed"),
 		markIndexComplete:                     op("MarkIndexComplete"),
 		markIndexErrored:                      op("MarkIndexErrored"),
 		markQueued:                            op("MarkQueued"),
@@ -120,7 +121,6 @@ func makeOperations(observationContext *observation.Context) *operations {
 		requeueIndex:                          op("RequeueIndex"),
 		resetIndexableRepositories:            op("ResetIndexableRepositories"),
 		sameRepoPager:                         op("SameRepoPager"),
-		setIndexLogContents:                   op("SetIndexLogContents"),
 		softDeleteOldDumps:                    op("SoftDeleteOldDumps"),
 		updateIndexableRepository:             op("UpdateIndexableRepository"),
 		updatePackageReferences:               op("UpdatePackageReferences"),

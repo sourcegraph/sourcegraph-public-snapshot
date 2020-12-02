@@ -166,6 +166,10 @@ type ChangesetSpecResolver interface {
 
 	ExpiresAt() *DateTime
 
+	Operations(ctx context.Context) ([]campaigns.ReconcilerOperation, error)
+	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
+	Changeset(ctx context.Context) (ChangesetResolver, error)
+
 	ToHiddenChangesetSpec() (HiddenChangesetSpecResolver, bool)
 	ToVisibleChangesetSpec() (VisibleChangesetSpecResolver, bool)
 }
@@ -178,6 +182,17 @@ type VisibleChangesetSpecResolver interface {
 	ChangesetSpecResolver
 
 	Description(ctx context.Context) (ChangesetDescription, error)
+}
+
+type ChangesetSpecDeltaResolver interface {
+	TitleChanged() bool
+	BodyChanged() bool
+	Undraft() bool
+	BaseRefChanged() bool
+	DiffChanged() bool
+	CommitMessageChanged() bool
+	AuthorNameChanged() bool
+	AuthorEmailChanged() bool
 }
 
 type ChangesetDescription interface {

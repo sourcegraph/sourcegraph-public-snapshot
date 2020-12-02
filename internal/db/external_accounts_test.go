@@ -305,3 +305,117 @@ func simplifyExternalAccount(account *extsvc.Account) {
 	account.CreatedAt = time.Time{}
 	account.UpdatedAt = time.Time{}
 }
+
+func TestExternalAccounts_expiredAt(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	spec := extsvc.AccountSpec{
+		ServiceType: "xa",
+		ServiceID:   "xb",
+		ClientID:    "xc",
+		AccountID:   "xd",
+	}
+	userID, err := ExternalAccounts.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	accts, err := ExternalAccounts.List(ctx, ExternalAccountsListOptions{UserID: userID})
+	if err != nil {
+		t.Fatal(err)
+	} else if len(accts) != 1 {
+		t.Fatalf("Want 1 external accounts but got %d", len(accts))
+	}
+	acct := accts[0]
+
+	t.Run("Exclude expired", func(t *testing.T) {
+		err := ExternalAccounts.TouchExpired(ctx, acct.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		accts, err := ExternalAccounts.List(ctx, ExternalAccountsListOptions{
+			UserID:         userID,
+			ExcludeExpired: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(accts) > 0 {
+			t.Fatalf("Want no external accounts but got %d", len(accts))
+		}
+	})
+
+	t.Run("LookupUserAndSave should set expired_at to NULL", func(t *testing.T) {
+		err := ExternalAccounts.TouchExpired(ctx, acct.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = ExternalAccounts.LookupUserAndSave(ctx, spec, extsvc.AccountData{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		accts, err := ExternalAccounts.List(ctx, ExternalAccountsListOptions{
+			UserID:         userID,
+			ExcludeExpired: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(accts) != 1 {
+			t.Fatalf("Want 1 external accounts but got %d", len(accts))
+		}
+	})
+
+	t.Run("AssociateUserAndSave should set expired_at to NULL", func(t *testing.T) {
+		err := ExternalAccounts.TouchExpired(ctx, acct.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = ExternalAccounts.AssociateUserAndSave(ctx, userID, spec, extsvc.AccountData{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		accts, err := ExternalAccounts.List(ctx, ExternalAccountsListOptions{
+			UserID:         userID,
+			ExcludeExpired: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(accts) != 1 {
+			t.Fatalf("Want 1 external accounts but got %d", len(accts))
+		}
+	})
+
+	t.Run("TouchLastValid should set expired_at to NULL", func(t *testing.T) {
+		err := ExternalAccounts.TouchExpired(ctx, acct.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = ExternalAccounts.TouchLastValid(ctx, acct.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		accts, err := ExternalAccounts.List(ctx, ExternalAccountsListOptions{
+			UserID:         userID,
+			ExcludeExpired: true,
+		})
+		if len(accts) != 1 {
+			t.Fatalf("Want 1 external accounts but got %d", len(accts))
+		}
+	})
+}

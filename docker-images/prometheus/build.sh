@@ -12,26 +12,26 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# The prom-wrapper has a dependency on internal/conf which makes its dependency
-# tree quite complicated. Cross-compile it separately before building the image.
+# Copy assets
+cp -R . "$BUILDDIR"
+
+# Build args for Go cross-compilation.
 export GO111MODULE=on
 export GOARCH=amd64
 export GOOS=linux
 export CGO_ENABLED=0
+
+# Cross-compile prom-wrapper before building the image.
 go build \
   -trimpath \
   -installsuffix netgo \
   -tags "dist netgo" \
   -o "$BUILDDIR"/.bin/prom-wrapper ./cmd/prom-wrapper
 
-# We copy just the monitoring directory and the root go.mod/go.sum so that we
-# do not need to send the entire repository as build context to Docker. Additionally,
-# we do not use a separate go.mod/go.sum in the monitoring/ directory because
-# editor tooling would occassionally include and not include it in the root
-# go.mod/go.sum.
-cp -R . "$BUILDDIR"
-cp -R ../../monitoring "$BUILDDIR"/
-cp ../../go.* "$BUILDDIR"/monitoring
+# Cross-compile monitoring generator before building the image.
+go build \
+  -trimpath \
+  -o "$BUILDDIR"/.bin/monitoring-generator ../../monitoring
 
 pushd "$BUILDDIR"
 

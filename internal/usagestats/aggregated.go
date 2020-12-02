@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func GetSiteUsageStats(ctx context.Context, monthsOnly bool) (*types.SiteUsageStatistics, error) {

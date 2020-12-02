@@ -314,18 +314,27 @@ export async function createChangesets(options: ChangesetsOptions): Promise<Crea
         }
     }
     const octokit = await getAuthenticatedGitHubClient()
+    if (options.dryRun) {
+        console.log('Changesets dry run enabled - diffs and pull requests will be printed instead')
+    } else {
+        console.log('Generating changes and publishing as pull requests')
+    }
 
-    // Generate changes
+    // Generate and push changes
+    for (const change of options.changes) {
+        const repository = `${change.owner}/${change.repo}`
+        console.log(`${repository}: Preparing change for on '${change.base}' to '${change.head}'`)
+        await createBranchWithChanges(octokit, { ...change, dryRun: options.dryRun })
+    }
+
+    // Publish changes as pull requests only if all changes are successfully created
     const results: CreatedChangeset[] = []
     for (const change of options.changes) {
         const repository = `${change.owner}/${change.repo}`
-        console.log(`Preparing change for ${repository} on '${change.base}' to '${change.head}'
+        console.log(`${repository}: Preparing pull request for change from '${change.base}' to '${change.head}':
 
 Title: ${change.title}
-Body: ${change.body || 'none'}
-Dryrun: ${options.dryRun || false}`)
-        await createBranchWithChanges(octokit, { ...change, dryRun: options.dryRun })
-
+Body: ${change.body || 'none'}`)
         let pullRequest: { url: string; number: number } = { url: '', number: -1 }
         if (!options.dryRun) {
             pullRequest = await createPR(octokit, change)
@@ -363,25 +372,25 @@ async function cloneRepo(
     const fetchFlags = '--depth 10'
 
     // Determine whether or not to create the base branch, or use the existing one
-    let baseExists = true
+    let revisionExists = true
     if (!checkout.revisionMustExist) {
         try {
             await octokit.repos.getBranch({ branch: checkout.revision, owner, repo })
         } catch (error) {
             if (error.status === 404) {
-                console.log(`Target revision ${checkout.revision} does not exist`)
-                baseExists = false
+                console.log(`Target revision ${checkout.revision} does not exist, this branch will be created`)
+                revisionExists = false
             } else {
                 throw error
             }
         }
     }
     const checkoutCommand =
-        baseExists === true
+        revisionExists === true
             ? // for an existing branch - fetch fails if we are already checked out, so ignore errors optimistically
               `git fetch ${fetchFlags} origin ${checkout.revision}:${checkout.revision} || true ; git checkout ${checkout.revision}`
-            : // create and publish base branch if it does not yet exist
-              `git checkout -b ${checkout.revision}`
+            : // create from HEAD and publish base branch if it does not yet exist
+              `git checkout -b ${checkout.revision} ; git push origin ${checkout.revision}:${checkout.revision}`
 
     // Set up repository
     const setupScript = `set -ex
@@ -424,12 +433,12 @@ async function createBranchWithChanges(
         git --no-pager diff;`
         await execa('bash', ['-c', showChangesScript], { stdio: 'inherit', cwd: workdir })
     } else {
-        // Publish changes
+        // Publish changes. We force push to ensure that the generated changes are applied.
         const publishScript = `set -ex
 
         git add :/;
         git commit -a -m ${JSON.stringify(commitMessage)};
-        git push origin HEAD:${headBranch};`
+        git push --force origin HEAD:${headBranch};`
         await execa('bash', ['-c', publishScript], { stdio: 'inherit', cwd: workdir })
     }
 }

@@ -930,6 +930,134 @@ declare module 'sourcegraph' {
         provideView(context: DirectoryViewContext): ProviderResult<View>
     }
 
+    export interface ThemableFileDecorationStyle {
+        /** The CSS color property value for the text contet */
+        color?: string
+
+        /** Overwrite style for when the file is active */
+        activeColor?: string
+    }
+
+    /** A decoration attachment adds content after a {@link FileDecoration}. */
+    export interface FileDecorationAttachmentRenderOptions extends ThemableFileDecorationStyle {
+        /** Text value to be displayed. This value should be very short to prevent truncation */
+        contentText: string
+
+        /** Tooltip text to display when hovering over the text content. */
+        hoverMessage?: string
+
+        /** Overwrite style for light themes. */
+        light?: ThemableFileDecorationStyle
+
+        /** Overwrite color for dark themes. */
+        dark?: ThemableFileDecorationStyle
+    }
+
+    /**
+     * A file decoration adds text content and/or a progress bar to files in a tree view
+     */
+    export interface FileDecoration {
+        /** The resource identifier of this file */
+        uri: string
+
+        /** Whether to display the decoration on the sidebar file tree or tree page. If omitted, it will be displayed in both locations  */
+        where?: 'sidebar' | 'page'
+
+        /** An optional object that describes the text content contributed by the decoration */
+        after?: FileDecorationAttachmentRenderOptions
+
+        /**
+         * Describes a meter bar like the [HTML5 `<meter>`
+         * element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter)
+         * to be rendered after the file/directory name.
+         */
+        meter?: {
+            /**
+             * The current numeric value. This must be between the minimum and maximum values
+             * (min attribute and max attribute) if they are specified.
+             */
+            value: number
+
+            /**
+             * The lower numeric bound of the measured range. This must be less than
+             * the maximum value (max attribute), if specified. If unspecified, the
+             * minimum value is 0.
+             */
+            min?: number
+
+            /**
+             * The upper numeric bound of the measured range. This must be greater
+             * than the minimum value (min attribute), if specified. If unspecified,
+             * the maximum value is 1.
+             */
+            max?: number
+
+            /**
+             * The upper numeric bound of the low end of the measured range. This
+             * must be greater than the minimum value (min attribute), and it also
+             * must be less than the high value and maximum value (high attribute
+             * and max attribute, respectively), if any are specified. If
+             * unspecified, or if less than the minimum value, the low value is
+             * equal to the minimum value.
+             */
+            low?: number
+
+            /**
+             * The lower numeric bound of the high end of the measured range. This
+             * must be less than the maximum value (max attribute), and it also must
+             * be greater than the low value and minimum value (low attribute and
+             * min attribute, respectively), if any are specified. If unspecified,
+             * or if greater than the maximum value, the high value is equal to the
+             * maximum value.
+             */
+            high?: number
+
+            /**
+             * This attribute indicates the optimal numeric value. It must be within
+             * the range (as defined by the min attribute and max attribute). When
+             * used with the low attribute and high attribute, it gives an
+             * indication where along the range is considered preferable. For
+             * example, if it is between the min attribute and the low attribute,
+             * then the lower range is considered preferred. The browser may color
+             * the meter's bar differently depending on whether the value is less
+             * than or equal to the optimum value.
+             */
+            optimum?: number
+
+            /** Tooltip text to display when hovering over the progress bar. */
+            hoverMessage?: string
+        }
+    }
+
+    /**
+     * Context passed to file decoration providers.
+     *
+     * The schema of these parameters is experimental and subject to change without notice.
+     */
+    export interface FileDecorationContext {
+        /** The uri of the file's parent */
+        uri: string
+
+        files: {
+            /** The uri of the file */
+            uri: string
+
+            /** Whether this file is a directory */
+            isDirectory: boolean
+
+            /**
+             * File path relative to repo root uri
+             *
+             * @todo Remove this once `parseRepoUri` is public
+             * */
+            path: string
+        }[]
+    }
+
+    export interface FileDecorationProvider {
+        provideFileDecorations: (fileDecorationContext: FileDecorationContext) => ProviderResult<FileDecoration[]>
+    }
+
     /**
      * The client application that is running the extension.
      */
@@ -982,6 +1110,11 @@ declare module 'sourcegraph' {
          * @returns An unsubscribable to unregister this provider.
          */
         export function registerViewProvider(id: string, provider: ViewProvider): Unsubscribable
+
+        /**
+         * Register a file decoration provider
+         */
+        export function registerFileDecorationProvider(provider: FileDecorationProvider): Unsubscribable
     }
 
     /**

@@ -85,6 +85,7 @@ describe('Search onboarding', () => {
         await driver.page.evaluate(() => {
             localStorage.setItem('has-seen-onboarding-tour', 'false')
             localStorage.setItem('has-cancelled-onboarding-tour', 'false')
+            localStorage.setItem('has-completed-onboarding-tour', 'false')
             location.reload()
         })
     }
@@ -94,7 +95,7 @@ describe('Search onboarding', () => {
     }
 
     describe('Onboarding', () => {
-        it('only diplay tour afteer input is focused', async () => {
+        it('only diplay tour after input is focused', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             let tourCard = await driver.page.evaluate(() => document.querySelector('.tour-card'))
             expect(tourCard).toBeNull()
@@ -247,6 +248,72 @@ describe('Search onboarding', () => {
             tourStep3 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-3'))
             tourStep2 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-2'))
             expect(tourStep3).toBeTruthy()
+        })
+
+        it('Removes onboardingTour query parameter when the query reference step is advanced', async () => {
+            await driver.page.goto(
+                driver.sourcegraphBaseUrl + '/search?q=lang:go+test&patternType=literal&onboardingTour=true'
+            )
+            await resetOnboardingTour()
+            await waitAndFocusInput()
+            await driver.page.waitForSelector('.tour-card')
+            await driver.page.waitForSelector('.test-tour-step-5')
+            await driver.page.waitForSelector('.search-help-dropdown-button')
+            await driver.page.click('.search-help-dropdown-button')
+            expect(await driver.page.evaluate(() => document.querySelectorAll('.test-tour-step-5').length)).toBe(0)
+            await driver.assertWindowLocation('/search?q=lang%3Ago+test&patternType=literal')
+        })
+
+        it('Removes onboardingTour query parameter when the query reference step is cancelled', async () => {
+            await driver.page.goto(
+                driver.sourcegraphBaseUrl + '/search?q=lang:go+test&patternType=literal&onboardingTour=true'
+            )
+            await resetOnboardingTour()
+            await waitAndFocusInput()
+            await driver.page.waitForSelector('.tour-card')
+            await driver.page.waitForSelector('.test-tour-step-5')
+            await driver.page.waitForSelector('.test-tour-close-button')
+            await driver.page.click('.test-tour-close-button')
+            expect(await driver.page.evaluate(() => document.querySelectorAll('.test-tour-step-5').length)).toBe(0)
+            await driver.assertWindowLocation('/search?q=lang%3Ago+test&patternType=literal')
+        })
+
+        it('Does not display tour step when re-visiting a page with onboardingTour query after already completing ', async () => {
+            await driver.page.goto(
+                driver.sourcegraphBaseUrl + '/search?q=lang:go+test&patternType=literal&onboardingTour=true'
+            )
+            await resetOnboardingTour()
+            await waitAndFocusInput()
+            await driver.page.waitForSelector('.tour-card')
+            await driver.page.waitForSelector('.test-tour-step-5')
+            await driver.page.waitForSelector('.search-help-dropdown-button')
+            await driver.page.click('.search-help-dropdown-button')
+            expect(await driver.page.evaluate(() => document.querySelectorAll('.test-tour-step-5').length)).toBe(0)
+            await driver.assertWindowLocation('/search?q=lang%3Ago+test&patternType=literal')
+            await driver.page.goto(
+                driver.sourcegraphBaseUrl + '/search?q=lang:go+test&patternType=literal&onboardingTour=true'
+            )
+            await driver.page.waitForSelector('.search-help-dropdown-button')
+            expect(await driver.page.evaluate(() => document.querySelectorAll('.test-tour-step-5').length)).toBe(0)
+        })
+
+        it('Does not display tour step when re-visiting a page with onboardingTour query after already closing tour ', async () => {
+            await driver.page.goto(
+                driver.sourcegraphBaseUrl + '/search?q=lang:go+test&patternType=literal&onboardingTour=true'
+            )
+            await resetOnboardingTour()
+            await waitAndFocusInput()
+            await driver.page.waitForSelector('.tour-card')
+            await driver.page.waitForSelector('.test-tour-step-5')
+            await driver.page.waitForSelector('.test-tour-close-button')
+            await driver.page.click('.test-tour-close-button')
+            expect(await driver.page.evaluate(() => document.querySelectorAll('.test-tour-step-5').length)).toBe(0)
+            await driver.assertWindowLocation('/search?q=lang%3Ago+test&patternType=literal')
+            await driver.page.goto(
+                driver.sourcegraphBaseUrl + '/search?q=lang:go+test&patternType=literal&onboardingTour=true'
+            )
+            await driver.page.waitForSelector('.search-help-dropdown-button')
+            expect(await driver.page.evaluate(() => document.querySelectorAll('.test-tour-step-5').length)).toBe(0)
         })
     })
 })

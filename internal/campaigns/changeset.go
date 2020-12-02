@@ -54,6 +54,7 @@ const (
 	ReconcilerStateQueued     ReconcilerState = "QUEUED"
 	ReconcilerStateProcessing ReconcilerState = "PROCESSING"
 	ReconcilerStateErrored    ReconcilerState = "ERRORED"
+	ReconcilerStateFailed     ReconcilerState = "FAILED"
 	ReconcilerStateCompleted  ReconcilerState = "COMPLETED"
 )
 
@@ -63,6 +64,7 @@ func (s ReconcilerState) Valid() bool {
 	case ReconcilerStateQueued,
 		ReconcilerStateProcessing,
 		ReconcilerStateErrored,
+		ReconcilerStateFailed,
 		ReconcilerStateCompleted:
 		return true
 	default:
@@ -535,6 +537,16 @@ func (c *Changeset) BaseRef() (string, error) {
 	default:
 		return "", errors.New("unknown changeset type")
 	}
+}
+
+// AttachedTo returns true if the changeset is currently attached to the campaign with the given campaignID.
+func (c *Changeset) AttachedTo(campaignID int64) bool {
+	for _, cid := range c.CampaignIDs {
+		if cid == campaignID {
+			return true
+		}
+	}
+	return false
 }
 
 // SupportsLabels returns whether the code host on which the changeset is

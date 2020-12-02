@@ -3,21 +3,22 @@ package webhookhandlers
 import (
 	"context"
 	"fmt"
+
 	gh "github.com/google/go-github/v28/github"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // handleGithubRepoAuthzEvent handles any github event containing a repository field, and enqueues the contained
 // repo for permissions synchronisation.
-func handleGitHubRepoAuthzEvent(ctx context.Context, extSvc *repos.ExternalService, payload interface{}) error {
+func handleGitHubRepoAuthzEvent(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
 	if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
 		return nil
 	}

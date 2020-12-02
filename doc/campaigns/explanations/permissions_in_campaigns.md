@@ -42,12 +42,14 @@ All users are automatically given read permissions to a campaign. Granular permi
 
 ## Code host interactions in campaigns
 
-All interactions with the code host are performed by Sourcegraph with the token with which you configured the code host. These operations include:
+Interactions with the code host are performed by Sourcegraph with your personal access token for that code host. These operations include:
 
 - Pushing a branch with the changes (the Git author and committer will be you, and the Git push will be authenticated with your credentials)
 - Creating a changeset (e.g., on GitHub, the pull request author will be you)
 - Updating a changeset
 - Closing a changeset
+
+For instructions on adding and managing your code host access tokens, please refer to "[Configuring user credentials](../how-tos/configuring_user_credentials.md)".
 
 See these code host specific pages for which permissions and scopes the tokens require:
 
@@ -55,7 +57,11 @@ See these code host specific pages for which permissions and scopes the tokens r
 - [GitLab](../../../admin/external_service/gitlab.md#access-token-scopes)
 - [Bitbucket Server](../../../admin/external_service/gitlab.md#access-token-permissions)
 
-In the future you'll be able to perform all code host interactions with a separate access token or your personal code host account.
+### Site admins
+
+Site admins will fall back to using the Sourcegraph token for the code host if they have not added a personal access token. This makes it easier to try out campaigns, but be aware that this may result in changesets being created or changed with different permissions to your normal code host user.
+
+Non-admin users are unable to apply campaigns without configuring access tokens.
 
 ## Repository permissions for campaigns
 

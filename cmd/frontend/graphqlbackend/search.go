@@ -19,7 +19,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -34,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -50,6 +50,9 @@ type SearchArgs struct {
 	After          *string
 	First          *int32
 	VersionContext *string
+
+	// For tests
+	Settings *schema.Settings
 }
 
 type SearchImplementer interface {
@@ -66,9 +69,14 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	settings, err := decodedViewerFinalSettings(ctx)
-	if err != nil {
-		return nil, err
+
+	settings := args.Settings
+	if settings == nil {
+		var err error
+		settings, err = decodedViewerFinalSettings(ctx)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	useNewParser := getBoolPtr(settings.SearchMigrateParser, true)
@@ -217,7 +225,7 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 		case "V2":
 			searchType = query.SearchTypeLiteral
 		default:
-			return -1, fmt.Errorf("unrecognized version: %v", version)
+			return -1, fmt.Errorf("unrecognized version want \"V1\" or \"V2\": %v", version)
 		}
 	}
 	return searchType, nil

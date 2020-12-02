@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -22,7 +23,7 @@ func TestAWSCodeCommitSource_Exclude(t *testing.T) {
 	}
 
 	fact := httpcli.NewFactory(httpcli.NewMiddleware())
-	svc := ExternalService{Kind: extsvc.KindAWSCodeCommit}
+	svc := types.ExternalService{Kind: extsvc.KindAWSCodeCommit}
 	conn, err := newAWSCodeCommitSource(&svc, config, fact)
 	if err != nil {
 		t.Fatal(err)

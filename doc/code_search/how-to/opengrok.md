@@ -51,7 +51,7 @@ The only exceptions are colon characters, which are by default used for specifyi
 
 Oracle OpenGrok provides three boolean operators — `AND`, `OR`, and `NOT` — for scoping searches to files that contain strings that match multiple patterns.
 
-Sourcegraph provides [`AND` and `OR` operators](../reference/queries.md#operators).
+Sourcegraph also provides [`AND`, `OR`, and `NOT` operators](../reference/queries.md#operators).
 
 > NOTE: Operators are available as of Sourcegraph 3.15 and enabled with `{"experimentalFeatures": {"andOrQuery": "enabled"}}` in the site configuration. Built-in operator support is planned for an upcoming release.
 
@@ -78,9 +78,3 @@ Both Sourcegraph and OpenGrok allow users to add keywords for scoping searches. 
 Sourcegraph also provides keywords to [scope commit message and diff searches](../reference/queries.md#keywords-diff-and-commit-searches-only) to specific authors or timeframes in which a change was made.
 
 To see an exhaustive list of Sourcegraph's search keywords, see the [search query syntax](../reference/queries.md#keywords-all-searches) page.
-
-**Negating search keywords**
-
-Oracle OpenGrok allows users to negate any search keyword, or to negate file results that contain a given search pattern, by appending a `-` character to the start of the term.
-
-Sourcegraph also allows users to negate search keywords by appending a `-` character to the name. For example, `pattern -repo:foo` will search across all repositories except for those that contain "foo". `pattern -lang:javascript` will search across all non-JavaScript files. Sourcegraph cannot currently exclude files based on text that they don't contain, but this will be available using [operators](../reference/queries.md#operators) soon.

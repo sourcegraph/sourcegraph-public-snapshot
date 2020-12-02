@@ -18,6 +18,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
@@ -134,14 +135,12 @@ func TestCleanupExpired(t *testing.T) {
 		}
 	}
 
-	origRepoRemoteURL := repoRemoteURL
-	repoRemoteURL = func(ctx context.Context, dir GitDir) (string, error) {
-		if string(dir) == repoBoom {
+	getRemoteURL := func(ctx context.Context, name api.RepoName) (string, error) {
+		if name == "repo-boom" {
 			return "", errors.Errorf("boom")
 		}
 		return remote, nil
 	}
-	defer func() { repoRemoteURL = origRepoRemoteURL }()
 
 	modTime := func(path string) time.Time {
 		t.Helper()
@@ -190,7 +189,10 @@ func TestCleanupExpired(t *testing.T) {
 	repoBoomTime := modTime(repoBoom)
 	repoBoomRecloneTime := recloneTime(repoBoom)
 
-	s := &Server{ReposDir: root}
+	s := &Server{
+		ReposDir:         root,
+		GetRemoteURLFunc: getRemoteURL,
+	}
 	s.Handler() // Handler as a side-effect sets up Server
 	s.cleanupRepos()
 

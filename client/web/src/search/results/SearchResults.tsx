@@ -31,14 +31,13 @@ import { SearchResultsList } from './SearchResultsList'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
-import AlertOutlineIcon from 'mdi-react/AlertOutlineIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
 import { Remote } from 'comlink'
 import { FlatExtensionHostAPI } from '../../../../shared/src/api/contract'
 import { DeployType } from '../../jscontext'
 import { AuthenticatedUser } from '../../auth'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 import { shouldDisplayPerformanceWarning } from '../backend'
+import { VersionContextWarning } from './VersionContextWarning'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
@@ -95,7 +94,7 @@ export type SearchType = 'diff' | 'commit' | 'symbol' | 'repo' | 'path' | null
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
 // The version is set based on the release tag of the instance. Anything before 3.9.0 will not pass a version parameter,
 // and will therefore default to V1.
-const LATEST_VERSION = 'V2'
+export const LATEST_VERSION = 'V2'
 
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {
@@ -171,7 +170,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             // Do async search request
                             this.props
                                 .searchRequest(
-                                    caseSensitive ? `${query} case:yes` : query,
+                                    query,
                                     LATEST_VERSION,
                                     patternType,
                                     resolveVersionContext(versionContext, this.props.availableVersionContexts),
@@ -315,19 +314,10 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     />
                 )}
                 {this.state.showVersionContextWarning && (
-                    <div className="mt-2 mx-2">
-                        <div className="d-flex alert alert-warning mb-0 justify-content-between">
-                            <div>
-                                <AlertOutlineIcon className="icon-inline mr-2" />
-                                This link changed your version context to{' '}
-                                <strong>{this.props.versionContext || 'default'}</strong>. You can switch contexts with
-                                the selector to the left of the search bar.
-                            </div>
-                            <div onClick={this.onDismissWarning}>
-                                <CloseIcon className="icon-inline ml-2" />
-                            </div>
-                        </div>
-                    </div>
+                    <VersionContextWarning
+                        versionContext={this.props.versionContext}
+                        onDismissWarning={this.onDismissWarning}
+                    />
                 )}
                 <SearchResultsList
                     {...this.props}

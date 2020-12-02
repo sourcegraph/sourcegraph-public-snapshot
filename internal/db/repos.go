@@ -13,9 +13,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -28,8 +26,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type RepoNotFoundErr struct {
@@ -199,12 +197,21 @@ func (s *RepoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 		return 0, err
 	}
 
+	joins := []*sqlf.Query{}
+	if len(opt.ExternalServiceIDs) != 0 {
+		serviceIDQuery := []*sqlf.Query{}
+		for _, id := range opt.ExternalServiceIDs {
+			serviceIDQuery = append(serviceIDQuery, sqlf.Sprintf("%s", id))
+		}
+		joins = append(joins, sqlf.Sprintf("JOIN external_service_repos e ON (repo.id = e.repo_id AND e.external_service_id IN (%s))", sqlf.Join(serviceIDQuery, ",")))
+	}
+
 	predQ := sqlf.Sprintf("TRUE")
 	if len(conds) > 0 {
 		predQ = sqlf.Sprintf("(%s)", sqlf.Join(conds, "AND"))
 	}
 
-	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo WHERE deleted_at IS NULL AND %s", predQ)
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo %s WHERE deleted_at IS NULL AND %s", sqlf.Join(joins, " "), predQ)
 	tr.LazyPrintf("SQL: %v", q.Query(sqlf.PostgresBindVar))
 
 	var count int
@@ -365,7 +372,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 
 	type sourceInfo struct {
 		ID       int64
-		CloneURL secret.StringValue
+		CloneURL string
 		Kind     string
 	}
 	r.Sources = make(map[string]*types.SourceInfo)
@@ -379,7 +386,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 			urn := extsvc.URN(src.Kind, src.ID)
 			r.Sources[urn] = &types.SourceInfo{
 				ID:       urn,
-				CloneURL: *src.CloneURL.S,
+				CloneURL: src.CloneURL,
 			}
 		}
 	}
@@ -441,9 +448,9 @@ type ReposListOptions struct {
 	// ServiceTypes of repos to list. When zero-valued, this is omitted from the predicate set.
 	ServiceTypes []string
 
-	// ExternalServiceID, if non zero, will only return repos added by the given external service.
+	// ExternalServiceIDs, if non empty, will only return repos added by the given external services.
 	// The id is that of the external_services table NOT the external_service_id in the repo table
-	ExternalServiceID int64
+	ExternalServiceIDs []int64
 
 	// PatternQuery is an expression tree of patterns to query. The atoms of
 	// the query are strings which are regular expression patterns.
@@ -558,8 +565,12 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 	}
 
 	fromClause := sqlf.Sprintf("repo")
-	if opt.ExternalServiceID != 0 {
-		fromClause = sqlf.Sprintf("repo JOIN external_service_repos e ON (repo.id = e.repo_id AND e.external_service_id = %s)", opt.ExternalServiceID)
+	if len(opt.ExternalServiceIDs) != 0 {
+		serviceIDQuery := []*sqlf.Query{}
+		for _, id := range opt.ExternalServiceIDs {
+			serviceIDQuery = append(serviceIDQuery, sqlf.Sprintf("%s", id))
+		}
+		fromClause = sqlf.Sprintf("repo JOIN external_service_repos e ON (repo.id = e.repo_id AND e.external_service_id IN (%s))", sqlf.Join(serviceIDQuery, ","))
 	}
 
 	queryConds := sqlf.Sprintf("TRUE")
@@ -714,7 +725,7 @@ func sourcesColumn(repoID api.RepoID, sources map[string]*types.SourceInfo) (jso
 		records = append(records, externalServiceRepo{
 			ExternalServiceID: src.ExternalServiceID(),
 			RepoID:            int64(repoID),
-			CloneURL:          secret.StringValue{S: &src.CloneURL},
+			CloneURL:          src.CloneURL,
 		})
 	}
 
@@ -722,9 +733,9 @@ func sourcesColumn(repoID api.RepoID, sources map[string]*types.SourceInfo) (jso
 }
 
 type externalServiceRepo struct {
-	ExternalServiceID int64              `json:"external_service_id"`
-	RepoID            int64              `json:"repo_id"`
-	CloneURL          secret.StringValue `json:"clone_url"`
+	ExternalServiceID int64  `json:"external_service_id"`
+	RepoID            int64  `json:"repo_id"`
+	CloneURL          string `json:"clone_url"`
 }
 
 var insertReposQuery = `
@@ -821,6 +832,10 @@ insert_sources AS (
     repo_id,
     clone_url
   FROM sources_list
+  ON CONFLICT ON CONSTRAINT external_service_repos_repo_id_external_service_id_unique
+  DO
+    UPDATE SET clone_url = EXCLUDED.clone_url
+    WHERE external_service_repos.clone_url != EXCLUDED.clone_url
 )
 SELECT id FROM inserted_repos_with_ids;
 `
@@ -1011,52 +1026,52 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 	return conds, nil
 }
 
-// GetUserAddedRepoNames will fetch all repos added by the given user
+// GetUserAddedRepoNames returns name of all repositories added by the given user.
 func (s *RepoStore) GetUserAddedRepoNames(ctx context.Context, userID int32) ([]api.RepoName, error) {
 	s.ensureStore()
 
-	columns := minimalColumns(getBySQLColumns)
-	fmtString := fmt.Sprintf(`
-SELECT %s from repo
+	authzConds, err := authzQueryConds(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	const fmtString = `
+SELECT DISTINCT(repo.name) FROM repo
 JOIN external_service_repos esr ON repo.id = esr.repo_id
-WHERE esr.external_service_id IN (
-    SELECT id from external_services
-    WHERE namespace_user_id = %%s
-    AND deleted_at IS NULL
-)
+WHERE
+	esr.external_service_id IN (
+		SELECT id from external_services
+		WHERE namespace_user_id = %s
+		AND deleted_at IS NULL
+	)
+AND (%s) -- Populates "authzConds"
 AND repo.deleted_at IS NULL
-`, strings.Join(columns, ","))
-	q := sqlf.Sprintf(fmtString, userID)
+`
+	q := sqlf.Sprintf(
+		fmtString,
+		userID,
+		authzConds, // 🚨 SECURITY: Enforce repository permissions
+	)
 
 	rows, err := s.Query(ctx, q)
-
 	if err != nil {
 		return nil, errors.Wrap(err, "getting user repos")
 	}
 	defer rows.Close()
 
-	var repos []*types.Repo
+	var repoNames []api.RepoName
 	for rows.Next() {
-		var repo types.Repo
-		if err := scanRepo(rows, &repo); err != nil {
+		var name api.RepoName
+		if err := rows.Scan(&name); err != nil {
 			return nil, err
 		}
-		repos = append(repos, &repo)
+		repoNames = append(repoNames, name)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: This enforces repository permissions
-	repos, err = authzFilter(ctx, repos, authz.Read)
-	if err != nil {
-		return nil, errors.Wrap(err, "performing authz filter")
-	}
-	names := make([]api.RepoName, 0, len(repos))
-	for _, r := range repos {
-		names = append(names, r.Name)
-	}
-	return names, nil
+	return repoNames, nil
 }
 
 // parseCursorConds checks whether the query is using cursor-based pagination, and

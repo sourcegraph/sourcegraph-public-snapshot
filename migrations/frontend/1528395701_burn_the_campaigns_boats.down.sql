@@ -108,7 +108,19 @@ ON CONFLICT
 INSERT INTO
     campaigns
 SELECT
-    *
+    id,
+    name,
+    description,
+    initial_applier_id,
+    namespace_user_id,
+    namespace_org_id,
+    created_at,
+    updated_at,
+    closed_at,
+    campaign_spec_id,
+    last_applier_id,
+    last_applied_at,
+    changeset_ids
 FROM
     campaigns_old;
 
