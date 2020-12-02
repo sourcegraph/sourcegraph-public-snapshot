@@ -18,7 +18,7 @@ are terminated.
 Run the following:
 
 ```
-./dev/db/add_migration.sh MIGRATION_NAME
+./dev/db/add_migration.sh <frontend|codeintel> MIGRATION_NAME
 ```
 
 There will be up/down `.sql` migration files created in this directory. Add
