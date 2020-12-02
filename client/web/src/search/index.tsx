@@ -8,7 +8,7 @@ import { Observable } from 'rxjs'
 import { ISavedSearch } from '../../../shared/src/graphql/schema'
 import { EventLogResult } from './backend'
 import { AggregateStreamingSearchResults } from './stream'
-import { findGlobalFilter } from '../../../shared/src/search/parser/validate'
+import { findFilter, FilterKind } from '../../../shared/src/search/parser/validate'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -54,7 +54,7 @@ export function parseSearchURLVersionContext(query: string): string | undefined 
 }
 
 export function searchURLIsCaseSensitive(query: string): boolean {
-    const globalCase = findGlobalFilter(parseSearchURLQuery(query) || '', 'case')
+    const globalCase = findFilter(parseSearchURLQuery(query) || '', 'case', FilterKind.Global)
     if (globalCase?.value && globalCase.value.type === 'literal') {
         // if `case:` filter exists in the query, override the existing case: query param
         return discreteValueAliases.yes.includes(globalCase.value.value)
@@ -85,14 +85,14 @@ export function parseSearchURL(
     let patternType = parseSearchURLPatternType(urlSearchQuery)
     let caseSensitive = searchURLIsCaseSensitive(urlSearchQuery)
 
-    const globalPatternType = findGlobalFilter(finalQuery, 'patterntype')
+    const globalPatternType = findFilter(finalQuery, 'patterntype', FilterKind.Global)
     if (globalPatternType?.value && globalPatternType.value.type === 'literal') {
         // Any `patterntype:` filter in the query should override the patternType= URL query parameter if it exists.
         finalQuery = replaceRange(finalQuery, globalPatternType.range)
         patternType = globalPatternType.value.value as SearchPatternType
     }
 
-    const globalCase = findGlobalFilter(finalQuery, 'case')
+    const globalCase = findFilter(finalQuery, 'case', FilterKind.Global)
     if (globalCase?.value && globalCase.value.type === 'literal') {
         // Any `case:` filter in the query should override the case= URL query parameter if it exists.
         finalQuery = replaceRange(finalQuery, globalCase.range)

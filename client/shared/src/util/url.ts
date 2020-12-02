@@ -6,7 +6,7 @@ import { replaceRange } from './strings'
 import { discreteValueAliases } from '../search/parser/filters'
 import { tryCatch } from './errors'
 import { SearchPatternType } from '../graphql-operations'
-import { findGlobalFilter } from '../search/parser/validate'
+import { findFilter, FilterKind } from '../search/parser/validate'
 
 export interface RepoSpec {
     /**
@@ -603,14 +603,14 @@ export function buildSearchURLQuery(
             .join(' ')
     }
 
-    const globalPatternType = findGlobalFilter(queryParameter, 'patterntype')
+    const globalPatternType = findFilter(queryParameter, 'patterntype', FilterKind.Global)
     if (globalPatternType?.value && globalPatternType.value.type === 'literal') {
         const { start, end } = globalPatternType.range
         patternTypeParameter = query.slice(globalPatternType.value.range.start, end)
         queryParameter = replaceRange(queryParameter, { start: Math.max(0, start - 1), end }).trim()
     }
 
-    const globalCase = findGlobalFilter(queryParameter, 'case')
+    const globalCase = findFilter(queryParameter, 'case', FilterKind.Global)
     if (globalCase?.value && globalCase.value.type === 'literal') {
         // When case:value is explicit in the query, override any previous value of caseParameter.
         caseParameter = discreteValueAliases.yes.includes(globalCase.value.value) ? 'yes' : 'no'
