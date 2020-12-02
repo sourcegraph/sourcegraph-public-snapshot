@@ -1,10 +1,9 @@
-package search
+package graphqlbackend
 
 import (
 	"fmt"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
@@ -18,7 +17,7 @@ func number(i int) string {
 	return fmt.Sprintf("%dk", i/1000)
 }
 
-func repositoryCloningHandler(resultsResolver *graphqlbackend.SearchResultsResolver) (search.Skipped, bool) {
+func repositoryCloningHandler(resultsResolver *SearchResultsResolver) (search.Skipped, bool) {
 	repos := resultsResolver.Cloning()
 	if len(repos) == 0 {
 		return search.Skipped{}, false
@@ -34,7 +33,7 @@ func repositoryCloningHandler(resultsResolver *graphqlbackend.SearchResultsResol
 	}, true
 }
 
-func repositoryMissingHandler(resultsResolver *graphqlbackend.SearchResultsResolver) (search.Skipped, bool) {
+func repositoryMissingHandler(resultsResolver *SearchResultsResolver) (search.Skipped, bool) {
 	repos := resultsResolver.Missing()
 	if len(repos) == 0 {
 		return search.Skipped{}, false
@@ -50,7 +49,7 @@ func repositoryMissingHandler(resultsResolver *graphqlbackend.SearchResultsResol
 	}, true
 }
 
-func shardTimeoutHandler(resultsResolver *graphqlbackend.SearchResultsResolver) (search.Skipped, bool) {
+func shardTimeoutHandler(resultsResolver *SearchResultsResolver) (search.Skipped, bool) {
 	// This is not the same, but once we expose this more granular details
 	// from our backend it will be shard specific.
 	repos := resultsResolver.Timedout()
@@ -68,7 +67,7 @@ func shardTimeoutHandler(resultsResolver *graphqlbackend.SearchResultsResolver) 
 	}, true
 }
 
-func shardMatchLimitHandler(resultsResolver *graphqlbackend.SearchResultsResolver) (search.Skipped, bool) {
+func shardMatchLimitHandler(resultsResolver *SearchResultsResolver) (search.Skipped, bool) {
 	// We don't have the details of repo vs shard vs document limits yet. So
 	// we just pretend all our shard limits.
 	if !resultsResolver.LimitHit() {
@@ -84,7 +83,7 @@ func shardMatchLimitHandler(resultsResolver *graphqlbackend.SearchResultsResolve
 }
 
 // TODO implement all skipped reasons
-var skippedHandlers = []func(*graphqlbackend.SearchResultsResolver) (search.Skipped, bool){
+var skippedHandlers = []func(*SearchResultsResolver) (search.Skipped, bool){
 	repositoryMissingHandler,
 	repositoryCloningHandler,
 	// documentMatchLimitHandler,
@@ -95,21 +94,24 @@ var skippedHandlers = []func(*graphqlbackend.SearchResultsResolver) (search.Skip
 	// excludedArchiveHandler,
 }
 
-// progressFromResolver builds a progress event from a final results resolver.
-func progressFromResolver(resultsResolver *graphqlbackend.SearchResultsResolver) search.Progress {
+// Progress builds a progress event from a final results resolver.
+func (sr *SearchResultsResolver) Progress() search.Progress {
 	skipped := []search.Skipped{}
 
 	for _, handler := range skippedHandlers {
-		if sk, ok := handler(resultsResolver); ok {
+		if sk, ok := handler(sr); ok {
 			skipped = append(skipped, sk)
 		}
 	}
 
 	return search.Progress{
-		Done:              true,
-		RepositoriesCount: intPtr(int(resultsResolver.RepositoriesCount())),
-		MatchCount:        int(resultsResolver.MatchCount()),
-		DurationMs:        int(resultsResolver.ElapsedMilliseconds()),
+		RepositoriesCount: intPtr(int(sr.RepositoriesCount())),
+		MatchCount:        int(sr.MatchCount()),
+		DurationMs:        int(sr.ElapsedMilliseconds()),
 		Skipped:           skipped,
 	}
+}
+
+func intPtr(i int) *int {
+	return &i
 }
