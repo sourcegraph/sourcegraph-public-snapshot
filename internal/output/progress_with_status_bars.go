@@ -16,7 +16,7 @@ func newProgressWithStatusBars(bars []ProgressBar, statusBars []*StatusBar, o *O
 	}
 
 	if !o.caps.Isatty {
-		return newProgressWithStatusBarsSimple(barPtrs, statusBars, o)
+		return newProgressWithStatusBarsSimple(barPtrs, statusBars, o, opts)
 	}
 
 	return newProgressWithStatusBarsTTY(barPtrs, statusBars, o, opts)

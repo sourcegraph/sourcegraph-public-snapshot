@@ -48,7 +48,7 @@ func (p *progressWithStatusBarsSimple) StatusBarResetf(i int, label, format stri
 	}
 }
 
-func newProgressWithStatusBarsSimple(bars []*ProgressBar, statusBars []*StatusBar, o *Output) *progressWithStatusBarsSimple {
+func newProgressWithStatusBarsSimple(bars []*ProgressBar, statusBars []*StatusBar, o *Output, opts *ProgressOpts) *progressWithStatusBarsSimple {
 	p := &progressWithStatusBarsSimple{
 		progressSimple: &progressSimple{
 			Output: o,
@@ -56,6 +56,14 @@ func newProgressWithStatusBarsSimple(bars []*ProgressBar, statusBars []*StatusBa
 			done:   make(chan chan struct{}),
 		},
 		statusBars: statusBars,
+	}
+
+	if opts.NoSpinner {
+		if p.Output.opts.Verbose {
+			writeBars(p.Output, p.bars)
+			writeStatusBars(p.Output, p.statusBars)
+		}
+		return p
 	}
 
 	go func() {

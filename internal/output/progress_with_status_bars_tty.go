@@ -22,7 +22,7 @@ func newProgressWithStatusBarsTTY(bars []*ProgressBar, statusBars []*StatusBar, 
 	if opts != nil {
 		p.opts = *opts
 	} else {
-		p.opts = defaultProgressTTYOpts
+		p.opts = *DefaultProgressTTYOpts
 	}
 
 	p.determineEmojiWidth()
@@ -33,6 +33,10 @@ func newProgressWithStatusBarsTTY(bars []*ProgressBar, statusBars []*StatusBar, 
 	defer p.o.lock.Unlock()
 
 	p.draw()
+
+	if opts.NoSpinner {
+		return p
+	}
 
 	go func() {
 		for s := range p.spinner.C {
@@ -170,6 +174,7 @@ func (p *progressWithStatusBarsTTY) draw() {
 	}
 
 	if len(p.statusBars) > 0 {
+		p.o.clearCurrentLine()
 		fmt.Fprint(p.o.w, StylePending, "│", runewidth.FillLeft("\n", p.o.caps.Width-1))
 
 	}

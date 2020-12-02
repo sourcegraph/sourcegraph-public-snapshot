@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/sourcegraph/go-diff/diff"
@@ -29,6 +30,9 @@ func newCampaignProgressPrinter(out *output.Output, verbose bool, numParallelism
 }
 
 type campaignProgressPrinter struct {
+	// Used in tests only
+	forceNoSpinner bool
+
 	out *output.Output
 
 	sem *semaphore.Weighted
@@ -59,10 +63,15 @@ func (p *campaignProgressPrinter) initProgressBar(statuses []*campaigns.TaskStat
 		statusBars = append(statusBars, output.NewStatusBar())
 	}
 
-	p.progress = p.out.ProgressWithStatusBars([]output.ProgressBar{{
-		Label: fmt.Sprintf("Executing ... (0/%d, 0 errored)", len(statuses)),
-		Max:   float64(len(statuses)),
-	}}, statusBars, nil)
+	progressBars := []output.ProgressBar{
+		{
+			Label: fmt.Sprintf("Executing ... (0/%d, 0 errored)", len(statuses)),
+			Max:   float64(len(statuses)),
+		},
+	}
+
+	opts := output.DefaultProgressTTYOpts.WithoutSpinner()
+	p.progress = p.out.ProgressWithStatusBars(progressBars, statusBars, opts)
 
 	return numStatusBars
 }
@@ -298,12 +307,12 @@ func verboseDiffSummary(fileDiffs []*diff.FileDiff) ([]string, error) {
 	)
 
 	fileStats := make(map[string]string, len(fileDiffs))
+	fileNames := make([]string, len(fileDiffs))
 
-	for _, f := range fileDiffs {
-		name := f.NewName
-		if name == "/dev/null" {
-			name = f.OrigName
-		}
+	for i, f := range fileDiffs {
+		name := diffDisplayName(f)
+
+		fileNames[i] = name
 
 		if len(name) > maxFilenameLen {
 			maxFilenameLen = len(name)
@@ -319,8 +328,11 @@ func verboseDiffSummary(fileDiffs []*diff.FileDiff) ([]string, error) {
 		fileStats[name] = fmt.Sprintf("%d %s", num, diffStatDiagram(stat))
 	}
 
-	for file, stats := range fileStats {
-		lines = append(lines, fmt.Sprintf("\t%-*s | %s", maxFilenameLen, file, stats))
+	sort.Slice(fileNames, func(i, j int) bool { return fileNames[i] < fileNames[j] })
+
+	for _, name := range fileNames {
+		stats := fileStats[name]
+		lines = append(lines, fmt.Sprintf("\t%-*s | %s", maxFilenameLen, name, stats))
 	}
 
 	var insertionsPlural string
@@ -340,4 +352,12 @@ func verboseDiffSummary(fileDiffs []*diff.FileDiff) ([]string, error) {
 	))
 
 	return lines, nil
+}
+
+func diffDisplayName(f *diff.FileDiff) string {
+	name := f.NewName
+	if name == "/dev/null" {
+		name = f.OrigName
+	}
+	return name
 }

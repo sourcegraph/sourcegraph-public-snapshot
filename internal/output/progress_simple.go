@@ -38,11 +38,18 @@ func (p *progressSimple) stop() {
 	<-c
 }
 
-func newProgressSimple(bars []*ProgressBar, o *Output) *progressSimple {
+func newProgressSimple(bars []*ProgressBar, o *Output, opts *ProgressOpts) *progressSimple {
 	p := &progressSimple{
 		Output: o,
 		bars:   bars,
 		done:   make(chan chan struct{}),
+	}
+
+	if opts.NoSpinner {
+		if p.Output.opts.Verbose {
+			writeBars(p.Output, p.bars)
+		}
+		return p
 	}
 
 	go func() {

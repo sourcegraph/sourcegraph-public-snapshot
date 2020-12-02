@@ -9,7 +9,7 @@ import (
 	"github.com/mattn/go-runewidth"
 )
 
-var defaultProgressTTYOpts = ProgressOpts{
+var DefaultProgressTTYOpts = &ProgressOpts{
 	SuccessEmoji: "\u2705",
 	SuccessStyle: StyleSuccess,
 	PendingStyle: StylePending,
@@ -145,7 +145,7 @@ func newProgressTTY(bars []*ProgressBar, o *Output, opts *ProgressOpts) *progres
 	if opts != nil {
 		p.opts = *opts
 	} else {
-		p.opts = defaultProgressTTYOpts
+		p.opts = *DefaultProgressTTYOpts
 	}
 
 	p.determineEmojiWidth()
@@ -155,6 +155,10 @@ func newProgressTTY(bars []*ProgressBar, o *Output, opts *ProgressOpts) *progres
 	defer p.o.lock.Unlock()
 
 	p.draw()
+
+	if opts.NoSpinner {
+		return p
+	}
 
 	go func() {
 		for s := range p.spinner.C {

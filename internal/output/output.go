@@ -50,7 +50,15 @@ type Output struct {
 type OutputOpts struct {
 	// ForceColor ignores all terminal detection and enabled coloured output.
 	ForceColor bool
-	Verbose    bool
+	// ForceTTY ignores all terminal detection and enables TTY output.
+	ForceTTY bool
+
+	// ForceHeight ignores all terminal detection and sets the height to this value.
+	ForceHeight int
+	// ForceWidth ignores all terminal detection and sets the width to this value.
+	ForceWidth int
+
+	Verbose bool
 }
 
 // newOutputPlatformQuirks provides a way for conditionally compiled code to
@@ -61,6 +69,15 @@ func NewOutput(w io.Writer, opts OutputOpts) *Output {
 	caps := detectCapabilities()
 	if opts.ForceColor {
 		caps.Color = true
+	}
+	if opts.ForceTTY {
+		caps.Isatty = true
+	}
+	if opts.ForceHeight != 0 {
+		caps.Height = opts.ForceHeight
+	}
+	if opts.ForceWidth != 0 {
+		caps.Width = opts.ForceWidth
 	}
 
 	o := &Output{caps: caps, opts: opts, w: w}
