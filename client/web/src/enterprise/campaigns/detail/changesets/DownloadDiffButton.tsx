@@ -66,10 +66,10 @@ export const DownloadDiffButton: React.FunctionComponent<DownloadDiffButtonProps
     }
 
     return (
-        <div className="download-diff-button p-2">
+        <div className="download-diff-button pb-1 d-flex justify-content-end">
             <button
                 type="button"
-                className="btn btn-icon btn-link"
+                className="btn btn-link"
                 aria-label="Download diff"
                 onClick={loadDiff}
                 disabled={state === DownloadState.LOADING}

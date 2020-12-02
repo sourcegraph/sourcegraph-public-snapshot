@@ -103,8 +103,8 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
             {isExpanded && (
                 <>
                     <div />
-                    <DownloadDiffButton changesetID={node.id} />
                     <div className="external-changeset-node__expanded-section p-2">
+                        <DownloadDiffButton changesetID={node.id} />
                         {node.error && <ErrorAlert error={node.error} history={history} />}
                         <ChangesetFileDiff
                             changesetID={node.id}
