@@ -8789,17 +8789,22 @@ FOR INTERNAL USE ONLY: A status message
 union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
 
 """
+An arbitrarily large integer encoded as a decimal string.
+"""
+scalar BigInt
+
+"""
 FOR INTERNAL USE ONLY: A repository statistic
 """
 type RepositoryStats {
     """
     The amount of bytes stored in .git directories
     """
-    gitDirBytes: Int!
+    gitDirBytes: BigInt!
     """
     The number of lines indexed
     """
-    indexedLinesCount: Int!
+    indexedLinesCount: BigInt!
 }
 
 """
