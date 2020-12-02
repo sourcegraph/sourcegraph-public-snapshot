@@ -8,6 +8,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -106,6 +107,34 @@ func (s *Store) GetDumpByID(ctx context.Context, id int) (_ Dump, _ bool, err er
 	`, id)))
 }
 
+// OldestDumpForRepository returns the oldest dump for the given repository and boolean flag indicating its existence.
+func (s *Store) OldestDumpForRepository(ctx context.Context, repositoryID int) (_ Dump, _ bool, err error) {
+	ctx, endObservation := s.operations.getDumpByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return scanFirstDump(s.Store.Query(ctx, sqlf.Sprintf(`
+		SELECT
+			d.id,
+			d.commit,
+			d.root,
+			EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = d.repository_id and upload_id = d.id) AS visible_at_tip,
+			d.uploaded_at,
+			d.state,
+			d.failure_message,
+			d.started_at,
+			d.finished_at,
+			d.process_after,
+			d.num_resets,
+			d.num_failures,
+			d.repository_id,
+			d.repository_name,
+			d.indexer
+		FROM lsif_dumps_with_repository_name d WHERE repository_id = %s ORDER BY d.uploaded_at LIMIT 1
+	`, repositoryID)))
+}
+
 // FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, path, and
 // optional indexer. If rootMustEnclosePath is true, then only dumps with a root which is a prefix of path are returned. Otherwise,
 // any dump with a root intersecting the given path is returned.
@@ -162,29 +191,29 @@ func (s *Store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 
 // FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
 // path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestDumps for additional details.
-func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph map[string][]string) (_ []Dump, err error) {
+func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph *gitserver.CommitGraph) (_ []Dump, err error) {
 	ctx, endObservation := s.operations.findClosestDumpsFromGraphFragment.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 		log.String("path", path),
 		log.Bool("rootMustEnclosePath", rootMustEnclosePath),
 		log.String("indexer", indexer),
-		log.Int("numKeys", len(graph)),
+		log.Int("numKeys", len(graph.Order())),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if len(graph) == 0 {
+	if len(graph.Order()) == 0 {
 		return nil, nil
 	}
 
-	commits := make([]*sqlf.Query, 0, len(graph))
-	for commit := range graph {
+	commits := make([]*sqlf.Query, 0, len(graph.Graph()))
+	for commit := range graph.Graph() {
 		commits = append(commits, sqlf.Sprintf("%s", commit))
 	}
 
-	uploadMeta, err := scanUploadMeta(s.Store.Query(ctx, sqlf.Sprintf(
+	commitGraphView, err := scanCommitGraphView(s.Store.Query(ctx, sqlf.Sprintf(
 		`
-			SELECT nu.upload_id, encode(nu.commit_bytea, 'hex'), u.root, u.indexer, nu.distance, nu.ancestor_visible, nu.overwritten
+			SELECT nu.upload_id, encode(nu.commit_bytea, 'hex'), md5(u.root || ':' || u.indexer) as token, nu.distance, nu.ancestor_visible, nu.overwritten
 			FROM lsif_nearest_uploads nu
 			JOIN lsif_uploads u ON u.id = nu.upload_id
 			WHERE nu.repository_id = %s AND encode(nu.commit_bytea, 'hex') IN (%s) AND nu.ancestor_visible
@@ -196,14 +225,14 @@ func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 		return nil, err
 	}
 
-	visibleUploads, err := calculateVisibleUploads(graph, uploadMeta)
+	visibleUploads, err := calculateVisibleUploads(graph, commitGraphView)
 	if err != nil {
 		return nil, err
 	}
 
 	var ids []*sqlf.Query
 	for _, uploadMeta := range visibleUploads[commit] {
-		if !uploadMeta.Overwritten {
+		if (uploadMeta.Flags & FlagOverwritten) == 0 {
 			ids = append(ids, sqlf.Sprintf("%d", uploadMeta.UploadID))
 		}
 	}

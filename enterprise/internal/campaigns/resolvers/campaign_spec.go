@@ -56,7 +56,7 @@ func (r *campaignSpecResolver) ParsedInput() (graphqlbackend.JSONValue, error) {
 }
 
 func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context, args *graphqlbackend.ChangesetSpecsConnectionArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
-	opts := ee.ListChangesetSpecsOpts{CampaignSpecID: r.campaignSpec.ID}
+	opts := ee.ListChangesetSpecsOpts{}
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
@@ -70,9 +70,10 @@ func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context, args *graphql
 	}
 
 	return &changesetSpecConnectionResolver{
-		store:       r.store,
-		httpFactory: r.httpFactory,
-		opts:        opts,
+		store:          r.store,
+		httpFactory:    r.httpFactory,
+		opts:           opts,
+		campaignSpecID: r.campaignSpec.ID,
 	}, nil
 }
 
@@ -154,11 +155,9 @@ func (r *campaignDescriptionResolver) Description() string {
 
 func (r *campaignSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
 	specsConnection := &changesetSpecConnectionResolver{
-		store:       r.store,
-		httpFactory: r.httpFactory,
-		opts: ee.ListChangesetSpecsOpts{
-			CampaignSpecID: r.campaignSpec.ID,
-		},
+		store:          r.store,
+		httpFactory:    r.httpFactory,
+		campaignSpecID: r.campaignSpec.ID,
 	}
 
 	specs, err := specsConnection.Nodes(ctx)

@@ -122,9 +122,12 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	if err != nil {
 		return nil, err
 	}
+	if err := mappings.Hydrate(ctx, tx); err != nil {
+		return nil, err
+	}
 
 	// And execute the mapping.
-	rewirer := NewChangesetRewirer(mappings, campaign, tx, rstore)
+	rewirer := NewChangesetRewirer(mappings, campaign, rstore)
 	changesets, err := rewirer.Rewire(ctx)
 	if err != nil {
 		return nil, err

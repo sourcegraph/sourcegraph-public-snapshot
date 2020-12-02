@@ -166,9 +166,9 @@ type ChangesetSpecResolver interface {
 
 	ExpiresAt() *DateTime
 
-	Operations() ([]campaigns.ReconcilerOperation, error)
-	Delta() (ChangesetSpecDeltaResolver, error)
-	Changeset() (ChangesetResolver, error)
+	Operations(ctx context.Context) ([]campaigns.ReconcilerOperation, error)
+	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
+	Changeset(ctx context.Context) (ChangesetResolver, error)
 
 	ToHiddenChangesetSpec() (HiddenChangesetSpecResolver, bool)
 	ToVisibleChangesetSpec() (VisibleChangesetSpecResolver, bool)

@@ -8,9 +8,9 @@ import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 
 Package monitoring declares types for Sourcegraph's monitoring generator as well as the generator implementation itself\.
 
-To learn more about developing monitoring\, see the guide: https://about\.sourcegraph\.com/handbook/engineering/observability/monitoring
+To learn more about developing monitoring\, see the guide: https://about.sourcegraph.com/handbook/engineering/observability/monitoring
 
-To learn more about the generator\, see the top\-level program: https://github\.com/sourcegraph/sourcegraph/tree/main/monitoring
+To learn more about the generator\, see the top\-level program: https://github.com/sourcegraph/sourcegraph/tree/main/monitoring
 
 ## Index
 
@@ -238,7 +238,7 @@ func (a *ObservableAlertDefinition) LessOrEqual(f float64) *ObservableAlertDefin
 
 ## type [ObservableOwner](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L106>)
 
-ObservableOwner denotes a team that owns an Observable\. The current teams are described in the handbook: https://about\.sourcegraph\.com/company/team/org\_chart\#engineering
+ObservableOwner denotes a team that owns an Observable\. The current teams are described in the handbook: https://about.sourcegraph.com/company/team/org_chart#engineering
 
 ```go
 type ObservableOwner string
@@ -338,7 +338,7 @@ UnitType for controlling the unit type display on graphs\.
 type UnitType string
 ```
 
-From https://sourcegraph\.com/github\.com/grafana/grafana@b63b82976b3708b082326c0b7d42f38d4bc261fa/\-/blob/packages/grafana\-data/src/valueFormats/categories\.ts\#L23
+From https://sourcegraph.com/github.com/grafana/grafana@b63b82976b3708b082326c0b7d42f38d4bc261fa/-/blob/packages/grafana-data/src/valueFormats/categories.ts#L23
 
 ```go
 const (

@@ -51,7 +51,7 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		VersionContext: strPtr(args.VersionContext),
 	})
 	if err != nil {
-		eventWriter.Event("error", err.Error())
+		_ = eventWriter.Event("error", err.Error())
 		return
 	}
 
@@ -126,7 +126,7 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 	final := <-resultsStreamDone
 	resultsResolver, err := final.resultsResolver, final.err
 	if err != nil {
-		eventWriter.Event("error", err.Error())
+		_ = eventWriter.Event("error", err.Error())
 		return
 	}
 
@@ -167,7 +167,11 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	// TODO stats
+	pr := resultsResolver.Progress()
+	pr.Done = true
+	_ = eventWriter.Event("progress", pr)
+
+	// TODO done event includes progress
 	_ = eventWriter.Event("done", map[string]interface{}{})
 }
 

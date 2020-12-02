@@ -19,4 +19,14 @@
             margin: 0 auto;
         }
     }
+
+    &__executor-task-details {
+        border-left: 4px solid var(--border-color);
+        margin-left: 1.5rem;
+        margin-top: -1rem;
+        margin-bottom: -1rem;
+        padding-left: 2rem;
+        padding-top: 1rem;
+        padding-bottom: 2rem;
+    }
 }
