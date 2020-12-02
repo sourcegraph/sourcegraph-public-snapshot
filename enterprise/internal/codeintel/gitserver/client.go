@@ -259,7 +259,7 @@ func (c *Client) FileExists(ctx context.Context, repositoryID int, commit, file 
 		return false, err
 	}
 
-	if _, err := git.ResolveRevision(ctx, repo, nil, commit, git.ResolveRevisionOptions{}); err != nil {
+	if _, err := git.ResolveRevision(ctx, repo, commit, git.ResolveRevisionOptions{}); err != nil {
 		return false, errors.Wrap(err, "git.ResolveRevision")
 	}
 
