@@ -98,11 +98,11 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         const cascadePatternTypeValue =
             settingsCascade.final &&
             !isErrorLike(settingsCascade.final) &&
-            settingsCascade.final['search.defaultPatternType']
+            (settingsCascade.final['search.defaultPatternType'] as SearchPatternType)
 
-        const defaultPatternType = cascadePatternTypeValue || 'literal'
+        const defaultPatternType = cascadePatternTypeValue || SearchPatternType.literal
 
-        const newPatternType =
+        const newPatternType: SearchPatternType =
             patternType !== SearchPatternType.structural ? SearchPatternType.structural : defaultPatternType
 
         setPatternType(newPatternType)

@@ -15,12 +15,22 @@ export const hiddenChangesetSpecStories: Record<string, HiddenChangesetSpecField
         id: 'someidh1',
         expiresAt: addDays(new Date(), 7).toISOString(),
         type: ChangesetSpecType.EXISTING,
+        operations: [],
+        delta: {
+            titleChanged: false,
+        },
+        changeset: null,
     },
     'Create changeset': {
         __typename: 'HiddenChangesetSpec',
         id: 'someidh2',
         expiresAt: addDays(new Date(), 7).toISOString(),
         type: ChangesetSpecType.BRANCH,
+        operations: [],
+        delta: {
+            titleChanged: false,
+        },
+        changeset: null,
     },
 }
 

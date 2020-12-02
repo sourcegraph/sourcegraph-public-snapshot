@@ -3,43 +3,15 @@ package dbstore
 import (
 	"sync"
 
-	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 )
-
-// UploadMeta contains the subset of fields from the lsif_uploads table that are used
-// to determine visibility of an upload from a particular commit.
-type UploadMeta struct {
-	UploadID int
-	Root     string
-	Indexer  string
-
-	// Distance is the number of commits between the definition and reference commits.
-	Distance int
-
-	// AncestorVisible indicates whether or not this upload was visible to the commit by
-	// looking for older uploads defined in an ancestor commit. False indicates that the
-	// upload is only visible via another upload defined in a descendant commit.
-	AncestorVisible bool
-
-	// Overwritten indicates that this upload defined on an ancestor commit that is farther
-	// away than an upload defined on a descendant commit that has the same root and indexer.
-	//
-	// If overwritten, this upload is not considered in nearest commit operations, but is kept
-	// in the database so that we can reconstruct the set of all ancestor-visible uploads of a
-	// commit, which is useful when determining the closest uploads with only a partial commit
-	// graph.
-	Overwritten bool
-}
 
 // calculateVisibleUploads transforms the given commit graph and the set of LSIF uploads
 // defined on each commit with LSIF upload into a map from a commit to the set of uploads
 // which are visible from that commit.
-func calculateVisibleUploads(graph map[string][]string, uploads map[string][]UploadMeta) (map[string][]UploadMeta, error) {
-	// Order parents before children
-	ordering, err := topologicalSort(graph)
-	if err != nil {
-		return nil, err
-	}
+func calculateVisibleUploads(commitGraph *gitserver.CommitGraph, commitGraphView *CommitGraphView) (map[string][]UploadMeta, error) {
+	graph := commitGraph.Graph()
+	order := commitGraph.Order()
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -56,21 +28,24 @@ func calculateVisibleUploads(graph map[string][]string, uploads map[string][]Upl
 		defer wg.Done()
 
 		for commit := range graph {
-			for _, upload := range uploads[commit] {
-				upload.AncestorVisible = true
-				ancestorVisibleUploads[commit] = append(ancestorVisibleUploads[commit], upload)
+			for _, upload := range commitGraphView.Meta[commit] {
+				ancestorVisibleUploads[commit] = append(ancestorVisibleUploads[commit], UploadMeta{
+					UploadID: upload.UploadID,
+					Flags:    upload.Flags | FlagAncestorVisible,
+				})
 			}
 		}
 
-		for _, commit := range ordering {
+		for _, commit := range order {
 			uploads := ancestorVisibleUploads[commit]
 			for _, parent := range graph[commit] {
 				for _, upload := range ancestorVisibleUploads[parent] {
-					upload.Distance++
-					uploads = addUploadMeta(uploads, upload, true)
+					uploads = addUploadMeta(uploads, commitGraphView, UploadMeta{
+						UploadID: upload.UploadID,
+						Flags:    upload.Flags + 1,
+					}, true)
 				}
 			}
-
 			ancestorVisibleUploads[commit] = uploads
 		}
 	}()
@@ -87,25 +62,28 @@ func calculateVisibleUploads(graph map[string][]string, uploads map[string][]Upl
 		defer wg.Done()
 
 		for commit := range graph {
-			for _, upload := range uploads[commit] {
-				upload.AncestorVisible = false
-				descendantVisibleUploads[commit] = append(descendantVisibleUploads[commit], upload)
+			for _, upload := range commitGraphView.Meta[commit] {
+				descendantVisibleUploads[commit] = append(descendantVisibleUploads[commit], UploadMeta{
+					UploadID: upload.UploadID,
+					Flags:    upload.Flags &^ FlagAncestorVisible,
+				})
 			}
 		}
 
 		// Calculate mapping from commits to their children
 		reverseGraph := reverseGraph(graph)
 
-		for i := len(ordering) - 1; i >= 0; i-- {
-			commit := ordering[i]
+		for i := len(order) - 1; i >= 0; i-- {
+			commit := order[i]
 			uploads := descendantVisibleUploads[commit]
 			for _, child := range reverseGraph[commit] {
 				for _, upload := range descendantVisibleUploads[child] {
-					upload.Distance++
-					uploads = addUploadMeta(uploads, upload, true)
+					uploads = addUploadMeta(uploads, commitGraphView, UploadMeta{
+						UploadID: upload.UploadID,
+						Flags:    upload.Flags + 1,
+					}, true)
 				}
 			}
-
 			descendantVisibleUploads[commit] = uploads
 		}
 	}()
@@ -128,7 +106,7 @@ func calculateVisibleUploads(graph map[string][]string, uploads map[string][]Upl
 	//     FindClosestDumpsFromGraphFragment for additional details.
 	for commit, uploads := range ancestorVisibleUploads {
 		for _, upload := range descendantVisibleUploads[commit] {
-			uploads = addUploadMeta(uploads, upload, false)
+			uploads = addUploadMeta(uploads, commitGraphView, upload, false)
 		}
 
 		ancestorVisibleUploads[commit] = uploads
@@ -144,27 +122,30 @@ func calculateVisibleUploads(graph map[string][]string, uploads map[string][]Upl
 // upload will be marked as overwritten and the upload will be appended to the end of the list
 // (if replace is false). If there is no such upload with the same root and indexer, then the
 // given upload will be appended to the end of the list.
-func addUploadMeta(uploads []UploadMeta, upload UploadMeta, replace bool) []UploadMeta {
-	for i, candidate := range uploads {
-		if upload.Root == candidate.Root && upload.Indexer == candidate.Indexer {
-			if upload.Distance < candidate.Distance || (upload.Distance == candidate.Distance && upload.UploadID < candidate.UploadID) {
-				u := uploads
-				if !replace {
-					u = append(uploads, UploadMeta{
-						UploadID:        uploads[i].UploadID,
-						Root:            uploads[i].Root,
-						Indexer:         uploads[i].Indexer,
-						Distance:        uploads[i].Distance,
-						AncestorVisible: uploads[i].AncestorVisible,
-						Overwritten:     true,
-					})
-				}
-				u[i] = upload
-				return u
-			}
+func addUploadMeta(uploads []UploadMeta, commitGraphView *CommitGraphView, upload UploadMeta, replace bool) []UploadMeta {
+	sharedFieldToken := commitGraphView.Tokens[upload.UploadID]
 
+	for i, candidate := range uploads {
+		candidateSharedFieldToken := commitGraphView.Tokens[candidate.UploadID]
+		if sharedFieldToken != candidateSharedFieldToken {
+			continue
+		}
+
+		uploadDistance := upload.Flags & MaxDistance
+		candidateDistance := candidate.Flags & MaxDistance
+
+		if uploadDistance < candidateDistance || (uploadDistance == candidateDistance && upload.UploadID < candidate.UploadID) {
+			if !replace {
+				uploads = append(uploads, UploadMeta{
+					UploadID: candidate.UploadID,
+					Flags:    candidate.Flags | FlagOverwritten,
+				})
+			}
+			uploads[i] = upload
 			return uploads
 		}
+
+		return uploads
 	}
 
 	return append(uploads, upload)
@@ -184,61 +165,4 @@ func reverseGraph(graph map[string][]string) map[string][]string {
 	}
 
 	return reverse
-}
-
-type sortMarker int
-
-const (
-	markTemp sortMarker = iota
-	markPermenant
-)
-
-var ErrCyclicCommitGraph = errors.New("commit graph contains cycles")
-
-// topologicalSort returns an ordering of the vertices of the given graph such that
-// each vertex occurs before all of its children. The input graph is expected to be
-// represented as a mapping from a vertex to its parents (a la git log) rather than
-// a mapping of children. If the graph is not acyclic an error is returned as no
-// such ordering can exist.
-func topologicalSort(graph map[string][]string) (_ []string, err error) {
-	commits := make([]string, 0, len(graph))
-	visited := make(map[string]sortMarker, len(graph))
-
-	for commit := range graph {
-		if commits, err = visitForTopologicalSort(graph, commits, visited, commit); err != nil {
-			return nil, err
-		}
-	}
-
-	return commits, nil
-}
-
-// visitForTopologicalSort performs a post-order DFS traversal of the given graph
-// from the given target commit. Commits are uniquely appended to the commits slice
-// only after all of their descendants have been added.
-func visitForTopologicalSort(graph map[string][]string, commits []string, visited map[string]sortMarker, commit string) (_ []string, err error) {
-	if mark, ok := visited[commit]; ok {
-		if mark == markTemp {
-			return nil, ErrCyclicCommitGraph
-		}
-
-		return commits, nil
-	}
-
-	parents, ok := graph[commit]
-	if !ok {
-		return commits, nil
-	}
-
-	visited[commit] = markTemp
-
-	for _, parent := range parents {
-		if commits, err = visitForTopologicalSort(graph, commits, visited, parent); err != nil {
-			return nil, err
-		}
-	}
-
-	visited[commit] = markPermenant
-	commits = append(commits, commit)
-	return commits, nil
 }

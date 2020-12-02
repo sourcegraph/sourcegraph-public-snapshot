@@ -192,6 +192,7 @@ Referenced by:
  closing               | boolean                  | not null default false
  num_failures          | integer                  | not null default 0
  log_contents          | text                     | 
+ execution_logs        | json[]                   | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -554,7 +555,6 @@ Check constraints:
 Indexes:
     "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
     "external_service_repos_external_service_id" btree (external_service_id)
-    "external_service_repos_repo_id" btree (repo_id)
 Foreign-key constraints:
     "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
     "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
@@ -577,6 +577,7 @@ Triggers:
  external_service_id | bigint                   | 
  num_failures        | integer                  | not null default 0
  log_contents        | text                     | 
+ execution_logs      | json[]                   | 
 Indexes:
     "external_service_sync_jobs_state_idx" btree (state)
 Foreign-key constraints:
@@ -753,6 +754,7 @@ Indexes:
  indexer_args    | text[]                   | not null
  outfile         | text                     | not null
  log_contents    | text                     | 
+ execution_logs  | json[]                   | 
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
 Check constraints:

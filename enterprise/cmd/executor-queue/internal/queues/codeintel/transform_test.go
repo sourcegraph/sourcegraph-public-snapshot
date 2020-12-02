@@ -27,7 +27,7 @@ func TestTransformRecord(t *testing.T) {
 	}
 	config := &Config{
 		FrontendURL:      "https://test.io",
-		FrontendUsername: "test",
+		FrontendUsername: "test*",
 		FrontendPassword: "hunter2",
 	}
 
@@ -65,8 +65,13 @@ func TestTransformRecord(t *testing.T) {
 					"-file", "dump.lsif",
 				},
 				Dir: "web",
-				Env: []string{"SRC_ENDPOINT=https://test:hunter2@test.io"},
+				Env: []string{"SRC_ENDPOINT=https://test%2A:hunter2@test.io"},
 			},
+		},
+		RedactedValues: map[string]string{
+			"https://test%2A:hunter2@test.io": "https://USERNAME_REMOVED:PASSWORD_REMOVED@test.io",
+			"test*":                           "USERNAME_REMOVED",
+			"hunter2":                         "PASSWORD_REMOVED",
 		},
 	}
 	if diff := cmp.Diff(expected, job); diff != "" {
@@ -98,7 +103,7 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 	}
 	config := &Config{
 		FrontendURL:      "https://test.io",
-		FrontendUsername: "test",
+		FrontendUsername: "test*",
 		FrontendPassword: "hunter2",
 	}
 
@@ -136,8 +141,13 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 					"-file", "other/path/lsif.dump",
 				},
 				Dir: "",
-				Env: []string{"SRC_ENDPOINT=https://test:hunter2@test.io"},
+				Env: []string{"SRC_ENDPOINT=https://test%2A:hunter2@test.io"},
 			},
+		},
+		RedactedValues: map[string]string{
+			"https://test%2A:hunter2@test.io": "https://USERNAME_REMOVED:PASSWORD_REMOVED@test.io",
+			"test*":                           "USERNAME_REMOVED",
+			"hunter2":                         "PASSWORD_REMOVED",
 		},
 	}
 	if diff := cmp.Diff(expected, job); diff != "" {

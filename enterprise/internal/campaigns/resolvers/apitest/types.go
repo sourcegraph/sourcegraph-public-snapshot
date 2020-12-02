@@ -213,9 +213,27 @@ type CampaignSpec struct {
 	ExpiresAt *graphqlbackend.DateTime
 }
 
+// ChangesetSpecDelta is the delta between two ChangesetSpecs describing the same Changeset.
+type ChangesetSpecDelta struct {
+	TitleChanged         bool
+	BodyChanged          bool
+	Undraft              bool
+	BaseRefChanged       bool
+	DiffChanged          bool
+	CommitMessageChanged bool
+	AuthorNameChanged    bool
+	AuthorEmailChanged   bool
+}
+
 type ChangesetSpec struct {
 	Typename string `json:"__typename"`
 	ID       string
+
+	Operations []campaigns.ReconcilerOperation
+	Delta      ChangesetSpecDelta
+	Changeset  struct {
+		ID string
+	}
 
 	Description ChangesetSpecDescription
 
