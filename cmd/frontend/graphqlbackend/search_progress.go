@@ -17,6 +17,13 @@ func number(i int) string {
 	return fmt.Sprintf("%dk", i/1000)
 }
 
+func plural(one, many string, n int) string {
+	if n == 1 {
+		return one
+	}
+	return many
+}
+
 func repositoryCloningHandler(resultsResolver *SearchResultsResolver) (search.Skipped, bool) {
 	repos := resultsResolver.Cloning()
 	if len(repos) == 0 {
@@ -28,7 +35,7 @@ func repositoryCloningHandler(resultsResolver *SearchResultsResolver) (search.Sk
 		Reason: search.RepositoryCloning,
 		Title:  fmt.Sprintf("%s cloning", amount),
 		// TODO sample of repos in message
-		Message:  fmt.Sprintf("%s repositories could not be searched since they are still cloning. Try searching again or reducing the scope of your query with repo: repogroup: or other filters.", amount),
+		Message:  fmt.Sprintf("%s %s could not be searched since they are still cloning. Try searching again or reducing the scope of your query with repo: repogroup: or other filters.", amount, plural("repository", "repositories", len(repos))),
 		Severity: search.SeverityWarn,
 	}, true
 }
@@ -44,7 +51,7 @@ func repositoryMissingHandler(resultsResolver *SearchResultsResolver) (search.Sk
 		Reason: search.RepositoryMissing,
 		Title:  fmt.Sprintf("%s missing", amount),
 		// TODO sample of repos in message
-		Message:  fmt.Sprintf("%s repositories could not be searched. Try reducing the scope of your query with repo: repogroup: or other filters.", amount),
+		Message:  fmt.Sprintf("%s %s could not be searched. Try reducing the scope of your query with repo: repogroup: or other filters.", amount, plural("repository", "repositories", len(repos))),
 		Severity: search.SeverityWarn,
 	}, true
 }
@@ -62,7 +69,7 @@ func shardTimeoutHandler(resultsResolver *SearchResultsResolver) (search.Skipped
 		Reason: search.ShardTimeout,
 		Title:  fmt.Sprintf("%s timedout", amount),
 		// TODO sample of repos in message
-		Message:  fmt.Sprintf("%s repositories could not be searched in time. Try reducing the scope of your query with repo: repogroup: or other filters.", amount),
+		Message:  fmt.Sprintf("%s %s could not be searched in time. Try reducing the scope of your query with repo: repogroup: or other filters.", amount, plural("repository", "repositories", len(repos))),
 		Severity: search.SeverityWarn,
 	}, true
 }
