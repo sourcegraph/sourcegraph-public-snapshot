@@ -154,6 +154,8 @@
 // 1528395759_drop_repo_id_index_on_external_service_repos.up.sql (70B)
 // 1528395760_log_contents_array.down.sql (925B)
 // 1528395760_log_contents_array.up.sql (1.138kB)
+// 1528395761_drop_orphaned_repo_trigger_on_external_service_repos.down.sql (758B)
+// 1528395761_drop_orphaned_repo_trigger_on_external_service_repos.up.sql (206B)
 
 package migrations
 
@@ -3302,6 +3304,46 @@ func _1528395760_log_contents_arrayUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395761_drop_orphaned_repo_trigger_on_external_service_reposDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x52\x41\x8f\x9b\x3c\x10\xbd\xf3\x2b\xde\x21\x87\x44\xda\xec\x1f\x40\x39\xf8\x83\x09\x8b\x44\xcc\xca\x18\xed\x77\xb3\xdc\xe0\x4d\x2c\x11\xa0\xb6\x5b\x75\xff\x7d\x85\x49\x68\x0f\xdb\x43\xcb\x01\x8d\x3d\xef\xbd\x79\xe3\x99\xff\xa8\x28\x79\x9a\x24\x99\x20\x26\x09\xc7\x96\x67\xb2\xac\x39\xfc\xf8\x1e\x54\x67\x7a\x13\x8c\x1a\xdd\x74\xd5\x83\x72\x66\x1a\xd5\x97\x0f\x65\x7e\x04\xe3\x06\xdd\x2b\x6f\xdc\x77\x7b\x36\x31\xe1\xb7\x3b\x08\x92\xad\xe0\x0d\x82\xb3\x97\x8b\x71\x09\x00\x54\x8c\x17\x2d\x2b\x08\x53\x3f\x5d\xfc\xd7\x3e\x61\x0d\x36\x9b\x24\x96\x8d\x80\xfd\x1e\x6f\x57\x33\x40\x0f\x78\x08\xe3\x2e\x0c\xeb\xa3\x0f\x8c\x0e\x57\xed\xba\xfd\xe2\xa7\x7b\x7a\x10\x27\xe3\xde\x47\x77\xf3\xd0\x38\xf7\x46\x0f\xf8\x36\x21\x8c\x91\x73\xc7\x62\xf1\x8e\x68\xd1\x86\xd1\x59\xe3\x9f\x23\xbd\x7d\xcd\x99\xa4\x18\xce\xdf\x0c\x88\x87\x86\xe4\x7a\x39\xe8\x9b\xc1\xe1\xf7\xb7\xe8\xd4\xaa\xf4\xa1\xe6\xf4\x76\xfe\xed\x9e\x56\xca\x03\xa6\x03\x0e\x08\x4e\x0f\x5e\x9f\x83\x1d\x07\x15\xec\xcd\xf8\xa0\x6f\xd3\x76\x17\xc1\x6f\x2f\x24\xe8\x33\x5a\xd9\x80\xb7\x55\x75\x4f\x31\x9e\x83\xd7\x12\xf4\x7f\xd9\xc8\x06\xdb\x95\xb1\x78\xad\x28\x93\x38\x8a\xfa\x84\xcf\xa7\xb2\x94\x89\xdd\x29\xdb\xe1\x10\xa3\x67\xdb\xad\x32\xbb\x34\x89\xf1\x32\xbb\x58\x39\x4d\x88\xe7\x69\xb2\xd9\xfc\x5a\x0b\x29\xca\xa2\x20\x11\x27\xab\xfe\x76\x35\xa2\x3e\x3b\x4a\x12\xc8\xa9\x22\x49\xa8\xf9\x1f\xec\x46\xe8\xb1\x16\x20\x96\xbd\xa0\x91\x4c\xd2\x89\xf8\xdc\x3d\x65\xad\x24\xbc\x8a\x3a\xa3\xbc\x15\xf4\x2f\xfb\x39\xb7\x53\x9f\x4e\xa5\x4c\x93\x9f\x01\x00\x00\xff\xff\xef\x8f\x5a\xea\xf6\x02\x00\x00")
+
+func _1528395761_drop_orphaned_repo_trigger_on_external_service_reposDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395761_drop_orphaned_repo_trigger_on_external_service_reposDownSql,
+		"1528395761_drop_orphaned_repo_trigger_on_external_service_repos.down.sql",
+	)
+}
+
+func _1528395761_drop_orphaned_repo_trigger_on_external_service_reposDownSql() (*asset, error) {
+	bytes, err := _1528395761_drop_orphaned_repo_trigger_on_external_service_reposDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395761_drop_orphaned_repo_trigger_on_external_service_repos.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf1, 0xfd, 0x60, 0x51, 0x2d, 0xb2, 0xfa, 0x73, 0x6f, 0x12, 0xf8, 0x5d, 0xf7, 0x9f, 0xb4, 0x76, 0x4e, 0xf0, 0xfd, 0x5b, 0xc5, 0x8, 0x2e, 0x44, 0x47, 0x76, 0x29, 0xfb, 0x9f, 0x23, 0xfd, 0x67}}
+	return a, nil
+}
+
+var __1528395761_drop_orphaned_repo_trigger_on_external_service_reposUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\xcd\xb1\x0e\xc2\x20\x10\x00\xd0\x9d\xaf\xb8\x51\xbf\x81\xa9\x52\x4a\x6e\x28\x18\xc0\xc4\xed\x52\xf5\xd4\x26\x4d\x69\x80\x18\xfd\x7b\x13\x5d\x1c\x5c\x3a\xbf\xe1\xed\xb4\x41\x2b\x85\x68\xbd\xdb\x43\xf4\x68\x8c\xf6\x80\x1d\xe8\x23\x86\x18\xa0\xe6\xf1\x46\x25\x5d\x2b\x5d\x78\xe2\xca\x94\xf2\x72\x1f\x66\xca\xbc\x24\x3a\xbd\x88\x9f\x95\xf3\x3c\x4c\x54\x38\x3f\xc6\x33\x7f\x00\x9c\x85\xbf\x50\xe4\xf7\xe9\x0e\x56\x45\x74\xf6\x27\x5a\x7b\x94\xcd\x16\x54\x13\x54\xd3\x6a\x29\x84\x72\x7d\x8f\x51\x8a\x77\x00\x00\x00\xff\xff\xd2\x5d\x75\xfc\xce\x00\x00\x00")
+
+func _1528395761_drop_orphaned_repo_trigger_on_external_service_reposUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395761_drop_orphaned_repo_trigger_on_external_service_reposUpSql,
+		"1528395761_drop_orphaned_repo_trigger_on_external_service_repos.up.sql",
+	)
+}
+
+func _1528395761_drop_orphaned_repo_trigger_on_external_service_reposUpSql() (*asset, error) {
+	bytes, err := _1528395761_drop_orphaned_repo_trigger_on_external_service_reposUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395761_drop_orphaned_repo_trigger_on_external_service_repos.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf0, 0x70, 0x9e, 0xd, 0x20, 0xd1, 0x2e, 0xb, 0x5, 0xf3, 0x9f, 0x54, 0xdb, 0xff, 0x62, 0xcc, 0x74, 0x6d, 0x5, 0x77, 0x36, 0x7c, 0x35, 0x2d, 0x5a, 0xba, 0x68, 0x96, 0x26, 0xb9, 0xa2, 0x1a}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3547,6 +3589,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395759_drop_repo_id_index_on_external_service_repos.up.sql":                         _1528395759_drop_repo_id_index_on_external_service_reposUpSql,
 	"1528395760_log_contents_array.down.sql":                                                 _1528395760_log_contents_arrayDownSql,
 	"1528395760_log_contents_array.up.sql":                                                   _1528395760_log_contents_arrayUpSql,
+	"1528395761_drop_orphaned_repo_trigger_on_external_service_repos.down.sql":               _1528395761_drop_orphaned_repo_trigger_on_external_service_reposDownSql,
+	"1528395761_drop_orphaned_repo_trigger_on_external_service_repos.up.sql":                 _1528395761_drop_orphaned_repo_trigger_on_external_service_reposUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3747,6 +3791,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395759_drop_repo_id_index_on_external_service_repos.up.sql":                         {_1528395759_drop_repo_id_index_on_external_service_reposUpSql, map[string]*bintree{}},
 	"1528395760_log_contents_array.down.sql":                                                 {_1528395760_log_contents_arrayDownSql, map[string]*bintree{}},
 	"1528395760_log_contents_array.up.sql":                                                   {_1528395760_log_contents_arrayUpSql, map[string]*bintree{}},
+	"1528395761_drop_orphaned_repo_trigger_on_external_service_repos.down.sql":               {_1528395761_drop_orphaned_repo_trigger_on_external_service_reposDownSql, map[string]*bintree{}},
+	"1528395761_drop_orphaned_repo_trigger_on_external_service_repos.up.sql":                 {_1528395761_drop_orphaned_repo_trigger_on_external_service_reposUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
