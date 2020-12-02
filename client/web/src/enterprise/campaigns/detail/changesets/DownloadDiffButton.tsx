@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react'
-import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
+import DownloadIcon from 'mdi-react/DownloadIcon'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { getChangesetDiff } from '../backend'
 import { asError, isErrorLike } from '../../../../../../shared/src/util/errors'
@@ -62,7 +62,7 @@ export const DownloadDiffButton: React.FunctionComponent<DownloadDiffButtonProps
     } else if (state === DownloadState.LOADING) {
         icon = <LoadingSpinner />
     } else {
-        icon = <FileDownloadIcon className="icon-inline" />
+        icon = <DownloadIcon className="icon-inline" />
     }
 
     return (
