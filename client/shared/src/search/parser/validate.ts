@@ -1,17 +1,29 @@
 import { Filter, scanSearchQuery } from './scanner'
 
+export enum FilterKind {
+    Global = 'Global',
+    Subexpression = 'Subexpression',
+}
+
 /**
- * Returns a global filter for a field in a query, if any. A filter is
- * global iff (1) it is specified once and (2) it is at the top-level of a query.
- * For example, `case:yes` is not global in the following queries:
+ * Returns the first filter for a field in a query, if any. A FilterKind
+ * specifies what kind of filter to look for.
+ *
+ * A Global filter is found iff (1) it is specified once and (2) it is at
+ * the top-level of a query.
+ *
+ * A Subexpression filter is found if a non-global filter exists. For
+ * example, `case:yes` is not global, but are part of subexpressions in
+ * the following queries:
  *
  * `(case:yes some subexpression) case:no multiple cases`
  * `(case:yes not at top level; inside a parentheses of a grouped expression)`
  *
  * @param query the query string
  * @param field the field of the filter to find
+ * @param kind the kind of filter to find
  */
-export const findGlobalFilter = (query: string, field: string): Filter | undefined => {
+export const findFilter = (query: string, field: string, kind: FilterKind): Filter | undefined => {
     const result = scanSearchQuery(query)
     let filter: Filter | undefined
     if (result.type === 'success') {
@@ -27,17 +39,16 @@ export const findGlobalFilter = (query: string, field: string): Filter | undefin
             if (token.type === 'filter' && token.field.value.toLowerCase() === field) {
                 if (seenField) {
                     // More than one of this field.
-                    return undefined
+                    return kind === FilterKind.Subexpression ? token : undefined
                 }
                 if (depth > 0) {
                     // Inside a grouped expression.
-                    return undefined
+                    return kind === FilterKind.Subexpression ? token : undefined
                 }
                 filter = token
                 seenField = true
-                continue
             }
         }
     }
-    return filter
+    return kind === FilterKind.Global ? filter : undefined
 }
