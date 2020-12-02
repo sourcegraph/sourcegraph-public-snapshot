@@ -1,7 +1,7 @@
 name: Changelog progress
 on:
   schedule:
-  - cron: "0 1 * * 6"   # Every Saturday 1:00am UTC (Friday 5pm PST)
+  - cron: "0 * * * *"   # Every day 00:00 UTC (4pm PST)
   push:
     branches:
       - main

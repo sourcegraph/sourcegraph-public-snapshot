@@ -6,9 +6,8 @@ import re
 import os
 from typing import List, Set, Dict, Tuple, Optional
 
-def parse_blame(blame: List[str]) -> Tuple[List, Dict]:
-    blame_lines = subprocess.getoutput('git blame --since=7.days --porcelain -- CHANGELOG.md').split('\n')
-
+def parse_blame(blame: str) -> Tuple[List, Dict]:
+    blame_lines = blame.split('\n')
     i = 0
     current_commit=None
     commits = {}
@@ -47,10 +46,15 @@ def parse_blame(blame: List[str]) -> Tuple[List, Dict]:
     return line_info, commits
 
 def format_blame(line_info: List, commits: Dict) -> str:
-    start_line_i = next(i for i, info in enumerate(line_info) if info['line'].find('START CHANGELOG') >= 0)
-    end_line_i = len(line_info) - 1 - next(i for i, info in enumerate(line_info[::-1]) if 'boundary' not in commits[info['commit']])
+    start_line_i = next((i for i, info in enumerate(line_info) if info['line'].find('START CHANGELOG') >= 0), 0)
+    end_line_i = len(line_info) - 1 - next((i for i, info in enumerate(line_info[::-1]) if 'boundary' not in commits[info['commit']]), len(line_info)-1)
 
-    header = ''':ship-2: :ship-2: :ship-2: *CHANGELOG summary for the past week*  :ship-2: :ship-2: :ship-2:
+    if end_line_i == 0:
+        return ''
+
+    header = ''':ship-2: :ship-2: :ship-2: *CHANGELOG updated in the last 24 hours*  :ship-2: :ship-2: :ship-2:
+
+(:ship-2: means "newly shipped". Everything else is prior work. :writing_hand: indicates authorship.)
 '''
     message = ''
     for l in line_info[start_line_i+1:end_line_i+1+1]:
@@ -78,7 +82,11 @@ webhook_url = os.environ.get('WEBHOOK_URL')
 if webhook_url is None:
     print('Error: WEBHOOK_URL not set')
     exit(1)
-line_info, commits = parse_blame(subprocess.getoutput('git blame --since=7.days --porcelain -- CHANGELOG.md'))
+line_info, commits = parse_blame(subprocess.getoutput('git blame --since=1.days --porcelain -- CHANGELOG.md'))
 message = format_blame(line_info, commits)
+if message == '':
+    print('No progress to report today')
+    exit(0)
+print(message)
 json_message = '{ "text": %s }' % json.dumps(message)
 print(subprocess.getoutput('curl -XPOST %s -d %s' % (webhook_url, "'" + json_message.replace("'", """'"'"'""") + "'")))
