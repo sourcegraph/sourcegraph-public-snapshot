@@ -47,8 +47,8 @@ func GitHubProxy() *monitoring.Container {
 							PanelOptions:    monitoring.PanelOptions().LegendFormat("requests waiting"),
 							Owner:           monitoring.ObservableOwnerCloud,
 							PossibleSolutions: `
-                                - **Check github-proxy logs for network connection issues.
-                                - **Check github status.`,
+								- **Check github-proxy logs for network connection issues.
+								- **Check github status.`,
 						},
 					},
 				},
