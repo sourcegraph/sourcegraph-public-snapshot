@@ -26,6 +26,7 @@ import { getLSPTextDocumentPositionParameters } from '../../utils'
 import { CampaignChangesetsHeader } from './CampaignChangesetsHeader'
 import { ChangesetFilters, ChangesetFilterRow } from './ChangesetFilterRow'
 import { EmptyChangesetListElement } from './EmptyChangesetListElement'
+import { EmptyChangesetSearchElement } from './EmptyChangesetSearchElement'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     campaignID: Scalars['ID']
@@ -180,7 +181,13 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                     listClassName="campaign-changesets__grid mb-3"
                     headComponent={CampaignChangesetsHeader}
                     // Only show the empty element, if no filters are selected.
-                    emptyElement={filtersSelected(changesetFilters) ? undefined : <EmptyChangesetListElement />}
+                    emptyElement={
+                        filtersSelected(changesetFilters) ? (
+                            <EmptyChangesetSearchElement />
+                        ) : (
+                            <EmptyChangesetListElement />
+                        )
+                    }
                     noSummaryIfAllNodesVisible={true}
                 />
                 {hoverState?.hoverOverlayProps && (
