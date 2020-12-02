@@ -127,7 +127,7 @@ var skippedHandlers = []func(*graphqlbackend.SearchResultsResolver) (eventSkippe
 	repositoryMissingHandler,
 	repositoryCloningHandler,
 	// documentMatchLimitHandler,
-	// shardMatchLimitHandler,
+	shardMatchLimitHandler,
 	// repositoryLimitHandler,
 	shardTimeoutHandler,
 	// excludedForkHandler,
