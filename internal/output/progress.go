@@ -40,9 +40,9 @@ type ProgressOpts struct {
 	NoSpinner bool
 }
 
-func (opt *ProgressOpts) WithoutSpinner() *ProgressOpts {
+func (opt *ProgressOpts) WithNoSpinner(noSpinner bool) *ProgressOpts {
 	c := *opt
-	c.NoSpinner = true
+	c.NoSpinner = noSpinner
 	return &c
 }
 

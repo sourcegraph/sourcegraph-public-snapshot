@@ -70,7 +70,7 @@ func (p *campaignProgressPrinter) initProgressBar(statuses []*campaigns.TaskStat
 		},
 	}
 
-	opts := output.DefaultProgressTTYOpts.WithoutSpinner()
+	opts := output.DefaultProgressTTYOpts.WithNoSpinner(p.forceNoSpinner)
 	p.progress = p.out.ProgressWithStatusBars(progressBars, statusBars, opts)
 
 	return numStatusBars
