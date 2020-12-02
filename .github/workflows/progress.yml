@@ -1,17 +1,20 @@
 name: Changelog progress
 on:
   schedule:
-  - cron: "0 1 * * 6"   # Every Saturday 1:00am UTC (Friday 5pm PST)
+  - cron: "* * * * *"   # Every Saturday 1:00am UTC (Friday 5pm PST)
+  # - cron: "0 1 * * 6"   # Every Saturday 1:00am UTC (Friday 5pm PST)
   push:
     branches:
       - main
       - master
+      - bl/progress-bot-once-a-week
 jobs:
   sync-progress-channel:
     runs-on: ubuntu-latest
     name: Sync changelog to progress channel
     env:
-      WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_PROGRESS_CHANNEL }}
+      WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_TEST_CHANNEL }}
+      # WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_PROGRESS_CHANNEL }}
     steps:
       - uses: actions/checkout@v2
         with:
