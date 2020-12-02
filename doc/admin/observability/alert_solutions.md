@@ -1516,8 +1516,8 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
--                                 - **Check github-proxy logs for network connection issues.
-                                - **Check github status.
+- 								- **Check github-proxy logs for network connection issues.
+								- **Check github status.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
