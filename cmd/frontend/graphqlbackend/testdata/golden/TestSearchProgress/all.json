@@ -27,6 +27,26 @@
     "title": "1 timedout",
     "message": "1 repository could not be searched in time. Try reducing the scope of your query with repo: repogroup: or other filters.",
     "severity": "warn"
+   },
+   {
+    "reason": "repository-fork",
+    "title": "5 forked",
+    "message": "By default we exclude forked repositories. Include them with `fork:yes` in your query.",
+    "severity": "info",
+    "suggested": {
+     "title": "include forked",
+     "queryExpression": "fork:yes"
+    }
+   },
+   {
+    "reason": "excluded-archive",
+    "title": "1 archived",
+    "message": "By default we exclude archived repositories. Include them with `archived:yes` in your query.",
+    "severity": "info",
+    "suggested": {
+     "title": "include archived",
+     "queryExpression": "archived:yes"
+    }
    }
   ]
  }
