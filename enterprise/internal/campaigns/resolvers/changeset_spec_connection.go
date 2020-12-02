@@ -63,6 +63,7 @@ func (r *changesetSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlb
 		return nil, err
 	}
 
+	// Create a shared previewer so the expensive operations can be cached across changeset spec resolvers.
 	previewer := &changesetSpecPreviewer{
 		store:          r.store,
 		campaignSpecID: r.campaignSpecID,
