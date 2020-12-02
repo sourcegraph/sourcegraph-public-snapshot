@@ -8,6 +8,7 @@ import (
 )
 
 type eventProgress struct {
+	Done              bool           `json:"done"`
 	RepositoriesCount *int           `json:"repositoriesCount"`
 	MatchCount        int            `json:"matchCount"`
 	DurationMs        int            `json:"durationMs"`
@@ -145,6 +146,7 @@ func progressFromResolver(resultsResolver *graphqlbackend.SearchResultsResolver)
 	}
 
 	return eventProgress{
+		Done:              true,
 		RepositoriesCount: intPtr(int(resultsResolver.RepositoriesCount())),
 		MatchCount:        int(resultsResolver.MatchCount()),
 		DurationMs:        int(resultsResolver.ElapsedMilliseconds()),
