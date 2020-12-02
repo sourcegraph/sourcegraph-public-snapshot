@@ -167,10 +167,7 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	_ = eventWriter.Event("progress", progressFromResolver(resultsResolver))
-
-	// TODO done event includes progress
-	_ = eventWriter.Event("done", map[string]interface{}{})
+	_ = eventWriter.Event("done", progressFromResolver(resultsResolver))
 }
 
 type args struct {
