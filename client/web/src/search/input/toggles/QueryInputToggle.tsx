@@ -45,10 +45,7 @@ export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggl
         onToggle()
     }, [disabledRule, onToggle])
     const tooltipValue = useMemo(
-        () =>
-            disabledRule
-                ? disabledRule.reason
-                : `${props.isActive ? 'Disable' : 'Enable'} ${props.title.toLowerCase()}`,
+        () => disabledRule?.reason ?? `${props.isActive ? 'Disable' : 'Enable'} ${props.title.toLowerCase()}`,
         [disabledRule, props.isActive, props.title]
     )
     useEffect(() => {
