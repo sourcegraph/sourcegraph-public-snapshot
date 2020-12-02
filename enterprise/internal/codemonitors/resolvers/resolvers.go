@@ -111,12 +111,8 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 		return nil, err
 	}
 
-	// create trigger
-	q, err = tx.createTriggerQueryQuery(ctx, m.(*monitor).id, args.Trigger)
-	if err != nil {
-		return nil, err
-	}
-	err = tx.store.Exec(ctx, q)
+	// Create trigger.
+	err = tx.store.CreateTriggerQuery(ctx, m.(*monitor).id, args.Trigger)
 	if err != nil {
 		return nil, err
 	}
@@ -305,11 +301,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		return nil, err
 	}
 	// Update trigger.
-	q, err = r.updateTriggerQueryQuery(ctx, args)
-	if err != nil {
-		return nil, err
-	}
-	err = r.store.Exec(ctx, q)
+	err = r.store.UpdateTriggerQuery(ctx, args)
 	if err != nil {
 		return nil, err
 	}
@@ -360,22 +352,6 @@ func (r *Resolver) runMonitorQuery(ctx context.Context, q *sqlf.Query) (graphqlb
 	}
 	defer rows.Close()
 	ms, err := scanMonitors(rows)
-	if err != nil {
-		return nil, err
-	}
-	if len(ms) == 0 {
-		return nil, fmt.Errorf("operation failed. Query should have returned 1 row")
-	}
-	return ms[0], nil
-}
-
-func (r *Resolver) runTriggerQuery(ctx context.Context, q *sqlf.Query) (*cm.MonitorQuery, error) {
-	rows, err := r.store.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	ms, err := cm.ScanTriggerQueries(rows)
 	if err != nil {
 		return nil, err
 	}
@@ -520,86 +496,6 @@ RETURNING %s;
 		now,
 		monitorID,
 		sqlf.Join(monitorColumns, ", "),
-	), nil
-}
-
-var queryColumns = []*sqlf.Query{
-	sqlf.Sprintf("cm_queries.id"),
-	sqlf.Sprintf("cm_queries.monitor"),
-	sqlf.Sprintf("cm_queries.query"),
-	sqlf.Sprintf("cm_queries.next_run"),
-	sqlf.Sprintf("cm_queries.created_by"),
-	sqlf.Sprintf("cm_queries.created_at"),
-	sqlf.Sprintf("cm_queries.changed_by"),
-	sqlf.Sprintf("cm_queries.changed_at"),
-}
-
-func (r *Resolver) createTriggerQueryQuery(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) (*sqlf.Query, error) {
-	const insertQueryQuery = `
-INSERT INTO cm_queries
-(monitor, query, created_by, created_at, changed_by, changed_at)
-VALUES (%s,%s,%s,%s,%s,%s)
-RETURNING %s;
-`
-	now := r.Now()
-	a := actor.FromContext(ctx)
-	return sqlf.Sprintf(
-		insertQueryQuery,
-		monitorID,
-		args.Query,
-		a.UID,
-		now,
-		a.UID,
-		now,
-		sqlf.Join(queryColumns, ", "),
-	), nil
-}
-
-func (r *Resolver) updateTriggerQueryQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (q *sqlf.Query, err error) {
-	const updateTriggerQueryQuery = `
-UPDATE cm_queries
-SET query = %s,
-	changed_by = %s,
-	changed_at = %s
-WHERE id = %s
-AND monitor = %s
-RETURNING %s;
-`
-	now := r.Now()
-	a := actor.FromContext(ctx)
-
-	var triggerID int64
-	err = relay.UnmarshalSpec(args.Trigger.Id, &triggerID)
-	if err != nil {
-		return nil, err
-	}
-
-	var monitorID int64
-	err = relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
-	if err != nil {
-		return nil, err
-	}
-
-	return sqlf.Sprintf(
-		updateTriggerQueryQuery,
-		args.Trigger.Update.Query,
-		a.UID,
-		now,
-		triggerID,
-		monitorID,
-		sqlf.Join(queryColumns, ", "),
-	), nil
-}
-
-func (r *Resolver) triggerQueryByMonitorQuery(ctx context.Context, monitorID int64) (*sqlf.Query, error) {
-	const triggerQueryByMonitorQuery = `
-SELECT id, monitor, query, next_run, latest_result, created_by, created_at, changed_by, changed_at
-FROM cm_queries
-WHERE monitor = %s;
-`
-	return sqlf.Sprintf(
-		triggerQueryByMonitorQuery,
-		monitorID,
 	), nil
 }
 
@@ -807,11 +703,7 @@ func (m *monitor) Owner(ctx context.Context) (n graphqlbackend.NamespaceResolver
 }
 
 func (m *monitor) Trigger(ctx context.Context) (graphqlbackend.MonitorTrigger, error) {
-	q, err := m.triggerQueryByMonitorQuery(ctx, m.id)
-	if err != nil {
-		return nil, err
-	}
-	t, err := m.runTriggerQuery(ctx, q)
+	t, err := m.store.TriggerQueryByMonitorIDInt64(ctx, m.id)
 	if err != nil {
 		return nil, err
 	}
