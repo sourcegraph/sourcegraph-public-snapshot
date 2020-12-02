@@ -176,3 +176,46 @@ func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *struct 
 
 	return &EmptyResponse{}, nil
 }
+
+func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *struct {
+	User  graphql.ID
+	Email string
+}) (*EmptyResponse, error) {
+	userID, err := UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+	// 🚨 SECURITY: Only the user and site admins can set the primary email address from a user.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+		return nil, err
+	}
+
+	user, err := db.Users.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	email, verified, err := db.UserEmails.Get(ctx, userID, args.Email)
+	if err != nil {
+		return nil, err
+	}
+	if verified {
+		return &EmptyResponse{}, nil
+	}
+
+	code, err := backend.MakeEmailVerificationCode()
+	if err != nil {
+		return nil, err
+	}
+
+	err = backend.SendUserEmailVerificationEmail(ctx, user.Username, email, code)
+	if err != nil {
+		return nil, err
+	}
+	err = db.UserEmails.SetLastVerification(ctx, userID, email, code)
+	if err != nil {
+		return nil, err
+	}
+
+	return &EmptyResponse{}, nil
+}

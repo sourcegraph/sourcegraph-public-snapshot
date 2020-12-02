@@ -203,6 +203,12 @@ type Mutation {
     """
     setUserEmailVerified(user: ID!, email: String!, verified: Boolean!): EmptyResponse!
     """
+    Resend a verification email, no op if the email is already verified.
+
+    Only the user and site admins may perform this mutation.
+    """
+    resendVerificationEmail(user: ID!, email: String!): EmptyResponse!
+    """
     Deletes a user account. Only site admins may perform this mutation.
 
     If hard == true, a hard delete is performed. By default, deletes are
