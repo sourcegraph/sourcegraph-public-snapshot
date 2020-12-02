@@ -114,6 +114,40 @@ func TestCleanupInactive(t *testing.T) {
 	}
 }
 
+func TestGitGC(t *testing.T) {
+	// Create a test repository with detectable garbage that GC can prune.
+	root := tmpDir(t)
+	repo := filepath.Join(root, "garbage-repo")
+	defer os.RemoveAll(root)
+	runCmd(t, root, "git", "init", repo)
+	mkFiles(t, repo, ".git/objects/fb/f6228a25d50b1ea329e06e75b2f3f1de3793a0")
+	runCmd(t, repo, "touch", "-amt", "200701010000", ".git/objects/fb/f6228a25d50b1ea329e06e75b2f3f1de3793a0")
+	runCmd(t, repo, "git", "config", "gc.pruneExpire", "1.days.ago")
+	runCmd(t, repo, "git", "config", "sourcegraph.gcTimestamp", "-345600000000000")
+
+	// `git count-objects -v` can indicate objects, packs, etc.
+	countObjects := func() string {
+		t.Helper()
+		return runCmd(t, repo, "git", "count-objects", "-v")
+	}
+
+	// Verify that we have GC-able objects in the repository.
+	if strings.Contains(countObjects(), "count: 0") {
+		t.Fatalf("expected git to report objects but none found")
+	}
+
+	// Handler must be invoked for Server side-effects.
+	s := &Server{ReposDir: root}
+	s.Handler()
+	s.cleanupRepos()
+
+	// Verify that there are no more GC-able objects in the repository.
+	if !strings.Contains(countObjects(), "count: 0") {
+		t.Log(countObjects())
+		t.Fatalf("expected git to report no objects, but found some")
+	}
+}
+
 func TestCleanupExpired(t *testing.T) {
 	root, err := ioutil.TempDir("", "gitserver-test-")
 	if err != nil {
