@@ -89,6 +89,44 @@ func shardMatchLimitHandler(resultsResolver *SearchResultsResolver) (search.Skip
 	}, true
 }
 
+func excludedForkHandler(resultsResolver *SearchResultsResolver) (search.Skipped, bool) {
+	forks := resultsResolver.excluded.forks
+	if forks == 0 {
+		return search.Skipped{}, false
+	}
+
+	amount := number(forks)
+	return search.Skipped{
+		Reason:   search.ExcludedFork,
+		Title:    fmt.Sprintf("%s forked", amount),
+		Message:  "By default we exclude forked repositories. Include them with `fork:yes` in your query.",
+		Severity: search.SeverityInfo,
+		Suggested: &search.SkippedSuggested{
+			Title:           "include forked",
+			QueryExpression: "fork:yes",
+		},
+	}, true
+}
+
+func excludedArchiveHandler(resultsResolver *SearchResultsResolver) (search.Skipped, bool) {
+	archived := resultsResolver.excluded.archived
+	if archived == 0 {
+		return search.Skipped{}, false
+	}
+
+	amount := number(archived)
+	return search.Skipped{
+		Reason:   search.ExcludedArchive,
+		Title:    fmt.Sprintf("%s archived", amount),
+		Message:  "By default we exclude archived repositories. Include them with `archived:yes` in your query.",
+		Severity: search.SeverityInfo,
+		Suggested: &search.SkippedSuggested{
+			Title:           "include archived",
+			QueryExpression: "archived:yes",
+		},
+	}, true
+}
+
 // TODO implement all skipped reasons
 var skippedHandlers = []func(*SearchResultsResolver) (search.Skipped, bool){
 	repositoryMissingHandler,
@@ -97,8 +135,8 @@ var skippedHandlers = []func(*SearchResultsResolver) (search.Skipped, bool){
 	shardMatchLimitHandler,
 	// repositoryLimitHandler,
 	shardTimeoutHandler,
-	// excludedForkHandler,
-	// excludedArchiveHandler,
+	excludedForkHandler,
+	excludedArchiveHandler,
 }
 
 // Progress builds a progress event from a final results resolver.
