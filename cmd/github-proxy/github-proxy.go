@@ -36,7 +36,7 @@ const port = "3180"
 // requestMu ensures we only do one request at a time to prevent tripping abuse detection.
 var requestMu sync.Mutex
 
-var metricsRateLimitRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
+var metricsRateLimitRemainingGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "src_github_rate_limit_remaining",
 	Help: "Number of calls to GitHub's API remaining before hitting the rate limit.",
 }, []string{"resource"})
@@ -49,6 +49,7 @@ var metricWaitingRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
 func init() {
 	metricsRateLimitRemainingGauge.WithLabelValues("core").Set(5000)
 	metricsRateLimitRemainingGauge.WithLabelValues("search").Set(30)
+	prometheus.MustRegister(metricsRateLimitRemainingGauge)
 }
 
 // list obtained from httputil of headers not to forward.
