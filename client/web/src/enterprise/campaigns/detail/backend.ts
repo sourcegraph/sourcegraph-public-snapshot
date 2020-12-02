@@ -461,6 +461,8 @@ export async function getChangesetDiff(changeset: Scalars['ID']): Promise<string
             map(({ node }) => {
                 if (!node) {
                     throw new Error(`Changeset with ID ${changeset} does not exist`)
+                } else if (node.__typename === 'HiddenExternalChangeset') {
+                    throw new Error(`You do not have permission to view changeset ${changeset}`)
                 } else if (node.__typename !== 'ExternalChangeset') {
                     throw new Error(`The given ID is a ${node.__typename}, not an ExternalChangeset`)
                 }

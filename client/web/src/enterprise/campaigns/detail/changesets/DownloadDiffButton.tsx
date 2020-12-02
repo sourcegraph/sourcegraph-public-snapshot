@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { getChangesetDiff } from '../backend'
-import { asError } from '../../../../../../shared/src/util/errors'
+import { asError, isErrorLike } from '../../../../../../shared/src/util/errors'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 export interface DownloadDiffButtonProps {
@@ -10,26 +10,25 @@ export interface DownloadDiffButtonProps {
 }
 
 enum DownloadState {
-    Ready,
-    Loading,
-    Error,
+    READY,
+    LOADING,
 }
 
+type State = DownloadState | Error
+
 export const DownloadDiffButton: React.FunctionComponent<DownloadDiffButtonProps> = ({ changesetID }) => {
-    const [error, setError] = useState<Error | null>(null)
-    const [state, setState] = useState(DownloadState.Ready)
+    const [state, setState] = useState<State>(DownloadState.READY)
 
     const loadDiff = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
         async event => {
             event.preventDefault()
 
             if (!state) {
-                setState(DownloadState.Loading)
-                setError(null)
+                setState(DownloadState.LOADING)
 
                 try {
                     const diff = await getChangesetDiff(changesetID)
-                    setState(DownloadState.Ready)
+                    setState(DownloadState.READY)
 
                     // Create a URL that we can "click" on behalf of the user to
                     // prompt them to download the diff.
@@ -50,30 +49,31 @@ export const DownloadDiffButton: React.FunctionComponent<DownloadDiffButtonProps
                         URL.revokeObjectURL(url)
                     }
                 } catch (error) {
-                    setError(asError(error))
-                    setState(DownloadState.Error)
+                    setState(asError(error))
                 }
             }
         },
         [changesetID, state]
     )
 
-    let icon: JSX.Element | undefined
-    switch (state) {
-        case DownloadState.Ready:
-            icon = <FileDownloadIcon className="icon-inline" />
-            break
-        case DownloadState.Loading:
-            icon = <LoadingSpinner />
-            break
-        case DownloadState.Error:
-            icon = <AlertCircleIcon className="icon icon-inline" data-tooltip={error?.message} />
-            break
+    let icon: JSX.Element
+    if (isErrorLike(state)) {
+        icon = <AlertCircleIcon className="icon icon-inline" data-tooltip={state?.message} />
+    } else if (state === DownloadState.LOADING) {
+        icon = <LoadingSpinner />
+    } else {
+        icon = <FileDownloadIcon className="icon-inline" />
     }
 
     return (
         <div className="download-diff-button p-2">
-            <button type="button" className="btn btn-icon" aria-label="Download diff" onClick={loadDiff}>
+            <button
+                type="button"
+                className="btn btn-icon btn-link"
+                aria-label="Download diff"
+                onClick={loadDiff}
+                disabled={state === DownloadState.LOADING}
+            >
                 {icon}
                 <span className="pl-1">Download diff</span>
             </button>
