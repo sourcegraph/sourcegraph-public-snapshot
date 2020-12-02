@@ -8789,7 +8789,7 @@ FOR INTERNAL USE ONLY: A status message
 union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
 
 """
-A string-format big integer that could not be held with a number.
+An arbitrarily large integer encoded as a decimal string.
 """
 scalar BigInt
 
