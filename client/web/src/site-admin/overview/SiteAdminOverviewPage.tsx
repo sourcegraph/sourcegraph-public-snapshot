@@ -28,8 +28,8 @@ interface Props extends ActivationProps, ThemeProps {
     _fetchOverview?: () => Observable<{
         repositories: number | null
         repositoryStats: {
-            gitDirBytes: number
-            indexedLinesCount: number
+            gitDirBytes: string
+            indexedLinesCount: string
         }
         users: number
         orgs: number
@@ -45,8 +45,8 @@ interface Props extends ActivationProps, ThemeProps {
 const fetchOverview = (): Observable<{
     repositories: number | null
     repositoryStats: {
-        gitDirBytes: number
-        indexedLinesCount: number
+        gitDirBytes: string
+        indexedLinesCount: string
     }
     users: number
     orgs: number
@@ -194,8 +194,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                                 to="/site-admin/repositories"
                                 className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
-                                {numberWithCommas(info.repositoryStats.gitDirBytes)}{' '}
-                                {pluralize('byte stored', info.repositoryStats.gitDirBytes, 'bytes stored')}
+                                {BigInt(info.repositoryStats.gitDirBytes).toLocaleString()} bytes stored
                             </Link>
                         )}
                         {info.repositoryStats !== null && (
@@ -203,12 +202,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                                 to="/site-admin/repositories"
                                 className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
-                                {numberWithCommas(info.repositoryStats.indexedLinesCount)}{' '}
-                                {pluralize(
-                                    'line of code indexed',
-                                    info.repositoryStats.indexedLinesCount,
-                                    'lines of code indexed'
-                                )}
+                                {BigInt(info.repositoryStats.indexedLinesCount).toLocaleString()} lines of code indexed
                             </Link>
                         )}
                         {info.users > 1 && (
