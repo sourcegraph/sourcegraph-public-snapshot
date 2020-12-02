@@ -226,15 +226,15 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	return r
 }
 
-func TestLimitSearcherRepos(t *testing.T) {
-	repos := func(names ...string) []*types.Repo {
-		var repos []*types.Repo
-		for _, name := range names {
-			repos = append(repos, &types.Repo{Name: api.RepoName(name)})
-		}
-		return repos
+func mkRepos(names ...string) []*types.Repo {
+	var repos []*types.Repo
+	for _, name := range names {
+		repos = append(repos, &types.Repo{Name: api.RepoName(name)})
 	}
+	return repos
+}
 
+func TestLimitSearcherRepos(t *testing.T) {
 	repoRevs := func(repoRevs ...string) []*search.RepositoryRevisions {
 		var result []*search.RepositoryRevisions
 		for _, repoRev := range repoRevs {
@@ -279,21 +279,21 @@ func TestLimitSearcherRepos(t *testing.T) {
 			limit:       5,
 			input:       repoRevs("a@1", "b@1", "c@1", "d@1", "e@1", "f@1", "g@1"),
 			want:        repoRevs("a@1", "b@1", "c@1", "d@1", "e@1"),
-			wantLimited: repos("f", "g"),
+			wantLimited: mkRepos("f", "g"),
 		},
 		{
 			name:        "rev_limited",
 			limit:       6,
 			input:       repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1", "f@1", "g@1"),
 			want:        repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1"),
-			wantLimited: repos("f", "g"),
+			wantLimited: mkRepos("f", "g"),
 		},
 		{
 			name:        "rev_limited_duplication",
 			limit:       6,
 			input:       repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1", "f@1", "f@2", "g@1"),
 			want:        repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1"),
-			wantLimited: repos("f", "g"),
+			wantLimited: mkRepos("f", "g"),
 		},
 	}
 	for _, tst := range tests {
