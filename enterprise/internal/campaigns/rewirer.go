@@ -102,15 +102,13 @@ func (rm RewirerMappings) RepoIDs() []api.RepoID {
 type changesetRewirer struct {
 	mappings RewirerMappings
 	campaign *campaigns.Campaign
-	tx       *Store
 	rstore   repos.Store
 }
 
-func NewChangesetRewirer(mappings RewirerMappings, campaign *campaigns.Campaign, tx *Store, rstore repos.Store) *changesetRewirer {
+func NewChangesetRewirer(mappings RewirerMappings, campaign *campaigns.Campaign, rstore repos.Store) *changesetRewirer {
 	return &changesetRewirer{
 		mappings: mappings,
 		campaign: campaign,
-		tx:       tx,
 		rstore:   rstore,
 	}
 }
@@ -144,9 +142,8 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 				continue
 			}
 
-			if err := r.closeChangeset(ctx, changeset); err != nil {
-				return nil, err
-			}
+			r.closeChangeset(ctx, changeset)
+			changesets = append(changesets, changeset)
 
 			continue
 		}
@@ -259,12 +256,10 @@ func (r *changesetRewirer) attachTrackingChangeset(changeset *campaigns.Changese
 	}
 }
 
-func (r *changesetRewirer) closeChangeset(ctx context.Context, changeset *campaigns.Changeset) error {
+func (r *changesetRewirer) closeChangeset(ctx context.Context, changeset *campaigns.Changeset) {
 	if changeset.CurrentSpecID != 0 && changeset.OwnedByCampaignID == r.campaign.ID {
 		// If we have a current spec ID and the changeset was created by
 		// _this_ campaign that means we should detach and close it.
-
-		// But only if it was created on the code host:
 		if changeset.Published() {
 			// Store the current spec also as the previous spec.
 			//
@@ -292,15 +287,11 @@ func (r *changesetRewirer) closeChangeset(ctx context.Context, changeset *campai
 			}
 			changeset.Closing = true
 			changeset.ResetQueued()
-		} else {
-			// otherwise we simply delete it.
-			return r.tx.DeleteChangeset(ctx, changeset.ID)
 		}
 	}
 
 	// Disassociate the changeset with the campaign.
 	changeset.RemoveCampaignID(r.campaign.ID)
-	return r.tx.UpdateChangeset(ctx, changeset)
 }
 
 type rewirerAssociations struct {
@@ -309,10 +300,6 @@ type rewirerAssociations struct {
 
 // loadAssociations retrieves all entities required to rewire the changesets in a campaign.
 func (r *changesetRewirer) loadAssociations(ctx context.Context) (associations *rewirerAssociations, err error) {
-	if err := r.mappings.Hydrate(ctx, r.tx); err != nil {
-		return nil, err
-	}
-
 	associations = &rewirerAssociations{}
 	// Fetch all repos involved. We use them later to enforce repo permissions.
 	//
