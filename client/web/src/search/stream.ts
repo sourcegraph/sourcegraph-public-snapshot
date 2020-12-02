@@ -11,12 +11,28 @@ import { SearchPatternType } from '../graphql-operations'
 // until it is no longer a proof of concept and instead works well.
 
 export type SearchEvent =
-    | { type: 'matches'; data: Match[] }
-    | { type: 'progress'; data: Progress }
+    | { type: 'results'; data: Results }
     | { type: 'filters'; data: Filter[] }
     | { type: 'alert'; data: Alert }
     | { type: 'error'; data: Error }
     | { type: 'done'; data: {} }
+
+/**
+ * Results is the main event data for streaming search.
+ *
+ * It contains both new matches found and the current value of progress.
+ * We send both at the same time so the frontend has a consistent view over progress and results to show.
+ */
+interface Results {
+    /**
+     * matches is a list of zero or more matches to add to the result set.
+     */
+    matches: Match[]
+    /**
+     * progress is the current value of progress
+     */
+    progress: Progress
+}
 
 type Match = FileMatch | RepositoryMatch | CommitMatch | FileSymbolMatch
 
