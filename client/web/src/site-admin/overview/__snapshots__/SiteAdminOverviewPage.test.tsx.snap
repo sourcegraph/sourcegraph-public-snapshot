@@ -23,14 +23,16 @@ exports[`SiteAdminOverviewPage < 2 users 1`] = `
       href="/site-admin/repositories"
     >
       1,825,299,556
-       bytes stored
+       
+      bytes stored
     </a>
     <a
       className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
       href="/site-admin/repositories"
     >
       2,616,264
-       lines of code indexed
+       
+      lines of code indexed
     </a>
   </div>
 </div>
@@ -59,14 +61,16 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
       href="/site-admin/repositories"
     >
       1,825,299,556
-       bytes stored
+       
+      bytes stored
     </a>
     <a
       className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
       href="/site-admin/repositories"
     >
       2,616,264
-       lines of code indexed
+       
+      lines of code indexed
     </a>
     <a
       className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
@@ -334,14 +338,16 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
       href="/site-admin/repositories"
     >
       1,825,299,556
-       bytes stored
+       
+      bytes stored
     </a>
     <a
       className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
       href="/site-admin/repositories"
     >
       2,616,264
-       lines of code indexed
+       
+      lines of code indexed
     </a>
   </div>
 </div>
