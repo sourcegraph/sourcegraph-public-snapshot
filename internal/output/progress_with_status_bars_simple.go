@@ -58,7 +58,7 @@ func newProgressWithStatusBarsSimple(bars []*ProgressBar, statusBars []*StatusBa
 		statusBars: statusBars,
 	}
 
-	if opts.NoSpinner {
+	if opts != nil && opts.NoSpinner {
 		if p.Output.opts.Verbose {
 			writeBars(p.Output, p.bars)
 			writeStatusBars(p.Output, p.statusBars)

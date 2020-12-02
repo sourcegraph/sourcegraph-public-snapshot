@@ -45,7 +45,7 @@ func newProgressSimple(bars []*ProgressBar, o *Output, opts *ProgressOpts) *prog
 		done:   make(chan chan struct{}),
 	}
 
-	if opts.NoSpinner {
+	if opts != nil && opts.NoSpinner {
 		if p.Output.opts.Verbose {
 			writeBars(p.Output, p.bars)
 		}

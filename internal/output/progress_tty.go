@@ -156,7 +156,7 @@ func newProgressTTY(bars []*ProgressBar, o *Output, opts *ProgressOpts) *progres
 
 	p.draw()
 
-	if opts.NoSpinner {
+	if opts != nil && opts.NoSpinner {
 		return p
 	}
 
