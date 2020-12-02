@@ -207,6 +207,8 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	go syncCloned(ctx, scheduler, gitserver.DefaultClient, store)
 
+	go cleanupOrphanedRepos(ctx, db)
+
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
 
 	if !envvar.SourcegraphDotComMode() {
@@ -394,6 +396,32 @@ func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver
 		select {
 		case <-ctx.Done():
 		case <-time.After(30 * time.Second):
+		}
+	}
+}
+
+func cleanupOrphanedRepos(ctx context.Context, db *sql.DB) {
+	doCleanup := func() {
+		q := `UPDATE
+    repo
+SET
+    name = soft_deleted_repository_name(name),
+    deleted_at = transaction_timestamp()
+WHERE
+    deleted_at IS NULL
+    AND NOT EXISTS (
+        SELECT FROM external_service_repos WHERE repo_id = repo.id
+    )`
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			log15.Warn("failed to cleanup orphaned repos", "error", err)
+		}
+	}
+
+	for ctx.Err() == nil {
+		doCleanup()
+		select {
+		case <-ctx.Done():
+		case <-time.After(1 * time.Minute):
 		}
 	}
 }
