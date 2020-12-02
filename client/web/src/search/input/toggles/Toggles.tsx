@@ -78,13 +78,10 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
     )
 
     const toggleCaseSensitivity = useCallback((): void => {
-        if (patternType === SearchPatternType.structural) {
-            return
-        }
         const newCaseSensitivity = !caseSensitive
         setCaseSensitivity(newCaseSensitivity)
         submitOnToggle({ newCaseSensitivity })
-    }, [caseSensitive, patternType, setCaseSensitivity, submitOnToggle])
+    }, [caseSensitive, setCaseSensitivity, submitOnToggle])
 
     const toggleRegexp = useCallback((): void => {
         const newPatternType =
@@ -134,8 +131,12 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                 icon={FormatLetterCaseIcon}
                 className="test-case-sensitivity-toggle"
                 activeClassName="test-case-sensitivity-toggle--active"
-                disabledCondition={patternType === SearchPatternType.structural}
-                disabledMessage="Structural search is always case sensitive"
+                disableOn={[
+                    {
+                        condition: patternType === SearchPatternType.structural,
+                        reason: 'Structural search is always case sensitive',
+                    },
+                ]}
             />
             <QueryInputToggle
                 {...props}
