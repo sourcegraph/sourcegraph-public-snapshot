@@ -680,6 +680,58 @@ func TestStoreMarkErroredAlreadyErrored(t *testing.T) {
 	}
 }
 
+func TestStoreMarkErroredRetriesExhausted(t *testing.T) {
+	setupStoreTest(t)
+
+	if _, err := dbconn.Global.Exec(`
+		INSERT INTO workerutil_test (id, state, num_failures)
+		VALUES
+			(1, 'processing', 0),
+			(2, 'processing', 1)
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	options := defaultTestStoreOptions
+	options.MaxNumRetries = 2
+
+	store := testStore(options)
+
+	for i := 1; i < 3; i++ {
+		marked, err := store.MarkErrored(context.Background(), i, "new message")
+		if err != nil {
+			t.Fatalf("unexpected error marking record as errored: %s", err)
+		}
+		if !marked {
+			t.Fatalf("expected record to be marked")
+		}
+	}
+
+	assertState := func(id int, wantState string) {
+		q := fmt.Sprintf(`SELECT state FROM workerutil_test WHERE id = %d`, id)
+		rows, err := dbconn.Global.Query(q)
+		if err != nil {
+			t.Fatalf("unexpected error querying record: %s", err)
+		}
+		defer func() { _ = basestore.CloseRows(rows, nil) }()
+
+		if !rows.Next() {
+			t.Fatal("expected record to exist")
+		}
+
+		var state string
+		if err := rows.Scan(&state); err != nil {
+			t.Fatalf("unexpected error scanning record: %s", err)
+		}
+		if state != wantState {
+			t.Errorf("record %d unexpected state. want=%q have=%q", id, wantState, state)
+		}
+	}
+
+	assertState(1, "errored")
+	assertState(2, "failed")
+}
+
 func TestStoreResetStalled(t *testing.T) {
 	setupStoreTest(t)
 

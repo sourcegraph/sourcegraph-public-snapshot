@@ -481,15 +481,18 @@ RETURNING {id}
 // if the current state of the record is processing or completed. A requeued record or a record already marked
 // with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
 func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string) (bool, error) {
-	q := s.formatQuery(markErroredOrFailedQuery, quote(s.options.TableName), "errored", failureMessage, id)
+	q := s.formatQuery(markErroredQuery, quote(s.options.TableName), s.options.MaxNumRetries, failureMessage, id)
 	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return ok, err
 }
 
-const markErroredOrFailedQuery = `
--- source: internal/workerutil/store.go:MarkErrored|MarkFailed
+const markErroredQuery = `
+-- source: internal/workerutil/store.go:MarkErrored
 UPDATE %s
-SET {state} = %s, {finished_at} = clock_timestamp(), {failure_message} = %s, {num_failures} = {num_failures} + 1
+SET {state} = CASE WHEN {num_failures} + 1 = %d THEN 'failed' ELSE 'errored' END,
+	{finished_at} = clock_timestamp(),
+	{failure_message} = %s,
+	{num_failures} = {num_failures} + 1
 WHERE {id} = %s AND ({state} = 'processing' OR {state} = 'completed')
 RETURNING {id}
 `
@@ -498,10 +501,21 @@ RETURNING {id}
 // if the current state of the record is processing or completed. A requeued record or a record already marked
 // with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
 func (s *store) MarkFailed(ctx context.Context, id int, failureMessage string) (bool, error) {
-	q := s.formatQuery(markErroredOrFailedQuery, quote(s.options.TableName), "failed", failureMessage, id)
+	q := s.formatQuery(markFailedQuery, quote(s.options.TableName), failureMessage, id)
 	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return ok, err
 }
+
+const markFailedQuery = `
+-- source: internal/workerutil/store.go:MarkFailed
+UPDATE %s
+SET {state} = 'failed',
+	{finished_at} = clock_timestamp(),
+	{failure_message} = %s,
+	{num_failures} = {num_failures} + 1
+WHERE {id} = %s AND ({state} = 'processing' OR {state} = 'completed')
+RETURNING {id}
+`
 
 // ResetStalled moves all unlocked records in the processing state for more than `StalledMaxAge` back to the queued
 // state. In order to prevent input that continually crashes worker instances, records that have been reset more
