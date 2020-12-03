@@ -490,7 +490,7 @@ const markErroredQuery = `
 -- source: internal/workerutil/store.go:MarkErrored|MarkFailed
 UPDATE %s
 SET {state} = CASE WHEN {num_failures} + 1 = %d THEN 'failed' ELSE 'errored' END,
-    {finished_at} = clock_timestamp(),
+	{finished_at} = clock_timestamp(),
 	{failure_message} = %s,
 	{num_failures} = {num_failures} + 1
 WHERE {id} = %s AND ({state} = 'processing' OR {state} = 'completed')
