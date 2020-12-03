@@ -173,7 +173,7 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 
 		getVersion := func(branch string) (string, error) {
 			// Do not to trigger a repo-updater lookup since this is a batch job.
-			commitID, err := git.ResolveRevision(ctx, gitserver.Repo{Name: repo.Name}, nil, branch, git.ResolveRevisionOptions{})
+			commitID, err := git.ResolveRevision(ctx, gitserver.Repo{Name: repo.Name}, branch, git.ResolveRevisionOptions{})
 			if err != nil && errcode.HTTP(err) == http.StatusNotFound {
 				// GetIndexOptions wants an empty rev for a missing rev or empty
 				// repo.
@@ -483,7 +483,7 @@ func serveGitResolveRevision(w http.ResponseWriter, r *http.Request) error {
 	spec := vars["Spec"]
 
 	// Do not to trigger a repo-updater lookup since this is a batch job.
-	commitID, err := git.ResolveRevision(r.Context(), gitserver.Repo{Name: name}, nil, spec, git.ResolveRevisionOptions{})
+	commitID, err := git.ResolveRevision(r.Context(), gitserver.Repo{Name: name}, spec, git.ResolveRevisionOptions{})
 	if err != nil {
 		return err
 	}
@@ -501,7 +501,7 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 
 	// Ensure commit exists. Do not want to trigger a repo-updater lookup since this is a batch job.
 	repo := gitserver.Repo{Name: name}
-	commit, err := git.ResolveRevision(r.Context(), repo, nil, spec, git.ResolveRevisionOptions{})
+	commit, err := git.ResolveRevision(r.Context(), repo, spec, git.ResolveRevisionOptions{})
 	if err != nil {
 		return err
 	}

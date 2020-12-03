@@ -1022,7 +1022,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 			// taking a long time because they all ask gitserver to try to fetch from the remote
 			// repo.
 			trimmedRefSpec := strings.TrimPrefix(rev.RevSpec, "^") // handle negated revisions, such as ^<branch>, ^<tag>, or ^<commit>
-			if _, err := git.ResolveRevision(ctx, repoRev.GitserverRepo(), nil, trimmedRefSpec, git.ResolveRevisionOptions{NoEnsureRevision: true}); err != nil {
+			if _, err := git.ResolveRevision(ctx, repoRev.GitserverRepo(), trimmedRefSpec, git.ResolveRevisionOptions{NoEnsureRevision: true}); err != nil {
 				if errors.Is(err, context.DeadlineExceeded) {
 					return resolvedRepositories{}, context.DeadlineExceeded
 				}
