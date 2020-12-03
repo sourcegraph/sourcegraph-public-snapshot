@@ -781,20 +781,20 @@ func (s *DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes m
 	}
 
 	type sourceSlices struct {
-		exteralServiceIDs []int64
-		repoIDs           []int64
-		cloneURLs         []string
+		externalServiceIDs []int64
+		repoIDs            []int64
+		cloneURLs          []string
 	}
 
 	makeSourceSlices := func(sources map[api.RepoID][]SourceInfo) sourceSlices {
 		srcs := sourceSlices{
-			exteralServiceIDs: make([]int64, 0, len(sources)),
-			repoIDs:           make([]int64, 0, len(sources)),
-			cloneURLs:         make([]string, 0, len(sources)),
+			externalServiceIDs: make([]int64, 0, len(sources)),
+			repoIDs:            make([]int64, 0, len(sources)),
+			cloneURLs:          make([]string, 0, len(sources)),
 		}
 		for rid, infoList := range sources {
 			for _, info := range infoList {
-				srcs.exteralServiceIDs = append(srcs.exteralServiceIDs, info.ExternalServiceID())
+				srcs.externalServiceIDs = append(srcs.externalServiceIDs, info.ExternalServiceID())
 				srcs.repoIDs = append(srcs.repoIDs, int64(rid))
 				srcs.cloneURLs = append(srcs.cloneURLs, info.CloneURL)
 			}
@@ -812,15 +812,15 @@ func (s *DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes m
 
 	q := sqlf.Sprintf(upsertSourcesQueryFmtstr,
 		// Updated
-		pq.Int64Array(updatedSources.exteralServiceIDs),
+		pq.Int64Array(updatedSources.externalServiceIDs),
 		pq.Int64Array(updatedSources.repoIDs),
 		pq.StringArray(updatedSources.cloneURLs),
 		// Inserted
-		pq.Int64Array(insertedSources.exteralServiceIDs),
+		pq.Int64Array(insertedSources.externalServiceIDs),
 		pq.Int64Array(insertedSources.repoIDs),
 		pq.StringArray(insertedSources.cloneURLs),
 		// Deleted
-		pq.Int64Array(deletedSources.exteralServiceIDs),
+		pq.Int64Array(deletedSources.externalServiceIDs),
 		pq.Int64Array(deletedSources.repoIDs),
 	)
 
