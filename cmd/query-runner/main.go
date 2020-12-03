@@ -69,7 +69,13 @@ func main() {
 	}
 	addr := net.JoinHostPort(host, port)
 	log15.Info("query-runner: listening", "addr", addr)
-	log.Fatalf("Fatal error serving: %s", http.ListenAndServe(addr, nil))
+	s := http.Server{
+		ReadTimeout:  75 * time.Second,
+		WriteTimeout: 10 * time.Minute,
+		Addr:         addr,
+		Handler:      http.DefaultServeMux,
+	}
+	log.Fatalf("Fatal error serving: %s", s.ListenAndServe())
 }
 
 func writeError(w http.ResponseWriter, err error) {

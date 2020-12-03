@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
@@ -42,7 +43,11 @@ func main() {
 		apiworker.NewWorker(config.APIWorkerOptions(nil)),
 	}
 	if !config.DisableHealthServer {
-		routines = append(routines, httpserver.NewFromAddr(addr, &http.Server{Handler: httpserver.NewHandler(nil)}))
+		routines = append(routines, httpserver.NewFromAddr(addr, &http.Server{
+			ReadTimeout:  75 * time.Second,
+			WriteTimeout: 10 * time.Minute,
+			Handler:      httpserver.NewHandler(nil),
+		}))
 	}
 
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
