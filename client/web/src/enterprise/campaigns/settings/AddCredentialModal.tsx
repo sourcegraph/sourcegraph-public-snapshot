@@ -12,7 +12,7 @@ export interface AddCredentialModalProps {
     onCancel: () => void
     afterCreate: () => void
     history: H.History
-    userID: string
+    userID: Scalars['ID']
     externalServiceKind: ExternalServiceKind
     externalServiceURL: string
 }
