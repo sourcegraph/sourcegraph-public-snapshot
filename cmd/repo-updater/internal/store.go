@@ -536,79 +536,65 @@ func (s *Store) UpsertSources(ctx context.Context, inserts, updates, deletes map
 		return nil
 	}
 
-	marshalSourceList := func(sources map[api.RepoID][]types.SourceInfo) ([]byte, error) {
-		srcs := make([]externalServiceRepo, 0, len(sources))
+	type sourceSlices struct {
+		externalServiceIDs []int64
+		repoIDs            []int64
+		cloneURLs          []string
+	}
+
+	makeSourceSlices := func(sources map[api.RepoID][]types.SourceInfo) sourceSlices {
+		srcs := sourceSlices{
+			externalServiceIDs: make([]int64, 0, len(sources)),
+			repoIDs:            make([]int64, 0, len(sources)),
+			cloneURLs:          make([]string, 0, len(sources)),
+		}
 		for rid, infoList := range sources {
 			for _, info := range infoList {
-				srcs = append(srcs, externalServiceRepo{
-					ExternalServiceID: info.ExternalServiceID(),
-					RepoID:            int64(rid),
-					CloneURL:          info.CloneURL,
-				})
+				srcs.externalServiceIDs = append(srcs.externalServiceIDs, info.ExternalServiceID())
+				srcs.repoIDs = append(srcs.repoIDs, int64(rid))
+				srcs.cloneURLs = append(srcs.cloneURLs, info.CloneURL)
 			}
 		}
-		return json.Marshal(srcs)
+		return srcs
 	}
 
-	insertedSources, err := marshalSourceList(inserts)
-	if err != nil {
-		return err
-	}
-
-	updatedSources, err := marshalSourceList(updates)
-	if err != nil {
-		return err
-	}
-
-	deletedSources, err := marshalSourceList(deletes)
-	if err != nil {
-		return err
-	}
+	insertedSources := makeSourceSlices(inserts)
+	updatedSources := makeSourceSlices(updates)
+	deletedSources := makeSourceSlices(deletes)
 
 	q := sqlf.Sprintf(upsertSourcesQueryFmtstr,
-		string(deletedSources),
-		string(updatedSources),
-		string(insertedSources),
+		// Updated
+		pq.Int64Array(updatedSources.externalServiceIDs),
+		pq.Int64Array(updatedSources.repoIDs),
+		pq.StringArray(updatedSources.cloneURLs),
+		// Inserted
+		pq.Int64Array(insertedSources.externalServiceIDs),
+		pq.Int64Array(insertedSources.repoIDs),
+		pq.StringArray(insertedSources.cloneURLs),
+		// Deleted
+		pq.Int64Array(deletedSources.externalServiceIDs),
+		pq.Int64Array(deletedSources.repoIDs),
 	)
 
-	err = s.Exec(ctx, q)
-	return err
+	return s.Exec(ctx, q)
 }
 
 const upsertSourcesQueryFmtstr = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.UpsertSources
-WITH deleted_sources_list AS (
-  SELECT * FROM ROWS FROM (
-	json_to_recordset(%s)
-	AS (
-		external_service_id bigint,
-		repo_id             integer,
-		clone_url           text
-	)
-  )
-  WITH ORDINALITY
-),
-updated_sources_list AS (
-  SELECT * FROM ROWS FROM (
-    json_to_recordset(%s)
-    AS (
-      external_service_id bigint,
-      repo_id             integer,
-      clone_url           text
-    )
-  )
-  WITH ORDINALITY
+WITH updated_sources_list AS (
+  SELECT * FROM
+  unnest(%s::bigint[], %s::integer[], %s::text[]) AS
+  x ( external_service_id, repo_id, clone_url )
 ),
 inserted_sources_list AS (
-  SELECT * FROM ROWS FROM (
-    json_to_recordset(%s)
-    AS (
-        external_service_id bigint,
-        repo_id             integer,
-        clone_url           text
-    )
-  )
-  WITH ORDINALITY
+  SELECT * FROM
+  unnest(%s::bigint[], %s::integer[], %s::text[]) AS
+  x ( external_service_id, repo_id, clone_url )
+),
+deleted_sources_list AS (
+  SELECT * FROM
+  unnest(%s::bigint[], %s::integer[]) AS
+  x ( external_service_id, repo_id )
 ),
 delete_sources AS (
   DELETE FROM external_service_repos AS e

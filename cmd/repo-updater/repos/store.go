@@ -806,10 +806,6 @@ func (s *DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes m
 	updatedSources := makeSourceSlices(updates)
 	deletedSources := makeSourceSlices(deletes)
 
-	// TODO: Most of the time deletes don't happen so we should lazily add that statement because
-	// even if it runs and affects zero rows, it still causes the slow orphaned repo
-	// trigger to run.
-
 	q := sqlf.Sprintf(upsertSourcesQueryFmtstr,
 		// Updated
 		pq.Int64Array(updatedSources.externalServiceIDs),
