@@ -59,7 +59,7 @@ function buildSafariExtensionApp(): void {
         '--app-name',
         '"Sourcegraph for Safari"',
         '--bundle-identifier',
-        '"com.sourcegraph.sourcegraph.for-safari"',
+        '"com.sourcegraph.sourcegraph-safari-extension"',
         '--swift',
         '--force',
         '--no-open',
