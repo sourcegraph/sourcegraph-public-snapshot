@@ -223,14 +223,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return "", err
 	}
-	remoteURLFunc := func() (string, error) {
-		grepo, err := GitRepo(ctx, repo)
-		if err != nil {
-			return "", err
-		}
-		return grepo.URL, nil
-	}
-	return git.ResolveRevision(ctx, *gitserverRepo, remoteURLFunc, rev, git.ResolveRevisionOptions{})
+	return git.ResolveRevision(ctx, *gitserverRepo, rev, git.ResolveRevisionOptions{})
 }
 
 func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *git.Commit, err error) {
@@ -256,14 +249,7 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return nil, err
 	}
-	remoteURLFunc := func() (string, error) {
-		grepo, err := GitRepo(ctx, repo)
-		if err != nil {
-			return "", err
-		}
-		return grepo.URL, nil
-	}
-	return git.GetCommit(ctx, *gitserverRepo, remoteURLFunc, commitID, git.ResolveRevisionOptions{})
+	return git.GetCommit(ctx, *gitserverRepo, commitID, git.ResolveRevisionOptions{})
 }
 
 func isIgnorableRepoUpdaterError(err error) bool {

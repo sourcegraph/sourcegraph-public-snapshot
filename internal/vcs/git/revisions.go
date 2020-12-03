@@ -54,12 +54,7 @@ type ResolveRevisionOptions struct {
 // * Commit does not exist: RevisionNotFoundError
 // * Empty repository: RevisionNotFoundError
 // * Other unexpected errors.
-//
-// The remoteURLFunc is called to get the Git remote URL if it's not set in r and if it is
-// needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
-// the repository or if the revision must be fetched from the remote. This only happens when calling
-// ResolveRevision.
-func ResolveRevision(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), spec string, opt ResolveRevisionOptions) (api.CommitID, error) {
+func ResolveRevision(ctx context.Context, repo gitserver.Repo, spec string, opt ResolveRevisionOptions) (api.CommitID, error) {
 	if Mocks.ResolveRevision != nil {
 		return Mocks.ResolveRevision(spec, opt)
 	}
@@ -83,29 +78,18 @@ func ResolveRevision(ctx context.Context, repo gitserver.Repo, remoteURLFunc fun
 		spec = spec + "^0"
 	}
 
-	var (
-		commit api.CommitID
-		err    error
-	)
 	cmd := gitserver.DefaultClient.Command("git", "rev-parse", spec)
 	cmd.Repo = repo
 	cmd.EnsureRevision = spec
-	retryer := &commandRetryer{
-		cmd:           cmd,
-		remoteURLFunc: remoteURLFunc,
-		exec: func() error {
-			commit, err = runRevParse(ctx, cmd, spec)
-			return err
-		},
-	}
-	if opt.NoEnsureRevision {
-		// Make the commandRetryer no-op so that gitserver does not try to
-		// update the repository.
+
+	// We don't ever need to ensure that HEAD is in git-server.
+	// HEAD is always there once a repo is cloned
+	// (except empty repos, but we don't need to ensure revision on those).
+	if opt.NoEnsureRevision || spec == "HEAD" {
 		cmd.EnsureRevision = ""
-		retryer.remoteURLFunc = nil
 	}
-	err = retryer.run()
-	return commit, err
+
+	return runRevParse(ctx, cmd, spec)
 }
 
 type BadCommitError struct {

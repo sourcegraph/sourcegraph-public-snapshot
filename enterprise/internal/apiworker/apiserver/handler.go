@@ -153,14 +153,8 @@ func (m *handler) markComplete(ctx context.Context, queueName, executorName stri
 	}
 
 	defer func() { m.dequeueSemaphore <- struct{}{} }()
-
 	_, err = job.tx.MarkComplete(ctx, job.record.RecordID())
-
-	if doneErr := job.tx.Done(err); doneErr != err {
-		return doneErr
-	}
-
-	return nil
+	return job.tx.Done(err)
 }
 
 // markErrored calls MarkErrored for the given job, then commits the job's transaction.
@@ -172,14 +166,8 @@ func (m *handler) markErrored(ctx context.Context, queueName, executorName strin
 	}
 
 	defer func() { m.dequeueSemaphore <- struct{}{} }()
-
 	_, err = job.tx.MarkErrored(ctx, job.record.RecordID(), errorMessage)
-
-	if doneErr := job.tx.Done(err); doneErr != err {
-		return doneErr
-	}
-
-	return nil
+	return job.tx.Done(err)
 }
 
 // markFailed calls MarkFailed for the given job, then commits the job's transaction.
@@ -191,14 +179,8 @@ func (m *handler) markFailed(ctx context.Context, queueName, executorName string
 	}
 
 	defer func() { m.dequeueSemaphore <- struct{}{} }()
-
 	_, err = job.tx.MarkFailed(ctx, job.record.RecordID(), errorMessage)
-
-	if doneErr := job.tx.Done(err); doneErr != err {
-		return doneErr
-	}
-
-	return nil
+	return job.tx.Done(err)
 }
 
 // findMeta returns the job with the given id and executor name. If the job is

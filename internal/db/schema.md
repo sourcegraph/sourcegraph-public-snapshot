@@ -740,7 +740,7 @@ Indexes:
  id              | bigint                   | not null default nextval('lsif_indexes_id_seq'::regclass)
  commit          | text                     | not null
  queued_at       | timestamp with time zone | not null default now()
- state           | lsif_index_state         | not null default 'queued'::lsif_index_state
+ state           | text                     | not null default 'queued'::text
  failure_message | text                     | 
  started_at      | timestamp with time zone | 
  finished_at     | timestamp with time zone | 
@@ -820,7 +820,7 @@ Foreign-key constraints:
  commit          | text                     | not null
  root            | text                     | not null default ''::text
  uploaded_at     | timestamp with time zone | not null default now()
- state           | lsif_upload_state        | not null default 'queued'::lsif_upload_state
+ state           | text                     | not null default 'queued'::text
  failure_message | text                     | 
  started_at      | timestamp with time zone | 
  finished_at     | timestamp with time zone | 
@@ -834,7 +834,7 @@ Foreign-key constraints:
  num_failures    | integer                  | not null default 0
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
-    "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::lsif_upload_state
+    "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
     "lsif_uploads_state" btree (state)
     "lsif_uploads_uploaded_at" btree (uploaded_at)
 Check constraints:
