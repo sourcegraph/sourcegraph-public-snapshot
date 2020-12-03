@@ -155,10 +155,7 @@ func TestFindClosestDumps(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	visibleUploads, err := calculateVisibleUploads(graph, toCommitGraphView(uploads))
-	if err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
-	}
+	visibleUploads := calculateVisibleUploads(graph, toCommitGraphView(uploads))
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
@@ -218,10 +215,7 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	visibleUploads, err := calculateVisibleUploads(graph, toCommitGraphView(uploads))
-	if err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
-	}
+	visibleUploads := calculateVisibleUploads(graph, toCommitGraphView(uploads))
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
@@ -273,10 +267,7 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	visibleUploads, err := calculateVisibleUploads(graph, toCommitGraphView(uploads))
-	if err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
-	}
+	visibleUploads := calculateVisibleUploads(graph, toCommitGraphView(uploads))
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
@@ -345,10 +336,7 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	visibleUploads, err := calculateVisibleUploads(graph, toCommitGraphView(uploads))
-	if err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
-	}
+	visibleUploads := calculateVisibleUploads(graph, toCommitGraphView(uploads))
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
@@ -403,10 +391,7 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	visibleUploads, err := calculateVisibleUploads(graph, toCommitGraphView(uploads))
-	if err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
-	}
+	visibleUploads := calculateVisibleUploads(graph, toCommitGraphView(uploads))
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
@@ -467,10 +452,7 @@ func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	visibleUploads, err := calculateVisibleUploads(graph, toCommitGraphView(uploads))
-	if err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
-	}
+	visibleUploads := calculateVisibleUploads(graph, toCommitGraphView(uploads))
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
@@ -516,10 +498,7 @@ func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	visibleUploads, err := calculateVisibleUploads(currentGraph, toCommitGraphView(uploads))
-	if err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
-	}
+	visibleUploads := calculateVisibleUploads(currentGraph, toCommitGraphView(uploads))
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{

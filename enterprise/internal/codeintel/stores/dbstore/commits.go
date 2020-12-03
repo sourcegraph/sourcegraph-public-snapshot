@@ -159,10 +159,7 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 	}
 
 	// Determine which uploads are visible to which commits for this repository
-	visibleUploads, err := calculateVisibleUploads(graph, commitGraphView)
-	if err != nil {
-		return err
-	}
+	visibleUploads := calculateVisibleUploads(graph, commitGraphView)
 
 	// Clear all old visibility data for this repository
 	for _, query := range []string{

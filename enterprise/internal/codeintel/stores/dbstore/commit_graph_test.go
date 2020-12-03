@@ -1,7 +1,15 @@
 package dbstore
 
 import (
+	"bytes"
+	"compress/gzip"
+	"encoding/csv"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -46,26 +54,11 @@ func TestInternalCalculateVisibleUploads(t *testing.T) {
 	commitGraphView.Add(UploadMeta{UploadID: 56}, "0ed556d3", "sub3/:lsif-go")
 
 	testGraph := gitserver.ParseCommitGraph(strings.Split(logOutput, "\n"))
-	// visibleUploads, err := calculateVisibleUploads(testGraph, commitGraphView)
+	visibleUploads := calculateVisibleUploads(testGraph, commitGraphView)
 
-	// uploads := map[string][]UploadMeta{
-	// 	"e66e8f9b": {{UploadID: 50, Root: "sub1/", Indexer: "lsif-go"}},
-	// 	"f635b8d1": {{UploadID: 52, Root: "sub3/", Indexer: "lsif-go"}},
-	// 	"d6e54842": {{UploadID: 53, Root: "sub3/", Indexer: "lsif-go"}},
-	// 	"5340d471": {{UploadID: 54, Root: "sub3/", Indexer: "lsif-go"}},
-	// 	"95dd4b2b": {{UploadID: 55, Root: "sub3/", Indexer: "lsif-go"}},
-	// 	"5971b083": {{UploadID: 51, Root: "sub2/", Indexer: "lsif-go"}},
-	// 	"0ed556d3": {{UploadID: 56, Root: "sub3/", Indexer: "lsif-go"}},
-	// }
-
-	visibleUploads, err := calculateVisibleUploads(testGraph, commitGraphView)
-	if err != nil {
-		t.Fatalf("unexpected error calculating visible uploads: %s", err)
-	}
-
-	for _, visibleUploads := range visibleUploads {
-		sort.Slice(visibleUploads, func(i, j int) bool {
-			return visibleUploads[i].UploadID-visibleUploads[j].UploadID < 0
+	for _, uploads := range visibleUploads {
+		sort.Slice(uploads, func(i, j int) bool {
+			return uploads[i].UploadID-uploads[j].UploadID < 0
 		})
 	}
 
@@ -115,4 +108,84 @@ func TestReverseGraph(t *testing.T) {
 	if diff := cmp.Diff(expectedReverseGraph, reverseGraph); diff != "" {
 		t.Errorf("unexpected graph (-want +got):\n%s", diff)
 	}
+}
+
+func BenchmarkCalculateVisibleUploads(b *testing.B) {
+	commitGraph, err := readBenchmarkCommitGraph()
+	if err != nil {
+		b.Fatalf("failed to read benchmark commit graph: %s", err)
+	}
+	commitGraphView, err := readBenchmarkCommitGraphView()
+	if err != nil {
+		b.Fatalf("failed to read benchmark commit graph view: %s", err)
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	_ = calculateVisibleUploads(commitGraph, commitGraphView)
+}
+
+func readBenchmarkCommitGraph() (*gitserver.CommitGraph, error) {
+	contents, err := readBenchmarkFile("./testdata/commits.txt.gz")
+	if err != nil {
+		return nil, err
+	}
+
+	return gitserver.ParseCommitGraph(strings.Split(string(contents), "\n")), nil
+}
+
+func readBenchmarkCommitGraphView() (*CommitGraphView, error) {
+	contents, err := readBenchmarkFile("./testdata/uploads.txt.gz")
+	if err != nil {
+		return nil, err
+	}
+
+	reader := csv.NewReader(bytes.NewReader(contents))
+
+	commitGraphView := NewCommitGraphView()
+	for {
+		record, err := reader.Read()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return nil, err
+		}
+
+		id, err := strconv.Atoi(record[0])
+		if err != nil {
+			return nil, err
+		}
+
+		commitGraphView.Add(
+			UploadMeta{UploadID: id},             // meta
+			record[1],                            // commit
+			fmt.Sprintf("%s:lsif-go", record[2]), // token = hash({root}:{indexer})
+		)
+	}
+
+	return commitGraphView, nil
+}
+
+func readBenchmarkFile(path string) ([]byte, error) {
+	uploadsFile, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer uploadsFile.Close()
+
+	r, err := gzip.NewReader(uploadsFile)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	contents, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return contents, nil
 }

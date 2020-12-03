@@ -225,10 +225,7 @@ func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 		return nil, err
 	}
 
-	visibleUploads, err := calculateVisibleUploads(graph, commitGraphView)
-	if err != nil {
-		return nil, err
-	}
+	visibleUploads := calculateVisibleUploads(graph, commitGraphView)
 
 	var ids []*sqlf.Query
 	for _, uploadMeta := range visibleUploads[commit] {

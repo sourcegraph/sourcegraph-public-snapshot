@@ -9,151 +9,34 @@ import (
 // calculateVisibleUploads transforms the given commit graph and the set of LSIF uploads
 // defined on each commit with LSIF upload into a map from a commit to the set of uploads
 // which are visible from that commit.
-func calculateVisibleUploads(commitGraph *gitserver.CommitGraph, commitGraphView *CommitGraphView) (map[string][]UploadMeta, error) {
+func calculateVisibleUploads(commitGraph *gitserver.CommitGraph, commitGraphView *CommitGraphView) map[string][]UploadMeta {
 	graph := commitGraph.Graph()
 	order := commitGraph.Order()
+	reverseGraph := reverseGraph(graph)
 
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	// ancestorVisibleUploads maps commits to the set of uploads visible by looking up the ancestor
-	// paths of that commit. This map is populated by first inserting each upload at the commit
-	// where it is defined. Then we populate the remaining data by walking the graph in topological
-	// order (parents before children), and "push" each visible upload down descendant paths. At each
-	// commit, if multiple uploads with the same root and indexer are visible, the one with the minmum
-	// distance from the source commit will be used.
-	ancestorVisibleUploads := map[string][]UploadMeta{}
-
+	ancestorVisibleUploads := make(map[string]map[string]UploadMeta, len(order))
 	go func() {
 		defer wg.Done()
-
-		for commit := range graph {
-			for _, upload := range commitGraphView.Meta[commit] {
-				ancestorVisibleUploads[commit] = append(ancestorVisibleUploads[commit], UploadMeta{
-					UploadID: upload.UploadID,
-					Flags:    upload.Flags | FlagAncestorVisible,
-				})
-			}
-		}
-
-		for _, commit := range order {
-			uploads := ancestorVisibleUploads[commit]
-			for _, parent := range graph[commit] {
-				for _, upload := range ancestorVisibleUploads[parent] {
-					uploads = addUploadMeta(uploads, commitGraphView, UploadMeta{
-						UploadID: upload.UploadID,
-						Flags:    upload.Flags + 1,
-					}, true)
-				}
-			}
-			ancestorVisibleUploads[commit] = uploads
-		}
+		populateUploadsByTraversal(ancestorVisibleUploads, graph, order, commitGraphView, false)
 	}()
 
-	// descendantVisibleUploads maps commits to the set of uploads visible by looking down the
-	// descendant paths of that commit. This map is populated by first inserting each upload at the
-	// commit where it is defined. Then we populate the remaining data by walking the graph in reverse
-	// topological order (children before parents), and "push" each visible upload up ancestor paths.
-	// At each  commit, if multiple uploads with the same root and indexer are visible, the one with
-	// the minmum  distance from the source commit will be used.
-	descendantVisibleUploads := map[string][]UploadMeta{}
-
+	descendantVisibleUploads := make(map[string]map[string]UploadMeta, len(order))
 	go func() {
 		defer wg.Done()
-
-		for commit := range graph {
-			for _, upload := range commitGraphView.Meta[commit] {
-				descendantVisibleUploads[commit] = append(descendantVisibleUploads[commit], UploadMeta{
-					UploadID: upload.UploadID,
-					Flags:    upload.Flags &^ FlagAncestorVisible,
-				})
-			}
-		}
-
-		// Calculate mapping from commits to their children
-		reverseGraph := reverseGraph(graph)
-
-		for i := len(order) - 1; i >= 0; i-- {
-			commit := order[i]
-			uploads := descendantVisibleUploads[commit]
-			for _, child := range reverseGraph[commit] {
-				for _, upload := range descendantVisibleUploads[child] {
-					uploads = addUploadMeta(uploads, commitGraphView, UploadMeta{
-						UploadID: upload.UploadID,
-						Flags:    upload.Flags + 1,
-					}, true)
-				}
-			}
-			descendantVisibleUploads[commit] = uploads
-		}
+		populateUploadsByTraversal(descendantVisibleUploads, reverseGraph, order, commitGraphView, true)
 	}()
 
 	wg.Wait()
 
-	// For each commit, merge the set of uploads visible by looking in each direction from that
-	// commit. We do this by merging the descendant-visible uploads on top of the ancestor-visible
-	// uploads. If we find a ancestor-visible upload and a descendant-visible upload with the same
-	// root and  indexer, where the descendant-visible upload has a smaller distance, then we keep
-	// both upload entries, but mark the ancestor-visible upload as overwritten.
-	//
-	// This produces a list of visible uploads with the properties we need for several features:
-	//   - We can ask for only the non-overwritten uploads, which will give us the set of
-	//     visible uploads with minimal distance we need to determine the (actual) nearest
-	//     upload for a given commit.
-	//   - We can ask for only the ancestor-visible uploads, which gives us the partial
-	//     graph we need to determine the nearest upload for a commit without needing to
-	//     operate over the entire commit graph. See the method code intel store method
-	//     FindClosestDumpsFromGraphFragment for additional details.
-	for commit, uploads := range ancestorVisibleUploads {
-		for _, upload := range descendantVisibleUploads[commit] {
-			uploads = addUploadMeta(uploads, commitGraphView, upload, false)
-		}
-
-		ancestorVisibleUploads[commit] = uploads
-	}
-
-	return ancestorVisibleUploads, nil
-}
-
-// addUploadMeta merges the given upload metadata into the given list, resolving conflicts.
-//
-// If there already exists an upload with the same root and indexer but a larger distance, then
-// that upload will take the place of the existing upload (if replace is true), or the existing
-// upload will be marked as overwritten and the upload will be appended to the end of the list
-// (if replace is false). If there is no such upload with the same root and indexer, then the
-// given upload will be appended to the end of the list.
-func addUploadMeta(uploads []UploadMeta, commitGraphView *CommitGraphView, upload UploadMeta, replace bool) []UploadMeta {
-	sharedFieldToken := commitGraphView.Tokens[upload.UploadID]
-
-	for i, candidate := range uploads {
-		candidateSharedFieldToken := commitGraphView.Tokens[candidate.UploadID]
-		if sharedFieldToken != candidateSharedFieldToken {
-			continue
-		}
-
-		uploadDistance := upload.Flags & MaxDistance
-		candidateDistance := candidate.Flags & MaxDistance
-
-		if uploadDistance < candidateDistance || (uploadDistance == candidateDistance && upload.UploadID < candidate.UploadID) {
-			if !replace {
-				uploads = append(uploads, UploadMeta{
-					UploadID: candidate.UploadID,
-					Flags:    candidate.Flags | FlagOverwritten,
-				})
-			}
-			uploads[i] = upload
-			return uploads
-		}
-
-		return uploads
-	}
-
-	return append(uploads, upload)
+	return combineVisibleUploads(ancestorVisibleUploads, descendantVisibleUploads, order)
 }
 
 // reverseGraph returns the reverse of the given graph by flipping all the edges.
 func reverseGraph(graph map[string][]string) map[string][]string {
-	reverse := map[string][]string{}
+	reverse := make(map[string][]string, len(graph))
 	for child := range graph {
 		reverse[child] = nil
 	}
@@ -165,4 +48,123 @@ func reverseGraph(graph map[string][]string) map[string][]string {
 	}
 
 	return reverse
+}
+
+// populateUploadsByTraversal populates the given mapping by traversing the graph in one direction,
+// either up ancestor paths or down descendant paths, depending on the encoding of the given graph
+// and the reverse parameter.
+func populateUploadsByTraversal(uploads map[string]map[string]UploadMeta, graph map[string][]string, order []string, commitGraphView *CommitGraphView, reverse bool) {
+	for i, commit := range order {
+		if reverse {
+			commit = order[len(order)-i-1]
+		}
+
+		uploads[commit] = populateUploadsForCommit(uploads, graph, commitGraphView, commit)
+	}
+}
+
+// populateUploadsForCommit populates the items stored in the given mapping for the given commit.
+// The uploads considered visible for a commit include:
+//
+//   1. the set of uploads defined on that commit, and
+//   2. the set of  uploads visible from the parents (or children) with the minimum distance
+//      for equivalent root and indexer values.
+//
+// If two parents have different uploads visible for the same root and indexer, the one with the
+// smaller distance to the source commit will shadow the other. Similarly, If a parent and the child
+// commit define uploads for the same root and indexer pair, the upload defined on the commit will
+// shadow the upload defined on the parent.
+func populateUploadsForCommit(uploads map[string]map[string]UploadMeta, graph map[string][]string, commitGraphView *CommitGraphView, commit string) map[string]UploadMeta {
+	capacity := len(commitGraphView.Meta[commit])
+	for _, parent := range graph[commit] {
+		if temp := len(uploads[parent]); temp > capacity {
+			capacity = temp
+		}
+	}
+	uploadsByToken := make(map[string]UploadMeta, capacity)
+
+	for _, upload := range commitGraphView.Meta[commit] {
+		token := commitGraphView.Tokens[upload.UploadID]
+		uploadsByToken[token] = upload
+	}
+
+	for _, parent := range graph[commit] {
+		for _, upload := range uploads[parent] {
+			token := commitGraphView.Tokens[upload.UploadID]
+
+			// Increase distance from source before comparison
+			upload.Flags++
+
+			// Only update upload for this token if distance of new upload is less than current one
+			if currentUpload, ok := uploadsByToken[token]; !ok || replaces(upload, currentUpload) {
+				uploadsByToken[token] = upload
+			}
+		}
+	}
+
+	return uploadsByToken
+}
+
+// combineVisibleUploads combines the set of uploads visible by traversing the ancestor and descendant
+// paths for ever commit. See combineVisibleUploadsForCommit for more details about the merge logic.
+func combineVisibleUploads(ancestorVisibleUploads, descendantVisibleUploads map[string]map[string]UploadMeta, order []string) map[string][]UploadMeta {
+	combined := make(map[string][]UploadMeta, len(order))
+	for _, commit := range order {
+		combined[commit] = combineVisibleUploadsForCommit(ancestorVisibleUploads, descendantVisibleUploads, commit)
+	}
+
+	return combined
+}
+
+// combineVisibleUploadsForCommit combines sets of uploads visible by looking in opposite directions
+// in the graph. This will produce a flat list of upload meta objects for each commit that consists of:
+//
+//   1. the set of ancestor-visible uploads,
+//   2. the set of descendant-visible uploads where there does not exist an ancestor-visible upload
+//      with an equivalent root an indexer value, and
+//   3. the set of descendant-visible uploads where there exists an ancestor-visible upload with an
+//      equivalent root and indexer value but a greater distance. In this case, the ancestor-visible
+//      upload is also present in the list, but is flagged as overwritten.
+func combineVisibleUploadsForCommit(ancestorVisibleUploads, descendantVisibleUploads map[string]map[string]UploadMeta, commit string) []UploadMeta {
+	capacity := len(ancestorVisibleUploads[commit])
+	if temp := len(descendantVisibleUploads[commit]); temp > capacity {
+		capacity = temp
+	}
+	uploads := make([]UploadMeta, 0, capacity)
+
+	for token, ancestorUpload := range ancestorVisibleUploads[commit] {
+		if descendantUpload, ok := descendantVisibleUploads[commit][token]; ok {
+			if replaces(descendantUpload, ancestorUpload) {
+				// Clear direction flag
+				descendantUpload.Flags &^= FlagAncestorVisible
+				uploads = append(uploads, descendantUpload)
+
+				// Mark upload as overwritten by descendant-visible upload
+				ancestorUpload.Flags |= FlagOverwritten
+			}
+		}
+
+		// Set direction flag
+		ancestorUpload.Flags |= FlagAncestorVisible
+		uploads = append(uploads, ancestorUpload)
+	}
+
+	for token, descendantUpload := range descendantVisibleUploads[commit] {
+		if _, ok := ancestorVisibleUploads[commit][token]; !ok {
+			// Clear direction flag
+			descendantUpload.Flags &^= FlagAncestorVisible
+			uploads = append(uploads, descendantUpload)
+		}
+	}
+
+	return uploads
+}
+
+// replaces returns true if upload1 has a smaller distance than upload2.
+// Ties are broken by the minimum upload identifier to remain determinstic.
+func replaces(upload1, upload2 UploadMeta) bool {
+	distance1 := upload1.Flags & MaxDistance
+	distance2 := upload2.Flags & MaxDistance
+
+	return distance1 < distance2 || (distance1 == distance2 && upload1.UploadID < upload2.UploadID)
 }
