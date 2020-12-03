@@ -70,9 +70,9 @@ const reposStatsName = "repos-stats.json"
 // 4. Reclone repos after a while. (simulate git gc)
 func (s *Server) cleanupRepos() {
 	janitorRunning.Set(1)
-	janitorTimer := prometheus.NewTimer(janitorDuration)
+	start := time.Now()
 	defer func() {
-		janitorTimer.ObserveDuration()
+		janitorDuration.Observe(time.Since(start).Seconds())
 		janitorRunning.Set(0)
 	}()
 
