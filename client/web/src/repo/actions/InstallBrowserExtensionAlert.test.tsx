@@ -1,5 +1,5 @@
 import React from 'react'
-import { FirefoxAddonAlert, InstallBrowserExtensionAlert } from './InstallBrowserExtensionAlert'
+import { InstallBrowserExtensionAlert, isFirefoxCampaignActive } from './InstallBrowserExtensionAlert'
 import { mount } from 'enzyme'
 import { noop } from 'lodash'
 
@@ -36,12 +36,14 @@ describe('InstallBrowserExtensionAlert', () => {
 
         // TODO(tj): Remove this after the final date (December 31, 2020)
         describe(`FirefoxAddonAlert (${serviceType ?? 'unknown service type'})`, () => {
-            test('displays alert before the final date', () => {
+            test('displays Firefox addon alert before the final date', () => {
                 expect(
                     mount(
-                        <FirefoxAddonAlert
-                            now={() => new Date('December 10, 2020')}
+                        <InstallBrowserExtensionAlert
+                            showFirefoxAddonAlert={isFirefoxCampaignActive(new Date('December 23, 2020'))}
                             onAlertDismissed={noop}
+                            isChrome={true}
+                            codeHostIntegrationMessaging="browser-extension"
                             externalURLs={
                                 serviceType
                                     ? [
@@ -58,12 +60,14 @@ describe('InstallBrowserExtensionAlert', () => {
                 ).toMatchSnapshot()
             })
 
-            test('does not display test after the final date', () => {
+            test('displays normal browser extension alert after the final date', () => {
                 expect(
                     mount(
-                        <FirefoxAddonAlert
-                            now={() => new Date('December 22, 2020')}
+                        <InstallBrowserExtensionAlert
+                            showFirefoxAddonAlert={isFirefoxCampaignActive(new Date('January 2, 2021'))}
                             onAlertDismissed={noop}
+                            isChrome={true}
+                            codeHostIntegrationMessaging="browser-extension"
                             externalURLs={
                                 serviceType
                                     ? [

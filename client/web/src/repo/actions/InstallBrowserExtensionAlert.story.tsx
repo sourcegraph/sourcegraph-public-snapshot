@@ -2,7 +2,7 @@ import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { WebStory } from '../../components/WebStory'
-import { FirefoxAddonAlert, InstallBrowserExtensionAlert } from './InstallBrowserExtensionAlert'
+import { InstallBrowserExtensionAlert } from './InstallBrowserExtensionAlert'
 
 const onAlertDismissed = action('onAlertDismissed')
 
@@ -100,9 +100,11 @@ for (const serviceType of services) {
     add(`${serviceType} (Firefox alert)`, () => (
         <WebStory>
             {() => (
-                <FirefoxAddonAlert
-                    now={() => new Date('December 10, 2020')}
+                <InstallBrowserExtensionAlert
+                    showFirefoxAddonAlert={true}
+                    isChrome={false} // Show Firefox addon alert to Chrome users in case they'd prefer to use Firefox
                     onAlertDismissed={onAlertDismissed}
+                    codeHostIntegrationMessaging="native-integration"
                     externalURLs={[
                         {
                             __typename: 'ExternalLink',
