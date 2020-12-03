@@ -457,6 +457,14 @@ function observeBrowserActionState(): Observable<BrowserActionIconState> {
 }
 
 function urlMatchesPattern(url: string, originPermissionPattern: string): boolean {
-    const regex = patternToRegex(originPermissionPattern)
-    return regex.test(url)
+    // Workaround for bug in `webext-patterns`. Remove workaround when fixed upstream.
+    // https://github.com/fregante/webext-patterns/issues/2
+    if (originPermissionPattern.includes('://*.')) {
+        const bareDomainPattern = originPermissionPattern.replace('://*.', '://')
+        if (patternToRegex(bareDomainPattern).test(url)) {
+            return true
+        }
+    }
+
+    return patternToRegex(originPermissionPattern).test(url)
 }
