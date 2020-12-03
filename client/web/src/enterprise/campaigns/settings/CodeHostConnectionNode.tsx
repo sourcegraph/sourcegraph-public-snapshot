@@ -3,14 +3,14 @@ import * as H from 'history'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import { CampaignsCodeHostFields } from '../../../graphql-operations'
+import { CampaignsCodeHostFields, Scalars } from '../../../graphql-operations'
 import { AddCredentialModal } from './AddCredentialModal'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 import { Subject } from 'rxjs'
 
 export interface CodeHostConnectionNodeProps {
     node: CampaignsCodeHostFields
-    userID: string
+    userID: Scalars['ID']
     history: H.History
     updateList: Subject<void>
 }

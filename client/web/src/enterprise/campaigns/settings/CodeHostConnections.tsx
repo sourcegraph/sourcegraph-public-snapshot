@@ -6,6 +6,7 @@ import { PageHeader } from '../../../components/PageHeader'
 import {
     CampaignsCodeHostFields,
     CampaignsCodeHostsFields,
+    Scalars,
     UserCampaignsCodeHostsVariables,
 } from '../../../graphql-operations'
 import { CampaignsIconFlushLeft } from '../icons'
@@ -13,12 +14,12 @@ import { queryUserCampaignsCodeHosts as _queryUserCampaignsCodeHosts } from './b
 import { CodeHostConnectionNode, CodeHostConnectionNodeProps } from './CodeHostConnectionNode'
 
 export interface CodeHostConnectionsProps extends Pick<RouteComponentProps, 'history' | 'location'> {
-    user: { id: string; username: string }
+    userID: Scalars['ID']
     queryUserCampaignsCodeHosts?: typeof _queryUserCampaignsCodeHosts
 }
 
 export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsProps> = ({
-    user,
+    userID,
     history,
     location,
     queryUserCampaignsCodeHosts = _queryUserCampaignsCodeHosts,
@@ -28,11 +29,11 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
     const query = useCallback<(args: Partial<UserCampaignsCodeHostsVariables>) => Observable<CampaignsCodeHostsFields>>(
         args =>
             queryUserCampaignsCodeHosts({
-                username: user.username ?? null,
+                user: userID,
                 first: args.first ?? null,
                 after: args.after ?? null,
             }),
-        [queryUserCampaignsCodeHosts, user.username]
+        [queryUserCampaignsCodeHosts, userID]
     )
     return (
         <>
@@ -44,7 +45,7 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
                 location={location}
                 useURLQuery={false}
                 nodeComponent={CodeHostConnectionNode}
-                nodeComponentProps={{ userID: user.id, history, updateList }}
+                nodeComponentProps={{ userID, history, updateList }}
                 queryConnection={query}
                 hideSearch={true}
                 defaultFirst={15}

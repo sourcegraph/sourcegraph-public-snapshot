@@ -713,7 +713,7 @@ type Mutation {
     """
     createCampaignsCredential(
         """
-        The user for which to create the credentials.
+        The user for which to create the credential.
         """
         user: ID!
 

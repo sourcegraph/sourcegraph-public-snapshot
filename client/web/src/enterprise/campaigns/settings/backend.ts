@@ -63,16 +63,18 @@ export function deleteCampaignsCredential(id: Scalars['ID']): Promise<void> {
 }
 
 export const queryUserCampaignsCodeHosts = ({
-    username,
+    user,
     first,
     after,
-}: Partial<UserCampaignsCodeHostsVariables>): Observable<CampaignsCodeHostsFields> =>
+}: UserCampaignsCodeHostsVariables): Observable<CampaignsCodeHostsFields> =>
     requestGraphQL<UserCampaignsCodeHostsResult, UserCampaignsCodeHostsVariables>(
         gql`
-            query UserCampaignsCodeHosts($username: String!, $first: Int, $after: String) {
-                user(username: $username) {
-                    campaignsCodeHosts(first: $first, after: $after) {
-                        ...CampaignsCodeHostsFields
+            query UserCampaignsCodeHosts($user: ID!, $first: Int, $after: String) {
+                node(id: $user) {
+                    ... on User {
+                        campaignsCodeHosts(first: $first, after: $after) {
+                            ...CampaignsCodeHostsFields
+                        }
                     }
                 }
             }
@@ -99,16 +101,16 @@ export const queryUserCampaignsCodeHosts = ({
             ${campaignsCredentialFieldsFragment}
         `,
         {
-            username: username ?? '', // TODO: why is this required?
-            first: first ?? null,
-            after: after ?? null,
+            user,
+            first,
+            after,
         }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            if (data.user === null) {
+            if (data.node === null) {
                 throw new Error('User not found')
             }
-            return data.user.campaignsCodeHosts
+            return data.node.campaignsCodeHosts
         })
     )

@@ -6,7 +6,7 @@ import { queryUserCampaignsCodeHosts } from './backend'
 import { CodeHostConnections } from './CodeHostConnections'
 
 export interface CampaignsSettingsAreaProps extends Pick<RouteComponentProps, 'history' | 'location'> {
-    user: Pick<UserAreaUserFields, 'id' | 'username'>
+    user: Pick<UserAreaUserFields, 'id'>
     queryUserCampaignsCodeHosts?: typeof queryUserCampaignsCodeHosts
 }
 
@@ -14,6 +14,6 @@ export interface CampaignsSettingsAreaProps extends Pick<RouteComponentProps, 'h
 export const CampaignsSettingsArea: React.FunctionComponent<CampaignsSettingsAreaProps> = props => (
     <div className="web-content test-campaigns-settings-page">
         <PageTitle title="Campaigns settings" />
-        <CodeHostConnections user={props.user} history={props.history} location={props.location} />
+        <CodeHostConnections userID={props.user.id} {...props} />
     </div>
 )

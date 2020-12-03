@@ -14,7 +14,7 @@ add('Overview', () => (
         {props => (
             <CampaignsSettingsArea
                 {...props}
-                user={{ id: 'user-id-1', username: 'my-username' }}
+                user={{ id: 'user-id-1' }}
                 queryUserCampaignsCodeHosts={() =>
                     of({
                         totalCount: 3,
@@ -51,7 +51,7 @@ add('Config added', () => (
         {props => (
             <CampaignsSettingsArea
                 {...props}
-                user={{ id: 'user-id-2', username: 'my-username' }}
+                user={{ id: 'user-id-2' }}
                 queryUserCampaignsCodeHosts={() =>
                     of({
                         totalCount: 3,
