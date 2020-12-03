@@ -22,6 +22,7 @@ interface Props {
 
     onDidRemove?: (email: string) => void
     onEmailVerify?: () => void
+    onEmailResendVerification?: () => void
 }
 
 type Status = undefined | 'loading' | ErrorLike
@@ -96,6 +97,35 @@ export const UserEmail: FunctionComponent<Props> = ({
         }
     }
 
+    // const resendEmailVerification = async(email: string): Promise<void> => {
+    //     setStatusOrError('loading')
+    //
+    //     try {
+    //         dataOrThrowErrors(
+    //             await requestGraphQL<X, X>(
+    //                 gql`
+    //                     mutation ResendVerificationEmail($user: ID!, $email: String!) {
+    //                         resendVerificationEmail(user: $user, email: $email) {
+    //                             alwaysNil
+    //                         }
+    //                     }
+    //                 `,
+    //                 { user, email }
+    //             ).toPromise()
+    //         )
+    //
+    //         setStatusOrError(undefined)
+    //
+    //         eventLogger.log('UserEmailAddressVerificationResent')
+    //
+    //         if (onEmailResendVerification) {
+    //             onEmailResendVerification()
+    //         }
+    //     } catch (error) {
+    //         setStatusOrError(asError(error))
+    //     }
+    // }
+
     return (
         <>
             <div className="d-flex align-items-center justify-content-between">
@@ -104,8 +134,16 @@ export const UserEmail: FunctionComponent<Props> = ({
                     {verified ? (
                         <span className="badge badge-success mr-1">Verified</span>
                     ) : verificationPending ? (
-                        <span className="badge badge-info mr-1">Verification pending</span>
+                        <span>&bull; <button
+                            type="button"
+                            className="btn btn-link text-primary p-0 mr-1"
+                            onClick={() => {}}
+                            disabled={statusOrError === 'loading'}
+                        >
+                            Resend verification email
+                        </button></span>
                     ) : (
+
                         <span className="badge badge-secondary mr-1">Not verified</span>
                     )}
                     {isPrimary && <span className="badge badge-primary">Primary</span>}

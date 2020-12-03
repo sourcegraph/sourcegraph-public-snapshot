@@ -104,6 +104,7 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
                                     user={user.id}
                                     email={email}
                                     onEmailVerify={fetchEmails}
+                                    onEmailResendVerification={fetchEmails}
                                     onDidRemove={onEmailRemove}
                                     history={history}
                                 />
