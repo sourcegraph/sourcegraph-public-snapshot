@@ -12,7 +12,7 @@ import { ErrorAlert } from '../../components/alerts'
 import { defaultExternalServices } from '../../components/externalServices/externalServices'
 import { asError } from '../../../../shared/src/util/errors'
 import * as H from 'history'
-import { RepositoryFields, SettingsAreaRepositoryFields } from '../../graphql-operations'
+import { SettingsAreaRepositoryFields } from '../../graphql-operations'
 
 interface Props extends RouteComponentProps<{}> {
     repo: SettingsAreaRepositoryFields

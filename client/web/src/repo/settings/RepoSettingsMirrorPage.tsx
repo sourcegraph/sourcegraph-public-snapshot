@@ -18,7 +18,7 @@ import { ActionContainer, BaseActionContainer } from './components/ActionContain
 import { ErrorAlert } from '../../components/alerts'
 import { asError } from '../../../../shared/src/util/errors'
 import * as H from 'history'
-import { RepositoryFields, SettingsAreaRepositoryFields } from '../../graphql-operations'
+import { SettingsAreaRepositoryFields } from '../../graphql-operations'
 
 interface UpdateMirrorRepositoryActionContainerProps {
     repo: SettingsAreaRepositoryFields
