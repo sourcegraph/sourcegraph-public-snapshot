@@ -23,7 +23,7 @@ The following diagram depicts the process by which the extension host is initial
 <object data="/dev/background-information/web/extension-host.svg" type="image/svg+xml" style="width:100%; height: 100%">
 </object>
 
-<!--- Update this diagram (/dev/background-information/web/extension-host.drawio) on https://app.diagrams.net/  -->
+<!--- Update this diagram (../web/extension-host.drawio) on https://app.diagrams.net/  -->
 
 Note that the extension host execution context varies depending on the client application:
 
@@ -31,7 +31,7 @@ Note that the extension host execution context varies depending on the client ap
 | --- | --- |
 | Sourcegraph web application | Web Worker |
 | Browser extensions | A Web Worker spawned in the browser extension's background page for each content script instance. Messages are forwarded from the content script to its corresponding worker. |
-| [Native Integration](/dev/background-information/web/code_host_integrations.md#how-code-host-integrations-are-delivered) | Web Worker spawned in an `<iframe/>`. Messages are forwarded from the content script to the worker. |
+| [Native Integration](../web/code_host_integrations.md#how-code-host-integrations-are-delivered) | Web Worker spawned in an `<iframe/>`. Messages are forwarded from the content script to the worker. |
 
 
 ## Inter-process communication
