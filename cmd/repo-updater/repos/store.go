@@ -804,30 +804,46 @@ func (s *DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes m
 
 	insertedSources := makeSourceSlices(inserts)
 	updatedSources := makeSourceSlices(updates)
-	deletedSources := makeSourceSlices(deletes)
 
-	// TODO: Most of the time deletes don't happen so we should lazily add that statement because
-	// even if it runs and affects zero rows, it still causes the slow orphaned repo
-	// trigger to run.
+	var q *sqlf.Query
 
-	q := sqlf.Sprintf(upsertSourcesQueryFmtstr,
-		// Updated
-		pq.Int64Array(updatedSources.externalServiceIDs),
-		pq.Int64Array(updatedSources.repoIDs),
-		pq.StringArray(updatedSources.cloneURLs),
-		// Inserted
-		pq.Int64Array(insertedSources.externalServiceIDs),
-		pq.Int64Array(insertedSources.repoIDs),
-		pq.StringArray(insertedSources.cloneURLs),
-		// Deleted
-		pq.Int64Array(deletedSources.externalServiceIDs),
-		pq.Int64Array(deletedSources.repoIDs),
-	)
+	// When upserting sources we only want to perform delete statements when there are actual deletes that need to happen
+	// so that we don't inadvertently trigger trig_soft_delete_orphan_repo_by_external_service_repo
+	if len(deletes) > 0 {
+		deletedSources := makeSourceSlices(deletes)
+		q = sqlf.Sprintf(upsertSourcesWithDeletesQueryFmtstr,
+			// Updated
+			pq.Int64Array(updatedSources.externalServiceIDs),
+			pq.Int64Array(updatedSources.repoIDs),
+			pq.StringArray(updatedSources.cloneURLs),
+			// Inserted
+			pq.Int64Array(insertedSources.externalServiceIDs),
+			pq.Int64Array(insertedSources.repoIDs),
+			pq.StringArray(insertedSources.cloneURLs),
+			// Deleted
+			pq.Int64Array(deletedSources.externalServiceIDs),
+			pq.Int64Array(deletedSources.repoIDs),
+		)
+	} else {
+		q = sqlf.Sprintf(upsertSourcesQueryFmtstr,
+			// Updated
+			pq.Int64Array(updatedSources.externalServiceIDs),
+			pq.Int64Array(updatedSources.repoIDs),
+			pq.StringArray(updatedSources.cloneURLs),
+			// Inserted
+			pq.Int64Array(insertedSources.externalServiceIDs),
+			pq.Int64Array(insertedSources.repoIDs),
+			pq.StringArray(insertedSources.cloneURLs),
+		)
+	}
 
 	return s.Exec(ctx, q)
 }
 
-const upsertSourcesQueryFmtstr = `
+var upsertSourcesQueryFmtstr = upsertSourcesFmtstrPrefix + upsertSourcesFmtstrSuffix
+var upsertSourcesWithDeletesQueryFmtstr = upsertSourcesFmtstrPrefix + upsertSourcesFmtstrDeletes + upsertSourcesFmtstrSuffix
+
+const upsertSourcesFmtstrPrefix = `
 -- source: cmd/repo-updater/repos/store.go:DBStore.UpsertSources
 WITH updated_sources_list AS (
   SELECT * FROM
@@ -839,19 +855,9 @@ inserted_sources_list AS (
   unnest(%s::bigint[], %s::integer[], %s::text[]) AS
   x ( external_service_id, repo_id, clone_url )
 ),
-deleted_sources_list AS (
-  SELECT * FROM
-  unnest(%s::bigint[], %s::integer[]) AS
-  x ( external_service_id, repo_id )
-),
-delete_sources AS (
-  DELETE FROM external_service_repos AS e
-  USING deleted_sources_list AS d
-  WHERE
-	  e.external_service_id = d.external_service_id
-	AND
-      e.repo_id = d.repo_id
-),
+`
+
+const upsertSourcesFmtstrSuffix = `
 update_sources AS (
   UPDATE external_service_repos AS e
   SET
@@ -875,6 +881,22 @@ ON CONFLICT ON CONSTRAINT external_service_repos_repo_id_external_service_id_uni
 DO
   UPDATE SET clone_url = EXCLUDED.clone_url
   WHERE external_service_repos.clone_url != EXCLUDED.clone_url
+`
+
+const upsertSourcesFmtstrDeletes = `
+deleted_sources_list AS (
+  SELECT * FROM
+  unnest(%s::bigint[], %s::integer[]) AS
+  x ( external_service_id, repo_id )
+),
+delete_sources AS (
+  DELETE FROM external_service_repos AS e
+  USING deleted_sources_list AS d
+  WHERE
+	  e.external_service_id = d.external_service_id
+	AND
+      e.repo_id = d.repo_id
+),
 `
 
 // SetClonedRepos updates cloned status for all repositories.
