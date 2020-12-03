@@ -6,7 +6,7 @@ import { Form } from '../../../../../branded/src/components/Form'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
 import { createCampaignsCredential } from './backend'
-import { ExternalServiceKind } from '../../../graphql-operations'
+import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
 
 export interface AddCredentialModalProps {
     onCancel: () => void

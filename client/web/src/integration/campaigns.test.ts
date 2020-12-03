@@ -695,6 +695,7 @@ describe('Campaigns', () => {
                 ...mockCommonGraphQLResponses('user'),
                 UserCampaignsCodeHosts: () => ({
                     node: {
+                        __typename: 'User',
                         campaignsCodeHosts: {
                             totalCount: 1,
                             pageInfo: {
