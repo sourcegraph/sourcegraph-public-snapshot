@@ -189,10 +189,7 @@ function toGQLFileMatchBase(fm: Omit<FileMatch, 'lineMatches' | 'type'>): GQL.IF
             oid: fm.version || '',
         },
     } as GQL.IGitBlob
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const repository: GQL.IRepository = {
-        name: fm.repository,
-    } as GQL.IRepository
+    const repository = toGQLRepositoryMatch({ type: 'repo', repository: fm.repository, branches: fm.branches })
     return {
         __typename: 'FileMatch',
         file,
@@ -243,6 +240,7 @@ function toGQLRepositoryMatch(repo: RepositoryMatch): GQL.IRepository {
         url: '/' + label,
         detail: toMarkdown('Repository name match'),
         matches: [],
+        name: repo.repository,
     }
 
     return gqlRepo as GQL.IRepository
