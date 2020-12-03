@@ -52,7 +52,7 @@ import { Link } from '../../../shared/src/components/Link'
 import { UncontrolledPopover } from 'reactstrap'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import { RepositoriesPopover } from './RepositoriesPopover'
-import { displayRepoName, splitPath } from '../../../shared/src/components/RepoFileLink'
+import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { ExternalLinkFields } from '../graphql-operations'
@@ -61,6 +61,7 @@ import { InstallBrowserExtensionAlert } from './actions/InstallBrowserExtensionA
 import { IS_CHROME } from '../marketing/util'
 import { useLocalStorage } from '../util/useLocalStorage'
 import { Settings } from '../schema/settings.schema'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -218,8 +219,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 return
             }
 
-            const [repoDirectory, repoBase] = splitPath(displayRepoName(repoOrError.name))
-
             return {
                 key: 'repository',
                 element: (
@@ -230,10 +229,9 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                     ? resolvedRevisionOrError.rootTreeURL
                                     : repoOrError.url
                             }
-                            className="repo-header__repo"
+                            className="font-weight-bold test-repo-header-repo-link"
                         >
-                            {repoDirectory ? `${repoDirectory}/` : ''}
-                            <span className="font-weight-semibold">{repoBase}</span>
+                            <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
                         </Link>
                         <button
                             type="button"

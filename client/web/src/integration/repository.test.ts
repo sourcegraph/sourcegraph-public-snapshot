@@ -386,13 +386,13 @@ describe('Repository', () => {
             // Assert breadcrumb order
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
             assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', clickedFileName])
 
             // Return to repo page
-            await driver.page.waitForSelector('a.repo-header__repo')
-            await driver.page.click('a.repo-header__repo')
+            await driver.page.waitForSelector('.test-repo-header-repo-link')
+            await driver.page.click('.test-repo-header-repo-link')
 
             await driver.page.waitForSelector('h2.tree-page__title')
             await assertSelectorHasText('h2.tree-page__title', ' ' + shortRepositoryName)
@@ -464,7 +464,7 @@ describe('Repository', () => {
 
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
             assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', filePath])
 
@@ -535,7 +535,7 @@ describe('Repository', () => {
 
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
             assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', 'readme.md'])
         })
@@ -572,7 +572,7 @@ describe('Repository', () => {
 
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
             assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', 'readme.md'])
         })
