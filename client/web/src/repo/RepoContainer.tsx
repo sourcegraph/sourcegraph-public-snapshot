@@ -87,7 +87,6 @@ export interface RepoContainerContext
     /** The URL route match for {@link RepoContainer}. */
     routePrefix: string
 
-    onDidUpdateRepository: (update: Partial<RepositoryFields>) => void
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 
     globbing: boolean
@@ -152,7 +151,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     )
 
     // Fetch repository upon mounting the component.
-    const initialRepoOrError = useObservable(
+    const repoOrError = useObservable(
         useMemo(
             () =>
                 fetchRepository({ repoName }).pipe(
@@ -168,22 +167,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                     )
                 ),
             [repoName]
-        )
-    )
-
-    // Allow partial updates of the repository from components further down the tree.
-    const [nextRepoOrErrorUpdate, repoOrError] = useEventObservable(
-        useCallback(
-            (repoOrErrorUpdates: Observable<Partial<RepositoryFields>>) =>
-                repoOrErrorUpdates.pipe(
-                    map((update): RepositoryFields | ErrorLike | undefined =>
-                        isErrorLike(initialRepoOrError) || initialRepoOrError === undefined
-                            ? initialRepoOrError
-                            : { ...initialRepoOrError, ...update }
-                    ),
-                    startWith(initialRepoOrError)
-                ),
-            [initialRepoOrError]
         )
     )
 
@@ -402,7 +385,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         repo: repoOrError,
         routePrefix: repoMatchURL,
         onDidUpdateExternalLinks: setExternalLinks,
-        onDidUpdateRepository: nextRepoOrErrorUpdate,
     }
 
     return (

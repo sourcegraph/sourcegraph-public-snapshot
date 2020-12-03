@@ -239,13 +239,12 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
     private checkMirrorRepositoryConnection = (): void => this.checkRequests.next()
 }
 
-interface Props extends RouteComponentProps<{}> {
+interface RepoSettingsMirrorPageProps extends RouteComponentProps<{}> {
     repo: SettingsAreaRepositoryFields
-    onDidUpdateRepository: (update: Partial<RepositoryFields>) => void
     history: H.History
 }
 
-interface State {
+interface RepoSettingsMirrorPageState {
     /**
      * The repository object, refreshed after we make changes that modify it.
      */
@@ -263,11 +262,14 @@ interface State {
 /**
  * The repository settings mirror page.
  */
-export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
+export class RepoSettingsMirrorPage extends React.PureComponent<
+    RepoSettingsMirrorPageProps,
+    RepoSettingsMirrorPageState
+> {
     private repoUpdates = new Subject<void>()
     private subscriptions = new Subscription()
 
-    constructor(props: Props) {
+    constructor(props: RepoSettingsMirrorPageProps) {
         super(props)
 
         this.state = {
@@ -366,7 +368,6 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
 
     private onDidUpdateRepository = (): void => {
         this.repoUpdates.next()
-        this.props.onDidUpdateRepository({})
     }
 
     private onDidUpdateReachability = (reachable: boolean | undefined): void => this.setState({ reachable })

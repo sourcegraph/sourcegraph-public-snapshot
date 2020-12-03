@@ -48,7 +48,7 @@ export interface RepoRevisionContainerContext
         TelemetryProps,
         HoverThresholdProps,
         ActivationProps,
-        Omit<RepoContainerContext, 'onDidUpdateRepository' | 'onDidUpdateExternalLinks'>,
+        Omit<RepoContainerContext, 'onDidUpdateExternalLinks'>,
         PatternTypeProps,
         CaseSensitivityProps,
         CopyQueryButtonProps,

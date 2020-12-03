@@ -16,7 +16,6 @@ import { RepositoryFields, SettingsAreaRepositoryFields } from '../../graphql-op
 
 interface Props extends RouteComponentProps<{}> {
     repo: SettingsAreaRepositoryFields
-    onDidUpdateRepository: (update: Partial<RepositoryFields>) => void
     history: H.History
 }
 
