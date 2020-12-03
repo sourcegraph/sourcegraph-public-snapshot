@@ -105,29 +105,24 @@ async function shouldRegenerateGraphQlOperations(type, name) {
 /**
  * Generates the new query-specific types on file changes.
  */
-async function watchGraphQlOperations() {
-  await new Promise((resolve, reject) => {
-    // Although graphql-codegen has watching capabilities, they don't appear to
-    // use chokidar correctly and rely on polling. Instead, let's get gulp to
-    // watch for us, since we know it'll do it more efficiently, and then we can
-    // trigger the code generation more selectively.
-    gulp
-      .watch(ALL_DOCUMENTS_GLOB, {
-        ignored: /** @param {string} name */ name => name.endsWith('graphql-operations.ts'),
-      })
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      .on('all', async (type, name) => {
-        try {
-          if (await shouldRegenerateGraphQlOperations(type, name)) {
-            await generateGraphQlOperations()
-          }
-        } catch (error) {
-          reject(error)
-          throw error
+function watchGraphQlOperations() {
+  // Although graphql-codegen has watching capabilities, they don't appear to
+  // use chokidar correctly and rely on polling. Instead, let's get gulp to
+  // watch for us, since we know it'll do it more efficiently, and then we can
+  // trigger the code generation more selectively.
+  return gulp
+    .watch(ALL_DOCUMENTS_GLOB, {
+      ignored: /** @param {string} name */ name => name.endsWith('graphql-operations.ts'),
+    })
+    .on('all', (type, name) => {
+      ;(async () => {
+        if (await shouldRegenerateGraphQlOperations(type, name)) {
+          await generateGraphQlOperations()
         }
+      })().catch(error => {
+        console.error(error)
       })
-      .on('error', reject)
-  })
+    })
 }
 
 /**
