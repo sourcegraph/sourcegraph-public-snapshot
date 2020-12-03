@@ -51,7 +51,7 @@ var (
 		Help: "number of repos removed due to not enough disk space",
 	})
 	janitorDuration = promauto.NewHistogram(prometheus.HistogramOpts{
-		Name: "src_gitserver_janitor_duration",
+		Name: "src_gitserver_janitor_duration_seconds",
 		Help: "duration of the gitserver janitor background job",
 	})
 	janitorRunning = promauto.NewGauge(prometheus.GaugeOpts{
@@ -59,7 +59,7 @@ var (
 		Help: "set to 1 when the gitserver janitor background job is running",
 	})
 	jobTimer = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "src_gitserver_janitor_job_duration",
+		Name: "src_gitserver_janitor_job_duration_seconds",
 		Help: "Duration of the individual jobs within the gitserver janitor background job",
 	}, []string{"job_name", "dir"})
 )
