@@ -16,7 +16,6 @@ import {
 import classNames from 'classnames'
 import { upperFirst, lowerCase } from 'lodash'
 import { Form } from 'reactstrap'
-import { SearchButton } from '../../../../search/input/SearchButton'
 
 export interface ChangesetFilters {
     externalState: ChangesetExternalState | null
@@ -108,39 +107,53 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
 
     return (
         <>
-            <div className="form-inline flex-grow-1 m-0 my-2">
-                <Form className="w-100 d-flex" onSubmit={onSubmit}>
-                    <input
-                        className="form-control w-100 changeset-filter__search"
-                        type="text"
-                        ref={searchElement}
-                        defaultValue={search}
-                        placeholder="Search"
-                    />
-                    <SearchButton noHelp={true} />
-                </Form>
+            <div className="row">
+                <div className="m-0 col">
+                    <Form className="form-inline d-flex my-2" onSubmit={onSubmit}>
+                        <input
+                            className="form-control flex-grow-1 changeset-filter__search"
+                            type="text"
+                            ref={searchElement}
+                            defaultValue={search}
+                            placeholder="Search"
+                        />
+                    </Form>
+                </div>
+                <div className="m-0 my-2 col-auto">
+                    <div className="form-inline row">
+                        <ChangesetFilter<ChangesetUIState>
+                            values={Object.values(ChangesetUIState)}
+                            label="Changeset state"
+                            selected={uiState}
+                            onChange={setUIState}
+                            className="col ml-2"
+                        />
+                        <ChangesetFilter<ChangesetCheckState>
+                            values={Object.values(ChangesetCheckState)}
+                            label="Check state"
+                            selected={checkState}
+                            onChange={setCheckState}
+                            className="col ml-2"
+                        />
+                        <ChangesetFilter<ChangesetReviewState>
+                            values={Object.values(ChangesetReviewState)}
+                            label="Review state"
+                            selected={reviewState}
+                            onChange={setReviewState}
+                            className="col ml-2"
+                        />
+                    </div>
+                </div>
             </div>
-            <div className="flex-grow-1" />
-            <div className="form-inline m-0 my-2">
-                <ChangesetUIStateFilter
-                    values={Object.values(ChangesetUIState)}
-                    selected={uiState}
-                    onChange={setUIState}
-                    className="mr-2"
-                />
-                <ChangesetFilter<ChangesetCheckState>
-                    values={Object.values(ChangesetCheckState)}
-                    label="Check state"
-                    selected={checkState}
-                    onChange={setCheckState}
-                    className="mr-2"
-                />
-                <ChangesetFilter<ChangesetReviewState>
-                    values={Object.values(ChangesetReviewState)}
-                    label="Review state"
-                    selected={reviewState}
-                    onChange={setReviewState}
-                />
+            <div className="row">
+                <div className="m-0 col d-flex">
+                    <div className="flex-grow-1">this is a thing</div>
+                </div>
+                <div className="m-0 my-2 col-auto">
+                    <select>
+                        <option>this is a non-expanding thing</option>
+                    </select>
+                </div>
             </div>
         </>
     )
@@ -175,28 +188,6 @@ export const ChangesetFilter = <T extends string>({
             ))}
         </select>
     </>
-)
-
-export interface ChangesetUIStateFilterProps {
-    values: ChangesetUIState[]
-    selected: ChangesetUIState | undefined
-    onChange: (value: ChangesetUIState | undefined) => void
-    className?: string
-}
-
-export const ChangesetUIStateFilter: React.FunctionComponent<ChangesetUIStateFilterProps> = ({
-    values,
-    selected,
-    onChange,
-    className,
-}) => (
-    <ChangesetFilter
-        className="d-block mr-2"
-        label="Changeset state"
-        values={values}
-        selected={selected}
-        onChange={onChange}
-    />
 )
 
 function changesetUIStateToChangesetFilters(

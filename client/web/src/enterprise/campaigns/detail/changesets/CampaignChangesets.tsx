@@ -152,9 +152,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     return (
         <>
             {!hideFilters && (
-                <div className="d-sm-flex justify-content-end">
-                    <ChangesetFilterRow history={history} location={location} onFiltersChange={setChangesetFilters} />
-                </div>
+                <ChangesetFilterRow history={history} location={location} onFiltersChange={setChangesetFilters} />
             )}
             <div className="list-group position-relative" ref={nextContainerElement}>
                 <FilteredConnection<ChangesetFields, Omit<ChangesetNodeProps, 'node'>>
