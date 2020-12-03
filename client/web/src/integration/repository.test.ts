@@ -386,7 +386,7 @@ describe('Repository', () => {
             // Assert breadcrumb order
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
             assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', clickedFileName])
 
@@ -464,7 +464,7 @@ describe('Repository', () => {
 
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
             assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', filePath])
 
@@ -535,7 +535,7 @@ describe('Repository', () => {
 
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
             assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', 'readme.md'])
         })
@@ -572,7 +572,7 @@ describe('Repository', () => {
 
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
             assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', 'readme.md'])
         })
