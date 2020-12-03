@@ -807,6 +807,8 @@ func (s *DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes m
 
 	var q *sqlf.Query
 
+	// When upserting sources we only want to perform delete statements when there are actual deletes that need to happen
+	// so that we don't inadvertently trigger trig_soft_delete_orphan_repo_by_external_service_repo
 	if len(deletes) > 0 {
 		deletedSources := makeSourceSlices(deletes)
 		q = sqlf.Sprintf(upsertSourcesWithDeletesQueryFmtstr,
