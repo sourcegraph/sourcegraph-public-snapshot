@@ -50,10 +50,6 @@ var (
 		Name: "src_gitserver_repos_removed_disk_pressure",
 		Help: "number of repos removed due to not enough disk space",
 	})
-	janitorDuration = promauto.NewHistogram(prometheus.HistogramOpts{
-		Name: "src_gitserver_janitor_duration_seconds",
-		Help: "duration of the gitserver janitor background job",
-	})
 	janitorRunning = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_janitor_running",
 		Help: "set to 1 when the gitserver janitor background job is running",
@@ -74,9 +70,7 @@ const reposStatsName = "repos-stats.json"
 // 4. Reclone repos after a while. (simulate git gc)
 func (s *Server) cleanupRepos() {
 	janitorRunning.Set(1)
-	start := time.Now()
 	defer func() {
-		janitorDuration.Observe(time.Since(start).Seconds())
 		janitorRunning.Set(0)
 	}()
 
