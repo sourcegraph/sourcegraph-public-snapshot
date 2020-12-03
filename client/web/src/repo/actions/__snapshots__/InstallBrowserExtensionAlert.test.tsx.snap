@@ -6,7 +6,6 @@ exports[`InstallBrowserExtensionAlert FirefoxAddonAlert (bitbucketServer) displa
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "bitbucketServer",
         "url": "",
       },
@@ -90,7 +89,6 @@ exports[`InstallBrowserExtensionAlert FirefoxAddonAlert (bitbucketServer) displa
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "bitbucketServer",
         "url": "",
       },
@@ -159,7 +157,6 @@ exports[`InstallBrowserExtensionAlert FirefoxAddonAlert (github) displays Firefo
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "github",
         "url": "",
       },
@@ -243,7 +240,6 @@ exports[`InstallBrowserExtensionAlert FirefoxAddonAlert (github) displays normal
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "github",
         "url": "",
       },
@@ -312,7 +308,6 @@ exports[`InstallBrowserExtensionAlert FirefoxAddonAlert (gitlab) displays Firefo
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "gitlab",
         "url": "",
       },
@@ -396,7 +391,6 @@ exports[`InstallBrowserExtensionAlert FirefoxAddonAlert (gitlab) displays normal
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "gitlab",
         "url": "",
       },
@@ -465,7 +459,6 @@ exports[`InstallBrowserExtensionAlert FirefoxAddonAlert (phabricator) displays F
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "phabricator",
         "url": "",
       },
@@ -576,7 +569,6 @@ exports[`InstallBrowserExtensionAlert FirefoxAddonAlert (phabricator) displays n
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "phabricator",
         "url": "",
       },

@@ -89,7 +89,6 @@ for (const serviceType of services) {
                     codeHostIntegrationMessaging="native-integration"
                     externalURLs={[
                         {
-                            __typename: 'ExternalLink',
                             url: '',
                             serviceType,
                         },

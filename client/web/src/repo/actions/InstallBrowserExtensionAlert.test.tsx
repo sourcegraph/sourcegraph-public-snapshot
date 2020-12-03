@@ -38,7 +38,6 @@ describe('InstallBrowserExtensionAlert', () => {
                                 serviceType
                                     ? [
                                           {
-                                              __typename: 'ExternalLink',
                                               url: '',
                                               serviceType,
                                           },
@@ -62,7 +61,6 @@ describe('InstallBrowserExtensionAlert', () => {
                                 serviceType
                                     ? [
                                           {
-                                              __typename: 'ExternalLink',
                                               url: '',
                                               serviceType,
                                           },
