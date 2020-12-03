@@ -510,7 +510,7 @@ const markFailedQuery = `
 -- source: internal/workerutil/store.go:MarkFailed
 UPDATE %s
 SET {state} = 'failed',
-    {finished_at} = clock_timestamp(),
+	{finished_at} = clock_timestamp(),
 	{failure_message} = %s,
 	{num_failures} = {num_failures} + 1
 WHERE {id} = %s AND ({state} = 'processing' OR {state} = 'completed')
