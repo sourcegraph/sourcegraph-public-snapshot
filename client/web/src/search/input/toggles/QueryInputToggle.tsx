@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useCallback, useEffect, useRef, useMemo } from 'react'
 import * as H from 'history'
-import { Subscription, fromEvent } from 'rxjs'
+import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { PatternTypeProps, CaseSensitivityProps } from '../..'
 import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
@@ -34,68 +34,57 @@ export interface ToggleProps extends PatternTypeProps, CaseSensitivityProps {
 /**
  * A toggle displayed in the QueryInput.
  */
-export class QueryInputToggle extends React.Component<ToggleProps> {
-    private subscriptions = new Subscription()
-    private toggleCheckbox = React.createRef<HTMLDivElement>()
+export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggle, ...props }) => {
+    const toggleCheckbox = useRef<HTMLDivElement | null>(null)
 
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(
-                    filter(
-                        event =>
-                            document.activeElement === this.toggleCheckbox.current &&
-                            (event.key === Key.Enter || event.key === ' ')
-                    )
-                )
-                .subscribe(event => {
-                    event.preventDefault()
-                    this.props.onToggle()
-                })
-        )
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        const Icon = this.props.icon
-
-        let tooltipValue = `${this.props.isActive ? 'Disable' : 'Enable'} ${this.props.title.toLowerCase()}`
-        let disabled = false
-        let onToggle = this.props.onToggle
-        if (this.props.disableOn) {
-            for (const rule of this.props.disableOn) {
-                if (rule.condition) {
-                    disabled = true
-                    tooltipValue = rule.reason
-                    onToggle = (): void => undefined // Make the button untoggleable.
-                    break
-                }
-            }
+    const disabledRule = useMemo(() => props.disableOn?.find(({ condition }) => condition), [props.disableOn])
+    const onCheckboxToggled = useCallback(() => {
+        if (disabledRule) {
+            return
         }
+        onToggle()
+    }, [disabledRule, onToggle])
+    const tooltipValue = useMemo(
+        () => disabledRule?.reason ?? `${props.isActive ? 'Disable' : 'Enable'} ${props.title.toLowerCase()}`,
+        [disabledRule, props.isActive, props.title]
+    )
+    useEffect(() => {
+        const subscription = fromEvent<KeyboardEvent>(window, 'keydown')
+            .pipe(
+                filter(
+                    event =>
+                        document.activeElement === toggleCheckbox.current &&
+                        (event.key === Key.Enter || event.key === ' ')
+                )
+            )
+            .subscribe(event => {
+                event.preventDefault()
+                onCheckboxToggled()
+            })
+        return () => subscription.unsubscribe()
+    }, [onCheckboxToggled])
 
-        return (
-            <div
-                ref={this.toggleCheckbox}
-                onClick={onToggle}
-                className={classNames(
-                    'btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle',
-                    this.props.className,
-                    { disabled },
-                    { 'toggle-container__toggle--active': this.props.isActive },
-                    this.props.activeClassName
-                )}
-                role="checkbox"
-                aria-disabled={disabled}
-                aria-checked={this.props.isActive}
-                aria-label={`${this.props.title} toggle`}
-                tabIndex={0}
-                data-tooltip={tooltipValue}
-            >
-                <Icon />
-            </div>
-        )
-    }
+    const Icon = props.icon
+
+    return (
+        <div
+            ref={toggleCheckbox}
+            onClick={onCheckboxToggled}
+            className={classNames(
+                'btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle',
+                props.className,
+                { disabled: !!disabledRule },
+                { 'toggle-container__toggle--active': props.isActive },
+                props.activeClassName
+            )}
+            role="checkbox"
+            aria-disabled={!!disabledRule}
+            aria-checked={props.isActive}
+            aria-label={`${props.title} toggle`}
+            tabIndex={0}
+            data-tooltip={tooltipValue}
+        >
+            <Icon />
+        </div>
+    )
 }
