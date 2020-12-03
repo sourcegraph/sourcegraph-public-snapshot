@@ -1,8 +1,9 @@
-<svg version="1.1" viewBox="0.0 0.0 960.0 720.0" fill="none" stroke="none" stroke-linecap="square" stroke-miterlimit="10" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg">
+<?xml version="1.0" encoding="utf-8"?>
+<svg viewBox="0 0 500 320" fill="none" stroke="none" stroke-linecap="square" stroke-miterlimit="10" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 	<clipPath id="p.0">
 		<path d="m0 0l960.0 0l0 720.0l-960.0 0l0 -720.0z" clip-rule="nonzero" />
 	</clipPath>
-	<g clip-path="url(#p.0)">
+	<g clip-path="url(#p.0)" transform="matrix(0.862588, 0, 0, 0.904847, -214.481354, 32.52145)" style="">
 		<path fill="#000000" fill-opacity="0.0" d="m0 0l960.0 0l0 720.0l-960.0 0z" fill-rule="evenodd" />
 		<path fill="#cfe2f3" d="m508.14435 40.965878l296.66144 0l0 193.5748l-296.66144 0z" fill-rule="evenodd" />
 		<path stroke="#000000" stroke-width="1.0" stroke-linejoin="round" stroke-linecap="butt" d="m508.14435 40.965878l296.66144 0l0 193.5748l-296.66144 0z" fill-rule="evenodd" />
