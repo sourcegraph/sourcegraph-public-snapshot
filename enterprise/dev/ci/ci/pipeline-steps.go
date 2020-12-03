@@ -290,6 +290,16 @@ func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 				Env:     env,
 			}),
 		)
+		pipeline.AddTrigger(":chromium: Trigger Code Intel QA",
+			bk.Trigger("code-intel-qa"),
+			bk.Async(async),
+			bk.Build(bk.BuildOptions{
+				Message: os.Getenv("BUILDKITE_MESSAGE"),
+				Commit:  c.commit,
+				Branch:  c.branch,
+				Env:     env,
+			}),
+		)
 	}
 }
 

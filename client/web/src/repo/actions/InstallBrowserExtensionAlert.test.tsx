@@ -17,17 +17,7 @@ describe('InstallBrowserExtensionAlert', () => {
                             codeHostIntegrationMessaging={
                                 integrationType === 'native integration' ? 'native-integration' : 'browser-extension'
                             }
-                            externalURLs={
-                                serviceType
-                                    ? [
-                                          {
-                                              __typename: 'ExternalLink',
-                                              url: '',
-                                              serviceType,
-                                          },
-                                      ]
-                                    : []
-                            }
+                            externalURLs={serviceType ? [{ url: '', serviceType }] : []}
                         />
                     )
                 ).toMatchSnapshot()

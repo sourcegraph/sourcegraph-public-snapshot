@@ -692,7 +692,6 @@ exports[`InstallBrowserExtensionAlert bitbucketServer (Chrome) 1`] = `
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "bitbucketServer",
         "url": "",
       },
@@ -760,7 +759,6 @@ exports[`InstallBrowserExtensionAlert bitbucketServer (native integration) 1`] =
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "bitbucketServer",
         "url": "",
       },
@@ -833,7 +831,6 @@ exports[`InstallBrowserExtensionAlert bitbucketServer (non-Chrome) 1`] = `
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "bitbucketServer",
         "url": "",
       },
@@ -901,7 +898,6 @@ exports[`InstallBrowserExtensionAlert github (Chrome) 1`] = `
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "github",
         "url": "",
       },
@@ -969,7 +965,6 @@ exports[`InstallBrowserExtensionAlert github (native integration) 1`] = `
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "github",
         "url": "",
       },
@@ -1042,7 +1037,6 @@ exports[`InstallBrowserExtensionAlert github (non-Chrome) 1`] = `
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "github",
         "url": "",
       },
@@ -1110,7 +1104,6 @@ exports[`InstallBrowserExtensionAlert gitlab (Chrome) 1`] = `
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "gitlab",
         "url": "",
       },
@@ -1178,7 +1171,6 @@ exports[`InstallBrowserExtensionAlert gitlab (native integration) 1`] = `
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "gitlab",
         "url": "",
       },
@@ -1251,7 +1243,6 @@ exports[`InstallBrowserExtensionAlert gitlab (non-Chrome) 1`] = `
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "gitlab",
         "url": "",
       },
@@ -1346,7 +1337,6 @@ exports[`InstallBrowserExtensionAlert phabricator (Chrome) 1`] = `
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "phabricator",
         "url": "",
       },
@@ -1441,7 +1431,6 @@ exports[`InstallBrowserExtensionAlert phabricator (native integration) 1`] = `
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "phabricator",
         "url": "",
       },
@@ -1543,7 +1532,6 @@ exports[`InstallBrowserExtensionAlert phabricator (non-Chrome) 1`] = `
   externalURLs={
     Array [
       Object {
-        "__typename": "ExternalLink",
         "serviceType": "phabricator",
         "url": "",
       },

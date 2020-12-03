@@ -1,6 +1,5 @@
 import React, { FunctionComponent, useCallback, useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import {
     FilteredConnection,
@@ -8,12 +7,12 @@ import {
     FilteredConnectionQueryArguments,
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
-import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
+import { LsifIndexFields, LSIFIndexState, SettingsAreaRepositoryFields } from '../../../graphql-operations'
 import { fetchLsifIndexes as defaultFetchLsifIndexes } from './backend'
 import { CodeIntelIndexNode, CodeIntelIndexNodeProps } from './CodeIntelIndexNode'
 
 export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
-    repo?: GQL.IRepository
+    repo?: SettingsAreaRepositoryFields
     fetchLsifIndexes?: typeof defaultFetchLsifIndexes
     now?: () => Date
 }
