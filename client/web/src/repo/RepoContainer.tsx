@@ -377,7 +377,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         HAS_DISMISSED_FIREFOX_ALERT_KEY,
         false
     )
-    const showFirefoxAddonAlert = !hasDismissedFirefoxAlert && isFirefoxCampaignActive(new Date())
+    const showFirefoxAddonAlert = !hasDismissedFirefoxAlert && isFirefoxCampaignActive(Date.now())
 
     const onAlertDismissed = useCallback(() => {
         onExtensionAlertDismissed()

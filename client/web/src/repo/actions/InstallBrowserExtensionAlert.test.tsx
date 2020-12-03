@@ -40,7 +40,7 @@ describe('InstallBrowserExtensionAlert', () => {
                 expect(
                     mount(
                         <InstallBrowserExtensionAlert
-                            showFirefoxAddonAlert={isFirefoxCampaignActive(new Date('December 23, 2020'))}
+                            showFirefoxAddonAlert={isFirefoxCampaignActive(new Date('December 23, 2020').getTime())}
                             onAlertDismissed={noop}
                             isChrome={true}
                             codeHostIntegrationMessaging="browser-extension"
@@ -64,7 +64,7 @@ describe('InstallBrowserExtensionAlert', () => {
                 expect(
                     mount(
                         <InstallBrowserExtensionAlert
-                            showFirefoxAddonAlert={isFirefoxCampaignActive(new Date('January 2, 2021'))}
+                            showFirefoxAddonAlert={isFirefoxCampaignActive(new Date('January 2, 2021').getTime())}
                             onAlertDismissed={noop}
                             isChrome={true}
                             codeHostIntegrationMessaging="browser-extension"

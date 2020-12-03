@@ -144,10 +144,11 @@ interface FirefoxAlertProps {
     icon: JSX.Element
 }
 
+const FIREFOX_ALERT_START_DATE = new Date('December 6, 2020')
 export const FIREFOX_ALERT_FINAL_DATE = new Date('December 31, 2020')
 
-export function isFirefoxCampaignActive(currentDate: Date): boolean {
-    return currentDate.getTime() < FIREFOX_ALERT_FINAL_DATE.getTime()
+export function isFirefoxCampaignActive(currentMs: number): boolean {
+    return currentMs < FIREFOX_ALERT_FINAL_DATE.getTime() && currentMs > FIREFOX_ALERT_START_DATE.getTime()
 }
 
 /**
