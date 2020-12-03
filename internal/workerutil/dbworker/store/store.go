@@ -487,7 +487,7 @@ func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string) 
 }
 
 const markErroredQuery = `
--- source: internal/workerutil/store.go:MarkErrored|MarkFailed
+-- source: internal/workerutil/store.go:MarkErrored
 UPDATE %s
 SET {state} = CASE WHEN {num_failures} + 1 = %d THEN 'failed' ELSE 'errored' END,
 	{finished_at} = clock_timestamp(),
