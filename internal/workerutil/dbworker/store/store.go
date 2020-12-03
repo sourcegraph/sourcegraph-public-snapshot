@@ -507,7 +507,7 @@ func (s *store) MarkFailed(ctx context.Context, id int, failureMessage string) (
 }
 
 const markFailedQuery = `
--- source: internal/workerutil/store.go:MarkErrored|MarkFailed
+-- source: internal/workerutil/store.go:MarkFailed
 UPDATE %s
 SET {state} = 'failed',
     {finished_at} = clock_timestamp(),
