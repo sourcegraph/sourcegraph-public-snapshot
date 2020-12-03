@@ -110,7 +110,7 @@ func populateUploadsForCommit(uploads map[string]map[string]UploadMeta, graph ma
 func combineVisibleUploads(ancestorVisibleUploads, descendantVisibleUploads map[string]map[string]UploadMeta, order []string) map[string][]UploadMeta {
 	combined := make(map[string][]UploadMeta, len(order))
 	for _, commit := range order {
-		combined[commit] = combineVisibleUploadsForCommit(ancestorVisibleUploads, descendantVisibleUploads, commit)
+		combined[commit] = combineVisibleUploadsForCommit(ancestorVisibleUploads[commit], descendantVisibleUploads[commit])
 	}
 
 	return combined
@@ -125,15 +125,15 @@ func combineVisibleUploads(ancestorVisibleUploads, descendantVisibleUploads map[
 //   3. the set of descendant-visible uploads where there exists an ancestor-visible upload with an
 //      equivalent root and indexer value but a greater distance. In this case, the ancestor-visible
 //      upload is also present in the list, but is flagged as overwritten.
-func combineVisibleUploadsForCommit(ancestorVisibleUploads, descendantVisibleUploads map[string]map[string]UploadMeta, commit string) []UploadMeta {
-	capacity := len(ancestorVisibleUploads[commit])
-	if temp := len(descendantVisibleUploads[commit]); temp > capacity {
+func combineVisibleUploadsForCommit(ancestorVisibleUploads, descendantVisibleUploads map[string]UploadMeta) []UploadMeta {
+	capacity := len(ancestorVisibleUploads)
+	if temp := len(descendantVisibleUploads); temp > capacity {
 		capacity = temp
 	}
 	uploads := make([]UploadMeta, 0, capacity)
 
-	for token, ancestorUpload := range ancestorVisibleUploads[commit] {
-		if descendantUpload, ok := descendantVisibleUploads[commit][token]; ok {
+	for token, ancestorUpload := range ancestorVisibleUploads {
+		if descendantUpload, ok := descendantVisibleUploads[token]; ok {
 			if replaces(descendantUpload, ancestorUpload) {
 				// Clear direction flag
 				descendantUpload.Flags &^= FlagAncestorVisible
@@ -149,8 +149,8 @@ func combineVisibleUploadsForCommit(ancestorVisibleUploads, descendantVisibleUpl
 		uploads = append(uploads, ancestorUpload)
 	}
 
-	for token, descendantUpload := range descendantVisibleUploads[commit] {
-		if _, ok := ancestorVisibleUploads[commit][token]; !ok {
+	for token, descendantUpload := range descendantVisibleUploads {
+		if _, ok := ancestorVisibleUploads[token]; !ok {
 			// Clear direction flag
 			descendantUpload.Flags &^= FlagAncestorVisible
 			uploads = append(uploads, descendantUpload)
