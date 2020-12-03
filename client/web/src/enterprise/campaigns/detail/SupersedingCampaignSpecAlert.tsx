@@ -5,7 +5,7 @@ import { Link } from '../../../../../shared/src/components/Link'
 import { SupersedingCampaignSpecFields } from '../../../graphql-operations'
 
 export interface SupersedingCampaignSpecAlertProps {
-    spec: SupersedingCampaignSpecFields | null | undefined
+    spec: SupersedingCampaignSpecFields | null
 }
 
 export const SupersedingCampaignSpecAlert: React.FunctionComponent<SupersedingCampaignSpecAlertProps> = ({ spec }) => {
@@ -17,11 +17,11 @@ export const SupersedingCampaignSpecAlert: React.FunctionComponent<SupersedingCa
     return (
         <div className="alert alert-info d-flex align-items-center">
             <div className="d-none d-md-block">
-                <CreationIcon className="mr-2" size={40} />
+                <CreationIcon className="icon icon-inline mr-2" />
             </div>
             <div className="flex-grow-1">
-                A <Link to={applyURL}>newer version of this campaign spec</Link> was uploaded{' '}
-                <Timestamp date={createdAt} />, and has not yet been applied.
+                A <Link to={applyURL}>newer campaign spec</Link> was uploaded <Timestamp date={createdAt} />, and has
+                not yet been applied.
             </div>
         </div>
     )
