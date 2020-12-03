@@ -34,7 +34,7 @@ describe('InstallBrowserExtensionAlert', () => {
             })
         }
 
-        // TODO(tj): Remove this after the final date (December 21, 2020)
+        // TODO(tj): Remove this after the final date (December 31, 2020)
         describe(`FirefoxAddonAlert (${serviceType ?? 'unknown service type'})`, () => {
             test('displays alert before the final date', () => {
                 expect(

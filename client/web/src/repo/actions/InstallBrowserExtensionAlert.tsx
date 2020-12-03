@@ -139,7 +139,7 @@ interface FirefoxAlertProps {
     nextSiblingAlert?: boolean
 }
 
-const FIREFOX_ALERT_FINAL_DATE = new Date('December 21, 2020')
+const FIREFOX_ALERT_FINAL_DATE = new Date('December 31, 2020')
 
 /**
  * Displays an alert to notify users that the Firefox addon is back. Doesn't do anything

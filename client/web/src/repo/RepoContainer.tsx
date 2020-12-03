@@ -376,6 +376,10 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     }, [onExtensionAlertDismissed, setHasDismissedExtensionAlert])
 
     // TEMPORARY: Alert to notify users that the Firefox addon is back
+    // Every user should see this alert, even users that have previously dismissed
+    // the "install the browser extension" alert. Treat dismissal of this alert
+    // as dismissal of the normal browser extension alert.
+    // Don't show the firefox alert after December 31, 2020
     const [hasDismissedFirefoxAlert, setHasDismissedFirefoxAlert] = useLocalStorage(
         HAS_DISMISSED_FIREFOX_ALERT_KEY,
         false
