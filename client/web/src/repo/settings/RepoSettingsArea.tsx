@@ -28,7 +28,6 @@ const NotFoundPage: React.FunctionComponent = () => (
 
 export interface RepoSettingsAreaRouteContext extends TelemetryProps {
     repo: SettingsAreaRepositoryFields
-    onDidUpdateRepository: (update: Partial<RepositoryFields>) => void
 }
 
 export interface RepoSettingsAreaRoute extends RouteDescriptor<RepoSettingsAreaRouteContext> {}
@@ -38,7 +37,6 @@ interface Props extends RouteComponentProps<{}>, BreadcrumbSetters, TelemetryPro
     repoSettingsSidebarGroups: RepoSettingsSideBarGroups
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
-    onDidUpdateRepository: (update: Partial<RepositoryFields>) => void
     history: H.History
 }
 
@@ -90,7 +88,6 @@ export const RepoSettingsArea: React.FunctionComponent<Props> = ({
     }
     const context: RepoSettingsAreaRouteContext = {
         repo: repoOrError,
-        onDidUpdateRepository: props.onDidUpdateRepository,
         telemetryService: props.telemetryService,
     }
 
