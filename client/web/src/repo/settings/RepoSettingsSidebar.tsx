@@ -1,7 +1,6 @@
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import {
     SIDEBAR_BUTTON_CLASS,
     SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS,
@@ -9,6 +8,7 @@ import {
     SidebarGroupHeader,
     SidebarGroup,
 } from '../../components/Sidebar'
+import { SettingsAreaRepositoryFields } from '../../graphql-operations'
 import { NavGroupDescriptor } from '../../util/contributions'
 
 export interface RepoSettingsSideBarGroup extends NavGroupDescriptor {}
@@ -18,7 +18,7 @@ export type RepoSettingsSideBarGroups = readonly RepoSettingsSideBarGroup[]
 interface Props extends RouteComponentProps<{}> {
     repoSettingsSidebarGroups: RepoSettingsSideBarGroups
     className?: string
-    repo?: GQL.IRepository
+    repo?: SettingsAreaRepositoryFields
 }
 
 /**

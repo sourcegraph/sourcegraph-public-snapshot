@@ -13,14 +13,15 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { checkMirrorRepositoryConnection, updateMirrorRepository } from '../../site-admin/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 import { DirectImportRepoAlert } from '../DirectImportRepoAlert'
-import { fetchRepository } from './backend'
+import { fetchSettingsAreaRepository } from './backend'
 import { ActionContainer, BaseActionContainer } from './components/ActionContainer'
 import { ErrorAlert } from '../../components/alerts'
 import { asError } from '../../../../shared/src/util/errors'
 import * as H from 'history'
+import { RepositoryFields, SettingsAreaRepositoryFields } from '../../graphql-operations'
 
 interface UpdateMirrorRepositoryActionContainerProps {
-    repo: GQL.IRepository
+    repo: SettingsAreaRepositoryFields
     onDidUpdateRepository: () => void
     disabled: boolean
     disabledReason: string | undefined
@@ -126,7 +127,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
 }
 
 interface CheckMirrorRepositoryConnectionActionContainerProps {
-    repo: GQL.IRepository
+    repo: SettingsAreaRepositoryFields
     onDidUpdateReachability: (reachable: boolean | undefined) => void
     history: H.History
 }
@@ -239,8 +240,8 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
 }
 
 interface Props extends RouteComponentProps<{}> {
-    repo: GQL.IRepository
-    onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
+    repo: SettingsAreaRepositoryFields
+    onDidUpdateRepository: (update: Partial<RepositoryFields>) => void
     history: H.History
 }
 
@@ -248,7 +249,7 @@ interface State {
     /**
      * The repository object, refreshed after we make changes that modify it.
      */
-    repo: GQL.IRepository
+    repo: SettingsAreaRepositoryFields
 
     /**
      * Whether the repository connection check reports that the repository is reachable.
@@ -279,7 +280,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
         eventLogger.logViewEvent('RepoSettingsMirror')
 
         this.subscriptions.add(
-            this.repoUpdates.pipe(switchMap(() => fetchRepository(this.props.repo.name))).subscribe(
+            this.repoUpdates.pipe(switchMap(() => fetchSettingsAreaRepository(this.props.repo.name))).subscribe(
                 repo => this.setState({ repo }),
                 error => this.setState({ error: asError(error).message })
             )

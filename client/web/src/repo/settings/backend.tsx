@@ -1,59 +1,71 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { gql } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../../shared/src/util/errors'
-import { queryGraphQL } from '../../backend/graphql'
+import { RepoNotFoundError } from '../../../../shared/src/backend/errors'
+import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
+import { requestGraphQL } from '../../backend/graphql'
+import {
+    SettingsAreaRepositoryFields,
+    SettingsAreaRepositoryResult,
+    SettingsAreaRepositoryVariables,
+} from '../../graphql-operations'
+
+export const settingsAreaRepositoryFragment = gql`
+    fragment SettingsAreaRepositoryFields on Repository {
+        id
+        name
+        url
+        isPrivate
+        viewerCanAdminister
+        mirrorInfo {
+            remoteURL
+            cloneInProgress
+            cloneProgress
+            cloned
+            updatedAt
+            updateSchedule {
+                due
+                index
+                total
+            }
+            updateQueue {
+                updating
+                index
+                total
+            }
+        }
+        externalServices {
+            nodes {
+                id
+                kind
+                displayName
+            }
+        }
+        permissionsInfo {
+            syncedAt
+            updatedAt
+        }
+    }
+`
 
 /**
  * Fetches a repository.
  */
-export function fetchRepository(name: string): Observable<GQL.IRepository> {
-    return queryGraphQL(
+export function fetchSettingsAreaRepository(name: string): Observable<SettingsAreaRepositoryFields> {
+    return requestGraphQL<SettingsAreaRepositoryResult, SettingsAreaRepositoryVariables>(
         gql`
-            query Repository($name: String!) {
+            query SettingsAreaRepository($name: String!) {
                 repository(name: $name) {
-                    id
-                    name
-                    url
-                    isPrivate
-                    viewerCanAdminister
-                    mirrorInfo {
-                        remoteURL
-                        cloneInProgress
-                        cloneProgress
-                        cloned
-                        updatedAt
-                        updateSchedule {
-                            due
-                            index
-                            total
-                        }
-                        updateQueue {
-                            updating
-                            index
-                            total
-                        }
-                    }
-                    externalServices {
-                        nodes {
-                            id
-                            kind
-                            displayName
-                        }
-                    }
-                    permissionsInfo {
-                        syncedAt
-                        updatedAt
-                    }
+                    ...SettingsAreaRepositoryFields
                 }
             }
+            ${settingsAreaRepositoryFragment}
         `,
         { name }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.repository || !data.repository.externalServices) {
-                throw createAggregateError(errors)
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.repository) {
+                throw new RepoNotFoundError(name)
             }
             return data.repository
         })

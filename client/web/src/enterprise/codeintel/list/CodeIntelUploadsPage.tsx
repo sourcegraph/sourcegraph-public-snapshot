@@ -1,6 +1,5 @@
 import React, { FunctionComponent, useCallback, useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import {
     FilteredConnection,
@@ -8,12 +7,12 @@ import {
     FilteredConnectionQueryArguments,
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
-import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
+import { LsifUploadFields, LSIFUploadState, SettingsAreaRepositoryFields } from '../../../graphql-operations'
 import { fetchLsifUploads as defaultFetchLsifUploads } from './backend'
 import { CodeIntelUploadNode, CodeIntelUploadNodeProps } from './CodeIntelUploadNode'
 
 export interface CodeIntelUploadsPageProps extends RouteComponentProps<{}>, TelemetryProps {
-    repo?: GQL.IRepository
+    repo?: SettingsAreaRepositoryFields
     fetchLsifUploads?: typeof defaultFetchLsifUploads
     now?: () => Date
 }
