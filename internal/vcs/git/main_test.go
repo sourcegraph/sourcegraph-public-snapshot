@@ -59,6 +59,9 @@ func init() {
 
 	srv := &http.Server{Handler: (&server.Server{
 		ReposDir: filepath.Join(root, "repos"),
+		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
+			return filepath.Join(root, "remotes", string(name)), nil
+		},
 	}).Handler()}
 	go func() {
 		if err := srv.Serve(l); err != nil {
@@ -121,8 +124,10 @@ func MakeGitRepository(t testing.TB, cmds ...string) gitserver.Repo {
 	t.Helper()
 	dir := InitGitRepository(t, cmds...)
 	repo := gitserver.Repo{Name: api.RepoName(filepath.Base(dir)), URL: dir}
-	if _, err := gitserver.DefaultClient.RequestRepoUpdate(context.Background(), repo, 0); err != nil {
+	if resp, err := gitserver.DefaultClient.RequestRepoUpdate(context.Background(), repo, 0); err != nil {
 		t.Fatal(err)
+	} else if resp.Error != "" {
+		t.Fatal(resp.Error)
 	}
 	return repo
 }

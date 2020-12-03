@@ -94,7 +94,7 @@ Install the indexer by running:
 
 
 2. A `dump.lsif` file should have been generated. This is file you are going to upload to your Sourcegraph instance.
-<img src="https://sourcegraphstatic.com/docs/images/code-intelligence/lsif-ts-dump2.png" class="screenshot center">
+<img src="https://sourcegraphstatic.com/docs/images/code-intelligence/lsif-ts-dump3.png" class="screenshot center">
 
 
 

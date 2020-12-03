@@ -133,3 +133,51 @@ func (c *Client) waitForReposByQuery(name, query string, repos ...string) ([]str
 
 	return nil, nil
 }
+
+// ExternalLink is a link to an external service.
+type ExternalLink struct {
+	URL         string `json:"url"`         // The URL to the resource
+	ServiceType string `json:"serviceType"` // The type of service that the URL points to
+}
+
+// FileExternalLinks external links for a file or directory in a repository.
+func (c *Client) FileExternalLinks(repoName, revision, filePath string) ([]*ExternalLink, error) {
+	const query = `
+query FileExternalLinks($repoName: String!, $revision: String!, $filePath: String!) {
+	repository(name: $repoName) {
+		commit(rev: $revision) {
+			file(path: $filePath) {
+				externalURLs {
+					... on ExternalLink {
+						url
+						serviceType
+					}
+				}
+			}
+		}
+	}
+}
+`
+	variables := map[string]interface{}{
+		"repoName": repoName,
+		"revision": revision,
+		"filePath": filePath,
+	}
+	var resp struct {
+		Data struct {
+			Repository struct {
+				Commit struct {
+					File struct {
+						ExternalURLs []*ExternalLink `json:"externalURLs"`
+					} `json:"file"`
+				} `json:"commit"`
+			} `json:"repository"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", "", query, variables, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	return resp.Data.Repository.Commit.File.ExternalURLs, nil
+}

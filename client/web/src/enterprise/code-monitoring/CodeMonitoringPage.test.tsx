@@ -8,8 +8,8 @@ import { ListCodeMonitors, ListUserCodeMonitorsVariables } from '../../graphql-o
 import sinon from 'sinon'
 import { mockCodeMonitorNodes } from './testing/util'
 
-const history = H.createBrowserHistory()
-
+const history = H.createBrowserHistory({})
+history.replace({ pathname: '/code-monitoring' })
 const additionalProps = {
     history,
     location: history.location,

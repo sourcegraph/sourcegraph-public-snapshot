@@ -36,15 +36,7 @@ export const lsifIndexFieldsFragment = gql`
         id
         inputCommit
         inputRoot
-        indexer
-        indexerArgs
-        outfile
-        logContents
-        dockerSteps {
-            root
-            image
-            commands
-        }
+        inputIndexer
         projectRoot {
             url
             path
@@ -58,11 +50,48 @@ export const lsifIndexFieldsFragment = gql`
                 abbreviatedOID
             }
         }
+        steps {
+            ...LsifIndexStepsFields
+        }
         state
         failure
         queuedAt
         startedAt
         finishedAt
         placeInQueue
+    }
+    fragment LsifIndexStepsFields on IndexSteps {
+        setup {
+            ...ExecutionLogEntryFields
+        }
+        preIndex {
+            root
+            image
+            commands
+            logEntry {
+                ...ExecutionLogEntryFields
+            }
+        }
+        index {
+            indexerArgs
+            outfile
+            logEntry {
+                ...ExecutionLogEntryFields
+            }
+        }
+        upload {
+            ...ExecutionLogEntryFields
+        }
+        teardown {
+            ...ExecutionLogEntryFields
+        }
+    }
+    fragment ExecutionLogEntryFields on ExecutionLogEntry {
+        key
+        command
+        startTime
+        exitCode
+        out
+        durationMilliseconds
     }
 `

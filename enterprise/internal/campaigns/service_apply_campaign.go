@@ -99,8 +99,11 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	defer func() { err = tx.Done(err) }()
 
 	if campaign.ID == 0 {
-		err := tx.CreateCampaign(ctx, campaign)
-		if err != nil {
+		if err := tx.CreateCampaign(ctx, campaign); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := tx.UpdateCampaign(ctx, campaign); err != nil {
 			return nil, err
 		}
 	}
@@ -119,25 +122,22 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	if err != nil {
 		return nil, err
 	}
+	if err := mappings.Hydrate(ctx, tx); err != nil {
+		return nil, err
+	}
 
 	// And execute the mapping.
-	rewirer := NewChangesetRewirer(mappings, campaign, tx, rstore)
+	rewirer := NewChangesetRewirer(mappings, campaign, rstore)
 	changesets, err := rewirer.Rewire(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Reset the attached changesets.
-	campaign.ChangesetIDs = []int64{}
+	// Upsert all changesets.
 	for _, changeset := range changesets {
 		if err := tx.UpsertChangeset(ctx, changeset); err != nil {
 			return nil, err
 		}
-		campaign.ChangesetIDs = append(campaign.ChangesetIDs, changeset.ID)
-	}
-
-	if err := tx.UpdateCampaign(ctx, campaign); err != nil {
-		return nil, err
 	}
 
 	return campaign, nil

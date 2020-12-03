@@ -768,6 +768,7 @@ func TestCreateCampaignsCredential(t *testing.T) {
 	}
 
 	input := map[string]interface{}{
+		"user":                graphqlbackend.MarshalUserID(userID),
 		"externalServiceKind": string(extsvc.KindGitHub),
 		"externalServiceURL":  "https://github.com/",
 		"credential":          "SOSECRET",
@@ -795,8 +796,8 @@ func TestCreateCampaignsCredential(t *testing.T) {
 }
 
 const mutationCreateCredential = `
-mutation($externalServiceKind: ExternalServiceKind!, $externalServiceURL: String!, $credential: String!) {
-  createCampaignsCredential(externalServiceKind: $externalServiceKind, externalServiceURL: $externalServiceURL, credential: $credential) { id }
+mutation($user: ID!, $externalServiceKind: ExternalServiceKind!, $externalServiceURL: String!, $credential: String!) {
+  createCampaignsCredential(user: $user, externalServiceKind: $externalServiceKind, externalServiceURL: $externalServiceURL, credential: $credential) { id }
 }
 `
 

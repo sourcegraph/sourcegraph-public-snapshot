@@ -45,11 +45,6 @@ echo "TEST: Running tests"
 # Run all tests, and error if one fails
 test_status=0
 pushd client/web
-yarn run test:regression:core || test_status=1
-yarn run test:regression:codeintel || test_status=1
-yarn run test:regression:config-settings || test_status=1
-yarn run test:regression:integrations || test_status=1
-yarn run test:regression:extensions || test_status=1
-yarn run test:regression:search || test_status=1
+yarn run test:regression || test_status=1
 popd
 exit $test_status

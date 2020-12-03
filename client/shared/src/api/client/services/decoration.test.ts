@@ -234,7 +234,7 @@ describe('fileDecorationColorForTheme', () => {
                 {
                     contentText: '',
                     color: 'red',
-                    selectedColor: 'orange',
+                    activeColor: 'orange',
                 },
                 false,
                 true
@@ -248,9 +248,9 @@ describe('fileDecorationColorForTheme', () => {
                 {
                     contentText: '',
                     color: 'red',
-                    selectedColor: 'orange',
+                    activeColor: 'orange',
                     dark: {
-                        selectedColor: 'teal',
+                        activeColor: 'teal',
                     },
                 },
                 false,

@@ -196,12 +196,7 @@ func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 		return nil, err
 	}
 
-	return &changesetSpecResolver{
-		store:         r.store,
-		httpFactory:   r.httpFactory,
-		changesetSpec: changesetSpec,
-		repoCtx:       ctx,
-	}, nil
+	return NewChangesetSpecResolver(ctx, r.store, r.httpFactory, changesetSpec)
 }
 
 func (r *Resolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignsCredentialResolver, error) {
@@ -418,13 +413,7 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 		return nil, err
 	}
 
-	resolver := &changesetSpecResolver{
-		store:         r.store,
-		httpFactory:   r.httpFactory,
-		changesetSpec: spec,
-		repoCtx:       ctx,
-	}
-	return resolver, nil
+	return NewChangesetSpecResolver(ctx, r.store, r.httpFactory, spec)
 }
 
 func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCampaignArgs) (graphqlbackend.CampaignResolver, error) {
@@ -724,10 +713,18 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 		return nil, err
 	}
 
-	// Check user is authenticated.
-	user := actor.FromContext(ctx)
-	if !user.IsAuthenticated() {
-		return nil, backend.ErrNotAuthenticated
+	userID, err := graphqlbackend.UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	if userID == 0 {
+		return nil, ErrIDIsZero{}
+	}
+
+	// 🚨 SECURITY: Check that the requesting user can create the credential.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+		return nil, err
 	}
 
 	// Need to validate externalServiceKind, otherwise this'll panic.
@@ -746,7 +743,7 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 		Domain:              db.UserCredentialDomainCampaigns,
 		ExternalServiceID:   args.ExternalServiceURL,
 		ExternalServiceType: extsvc.KindToType(kind),
-		UserID:              user.UID,
+		UserID:              userID,
 	}
 
 	// Throw error documented in schema.graphql.

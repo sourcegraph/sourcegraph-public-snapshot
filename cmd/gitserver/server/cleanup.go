@@ -50,6 +50,14 @@ var (
 		Name: "src_gitserver_repos_removed_disk_pressure",
 		Help: "number of repos removed due to not enough disk space",
 	})
+	janitorRunning = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_gitserver_janitor_running",
+		Help: "set to 1 when the gitserver janitor background job is running",
+	})
+	jobTimer = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "src_gitserver_janitor_job_duration_seconds",
+		Help: "Duration of the individual jobs within the gitserver janitor background job",
+	}, []string{"job_name", "dir"})
 )
 
 const reposStatsName = "repos-stats.json"
@@ -61,6 +69,11 @@ const reposStatsName = "repos-stats.json"
 // 3. Remove inactive repos on sourcegraph.com
 // 4. Reclone repos after a while. (simulate git gc)
 func (s *Server) cleanupRepos() {
+	janitorRunning.Set(1)
+	defer func() {
+		janitorRunning.Set(0)
+	}()
+
 	bCtx, bCancel := s.serverContext()
 	defer bCancel()
 
@@ -134,12 +147,7 @@ func (s *Server) cleanupRepos() {
 			log15.Warn("setting backed off reclone time failed", "repo", repo, "cloned", recloneTime, "reason", reason, "error", err)
 		}
 
-		remoteURL, err := repoRemoteURL(ctx, dir)
-		if err != nil {
-			return false, errors.Wrap(err, "failed to get remote URL")
-		}
-
-		if _, err := s.cloneRepo(ctx, repo, remoteURL, &cloneOptions{Block: true, Overwrite: true}); err != nil {
+		if _, err := s.cloneRepo(ctx, repo, &cloneOptions{Block: true, Overwrite: true}); err != nil {
 			return true, err
 		}
 		reposRecloned.Inc()
@@ -217,10 +225,12 @@ func (s *Server) cleanupRepos() {
 		gitDir := GitDir(dir)
 
 		for _, cfn := range cleanups {
+			start := time.Now()
 			done, err := cfn.Do(gitDir)
 			if err != nil {
 				log15.Error("error running cleanup command", "name", cfn.Name, "repo", gitDir, "error", err)
 			}
+			jobTimer.WithLabelValues(cfn.Name, dir).Observe(time.Since(start).Seconds())
 			if done {
 				break
 			}

@@ -71,14 +71,7 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
             <ChangesetSpecAction spec={node} className="visible-changeset-spec-node__action" />
             <div className="visible-changeset-spec-node__information">
                 <div className="d-flex flex-column">
-                    <h3>
-                        {node.description.__typename === 'ExistingChangesetReference' && (
-                            <span>Import changeset #{node.description.externalID}</span>
-                        )}
-                        {node.description.__typename === 'GitBranchChangesetDescription' && (
-                            <span>{node.description.title}</span>
-                        )}
-                    </h3>
+                    <ChangesetSpecTitle spec={node} />
                     <div className="mr-2">
                         <Link
                             to={node.description.baseRepository.url}
@@ -161,5 +154,25 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
                 </>
             )}
         </>
+    )
+}
+
+const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetSpecFields }> = ({ spec }) => {
+    if (spec.description.__typename === 'ExistingChangesetReference') {
+        return <h3>Import changeset #{spec.description.externalID}</h3>
+    }
+    if (
+        spec.operations.length === 0 ||
+        !spec.delta.titleChanged ||
+        !spec.changeset ||
+        spec.changeset.__typename !== 'ExternalChangeset'
+    ) {
+        return <h3>{spec.description.title}</h3>
+    }
+    return (
+        <h3>
+            <del className="text-danger">{spec.changeset.title}</del>{' '}
+            <span className="text-success">{spec.description.title}</span>
+        </h3>
     )
 }

@@ -23,7 +23,11 @@ import {
     ListCampaign,
     CampaignByNamespaceResult,
 } from '../graphql-operations'
-import { ExternalServiceKind, SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
+import {
+    ChangesetSpecOperation,
+    ExternalServiceKind,
+    SharedGraphQlOperations,
+} from '../../../shared/src/graphql-operations'
 
 const campaignListNode: ListCampaign = {
     id: 'campaign123',
@@ -583,6 +587,11 @@ describe('Campaigns', () => {
                                         expiresAt: addDays(new Date(), 3).toISOString(),
                                         id: 'changesetspec123',
                                         type: ChangesetSpecType.BRANCH,
+                                        operations: [ChangesetSpecOperation.PUSH, ChangesetSpecOperation.PUBLISH],
+                                        delta: {
+                                            titleChanged: false,
+                                        },
+                                        changeset: null,
                                     },
                                 ],
                                 pageInfo: {
@@ -685,7 +694,8 @@ describe('Campaigns', () => {
                 ...commonWebGraphQlResults,
                 ...mockCommonGraphQLResponses('user'),
                 UserCampaignsCodeHosts: () => ({
-                    currentUser: {
+                    node: {
+                        __typename: 'User',
                         campaignsCodeHosts: {
                             totalCount: 1,
                             pageInfo: {

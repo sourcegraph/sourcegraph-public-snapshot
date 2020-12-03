@@ -170,7 +170,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             // Do async search request
                             this.props
                                 .searchRequest(
-                                    caseSensitive ? `${query} case:yes` : query,
+                                    query,
                                     LATEST_VERSION,
                                     patternType,
                                     resolveVersionContext(versionContext, this.props.availableVersionContexts),

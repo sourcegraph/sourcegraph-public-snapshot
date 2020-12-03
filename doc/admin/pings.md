@@ -22,6 +22,9 @@ Critical telemetry includes only the high-level data below required for billing,
 - License key associated with your Sourcegraph subscription
 - Aggregate count of current monthly users
 - Total count of existing user accounts
+- Aggregated repository statistics
+  - Total size of git repositories stored in bytes
+  - Total number of lines of code stored in text search index
 
 ## Other telemetry
 
@@ -67,9 +70,6 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Count of notifications triggered
   - Count of notifications clicked
   - Count of saved search views
-- Aggregated repository statistics
-  - Total size of git repositories stored in bytes
-  - Total number of lines of code stored in text search index
 - Homepage panel engagement
   - Percentage of panel clicks (out of total views)
   - Total count of unique users engaging with the panels

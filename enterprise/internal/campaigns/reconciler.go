@@ -31,14 +31,6 @@ type GitserverClient interface {
 	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error)
 }
 
-// ReconcilerMaxNumRetries is the maximum number of attempts the reconciler
-// makes to process a changeset when it fails.
-const ReconcilerMaxNumRetries = 60
-
-// ReconcilerMaxNumResets is the maximum number of attempts the reconciler
-// makes to process a changeset when it stalls (process crashes, etc.).
-const ReconcilerMaxNumResets = 60
-
 // Reconciler processes changesets and reconciles their current state — in
 // Sourcegraph or on the code host — with that described in the current
 // ChangesetSpec associated with the changeset.
@@ -83,12 +75,12 @@ func (r *Reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 		return nil
 	}
 
-	plan, err := determinePlan(prev, curr, ch)
+	plan, err := DetermineReconcilerPlan(prev, curr, ch)
 	if err != nil {
 		return err
 	}
 
-	log15.Info("Reconciler processing changeset", "changeset", ch.ID, "operations", plan.ops)
+	log15.Info("Reconciler processing changeset", "changeset", ch.ID, "operations", plan.Ops)
 
 	e := &executor{
 		sourcer:           r.Sourcer,
@@ -99,7 +91,7 @@ func (r *Reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 		ch: ch,
 
 		spec:  curr,
-		delta: plan.delta,
+		delta: plan.Delta,
 	}
 
 	return e.ExecutePlan(ctx, plan)
@@ -139,8 +131,8 @@ type executor struct {
 }
 
 // ExecutePlan executes the given reconciler plan.
-func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
-	if plan.ops.IsNone() {
+func (e *executor) ExecutePlan(ctx context.Context, plan *ReconcilerPlan) (err error) {
+	if plan.Ops.IsNone() {
 		return nil
 	}
 
@@ -169,7 +161,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 	}
 
 	upsertChangesetEvents := true
-	for _, op := range plan.ops.ExecutionOrder() {
+	for _, op := range plan.Ops.ExecutionOrder() {
 		switch op {
 		case campaigns.ReconcilerOperationSync:
 			err = e.syncChangeset(ctx)
@@ -643,13 +635,13 @@ var operationPrecedence = map[campaigns.ReconcilerOperation]int{
 	campaigns.ReconcilerOperationSync:         6,
 }
 
-type operations []campaigns.ReconcilerOperation
+type ReconcilerOperations []campaigns.ReconcilerOperation
 
-func (ops operations) IsNone() bool {
+func (ops ReconcilerOperations) IsNone() bool {
 	return len(ops) == 0
 }
 
-func (ops operations) Equal(b operations) bool {
+func (ops ReconcilerOperations) Equal(b ReconcilerOperations) bool {
 	if len(ops) != len(b) {
 		return false
 	}
@@ -667,7 +659,7 @@ func (ops operations) Equal(b operations) bool {
 	return true
 }
 
-func (ops operations) String() string {
+func (ops ReconcilerOperations) String() string {
 	if ops.IsNone() {
 		return "No operations required"
 	}
@@ -679,7 +671,7 @@ func (ops operations) String() string {
 	return strings.Join(ss, " => ")
 }
 
-func (ops operations) ExecutionOrder() []campaigns.ReconcilerOperation {
+func (ops ReconcilerOperations) ExecutionOrder() []campaigns.ReconcilerOperation {
 	uniqueOps := []campaigns.ReconcilerOperation{}
 
 	// Make sure ops are unique.
@@ -700,27 +692,27 @@ func (ops operations) ExecutionOrder() []campaigns.ReconcilerOperation {
 	return uniqueOps
 }
 
-// plan represents the possible operations the reconciler needs to do
+// ReconcilerPlan represents the possible operations the reconciler needs to do
 // to reconcile the current and the desired state of a changeset.
-type plan struct {
+type ReconcilerPlan struct {
 	// The operations that need to be done to reconcile the changeset.
-	ops operations
+	Ops ReconcilerOperations
 
-	// The delta between a possible previous ChangesetSpec and the current
+	// The Delta between a possible previous ChangesetSpec and the current
 	// ChangesetSpec.
-	delta *ChangesetSpecDelta
+	Delta *ChangesetSpecDelta
 }
 
-func (p *plan) AddOp(op campaigns.ReconcilerOperation) { p.ops = append(p.ops, op) }
-func (p *plan) SetOp(op campaigns.ReconcilerOperation) { p.ops = operations{op} }
+func (p *ReconcilerPlan) AddOp(op campaigns.ReconcilerOperation) { p.Ops = append(p.Ops, op) }
+func (p *ReconcilerPlan) SetOp(op campaigns.ReconcilerOperation) { p.Ops = ReconcilerOperations{op} }
 
-// determinePlan looks at the given changeset to determine what action the
+// DetermineReconcilerPlan looks at the given changeset to determine what action the
 // reconciler should take.
 // It loads the current ChangesetSpec and if it exists also the previous one.
 // If the current ChangesetSpec is not applied to a campaign, it returns an
 // error.
-func determinePlan(previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campaigns.Changeset) (*plan, error) {
-	pl := &plan{}
+func DetermineReconcilerPlan(previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campaigns.Changeset) (*ReconcilerPlan, error) {
+	pl := &ReconcilerPlan{}
 
 	// If it doesn't have a spec, it's an imported changeset and we can't do
 	// anything.
@@ -741,7 +733,7 @@ func determinePlan(previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campa
 	if err != nil {
 		return pl, nil
 	}
-	pl.delta = delta
+	pl.Delta = delta
 
 	switch ch.PublicationState {
 	case campaigns.ChangesetPublicationStateUnpublished:
@@ -818,19 +810,10 @@ func reopenAfterDetach(ch *campaigns.Changeset) bool {
 		return false
 	}
 
-	// Check if it's (re-)attached to the campaign that created it.
-	attachedToOwner := false
-	for _, campaignID := range ch.CampaignIDs {
-		if campaignID == ch.OwnedByCampaignID {
-			attachedToOwner = true
-		}
-	}
-
-	// At this point the changeset is closed and not marked as to-be-closed and
-	// attached to the owning campaign.
-	return attachedToOwner
+	// At this point the changeset is closed and not marked as to-be-closed.
 
 	// TODO: What if somebody closed the changeset on purpose on the codehost?
+	return ch.AttachedTo(ch.OwnedByCampaignID)
 }
 
 func loadRepo(ctx context.Context, tx RepoStore, id api.RepoID) (*repos.Repo, error) {

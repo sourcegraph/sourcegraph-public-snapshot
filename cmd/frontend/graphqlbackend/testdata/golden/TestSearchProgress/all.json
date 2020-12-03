@@ -1,0 +1,52 @@
+{
+  "done": false,
+  "repositoriesCount": 5,
+  "matchCount": 1,
+  "durationMs": 0,
+  "skipped": [
+   {
+    "reason": "repository-missing",
+    "title": "1 missing",
+    "message": "1 repository could not be searched. Try reducing the scope of your query with repo: repogroup: or other filters.",
+    "severity": "warn"
+   },
+   {
+    "reason": "repository-cloning",
+    "title": "1 cloning",
+    "message": "1 repository could not be searched since they are still cloning. Try searching again or reducing the scope of your query with repo: repogroup: or other filters.",
+    "severity": "warn"
+   },
+   {
+    "reason": "shard-match-limit",
+    "title": "result limit hit",
+    "message": "Not all results have been returned due to hitting a match limit. Sourcegraph has limits for the number of results returned from a line, document and repository.",
+    "severity": "warn"
+   },
+   {
+    "reason": "shard-timeout",
+    "title": "1 timedout",
+    "message": "1 repository could not be searched in time. Try reducing the scope of your query with repo: repogroup: or other filters.",
+    "severity": "warn"
+   },
+   {
+    "reason": "repository-fork",
+    "title": "5 forked",
+    "message": "By default we exclude forked repositories. Include them with `fork:yes` in your query.",
+    "severity": "info",
+    "suggested": {
+     "title": "include forked",
+     "queryExpression": "fork:yes"
+    }
+   },
+   {
+    "reason": "excluded-archive",
+    "title": "1 archived",
+    "message": "By default we exclude archived repositories. Include them with `archived:yes` in your query.",
+    "severity": "info",
+    "suggested": {
+     "title": "include archived",
+     "queryExpression": "archived:yes"
+    }
+   }
+  ]
+ }

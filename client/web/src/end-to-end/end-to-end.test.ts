@@ -1092,30 +1092,6 @@ describe('e2e test suite', () => {
                 await driver.assertAllHighlightedTokens('Router')
             })
         })
-
-        describe('external code host links', () => {
-            test('on repo navbar ("View on GitHub")', async () => {
-                await driver.page.goto(
-                    sourcegraphBaseUrl +
-                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L19',
-                    { waitUntil: 'domcontentloaded' }
-                )
-                await driver.page.waitForSelector('.nav-link[href*="https://github"]', {
-                    visible: true,
-                    timeout: 300000,
-                })
-                await retry(async () =>
-                    expect(
-                        await driver.page.evaluate(
-                            () =>
-                                (document.querySelector('.nav-link[href*="https://github"]') as HTMLAnchorElement).href
-                        )
-                    ).toEqual(
-                        'https://github.com/sourcegraph/go-diff/blob/3f415a150aec0685cb81b73cc201e762e075006d/diff/parse.go#L19'
-                    )
-                )
-            })
-        })
     })
 
     describe('Search component', () => {

@@ -17,7 +17,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors'
-import { encodeURIComponentExceptSlashes, makeRepoURI } from '../../../shared/src/util/url'
+import { encodeURIPathComponent, makeRepoURI } from '../../../shared/src/util/url'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import {
@@ -52,7 +52,7 @@ import { Link } from '../../../shared/src/components/Link'
 import { UncontrolledPopover } from 'reactstrap'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import { RepositoriesPopover } from './RepositoriesPopover'
-import { displayRepoName, splitPath } from '../../../shared/src/components/RepoFileLink'
+import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { ExternalLinkFields } from '../graphql-operations'
@@ -61,6 +61,7 @@ import { FirefoxAddonAlert, InstallBrowserExtensionAlert } from './actions/Insta
 import { IS_CHROME } from '../marketing/util'
 import { useLocalStorage } from '../util/useLocalStorage'
 import { Settings } from '../schema/settings.schema'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -219,8 +220,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 return
             }
 
-            const [repoDirectory, repoBase] = splitPath(displayRepoName(repoOrError.name))
-
             return {
                 key: 'repository',
                 element: (
@@ -231,10 +230,9 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                     ? resolvedRevisionOrError.rootTreeURL
                                     : repoOrError.url
                             }
-                            className="repo-header__repo"
+                            className="font-weight-bold test-repo-header-repo-link"
                         >
-                            {repoDirectory ? `${repoDirectory}/` : ''}
-                            <span className="font-weight-semibold">{repoBase}</span>
+                            <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
                         </Link>
                         <button
                             type="button"
@@ -411,7 +409,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         )
     }
 
-    const repoMatchURL = '/' + encodeURIComponentExceptSlashes(repoName)
+    const repoMatchURL = '/' + encodeURIPathComponent(repoName)
 
     const context: RepoContainerContext = {
         ...props,
