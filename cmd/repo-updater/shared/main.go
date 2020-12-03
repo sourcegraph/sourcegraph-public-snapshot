@@ -330,7 +330,11 @@ func Main(enterpriseInit EnterpriseInit) {
 	},
 	)
 
-	httpSrv := httpserver.NewFromAddr(addr, &http.Server{Handler: ot.Middleware(handler)})
+	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
+		ReadTimeout:  75 * time.Second,
+		WriteTimeout: 10 * time.Minute,
+		Handler:      ot.Middleware(handler),
+	})
 	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }
 

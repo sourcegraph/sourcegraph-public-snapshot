@@ -109,7 +109,12 @@ func main() {
 		host = "127.0.0.1"
 	}
 	addr := net.JoinHostPort(host, port)
-	srv := &http.Server{Addr: addr, Handler: handler}
+	srv := &http.Server{
+		ReadTimeout:  75 * time.Second,
+		WriteTimeout: 10 * time.Minute, // set a high write timeout as we may serve large archives
+		Addr:         addr,
+		Handler:      handler,
+	}
 	log15.Info("git-server: listening", "addr", srv.Addr)
 
 	go func() {

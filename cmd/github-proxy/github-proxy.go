@@ -158,7 +158,13 @@ func main() {
 	}
 	addr := net.JoinHostPort(host, port)
 	log15.Info("github-proxy: listening", "addr", addr)
-	log.Fatal(http.ListenAndServe(addr, nil))
+	s := http.Server{
+		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 10 * time.Minute,
+		Addr:         addr,
+		Handler:      http.DefaultServeMux,
+	}
+	log.Fatal(s.ListenAndServe())
 }
 
 func instrumentHandler(r prometheus.Registerer, h http.Handler) http.Handler {
