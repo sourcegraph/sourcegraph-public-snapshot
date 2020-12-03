@@ -713,10 +713,18 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 		return nil, err
 	}
 
-	// Check user is authenticated.
-	user := actor.FromContext(ctx)
-	if !user.IsAuthenticated() {
-		return nil, backend.ErrNotAuthenticated
+	userID, err := graphqlbackend.UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	if userID == 0 {
+		return nil, ErrIDIsZero{}
+	}
+
+	// 🚨 SECURITY: Check that the requesting user can create the credential.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+		return nil, err
 	}
 
 	// Need to validate externalServiceKind, otherwise this'll panic.
@@ -735,7 +743,7 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 		Domain:              db.UserCredentialDomainCampaigns,
 		ExternalServiceID:   args.ExternalServiceURL,
 		ExternalServiceType: extsvc.KindToType(kind),
-		UserID:              user.UID,
+		UserID:              userID,
 	}
 
 	// Throw error documented in schema.graphql.

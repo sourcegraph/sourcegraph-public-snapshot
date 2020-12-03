@@ -15,11 +15,13 @@ import { CodeHostConnectionNode, CodeHostConnectionNodeProps } from './CodeHostC
 
 export interface CodeHostConnectionsProps extends Pick<RouteComponentProps, 'history' | 'location'> {
     username: Scalars['String']
+    userID: Scalars['ID']
     queryUserCampaignsCodeHosts?: typeof _queryUserCampaignsCodeHosts
 }
 
 export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsProps> = ({
     username,
+    userID,
     history,
     location,
     queryUserCampaignsCodeHosts = _queryUserCampaignsCodeHosts,
@@ -45,7 +47,7 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
                 location={location}
                 useURLQuery={false}
                 nodeComponent={CodeHostConnectionNode}
-                nodeComponentProps={{ history, updateList }}
+                nodeComponentProps={{ userID, history, updateList }}
                 queryConnection={query}
                 hideSearch={true}
                 defaultFirst={15}

@@ -24,11 +24,13 @@ export function createCampaignsCredential(args: CreateCampaignsCredentialVariabl
     return requestGraphQL<CreateCampaignsCredentialResult, CreateCampaignsCredentialVariables>(
         gql`
             mutation CreateCampaignsCredential(
+                $user: ID!
                 $credential: String!
                 $externalServiceKind: ExternalServiceKind!
                 $externalServiceURL: String!
             ) {
                 createCampaignsCredential(
+                    user: $user
                     credential: $credential
                     externalServiceKind: $externalServiceKind
                     externalServiceURL: $externalServiceURL

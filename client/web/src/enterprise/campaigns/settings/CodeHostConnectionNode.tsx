@@ -10,6 +10,7 @@ import { Subject } from 'rxjs'
 
 export interface CodeHostConnectionNodeProps {
     node: CampaignsCodeHostFields
+    userID: string
     history: H.History
     updateList: Subject<void>
 }
@@ -18,6 +19,7 @@ type OpenModal = 'add' | 'delete'
 
 export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionNodeProps> = ({
     node,
+    userID,
     history,
     updateList,
 }) => {
@@ -95,6 +97,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                     onCancel={onCancel}
                     afterCreate={afterAction}
                     history={history}
+                    userID={userID}
                     externalServiceKind={node.externalServiceKind}
                     externalServiceURL={node.externalServiceURL}
                 />
