@@ -6,7 +6,6 @@ import { PageHeader } from '../../../components/PageHeader'
 import {
     CampaignsCodeHostFields,
     CampaignsCodeHostsFields,
-    Scalars,
     UserCampaignsCodeHostsVariables,
 } from '../../../graphql-operations'
 import { CampaignsIconFlushLeft } from '../icons'
@@ -14,14 +13,12 @@ import { queryUserCampaignsCodeHosts as _queryUserCampaignsCodeHosts } from './b
 import { CodeHostConnectionNode, CodeHostConnectionNodeProps } from './CodeHostConnectionNode'
 
 export interface CodeHostConnectionsProps extends Pick<RouteComponentProps, 'history' | 'location'> {
-    username: Scalars['String']
-    userID: Scalars['ID']
+    user: { id: string; username: string }
     queryUserCampaignsCodeHosts?: typeof _queryUserCampaignsCodeHosts
 }
 
 export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsProps> = ({
-    username,
-    userID,
+    user,
     history,
     location,
     queryUserCampaignsCodeHosts = _queryUserCampaignsCodeHosts,
@@ -31,11 +28,11 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
     const query = useCallback<(args: Partial<UserCampaignsCodeHostsVariables>) => Observable<CampaignsCodeHostsFields>>(
         args =>
             queryUserCampaignsCodeHosts({
-                username: username ?? null,
+                username: user.username ?? null,
                 first: args.first ?? null,
                 after: args.after ?? null,
             }),
-        [queryUserCampaignsCodeHosts, username]
+        [queryUserCampaignsCodeHosts, user.username]
     )
     return (
         <>
@@ -47,7 +44,7 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
                 location={location}
                 useURLQuery={false}
                 nodeComponent={CodeHostConnectionNode}
-                nodeComponentProps={{ userID, history, updateList }}
+                nodeComponentProps={{ userID: user.id, history, updateList }}
                 queryConnection={query}
                 hideSearch={true}
                 defaultFirst={15}

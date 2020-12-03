@@ -14,11 +14,6 @@ export interface CampaignsSettingsAreaProps extends Pick<RouteComponentProps, 'h
 export const CampaignsSettingsArea: React.FunctionComponent<CampaignsSettingsAreaProps> = props => (
     <div className="web-content test-campaigns-settings-page">
         <PageTitle title="Campaigns settings" />
-        <CodeHostConnections
-            username={props.user.username}
-            userID={props.user.id}
-            history={props.history}
-            location={props.location}
-        />
+        <CodeHostConnections user={props.user} history={props.history} location={props.location} />
     </div>
 )
