@@ -4,7 +4,6 @@ package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 import (
 	"context"
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
 	"log"
 	"net"
 	"net/http"
@@ -93,7 +92,16 @@ func main() {
 
 	go debugserver.Start()
 
-	runJanitor(&gitserver)
+	janitorInterval2, err := time.ParseDuration(janitorInterval)
+	if err != nil {
+		log.Fatalf("parsing $SRC_REPOS_JANITOR_INTERVAL: %v", err)
+	}
+	go func() {
+		for {
+			gitserver.Janitor()
+			time.Sleep(janitorInterval2)
+		}
+	}()
 
 	port := "3178"
 	host := ""
@@ -174,31 +182,4 @@ func getRepoStore() (*db.RepoStore, error) {
 	}
 
 	return db.NewRepoStoreWithDB(h), nil
-}
-
-func runJanitor(gitserver *server.Server) {
-	janitorDuration := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_janitor_duration_seconds",
-		Help: "Duration of executing the background janitor job.",
-	})
-	janitorRunning := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_janitor_running",
-		Help: "Is the gitserver janitor background task running.",
-	})
-	prometheus.MustRegister(janitorDuration)
-	prometheus.MustRegister(janitorRunning)
-	janitorInterval2, err := time.ParseDuration(janitorInterval)
-	if err != nil {
-		log.Fatalf("parsing $SRC_REPOS_JANITOR_INTERVAL: %v", err)
-	}
-	go func() {
-		for {
-			start := time.Now()
-			janitorRunning.Set(1)
-			gitserver.Janitor()
-			janitorRunning.Set(0)
-			janitorDuration.Set(time.Since(start).Seconds())
-			time.Sleep(janitorInterval2)
-		}
-	}()
 }
