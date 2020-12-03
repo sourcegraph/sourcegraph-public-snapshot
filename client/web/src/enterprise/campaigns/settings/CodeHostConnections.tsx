@@ -1,24 +1,40 @@
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Subject } from 'rxjs'
+import { Observable, Subject } from 'rxjs'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageHeader } from '../../../components/PageHeader'
-import { CampaignsCodeHostFields } from '../../../graphql-operations'
+import {
+    CampaignsCodeHostFields,
+    CampaignsCodeHostsFields,
+    Scalars,
+    UserCampaignsCodeHostsVariables,
+} from '../../../graphql-operations'
 import { CampaignsIconFlushLeft } from '../icons'
 import { queryUserCampaignsCodeHosts as _queryUserCampaignsCodeHosts } from './backend'
 import { CodeHostConnectionNode, CodeHostConnectionNodeProps } from './CodeHostConnectionNode'
 
 export interface CodeHostConnectionsProps extends Pick<RouteComponentProps, 'history' | 'location'> {
+    userID: Scalars['ID']
     queryUserCampaignsCodeHosts?: typeof _queryUserCampaignsCodeHosts
 }
 
 export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsProps> = ({
+    userID,
     history,
     location,
     queryUserCampaignsCodeHosts = _queryUserCampaignsCodeHosts,
 }) => {
     // Subject to fire a reload of the list.
     const updateList = useMemo(() => new Subject<void>(), [])
+    const query = useCallback<(args: Partial<UserCampaignsCodeHostsVariables>) => Observable<CampaignsCodeHostsFields>>(
+        args =>
+            queryUserCampaignsCodeHosts({
+                user: userID,
+                first: args.first ?? null,
+                after: args.after ?? null,
+            }),
+        [queryUserCampaignsCodeHosts, userID]
+    )
     return (
         <>
             <PageHeader icon={CampaignsIconFlushLeft} title="Campaigns" className="justify-content-end" />
@@ -29,8 +45,8 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
                 location={location}
                 useURLQuery={false}
                 nodeComponent={CodeHostConnectionNode}
-                nodeComponentProps={{ history, updateList }}
-                queryConnection={queryUserCampaignsCodeHosts}
+                nodeComponentProps={{ userID, history, updateList }}
+                queryConnection={query}
                 hideSearch={true}
                 defaultFirst={15}
                 noun="code host"

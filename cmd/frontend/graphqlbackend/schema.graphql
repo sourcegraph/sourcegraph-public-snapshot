@@ -700,11 +700,16 @@ type Mutation {
     syncChangeset(changeset: ID!): EmptyResponse!
 
     """
-    Create a new credential for the requesting user for the given code host.
+    Create a new credential for the given user for the given code host.
     If another token for that code host already exists, an error with the error code
     ErrDuplicateCredential is returned.
     """
     createCampaignsCredential(
+        """
+        The user for which to create the credential.
+        """
+        user: ID!
+
         """
         The kind of external service being configured.
         """
