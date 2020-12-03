@@ -5,9 +5,8 @@ import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../components/HeroPage'
-import { fetchRepository } from './backend'
+import { fetchSettingsAreaRepository } from './backend'
 import { RepoSettingsSidebar, RepoSettingsSideBarGroups } from './RepoSettingsSidebar'
 import { RouteDescriptor } from '../../util/contributions'
 import { ErrorMessage } from '../../components/alerts'
@@ -17,6 +16,7 @@ import { useObservable } from '../../../../shared/src/util/useObservable'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { AuthenticatedUser } from '../../auth'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { RepositoryFields, SettingsAreaRepositoryFields } from '../../graphql-operations'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -27,8 +27,8 @@ const NotFoundPage: React.FunctionComponent = () => (
 )
 
 export interface RepoSettingsAreaRouteContext extends TelemetryProps {
-    repo: GQL.IRepository
-    onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
+    repo: SettingsAreaRepositoryFields
+    onDidUpdateRepository: (update: Partial<RepositoryFields>) => void
 }
 
 export interface RepoSettingsAreaRoute extends RouteDescriptor<RepoSettingsAreaRouteContext> {}
@@ -36,9 +36,9 @@ export interface RepoSettingsAreaRoute extends RouteDescriptor<RepoSettingsAreaR
 interface Props extends RouteComponentProps<{}>, BreadcrumbSetters, TelemetryProps {
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: RepoSettingsSideBarGroups
-    repo: GQL.IRepository
+    repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
-    onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
+    onDidUpdateRepository: (update: Partial<RepositoryFields>) => void
     history: H.History
 }
 
@@ -53,7 +53,9 @@ export const RepoSettingsArea: React.FunctionComponent<Props> = ({
 }) => {
     const repoName = props.repo.name
     const repoOrError = useObservable(
-        useMemo(() => fetchRepository(repoName).pipe(catchError(error => of<ErrorLike>(asError(error)))), [repoName])
+        useMemo(() => fetchSettingsAreaRepository(repoName).pipe(catchError(error => of<ErrorLike>(asError(error)))), [
+            repoName,
+        ])
     )
 
     useBreadcrumb(useMemo(() => ({ key: 'settings', element: 'Settings' }), []))

@@ -13,7 +13,6 @@ import {
 } from '../../../shared/src/backend/errors'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors'
@@ -55,7 +54,7 @@ import { RepositoriesPopover } from './RepositoriesPopover'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
-import { ExternalLinkFields } from '../graphql-operations'
+import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { InstallBrowserExtensionAlert } from './actions/InstallBrowserExtensionAlert'
 import { IS_CHROME } from '../marketing/util'
@@ -80,7 +79,7 @@ export interface RepoContainerContext
         CopyQueryButtonProps,
         VersionContextProps,
         BreadcrumbSetters {
-    repo: GQL.IRepository
+    repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -88,7 +87,7 @@ export interface RepoContainerContext
     /** The URL route match for {@link RepoContainer}. */
     routePrefix: string
 
-    onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
+    onDidUpdateRepository: (update: Partial<RepositoryFields>) => void
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 
     globbing: boolean
@@ -175,9 +174,9 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     // Allow partial updates of the repository from components further down the tree.
     const [nextRepoOrErrorUpdate, repoOrError] = useEventObservable(
         useCallback(
-            (repoOrErrorUpdates: Observable<Partial<GQL.IRepository>>) =>
+            (repoOrErrorUpdates: Observable<Partial<RepositoryFields>>) =>
                 repoOrErrorUpdates.pipe(
-                    map((update): GQL.IRepository | ErrorLike | undefined =>
+                    map((update): RepositoryFields | ErrorLike | undefined =>
                         isErrorLike(initialRepoOrError) || initialRepoOrError === undefined
                             ? initialRepoOrError
                             : { ...initialRepoOrError, ...update }
