@@ -25,9 +25,7 @@ const BROWSER_DOCUMENTS_GLOB = [
 ]
 
 // Define ALL_DOCUMENTS_GLOB as the union of the previous glob arrays.
-const ALL_DOCUMENTS_GLOB = Array.from(
-  new Set([...SHARED_DOCUMENTS_GLOB, ...WEB_DOCUMENTS_GLOB, ...BROWSER_DOCUMENTS_GLOB])
-)
+const ALL_DOCUMENTS_GLOB = [...new Set([...SHARED_DOCUMENTS_GLOB, ...WEB_DOCUMENTS_GLOB, ...BROWSER_DOCUMENTS_GLOB])]
 
 const plugins = [`${SHARED_FOLDER}/dev/extractGraphQlOperationCodegenPlugin.js`, 'typescript', 'typescript-operations']
 
