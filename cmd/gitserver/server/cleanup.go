@@ -58,6 +58,10 @@ var (
 		Name: "src_gitserver_janitor_running",
 		Help: "set to 1 when the gitserver janitor background job is running",
 	})
+	jobTimer = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "src_gitserver_janitor_job_duration",
+		Help: "Duration of the individual jobs within the gitserver janitor background job",
+	}, []string{"job_name", "dir"})
 )
 
 const reposStatsName = "repos-stats.json"
@@ -228,19 +232,11 @@ func (s *Server) cleanupRepos() {
 
 		for _, cfn := range cleanups {
 			start := time.Now()
-			jobTimer := promauto.NewHistogram(prometheus.HistogramOpts{
-				Name: "src_gitserver_janitor_job_duration",
-				Help: "Duration of the individual jobs within the gitserver janitor background job",
-				ConstLabels: prometheus.Labels{
-					"job_name": cfn.Name,
-					"dir":      dir,
-				},
-			})
 			done, err := cfn.Do(gitDir)
 			if err != nil {
 				log15.Error("error running cleanup command", "name", cfn.Name, "repo", gitDir, "error", err)
 			}
-			jobTimer.Observe(time.Since(start).Seconds())
+			jobTimer.WithLabelValues(cfn.Name, dir).Observe(time.Since(start).Seconds())
 			if done {
 				break
 			}
