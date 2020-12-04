@@ -39,16 +39,16 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
         { token: 'closingParen', foreground: '#da77f2' },
         { token: 'comment', foreground: '#ffa94d' },
         // Regexp pattern highlighting
-        { token: 'regexpMetaDelimited', foreground: '#ff6b6b' },
-        { token: 'regexpMetaAssertion', foreground: '#ff6b6b' },
-        { token: 'regexpMetaLazyQuantifier', foreground: '#ff6b6b' },
-        { token: 'regexpMetaEscapedCharacter', foreground: '#ffa8a8' },
-        { token: 'regexpMetaCharacterSet', foreground: '#da77f2' },
-        { token: 'regexpMetaCharacterClass', foreground: '#da77f2' },
-        { token: 'regexpMetaRangeQuantifier', foreground: '#3bc9db' },
-        { token: 'regexpMetaAlternative', foreground: '#3bc9db' },
+        { token: 'metaRegexpDelimited', foreground: '#ff6b6b' },
+        { token: 'metaRegexpAssertion', foreground: '#ff6b6b' },
+        { token: 'metaRegexpLazyQuantifier', foreground: '#ff6b6b' },
+        { token: 'metaRegexpEscapedCharacter', foreground: '#ffa8a8' },
+        { token: 'metaRegexpCharacterSet', foreground: '#da77f2' },
+        { token: 'metaRegexpCharacterClass', foreground: '#da77f2' },
+        { token: 'metaRegexpRangeQuantifier', foreground: '#3bc9db' },
+        { token: 'metaRegexpAlternative', foreground: '#3bc9db' },
         // Structural pattern highlighting
-        { token: 'structuralMetaHole', foreground: '#ff6b6b' },
+        { token: 'metaStructuralHole', foreground: '#ff6b6b' },
     ],
 })
 
@@ -79,16 +79,16 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
         { token: 'closingParen', foreground: '#ae3ec9' },
         { token: 'comment', foreground: '#d9480f' },
         // Regexp pattern highlighting
-        { token: 'regexpMetaDelimited', foreground: '#c92a2a' },
-        { token: 'regexpMetaAssertion', foreground: '#c92a2a' },
-        { token: 'regexpMetaLazyQuantifier', foreground: '#c92a2a' },
-        { token: 'regexpMetaEscapedCharacter', foreground: '#af5200' },
-        { token: 'regexpMetaCharacterSet', foreground: '#ae3ec9' },
-        { token: 'regexpMetaCharacterClass', foreground: '#ae3ec9' },
-        { token: 'regexpMetaRangeQuantifier', foreground: '#1098ad' },
-        { token: 'regexpMetaAlternative', foreground: '#1098ad' },
+        { token: 'metaRegexpDelimited', foreground: '#c92a2a' },
+        { token: 'metaRegexpAssertion', foreground: '#c92a2a' },
+        { token: 'metaRegexpLazyQuantifier', foreground: '#c92a2a' },
+        { token: 'metaRegexpEscapedCharacter', foreground: '#af5200' },
+        { token: 'metaRegexpCharacterSet', foreground: '#ae3ec9' },
+        { token: 'metaRegexpCharacterClass', foreground: '#ae3ec9' },
+        { token: 'metaRegexpRangeQuantifier', foreground: '#1098ad' },
+        { token: 'metaRegexpAlternative', foreground: '#1098ad' },
         // Structural pattern highlighting
-        { token: 'structuralMetaHole', foreground: '#c92a2a' },
+        { token: 'metaStructuralHole', foreground: '#c92a2a' },
     ],
 })
 

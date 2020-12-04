@@ -1,6 +1,6 @@
 import * as Monaco from 'monaco-editor'
 import { Token } from './token'
-import { decorate, toMonacoRange, DecoratedToken, RegexpMetaKind } from './decoratedToken'
+import { decorate, toMonacoRange, DecoratedToken, MetaRegexpKind } from './decoratedToken'
 import { resolveFilter } from './filters'
 
 const toHover = (token: DecoratedToken): string => {
@@ -9,11 +9,11 @@ const toHover = (token: DecoratedToken): string => {
             const quantity = token.value.length > 1 ? 'string' : 'character'
             return `Matches the ${quantity} \`${token.value}\`.`
         }
-        case 'regexpMeta': {
+        case 'metaRegexp': {
             switch (token.kind) {
-                case RegexpMetaKind.Alternative:
+                case MetaRegexpKind.Alternative:
                     return '**Or**. Match either the expression before or after the `|`.'
-                case RegexpMetaKind.Assertion:
+                case MetaRegexpKind.Assertion:
                     switch (token.value) {
                         case '^':
                             return '**Start anchor**. Match the beginning of a string. Typically used to match a string prefix, as in `^prefix`. Also often used with the end anchor `$` to match an exact string, as in `^exact$`.'
@@ -24,11 +24,11 @@ const toHover = (token: DecoratedToken): string => {
                         case '\\B':
                             return '**Negated word boundary**. Match a position between two word characters, or a position between two non-word characters. This is the negation of `\\b`.'
                     }
-                case RegexpMetaKind.CharacterClass:
+                case MetaRegexpKind.CharacterClass:
                     return token.value.startsWith('[^')
                         ? '**Negated character class**. Match any character _not_ inside the square brackets.'
                         : '**Character class**. Match any character inside the square brackets.'
-                case RegexpMetaKind.CharacterSet:
+                case MetaRegexpKind.CharacterSet:
                     switch (token.value) {
                         case '.':
                             return '**Dot**. Match any character except a line break.'
@@ -45,9 +45,9 @@ const toHover = (token: DecoratedToken): string => {
                         case '\\S':
                             return '**Negated whitespace**. Match any character that is **not** a whitespace character like a space, line break, or tab.'
                     }
-                case RegexpMetaKind.Delimited:
+                case MetaRegexpKind.Delimited:
                     return '**Group**. Groups together multiple expressions to match.'
-                case RegexpMetaKind.EscapedCharacter: {
+                case MetaRegexpKind.EscapedCharacter: {
                     const escapable = '~`!@#$%^&*()[]{}<>,.?/\\|=+-_'
                     let description = escapable.includes(token.value[1])
                         ? `Match the character \`${token.value[1]}\`.`
@@ -65,9 +65,9 @@ const toHover = (token: DecoratedToken): string => {
                     }
                     return `**Escaped Character. ${description}`
                 }
-                case RegexpMetaKind.LazyQuantifier:
+                case MetaRegexpKind.LazyQuantifier:
                     return '**Lazy**. Match as few as characters as possible that match the previous expression.'
-                case RegexpMetaKind.RangeQuantifier:
+                case MetaRegexpKind.RangeQuantifier:
                     switch (token.value) {
                         case '*':
                             return '**Zero or more**. Match zero or more of the previous expression.'
@@ -145,7 +145,7 @@ export const getHoverResult = (
                 values.push(toHover(token))
                 range = toMonacoRange(token.range)
                 break
-            case 'regexpMeta':
+            case 'metaRegexp':
                 values.push(toHover(token))
                 range = toMonacoRange(token.groupRange ? token.groupRange : token.range)
                 break
