@@ -107,52 +107,51 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
 
     return (
         <>
-            <div className="row">
+            <div className="row no-gutters">
                 <div className="m-0 col">
                     <Form className="form-inline d-flex my-2" onSubmit={onSubmit}>
                         <input
                             className="form-control flex-grow-1 changeset-filter__search"
-                            type="text"
+                            type="search"
                             ref={searchElement}
                             defaultValue={search}
-                            placeholder="Search"
+                            placeholder="Search title and repository name"
                         />
                     </Form>
                 </div>
-                <div className="m-0 my-2 col-auto">
-                    <div className="form-inline row">
-                        <ChangesetFilter<ChangesetUIState>
-                            values={Object.values(ChangesetUIState)}
-                            label="Changeset state"
-                            selected={uiState}
-                            onChange={setUIState}
-                            className="col ml-2"
-                        />
-                        <ChangesetFilter<ChangesetCheckState>
-                            values={Object.values(ChangesetCheckState)}
-                            label="Check state"
-                            selected={checkState}
-                            onChange={setCheckState}
-                            className="col ml-2"
-                        />
-                        <ChangesetFilter<ChangesetReviewState>
-                            values={Object.values(ChangesetReviewState)}
-                            label="Review state"
-                            selected={reviewState}
-                            onChange={setReviewState}
-                            className="col ml-2"
-                        />
+                <div className="w-100 d-block d-md-none" />
+                <div className="m-0 col col-md-auto">
+                    <div className="row no-gutters">
+                        <div className="col my-2 ml-0 ml-md-2">
+                            <ChangesetFilter<ChangesetUIState>
+                                values={Object.values(ChangesetUIState)}
+                                label="Status"
+                                selected={uiState}
+                                onChange={setUIState}
+                                className="w-100"
+                            />
+                        </div>
+                        <div className="col my-2 ml-2">
+                            <ChangesetFilter<ChangesetCheckState>
+                                values={Object.values(ChangesetCheckState)}
+                                label="Check state"
+                                selected={checkState}
+                                onChange={setCheckState}
+                                className="w-100"
+                            />
+                        </div>
+                        <div className="w-100 d-block d-sm-none" />
+                        <div className="col my-2 ml-0 ml-sm-2">
+                            <ChangesetFilter<ChangesetReviewState>
+                                values={Object.values(ChangesetReviewState)}
+                                label="Review state"
+                                selected={reviewState}
+                                onChange={setReviewState}
+                                className="w-100"
+                            />
+                        </div>
+                        <div className="col d-block d-sm-none ml-2" />
                     </div>
-                </div>
-            </div>
-            <div className="row">
-                <div className="m-0 col d-flex">
-                    <div className="flex-grow-1">this is a thing</div>
-                </div>
-                <div className="m-0 my-2 col-auto">
-                    <select>
-                        <option>this is a non-expanding thing</option>
-                    </select>
                 </div>
             </div>
         </>
