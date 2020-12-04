@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	campaignApitest "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -37,16 +37,16 @@ func TestCreateCodeMonitor(t *testing.T) {
 
 	userID := insertTestUser(t, dbconn.Global, "cm-user1", true)
 
-	want := &monitor{
-		id:              1,
-		createdBy:       userID,
-		createdAt:       r.Now(),
-		changedBy:       userID,
-		changedAt:       r.Now(),
-		description:     "test monitor",
-		enabled:         true,
-		namespaceUserID: &userID,
-		namespaceOrgID:  nil,
+	want := &cm.Monitor{
+		ID:              1,
+		CreatedBy:       userID,
+		CreatedAt:       r.Now(),
+		ChangedBy:       userID,
+		ChangedAt:       r.Now(),
+		Description:     "test monitor",
+		Enabled:         true,
+		NamespaceUserID: &userID,
+		NamespaceOrgID:  nil,
 	}
 
 	// Create a monitor.
@@ -56,21 +56,20 @@ func TestCreateCodeMonitor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want.Resolver = got.(*monitor).Resolver
-	if !reflect.DeepEqual(want, got.(*monitor)) {
-		t.Fatalf("\ngot:\t %+v,\nwant:\t %+v", got, want)
+	if !reflect.DeepEqual(want, got.(*monitor).Monitor) {
+		t.Fatalf("\ngot:\t %+v,\nwant:\t %+v", got.(*monitor).Monitor, want)
 	}
 
 	// Toggle field enabled from true to false.
 	got, err = r.ToggleCodeMonitor(ctx, &graphqlbackend.ToggleCodeMonitorArgs{
-		Id:      relay.MarshalID(monitorKind, got.(*monitor).id),
+		Id:      relay.MarshalID(monitorKind, got.(*monitor).Monitor.ID),
 		Enabled: false,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.(*monitor).enabled {
-		t.Fatalf("got enabled=%T, want enabled=%T", got.(*monitor).enabled, false)
+	if got.(*monitor).Monitor.Enabled {
+		t.Fatalf("got enabled=%T, want enabled=%T", got.(*monitor).Monitor.Enabled, false)
 	}
 
 	// Delete code monitor.
@@ -78,7 +77,7 @@ func TestCreateCodeMonitor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = r.monitorForIDInt32(ctx, t, got.(*monitor).id)
+	_, err = r.store.MonitorByIDInt64(ctx, got.(*monitor).Monitor.ID)
 	if err == nil {
 		t.Fatalf("monitor should have been deleted")
 	}
