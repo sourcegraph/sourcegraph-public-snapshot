@@ -224,11 +224,15 @@ func (r *campaignSpecResolver) SupersedingCampaignSpec(ctx context.Context) (gra
 		namespaceErr: r.namespaceErr,
 	}
 
-	// sync.Once values can't be copied, so although we copied the namespace and
-	// namespaceErr fields onto the new resolver, we had to create a new
-	// namespaceOnce field. We'll fuse it here without performing any action to
-	// ensure that computeNamespace() operates as expected on the new resolver.
-	resolver.namespaceOnce.Do(func() {})
+	// If namespace is set on the new resolver, then we don't want
+	// computeNamespace() to recompute the namespace. computeNamespace() uses
+	// the sync.Once value in the namespaceOnce field to implement its
+	// memoisation, but we can't copy r.namespaceOnce in because sync.Once
+	// values cannot be copied. Therefore, we'll fuse resolver.namespaceOnce in
+	// that case and get the same behaviour.
+	if resolver.namespace != nil {
+		resolver.namespaceOnce.Do(func() {})
+	}
 
 	return resolver, nil
 }
