@@ -8,6 +8,11 @@
 }
 
 .streaming-progress {
+    &__count,
+    &__skipped {
+        padding: 0.25rem 0.5rem;
+    }
+
     &__count {
         color: var(--link-color);
 
@@ -25,6 +30,8 @@
 
     &__skipped {
         border: none;
+        margin-left: 0.25rem;
+
         &.btn.btn-secondary {
             color: var(--link-color);
             background-color: transparent;
