@@ -2,6 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
@@ -10,6 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 )
+
+var timeNow = time.Now
 
 func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {
 	// 🚨 SECURITY: Only the self user and site admins can fetch a user's emails.
@@ -193,6 +197,16 @@ func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *stru
 	user, err := db.Users.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
+	}
+
+	lastSent, err := db.UserEmails.GetLatestVerificationSentEmail(ctx, args.Email)
+	if err != nil {
+		return nil, err
+	}
+	if lastSent != nil &&
+		lastSent.LastVerificationSentAt != nil &&
+		timeNow().Sub(*lastSent.LastVerificationSentAt) < 1*time.Minute {
+		return nil, errors.New("Last email sent too recently")
 	}
 
 	email, verified, err := db.UserEmails.Get(ctx, userID, args.Email)

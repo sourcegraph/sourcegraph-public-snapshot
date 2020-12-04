@@ -105,6 +105,9 @@ func TestResendUserEmailVerification(t *testing.T) {
 	}
 
 	knownTime := time.Time{}.Add(1337 * time.Hour)
+	timeNow = func() time.Time {
+		return knownTime
+	}
 
 	tests := []struct {
 		name            string
@@ -196,6 +199,38 @@ func TestResendUserEmailVerification(t *testing.T) {
 			},
 			expectEmailSent: false,
 		},
+		{
+			name: "resend a verification email, too soon",
+			gqlTests: []*gqltesting.Test{
+				{
+					Schema: mustParseGraphQLSchema(t),
+					Query: `
+				mutation {
+					resendVerificationEmail(user: "VXNlcjox", email: "alice@example.com") {
+						alwaysNil
+					}
+				}
+			`,
+					ExpectedResult: "null",
+					ExpectedErrors: []*errors.QueryError{
+						{
+							Message:       "Last email sent too recently",
+							Path:          []interface{}{"resendVerificationEmail"},
+							ResolverError: fmt.Errorf("Last email sent too recently"),
+						},
+					},
+				},
+			},
+			email: &db.UserEmail{
+				Email:  "alice@example.com",
+				UserID: 1,
+				LastVerificationSentAt: func() *time.Time {
+					t := knownTime.Add(-30 * time.Second)
+					return &t
+				}(),
+			},
+			expectEmailSent: false,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -209,6 +244,9 @@ func TestResendUserEmailVerification(t *testing.T) {
 					return "", false, fmt.Errorf("oh no!")
 				}
 				return test.email.Email, test.email.VerifiedAt != nil, nil
+			}
+			db.Mocks.UserEmails.GetLatestVerificationSentEmail = func(context.Context, string) (*db.UserEmail, error) {
+				return test.email, nil
 			}
 
 			gqltesting.RunTests(t, test.gqlTests)
