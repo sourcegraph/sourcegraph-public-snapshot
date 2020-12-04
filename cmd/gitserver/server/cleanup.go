@@ -57,7 +57,7 @@ var (
 	jobTimer = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "src_gitserver_janitor_job_duration_seconds",
 		Help: "Duration of the individual jobs within the gitserver janitor background job",
-	}, []string{"job_name", "dir"})
+	}, []string{"job_name"})
 )
 
 const reposStatsName = "repos-stats.json"
@@ -70,9 +70,8 @@ const reposStatsName = "repos-stats.json"
 // 4. Reclone repos after a while. (simulate git gc)
 func (s *Server) cleanupRepos() {
 	janitorRunning.Set(1)
-	defer func() {
-		janitorRunning.Set(0)
-	}()
+
+	defer janitorRunning.Set(0)
 
 	bCtx, bCancel := s.serverContext()
 	defer bCancel()
@@ -230,7 +229,7 @@ func (s *Server) cleanupRepos() {
 			if err != nil {
 				log15.Error("error running cleanup command", "name", cfn.Name, "repo", gitDir, "error", err)
 			}
-			jobTimer.WithLabelValues(cfn.Name, dir).Observe(time.Since(start).Seconds())
+			jobTimer.WithLabelValues(cfn.Name).Observe(time.Since(start).Seconds())
 			if done {
 				break
 			}
