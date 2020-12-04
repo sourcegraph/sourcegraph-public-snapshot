@@ -192,13 +192,13 @@ type LSIFIndexConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
+type IndexConfigurationResolver interface {
+	Configuration() *string
+}
+
 type UpdateRepositoryIndexConfigurationArgs struct {
 	Repository    graphql.ID
 	Configuration string
-}
-
-type IndexConfigurationResolver interface {
-	Configuration() *string
 }
 
 type GitTreeLSIFDataResolver interface {
