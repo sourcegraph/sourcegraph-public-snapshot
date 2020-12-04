@@ -78,6 +78,11 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Total number of views of the onboarding tour
   - Total number of views of each step in the onboarding tour
   - Total number of tours closed
+- Sourcegraph extension activation statistics
+  - Total number of users that use a given non-default Sourcegraph extension
+  - Average number of activations for users that use a given non-default Sourcegraph extension
+  - Total number of users that use non-default Sourcegraph extensions
+  - Average number of non-default extensions enabled for users that use non-default Sourcegraph extensions
 
 ## CIDR Range for Sourcegraph
 
