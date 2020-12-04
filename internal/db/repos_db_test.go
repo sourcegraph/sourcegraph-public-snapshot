@@ -1336,10 +1336,10 @@ func TestRepos_ListRepoNames_pagination(t *testing.T) {
 	}
 }
 
-// TestRepos_ListRepoNames_query tests the behavior of Repos.List when called with
+// TestRepos_ListRepoNames_query tests the behavior of Repos.ListRepoNames when called with
 // a query.
 // Test batch 1 (correct filtering)
-func TestRepos_ListRepoNames_query1(t *testing.T) {
+func TestRepos_ListRepoNames_correctFiltering(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
