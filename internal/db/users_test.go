@@ -544,7 +544,7 @@ func TestUsers_Delete(t *testing.T) {
 			err = ExternalServices.Create(ctx, confGet, &types.ExternalService{
 				Kind:            extsvc.KindGitHub,
 				DisplayName:     "GITHUB #1",
-				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 				NamespaceUserID: user.ID,
 			})
 			if err != nil {

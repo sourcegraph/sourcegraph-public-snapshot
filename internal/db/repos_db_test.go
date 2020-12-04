@@ -373,7 +373,7 @@ func Test_GetUserAddedRepos(t *testing.T) {
 	service := types.ExternalService{
 		Kind:            extsvc.KindGitHub,
 		DisplayName:     "Github - Test",
-		Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 		CreatedAt:       now,
 		UpdatedAt:       now,
 		NamespaceUserID: user.ID,
