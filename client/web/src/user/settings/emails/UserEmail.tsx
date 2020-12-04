@@ -22,6 +22,7 @@ interface Props {
     email: NonNullable<UserEmailsResult['node']>['emails'][number]
     history: H.History
 
+    onError?: (error: ErrorLike) => void
     onDidRemove?: (email: string) => void
     onEmailVerify?: () => void
     onEmailResendVerification?: () => void
@@ -32,11 +33,26 @@ type Status = undefined | 'loading' | ErrorLike
 export const UserEmail: FunctionComponent<Props> = ({
     user,
     email: { email, isPrimary, verified, verificationPending, viewerCanManuallyVerify },
+    onError,
     onDidRemove,
     onEmailVerify,
+    onEmailResendVerification,
     history,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
+
+    const handleError = useCallback(
+        (error: ErrorLike): void => {
+            const emailError = asError(error)
+            if (onError) {
+                onError(emailError)
+                setStatusOrError(undefined)
+            } else {
+                setStatusOrError(emailError)
+            }
+        },
+        [onError]
+    )
 
     const removeEmail = useCallback(async (): Promise<void> => {
         setStatusOrError('loading')
@@ -62,9 +78,9 @@ export const UserEmail: FunctionComponent<Props> = ({
                 onDidRemove(email)
             }
         } catch (error) {
-            setStatusOrError(asError(error))
+            handleError(error)
         }
-    }, [email, user, onDidRemove])
+    }, [email, user, onDidRemove, handleError])
 
     const updateEmailVerification = async (verified: boolean): Promise<void> => {
         setStatusOrError('loading')
@@ -95,38 +111,37 @@ export const UserEmail: FunctionComponent<Props> = ({
                 onEmailVerify()
             }
         } catch (error) {
-            setStatusOrError(asError(error))
+            handleError(error)
         }
     }
 
-    // const resendEmailVerification = async(email: string): Promise<void> => {
-    //     setStatusOrError('loading')
-    //
-    //     try {
-    //         dataOrThrowErrors(
-    //             await requestGraphQL<ResendVerificationEmailResult, ResendVerificationEmailVariables>(
-    //                 gql`
-    //                     mutation ResendVerificationEmail($user: ID!, $email: String!) {
-    //                         resendVerificationEmail(user: $user, email: $email) {
-    //                             alwaysNil
-    //                         }
-    //                     }
-    //                 `,
-    //                 { user, email }
-    //             ).toPromise()
-    //         )
-    //
-    //         setStatusOrError(undefined)
-    //
-    //         eventLogger.log('UserEmailAddressVerificationResent')
-    //
-    //         if (onEmailResendVerification) {
-    //             onEmailResendVerification()
-    //         }
-    //     } catch (error) {
-    //         setStatusOrError(asError(error))
-    //     }
-    // }
+    const resendEmailVerification = async (email: string): Promise<void> => {
+        setStatusOrError('loading')
+
+        try {
+            dataOrThrowErrors(
+                await requestGraphQL<ResendVerificationEmailResult, ResendVerificationEmailVariables>(
+                    gql`
+                        mutation ResendVerificationEmail($user: ID!, $email: String!) {
+                            resendVerificationEmail(user: $user, email: $email) {
+                                alwaysNil
+                            }
+                        }
+                    `,
+                    { user, email }
+                ).toPromise()
+            )
+
+            setStatusOrError(undefined)
+            eventLogger.log('UserEmailAddressVerificationResent')
+
+            if (onEmailResendVerification) {
+                onEmailResendVerification()
+            }
+        } catch (error) {
+            handleError(error)
+        }
+    }
 
     return (
         <>
@@ -141,7 +156,7 @@ export const UserEmail: FunctionComponent<Props> = ({
                             <button
                                 type="button"
                                 className="btn btn-link text-primary p-0 mr-1"
-                                onClick={() => {}}
+                                onClick={() => resendEmailVerification(email)}
                                 disabled={statusOrError === 'loading'}
                             >
                                 Resend verification email
