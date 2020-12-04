@@ -221,7 +221,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     items={results?.results.map(result => renderResult(result)).filter(isDefined) || []}
                 />
 
-                {(!results || !results.progress.done) && (
+                {!results?.progress.done && (
                     <div className="text-center my-2" data-testid="loading-container">
                         <LoadingSpinner className="icon-inline" />
                     </div>
