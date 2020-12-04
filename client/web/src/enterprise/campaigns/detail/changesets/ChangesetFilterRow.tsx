@@ -51,10 +51,7 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
         const value = searchParameters.get('check_state')
         return value && isValidChangesetCheckState(value) ? value : undefined
     })
-    const [search, setSearch] = useState<string | undefined>(() => {
-        const value = searchParameters.get('search')
-        return value && isValidChangesetCheckState(value) ? value : undefined
-    })
+    const [search, setSearch] = useState<string | undefined>(() => searchParameters.get('search') ?? undefined)
     useEffect(() => {
         const searchParameters = new URLSearchParams(location.search)
         if (uiState) {
