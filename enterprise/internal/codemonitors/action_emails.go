@@ -25,6 +25,18 @@ type MonitorEmail struct {
 	ChangedAt time.Time
 }
 
+var EmailsColumns = []*sqlf.Query{
+	sqlf.Sprintf("cm_emails.id"),
+	sqlf.Sprintf("cm_emails.monitor"),
+	sqlf.Sprintf("cm_emails.enabled"),
+	sqlf.Sprintf("cm_emails.priority"),
+	sqlf.Sprintf("cm_emails.header"),
+	sqlf.Sprintf("cm_emails.created_by"),
+	sqlf.Sprintf("cm_emails.created_at"),
+	sqlf.Sprintf("cm_emails.changed_by"),
+	sqlf.Sprintf("cm_emails.changed_at"),
+}
+
 func (s *Store) UpdateActionEmail(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (e *MonitorEmail, err error) {
 	var q *sqlf.Query
 	q, err = s.updateActionEmailQuery(ctx, monitorID, action.Email)
@@ -65,6 +77,16 @@ func (s *Store) DeleteActionsInt64(ctx context.Context, actionIDs []int64, monit
 		return err
 	}
 	return nil
+}
+
+const actionEmailByIDFmtStr = `
+SELECT id, monitor, enabled, priority, header, created_by, created_at, changed_by, changed_at
+FROM cm_emails
+WHERE id = %s
+`
+
+func (s *Store) ActionEmailByIDInt64(ctx context.Context, emailID int64) (m *MonitorEmail, err error) {
+	return s.runEmailQuery(ctx, sqlf.Sprintf(actionEmailByIDFmtStr, emailID))
 }
 
 func (s *Store) runEmailQuery(ctx context.Context, q *sqlf.Query) (*MonitorEmail, error) {
@@ -183,18 +205,6 @@ SELECT e.id, e.monitor, e.enabled, e.priority, e.header, e.created_by, e.created
 FROM cm_emails e INNER JOIN cm_queries q ON e.monitor = q.monitor
 WHERE q.id = %s
 `
-
-var EmailsColumns = []*sqlf.Query{
-	sqlf.Sprintf("cm_emails.id"),
-	sqlf.Sprintf("cm_emails.monitor"),
-	sqlf.Sprintf("cm_emails.enabled"),
-	sqlf.Sprintf("cm_emails.priority"),
-	sqlf.Sprintf("cm_emails.header"),
-	sqlf.Sprintf("cm_emails.created_by"),
-	sqlf.Sprintf("cm_emails.created_at"),
-	sqlf.Sprintf("cm_emails.changed_by"),
-	sqlf.Sprintf("cm_emails.changed_at"),
-}
 
 func ScanEmails(rows *sql.Rows) (ms []*MonitorEmail, err error) {
 	for rows.Next() {

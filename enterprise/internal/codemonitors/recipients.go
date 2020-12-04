@@ -3,6 +3,7 @@ package codemonitors
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/sqlf"
@@ -57,27 +58,20 @@ func (s *Store) RecipientsForEmailIDInt64(ctx context.Context, emailID int64, ar
 	return ms, nil
 }
 
-func scanRecipients(rows *sql.Rows) (ms []*Recipient, err error) {
-	for rows.Next() {
-		m := &Recipient{}
-		if err := rows.Scan(
-			&m.ID,
-			&m.Email,
-			&m.NamespaceUserID,
-			&m.NamespaceOrgID,
-		); err != nil {
-			return nil, err
-		}
-		ms = append(ms, m)
-	}
-	err = rows.Close()
+const allRecipientsForEmailIDInt64FmtStr = `
+SELECT id, email, namespace_user_id, namespace_org_id
+FROM cm_recipients
+WHERE email = %s
+`
+
+func (s *Store) AllRecipientsForEmailIDInt64(ctx context.Context, emailID int64) (rs []*Recipient, err error) {
+	var rows *sql.Rows
+	rows, err = s.Query(ctx, sqlf.Sprintf(allRecipientsForEmailIDInt64FmtStr, emailID))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
 	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return ms, nil
+	defer func() { err = rows.Close() }()
+	return scanRecipients(rows)
 }
 
 const createRecipientFmtStr = `
@@ -136,6 +130,29 @@ func readRecipientQuery(ctx context.Context, emailId int64, args *graphqlbackend
 		after,
 		args.First,
 	), nil
+}
+
+func scanRecipients(rows *sql.Rows) (ms []*Recipient, err error) {
+	for rows.Next() {
+		m := &Recipient{}
+		if err := rows.Scan(
+			&m.ID,
+			&m.Email,
+			&m.NamespaceUserID,
+			&m.NamespaceOrgID,
+		); err != nil {
+			return nil, err
+		}
+		ms = append(ms, m)
+	}
+	err = rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return ms, nil
 }
 
 func nilOrInt32(n int32) *int32 {

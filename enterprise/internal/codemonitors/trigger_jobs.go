@@ -14,6 +14,48 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
+type TriggerJobs struct {
+	Id    int
+	Query int64
+
+	// The query we ran including after: filter.
+	QueryString *string
+
+	// Whether we got any results.
+	Results    *bool
+	NumResults *int
+
+	// Fields demanded for any dbworker.
+	State          string
+	FailureMessage *string
+	StartedAt      *time.Time
+	FinishedAt     *time.Time
+	ProcessAfter   *time.Time
+	NumResets      int32
+	NumFailures    int32
+	LogContents    *string
+}
+
+func (r *TriggerJobs) RecordID() int {
+	return r.Id
+}
+
+var TriggerJobsColumns = []*sqlf.Query{
+	sqlf.Sprintf("cm_trigger_jobs.id"),
+	sqlf.Sprintf("cm_trigger_jobs.query"),
+	sqlf.Sprintf("cm_trigger_jobs.query_string"),
+	sqlf.Sprintf("cm_trigger_jobs.results"),
+	sqlf.Sprintf("cm_trigger_jobs.num_results"),
+	sqlf.Sprintf("cm_trigger_jobs.state"),
+	sqlf.Sprintf("cm_trigger_jobs.failure_message"),
+	sqlf.Sprintf("cm_trigger_jobs.started_at"),
+	sqlf.Sprintf("cm_trigger_jobs.finished_at"),
+	sqlf.Sprintf("cm_trigger_jobs.process_after"),
+	sqlf.Sprintf("cm_trigger_jobs.num_resets"),
+	sqlf.Sprintf("cm_trigger_jobs.num_failures"),
+	sqlf.Sprintf("cm_trigger_jobs.log_contents"),
+}
+
 const enqueueTriggerQueryFmtStr = `
 WITH due AS (
     SELECT cm_queries.id as id
@@ -27,7 +69,7 @@ busy AS (
     OR state = 'processing'
 )
 INSERT INTO cm_trigger_jobs (query)
-SELECT id from due EXCEPT SELECT id from busy
+SELECT id from due EXCEPT SELECT id from busy ORDER BY id
 `
 
 func (s *Store) EnqueueTriggerQueries(ctx context.Context) (err error) {
@@ -37,12 +79,13 @@ func (s *Store) EnqueueTriggerQueries(ctx context.Context) (err error) {
 const logSearchFmtStr = `
 UPDATE cm_trigger_jobs
 SET query_string = %s,
-	results = %s
+	results = %s,
+	num_results = %s
 WHERE id = %s
 `
 
-func (s *Store) LogSearch(ctx context.Context, queryString string, results bool, recordID int) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, results, recordID))
+func (s *Store) LogSearch(ctx context.Context, queryString string, numResults int, recordID int) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, numResults > 0, numResults, recordID))
 }
 
 const deleteObsoleteJobLogsFmtStr = `
@@ -58,7 +101,7 @@ func (s *Store) DeleteObsoleteJobLogs(ctx context.Context) error {
 }
 
 const getEventsForQueryIDInt64FmtStr = `
-SELECT id, query, query_string, results, state, failure_message, started_at, finished_at, process_after, num_resets, num_failures, log_contents
+SELECT id, query, query_string, results, num_results, state, failure_message, started_at, finished_at, process_after, num_resets, num_failures, log_contents
 FROM cm_trigger_jobs
 WHERE ((state = 'completed' AND results IS TRUE) OR (state != 'completed'))
 AND query = %s
@@ -83,31 +126,6 @@ func (s *Store) GetEventsForQueryIDInt64(ctx context.Context, queryID int64, arg
 	return scanTriggerJobs(rows, err)
 }
 
-type TriggerJobs struct {
-	Id    int
-	Query int64
-
-	// The query we ran including after: filter.
-	QueryString *string
-
-	// Whether we got any results.
-	Results *bool
-
-	// Fields demanded for any dbworker.
-	State          string
-	FailureMessage *string
-	StartedAt      *time.Time
-	FinishedAt     *time.Time
-	ProcessAfter   *time.Time
-	NumResets      int32
-	NumFailures    int32
-	LogContents    *string
-}
-
-func (r *TriggerJobs) RecordID() int {
-	return r.Id
-}
-
 func ScanTriggerJobs(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	records, err := scanTriggerJobs(rows, err)
 	if err != nil {
@@ -129,6 +147,7 @@ func scanTriggerJobs(rows *sql.Rows, err error) ([]*TriggerJobs, error) {
 			&m.Query,
 			&m.QueryString,
 			&m.Results,
+			&m.NumResults,
 			&m.State,
 			&m.FailureMessage,
 			&m.StartedAt,
@@ -150,21 +169,6 @@ func scanTriggerJobs(rows *sql.Rows, err error) ([]*TriggerJobs, error) {
 		return nil, err
 	}
 	return ms, nil
-}
-
-var TriggerJobsColumns = []*sqlf.Query{
-	sqlf.Sprintf("cm_trigger_jobs.id"),
-	sqlf.Sprintf("cm_trigger_jobs.query"),
-	sqlf.Sprintf("cm_trigger_jobs.query_string"),
-	sqlf.Sprintf("cm_trigger_jobs.results"),
-	sqlf.Sprintf("cm_trigger_jobs.state"),
-	sqlf.Sprintf("cm_trigger_jobs.failure_message"),
-	sqlf.Sprintf("cm_trigger_jobs.started_at"),
-	sqlf.Sprintf("cm_trigger_jobs.finished_at"),
-	sqlf.Sprintf("cm_trigger_jobs.process_after"),
-	sqlf.Sprintf("cm_trigger_jobs.num_resets"),
-	sqlf.Sprintf("cm_trigger_jobs.num_failures"),
-	sqlf.Sprintf("cm_trigger_jobs.log_contents"),
 }
 
 func unmarshalAfter(after *string) (int64, error) {
