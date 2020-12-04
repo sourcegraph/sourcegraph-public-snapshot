@@ -6,9 +6,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background/email"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -21,7 +23,7 @@ func newTriggerQueryRunner(ctx context.Context, s *cm.Store, metrics codeMonitor
 		Interval:    5 * time.Second,
 		Metrics:     workerutil.WorkerMetrics{HandleOperation: metrics.handleOperation},
 	}
-	worker := dbworker.NewWorker(ctx, createDBWorkerStore(s), &queryRunner{s}, options)
+	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(s), &queryRunner{s}, options)
 	return worker
 }
 
@@ -35,7 +37,7 @@ func newTriggerQueryEnqueuer(ctx context.Context, store *cm.Store) goroutine.Bac
 }
 
 func newTriggerQueryResetter(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *dbworker.Resetter {
-	workerStore := createDBWorkerStore(s)
+	workerStore := createDBWorkerStoreForTriggerJobs(s)
 
 	options := dbworker.ResetterOptions{
 		Name:     "code_monitors_query_resetter",
@@ -58,11 +60,48 @@ func newTriggerJobsLogDeleter(ctx context.Context, store *cm.Store) goroutine.Ba
 	return goroutine.NewPeriodicGoroutine(ctx, 60*time.Minute, deleteObsoleteLogs)
 }
 
-func createDBWorkerStore(s *cm.Store) dbworkerstore.Store {
+func newActionRunner(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *workerutil.Worker {
+	options := workerutil.WorkerOptions{
+		NumHandlers: 1,
+		Interval:    5 * time.Second,
+		Metrics:     workerutil.WorkerMetrics{HandleOperation: metrics.handleOperation},
+	}
+	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForActionJobs(s), &actionRunner{s}, options)
+	return worker
+}
+
+func newActionJobResetter(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *dbworker.Resetter {
+	workerStore := createDBWorkerStoreForActionJobs(s)
+
+	options := dbworker.ResetterOptions{
+		Name:     "code_monitors_action_resetter",
+		Interval: 1 * time.Minute,
+		Metrics: dbworker.ResetterMetrics{
+			Errors:              metrics.errors,
+			RecordResetFailures: metrics.resetFailures,
+			RecordResets:        metrics.resets,
+		},
+	}
+	return dbworker.NewResetter(workerStore, options)
+}
+
+func createDBWorkerStoreForTriggerJobs(s *cm.Store) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		TableName:         "cm_trigger_jobs",
 		ColumnExpressions: cm.TriggerJobsColumns,
 		Scan:              cm.ScanTriggerJobs,
+		StalledMaxAge:     60 * time.Second,
+		RetryAfter:        10 * time.Second,
+		MaxNumRetries:     3,
+		OrderByExpression: sqlf.Sprintf("id"),
+	})
+}
+
+func createDBWorkerStoreForActionJobs(s *cm.Store) dbworkerstore.Store {
+	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
+		TableName:         "cm_action_jobs",
+		ColumnExpressions: cm.ActionJobsColumns,
+		Scan:              cm.ScanActionJobs,
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     3,
@@ -75,6 +114,12 @@ type queryRunner struct {
 }
 
 func (r *queryRunner) Handle(ctx context.Context, workerStore dbworkerstore.Store, record workerutil.Record) (err error) {
+	defer func() {
+		if err != nil {
+			log15.Error("queryRunner.Handle", "error", err)
+		}
+	}()
+
 	s := r.Store.With(workerStore)
 
 	var q *cm.MonitorQuery
@@ -94,6 +139,12 @@ func (r *queryRunner) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 	if results != nil {
 		numResults = len(results.Data.Search.Results.Results)
 	}
+	if numResults > 0 {
+		err := s.EnqueueActionEmailsForQueryIDInt64(ctx, q.Id, record.RecordID())
+		if err != nil {
+			return fmt.Errorf("store.EnqueueActionEmailsForQueryIDInt64: %w", err)
+		}
+	}
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, err)
 	err = s.SetTriggerQueryNextRun(ctx, q.Id, s.Clock()().Add(5*time.Minute), newLatestResult.UTC())
@@ -103,7 +154,70 @@ func (r *queryRunner) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 	// Log the actual query we ran and whether we got any new results.
 	err = s.LogSearch(ctx, newQuery, numResults, record.RecordID())
 	if err != nil {
-		return err
+		return fmt.Errorf("LogSearch: %w", err)
+
+	}
+	return nil
+}
+
+type actionRunner struct {
+	*cm.Store
+}
+
+func (r *actionRunner) Handle(ctx context.Context, workerStore dbworkerstore.Store, record workerutil.Record) (err error) {
+	log15.Info("actionRunner.Handle starting")
+	defer func() {
+		if err != nil {
+			log15.Error("actionRunner.Handle", "error", err)
+		}
+	}()
+
+	s := r.Store.With(workerStore)
+
+	var (
+		j    *cm.ActionJob
+		m    *cm.ActionJobMetadata
+		e    *cm.MonitorEmail
+		recs []*cm.Recipient
+		data *email.TemplateDataNewSearchResults
+	)
+
+	j, err = s.ActionJobForIDInt(ctx, record.RecordID())
+	if err != nil {
+		return fmt.Errorf("store.ActionJobForIDInt: %w", err)
+	}
+
+	m, err = s.GetActionJobMetadata(ctx, record.RecordID())
+	if err != nil {
+		return fmt.Errorf("store.GetActionJobMetadata: %w", err)
+	}
+
+	e, err = s.ActionEmailByIDInt64(ctx, j.Email)
+	if err != nil {
+		return fmt.Errorf("store.ActionEmailByIDInt64: %w", err)
+	}
+
+	recs, err = s.AllRecipientsForEmailIDInt64(ctx, j.Email)
+	if err != nil {
+		return fmt.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
+	}
+
+	data, err = email.NewTemplateDataForNewSearchResults(m.Description, m.Query, e, zeroOrVal(m.NumResults))
+	if err != nil {
+		return fmt.Errorf("email.NewTemplateDataForNewSearchResults")
+	}
+	for _, rec := range recs {
+		if rec.NamespaceOrgID != nil {
+			// TODO (stefan): Send emails to org members.
+			continue
+		}
+		if rec.NamespaceUserID == nil {
+			return fmt.Errorf("nil recipient")
+		}
+		err = email.SendEmailForNewSearchResult(ctx, *rec.NamespaceUserID, data)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -119,7 +233,13 @@ func newQueryWithAfterFilter(q *cm.MonitorQuery) string {
 		// time. We'll most certainly find nothing, which is okay.
 		latestResult = time.Now()
 	}
-	afterTime := latestResult.UTC().Format(time.RFC3339)
+	// ATTENTION: This is a stop gap. Add(time.Second) is necessary because currently
+	// the after: filter is implemented as "at OR after". If we didn't add a second
+	// here, we would send out emails for every run, always showing at least the last
+	// result. This means there is non-zero chance that we miss results whenever
+	// commits have a timestamp equal to the value of :after but arrive after this
+	// job has run.
+	afterTime := latestResult.UTC().Add(time.Second).Format(time.RFC3339)
 	return strings.Join([]string{q.QueryString, fmt.Sprintf(`after:"%s"`, afterTime)}, " ")
 }
 
@@ -140,4 +260,11 @@ func latestResultTime(previousLastResult *time.Time, v *gqlSearchResponse, searc
 		return time.Now()
 	}
 	return *t
+}
+
+func zeroOrVal(i *int) int {
+	if i == nil {
+		return 0
+	}
+	return *i
 }
