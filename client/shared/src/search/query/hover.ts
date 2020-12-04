@@ -1,7 +1,7 @@
 import * as Monaco from 'monaco-editor'
-import { Token, toMonacoRange } from './scanner'
+import { Token } from './scanner'
+import { toMonacoRange, decorate, DecoratedToken, RegexpMetaKind } from './tokens'
 import { resolveFilter } from './filters'
-import { decorate, DecoratedToken, RegexpMetaKind } from './tokens'
 
 const toHover = (token: DecoratedToken): string => {
     switch (token.type) {

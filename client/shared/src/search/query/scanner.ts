@@ -1,4 +1,3 @@
-import { IRange } from 'monaco-editor'
 import { filterTypeKeysWithAliases } from '../interactive/util'
 import { SearchPatternType } from '../../graphql-operations'
 
@@ -29,16 +28,6 @@ export interface CharacterRange {
     /** Zero-based character on the line */
     end: number
 }
-
-/**
- * Converts a zero-indexed, single-line {@link CharacterRange} to a Monaco {@link IRange}.
- */
-export const toMonacoRange = ({ start, end }: CharacterRange): IRange => ({
-    startLineNumber: 1,
-    endLineNumber: 1,
-    startColumn: start + 1,
-    endColumn: end + 1,
-})
 
 /**
  * A label associated with a pattern token. We don't use SearchPatternType because
