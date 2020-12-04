@@ -24,7 +24,7 @@ export type DecoratedToken = Token | MetaToken
 /**
  * A MetaToken defines a token that is associated with some language-specific metasyntax.
  */
-export type MetaToken = RegexpMeta | StructuralMeta | FieldMeta
+export type MetaToken = MetaRegexp | MetaStructural | MetaField
 
 /**
  * Defines common properties for meta tokens.
@@ -38,16 +38,16 @@ export interface BaseMetaToken {
 /**
  * A token that is labeled and interpreted as regular expression syntax.
  */
-export interface RegexpMeta extends BaseMetaToken {
-    type: 'regexpMeta'
+export interface MetaRegexp extends BaseMetaToken {
+    type: 'metaRegexp'
     groupRange?: CharacterRange
-    kind: RegexpMetaKind
+    kind: MetaRegexpKind
 }
 
 /**
  * Classifications of the kinds of regexp metasyntax.
  */
-export enum RegexpMetaKind {
+export enum MetaRegexpKind {
     Assertion = 'Assertion', // like ^ or \b
     Alternative = 'Alternative', // like |
     Delimited = 'Delimited', // like ( or )
@@ -61,22 +61,22 @@ export enum RegexpMetaKind {
 /**
  * A token that is labeled and interpreted as structural search syntax.
  */
-export interface StructuralMeta extends BaseMetaToken {
-    type: 'structuralMeta'
-    kind: StructuralMetaKind
+export interface MetaStructural extends BaseMetaToken {
+    type: 'metaStructural'
+    kind: MetaStructuralKind
 }
 
 /**
  * Classifications of the kinds of structural metasyntax.
  */
-export enum StructuralMetaKind {
+export enum MetaStructuralKind {
     Hole = 'Hole',
 }
 
 /**
  * A token that is labeled and interpreted as a field, like "repo:" in the Sourcegraph language syntax.
  */
-export interface FieldMeta extends BaseMetaToken {
+export interface MetaField extends BaseMetaToken {
     type: 'field'
 }
 
@@ -93,80 +93,80 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                 // escaped \| or part of a character class like [abcd|].
                 if (pattern.value[node.end] && pattern.value[node.end] === '|') {
                     tokens.push({
-                        type: 'regexpMeta',
+                        type: 'metaRegexp',
                         range: { start: offset + node.end, end: offset + node.end + 1 },
                         value: '|',
-                        kind: RegexpMetaKind.Alternative,
+                        kind: MetaRegexpKind.Alternative,
                     })
                 }
             },
             onAssertionEnter(node: Assertion) {
                 tokens.push({
-                    type: 'regexpMeta',
+                    type: 'metaRegexp',
                     range: { start: offset + node.start, end: offset + node.end },
                     value: node.raw,
-                    kind: RegexpMetaKind.Assertion,
+                    kind: MetaRegexpKind.Assertion,
                 })
             },
             onGroupEnter(node: Group) {
                 // Push the leading '('
                 tokens.push({
-                    type: 'regexpMeta',
+                    type: 'metaRegexp',
                     range: { start: offset + node.start, end: offset + node.start + 1 },
                     value: '(',
-                    kind: RegexpMetaKind.Delimited,
+                    kind: MetaRegexpKind.Delimited,
                 })
                 // Push the trailing ')'
                 tokens.push({
-                    type: 'regexpMeta',
+                    type: 'metaRegexp',
                     range: { start: offset + node.end - 1, end: offset + node.end },
                     value: ')',
-                    kind: RegexpMetaKind.Delimited,
+                    kind: MetaRegexpKind.Delimited,
                 })
             },
             onCapturingGroupEnter(node: CapturingGroup) {
                 // Push the leading '('
                 tokens.push({
-                    type: 'regexpMeta',
+                    type: 'metaRegexp',
                     range: { start: offset + node.start, end: offset + node.start + 1 },
                     groupRange: { start: offset + node.start, end: offset + node.end },
                     value: '(',
-                    kind: RegexpMetaKind.Delimited,
+                    kind: MetaRegexpKind.Delimited,
                 })
                 // Push the trailing ')'
                 tokens.push({
-                    type: 'regexpMeta',
+                    type: 'metaRegexp',
                     range: { start: offset + node.end - 1, end: offset + node.end },
                     groupRange: { start: offset + node.start, end: offset + node.end },
                     value: ')',
-                    kind: RegexpMetaKind.Delimited,
+                    kind: MetaRegexpKind.Delimited,
                 })
             },
             onCharacterSetEnter(node: CharacterSet) {
                 tokens.push({
-                    type: 'regexpMeta',
+                    type: 'metaRegexp',
                     range: { start: offset + node.start, end: offset + node.end },
                     value: node.raw,
-                    kind: RegexpMetaKind.CharacterSet,
+                    kind: MetaRegexpKind.CharacterSet,
                 })
             },
             onCharacterClassEnter(node: CharacterClass) {
                 const negatedOffset = node.negate ? 1 : 0
                 // Push the leading '['
                 tokens.push({
-                    type: 'regexpMeta',
+                    type: 'metaRegexp',
                     range: { start: offset + node.start, end: offset + node.start + 1 + negatedOffset },
                     groupRange: { start: offset + node.start, end: offset + node.end },
                     value: node.negate ? '[^' : '[',
-                    kind: RegexpMetaKind.CharacterClass,
+                    kind: MetaRegexpKind.CharacterClass,
                 })
                 // Push the trailing ']'
                 tokens.push({
-                    type: 'regexpMeta',
+                    type: 'metaRegexp',
                     range: { start: offset + node.end - 1, end: offset + node.end },
                     groupRange: { start: offset + node.start, end: offset + node.end },
                     value: ']',
-                    kind: RegexpMetaKind.CharacterClass,
+                    kind: MetaRegexpKind.CharacterClass,
                 })
             },
             onCharacterClassRangeEnter(node: CharacterClassRange) {
@@ -174,10 +174,10 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                 // don't want to highlight the first '-' in [--z], nor an escaped '-' with a
                 // two-character offset as in [\--z].
                 tokens.push({
-                    type: 'regexpMeta',
+                    type: 'metaRegexp',
                     range: { start: offset + node.min.end, end: offset + node.min.end + 1 },
                     value: '-',
-                    kind: RegexpMetaKind.CharacterClass,
+                    kind: MetaRegexpKind.CharacterClass,
                 })
             },
             onQuantifierEnter(node: Quantifier) {
@@ -185,23 +185,23 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                 const lazyQuantifierOffset = node.greedy ? 0 : 1
                 if (!node.greedy) {
                     tokens.push({
-                        type: 'regexpMeta',
+                        type: 'metaRegexp',
                         range: { start: offset + node.end - 1, end: offset + node.end },
                         value: '?',
-                        kind: RegexpMetaKind.LazyQuantifier,
+                        kind: MetaRegexpKind.LazyQuantifier,
                     })
                 }
 
                 const quantifier = node.raw[node.raw.length - lazyQuantifierOffset - 1]
                 if (quantifier === '+' || quantifier === '*' || quantifier === '?') {
                     tokens.push({
-                        type: 'regexpMeta',
+                        type: 'metaRegexp',
                         range: {
                             start: offset + node.end - 1 - lazyQuantifierOffset,
                             end: offset + node.end - lazyQuantifierOffset,
                         },
                         value: quantifier,
-                        kind: RegexpMetaKind.RangeQuantifier,
+                        kind: MetaRegexpKind.RangeQuantifier,
                     })
                 } else {
                     // regexpp provides no easy way to tell whether the quantifier is a range '{number, number}',
@@ -214,10 +214,10 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                         openBrace = openBrace - 1
                     }
                     tokens.push({
-                        type: 'regexpMeta',
+                        type: 'metaRegexp',
                         range: { start: offset + openBrace, end: offset + node.end - lazyQuantifierOffset },
                         value: pattern.value.slice(openBrace, node.end - lazyQuantifierOffset),
-                        kind: RegexpMetaKind.RangeQuantifier,
+                        kind: MetaRegexpKind.RangeQuantifier,
                     })
                 }
             },
@@ -225,10 +225,10 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                 if (node.end - node.start > 1 && node.raw.startsWith('\\')) {
                     // This is an escaped value like `\.`, `\u0065`, `\x65`.
                     tokens.push({
-                        type: 'regexpMeta',
+                        type: 'metaRegexp',
                         range: { start: offset + node.start, end: offset + node.end },
                         value: node.raw,
-                        kind: RegexpMetaKind.EscapedCharacter,
+                        kind: MetaRegexpKind.EscapedCharacter,
                     })
                     return
                 }
@@ -277,13 +277,13 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
     }
 
     // Appends a decorated token to the list of tokens, and resets the current token to be empty.
-    const appendDecoratedToken = (endIndex: number, kind: PatternKind.Literal | StructuralMetaKind): void => {
+    const appendDecoratedToken = (endIndex: number, kind: PatternKind.Literal | MetaStructuralKind): void => {
         const value = token.join('')
         const range = { start: offset + endIndex - value.length, end: offset + endIndex }
         if (kind === PatternKind.Literal) {
             decorated.push({ type: 'pattern', kind, value, range })
         } else {
-            decorated.push({ type: 'structuralMeta', kind, value, range })
+            decorated.push({ type: 'metaStructural', kind, value, range })
         }
         token = []
     }
@@ -301,7 +301,7 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                     }
                     start = start + 2
                     // Append the value of '...' after advancing.
-                    appendDecoratedToken(start - 3, StructuralMetaKind.Hole)
+                    appendDecoratedToken(start - 3, MetaStructuralKind.Hole)
                     continue
                 }
                 token.push('.')
@@ -359,7 +359,7 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                     // This ']' closes a hole.
                     open = open - 1
                     token.push(']')
-                    appendDecoratedToken(start, StructuralMetaKind.Hole)
+                    appendDecoratedToken(start, MetaStructuralKind.Hole)
                     continue
                 }
                 token.push(current)
@@ -453,8 +453,8 @@ const decoratedToMonaco = (token: DecoratedToken): Monaco.languages.IToken => {
                 startIndex: token.range.start,
                 scopes: token.type,
             }
-        case 'regexpMeta':
-        case 'structuralMeta':
+        case 'metaRegexp':
+        case 'metaStructural':
             // The scopes value is derived from the token type and its kind.
             // E.g., regexpMetaDelimited derives from {@link RegexpMeta} and {@link RegexpMetaKind}.
             return {

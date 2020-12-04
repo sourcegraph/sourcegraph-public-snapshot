@@ -48,8 +48,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('search query containing parenthesized parameters', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:a (f:b and c)')))).toMatchInlineSnapshot(
-            `
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:a (f:b and c)')))).toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,
@@ -96,8 +95,7 @@ describe('getMonacoTokens()', () => {
                 "scopes": "identifier"
               }
             ]
-        `
-        )
+        `)
     })
 
     test('no decoration for literal', () => {
@@ -118,7 +116,7 @@ describe('getMonacoTokens()', () => {
             [
               {
                 "startIndex": 0,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 1,
@@ -126,7 +124,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 2,
-                "scopes": "regexpMetaCharacterSet"
+                "scopes": "metaRegexpCharacterSet"
               },
               {
                 "startIndex": 4,
@@ -134,7 +132,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 5,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               }
             ]
         `)
@@ -146,7 +144,7 @@ describe('getMonacoTokens()', () => {
             [
               {
                 "startIndex": 0,
-                "scopes": "regexpMetaAssertion"
+                "scopes": "metaRegexpAssertion"
               },
               {
                 "startIndex": 1,
@@ -158,7 +156,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 3,
-                "scopes": "regexpMetaEscapedCharacter"
+                "scopes": "metaRegexpEscapedCharacter"
               },
               {
                 "startIndex": 5,
@@ -174,7 +172,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 8,
-                "scopes": "regexpMetaAssertion"
+                "scopes": "metaRegexpAssertion"
               }
             ]
         `)
@@ -190,15 +188,15 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 1,
-                "scopes": "regexpMetaRangeQuantifier"
+                "scopes": "metaRegexpRangeQuantifier"
               },
               {
                 "startIndex": 2,
-                "scopes": "regexpMetaLazyQuantifier"
+                "scopes": "metaRegexpLazyQuantifier"
               },
               {
                 "startIndex": 3,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 4,
@@ -206,11 +204,11 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 5,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 6,
-                "scopes": "regexpMetaRangeQuantifier"
+                "scopes": "metaRegexpRangeQuantifier"
               }
             ]
         `)
@@ -226,7 +224,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 1,
-                "scopes": "regexpMetaRangeQuantifier"
+                "scopes": "metaRegexpRangeQuantifier"
               },
               {
                 "startIndex": 4,
@@ -238,7 +236,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 6,
-                "scopes": "regexpMetaRangeQuantifier"
+                "scopes": "metaRegexpRangeQuantifier"
               },
               {
                 "startIndex": 11,
@@ -250,11 +248,11 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 13,
-                "scopes": "regexpMetaRangeQuantifier"
+                "scopes": "metaRegexpRangeQuantifier"
               },
               {
                 "startIndex": 17,
-                "scopes": "regexpMetaLazyQuantifier"
+                "scopes": "metaRegexpLazyQuantifier"
               }
             ]
         `)
@@ -270,7 +268,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 1,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 2,
@@ -278,7 +276,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 3,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 4,
@@ -310,7 +308,7 @@ describe('getMonacoTokens()', () => {
             [
               {
                 "startIndex": 0,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 3,
@@ -318,7 +316,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 4,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 7,
@@ -326,11 +324,11 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 8,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 9,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               }
             ]
         `)
@@ -342,11 +340,11 @@ describe('getMonacoTokens()', () => {
             [
               {
                 "startIndex": 0,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 1,
-                "scopes": "regexpMetaCharacterClass"
+                "scopes": "metaRegexpCharacterClass"
               },
               {
                 "startIndex": 2,
@@ -354,7 +352,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 3,
-                "scopes": "regexpMetaCharacterClass"
+                "scopes": "metaRegexpCharacterClass"
               },
               {
                 "startIndex": 4,
@@ -362,11 +360,11 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 5,
-                "scopes": "regexpMetaCharacterClass"
+                "scopes": "metaRegexpCharacterClass"
               },
               {
                 "startIndex": 6,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               }
             ]
         `)
@@ -378,7 +376,7 @@ describe('getMonacoTokens()', () => {
             [
               {
                 "startIndex": 0,
-                "scopes": "regexpMetaCharacterClass"
+                "scopes": "metaRegexpCharacterClass"
               },
               {
                 "startIndex": 1,
@@ -386,7 +384,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 2,
-                "scopes": "regexpMetaCharacterClass"
+                "scopes": "metaRegexpCharacterClass"
               },
               {
                 "startIndex": 3,
@@ -394,11 +392,11 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 4,
-                "scopes": "regexpMetaCharacterClass"
+                "scopes": "metaRegexpCharacterClass"
               },
               {
                 "startIndex": 5,
-                "scopes": "regexpMetaCharacterClass"
+                "scopes": "metaRegexpCharacterClass"
               },
               {
                 "startIndex": 6,
@@ -406,7 +404,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 7,
-                "scopes": "regexpMetaCharacterClass"
+                "scopes": "metaRegexpCharacterClass"
               },
               {
                 "startIndex": 8,
@@ -414,11 +412,11 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 9,
-                "scopes": "regexpMetaCharacterClass"
+                "scopes": "metaRegexpCharacterClass"
               },
               {
                 "startIndex": 10,
-                "scopes": "regexpMetaCharacterClass"
+                "scopes": "metaRegexpCharacterClass"
               },
               {
                 "startIndex": 11,
@@ -426,7 +424,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 12,
-                "scopes": "regexpMetaCharacterClass"
+                "scopes": "metaRegexpCharacterClass"
               },
               {
                 "startIndex": 13,
@@ -434,7 +432,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 14,
-                "scopes": "regexpMetaCharacterClass"
+                "scopes": "metaRegexpCharacterClass"
               }
             ]
         `)
@@ -454,7 +452,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 5,
-                "scopes": "regexpMetaAssertion"
+                "scopes": "metaRegexpAssertion"
               },
               {
                 "startIndex": 6,
@@ -470,7 +468,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 9,
-                "scopes": "regexpMetaAssertion"
+                "scopes": "metaRegexpAssertion"
               },
               {
                 "startIndex": 10,
@@ -494,11 +492,11 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 25,
-                "scopes": "regexpMetaCharacterSet"
+                "scopes": "metaRegexpCharacterSet"
               },
               {
                 "startIndex": 26,
-                "scopes": "regexpMetaRangeQuantifier"
+                "scopes": "metaRegexpRangeQuantifier"
               },
               {
                 "startIndex": 27,
@@ -522,7 +520,7 @@ describe('getMonacoTokens()', () => {
             [
               {
                 "startIndex": 0,
-                "scopes": "regexpMetaCharacterClass"
+                "scopes": "metaRegexpCharacterClass"
               },
               {
                 "startIndex": 1,
@@ -530,19 +528,19 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 2,
-                "scopes": "regexpMetaCharacterClass"
+                "scopes": "metaRegexpCharacterClass"
               },
               {
                 "startIndex": 3,
-                "scopes": "regexpMetaEscapedCharacter"
+                "scopes": "metaRegexpEscapedCharacter"
               },
               {
                 "startIndex": 5,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 6,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 7,
@@ -550,7 +548,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 8,
-                "scopes": "regexpMetaAlternative"
+                "scopes": "metaRegexpAlternative"
               },
               {
                 "startIndex": 9,
@@ -558,11 +556,11 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 10,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 11,
-                "scopes": "regexpMetaAlternative"
+                "scopes": "metaRegexpAlternative"
               },
               {
                 "startIndex": 12,
@@ -570,11 +568,11 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 13,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 14,
-                "scopes": "regexpMetaAlternative"
+                "scopes": "metaRegexpAlternative"
               },
               {
                 "startIndex": 15,
@@ -595,7 +593,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 5,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 6,
@@ -603,7 +601,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 7,
-                "scopes": "regexpMetaAlternative"
+                "scopes": "metaRegexpAlternative"
               },
               {
                 "startIndex": 8,
@@ -611,7 +609,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 9,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 10,
@@ -619,7 +617,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 11,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 12,
@@ -627,7 +625,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 13,
-                "scopes": "regexpMetaAlternative"
+                "scopes": "metaRegexpAlternative"
               },
               {
                 "startIndex": 14,
@@ -635,7 +633,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 15,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 16,
@@ -643,7 +641,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 17,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 18,
@@ -651,7 +649,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 19,
-                "scopes": "regexpMetaAlternative"
+                "scopes": "metaRegexpAlternative"
               },
               {
                 "startIndex": 20,
@@ -659,7 +657,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 21,
-                "scopes": "regexpMetaDelimited"
+                "scopes": "metaRegexpDelimited"
               }
             ]
         `)
@@ -675,19 +673,19 @@ describe('getMonacoTokens()', () => {
             [
               {
                 "startIndex": 0,
-                "scopes": "regexpMetaCharacterClass"
+                "scopes": "metaRegexpCharacterClass"
               },
               {
                 "startIndex": 1,
-                "scopes": "regexpMetaEscapedCharacter"
+                "scopes": "metaRegexpEscapedCharacter"
               },
               {
                 "startIndex": 3,
-                "scopes": "regexpMetaCharacterClass"
+                "scopes": "metaRegexpCharacterClass"
               },
               {
                 "startIndex": 4,
-                "scopes": "regexpMetaEscapedCharacter"
+                "scopes": "metaRegexpEscapedCharacter"
               },
               {
                 "startIndex": 6,
@@ -699,7 +697,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 8,
-                "scopes": "regexpMetaCharacterClass"
+                "scopes": "metaRegexpCharacterClass"
               },
               {
                 "startIndex": 9,
@@ -707,23 +705,23 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 10,
-                "scopes": "regexpMetaEscapedCharacter"
+                "scopes": "metaRegexpEscapedCharacter"
               },
               {
                 "startIndex": 12,
-                "scopes": "regexpMetaEscapedCharacter"
+                "scopes": "metaRegexpEscapedCharacter"
               },
               {
                 "startIndex": 14,
-                "scopes": "regexpMetaAlternative"
+                "scopes": "metaRegexpAlternative"
               },
               {
                 "startIndex": 15,
-                "scopes": "regexpMetaEscapedCharacter"
+                "scopes": "metaRegexpEscapedCharacter"
               },
               {
                 "startIndex": 17,
-                "scopes": "regexpMetaEscapedCharacter"
+                "scopes": "metaRegexpEscapedCharacter"
               }
             ]
         `)
@@ -763,7 +761,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 19,
-                "scopes": "structuralMetaHole"
+                "scopes": "metaStructuralHole"
               },
               {
                 "startIndex": 23,
@@ -771,7 +769,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 25,
-                "scopes": "structuralMetaHole"
+                "scopes": "metaStructuralHole"
               },
               {
                 "startIndex": 29,
@@ -812,7 +810,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 7,
-                "scopes": "structuralMetaHole"
+                "scopes": "metaStructuralHole"
               },
               {
                 "startIndex": 16,
@@ -856,7 +854,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 7,
-                "scopes": "structuralMetaHole"
+                "scopes": "metaStructuralHole"
               },
               {
                 "startIndex": 10,
@@ -864,7 +862,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 11,
-                "scopes": "structuralMetaHole"
+                "scopes": "metaStructuralHole"
               },
               {
                 "startIndex": 14,
@@ -872,7 +870,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 15,
-                "scopes": "structuralMetaHole"
+                "scopes": "metaStructuralHole"
               },
               {
                 "startIndex": 18,
@@ -907,7 +905,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 6,
-                "scopes": "structuralMetaHole"
+                "scopes": "metaStructuralHole"
               },
               {
                 "startIndex": 9,
@@ -915,7 +913,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 10,
-                "scopes": "structuralMetaHole"
+                "scopes": "metaStructuralHole"
               }
             ]
         `)
