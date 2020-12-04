@@ -215,13 +215,22 @@ func (r *campaignSpecResolver) SupersedingCampaignSpec(ctx context.Context) (gra
 		return nil, nil
 	}
 
-	// Although we may have the namespace fields already set on r, sync.Once
-	// values cannot be copied, so we'll have to leave them blank.
-	return &campaignSpecResolver{
+	// Create our new resolver, reusing as many fields as we can from this one.
+	resolver := &campaignSpecResolver{
 		store:        r.store,
 		httpFactory:  r.httpFactory,
 		campaignSpec: newest,
-	}, nil
+		namespace:    r.namespace,
+		namespaceErr: r.namespaceErr,
+	}
+
+	// sync.Once values can't be copied, so although we copied the namespace and
+	// namespaceErr fields onto the new resolver, we had to create a new
+	// namespaceOnce field. We'll fuse it here without performing any action to
+	// ensure that computeNamespace() operates as expected on the new resolver.
+	resolver.namespaceOnce.Do(func() {})
+
+	return resolver, nil
 }
 
 func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
