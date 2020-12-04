@@ -1524,9 +1524,7 @@ type Campaign implements Node {
         """
         onlyPublishedByThisCampaign: Boolean
         """
-        Search for changesets matching this query.
-
-        TODO: add notes about what syntax is supported
+        Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
         """
         search: String
     ): ChangesetConnection!
