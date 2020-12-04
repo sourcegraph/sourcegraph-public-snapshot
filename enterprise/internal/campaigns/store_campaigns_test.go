@@ -11,7 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
 func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
@@ -473,12 +474,12 @@ func TestUserDeleteCascades(t *testing.T) {
 		t.Skip()
 	}
 
-	// Why not the global one?
-	db := dbtest.NewDB(t, *dsn)
-	orgID := insertTestOrg(t, db)
-	userID := insertTestUser(t, db)
+	dbtesting.SetupGlobalTestDB(t)
 
-	t.Run("user delete", storeTest(db, func(t *testing.T, ctx context.Context, store *Store, rs repos.Store, clock clock) {
+	orgID := insertTestOrg(t, dbconn.Global)
+	userID := insertTestUser(t, dbconn.Global)
+
+	t.Run("user delete", storeTest(dbconn.Global, func(t *testing.T, ctx context.Context, store *Store, rs repos.Store, clock clock) {
 		// Set up two campaigns and specs: one in the user's namespace (which
 		// should be deleted when the user is hard deleted), and one that is
 		// merely created by the user (which should remain).

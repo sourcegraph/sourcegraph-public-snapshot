@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
@@ -20,23 +20,22 @@ func TestIntegration(t *testing.T) {
 	t.Parallel()
 
 	dbtesting.SetupGlobalTestDB(t)
-	db := dbtest.NewDB(t, *dsn)
 
-	userID := insertTestUser(t, db)
+	userID := insertTestUser(t, dbconn.Global)
 
 	t.Run("Store", func(t *testing.T) {
-		t.Run("Campaigns", storeTest(db, testStoreCampaigns))
-		t.Run("Changesets", storeTest(db, testStoreChangesets))
-		t.Run("ChangesetEvents", storeTest(db, testStoreChangesetEvents))
-		t.Run("ListChangesetSyncData", storeTest(db, testStoreListChangesetSyncData))
-		t.Run("CampaignSpecs", storeTest(db, testStoreCampaignSpecs))
-		t.Run("ChangesetSpecs", storeTest(db, testStoreChangesetSpecs))
-		t.Run("CodeHosts", storeTest(db, testStoreCodeHost))
+		t.Run("Campaigns", storeTest(dbconn.Global, testStoreCampaigns))
+		t.Run("Changesets", storeTest(dbconn.Global, testStoreChangesets))
+		t.Run("ChangesetEvents", storeTest(dbconn.Global, testStoreChangesetEvents))
+		t.Run("ListChangesetSyncData", storeTest(dbconn.Global, testStoreListChangesetSyncData))
+		t.Run("CampaignSpecs", storeTest(dbconn.Global, testStoreCampaignSpecs))
+		t.Run("ChangesetSpecs", storeTest(dbconn.Global, testStoreChangesetSpecs))
+		t.Run("CodeHosts", storeTest(dbconn.Global, testStoreCodeHost))
 	})
 
-	t.Run("GitHubWebhook", testGitHubWebhook(db, userID))
-	t.Run("BitbucketWebhook", testBitbucketWebhook(db, userID))
-	t.Run("GitLabWebhook", testGitLabWebhook(db, userID))
+	t.Run("GitHubWebhook", testGitHubWebhook(dbconn.Global, userID))
+	t.Run("BitbucketWebhook", testBitbucketWebhook(dbconn.Global, userID))
+	t.Run("GitLabWebhook", testGitLabWebhook(dbconn.Global, userID))
 }
 
 func truncateTables(t *testing.T, db *sql.DB, tables ...string) {
