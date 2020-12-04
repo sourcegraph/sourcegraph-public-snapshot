@@ -1,4 +1,5 @@
-import { getMonacoTokens, Token } from './tokens'
+import { Token } from './tokens'
+import { getMonacoTokens } from './decoratedToken'
 import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
 import { SearchPatternType } from '../../graphql-operations'
 
