@@ -56,7 +56,7 @@ export interface StreamingSearchResultsProps
     availableVersionContexts: VersionContext[] | undefined
     previousVersionContext: string | null
 
-    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
 const initialItemsToShow = 15
@@ -170,7 +170,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         showAllMatches={false}
                         isLightTheme={props.isLightTheme}
                         allExpanded={allExpanded}
-                        fetchHighlightedFileLines={props.fetchHighlightedFileLines}
+                        fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                         settingsCascade={props.settingsCascade}
                     />
                 )

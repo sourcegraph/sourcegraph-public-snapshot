@@ -27,7 +27,7 @@ interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
      * The number of matches to show when the results are collapsed (allMatches===false, user has not clicked "Show N more matches")
      */
     subsetMatches: number
-    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     /**
      * Called when the file's search result is selected.
      */
@@ -67,10 +67,10 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         context,
     ])
 
-    const { result, isLightTheme, fetchHighlightedFileLines } = props
+    const { result, isLightTheme, fetchHighlightedFileLineRanges } = props
     const fetchHighlightedFileRangeLines = React.useCallback(
         (startLine, endLine) =>
-            fetchHighlightedFileLines(
+            fetchHighlightedFileLineRanges(
                 {
                     repoName: result.repository.name,
                     commitID: result.file.commit.oid,
@@ -80,7 +80,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 },
                 false
             ).pipe(map(lines => lines.slice(startLine, endLine))),
-        [result, isLightTheme, fetchHighlightedFileLines]
+        [result, isLightTheme, fetchHighlightedFileLineRanges]
     )
 
     if (NO_SEARCH_HIGHLIGHTING) {

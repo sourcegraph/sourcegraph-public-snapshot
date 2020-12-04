@@ -72,7 +72,7 @@ interface Props extends SettingsCascadeProps {
 
     allExpanded?: boolean
 
-    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
 export class FileMatch extends React.PureComponent<Props> {

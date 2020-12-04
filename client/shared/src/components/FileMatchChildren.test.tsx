@@ -38,7 +38,7 @@ const defaultProps = {
     result: RESULT,
     allMatches: true,
     subsetMatches: 10,
-    fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
+    fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
     onSelect,
     settingsCascade: NOOP_SETTINGS_CASCADE,
     isLightTheme: true,
@@ -87,9 +87,9 @@ describe('FileMatchChildren', () => {
             file matches because falling back to plaintext rendering is most
             ideal.
         */
-        const fetchHighlightedFileLines = sinon.spy(context => of(HIGHLIGHTED_FILE_LINES))
-        render(<FileMatchChildren {...defaultProps} fetchHighlightedFileLines={fetchHighlightedFileLines} />)
-        sinon.assert.calledOnce(fetchHighlightedFileLines)
-        sinon.assert.calledWithMatch(fetchHighlightedFileLines, { disableTimeout: false })
+        const fetchHighlightedFileLineRanges = sinon.spy(context => of(HIGHLIGHTED_FILE_LINES))
+        render(<FileMatchChildren {...defaultProps} fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges} />)
+        sinon.assert.calledOnce(fetchHighlightedFileLineRanges)
+        sinon.assert.calledWithMatch(fetchHighlightedFileLineRanges, { disableTimeout: false })
     })
 })
