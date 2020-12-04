@@ -22,6 +22,8 @@ export interface CodeMonitorFormProps {
     onSubmit: (codeMonitor: CodeMonitorFields) => Observable<Partial<CodeMonitorFields>>
     /** The text for the submit button. */
     submitButtonLabel: string
+    /** A code monitor to initialize the form with. */
+    codeMonitor?: CodeMonitorFields
 }
 
 interface FormCompletionSteps {
@@ -33,25 +35,40 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     authenticatedUser,
     onSubmit,
     submitButtonLabel,
+    codeMonitor,
 }) => {
     const LOADING = 'loading' as const
 
-    const [currentCodeMonitorState, setCodeMonitor] = useState<CodeMonitorFields>({
-        id: '',
-        description: '',
-        enabled: true,
-        trigger: { id: '', query: '' },
-        actions: {
-            nodes: [],
-        },
+    const [currentCodeMonitorState, setCodeMonitor] = useState<CodeMonitorFields>(
+        codeMonitor ?? {
+            id: '',
+            description: '',
+            enabled: true,
+            trigger: { id: '', query: '' },
+            actions: {
+                nodes: [],
+            },
+        }
+    )
+
+    const [formCompletion, setFormCompletion] = useState<FormCompletionSteps>({
+        triggerCompleted: currentCodeMonitorState.trigger.query.length > 0,
+        actionCompleted: currentCodeMonitorState.actions.nodes.length > 0,
     })
+    const setTriggerCompleted = useCallback((complete: boolean) => {
+        setFormCompletion(previousState => ({ ...previousState, triggerCompleted: complete }))
+    }, [])
+    const setActionsCompleted = useCallback((complete: boolean) => {
+        setFormCompletion(previousState => ({ ...previousState, actionCompleted: complete }))
+    }, [])
 
     const onNameChange = useCallback(
         (description: string): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, description })),
         []
     )
     const onQueryChange = useCallback(
-        (query: string): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, query })),
+        (query: string): void =>
+            setCodeMonitor(codeMonitor => ({ ...codeMonitor, trigger: { ...codeMonitor.trigger, query } })),
         []
     )
     const onEnabledChange = useCallback(
@@ -62,17 +79,6 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
         (actions: CodeMonitorFields['actions']): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, actions })),
         []
     )
-
-    const [formCompletion, setFormCompletion] = useState<FormCompletionSteps>({
-        triggerCompleted: false,
-        actionCompleted: false,
-    })
-    const setTriggerCompleted = useCallback((complete: boolean) => {
-        setFormCompletion(previousState => ({ ...previousState, triggerCompleted: complete }))
-    }, [])
-    const setActionsCompleted = useCallback((complete: boolean) => {
-        setFormCompletion(previousState => ({ ...previousState, actionCompleted: complete }))
-    }, [])
 
     const [requestOnSubmit, codeMonitorOrError] = useEventObservable(
         useCallback(
@@ -102,6 +108,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         onChange={event => {
                             onNameChange(event.target.value)
                         }}
+                        value={currentCodeMonitorState.description}
                         autoFocus={true}
                     />
                 </div>
