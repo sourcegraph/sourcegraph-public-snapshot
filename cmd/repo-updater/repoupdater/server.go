@@ -538,14 +538,16 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 					ErrorNotFound: true,
 				}, nil
 			}
-			if isUnauthorized(err) {
-				return &protocol.RepoLookupResult{
-					ErrorUnauthorized: true,
-				}, nil
-			}
+			// This check needs to come before isUnauthorized since GitHub returns 403 when
+			// rate limit has been exceeded.
 			if isTemporarilyUnavailable(err) {
 				return &protocol.RepoLookupResult{
 					ErrorTemporarilyUnavailable: true,
+				}, nil
+			}
+			if isUnauthorized(err) {
+				return &protocol.RepoLookupResult{
+					ErrorUnauthorized: true,
 				}, nil
 			}
 			return nil, err
