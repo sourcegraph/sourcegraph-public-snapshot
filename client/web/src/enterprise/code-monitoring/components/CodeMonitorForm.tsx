@@ -10,6 +10,7 @@ import { FormTriggerArea } from './FormTriggerArea'
 import { mergeMap, startWith, catchError, tap } from 'rxjs/operators'
 import { Form } from '../../../../../branded/src/components/Form'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
+import { CodeMonitorFields } from '../../../graphql-operations'
 
 export interface CodeMonitorFormProps {
     location: H.Location
@@ -28,18 +29,6 @@ interface FormCompletionSteps {
     actionCompleted: boolean
 }
 
-export interface Action {
-    recipient: string
-    enabled: boolean
-}
-
-export interface CodeMonitorFields {
-    description: string
-    query: string
-    enabled: boolean
-    actions: Action[]
-}
-
 export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     authenticatedUser,
     onSubmit,
@@ -48,10 +37,13 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     const LOADING = 'loading' as const
 
     const [currentCodeMonitorState, setCodeMonitor] = useState<CodeMonitorFields>({
+        id: '',
         description: '',
-        query: '',
-        actions: [{ recipient: authenticatedUser.id, enabled: true }],
         enabled: true,
+        trigger: { id: '', query: '' },
+        actions: {
+            nodes: [],
+        },
     })
 
     const onNameChange = useCallback(
@@ -67,7 +59,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
         []
     )
     const onActionsChange = useCallback(
-        (actions: Action[]): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, action: actions[0] })),
+        (actions: CodeMonitorFields['actions']): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, actions })),
         []
     )
 
@@ -135,7 +127,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
             <hr className="my-4" />
             <div className="create-monitor-page__triggers mb-4">
                 <FormTriggerArea
-                    query={currentCodeMonitorState.query}
+                    query={currentCodeMonitorState.trigger.query}
                     onQueryChange={onQueryChange}
                     triggerCompleted={formCompletion.triggerCompleted}
                     setTriggerCompleted={setTriggerCompleted}

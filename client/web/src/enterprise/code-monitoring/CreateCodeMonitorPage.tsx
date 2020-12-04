@@ -6,9 +6,9 @@ import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../../components/Breadcrumbs'
 import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
-import { MonitorEmailPriority } from '../../graphql-operations'
+import { CodeMonitorFields, MonitorEmailPriority } from '../../graphql-operations'
 import { createCodeMonitor } from './backend'
-import { CodeMonitorFields, CodeMonitorForm } from './components/CodeMonitorForm'
+import { CodeMonitorForm } from './components/CodeMonitorForm'
 
 export interface CreateCodeMonitorPageProps extends BreadcrumbsProps, BreadcrumbSetters {
     location: H.Location
@@ -34,18 +34,16 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                     description: codeMonitor.description,
                     enabled: codeMonitor.enabled,
                 },
-                trigger: { query: codeMonitor.query },
-                // TODO: map over all actions to return equivalent action.
-                actions: [
-                    {
-                        email: {
-                            enabled: codeMonitor.actions[0].enabled,
-                            priority: MonitorEmailPriority.NORMAL,
-                            recipients: [props.authenticatedUser.id],
-                            header: '',
-                        },
+                trigger: { query: codeMonitor.trigger.query },
+
+                actions: codeMonitor.actions.nodes.map(action => ({
+                    email: {
+                        enabled: action.enabled,
+                        priority: MonitorEmailPriority.NORMAL,
+                        recipients: [props.authenticatedUser.id],
+                        header: '',
                     },
-                ],
+                })),
             }),
         [props.authenticatedUser.id]
     )

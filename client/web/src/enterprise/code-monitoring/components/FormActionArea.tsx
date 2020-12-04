@@ -1,15 +1,15 @@
 import React, { useState, useCallback } from 'react'
 import { Toggle } from '../../../../../branded/src/components/Toggle'
 import { AuthenticatedUser } from '../../../auth'
-import { Action } from './CodeMonitorForm'
+import { CodeMonitorFields } from '../../../graphql-operations'
 
 interface ActionAreaProps {
-    actions: Action[]
+    actions: CodeMonitorFields['actions']
     actionsCompleted: boolean
     setActionsCompleted: (completed: boolean) => void
     disabled: boolean
     authenticatedUser: AuthenticatedUser
-    onActionsChange: (action: Action[]) => void
+    onActionsChange: (action: CodeMonitorFields['actions']) => void
 }
 
 export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
@@ -27,10 +27,10 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
     }, [])
 
     const [emailNotificationEnabled, setEmailNotificationEnabled] = useState(true)
-    const toggleEmailNotificationEnabled: (value: boolean) => void = useCallback(
+    const toggleEmailNotificationEnabled: (enabled: boolean) => void = useCallback(
         enabled => {
             setEmailNotificationEnabled(enabled)
-            onActionsChange([{ recipient: authenticatedUser.id, enabled }])
+            onActionsChange({ nodes: [{ id: '', recipients: { nodes: [{ id: authenticatedUser.email }] }, enabled }] })
         },
         [authenticatedUser, onActionsChange]
     )
@@ -40,11 +40,14 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
             event.preventDefault()
             setShowEmailNotificationForm(false)
             setActionsCompleted(true)
-            if (actions.length === 0) {
-                onActionsChange([{ enabled: true, recipient: authenticatedUser.id }])
+            if (actions.nodes.length === 0) {
+                // ID can be empty here, since we'll generate a new ID when we create the monitor.
+                onActionsChange({
+                    nodes: [{ id: '', enabled: true, recipients: { nodes: [{ id: authenticatedUser.id }] } }],
+                })
             }
         },
-        [setActionsCompleted, setShowEmailNotificationForm, actions.length, authenticatedUser.id, onActionsChange]
+        [setActionsCompleted, setShowEmailNotificationForm, actions.nodes.length, authenticatedUser.id, onActionsChange]
     )
     const editForm: React.FormEventHandler = useCallback(
         event => {
