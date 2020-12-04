@@ -14,46 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-type TriggerJobs struct {
-	Id    int
-	Query int64
-
-	// The query we ran including after: filter.
-	QueryString *string
-
-	// Whether we got any results.
-	Results    *bool
-	NumResults *int
-
-	// Fields demanded for any dbworker.
-	State          string
-	FailureMessage *string
-	StartedAt      *time.Time
-	FinishedAt     *time.Time
-	ProcessAfter   *time.Time
-	NumResets      int32
-	NumFailures    int32
-	LogContents    *string
-}
-
 func (r *TriggerJobs) RecordID() int {
 	return r.Id
-}
-
-var TriggerJobsColumns = []*sqlf.Query{
-	sqlf.Sprintf("cm_trigger_jobs.id"),
-	sqlf.Sprintf("cm_trigger_jobs.query"),
-	sqlf.Sprintf("cm_trigger_jobs.query_string"),
-	sqlf.Sprintf("cm_trigger_jobs.results"),
-	sqlf.Sprintf("cm_trigger_jobs.num_results"),
-	sqlf.Sprintf("cm_trigger_jobs.state"),
-	sqlf.Sprintf("cm_trigger_jobs.failure_message"),
-	sqlf.Sprintf("cm_trigger_jobs.started_at"),
-	sqlf.Sprintf("cm_trigger_jobs.finished_at"),
-	sqlf.Sprintf("cm_trigger_jobs.process_after"),
-	sqlf.Sprintf("cm_trigger_jobs.num_resets"),
-	sqlf.Sprintf("cm_trigger_jobs.num_failures"),
-	sqlf.Sprintf("cm_trigger_jobs.log_contents"),
 }
 
 const enqueueTriggerQueryFmtStr = `
@@ -126,6 +88,28 @@ func (s *Store) GetEventsForQueryIDInt64(ctx context.Context, queryID int64, arg
 	return scanTriggerJobs(rows, err)
 }
 
+type TriggerJobs struct {
+	Id    int
+	Query int64
+
+	// The query we ran including after: filter.
+	QueryString *string
+
+	// Whether we got any results.
+	Results    *bool
+	NumResults *int
+
+	// Fields demanded for any dbworker.
+	State          string
+	FailureMessage *string
+	StartedAt      *time.Time
+	FinishedAt     *time.Time
+	ProcessAfter   *time.Time
+	NumResets      int32
+	NumFailures    int32
+	LogContents    *string
+}
+
 func ScanTriggerJobs(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	records, err := scanTriggerJobs(rows, err)
 	if err != nil {
@@ -169,6 +153,22 @@ func scanTriggerJobs(rows *sql.Rows, err error) ([]*TriggerJobs, error) {
 		return nil, err
 	}
 	return ms, nil
+}
+
+var TriggerJobsColumns = []*sqlf.Query{
+	sqlf.Sprintf("cm_trigger_jobs.id"),
+	sqlf.Sprintf("cm_trigger_jobs.query"),
+	sqlf.Sprintf("cm_trigger_jobs.query_string"),
+	sqlf.Sprintf("cm_trigger_jobs.results"),
+	sqlf.Sprintf("cm_trigger_jobs.num_results"),
+	sqlf.Sprintf("cm_trigger_jobs.state"),
+	sqlf.Sprintf("cm_trigger_jobs.failure_message"),
+	sqlf.Sprintf("cm_trigger_jobs.started_at"),
+	sqlf.Sprintf("cm_trigger_jobs.finished_at"),
+	sqlf.Sprintf("cm_trigger_jobs.process_after"),
+	sqlf.Sprintf("cm_trigger_jobs.num_resets"),
+	sqlf.Sprintf("cm_trigger_jobs.num_failures"),
+	sqlf.Sprintf("cm_trigger_jobs.log_contents"),
 }
 
 func unmarshalAfter(after *string) (int64, error) {
