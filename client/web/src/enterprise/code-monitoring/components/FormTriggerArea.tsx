@@ -13,7 +13,7 @@ interface TriggerAreaProps {
     query: string
     onQueryChange: (query: string) => void
     triggerCompleted: boolean
-    setTriggerCompleted: () => void
+    setTriggerCompleted: (complete: boolean) => void
 }
 
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
@@ -29,15 +29,6 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
         event.preventDefault()
         setShowQueryForm(show => !show)
     }, [])
-
-    const editOrCompleteForm: React.FormEventHandler = useCallback(
-        event => {
-            event.preventDefault()
-            toggleQueryForm(event)
-            setTriggerCompleted()
-        },
-        [setTriggerCompleted, toggleQueryForm]
-    )
 
     const [queryState, nextQueryFieldChange, queryInputReference] = useInputValidation(
         useMemo(
@@ -83,11 +74,30 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
         )
     )
 
-    useEffect(() => {
-        if (queryState.kind === 'VALID') {
+    const completeForm: React.FormEventHandler = useCallback(
+        event => {
+            event.preventDefault()
+            setShowQueryForm(false)
+            setTriggerCompleted(true)
             onQueryChange(queryState.value)
-        }
-    }, [onQueryChange, queryState])
+        },
+        [setTriggerCompleted, setShowQueryForm, onQueryChange, queryState]
+    )
+
+    const editForm: React.FormEventHandler = useCallback(
+        event => {
+            event.preventDefault()
+            setShowQueryForm(true)
+        },
+        [setShowQueryForm]
+    )
+    const cancelForm: React.FormEventHandler = useCallback(
+        event => {
+            event.preventDefault()
+            setShowQueryForm(false)
+        },
+        [setShowQueryForm]
+    )
 
     return (
         <>
@@ -151,27 +161,27 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         <div>
                             <button
                                 className="btn btn-outline-secondary mr-1 test-submit-trigger"
-                                onClick={editOrCompleteForm}
-                                onSubmit={editOrCompleteForm}
+                                onClick={completeForm}
+                                onSubmit={completeForm}
                                 type="submit"
                                 disabled={queryState.kind !== 'VALID'}
                             >
                                 Continue
                             </button>
-                            <button type="button" className="btn btn-outline-secondary" onClick={editOrCompleteForm}>
+                            <button type="button" className="btn btn-outline-secondary" onClick={cancelForm}>
                                 Cancel
                             </button>
                         </div>
                     </>
                 )}
-                {triggerCompleted && (
+                {!showQueryForm && triggerCompleted && (
                     <div className="d-flex justify-content-between align-items-center">
                         <div>
                             <div className="font-weight-bold">When there are new search results</div>
                             <code className="text-muted">{query}</code>
                         </div>
                         <div>
-                            <button type="button" onClick={editOrCompleteForm} className="btn btn-link p-0 text-left">
+                            <button type="button" onClick={editForm} className="btn btn-link p-0 text-left">
                                 Edit
                             </button>
                         </div>
