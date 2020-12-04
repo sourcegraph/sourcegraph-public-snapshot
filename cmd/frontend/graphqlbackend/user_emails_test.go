@@ -3,14 +3,14 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"github.com/graph-gophers/graphql-go/errors"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"testing"
 	"time"
 
+	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
