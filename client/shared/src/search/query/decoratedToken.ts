@@ -13,6 +13,40 @@ import {
     Quantifier,
 } from 'regexpp/ast'
 
+/**
+ * A DecoratedToken is a type of token used for syntax highlighting, hovers, and diagnostics. All
+ * standard Token types are compatible where DecoratedTokens are used. A DecoratedToken extends
+ * the definition of standard tokens to language-specific metasyntax tokens, like .* in regexp,
+ * or :[holes] in structural search.
+ */
+export type DecoratedToken = Token | MetaToken
+
+/**
+ * A MetaToken defines a token that is associated with some language-specific metasyntax.
+ */
+export type MetaToken = RegexpMeta | StructuralMeta | FieldMeta
+
+/**
+ * Defines common properties for meta tokens.
+ */
+export interface BaseMetaToken {
+    type: MetaToken['type']
+    range: CharacterRange
+    value: string
+}
+
+/**
+ * A token that is labeled and interpreted as regular expression syntax.
+ */
+export interface RegexpMeta extends BaseMetaToken {
+    type: 'regexpMeta'
+    groupRange?: CharacterRange
+    kind: RegexpMetaKind
+}
+
+/**
+ * Classifications of the kinds of regexp metasyntax.
+ */
 export enum RegexpMetaKind {
     Assertion = 'Assertion', // like ^ or \b
     Alternative = 'Alternative', // like |
@@ -24,34 +58,27 @@ export enum RegexpMetaKind {
     RangeQuantifier = 'RangeQuantifier', // like +
 }
 
-export interface RegexpMeta {
-    type: 'regexpMeta'
-    range: CharacterRange
-    groupRange?: CharacterRange
-    kind: RegexpMetaKind
-    value: string
+/**
+ * A token that is labeled and interpreted as structural search syntax.
+ */
+export interface StructuralMeta extends BaseMetaToken {
+    type: 'structuralMeta'
+    kind: StructuralMetaKind
 }
 
+/**
+ * Classifications of the kinds of structural metasyntax.
+ */
 export enum StructuralMetaKind {
     Hole = 'Hole',
 }
 
-export interface StructuralMeta {
-    type: 'structuralMeta'
-    range: CharacterRange
-    kind: StructuralMetaKind
-    value: string
-}
-
-export interface Field {
+/**
+ * A token that is labeled and interpreted as a field, like "repo:" in the Sourcegraph language syntax.
+ */
+export interface FieldMeta extends BaseMetaToken {
     type: 'field'
-    range: CharacterRange
-    value: string
 }
-
-export type MetaToken = RegexpMeta | StructuralMeta
-
-export type DecoratedToken = Token | Field | MetaToken
 
 const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
     const tokens: DecoratedToken[] = []
