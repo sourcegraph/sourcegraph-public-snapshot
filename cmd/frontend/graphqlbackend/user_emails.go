@@ -2,6 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
@@ -10,6 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 )
+
+var timeNow = time.Now
 
 func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {
 	// 🚨 SECURITY: Only the self user and site admins can fetch a user's emails.
@@ -172,6 +176,60 @@ func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *struct 
 		}); err != nil {
 			log15.Error("Failed to grant user pending permissions", "userID", userID, "error", err)
 		}
+	}
+
+	return &EmptyResponse{}, nil
+}
+
+func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *struct {
+	User  graphql.ID
+	Email string
+}) (*EmptyResponse, error) {
+	userID, err := UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+	// 🚨 SECURITY: Only the user and site admins can set the primary email address from a user.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+		return nil, err
+	}
+
+	user, err := db.Users.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	lastSent, err := db.UserEmails.GetLatestVerificationSentEmail(ctx, args.Email)
+	if err != nil {
+		return nil, err
+	}
+	if lastSent != nil &&
+		lastSent.LastVerificationSentAt != nil &&
+		timeNow().Sub(*lastSent.LastVerificationSentAt) < 1*time.Minute {
+		return nil, errors.New("Last email sent too recently")
+	}
+
+	email, verified, err := db.UserEmails.Get(ctx, userID, args.Email)
+	if err != nil {
+		return nil, err
+	}
+	if verified {
+		return &EmptyResponse{}, nil
+	}
+
+	code, err := backend.MakeEmailVerificationCode()
+	if err != nil {
+		return nil, err
+	}
+
+	err = db.UserEmails.SetLastVerification(ctx, userID, email, code)
+	if err != nil {
+		return nil, err
+	}
+
+	err = backend.SendUserEmailVerificationEmail(ctx, user.Username, email, code)
+	if err != nil {
+		return nil, err
 	}
 
 	return &EmptyResponse{}, nil

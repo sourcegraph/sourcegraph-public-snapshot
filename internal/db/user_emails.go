@@ -231,9 +231,12 @@ func (*userEmails) SetVerified(ctx context.Context, userID int32, email string, 
 	return nil
 }
 
-// SetLastVerificationSentAt sets the "last_verification_sent_at" column to now() for given email of the user.
-func (*userEmails) SetLastVerificationSentAt(ctx context.Context, userID int32, email string) error {
-	res, err := dbconn.Global.ExecContext(ctx, "UPDATE user_emails SET last_verification_sent_at=now() WHERE user_id=$1 AND email=$2", userID, email)
+// SetLastVerification sets the "last_verification_sent_at" column to now() and updates the verification code for given email of the user.
+func (*userEmails) SetLastVerification(ctx context.Context, userID int32, email, code string) error {
+	if Mocks.UserEmails.SetLastVerification != nil {
+		return Mocks.UserEmails.SetLastVerification(ctx, userID, email, code)
+	}
+	res, err := dbconn.Global.ExecContext(ctx, "UPDATE user_emails SET last_verification_sent_at=now(), verification_code = $3 WHERE user_id=$1 AND email=$2", userID, email, code)
 	if err != nil {
 		return err
 	}
