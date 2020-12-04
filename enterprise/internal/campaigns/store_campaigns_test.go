@@ -473,6 +473,7 @@ func TestUserDeleteCascades(t *testing.T) {
 		t.Skip()
 	}
 
+	// Why not the global one?
 	db := dbtest.NewDB(t, *dsn)
 	orgID := insertTestOrg(t, db)
 	userID := insertTestUser(t, db)

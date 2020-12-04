@@ -1032,6 +1032,10 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 }
 
 func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
@@ -1180,6 +1184,17 @@ func createChangeset(
 ) *campaigns.Changeset {
 	t.Helper()
 
+	changeset := buildChangeset(opts)
+
+	if err := store.CreateChangeset(ctx, changeset); err != nil {
+		t.Fatalf("creating changeset failed: %s", err)
+	}
+
+	return changeset
+}
+
+func buildChangeset(opts testChangesetOpts) *campaigns.Changeset {
+
 	if opts.externalServiceType == "" {
 		opts.externalServiceType = extsvc.TypeGitHub
 	}
@@ -1214,52 +1229,37 @@ func createChangeset(
 		changeset.CampaignIDs = []int64{opts.campaign}
 	}
 
-	if err := store.CreateChangeset(ctx, changeset); err != nil {
-		t.Fatalf("creating changeset failed: %s", err)
-	}
-
 	return changeset
 }
 
 func TestDecorateChangesetBody(t *testing.T) {
-	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
-
-	now := timeutil.Now()
-	clock := func() time.Time { return now }
-	store := NewStoreWithClock(dbconn.Global, clock)
-
-	admin := createTestUser(ctx, t)
-	if !admin.SiteAdmin {
-		t.Fatal("admin is not site admin")
+	if testing.Short() {
+		t.Skip()
 	}
 
-	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
-
-	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
-		Name: api.RepoName(rs[0].Name),
-		VCS:  protocol.VCSInfo{URL: rs[0].URI},
-	})
-	defer state.Unmock()
+	db.Mocks.Namespaces.GetByID = func(ctx context.Context, org, user int32) (*db.Namespace, error) {
+		return &db.Namespace{Name: "my-user", User: user}, nil
+	}
+	defer func() { db.Mocks.Namespaces.GetByID = nil }()
 
 	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
 	defer func() { internalClient = api.InternalClient }()
 
-	// Create a changeset.
-	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
-	campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
-	cs := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:            rs[0].ID,
-		ownedByCampaign: campaign.ID,
-	})
+	fs := &FakeStore{
+		GetCampaignMock: func(ctx context.Context, opts GetCampaignOpts) (*campaigns.Campaign, error) {
+			return &campaigns.Campaign{ID: 1234, Name: "reconciler-test-campaign"}, nil
+		},
+	}
+
+	cs := buildChangeset(testChangesetOpts{ownedByCampaign: 1234})
 
 	body := "body"
-	rcs := &repos.Changeset{Body: body, Changeset: cs, Repo: rs[0]}
-	if err := decorateChangesetBody(ctx, store, rcs); err != nil {
+	rcs := &repos.Changeset{Body: body, Changeset: cs}
+	if err := decorateChangesetBody(context.Background(), fs, rcs); err != nil {
 		t.Errorf("unexpected non-nil error: %v", err)
 	}
-	if want := body + "\n\n[_Created by Sourcegraph campaign `" + admin.Username + "/reconciler-test-campaign`._](https://sourcegraph.test/users/" + admin.Username + "/campaigns/reconciler-test-campaign)"; rcs.Body != want {
-		t.Errorf("repos.Changeset body unexpectedly changed: have=%q want=%q", rcs.Body, want)
+	if want := body + "\n\n[_Created by Sourcegraph campaign `my-user/reconciler-test-campaign`._](https://sourcegraph.test/users/my-user/campaigns/reconciler-test-campaign)"; rcs.Body != want {
+		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
 	}
 }
 
