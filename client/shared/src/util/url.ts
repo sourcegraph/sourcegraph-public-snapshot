@@ -3,10 +3,10 @@ import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceServi
 import { FiltersToTypeAndValue } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
 import { replaceRange } from './strings'
-import { discreteValueAliases } from '../search/parser/filters'
+import { discreteValueAliases } from '../search/query/filters'
 import { tryCatch } from './errors'
 import { SearchPatternType } from '../graphql-operations'
-import { findFilter, FilterKind } from '../search/parser/validate'
+import { findFilter, FilterKind } from '../search/query/validate'
 
 export interface RepoSpec {
     /**
