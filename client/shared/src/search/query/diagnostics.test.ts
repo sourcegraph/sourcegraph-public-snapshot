@@ -1,6 +1,6 @@
 import { getDiagnostics } from './diagnostics'
 import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
-import { Token } from './tokens'
+import { Token } from './token'
 import { SearchPatternType } from '../../graphql-operations'
 
 const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSuccess<Token[]>).term

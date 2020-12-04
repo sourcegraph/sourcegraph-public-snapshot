@@ -14,7 +14,7 @@ import {
     KeywordKind,
     PatternKind,
     CharacterRange,
-} from './tokens'
+} from './token'
 
 /**
  * A scanner produces a term, which is either a token or a list of tokens.

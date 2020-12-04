@@ -1,7 +1,7 @@
 import * as Monaco from 'monaco-editor'
 import { escapeRegExp, startCase } from 'lodash'
 import { FILTERS, resolveFilter } from './filters'
-import { Token } from './tokens'
+import { Token } from './token'
 import { toMonacoRange } from './decoratedToken'
 import { Omit } from 'utility-types'
 import { Observable } from 'rxjs'

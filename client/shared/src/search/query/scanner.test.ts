@@ -1,5 +1,5 @@
 import { scanSearchQuery, scanBalancedLiteral, toPatternResult } from './scanner'
-import { PatternKind } from './tokens'
+import { PatternKind } from './token'
 import { SearchPatternType } from '../../graphql-operations'
 
 expect.addSnapshotSerializer({

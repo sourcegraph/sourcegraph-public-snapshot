@@ -1,5 +1,5 @@
 import * as Monaco from 'monaco-editor'
-import { Token } from './tokens'
+import { Token } from './token'
 import { decorate, toMonacoRange, DecoratedToken, RegexpMetaKind } from './decoratedToken'
 import { resolveFilter } from './filters'
 

@@ -1,5 +1,5 @@
 import { validateFilter } from './filters'
-import { Literal, Quoted } from './tokens'
+import { Literal, Quoted } from './token'
 
 describe('validateFilter()', () => {
     interface TestCase {
