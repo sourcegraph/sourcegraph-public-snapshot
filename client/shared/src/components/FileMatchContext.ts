@@ -37,7 +37,7 @@ const calculateGroupPositions = (
     }[],
     context: number,
     highestLineNumberWithinSubsetMatches: number
-) => {
+): IGroupedMatch => {
     {
         const contextLines = context || context === 0 ? context : 1
 
@@ -69,15 +69,42 @@ const calculateGroupPositions = (
             : Math.max(...highlightRangeLines) + contextLines
 
         return {
-            matches: matches,
+            matches,
+
             // 1-based position describing the starting place of the matches.
             position: { line: matches[0].line + 1, character: matches[0].character + 1 },
 
             // 0-based range describing the start and end lines (end line is exclusive.)
-            startLine: startLine,
+            startLine,
             endLine: endLine + 1,
         }
     }
+}
+
+/**
+ * Describes a single group of matches.
+ */
+interface IGroupedMatch {
+    // The matches in this group to display.
+    matches: {
+        line: number
+        character: number
+        highlightLength: number
+        badge: BadgeAttachmentRenderOptions | undefined
+        IsInContext: boolean
+    }[]
+
+    // The 1-based position of where the first match in the group.
+    position: {
+        line: number
+        character: number
+    }
+
+    // The 0-based start line of the group (inclusive.)
+    startLine: number
+
+    // The 0-based end line of the group (exclusive.)
+    endLine: number
 }
 
 /**
@@ -85,28 +112,7 @@ const calculateGroupPositions = (
  */
 interface IGroupedMatches {
     // The grouped matches.
-    grouped: {
-        // The matches in this group to display.
-        matches: {
-            line: number
-            character: number
-            highlightLength: number
-            badge: BadgeAttachmentRenderOptions | undefined
-            IsInContext: boolean
-        }[]
-
-        // The 1-based position of where the first match in the group.
-        position: {
-            line: number
-            character: number
-        }
-
-        // The 0-based start line of the group (inclusive.)
-        startLine: number
-
-        // The 0-based end line of the group (exclusive.)
-        endLine: number
-    }[]
+    grouped: IGroupedMatch[]
 
     // The subset of sorted matches that should be displayed. Useful if e.g. rendering matches as
     // plaintext.
@@ -147,7 +153,7 @@ export const calculateMatchGroups = (matches: IMatchItem[], maxMatches: number, 
     const highestLineNumberWithinSubsetMatches =
         sortedMatches.length > 0
             ? sortedMatches.length > maxMatches
-                ? sortedMatches[maxMatches == 0 ? 0 : maxMatches - 1].line
+                ? sortedMatches[maxMatches === 0 ? 0 : maxMatches - 1].line
                 : sortedMatches[sortedMatches.length - 1].line
             : 0
 
@@ -172,7 +178,7 @@ export const calculateMatchGroups = (matches: IMatchItem[], maxMatches: number, 
     ).map(group => calculateGroupPositions(group, context, highestLineNumberWithinSubsetMatches))
 
     return {
-        grouped: grouped,
+        grouped,
         matches: showMatches,
     }
 }

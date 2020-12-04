@@ -223,10 +223,10 @@ describe('components/FileMatchContext', () => {
 })
 
 // "error" matched 5 times, once per line.
-const testData6ConsecutiveMatches: IMatchItem[] = range(0, 6).map(i => ({
+const testData6ConsecutiveMatches: IMatchItem[] = range(0, 6).map(index => ({
     highlightRanges: [{ start: 0, highlightLength: 5 }],
     preview: 'error',
-    line: i,
+    line: index,
 }))
 
 // Real match data from searching a file for `error`.

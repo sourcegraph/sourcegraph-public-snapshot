@@ -35,7 +35,7 @@ describe('CodeExcerpt', () => {
 
     const startLine = 0
     const endLine = 3
-    let defaultProps = {
+    const defaultProps = {
         repoName: 'github.com/golang/oauth2',
         commitID: 'e64efc72b421e893cbf63f17ba2221e7d6d0b0f3',
         filePath: '.travis.yml',
@@ -49,12 +49,12 @@ describe('CodeExcerpt', () => {
         isLightTheme: false,
         className: 'file-match__item-code-excerpt',
         fetchHighlightedFileRangeLines: () =>
-            of(HIGHLIGHTED_FILE_LINES_SIMPLE).pipe(map(x => x.slice(startLine, endLine))),
+            of(HIGHLIGHTED_FILE_LINES_SIMPLE).pipe(map(lines => lines.slice(startLine, endLine))),
     }
 
     it('renders correct number of rows', () => {
         const { container } = render(<CodeExcerpt {...defaultProps} />)
-        expect(container.querySelectorAll('.code-excerpt tr').length).toMatchInlineSnapshot(`3`)
+        expect(container.querySelectorAll('.code-excerpt tr').length).toMatchInlineSnapshot('3')
     })
 
     it('renders the line number container on each row', () => {
@@ -63,7 +63,7 @@ describe('CodeExcerpt', () => {
         // at least exist.
         const { container } = render(<CodeExcerpt {...defaultProps} />)
         const dataLines = container.querySelectorAll('[data-line]')
-        expect(dataLines.length).toMatchInlineSnapshot(`3`)
+        expect(dataLines.length).toMatchInlineSnapshot('3')
     })
 
     it('renders the code portion of each row', () => {
@@ -93,7 +93,7 @@ describe('CodeExcerpt', () => {
                 endLine={endLine}
                 highlightRanges={highlightRanges}
                 fetchHighlightedFileRangeLines={() =>
-                    of(HIGHLIGHTED_FILE_LINES).pipe(map(x => x.slice(startLine, endLine)))
+                    of(HIGHLIGHTED_FILE_LINES).pipe(map(highlights => highlights.slice(startLine, endLine)))
                 }
             />
         )
@@ -126,7 +126,7 @@ describe('CodeExcerpt', () => {
                 endLine={endLine}
                 highlightRanges={highlightRanges}
                 fetchHighlightedFileRangeLines={() =>
-                    of(HIGHLIGHTED_FILE_LINES_LONG).pipe(map(x => x.slice(startLine, endLine)))
+                    of(HIGHLIGHTED_FILE_LINES_LONG).pipe(map(highlights => highlights.slice(startLine, endLine)))
                 }
             />
         )
@@ -157,7 +157,7 @@ describe('CodeExcerpt', () => {
                 endLine={endLine}
                 highlightRanges={highlightRanges}
                 fetchHighlightedFileRangeLines={() =>
-                    of(HIGHLIGHTED_FILE_LINES_LONG).pipe(map(x => x.slice(startLine, endLine)))
+                    of(HIGHLIGHTED_FILE_LINES_LONG).pipe(map(highlights => highlights.slice(startLine, endLine)))
                 }
             />
         )

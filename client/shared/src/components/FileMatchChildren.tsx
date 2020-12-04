@@ -110,6 +110,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                             highlightRanges={group.matches}
                             className="file-match-children__item-code-excerpt"
                             isLightTheme={props.isLightTheme}
+                            /* eslint-disable react/jsx-no-bind */
                             fetchHighlightedFileRangeLines={() =>
                                 props
                                     .fetchHighlightedFileLines(
