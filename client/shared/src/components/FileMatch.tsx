@@ -28,6 +28,9 @@ export interface IMatchItem {
         highlightLength: number
     }[]
     preview: string
+    /**
+     * The 0-based line number of this match.
+     */
     line: number
     badge?: BadgeAttachmentRenderOptions
 }

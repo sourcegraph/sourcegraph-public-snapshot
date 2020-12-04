@@ -13,7 +13,13 @@ jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children
 import sinon from 'sinon'
 
 import { FileMatchChildren } from './FileMatchChildren'
-import { RESULT, HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST, NOOP_SETTINGS_CASCADE } from '../util/searchTestHelpers'
+import {
+    RESULT,
+    HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
+    NOOP_SETTINGS_CASCADE,
+    HIGHLIGHTED_FILE_LINES,
+} from '../util/searchTestHelpers'
+import { of } from 'rxjs'
 
 const history = H.createBrowserHistory()
 history.replace({ pathname: '/search' })
@@ -72,5 +78,18 @@ describe('FileMatchChildren', () => {
         const { container } = render(<FileMatchChildren {...defaultProps} settingsCascade={settingsCascade} />)
         const tableRows = container.querySelectorAll('.code-excerpt tr')
         expect(tableRows.length).toBe(7)
+    })
+
+    it('does not disable the highlighting timeout', () => {
+        /*
+            Because disabling the timeout should only ever be done in response
+            to the user asking us to do so, something that we do not do for
+            file matches because falling back to plaintext rendering is most
+            ideal.
+        */
+        const fetchHighlightedFileLines = sinon.spy(context => of(HIGHLIGHTED_FILE_LINES))
+        render(<FileMatchChildren {...defaultProps} fetchHighlightedFileLines={fetchHighlightedFileLines} />)
+        sinon.assert.calledOnce(fetchHighlightedFileLines)
+        sinon.assert.calledWithMatch(fetchHighlightedFileLines, { disableTimeout: false })
     })
 })
