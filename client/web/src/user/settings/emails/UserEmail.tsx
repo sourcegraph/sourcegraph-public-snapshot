@@ -9,6 +9,8 @@ import {
     RemoveUserEmailVariables,
     SetUserEmailVerifiedResult,
     SetUserEmailVerifiedVariables,
+    ResendVerificationEmailResult,
+    ResendVerificationEmailVariables,
 } from '../../../graphql-operations'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -102,7 +104,7 @@ export const UserEmail: FunctionComponent<Props> = ({
     //
     //     try {
     //         dataOrThrowErrors(
-    //             await requestGraphQL<X, X>(
+    //             await requestGraphQL<ResendVerificationEmailResult, ResendVerificationEmailVariables>(
     //                 gql`
     //                     mutation ResendVerificationEmail($user: ID!, $email: String!) {
     //                         resendVerificationEmail(user: $user, email: $email) {
@@ -134,16 +136,18 @@ export const UserEmail: FunctionComponent<Props> = ({
                     {verified ? (
                         <span className="badge badge-success mr-1">Verified</span>
                     ) : verificationPending ? (
-                        <span>&bull; <button
-                            type="button"
-                            className="btn btn-link text-primary p-0 mr-1"
-                            onClick={() => {}}
-                            disabled={statusOrError === 'loading'}
-                        >
-                            Resend verification email
-                        </button></span>
+                        <span>
+                            &bull;{' '}
+                            <button
+                                type="button"
+                                className="btn btn-link text-primary p-0 mr-1"
+                                onClick={() => {}}
+                                disabled={statusOrError === 'loading'}
+                            >
+                                Resend verification email
+                            </button>
+                        </span>
                     ) : (
-
                         <span className="badge badge-secondary mr-1">Not verified</span>
                     )}
                     {isPrimary && <span className="badge badge-primary">Primary</span>}
