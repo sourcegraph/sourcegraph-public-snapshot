@@ -676,7 +676,7 @@ func TestRepos_List_query1(t *testing.T) {
 }
 
 // Test batch 2 (correct ranking)
-func TestRepos_List_query2(t *testing.T) {
+func TestRepos_List_correct_ranking(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
