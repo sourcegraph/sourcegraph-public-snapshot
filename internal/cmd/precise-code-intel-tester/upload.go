@@ -32,6 +32,7 @@ func uploadCommand() error {
 // Upload represents a fully uploaded (but possibly unprocessed) LSIF index.
 type Upload struct {
 	Name     string
+	Index    int
 	Rev      string
 	UploadID string
 }
@@ -56,16 +57,17 @@ func uploadIndexes(ctx context.Context) error {
 
 	var fns []util.ParallelFn
 	for name, revs := range revsByRepo {
-		for _, rev := range revs {
-			fns = append(fns, makeTestUploadFunction(ctx, name, rev, uploaded, processedSignals, limiter))
+		for i, rev := range revs {
+			fns = append(fns, makeTestUploadFunction(name, i, rev, uploaded, processedSignals, limiter))
 		}
 	}
 
 	return util.RunParallel(ctx, total, fns)
 }
 
-// indexFilenamePattern extracts a repo name and rev from the index filename.
-var indexFilenamePattern = regexp.MustCompile(`^(.+)\.([0-9A-Fa-f]{40})\.dump$`)
+// indexFilenamePattern extracts a repo name and rev from the index filename. We assume that the
+// index segment here (the non-captured `.\d+.`) occupies [0,n) without gaps for each repository.
+var indexFilenamePattern = regexp.MustCompile(`^(.+)\.\d+\.([0-9A-Fa-f]{40})\.dump$`)
 
 // readRevsByRepo returns a list of revisions by repository names for which there is an index file.
 func readRevsByRepo() (map[string][]string, error) {
@@ -225,10 +227,10 @@ func filterUploadsByState(uploads []Upload, processedSignals map[string]map[stri
 // makeTestUploadFunction constructs a function for RunParallel that uploads the index file for the given
 // repo name and revision, then blocks until the upload record enters a terminal state. If the upload failed
 // to process, an error is returned.
-func makeTestUploadFunction(ctx context.Context, name string, rev string, uploaded chan Upload, processedSignals map[string]map[string]chan error, limiter *util.Limiter) util.ParallelFn {
+func makeTestUploadFunction(name string, index int, rev string, uploaded chan Upload, processedSignals map[string]map[string]chan error, limiter *util.Limiter) util.ParallelFn {
 	return util.ParallelFn{
 		Fn: func(ctx context.Context) error {
-			id, err := upload(ctx, name, rev, limiter)
+			id, err := upload(ctx, name, index, rev, limiter)
 			if err != nil {
 				return err
 			}
@@ -238,7 +240,7 @@ func makeTestUploadFunction(ctx context.Context, name string, rev string, upload
 
 			select {
 			// send id to monitor
-			case uploaded <- Upload{Name: name, Rev: rev, UploadID: id}:
+			case uploaded <- Upload{Name: name, Index: index, Rev: rev, UploadID: id}:
 
 			case <-ctx.Done():
 				return ctx.Err()
@@ -263,7 +265,7 @@ var uploadIDPattern = regexp.MustCompile(`/settings/code-intelligence/lsif-uploa
 
 // upload invokes the `src lsif upload` command. This requires that src is installed on the
 // current user's $PATH and is relatively up to date.
-func upload(ctx context.Context, name, rev string, limiter *util.Limiter) (string, error) {
+func upload(ctx context.Context, name string, index int, rev string, limiter *util.Limiter) (string, error) {
 	if err := limiter.Acquire(ctx); err != nil {
 		return "", err
 	}
@@ -276,7 +278,7 @@ func upload(ctx context.Context, name, rev string, limiter *util.Limiter) (strin
 		"-root=/",
 		fmt.Sprintf("-repo=%s", fmt.Sprintf("github.com/%s/%s", "sourcegraph-testing", name)),
 		fmt.Sprintf("-commit=%s", rev),
-		fmt.Sprintf("-file=%s", filepath.Join(fmt.Sprintf("%s.%s.dump", name, rev))),
+		fmt.Sprintf("-file=%s", filepath.Join(fmt.Sprintf("%s.%d.%s.dump", name, index, rev))),
 	}
 
 	cmd := exec.CommandContext(ctx, "src", args...)
