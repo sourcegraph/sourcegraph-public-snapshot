@@ -213,7 +213,7 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 		})
 	})
 
-	t.Run("GetNewest", func(t *testing.T) {
+	t.Run("GetNewestCampaignSpec", func(t *testing.T) {
 		t.Run("NotFound", func(t *testing.T) {
 			opts := GetNewestCampaignSpecOpts{
 				NamespaceUserID: 1235,
