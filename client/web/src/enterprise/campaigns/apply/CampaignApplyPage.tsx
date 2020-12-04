@@ -56,7 +56,7 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
             () =>
                 fetchCampaignSpecById(specID).pipe(
                     repeatWhen(notifier => notifier.pipe(delay(5000))),
-                    distinctUntilChanged((a, b) => isEqual(a, b))
+                    distinctUntilChanged(isEqual)
                 ),
             [specID, fetchCampaignSpecById]
         )
