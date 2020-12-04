@@ -208,11 +208,12 @@ func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *stru
 		return nil, err
 	}
 
-	err = backend.SendUserEmailVerificationEmail(ctx, user.Username, email, code)
+	err = db.UserEmails.SetLastVerification(ctx, userID, email, code)
 	if err != nil {
 		return nil, err
 	}
-	err = db.UserEmails.SetLastVerification(ctx, userID, email, code)
+
+	err = backend.SendUserEmailVerificationEmail(ctx, user.Username, email, code)
 	if err != nil {
 		return nil, err
 	}
