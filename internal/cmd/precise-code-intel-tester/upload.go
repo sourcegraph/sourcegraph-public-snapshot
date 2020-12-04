@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -57,9 +59,7 @@ func uploadIndexes(ctx context.Context) error {
 
 	var fns []util.ParallelFn
 	for name, revs := range revsByRepo {
-		for i, rev := range revs {
-			fns = append(fns, makeTestUploadFunction(name, i, rev, uploaded, processedSignals, limiter))
-		}
+		fns = append(fns, makeTestUploadForRepositoryFunction(name, revs, uploaded, processedSignals, limiter))
 	}
 
 	return util.RunParallel(ctx, total, fns)
@@ -204,7 +204,6 @@ func filterUploadsByState(uploads []Upload, processedSignals map[string]map[stri
 
 	for _, upload := range uploads {
 		var err error
-
 		switch states[upload.UploadID] {
 		case "ERRORED":
 			err = errors.New("processing failed")
@@ -224,39 +223,68 @@ func filterUploadsByState(uploads []Upload, processedSignals map[string]map[stri
 	return nonterminals
 }
 
-// makeTestUploadFunction constructs a function for RunParallel that uploads the index file for the given
-// repo name and revision, then blocks until the upload record enters a terminal state. If the upload failed
-// to process, an error is returned.
-func makeTestUploadFunction(name string, index int, rev string, uploaded chan Upload, processedSignals map[string]map[string]chan error, limiter *util.Limiter) util.ParallelFn {
+// makeTestUploadForRepositoryFunction constructs a function for RunParallel that uploads the index files
+// for the given repo, then blocks until the upload records enter a terminal state. If any upload fails to
+// process, an error is returned.
+func makeTestUploadForRepositoryFunction(name string, revs []string, uploaded chan Upload, processedSignals map[string]map[string]chan error, limiter *util.Limiter) util.ParallelFn {
+	var numUploaded uint32
+	var numProcessed uint32
+
 	return util.ParallelFn{
 		Fn: func(ctx context.Context) error {
-			id, err := upload(ctx, name, index, rev, limiter)
-			if err != nil {
-				return err
+			var wg sync.WaitGroup
+			ch := make(chan error, len(revs))
+
+			for i, rev := range revs {
+				id, err := upload(ctx, name, i, rev, limiter)
+				if err != nil {
+					return err
+				}
+				atomic.AddUint32(&numUploaded, 1)
+
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					ch <- <-processedSignals[name][rev]
+				}()
+
+				select {
+				// send id to monitor
+				case uploaded <- Upload{Name: name, Index: i, Rev: rev, UploadID: id}:
+
+				case <-ctx.Done():
+					return ctx.Err()
+				}
 			}
 
-			// grab ref now to avoid race
-			ch := processedSignals[name][rev]
+			go func() {
+				wg.Wait()
+				close(ch)
+			}()
 
-			select {
-			// send id to monitor
-			case uploaded <- Upload{Name: name, Index: index, Rev: rev, UploadID: id}:
+			// wait for all uploads to process
+			for {
+				select {
+				case err, ok := <-ch:
+					if err != nil || !ok {
+						return err
+					}
+					atomic.AddUint32(&numProcessed, 1)
 
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-
-			select {
-			case err := <-ch:
-				// wait for upload to process
-				return err
-
-			case <-ctx.Done():
-				return ctx.Err()
+				case <-ctx.Done():
+					return ctx.Err()
+				}
 			}
 		},
+		Description: func() string {
+			if n := atomic.LoadUint32(&numUploaded); n < uint32(len(revs)) {
+				return fmt.Sprintf("Uploading index %d of %d for %s...", n+1, len(revs), name)
+			}
 
-		Description: fmt.Sprintf("Uploading %s@%s", name, rev[:6]),
+			return fmt.Sprintf("Waiting for uploads to process for %s...", name)
+		},
+		Total:    func() int { return len(revs) },
+		Finished: func() int { return int(atomic.LoadUint32(&numProcessed)) },
 	}
 }
 
