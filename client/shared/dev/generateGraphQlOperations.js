@@ -39,6 +39,7 @@ async function generateGraphQlOperations({ watch } = {}) {
       hooks: {
         afterOneFileWrite: 'prettier --write',
       },
+      errorsOnly: true,
       config: {
         preResolveTypes: true,
         operationResultSuffix: 'Result',

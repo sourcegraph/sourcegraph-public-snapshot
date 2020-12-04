@@ -53,7 +53,7 @@ func (e *RepoNotFoundErr) NotFound() bool {
 type RepoStore struct {
 	*basestore.Store
 
-	mu sync.Mutex
+	once sync.Once
 }
 
 // NewRepoStoreWithDB instantiates and returns a new RepoStore with prepared statements.
@@ -74,12 +74,11 @@ func (s *RepoStore) Transact(ctx context.Context) (*RepoStore, error) {
 // This function ensures access to dbconn happens after the rest of the code or tests have
 // initialized it.
 func (s *RepoStore) ensureStore() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.Store == nil {
-		s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-	}
+	s.once.Do(func() {
+		if s.Store == nil {
+			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+		}
+	})
 }
 
 // Get returns metadata for the request repository ID. It fetches data
@@ -158,7 +157,21 @@ func (s *RepoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.R
 		items[i] = sqlf.Sprintf("%d", ids[i])
 	}
 	q := sqlf.Sprintf("id IN (%s)", sqlf.Join(items, ","))
-	return s.getReposBySQL(ctx, true, nil, q, nil)
+	var repos []*types.Repo
+	err := s.getReposBySQL(ctx, true, nil, q, nil, func(rows *sql.Rows) error {
+		var repo types.Repo
+
+		if err := scanRepo(rows, &repo); err != nil {
+			return err
+		}
+
+		repos = append(repos, &repo)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return repos, nil
 }
 
 // GetReposSetByIDs returns a map of repositories with the given IDs, indexed by their IDs. The number of results
@@ -275,10 +288,26 @@ func minimalColumns(columns []string) []string {
 }
 
 func (s *RepoStore) getBySQL(ctx context.Context, queryConds, querySuffix *sqlf.Query) ([]*types.Repo, error) {
-	return s.getReposBySQL(ctx, false, nil, queryConds, querySuffix)
+	var repos []*types.Repo
+	err := s.getReposBySQL(ctx, false, nil, queryConds, querySuffix, func(rows *sql.Rows) error {
+		repo := types.Repo{
+			RepoFields: &types.RepoFields{},
+		}
+
+		if err := scanRepo(rows, &repo); err != nil {
+			return err
+		}
+
+		repos = append(repos, &repo)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return repos, nil
 }
 
-func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause, queryConds, querySuffix *sqlf.Query) ([]*types.Repo, error) {
+func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause, queryConds, querySuffix *sqlf.Query, scanRepo func(*sql.Rows) error) error {
 	if fromClause == nil {
 		fromClause = sqlf.Sprintf("repo")
 	}
@@ -291,7 +320,7 @@ func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause,
 
 	authzConds, err := authzQueryConds(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	columns := getBySQLColumns
@@ -309,28 +338,20 @@ func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause,
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer rows.Close()
 
-	var repos []*types.Repo
 	for rows.Next() {
-		var repo types.Repo
-		if !minimal {
-			repo.RepoFields = &types.RepoFields{}
+		if err := scanRepo(rows); err != nil {
+			return err
 		}
-
-		if err := scanRepo(rows, &repo); err != nil {
-			return nil, err
-		}
-
-		repos = append(repos, &repo)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return err
 	}
 
-	return repos, nil
+	return nil
 }
 
 func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
@@ -559,9 +580,68 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 	}
 	s.ensureStore()
 
-	conds, err := s.listSQL(opt)
+	var repos []*types.Repo
+	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
+		var repo types.Repo
+		if !opt.OnlyRepoIDs {
+			repo.RepoFields = &types.RepoFields{}
+		}
+
+		if err := scanRepo(rows, &repo); err != nil {
+			return err
+		}
+
+		repos = append(repos, &repo)
+		return nil
+	})
 	if err != nil {
 		return nil, err
+	}
+	return repos, nil
+}
+
+// ListRepoNames returns a list of repositories names and ids.
+// It overrides the OnlyRepoIDs options by setting it to true.
+func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (results []*types.RepoName, err error) {
+	tr, ctx := trace.New(ctx, "repos.ListRepoNames", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	s.ensureStore()
+
+	opt.OnlyRepoIDs = true
+
+	var repos []*types.RepoName
+	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
+		var r types.RepoName
+		err := rows.Scan(
+			&r.ID,
+			&r.Name,
+			// TODO(asdine): The following variables are only there to scan requested columns but are never used.
+			// These will be deleted once we rework the getReposBySQL method to only fetch 2 columns instead of 6.
+			new(bool),
+			&dbutil.NullString{S: new(string)},
+			&dbutil.NullString{S: new(string)},
+			&dbutil.NullString{S: new(string)},
+		)
+		if err != nil {
+			return err
+		}
+
+		repos = append(repos, &r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return repos, nil
+}
+
+func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
+	conds, err := s.listSQL(opt)
+	if err != nil {
+		return err
 	}
 
 	fromClause := sqlf.Sprintf("repo")
@@ -586,7 +666,7 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 	tr.LogFields(trace.SQL(queryConds), trace.SQL(querySuffix))
 
-	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fromClause, queryConds, querySuffix)
+	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fromClause, queryConds, querySuffix, scanRepo)
 }
 
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.

@@ -156,6 +156,8 @@
 // 1528395760_log_contents_array.up.sql (1.138kB)
 // 1528395761_remove_enums.down.sql (1.526kB)
 // 1528395761_remove_enums.up.sql (1.454kB)
+// 1528395762_add_col_num_results_trigger_event.down.sql (150B)
+// 1528395762_add_col_num_results_trigger_event.up.sql (327B)
 
 package migrations
 
@@ -3344,6 +3346,46 @@ func _1528395761_remove_enumsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395762_add_col_num_results_trigger_eventDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x8d\x4f\x4c\x2e\xc9\xcc\xcf\x8b\xcf\xca\x4f\x2a\xe6\x52\x50\x50\x50\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x29\xca\x4c\x4f\x4f\x2d\x8a\x4f\x2d\x4b\xcd\x2b\xc1\x30\x03\x26\x4b\xc0\x90\xbc\xd2\xdc\xf8\xa2\xd4\xe2\xd2\x9c\x92\x62\x6b\x2e\x67\x7f\x5f\x5f\xcf\x10\x6b\x2e\x40\x00\x00\x00\xff\xff\xc0\xec\x8e\x48\x96\x00\x00\x00")
+
+func _1528395762_add_col_num_results_trigger_eventDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395762_add_col_num_results_trigger_eventDownSql,
+		"1528395762_add_col_num_results_trigger_event.down.sql",
+	)
+}
+
+func _1528395762_add_col_num_results_trigger_eventDownSql() (*asset, error) {
+	bytes, err := _1528395762_add_col_num_results_trigger_eventDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395762_add_col_num_results_trigger_event.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x21, 0x69, 0xdc, 0x1a, 0x25, 0xa4, 0x28, 0x72, 0x15, 0x2a, 0xfa, 0xf7, 0x9c, 0xe0, 0x6c, 0xb8, 0x63, 0xe3, 0xe0, 0x2a, 0x60, 0xf6, 0x54, 0x88, 0xe, 0xf9, 0xf6, 0x70, 0xc9, 0xda, 0x9b, 0x33}}
+	return a, nil
+}
+
+var __1528395762_add_col_num_results_trigger_eventUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x8f\xc1\x4a\x03\x31\x14\x45\xf7\xf9\x8a\xbb\xac\xe0\x1f\xcc\x2a\xcd\xbc\x29\xc1\x99\x17\x48\x9e\xa0\xab\xa0\x35\x96\xa8\x4d\x61\x26\xf5\xfb\x25\x82\xd2\xe9\xa2\x77\x7d\xee\x81\xb3\xa5\x9d\xe5\x4e\xe9\x51\xc8\x43\xf4\x76\x24\xec\x8f\xf1\x65\x5f\xf3\xa9\xc4\x8f\xd3\xeb\xa2\x00\x40\xf7\x3d\x8c\x1b\x1f\x27\x86\x1d\xc0\x4e\x40\x4f\x36\x48\x40\x9d\xf3\xe1\x90\xe6\x98\xbe\x53\xa9\xc8\xa5\xde\x5f\xf0\x1c\xc4\x6b\xcb\x72\x65\x8c\xab\x53\x7c\xff\xfc\xbd\xb4\x0d\xce\x93\xdd\x31\x1e\xe8\x19\x9b\x15\x75\xf7\xcf\xb4\x79\x1a\xc8\x13\x1b\x0a\x4d\xfd\x07\x36\x37\x36\xf9\x6d\xcd\x3a\x46\x4f\x23\x09\xc1\xe8\x60\x74\x4f\x9d\xba\xae\xbd\x14\xdc\xce\x2d\xe7\x63\x9c\xd3\x72\xfe\xaa\x4b\x8b\xed\x94\x71\xd3\x64\xa5\x53\x3f\x01\x00\x00\xff\xff\x32\x4b\x04\xbc\x47\x01\x00\x00")
+
+func _1528395762_add_col_num_results_trigger_eventUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395762_add_col_num_results_trigger_eventUpSql,
+		"1528395762_add_col_num_results_trigger_event.up.sql",
+	)
+}
+
+func _1528395762_add_col_num_results_trigger_eventUpSql() (*asset, error) {
+	bytes, err := _1528395762_add_col_num_results_trigger_eventUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395762_add_col_num_results_trigger_event.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc6, 0xbd, 0xe5, 0xc6, 0xa8, 0x43, 0x66, 0xa2, 0x1d, 0x5a, 0x37, 0x9e, 0x68, 0xdd, 0x33, 0xb9, 0x2a, 0xec, 0x86, 0x7b, 0x84, 0x4b, 0x1f, 0xad, 0xe9, 0xa, 0x6, 0xd6, 0x51, 0xb4, 0x10, 0x16}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3591,6 +3633,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395760_log_contents_array.up.sql":                                                   _1528395760_log_contents_arrayUpSql,
 	"1528395761_remove_enums.down.sql":                                                       _1528395761_remove_enumsDownSql,
 	"1528395761_remove_enums.up.sql":                                                         _1528395761_remove_enumsUpSql,
+	"1528395762_add_col_num_results_trigger_event.down.sql":                                  _1528395762_add_col_num_results_trigger_eventDownSql,
+	"1528395762_add_col_num_results_trigger_event.up.sql":                                    _1528395762_add_col_num_results_trigger_eventUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3793,6 +3837,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395760_log_contents_array.up.sql":                                                   {_1528395760_log_contents_arrayUpSql, map[string]*bintree{}},
 	"1528395761_remove_enums.down.sql":                                                       {_1528395761_remove_enumsDownSql, map[string]*bintree{}},
 	"1528395761_remove_enums.up.sql":                                                         {_1528395761_remove_enumsUpSql, map[string]*bintree{}},
+	"1528395762_add_col_num_results_trigger_event.down.sql":                                  {_1528395762_add_col_num_results_trigger_eventDownSql, map[string]*bintree{}},
+	"1528395762_add_col_num_results_trigger_event.up.sql":                                    {_1528395762_add_col_num_results_trigger_eventUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

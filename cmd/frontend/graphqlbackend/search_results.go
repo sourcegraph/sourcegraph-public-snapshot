@@ -172,7 +172,7 @@ type SearchResultsResolver struct {
 
 	// cache for user settings. Ideally this should be set just once in the code path
 	// by an upstream resolver
-	userSettings *schema.Settings
+	UserSettings *schema.Settings
 }
 
 func (sr *SearchResultsResolver) Results() []SearchResultResolver {
@@ -241,8 +241,8 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	// For search, sr.userSettings is set in (r *searchResolver) Results(ctx
 	// context.Context). However we might regress on that or call DynamicFilters from
 	// other code paths. Hence we fallback to accessing the user settings directly.
-	if sr.userSettings != nil {
-		globbing = getBoolPtr(sr.userSettings.SearchGlobbing, false)
+	if sr.UserSettings != nil {
+		globbing = getBoolPtr(sr.UserSettings.SearchGlobbing, false)
 	} else {
 		settings, err := decodedViewerFinalSettings(ctx)
 		if err != nil {
@@ -1143,7 +1143,7 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 	}
 	// copy userSettings from searchResolver to SearchResultsResolver
 	if srr != nil {
-		srr.userSettings = r.userSettings
+		srr.UserSettings = r.userSettings
 	}
 	if srr == nil {
 		srr = &SearchResultsResolver{}

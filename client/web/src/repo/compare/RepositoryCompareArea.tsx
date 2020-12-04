@@ -9,7 +9,6 @@ import { filter, map, withLatestFrom } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { getHoverActions } from '../../../../shared/src/hover/actions'
 import { HoverContext } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
@@ -35,6 +34,7 @@ import { ErrorMessage } from '../../components/alerts'
 import * as H from 'history'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { RepositoryFields, Scalars } from '../../graphql-operations'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -52,7 +52,7 @@ interface RepositoryCompareAreaProps
         ExtensionsControllerProps,
         ThemeProps,
         BreadcrumbSetters {
-    repo: GQL.IRepository
+    repo: RepositoryFields
     history: H.History
 }
 
@@ -65,13 +65,13 @@ interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> 
  */
 export interface RepositoryCompareAreaPageProps extends PlatformContextProps {
     /** The repository being compared. */
-    repo: GQL.IRepository
+    repo: RepositoryFields
 
     /** The base of the comparison. */
-    base: { repoName: string; repoID: GQL.ID; revision?: string | null }
+    base: { repoName: string; repoID: Scalars['ID']; revision?: string | null }
 
     /** The head of the comparison. */
-    head: { repoName: string; repoID: GQL.ID; revision?: string | null }
+    head: { repoName: string; repoID: Scalars['ID']; revision?: string | null }
 
     /** The URL route prefix for the comparison. */
     routePrefix: string
