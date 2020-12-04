@@ -1107,6 +1107,8 @@ type SettingsExperimentalFeatures struct {
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
 	// CopyQueryButton description: Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
+	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
+	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
 	// EnableSmartQuery description: Enables contextual syntax highlighting and hovers for search queries in the web app
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
 	// SearchStats description: Enables a new page that shows language statistics about the results for a search query.

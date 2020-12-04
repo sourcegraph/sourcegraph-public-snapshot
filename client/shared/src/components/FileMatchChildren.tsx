@@ -12,7 +12,7 @@ import { calculateMatchGroups } from './FileMatchContext'
 import { Link } from './Link'
 import { BadgeAttachment } from './BadgeAttachment'
 import { isErrorLike } from '../util/errors'
-import { ISymbol } from '../graphql/schema'
+import { ISymbol, IHighlightLineRange } from '../graphql/schema'
 import { map } from 'rxjs/operators'
 
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
@@ -67,6 +67,23 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         context,
     ])
 
+    // If optimizeHighlighting is enabled, compile a list of the highlighted file ranges we want to
+    // fetch (instead of the entire file.)
+    const optimizeHighlighting =
+        props.settingsCascade.final &&
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade.final.experimentalFeatures &&
+        props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
+
+    const highlightRanges = optimizeHighlighting
+        ? grouped.map(
+              (group): IHighlightLineRange => ({
+                  startLine: group.startLine,
+                  endLine: group.endLine,
+              })
+          )
+          : [{startLine: 0, endLine: 2147483647}] // entire file
+
     const { result, isLightTheme, fetchHighlightedFileLineRanges } = props
     const fetchHighlightedFileRangeLines = React.useCallback(
         (startLine, endLine) =>
@@ -77,10 +94,20 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     filePath: result.file.path,
                     disableTimeout: false,
                     isLightTheme,
+                    ranges: highlightRanges,
                 },
                 false
-            ).pipe(map(lines => lines.slice(startLine, endLine))),
-        [result, isLightTheme, fetchHighlightedFileLineRanges]
+            ).pipe(
+                map(lines =>
+                    optimizeHighlighting
+                        ? lines[
+                            grouped.findIndex(
+                                group => group.startLine === startLine && group.endLine === group.endLine
+                            )
+                        ] : lines[0].slice(startLine, endLine)
+                )
+            ),
+        [result, isLightTheme, fetchHighlightedFileLineRanges, highlightRanges, grouped, optimizeHighlighting]
     )
 
     if (NO_SEARCH_HIGHLIGHTING) {
@@ -105,7 +132,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     </code>
                 </Link>
             ))}
-            {grouped.map(group => (
+            {grouped.map((group, groupIndex) => (
                 <div
                     key={`linematch:${result.file.url}${group.position.line}:${group.position.character}`}
                     className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
