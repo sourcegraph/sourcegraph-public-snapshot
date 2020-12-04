@@ -1,5 +1,5 @@
 import * as Monaco from 'monaco-editor'
-import { Token, Pattern, PatternKind, CharacterRange } from './tokens'
+import { Token, Pattern, PatternKind, CharacterRange } from './token'
 import { RegExpParser, visitRegExpAST } from 'regexpp'
 import {
     Alternative,
