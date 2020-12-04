@@ -252,6 +252,7 @@ func toCommitGraphView(uploads []Upload) *CommitGraphView {
 	return commitGraphView
 }
 
+// UploadMetaComparer compares the upload identifier and distances of two upload meta values.
 var UploadMetaComparer = cmp.Comparer(func(x, y UploadMeta) bool {
 	return x.UploadID == y.UploadID && (x.Flags&MaxDistance) == (y.Flags&MaxDistance)
 })
