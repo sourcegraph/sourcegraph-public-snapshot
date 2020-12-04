@@ -221,7 +221,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 
 // repoIsLess sorts repositories first by name then by ID, suitable for use
 // with sort.Slice.
-func repoIsLess(i, j *types.Repo) bool {
+func repoIsLess(i, j *types.RepoName) bool {
 	if i.Name != j.Name {
 		return i.Name < j.Name
 	}
@@ -391,7 +391,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 	if len(sliced.results) > 0 {
 		// First, identify what repository corresponds to the last result.
 		lastRepoConsumedName, _ := sliced.results[len(sliced.results)-1].searchResultURIs()
-		var lastRepoConsumed *types.Repo
+		var lastRepoConsumed *types.RepoName
 		for _, repo := range p.repositories {
 			if string(repo.Repo.Name) == lastRepoConsumedName {
 				lastRepoConsumed = repo.Repo
@@ -404,7 +404,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 		// that out now. For example, a cloning repository could be last or
 		// first in the results and we need to know the position for the cursor
 		// RepositoryOffset.
-		potentialLastRepos := []*types.Repo{lastRepoConsumed}
+		potentialLastRepos := []*types.RepoName{lastRepoConsumed}
 		potentialLastRepos = append(potentialLastRepos, sliced.common.cloning...)
 		potentialLastRepos = append(potentialLastRepos, sliced.common.missing...)
 		sort.Slice(potentialLastRepos, func(i, j int) bool {
@@ -475,11 +475,11 @@ func sliceSearchResults(results []SearchResultResolver, common *searchResultsCom
 
 	// Break results into repositories because for each result we need to add
 	// the respective repository to the new common structure.
-	reposByName := map[string]*types.Repo{}
+	reposByName := map[string]*types.RepoName{}
 	for _, r := range common.repos {
 		reposByName[string(r.Name)] = r
 	}
-	resultsByRepo := map[*types.Repo][]SearchResultResolver{}
+	resultsByRepo := map[*types.RepoName][]SearchResultResolver{}
 	for _, r := range results[:limit] {
 		repoName, _ := r.searchResultURIs()
 		repo := reposByName[repoName]
@@ -549,7 +549,7 @@ func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, last
 		resultCount:      common.resultCount,
 	}
 
-	doAppend := func(dst, src []*types.Repo) []*types.Repo {
+	doAppend := func(dst, src []*types.RepoName) []*types.RepoName {
 		sort.Slice(src, func(i, j int) bool {
 			return repoIsLess(src[i], src[j])
 		})

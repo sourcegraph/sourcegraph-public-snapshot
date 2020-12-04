@@ -317,14 +317,14 @@ func repoNamesToStrings(repoNames []api.RepoName) []string {
 	return strings
 }
 
-func toRepositoryResolvers(repos []*types.Repo) []*RepositoryResolver {
+func toRepositoryResolvers(repos []*types.RepoName) []*RepositoryResolver {
 	if len(repos) == 0 {
 		return []*RepositoryResolver{}
 	}
 
 	resolvers := make([]*RepositoryResolver, len(repos))
 	for i := range repos {
-		resolvers[i] = &RepositoryResolver{repo: repos[i]}
+		resolvers[i] = &RepositoryResolver{repo: repos[i].ToRepo()}
 	}
 
 	return resolvers

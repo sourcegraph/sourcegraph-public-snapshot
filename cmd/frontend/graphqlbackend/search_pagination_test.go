@@ -600,8 +600,8 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 		}
 		return revs
 	}
-	repo := func(name string) *types.Repo {
-		return &types.Repo{Name: api.RepoName(name)}
+	repo := func(name string) *types.RepoName {
+		return &types.RepoName{Name: api.RepoName(name)}
 	}
 	result := mkFileMatch
 	repoRevs := func(name string, rev ...string) *search.RepositoryRevisions {
@@ -641,7 +641,7 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 		for _, repoRev := range batch {
 			if res, ok := repoResults[string(repoRev.Repo.Name)]; ok {
 				results = append(results, res...)
-				common.repos = append(common.repos, repoRev.Repo)
+				common.repos = append(common.repos, &types.Repo{ID: repoRev.Repo.ID, Name: repoRev.Repo.Name})
 			}
 			if missing, ok := repoMissing[string(repoRev.Repo.Name)]; ok {
 				common.missing = append(common.missing, missing)
