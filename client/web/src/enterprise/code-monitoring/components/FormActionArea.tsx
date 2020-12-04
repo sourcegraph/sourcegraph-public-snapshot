@@ -4,19 +4,21 @@ import { AuthenticatedUser } from '../../../auth'
 import { Action } from './CodeMonitorForm'
 
 interface ActionAreaProps {
-    actionCompleted: boolean
-    setActionCompleted: () => void
+    actions: Action[]
+    actionsCompleted: boolean
+    setActionsCompleted: (completed: boolean) => void
     disabled: boolean
     authenticatedUser: AuthenticatedUser
-    onActionChange: (action: Action) => void
+    onActionsChange: (action: Action[]) => void
 }
 
 export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
-    actionCompleted,
-    setActionCompleted,
+    actions,
+    actionsCompleted,
+    setActionsCompleted,
     disabled,
     authenticatedUser,
-    onActionChange,
+    onActionsChange,
 }) => {
     const [showEmailNotificationForm, setShowEmailNotificationForm] = useState(false)
     const toggleEmailNotificationForm: React.FormEventHandler = useCallback(event => {
@@ -24,22 +26,39 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
         setShowEmailNotificationForm(show => !show)
     }, [])
 
-    const editOrCompleteForm: React.FormEventHandler = useCallback(
-        event => {
-            event?.preventDefault()
-            toggleEmailNotificationForm(event)
-            setActionCompleted()
-        },
-        [toggleEmailNotificationForm, setActionCompleted]
-    )
-
     const [emailNotificationEnabled, setEmailNotificationEnabled] = useState(true)
     const toggleEmailNotificationEnabled: (value: boolean) => void = useCallback(
         enabled => {
             setEmailNotificationEnabled(enabled)
-            onActionChange({ recipient: authenticatedUser.email, enabled })
+            onActionsChange([{ recipient: authenticatedUser.id, enabled }])
         },
-        [authenticatedUser, onActionChange]
+        [authenticatedUser, onActionsChange]
+    )
+
+    const completeForm: React.FormEventHandler = useCallback(
+        event => {
+            event.preventDefault()
+            setShowEmailNotificationForm(false)
+            setActionsCompleted(true)
+            if (actions.length === 0) {
+                onActionsChange([{ enabled: true, recipient: authenticatedUser.id }])
+            }
+        },
+        [setActionsCompleted, setShowEmailNotificationForm, actions.length, authenticatedUser.id, onActionsChange]
+    )
+    const editForm: React.FormEventHandler = useCallback(
+        event => {
+            event.preventDefault()
+            setShowEmailNotificationForm(true)
+        },
+        [setShowEmailNotificationForm]
+    )
+    const cancelForm: React.FormEventHandler = useCallback(
+        event => {
+            event.preventDefault()
+            setShowEmailNotificationForm(false)
+        },
+        [setShowEmailNotificationForm]
     )
 
     return (
@@ -48,7 +67,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
             <span className="text-muted">Run any number of actions in response to an event</span>
             <div className="card p-3 my-3">
                 {/* This should be its own component when you can add multiple email actions */}
-                {!showEmailNotificationForm && !actionCompleted && (
+                {!showEmailNotificationForm && !actionsCompleted && (
                     <>
                         <button
                             type="button"
@@ -61,7 +80,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                         <span className="text-muted">Deliver email notifications to specified recipients.</span>
                     </>
                 )}
-                {showEmailNotificationForm && !actionCompleted && (
+                {showEmailNotificationForm && (
                     <>
                         <div className="font-weight-bold">Send email notifications</div>
                         <span className="text-muted">Deliver email notifications to specified recipients.</span>
@@ -91,18 +110,18 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                             <button
                                 type="submit"
                                 className="btn btn-outline-secondary mr-1 test-submit-action"
-                                onClick={editOrCompleteForm}
-                                onSubmit={editOrCompleteForm}
+                                onClick={completeForm}
+                                onSubmit={completeForm}
                             >
                                 Done
                             </button>
-                            <button type="button" className="btn btn-outline-secondary" onClick={editOrCompleteForm}>
+                            <button type="button" className="btn btn-outline-secondary" onClick={cancelForm}>
                                 Cancel
                             </button>
                         </div>
                     </>
                 )}
-                {actionCompleted && (
+                {actionsCompleted && !showEmailNotificationForm && (
                     <div className="d-flex justify-content-between align-items-center">
                         <div>
                             <div className="font-weight-bold">Send email notifications</div>
@@ -117,7 +136,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                                     className="mr-2"
                                 />
                             </div>
-                            <button type="button" onClick={editOrCompleteForm} className="btn btn-link p-0 text-left">
+                            <button type="button" onClick={editForm} className="btn btn-link p-0 text-left">
                                 Edit
                             </button>
                         </div>
