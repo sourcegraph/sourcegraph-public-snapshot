@@ -1,5 +1,6 @@
 import * as Monaco from 'monaco-editor'
-import { Token, toMonacoRange } from './scanner'
+import { Token } from './scanner'
+import { toMonacoRange } from './tokens'
 import { validateFilter } from './filters'
 import { SearchPatternType } from '../../graphql-operations'
 
