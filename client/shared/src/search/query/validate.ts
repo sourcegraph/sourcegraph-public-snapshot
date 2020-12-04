@@ -1,4 +1,5 @@
-import { Filter, scanSearchQuery } from './scanner'
+import { scanSearchQuery } from './scanner'
+import { Filter } from './tokens'
 
 export enum FilterKind {
     Global = 'Global',

@@ -1,5 +1,5 @@
 import { Node, Operator, Parameter, Pattern, OperatorKind } from './parser'
-import { PatternKind } from './scanner'
+import { PatternKind } from './tokens'
 
 export class Visitor {
     /**
