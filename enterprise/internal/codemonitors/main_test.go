@@ -62,7 +62,7 @@ func (s *Store) insertTestMonitor(ctx context.Context, t *testing.T) (*Monitor, 
 func newTestStore(t *testing.T) (context.Context, *Store) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
-	now := time.Now()
+	now := time.Now().Truncate(time.Microsecond)
 	return ctx, NewStoreWithClock(dbconn.Global, func() time.Time { return now })
 }
 
