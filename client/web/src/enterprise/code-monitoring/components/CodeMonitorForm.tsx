@@ -74,8 +74,8 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
         triggerCompleted: false,
         actionCompleted: false,
     })
-    const setTriggerCompleted = useCallback(() => {
-        setFormCompletion(previousState => ({ ...previousState, triggerCompleted: !previousState.triggerCompleted }))
+    const setTriggerCompleted = useCallback((complete: boolean) => {
+        setFormCompletion(previousState => ({ ...previousState, triggerCompleted: complete }))
     }, [])
     const setActionCompleted = useCallback(() => {
         setFormCompletion(previousState => ({ ...previousState, actionCompleted: !previousState.actionCompleted }))
