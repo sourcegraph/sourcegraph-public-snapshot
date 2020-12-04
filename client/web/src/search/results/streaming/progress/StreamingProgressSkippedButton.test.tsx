@@ -101,7 +101,7 @@ describe('StreamingProgressSkippedButton', () => {
 
         const element = mount(<StreamingProgressSkippedButton progress={progress} />, { attachTo: div })
         expect(element.find('.btn.streaming-progress__skipped')).toHaveLength(1)
-        expect(element.find('.btn.streaming-progress__skipped.alert.alert-danger')).toHaveLength(1)
+        expect(element.find('.btn.streaming-progress__skipped--warning')).toHaveLength(1)
     })
 
     it('should open and close popover when button is clicked', () => {

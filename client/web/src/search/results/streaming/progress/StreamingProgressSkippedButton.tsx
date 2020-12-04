@@ -21,9 +21,9 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<StreamingPr
                 <>
                     <Button
                         className={classNames('streaming-progress__skipped mb-0 ml-2 d-flex align-items-center', {
-                            'alert alert-danger': skippedWithWarning,
+                            'streaming-progress__skipped--warning': skippedWithWarning,
                         })}
-                        color={skippedWithWarning ? 'danger' : 'secondary'}
+                        color="secondary"
                         onClick={toggleOpen}
                         id="streaming-progress__skipped"
                     >

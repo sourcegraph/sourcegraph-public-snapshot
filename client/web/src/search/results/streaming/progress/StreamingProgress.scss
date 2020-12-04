@@ -29,13 +29,16 @@
     }
 
     &__skipped {
-        border: none;
-        margin-left: 0.25rem;
-
         &.btn.btn-secondary {
+            border: none;
+            margin-left: 0.25rem;
             color: var(--link-color);
             background-color: transparent;
             box-shadow: none;
+        }
+
+        &--warning.btn.btn-secondary {
+            color: var(--infobar-warning-color);
         }
 
         &-popover {
