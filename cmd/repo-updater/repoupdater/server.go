@@ -476,11 +476,12 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		}
 
 		// TODO a queue with single flighting to speak to remote for args.Repo?
-		// We have (potentially stale) data we can return to the user right
-		// now. Do that rather than blocking.
-		// This should only happen for public repos, private repos are ignored since if they do exist
-		// in our DB they would have been added by a user owned code host connection in which case they'll
-		// be kept up to date by our background syncer.
+
+		// We have (potentially stale) data we can return to the user right now. Do that
+		// rather than blocking. This should only happen for public repos, private repos
+		// are ignored since if they do exist in our DB they would have been added by a
+		// user owned code host connection in which case they'll be kept up to date by
+		// our background syncer.
 		if !repo.Private {
 			go func() {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -491,9 +492,9 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 					return
 				}
 
-				// Since we don't support private repositories on Cloud,
-				// we can safely assume that when a repository stored in the database is not accessible anymore,
-				// no other external service should have access to it, we can then remove it.
+				// Since we are only dealing with public repos here we can safely assume that
+				// when a repository stored in the database is not accessible anymore, no other
+				// external service should have access to it, we can then remove it.
 				if repoResult.ErrorNotFound || repoResult.ErrorUnauthorized {
 					err = s.Store.UpsertRepos(ctx, repo.With(func(r *repos.Repo) {
 						r.DeletedAt = s.Now()
