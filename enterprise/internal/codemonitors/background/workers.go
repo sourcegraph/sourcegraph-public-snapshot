@@ -182,9 +182,10 @@ func (r *actionRunner) Handle(ctx context.Context, workerStore dbworkerstore.Sto
 		data *email.TemplateDataNewSearchResults
 	)
 
-	j, err = s.ActionJobForIDInt(ctx, record.RecordID())
-	if err != nil {
-		return fmt.Errorf("store.ActionJobForIDInt: %w", err)
+	var ok bool
+	j, ok = record.(*cm.ActionJob)
+	if !ok {
+		return fmt.Errorf("type assertion failed")
 	}
 
 	m, err = s.GetActionJobMetadata(ctx, record.RecordID())

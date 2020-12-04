@@ -5,9 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
-
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 )
 
 func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {

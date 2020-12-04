@@ -62,7 +62,7 @@ func TestCreateCodeMonitor(t *testing.T) {
 
 	// Toggle field enabled from true to false.
 	got, err = r.ToggleCodeMonitor(ctx, &graphqlbackend.ToggleCodeMonitorArgs{
-		Id:      relay.MarshalID(monitorKind, got.(*monitor).Monitor.ID),
+		Id:      relay.MarshalID(MonitorKind, got.(*monitor).Monitor.ID),
 		Enabled: false,
 	})
 	if err != nil {
@@ -243,7 +243,7 @@ func TestQueryMonitor(t *testing.T) {
 			Monitors: apitest.MonitorConnection{
 				TotalCount: 1,
 				Nodes: []apitest.Monitor{{
-					Id:          string(relay.MarshalID(monitorKind, 1)),
+					Id:          string(relay.MarshalID(MonitorKind, 1)),
 					Description: "test monitor",
 					Enabled:     true,
 					Owner:       apitest.UserOrg{Name: userName},
@@ -404,7 +404,7 @@ func TestEditCodeMonitor(t *testing.T) {
 		t.Fatal(err)
 	}
 	updateInput := map[string]interface{}{
-		"monitorID": string(relay.MarshalID(monitorKind, 1)),
+		"monitorID": string(relay.MarshalID(MonitorKind, 1)),
 		"triggerID": string(relay.MarshalID(monitorTriggerQueryKind, 1)),
 		"actionID":  string(relay.MarshalID(monitorActionEmailKind, 1)),
 		"user1ID":   ns1,
@@ -415,7 +415,7 @@ func TestEditCodeMonitor(t *testing.T) {
 
 	want := apitest.UpdateCodeMonitorResponse{
 		UpdateCodeMonitor: apitest.Monitor{
-			Id:          string(relay.MarshalID(monitorKind, 1)),
+			Id:          string(relay.MarshalID(MonitorKind, 1)),
 			Description: "updated test monitor",
 			Enabled:     false,
 			Owner: apitest.UserOrg{
@@ -668,7 +668,7 @@ func TestQueryMonitorByID(t *testing.T) {
 
 	want := apitest.Node{
 		Node: apitest.Monitor{
-			Id:          string(relay.MarshalID(monitorKind, 1)),
+			Id:          string(relay.MarshalID(MonitorKind, 1)),
 			Description: "test monitor",
 			Enabled:     true,
 			Owner:       apitest.UserOrg{Name: userName},
