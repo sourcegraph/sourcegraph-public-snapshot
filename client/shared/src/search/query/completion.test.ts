@@ -1,6 +1,7 @@
 import * as Monaco from 'monaco-editor'
 import { getCompletionItems, repositoryCompletionItemKind } from './completion'
-import { scanSearchQuery, ScanSuccess, ScanResult, Token } from './scanner'
+import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
+import { Token } from './tokens'
 import { NEVER, of } from 'rxjs'
 import { SearchSuggestion } from '../../graphql/schema'
 

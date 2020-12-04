@@ -1,4 +1,4 @@
-import { Filter } from './scanner'
+import { Filter } from './tokens'
 import { SearchSuggestion } from '../suggestions'
 import {
     FilterType,

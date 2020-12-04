@@ -1,5 +1,5 @@
-import { getMonacoTokens } from './tokens'
-import { scanSearchQuery, ScanSuccess, Token, ScanResult } from './scanner'
+import { getMonacoTokens, Token } from './tokens'
+import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
 import { SearchPatternType } from '../../graphql-operations'
 
 expect.addSnapshotSerializer({
