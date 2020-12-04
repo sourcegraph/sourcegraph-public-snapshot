@@ -1,7 +1,7 @@
 import * as Monaco from 'monaco-editor'
 import { Token, toMonacoRange } from './scanner'
 import { resolveFilter } from './filters'
-import { decorateTokens, DecoratedToken, RegexpMetaKind } from './tokens'
+import { decorate, DecoratedToken, RegexpMetaKind } from './tokens'
 
 const toHover = (token: DecoratedToken): string => {
     switch (token.type) {
@@ -105,7 +105,7 @@ export const getHoverResult = (
     { column }: Pick<Monaco.Position, 'column'>,
     smartQuery = false
 ): Monaco.languages.Hover | null => {
-    const tokensAtCursor = (smartQuery ? decorateTokens(tokens) : tokens).filter(inside(column))
+    const tokensAtCursor = (smartQuery ? tokens.flatMap(decorate) : tokens).filter(inside(column))
     if (tokensAtCursor.length === 0) {
         return null
     }

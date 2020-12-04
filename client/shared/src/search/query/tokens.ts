@@ -371,129 +371,116 @@ export const hasRegexpValue = (field: string): boolean => {
     }
 }
 
-export const decorateTokens = (tokens: Token[]): DecoratedToken[] => {
+export const decorate = (token: Token): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
-    for (const token of tokens) {
-        switch (token.type) {
-            case 'pattern':
-                switch (token.kind) {
-                    case PatternKind.Regexp:
-                        decorated.push(...mapRegexpMeta(token))
-                        break
-                    case PatternKind.Structural:
-                        decorated.push(...mapStructuralMeta(token))
-                        break
-                    case PatternKind.Literal:
-                        decorated.push(token)
-                        break
-                }
-                break
-            case 'filter': {
-                decorated.push({
-                    type: 'field',
-                    range: token.field.range,
-                    value: token.field.value,
-                })
-                if (token.value && token.value.type === 'literal' && hasRegexpValue(token.field.value)) {
-                    // Highlight fields with regexp values.
-                    decorated.push(
-                        ...decorateTokens([
-                            {
-                                type: 'pattern',
-                                kind: PatternKind.Regexp,
-                                value: token.value.value,
-                                range: token.value.range,
-                            },
-                        ])
-                    )
-                } else if (token.value) {
-                    decorated.push(token.value)
-                }
-                break
+    switch (token.type) {
+        case 'pattern':
+            switch (token.kind) {
+                case PatternKind.Regexp:
+                    decorated.push(...mapRegexpMeta(token))
+                    break
+                case PatternKind.Structural:
+                    decorated.push(...mapStructuralMeta(token))
+                    break
+                case PatternKind.Literal:
+                    decorated.push(token)
+                    break
             }
-            default:
-                decorated.push(token)
+            break
+        case 'filter': {
+            decorated.push({
+                type: 'field',
+                range: token.field.range,
+                value: token.field.value,
+            })
+            if (token.value && token.value.type === 'literal' && hasRegexpValue(token.field.value)) {
+                // Highlight fields with regexp values.
+                decorated.push(
+                    ...decorate({
+                        type: 'pattern',
+                        kind: PatternKind.Regexp,
+                        value: token.value.value,
+                        range: token.value.range,
+                    })
+                )
+            } else if (token.value) {
+                decorated.push(token.value)
+            }
+            break
         }
+        default:
+            decorated.push(token)
     }
     return decorated
 }
 
-const fromDecoratedTokens = (tokens: DecoratedToken[]): Monaco.languages.IToken[] => {
-    const monacoTokens: Monaco.languages.IToken[] = []
-    for (const token of tokens) {
-        switch (token.type) {
-            case 'field':
-            case 'whitespace':
-            case 'keyword':
-            case 'comment':
-            case 'openingParen':
-            case 'closingParen':
-                monacoTokens.push({
-                    startIndex: token.range.start,
-                    scopes: token.type,
-                })
-                break
-            case 'regexpMeta':
-            case 'structuralMeta':
-                /** The scopes value is derived from the token type and its kind.
-                 * E.g., regexpMetaDelimited derives from {@link RegexpMeta} and {@link RegexpMetaKind}.
-                 */
-                monacoTokens.push({
-                    startIndex: token.range.start,
-                    scopes: `${token.type}${token.kind}`,
-                })
-                break
-            default:
-                monacoTokens.push({
-                    startIndex: token.range.start,
-                    scopes: 'identifier',
-                })
-                break
-        }
+const decoratedToMonaco = (token: DecoratedToken): Monaco.languages.IToken => {
+    switch (token.type) {
+        case 'field':
+        case 'whitespace':
+        case 'keyword':
+        case 'comment':
+        case 'openingParen':
+        case 'closingParen':
+            return {
+                startIndex: token.range.start,
+                scopes: token.type,
+            }
+        case 'regexpMeta':
+        case 'structuralMeta':
+            // The scopes value is derived from the token type and its kind.
+            // E.g., regexpMetaDelimited derives from {@link RegexpMeta} and {@link RegexpMetaKind}.
+            return {
+                startIndex: token.range.start,
+                scopes: `${token.type}${token.kind}`,
+            }
+
+        default:
+            return {
+                startIndex: token.range.start,
+                scopes: 'identifier',
+            }
     }
-    return monacoTokens
 }
 
-const fromTokens = (tokens: Token[]): Monaco.languages.IToken[] => {
-    const monacoTokens: Monaco.languages.IToken[] = []
-    for (const token of tokens) {
-        switch (token.type) {
-            case 'filter':
-                {
-                    monacoTokens.push({
-                        startIndex: token.field.range.start,
-                        scopes: 'field',
-                    })
-                    if (token.value) {
-                        monacoTokens.push({
-                            startIndex: token.value.range.start,
-                            scopes: 'identifier',
-                        })
-                    }
-                }
-                break
-            case 'whitespace':
-            case 'keyword':
-            case 'comment':
+const toMonaco = (token: Token): Monaco.languages.IToken[] => {
+    switch (token.type) {
+        case 'filter': {
+            const monacoTokens: Monaco.languages.IToken[] = []
+            monacoTokens.push({
+                startIndex: token.field.range.start,
+                scopes: 'field',
+            })
+            if (token.value) {
                 monacoTokens.push({
-                    startIndex: token.range.start,
-                    scopes: token.type,
-                })
-                break
-            default:
-                monacoTokens.push({
-                    startIndex: token.range.start,
+                    startIndex: token.value.range.start,
                     scopes: 'identifier',
                 })
-                break
+            }
+            return monacoTokens
         }
+        case 'whitespace':
+        case 'keyword':
+        case 'comment':
+            return [
+                {
+                    startIndex: token.range.start,
+                    scopes: token.type,
+                },
+            ]
+        default:
+            return [
+                {
+                    startIndex: token.range.start,
+                    scopes: 'identifier',
+                },
+            ]
     }
-    return monacoTokens
 }
 
 /**
  * Returns the tokens in a scanned search query displayed in the Monaco query input. If the experimental
  * decorate flag is true, a list of {@link DecoratedToken} provides more contextual highlighting for patterns.
  */
-export const getMonacoTokens = (tokens: Token[], decorate = false): Monaco.languages.IToken[] =>
-    decorate ? fromDecoratedTokens(decorateTokens(tokens)) : fromTokens(tokens)
+export const getMonacoTokens = (tokens: Token[], toDecorate = false): Monaco.languages.IToken[] =>
+    toDecorate ? tokens.flatMap(token => decorate(token).map(decoratedToMonaco)) : tokens.flatMap(toMonaco)
