@@ -200,7 +200,7 @@ func (s *Service) GetCampaignMatchingCampaignSpec(ctx context.Context, spec *cam
 }
 
 // GetNewestCampaignSpec returns the newest campaign spec that matches the given
-// spec's namespace and name and is owned by the given user.
+// spec's namespace and name and is owned by the given user, or nil if none is found.
 func (s *Service) GetNewestCampaignSpec(ctx context.Context, tx *Store, spec *campaigns.CampaignSpec, userID int32) (*campaigns.CampaignSpec, error) {
 	opts := GetNewestCampaignSpecOpts{
 		UserID:          userID,
