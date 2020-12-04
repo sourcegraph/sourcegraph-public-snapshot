@@ -171,6 +171,7 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 		}
 	}
 
+	// Update the set of uploads that are visible from each commit for a given repository.
 	nearestUploadsInserter := batch.NewBatchInserter(
 		ctx,
 		s.Store.Handle().DB(),
@@ -182,12 +183,24 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 		"ancestor_visible",
 		"overwritten",
 	)
-	for commit, uploads := range visibleUploads {
-		for _, uploadMeta := range uploads {
+
+	// Update which repositories are visible from the tip of the default branch. This
+	// flag is used to determine which bundles for a repository we open during a global
+	// find references query.
+	uploadsVisibleAtTipInserter := batch.NewBatchInserter(
+		ctx,
+		s.Store.Handle().DB(),
+		"lsif_uploads_visible_at_tip",
+		"repository_id",
+		"upload_id",
+	)
+
+	for v := range visibleUploads {
+		for _, uploadMeta := range v.uploads {
 			if err := nearestUploadsInserter.Insert(
 				ctx,
 				repositoryID,
-				dbutil.CommitBytea(commit),
+				dbutil.CommitBytea(v.commit),
 				uploadMeta.UploadID,
 				uploadMeta.Flags&MaxDistance,
 				(uploadMeta.Flags&FlagAncestorVisible) != 0,
@@ -196,22 +209,19 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 				return err
 			}
 		}
-	}
-	if err := nearestUploadsInserter.Flush(ctx); err != nil {
-		return err
-	}
 
-	// Update which repositories are visible from the tip of the default branch. This
-	// flag is used to determine which bundles for a repository we open during a global
-	// find references query.
-	uploadsVisibleAtTipInserter := batch.NewBatchInserter(ctx, s.Store.Handle().DB(), "lsif_uploads_visible_at_tip", "repository_id", "upload_id")
-
-	for _, uploadMeta := range visibleUploads[tipCommit] {
-		if err := uploadsVisibleAtTipInserter.Insert(ctx, repositoryID, uploadMeta.UploadID); err != nil {
-			return err
+		if v.commit == tipCommit {
+			for _, uploadMeta := range v.uploads {
+				if err := uploadsVisibleAtTipInserter.Insert(ctx, repositoryID, uploadMeta.UploadID); err != nil {
+					return err
+				}
+			}
 		}
 	}
 	if err := uploadsVisibleAtTipInserter.Flush(ctx); err != nil {
+		return err
+	}
+	if err := nearestUploadsInserter.Flush(ctx); err != nil {
 		return err
 	}
 

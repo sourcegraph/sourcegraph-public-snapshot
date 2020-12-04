@@ -58,7 +58,10 @@ func TestInternalCalculateVisibleUploads(t *testing.T) {
 	commitGraphView.Add(UploadMeta{UploadID: 55}, "h", "sub3/:lsif-go")
 	commitGraphView.Add(UploadMeta{UploadID: 56}, "m", "sub3/:lsif-go")
 
-	visibleUploads := calculateVisibleUploads(testGraph, commitGraphView)
+	visibleUploads := map[string][]UploadMeta{}
+	for v := range calculateVisibleUploads(testGraph, commitGraphView) {
+		visibleUploads[v.commit] = v.uploads
+	}
 
 	for _, uploads := range visibleUploads {
 		sort.Slice(uploads, func(i, j int) bool {
@@ -173,7 +176,10 @@ func TestInternalCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 	commitGraphView.Add(UploadMeta{UploadID: 52}, "i", "sub2/:lsif-go")
 	commitGraphView.Add(UploadMeta{UploadID: 53}, "q", "sub3/:lsif-go")
 
-	visibleUploads := calculateVisibleUploads(testGraph, commitGraphView)
+	visibleUploads := map[string][]UploadMeta{}
+	for v := range calculateVisibleUploads(testGraph, commitGraphView) {
+		visibleUploads[v.commit] = v.uploads
+	}
 
 	for _, uploads := range visibleUploads {
 		sort.Slice(uploads, func(i, j int) bool {
@@ -311,7 +317,10 @@ func BenchmarkCalculateVisibleUploads(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	_ = calculateVisibleUploads(commitGraph, commitGraphView)
+	for i := 0; i < b.N; i++ {
+		for range calculateVisibleUploads(commitGraph, commitGraphView) {
+		}
+	}
 }
 
 func readBenchmarkCommitGraph() (*gitserver.CommitGraph, error) {

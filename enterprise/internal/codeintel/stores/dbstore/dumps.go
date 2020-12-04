@@ -225,10 +225,8 @@ func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 		return nil, err
 	}
 
-	visibleUploads := calculateVisibleUploads(graph, commitGraphView)
-
 	var ids []*sqlf.Query
-	for _, uploadMeta := range visibleUploads[commit] {
+	for _, uploadMeta := range calculateVisibleUploadsForCommit(graph, commitGraphView, commit) {
 		if (uploadMeta.Flags & FlagOverwritten) == 0 {
 			ids = append(ids, sqlf.Sprintf("%d", uploadMeta.UploadID))
 		}
@@ -277,25 +275,6 @@ func makeFindClosestDumpConditions(path string, rootMustEnclosePath bool, indexe
 	}
 
 	return conds
-}
-
-func scanFirstIntPair(rows *sql.Rows, queryErr error) (_ int, _ int, _ bool, err error) {
-	if queryErr != nil {
-		return 0, 0, false, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	if rows.Next() {
-		var value1 int
-		var value2 int
-		if err := rows.Scan(&value1, &value2); err != nil {
-			return 0, 0, false, err
-		}
-
-		return value1, value2, true, nil
-	}
-
-	return 0, 0, false, nil
 }
 
 // SoftDeleteOldDumps marks dumps older than the given age that are not visible at the tip of the default branch

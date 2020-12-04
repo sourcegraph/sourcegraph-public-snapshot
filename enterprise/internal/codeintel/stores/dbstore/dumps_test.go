@@ -155,7 +155,10 @@ func TestFindClosestDumps(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	visibleUploads := calculateVisibleUploads(graph, toCommitGraphView(uploads))
+	visibleUploads := map[string][]UploadMeta{}
+	for v := range calculateVisibleUploads(graph, toCommitGraphView(uploads)) {
+		visibleUploads[v.commit] = v.uploads
+	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
@@ -215,7 +218,10 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	visibleUploads := calculateVisibleUploads(graph, toCommitGraphView(uploads))
+	visibleUploads := map[string][]UploadMeta{}
+	for v := range calculateVisibleUploads(graph, toCommitGraphView(uploads)) {
+		visibleUploads[v.commit] = v.uploads
+	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
@@ -267,7 +273,10 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	visibleUploads := calculateVisibleUploads(graph, toCommitGraphView(uploads))
+	visibleUploads := map[string][]UploadMeta{}
+	for v := range calculateVisibleUploads(graph, toCommitGraphView(uploads)) {
+		visibleUploads[v.commit] = v.uploads
+	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
@@ -336,7 +345,10 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	visibleUploads := calculateVisibleUploads(graph, toCommitGraphView(uploads))
+	visibleUploads := map[string][]UploadMeta{}
+	for v := range calculateVisibleUploads(graph, toCommitGraphView(uploads)) {
+		visibleUploads[v.commit] = v.uploads
+	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
@@ -391,7 +403,10 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	visibleUploads := calculateVisibleUploads(graph, toCommitGraphView(uploads))
+	visibleUploads := map[string][]UploadMeta{}
+	for v := range calculateVisibleUploads(graph, toCommitGraphView(uploads)) {
+		visibleUploads[v.commit] = v.uploads
+	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
@@ -452,7 +467,10 @@ func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	visibleUploads := calculateVisibleUploads(graph, toCommitGraphView(uploads))
+	visibleUploads := map[string][]UploadMeta{}
+	for v := range calculateVisibleUploads(graph, toCommitGraphView(uploads)) {
+		visibleUploads[v.commit] = v.uploads
+	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
@@ -498,7 +516,10 @@ func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	visibleUploads := calculateVisibleUploads(currentGraph, toCommitGraphView(uploads))
+	visibleUploads := map[string][]UploadMeta{}
+	for v := range calculateVisibleUploads(currentGraph, toCommitGraphView(uploads)) {
+		visibleUploads[v.commit] = v.uploads
+	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
