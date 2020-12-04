@@ -190,6 +190,29 @@ func TestCampaignSpecResolver(t *testing.T) {
 		}
 	}
 
+	// If the superseding campaign spec was created by a different user, then we
+	// shouldn't return it.
+	sup.UserID = adminID
+	if err := store.UpdateCampaignSpec(ctx, sup); err != nil {
+		t.Fatal(err)
+	}
+
+	{
+		var response struct{ Node apitest.CampaignSpec }
+
+		// Note that we have to execute as the actual user, since a superseding
+		// spec isn't returned for an admin.
+		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryCampaignSpecNode)
+
+		// Expect no superseding campaign spec, since this request is run as a
+		// different user.
+		want.SupersedingCampaignSpec = nil
+
+		if diff := cmp.Diff(want, response.Node); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+	}
+
 	// Now soft-delete the creator and check that the campaign spec is still retrievable.
 	err = db.Users.Delete(ctx, userID)
 	if err != nil {

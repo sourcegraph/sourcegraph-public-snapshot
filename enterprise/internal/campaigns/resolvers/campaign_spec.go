@@ -215,6 +215,12 @@ func (r *campaignSpecResolver) SupersedingCampaignSpec(ctx context.Context) (gra
 		return nil, nil
 	}
 
+	// If this spec and the new spec have different creators, we shouldn't
+	// return this as a superseding spec.
+	if newest.UserID != r.campaignSpec.UserID {
+		return nil, nil
+	}
+
 	// Create our new resolver, reusing as many fields as we can from this one.
 	resolver := &campaignSpecResolver{
 		store:        r.store,
