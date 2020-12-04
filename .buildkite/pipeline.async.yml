@@ -1,6 +1,7 @@
 env:
   ENTERPRISE: "1"
   FORCE_COLOR: "3"
+  CHROMATIC: "1"
 
 steps:
 - command:
