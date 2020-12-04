@@ -8,6 +8,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -226,8 +227,8 @@ func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 	}
 
 	var ids []*sqlf.Query
-	for _, uploadMeta := range calculateVisibleUploadsForCommit(graph, commitGraphView, commit) {
-		if (uploadMeta.Flags & FlagOverwritten) == 0 {
+	for _, uploadMeta := range commitgraph.CalculateVisibleUploadsForCommit(graph, commitGraphView, commit) {
+		if (uploadMeta.Flags & commitgraph.FlagOverwritten) == 0 {
 			ids = append(ids, sqlf.Sprintf("%d", uploadMeta.UploadID))
 		}
 	}

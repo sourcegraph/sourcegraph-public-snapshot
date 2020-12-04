@@ -1,21 +1,21 @@
-package dbstore
+package commitgraph
 
 import "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 
-type visibilityRelationship struct {
-	commit  string
-	uploads []UploadMeta
+type VisibilityRelationship struct {
+	Commit  string
+	Uploads []UploadMeta
 }
 
-// calculateVisibleUploads returns a channel returning values indicating that a given
+// CalculateVisibleUploads returns a channel returning values indicating that a given
 // set of uploads are visible from a particular commit, based on the given commit graph
 // and complete set of LSIF upload metadata.
-func calculateVisibleUploads(commitGraph *gitserver.CommitGraph, commitGraphView *CommitGraphView) <-chan visibilityRelationship {
+func CalculateVisibleUploads(commitGraph *gitserver.CommitGraph, commitGraphView *CommitGraphView) <-chan VisibilityRelationship {
 	graph := commitGraph.Graph()
 	reverseGraph := reverseGraph(graph)
 	order := commitGraph.Order()
 
-	ch := make(chan visibilityRelationship, len(order))
+	ch := make(chan VisibilityRelationship, len(order))
 
 	go func() {
 		defer close(ch)
@@ -33,9 +33,9 @@ func calculateVisibleUploads(commitGraph *gitserver.CommitGraph, commitGraphView
 	return ch
 }
 
-// calculateVisibleUploadsForCommit returns the set of uploads that are visible from the
+// CalculateVisibleUploadsForCommit returns the set of uploads that are visible from the
 // given commit, based on the given commit graph and complete set of LSIF upload metadata.
-func calculateVisibleUploadsForCommit(commitGraph *gitserver.CommitGraph, commitGraphView *CommitGraphView, commit string) []UploadMeta {
+func CalculateVisibleUploadsForCommit(commitGraph *gitserver.CommitGraph, commitGraphView *CommitGraphView, commit string) []UploadMeta {
 	graph := commitGraph.Graph()
 	reverseGraph := reverseGraph(graph)
 	order := commitGraph.Order()
@@ -176,12 +176,12 @@ func populateUploadsForCommit(uploads map[string]map[string]UploadMeta, ancestor
 // the distances of each upload meta value adjusted proportionally to the traversal distance.
 //
 // See combineVisibleUploadsForCommit for more details about the merge logic.
-func combineVisibleUploads(ch chan<- visibilityRelationship, graph, reverseGraph map[string][]string, order []string, ancestorUploads, descendantUploads map[string]map[string]UploadMeta) {
+func combineVisibleUploads(ch chan<- VisibilityRelationship, graph, reverseGraph map[string][]string, order []string, ancestorUploads, descendantUploads map[string]map[string]UploadMeta) {
 	for _, commit := range order {
 		ancestorUploads, ancestorDistance := traverse(graph, ancestorUploads, commit)
 		descendantUploads, descendantDistance := traverse(reverseGraph, descendantUploads, commit)
 		uploads := combineVisibleUploadsForCommit(ancestorUploads, descendantUploads, ancestorDistance, descendantDistance)
-		ch <- visibilityRelationship{commit: commit, uploads: uploads}
+		ch <- VisibilityRelationship{Commit: commit, Uploads: uploads}
 	}
 }
 

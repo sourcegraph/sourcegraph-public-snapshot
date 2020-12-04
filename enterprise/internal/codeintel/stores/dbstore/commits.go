@@ -6,6 +6,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/batch"
@@ -14,16 +15,16 @@ import (
 )
 
 // scanCommitGraphView scans a commit graph view from the return value of `*Store.query`.
-func scanCommitGraphView(rows *sql.Rows, queryErr error) (_ *CommitGraphView, err error) {
+func scanCommitGraphView(rows *sql.Rows, queryErr error) (_ *commitgraph.CommitGraphView, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	commitGraphView := NewCommitGraphView()
+	commitGraphView := commitgraph.NewCommitGraphView()
 
 	for rows.Next() {
-		var meta UploadMeta
+		var meta commitgraph.UploadMeta
 		var commit, token string
 		var ancestorVisible, overwritten bool
 
@@ -32,10 +33,10 @@ func scanCommitGraphView(rows *sql.Rows, queryErr error) (_ *CommitGraphView, er
 		}
 
 		if ancestorVisible {
-			meta.Flags |= FlagAncestorVisible
+			meta.Flags |= commitgraph.FlagAncestorVisible
 		}
 		if overwritten {
-			meta.Flags |= FlagOverwritten
+			meta.Flags |= commitgraph.FlagOverwritten
 		}
 
 		commitGraphView.Add(meta, commit, token)
@@ -159,7 +160,7 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 	}
 
 	// Determine which uploads are visible to which commits for this repository
-	visibleUploads := calculateVisibleUploads(graph, commitGraphView)
+	visibleUploads := commitgraph.CalculateVisibleUploads(graph, commitGraphView)
 
 	// Clear all old visibility data for this repository
 	for _, query := range []string{
@@ -196,22 +197,22 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 	)
 
 	for v := range visibleUploads {
-		for _, uploadMeta := range v.uploads {
+		for _, uploadMeta := range v.Uploads {
 			if err := nearestUploadsInserter.Insert(
 				ctx,
 				repositoryID,
-				dbutil.CommitBytea(v.commit),
+				dbutil.CommitBytea(v.Commit),
 				uploadMeta.UploadID,
-				uploadMeta.Flags&MaxDistance,
-				(uploadMeta.Flags&FlagAncestorVisible) != 0,
-				(uploadMeta.Flags&FlagOverwritten) != 0,
+				uploadMeta.Flags&commitgraph.MaxDistance,
+				(uploadMeta.Flags&commitgraph.FlagAncestorVisible) != 0,
+				(uploadMeta.Flags&commitgraph.FlagOverwritten) != 0,
 			); err != nil {
 				return err
 			}
 		}
 
-		if v.commit == tipCommit {
-			for _, uploadMeta := range v.uploads {
+		if v.Commit == tipCommit {
+			for _, uploadMeta := range v.Uploads {
 				if err := uploadsVisibleAtTipInserter.Insert(ctx, repositoryID, uploadMeta.UploadID); err != nil {
 					return err
 				}

@@ -1,4 +1,4 @@
-package dbstore
+package commitgraph
 
 import (
 	"bytes"
@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 )
 
-func TestInternalCalculateVisibleUploads(t *testing.T) {
+func TestCalculateVisibleUploads(t *testing.T) {
 	// testGraph has the following layout:
 	//
 	//       +--- b -------------------------------+-- [j]
@@ -59,7 +59,7 @@ func TestInternalCalculateVisibleUploads(t *testing.T) {
 	commitGraphView.Add(UploadMeta{UploadID: 56}, "m", "sub3/:lsif-go")
 
 	visibleUploads := map[string][]UploadMeta{}
-	for v := range calculateVisibleUploads(testGraph, commitGraphView) {
+	for v := range CalculateVisibleUploads(testGraph, commitGraphView) {
 		visibleUploads[v.commit] = v.uploads
 	}
 
@@ -139,7 +139,7 @@ func TestInternalCalculateVisibleUploads(t *testing.T) {
 	}
 }
 
-func TestInternalCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
+func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 	// testGraph has the following layout:
 	//
 	//       [b] ------+                                          +------ n --- p
@@ -177,7 +177,7 @@ func TestInternalCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 	commitGraphView.Add(UploadMeta{UploadID: 53}, "q", "sub3/:lsif-go")
 
 	visibleUploads := map[string][]UploadMeta{}
-	for v := range calculateVisibleUploads(testGraph, commitGraphView) {
+	for v := range CalculateVisibleUploads(testGraph, commitGraphView) {
 		visibleUploads[v.commit] = v.uploads
 	}
 
@@ -318,7 +318,7 @@ func BenchmarkCalculateVisibleUploads(b *testing.B) {
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
-		for range calculateVisibleUploads(commitGraph, commitGraphView) {
+		for range CalculateVisibleUploads(commitGraph, commitGraphView) {
 		}
 	}
 }
