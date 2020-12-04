@@ -462,16 +462,26 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		repo = list[0]
 	}
 
-	// If we are sourcegraph.com we don't run a global Sync since there are
-	// too many repos. Instead we use an incremental approach where we check
+	// If we are sourcegraph.com we don't sync our site level code hosts in the background
+	// since there are too many repos. Instead we use an incremental approach where we check
 	// for changes everytime a user browses a repo. RepoLookup is the signal
 	// we rely on to check metadata.
+
 	codehost := extsvc.CodeHostOf(args.Repo, extsvc.PublicCodeHosts...)
 	if s.SourcegraphDotComMode && codehost != nil {
+		if repo == nil {
+			// Try and find this repo on the remote host. Block on the remote
+			// request.
+			return s.remoteRepoSync(ctx, codehost, string(args.Repo))
+		}
+
 		// TODO a queue with single flighting to speak to remote for args.Repo?
-		if repo != nil {
-			// We have (potentially stale) data we can return to the user right
-			// now. Do that rather than blocking.
+		// We have (potentially stale) data we can return to the user right
+		// now. Do that rather than blocking.
+		// This should only happen for public repos, private repos are ignored since if they do exist
+		// in our DB they would have been added by a user owned code host connection in which case they'll
+		// be kept up to date by our background syncer.
+		if !repo.Private {
 			go func() {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 				defer cancel()
@@ -493,10 +503,6 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 					}
 				}
 			}()
-		} else {
-			// Try and find this repo on the remote host. Block on the remote
-			// request.
-			return s.remoteRepoSync(ctx, codehost, string(args.Repo))
 		}
 	}
 
