@@ -35,7 +35,7 @@ jobs:
           cat .github/workflows/renovate-downstream.json
 
       - name: Renovate
-        uses: renovatebot/github-action@v23.27.1
+        uses: renovatebot/github-action@v23.94.1
         with:
           configurationFile: .github/workflows/renovate-downstream.json
           # token must be a personal access token for cross-repo access - currently @sourcegraph-bot cross-repo-github-actions in 1password
