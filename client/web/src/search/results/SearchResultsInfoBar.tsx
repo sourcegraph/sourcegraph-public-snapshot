@@ -70,12 +70,10 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInf
 export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => (
     <div className={classNames(props.className, 'search-results-info-bar')} data-testid="results-info-bar">
         <small className="search-results-info-bar__row">
-            <div className="search-results-info-bar__row-left">
-                {props.stats}
-                <QuotesInterpretedLiterallyNotice {...props} />
-            </div>
+            {props.stats}
+            <QuotesInterpretedLiterallyNotice {...props} />
 
-            <ul className="search-results-info-bar__row-right nav align-items-center justify-content-end">
+            <ul className="nav align-items-center justify-content-end">
                 <ActionsNavItems
                     {...props}
                     extraContext={{ searchQuery: props.query || null }}
