@@ -1,14 +1,14 @@
 import { escapeRegExp } from 'lodash'
 import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
 import { replaceRange } from '../../../shared/src/util/strings'
-import { discreteValueAliases } from '../../../shared/src/search/parser/filters'
+import { discreteValueAliases } from '../../../shared/src/search/query/filters'
 import { VersionContext } from '../schema/site.schema'
 import { SearchPatternType } from '../../../shared/src/graphql-operations'
 import { Observable } from 'rxjs'
 import { ISavedSearch } from '../../../shared/src/graphql/schema'
 import { EventLogResult } from './backend'
 import { AggregateStreamingSearchResults } from './stream'
-import { findFilter, FilterKind } from '../../../shared/src/search/parser/validate'
+import { findFilter, FilterKind } from '../../../shared/src/search/query/validate'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it

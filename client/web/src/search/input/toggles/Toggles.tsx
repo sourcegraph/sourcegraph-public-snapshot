@@ -14,7 +14,7 @@ import { generateFiltersQuery } from '../../../../../shared/src/util/url'
 import { CopyQueryButton } from './CopyQueryButton'
 import { VersionContextProps } from '../../../../../shared/src/search/util'
 import { SearchPatternType } from '../../../graphql-operations'
-import { findFilter, FilterKind } from '../../../../../shared/src/search/parser/validate'
+import { findFilter, FilterKind } from '../../../../../shared/src/search/query/validate'
 
 export interface TogglesProps
     extends PatternTypeProps,

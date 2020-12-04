@@ -6,7 +6,7 @@ import { toggleSearchType } from '../helpers'
 import { buildSearchURLQuery, generateFiltersQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
 import { PatternTypeProps, CaseSensitivityProps, parseSearchURLQuery, InteractiveSearchProps } from '..'
-import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
+import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 
 interface Props

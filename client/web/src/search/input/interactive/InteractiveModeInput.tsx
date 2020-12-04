@@ -18,7 +18,7 @@ import { InteractiveSearchProps, PatternTypeProps, CaseSensitivityProps, CopyQue
 import { SearchModeToggle } from './SearchModeToggle'
 import { uniqueId } from 'lodash'
 import { convertPlainTextToInteractiveQuery } from '../helpers'
-import { isSingularFilter } from '../../../../../shared/src/search/parser/filters'
+import { isSingularFilter } from '../../../../../shared/src/search/query/filters'
 import { VersionContextDropdown } from '../../../nav/VersionContextDropdown'
 import { VersionContextProps } from '../../../../../shared/src/search/util'
 import { VersionContext } from '../../../schema/site.schema'
