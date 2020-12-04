@@ -37,7 +37,7 @@ export interface CodeMonitorFields {
     description: string
     query: string
     enabled: boolean
-    action: Action
+    actions: Action[]
 }
 
 export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
@@ -53,6 +53,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
         actions: [{ recipient: authenticatedUser.id, enabled: true }],
         enabled: true,
     })
+
     const onNameChange = useCallback(
         (description: string): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, description })),
         []
@@ -65,8 +66,8 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
         (enabled: boolean): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, enabled })),
         []
     )
-    const onActionChange = useCallback(
-        (action: Action): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, action })),
+    const onActionsChange = useCallback(
+        (actions: Action[]): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, action: actions[0] })),
         []
     )
 
@@ -77,8 +78,8 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     const setTriggerCompleted = useCallback((complete: boolean) => {
         setFormCompletion(previousState => ({ ...previousState, triggerCompleted: complete }))
     }, [])
-    const setActionCompleted = useCallback(() => {
-        setFormCompletion(previousState => ({ ...previousState, actionCompleted: !previousState.actionCompleted }))
+    const setActionsCompleted = useCallback((complete: boolean) => {
+        setFormCompletion(previousState => ({ ...previousState, actionCompleted: complete }))
     }, [])
 
     const [requestOnSubmit, codeMonitorOrError] = useEventObservable(
@@ -151,7 +152,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                     actionsCompleted={formCompletion.actionCompleted}
                     authenticatedUser={authenticatedUser}
                     disabled={!formCompletion.triggerCompleted}
-                    onActionChange={onActionChange}
+                    onActionsChange={onActionsChange}
                 />
             </div>
             <div>

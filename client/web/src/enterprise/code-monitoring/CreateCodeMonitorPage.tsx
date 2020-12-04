@@ -39,10 +39,11 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                     enabled: codeMonitor.enabled,
                 },
                 trigger: { query: codeMonitor.query },
+                // TODO: map over all actions to return equivalent action.
                 actions: [
                     {
                         email: {
-                            enabled: codeMonitor.action.enabled,
+                            enabled: codeMonitor.actions[0].enabled,
                             priority: MonitorEmailPriority.NORMAL,
                             recipients: [props.authenticatedUser.id],
                             header: '',
