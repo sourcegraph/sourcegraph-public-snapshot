@@ -17,6 +17,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 - New site config option `"log": { "sentry": { "backendDSN": "<REDACTED>" } }` to use a separate Sentry project for backend errors. [#17363](https://github.com/sourcegraph/sourcegraph/pull/17363)
 - Structural search now supports searching indexed branches other than default. [#17726](https://github.com/sourcegraph/sourcegraph/pull/17726)
+- Pings now contain Sourcegraph extension activation statistics. [#16421](https://github.com/sourcegraph/sourcegraph/pull/16421)
+- Pings now contain aggregate Sourcegraph extension activation statistics: the number of users and number of activations per (public) extension per week, and the number of total extension users per week and average extensions activated per user. [#16421](https://github.com/sourcegraph/sourcegraph/pull/16421)
 
 ### Changed
 

@@ -211,6 +211,17 @@ func getAndMarshalAggregatedSearchUsageJSON(ctx context.Context) (_ json.RawMess
 	return json.Marshal(searchUsage)
 }
 
+func getAndMarshalExtensionsUsageStatisticsJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalExtensionsUsageStatisticsJSON")
+
+	extensionsUsage, err := usagestats.GetExtensionsUsageStatistics(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(extensionsUsage)
+}
+
 func getDependencyVersions(ctx context.Context, logFunc func(string, ...interface{})) (json.RawMessage, error) {
 	var (
 		err error
@@ -293,6 +304,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		Repositories:        []byte("{}"),
 		RetentionStatistics: []byte("{}"),
 		SearchOnboarding:    []byte("{}"),
+		ExtensionsUsage:     []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx)
@@ -367,6 +379,11 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		r.RetentionStatistics, err = getAndMarshalRetentionStatisticsJSON(ctx)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalRetentionStatisticsJSON failed", "error", err)
+		}
+
+		r.ExtensionsUsage, err = getAndMarshalExtensionsUsageStatisticsJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalExtensionsUsageStatisticsJSON failed", "error", err)
 		}
 
 		r.ExternalServices, err = externalServiceKinds(ctx)
