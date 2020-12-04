@@ -1,11 +1,18 @@
+import { LOADING } from '@sourcegraph/codeintellify'
 import * as H from 'history'
 import VideoInputAntennaIcon from 'mdi-react/VideoInputAntennaIcon'
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
+import { Observable } from 'rxjs'
+import { mergeMap, startWith, catchError, tap } from 'rxjs/operators'
+import { asError } from '../../../../shared/src/util/errors'
+import { useEventObservable } from '../../../../shared/src/util/useObservable'
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../../components/Breadcrumbs'
 import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
-import { CodeMonitorForm } from './components/CodeMonitorForm'
+import { MonitorEmailPriority } from '../../graphql-operations'
+import { createCodeMonitor } from './backend'
+import { CodeMonitorFields, CodeMonitorForm } from './components/CodeMonitorForm'
 
 export interface CreateCodeMonitorPageProps extends BreadcrumbsProps, BreadcrumbSetters {
     location: H.Location
@@ -23,6 +30,29 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
         )
     )
 
+    const createMonitorRequest = useCallback(
+        (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> =>
+            createCodeMonitor({
+                monitor: {
+                    namespace: props.authenticatedUser.id,
+                    description: codeMonitor.description,
+                    enabled: codeMonitor.enabled,
+                },
+                trigger: { query: codeMonitor.query },
+                actions: [
+                    {
+                        email: {
+                            enabled: codeMonitor.action.enabled,
+                            priority: MonitorEmailPriority.NORMAL,
+                            recipients: [props.authenticatedUser.id],
+                            header: '',
+                        },
+                    },
+                ],
+            }),
+        [props.authenticatedUser.id]
+    )
+
     return (
         <div className="container mt-3 web-content">
             <PageTitle title="Create new code monitor" />
@@ -32,7 +62,7 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                 {/* TODO: populate link */}
                 Learn more
             </a>
-            <CodeMonitorForm {...props} />
+            <CodeMonitorForm {...props} onSubmit={createMonitorRequest} submitButtonLabel="Create code monitor" />
         </div>
     )
 }

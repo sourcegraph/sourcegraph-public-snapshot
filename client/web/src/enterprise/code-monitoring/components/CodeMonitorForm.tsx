@@ -3,19 +3,24 @@ import React, { useCallback, useState } from 'react'
 import { Observable } from 'rxjs'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { AuthenticatedUser } from '../../../auth'
-import { MonitorEmailPriority } from '../../../graphql-operations'
 import * as H from 'history'
 import { Toggle } from '../../../../../branded/src/components/Toggle'
-import { useEventObservable } from '../../../../../shared/src/util/useObservable'
-import { createCodeMonitor } from '../backend'
 import { FormActionArea } from './FormActionArea'
 import { FormTriggerArea } from './FormTriggerArea'
 import { mergeMap, startWith, catchError, tap } from 'rxjs/operators'
 import { Form } from '../../../../../branded/src/components/Form'
+import { useEventObservable } from '../../../../../shared/src/util/useObservable'
 
 export interface CodeMonitorFormProps {
     location: H.Location
     authenticatedUser: AuthenticatedUser
+    /**
+     * A function that takes in a code monitor and emits an Observable with all or some
+     * of the CodeMonitorFields when the form is submitted.
+     */
+    onSubmit: (codeMonitor: CodeMonitorFields) => Observable<Partial<CodeMonitorFields>>
+    /** The text for the submit button. */
+    submitButtonLabel: string
 }
 
 interface FormCompletionSteps {
@@ -35,13 +40,17 @@ export interface CodeMonitorFields {
     action: Action
 }
 
-export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = props => {
+export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
+    authenticatedUser,
+    onSubmit,
+    submitButtonLabel,
+}) => {
     const LOADING = 'loading' as const
 
-    const [codeMonitor, setCodeMonitor] = useState<CodeMonitorFields>({
+    const [currentCodeMonitorState, setCodeMonitor] = useState<CodeMonitorFields>({
         description: '',
         query: '',
-        action: { recipient: props.authenticatedUser.id, enabled: true },
+        actions: [{ recipient: authenticatedUser.id, enabled: true }],
         enabled: true,
     })
     const onNameChange = useCallback(
@@ -72,41 +81,24 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = pr
         setFormCompletion(previousState => ({ ...previousState, actionCompleted: !previousState.actionCompleted }))
     }, [])
 
-    const [createRequest, codeMonitorOrError] = useEventObservable(
+    const [requestOnSubmit, codeMonitorOrError] = useEventObservable(
         useCallback(
             (submit: Observable<React.FormEvent<HTMLFormElement>>) =>
                 submit.pipe(
                     tap(event => event.preventDefault()),
                     mergeMap(() =>
-                        createCodeMonitor({
-                            monitor: {
-                                namespace: props.authenticatedUser.id,
-                                description: codeMonitor.description,
-                                enabled: codeMonitor.enabled,
-                            },
-                            trigger: { query: codeMonitor.query },
-                            actions: [
-                                {
-                                    email: {
-                                        enabled: codeMonitor.action.enabled,
-                                        priority: MonitorEmailPriority.NORMAL,
-                                        recipients: [props.authenticatedUser.id],
-                                        header: '',
-                                    },
-                                },
-                            ],
-                        }).pipe(
+                        onSubmit(currentCodeMonitorState).pipe(
                             startWith(LOADING),
                             catchError(error => [asError(error)])
                         )
                     )
                 ),
-            [props.authenticatedUser, codeMonitor]
+            [onSubmit, currentCodeMonitorState]
         )
     )
 
     return (
-        <Form className="my-4" onSubmit={createRequest}>
+        <Form className="my-4" onSubmit={requestOnSubmit}>
             <div className="flex mb-4">
                 Name
                 <div>
@@ -133,8 +125,8 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = pr
             <div className="flex">
                 Owner
                 <select className="form-control my-2 w-auto" disabled={true}>
-                    <option value={props.authenticatedUser.displayName || props.authenticatedUser.username}>
-                        {props.authenticatedUser.username}
+                    <option value={authenticatedUser.displayName || authenticatedUser.username}>
+                        {authenticatedUser.username}
                     </option>
                 </select>
                 <small className="text-muted">Event history and configuration will not be shared.</small>
@@ -142,7 +134,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = pr
             <hr className="my-4" />
             <div className="create-monitor-page__triggers mb-4">
                 <FormTriggerArea
-                    query={codeMonitor.query}
+                    query={currentCodeMonitorState.query}
                     onQueryChange={onQueryChange}
                     triggerCompleted={formCompletion.triggerCompleted}
                     setTriggerCompleted={setTriggerCompleted}
@@ -154,9 +146,10 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = pr
                 })}
             >
                 <FormActionArea
-                    setActionCompleted={setActionCompleted}
-                    actionCompleted={formCompletion.actionCompleted}
-                    authenticatedUser={props.authenticatedUser}
+                    actions={currentCodeMonitorState.actions}
+                    setActionsCompleted={setActionsCompleted}
+                    actionsCompleted={formCompletion.actionCompleted}
+                    authenticatedUser={authenticatedUser}
                     disabled={!formCompletion.triggerCompleted}
                     onActionChange={onActionChange}
                 />
@@ -166,7 +159,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = pr
                     <div>
                         <Toggle
                             title="Active"
-                            value={codeMonitor.enabled}
+                            value={currentCodeMonitorState.enabled}
                             onToggle={onEnabledChange}
                             className="mr-2"
                         />{' '}
@@ -186,7 +179,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = pr
                         }
                         className="btn btn-primary mr-2 test-submit-monitor"
                     >
-                        Create code monitor
+                        {submitButtonLabel}
                     </button>
                     <button type="button" className="btn btn-outline-secondary">
                         {/* TODO: this should link somewhere */}
