@@ -158,7 +158,21 @@ func (s *RepoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.R
 		items[i] = sqlf.Sprintf("%d", ids[i])
 	}
 	q := sqlf.Sprintf("id IN (%s)", sqlf.Join(items, ","))
-	return s.getReposBySQL(ctx, true, nil, q, nil)
+	var repos []*types.Repo
+	err := s.getReposBySQL(ctx, true, nil, q, nil, func(rows *sql.Rows) error {
+		var repo types.Repo
+
+		if err := scanRepo(rows, &repo); err != nil {
+			return err
+		}
+
+		repos = append(repos, &repo)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return repos, nil
 }
 
 // GetReposSetByIDs returns a map of repositories with the given IDs, indexed by their IDs. The number of results
@@ -275,10 +289,26 @@ func minimalColumns(columns []string) []string {
 }
 
 func (s *RepoStore) getBySQL(ctx context.Context, queryConds, querySuffix *sqlf.Query) ([]*types.Repo, error) {
-	return s.getReposBySQL(ctx, false, nil, queryConds, querySuffix)
+	var repos []*types.Repo
+	err := s.getReposBySQL(ctx, false, nil, queryConds, querySuffix, func(rows *sql.Rows) error {
+		repo := types.Repo{
+			RepoFields: &types.RepoFields{},
+		}
+
+		if err := scanRepo(rows, &repo); err != nil {
+			return err
+		}
+
+		repos = append(repos, &repo)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return repos, nil
 }
 
-func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause, queryConds, querySuffix *sqlf.Query) ([]*types.Repo, error) {
+func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause, queryConds, querySuffix *sqlf.Query, scanRepo func(*sql.Rows) error) error {
 	if fromClause == nil {
 		fromClause = sqlf.Sprintf("repo")
 	}
@@ -291,7 +321,7 @@ func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause,
 
 	authzConds, err := authzQueryConds(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	columns := getBySQLColumns
@@ -309,28 +339,20 @@ func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause,
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer rows.Close()
 
-	var repos []*types.Repo
 	for rows.Next() {
-		var repo types.Repo
-		if !minimal {
-			repo.RepoFields = &types.RepoFields{}
+		if err := scanRepo(rows); err != nil {
+			return err
 		}
-
-		if err := scanRepo(rows, &repo); err != nil {
-			return nil, err
-		}
-
-		repos = append(repos, &repo)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return err
 	}
 
-	return repos, nil
+	return nil
 }
 
 func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
@@ -586,7 +608,24 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 	tr.LogFields(trace.SQL(queryConds), trace.SQL(querySuffix))
 
-	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fromClause, queryConds, querySuffix)
+	var repos []*types.Repo
+	err = s.getReposBySQL(ctx, opt.OnlyRepoIDs, fromClause, queryConds, querySuffix, func(rows *sql.Rows) error {
+		var repo types.Repo
+		if !opt.OnlyRepoIDs {
+			repo.RepoFields = &types.RepoFields{}
+		}
+
+		if err := scanRepo(rows, &repo); err != nil {
+			return err
+		}
+
+		repos = append(repos, &repo)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return repos, nil
 }
 
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.
