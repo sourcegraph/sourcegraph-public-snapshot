@@ -310,7 +310,7 @@
     "recharts": "^1.8.5",
     "regexpp": "^3.1.0",
     "rxjs": "^6.6.3",
-    "sanitize-html": "^1.26.0",
+    "sanitize-html": "^2.2.0",
     "semver": "^7.3.2",
     "shepherd.js": "^8.0.2",
     "sourcegraph": "link:client/packages/sourcegraph-extension-api",
