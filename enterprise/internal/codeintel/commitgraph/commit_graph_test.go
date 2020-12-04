@@ -60,7 +60,7 @@ func TestCalculateVisibleUploads(t *testing.T) {
 
 	visibleUploads := map[string][]UploadMeta{}
 	for v := range CalculateVisibleUploads(testGraph, commitGraphView) {
-		visibleUploads[v.commit] = v.uploads
+		visibleUploads[v.Commit] = v.Uploads
 	}
 
 	for _, uploads := range visibleUploads {
@@ -178,7 +178,7 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 
 	visibleUploads := map[string][]UploadMeta{}
 	for v := range CalculateVisibleUploads(testGraph, commitGraphView) {
-		visibleUploads[v.commit] = v.uploads
+		visibleUploads[v.Commit] = v.Uploads
 	}
 
 	for _, uploads := range visibleUploads {
