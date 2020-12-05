@@ -1,11 +1,18 @@
 import { concat, Observable } from 'rxjs'
 import { map, mergeMap } from 'rxjs/operators'
 import { gql } from '../../../shared/src/graphql/graphql'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { refreshAuthenticatedUser } from '../auth'
-import { mutateGraphQL, requestGraphQL } from '../backend/graphql'
-import { CreateOrganizationResult, CreateOrganizationVariables } from '../graphql-operations'
+import { requestGraphQL } from '../backend/graphql'
+import {
+    CreateOrganizationResult,
+    CreateOrganizationVariables,
+    RemoveUserFromOrganizationResult,
+    RemoveUserFromOrganizationVariables,
+    Scalars,
+    UpdateOrganizationResult,
+    UpdateOrganizationVariables,
+} from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 /**
@@ -50,13 +57,13 @@ export function createOrganization(args: {
  */
 export function removeUserFromOrganization(args: {
     /** The ID of the user to remove. */
-    user: GQL.ID
+    user: Scalars['ID']
     /** The organization's ID. */
-    organization: GQL.ID
+    organization: Scalars['ID']
 }): Observable<void> {
-    return mutateGraphQL(
+    return requestGraphQL<RemoveUserFromOrganizationResult, RemoveUserFromOrganizationVariables>(
         gql`
-            mutation removeUserFromOrganization($user: ID!, $organization: ID!) {
+            mutation RemoveUserFromOrganization($user: ID!, $organization: ID!) {
                 removeUserFromOrganization(user: $user, organization: $organization) {
                     alwaysNil
                 }
@@ -83,8 +90,8 @@ export function removeUserFromOrganization(args: {
  * @param displayName The display name of the organization.
  * @returns Observable that emits `undefined`, then completes
  */
-export function updateOrganization(id: GQL.ID, displayName: string): Observable<void> {
-    return mutateGraphQL(
+export function updateOrganization(id: Scalars['ID'], displayName: string): Observable<void> {
+    return requestGraphQL<UpdateOrganizationResult, UpdateOrganizationVariables>(
         gql`
             mutation UpdateOrganization($id: ID!, $displayName: String) {
                 updateOrganization(id: $id, displayName: $displayName) {
