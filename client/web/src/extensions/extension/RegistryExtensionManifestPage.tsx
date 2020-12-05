@@ -10,6 +10,7 @@ import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/Dynamica
 import { eventLogger } from '../../tracking/eventLogger'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ThemeProps } from '../../../../shared/src/theme'
+
 export const ExtensionNoManifestAlert: React.FunctionComponent<{
     extension: ConfiguredRegistryExtension
 }> = ({ extension }) => (
