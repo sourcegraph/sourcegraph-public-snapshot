@@ -6,9 +6,8 @@ import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import React, { useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { withLatestFrom } from 'rxjs/operators'
 import { PageTitle } from '../components/PageTitle'
-import { fetchSite, fetchSiteUpdateCheck } from './backend'
+import { fetchSiteUpdateCheck } from './backend'
 import { ErrorAlert } from '../components/alerts'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { useObservable } from '../../../shared/src/util/useObservable'
@@ -24,14 +23,14 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ history, 
         telemetryService.logViewEvent('SiteAdminUpdates')
     }, [telemetryService])
 
-    const state = useObservable(useMemo(() => fetchSite().pipe(withLatestFrom(fetchSiteUpdateCheck())), []))
+    const state = useObservable(useMemo(() => fetchSiteUpdateCheck(), []))
     const autoUpdateCheckingEnabled = window.context.site['update.channel'] === 'release'
 
     if (state === undefined) {
         return <LoadingSpinner />
     }
 
-    const updateCheck = state[1].updateCheck
+    const updateCheck = state.updateCheck
 
     return (
         <div className="site-admin-updates-page">
@@ -77,7 +76,7 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ history, 
 
             <p className="site-admin-updates_page__info">
                 <small>
-                    <strong>Current product version:</strong> {state[1].productVersion} ({state[1].buildVersion})
+                    <strong>Current product version:</strong> {state.productVersion} ({state.buildVersion})
                 </small>
                 <br />
                 <small>
