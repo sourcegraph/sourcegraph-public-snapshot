@@ -1,24 +1,30 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AddIcon from 'mdi-react/AddIcon'
-import * as React from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
-import { concat, Observable, Subject, Subscription } from 'rxjs'
+import { concat, Observable, Subject } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
 import { gql } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, createAggregateError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { AccessTokenScopes } from '../../../auth/accessToken'
-import { mutateGraphQL } from '../../../backend/graphql'
+import { requestGraphQL } from '../../../backend/graphql'
 import { Form } from '../../../../../branded/src/components/Form'
 import { PageTitle } from '../../../components/PageTitle'
 import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { UserAreaRouteContext } from '../../area/UserArea'
 import { ErrorAlert } from '../../../components/alerts'
+import { CreateAccessTokenResult, CreateAccessTokenVariables, Scalars } from '../../../graphql-operations'
+import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
+import { Link } from '../../../../../shared/src/components/Link'
 
-function createAccessToken(user: GQL.ID, scopes: string[], note: string): Observable<GQL.ICreateAccessTokenResult> {
-    return mutateGraphQL(
+function createAccessToken(
+    user: Scalars['ID'],
+    scopes: string[],
+    note: string
+): Observable<CreateAccessTokenResult['createAccessToken']> {
+    return requestGraphQL<CreateAccessTokenResult, CreateAccessTokenVariables>(
         gql`
             mutation CreateAccessToken($user: ID!, $scopes: [String!]!, $note: String!) {
                 createAccessToken(user: $user, scopes: $scopes, note: $note) {
@@ -40,185 +46,169 @@ function createAccessToken(user: GQL.ID, scopes: string[], note: string): Observ
     )
 }
 
-interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {
-    /** Called when a new access token is created and should be temporarily displayed to the user. */
-    onDidCreateAccessToken: (result: GQL.ICreateAccessTokenResult) => void
-}
-
-interface State {
-    /** The contents of the note input field. */
-    note: string
-
-    /** The selected scopes checkboxes. */
-    scopes: string[]
-
-    creationOrError?: 'loading' | GQL.ICreateAccessTokenResult | ErrorLike
+interface Props
+    extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>,
+        Pick<RouteComponentProps<{}>, 'history' | 'match'>,
+        TelemetryProps {
+    /**
+     * Called when a new access token is created and should be temporarily displayed to the user.
+     */
+    onDidCreateAccessToken: (value: CreateAccessTokenResult['createAccessToken']) => void
 }
 
 /**
  * A page with a form to create an access token for a user.
  */
-export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props, State> {
-    public state: State = {
-        note: '',
-        scopes: [AccessTokenScopes.UserAll],
-    }
+export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<Props> = ({
+    telemetryService,
+    onDidCreateAccessToken,
+    authenticatedUser,
+    user,
+    history,
+    match,
+}) => {
+    useMemo(() => {
+        telemetryService.logViewEvent('NewAccessToken')
+    }, [telemetryService])
 
-    private submits = new Subject<React.FormEvent<HTMLFormElement>>()
-    private componentUpdates = new Subject<Props>()
-    private subscriptions = new Subscription()
+    /** The contents of the note input field. */
+    const [note, setNote] = useState<string>('')
+    /** The selected scopes checkboxes. */
+    const [scopes, setScopes] = useState<string[]>([AccessTokenScopes.UserAll])
 
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('NewAccessToken')
-        this.subscriptions.add(
-            this.submits
-                .pipe(
+    const onNoteChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
+        setNote(event.currentTarget.value)
+    }, [])
+
+    const onScopesChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
+        const checked = event.currentTarget.checked
+        const value = event.currentTarget.value
+        setScopes(previous => (checked ? [...previous, value] : previous.filter(scope => scope !== value)))
+    }, [])
+
+    const submits = useMemo(() => new Subject<React.FormEvent<HTMLFormElement>>(), [])
+    const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(event => submits.next(event), [submits])
+
+    const creationOrError = useObservable(
+        useMemo(
+            () =>
+                submits.pipe(
                     tap(event => event.preventDefault()),
                     concatMap(() =>
                         concat(
-                            [{ creationOrError: 'loading' }],
-                            createAccessToken(this.props.user.id, this.state.scopes, this.state.note).pipe(
+                            ['loading'],
+                            createAccessToken(user.id, scopes, note).pipe(
                                 tap(result => {
                                     // Go back to access tokens list page and display the token secret value.
-                                    this.props.history.push(`${this.props.match.url.replace(/\/new$/, '')}`)
-                                    this.props.onDidCreateAccessToken(result)
+                                    history.push(`${match.url.replace(/\/new$/, '')}`)
+                                    onDidCreateAccessToken(result)
                                 }),
-                                map(result => ({ creationOrError: result })),
-                                catchError(error => [{ creationOrError: asError(error) }])
+                                catchError(error => [asError(error)])
                             )
                         )
                     )
-                )
-                .subscribe(
-                    stateUpdate => this.setState(stateUpdate as State),
-                    error => console.error(error)
-                )
+                ),
+            [history, match.url, note, onDidCreateAccessToken, scopes, submits, user.id]
         )
+    )
 
-        this.componentUpdates.next(this.props)
-    }
+    const siteAdminViewingOtherUser = authenticatedUser && authenticatedUser.id !== user.id
 
-    public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
-    }
+    return (
+        <div className="user-settings-create-access-token-page">
+            <PageTitle title="Create access token" />
+            <h2>New access token</h2>
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
+            {siteAdminViewingOtherUser && (
+                <SiteAdminAlert className="sidebar__alert">
+                    Creating access token for other user <strong>{user.username}</strong>
+                </SiteAdminAlert>
+            )}
 
-    public render(): JSX.Element | null {
-        const siteAdminViewingOtherUser =
-            this.props.authenticatedUser && this.props.authenticatedUser.id !== this.props.user.id
-        return (
-            <div className="user-settings-create-access-token-page">
-                <PageTitle title="Create access token" />
-                <h2>New access token</h2>
-                {siteAdminViewingOtherUser && (
-                    <SiteAdminAlert className="sidebar__alert">
-                        Creating access token for other user <strong>{this.props.user.username}</strong>
-                    </SiteAdminAlert>
-                )}
-                <Form onSubmit={this.onSubmit}>
-                    <div className="form-group">
-                        <label htmlFor="user-settings-create-access-token-page__note">Token description</label>
-                        <input
-                            type="text"
-                            className="form-control test-create-access-token-description"
-                            id="user-settings-create-access-token-page__note"
-                            onChange={this.onNoteChange}
-                            required={true}
-                            autoFocus={true}
-                            placeholder="Description"
-                        />
-                        <small className="form-help text-muted">What's this token for?</small>
+            <Form onSubmit={onSubmit}>
+                <div className="form-group">
+                    <label htmlFor="user-settings-create-access-token-page__note">Token description</label>
+                    <input
+                        type="text"
+                        className="form-control test-create-access-token-description"
+                        id="user-settings-create-access-token-page__note"
+                        onChange={onNoteChange}
+                        required={true}
+                        autoFocus={true}
+                        placeholder="Description"
+                    />
+                    <small className="form-help text-muted">What's this token for?</small>
+                </div>
+                <div className="form-group">
+                    <label className="mb-1" htmlFor="user-settings-create-access-token-page__note">
+                        Token scope
+                    </label>
+                    <div>
+                        <small className="form-help text-muted">
+                            Tokens with limited user scopes are not yet supported.
+                        </small>
                     </div>
-                    <div className="form-group">
-                        <label className="mb-1" htmlFor="user-settings-create-access-token-page__note">
-                            Token scope
+                    <div className="form-check">
+                        <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id="user-settings-create-access-token-page__scope-user:all"
+                            checked={true}
+                            value={AccessTokenScopes.UserAll}
+                            onChange={onScopesChange}
+                            disabled={true}
+                        />
+                        <label
+                            className="form-check-label"
+                            htmlFor="user-settings-create-access-token-page__scope-user:all"
+                        >
+                            <strong>{AccessTokenScopes.UserAll}</strong> — Full control of all resources accessible to
+                            the user account
                         </label>
-                        <div>
-                            <small className="form-help text-muted">
-                                Tokens with limited user scopes are not yet supported.
-                            </small>
-                        </div>
+                    </div>
+                    {user.siteAdmin && (
                         <div className="form-check">
                             <input
                                 className="form-check-input"
                                 type="checkbox"
-                                id="user-settings-create-access-token-page__scope-user:all"
-                                checked={true}
-                                value={AccessTokenScopes.UserAll}
-                                onChange={this.onScopesChange}
-                                disabled={true}
+                                id="user-settings-create-access-token-page__scope-site-admin:sudo"
+                                checked={scopes.includes(AccessTokenScopes.SiteAdminSudo)}
+                                value={AccessTokenScopes.SiteAdminSudo}
+                                onChange={onScopesChange}
                             />
                             <label
                                 className="form-check-label"
-                                htmlFor="user-settings-create-access-token-page__scope-user:all"
+                                htmlFor="user-settings-create-access-token-page__scope-site-admin:sudo"
                             >
-                                <strong>{AccessTokenScopes.UserAll}</strong> — Full control of all resources accessible
-                                to the user account
+                                <strong>{AccessTokenScopes.SiteAdminSudo}</strong> — Ability to perform any action as
+                                any other user
                             </label>
                         </div>
-                        {this.props.user.siteAdmin && (
-                            <div className="form-check">
-                                <input
-                                    className="form-check-input"
-                                    type="checkbox"
-                                    id="user-settings-create-access-token-page__scope-site-admin:sudo"
-                                    checked={this.state.scopes.includes(AccessTokenScopes.SiteAdminSudo)}
-                                    value={AccessTokenScopes.SiteAdminSudo}
-                                    onChange={this.onScopesChange}
-                                />
-                                <label
-                                    className="form-check-label"
-                                    htmlFor="user-settings-create-access-token-page__scope-site-admin:sudo"
-                                >
-                                    <strong>{AccessTokenScopes.SiteAdminSudo}</strong> — Ability to perform any action
-                                    as any other user
-                                </label>
-                            </div>
-                        )}
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={this.state.creationOrError === 'loading'}
-                        className="btn btn-success test-create-access-token-submit"
-                    >
-                        {this.state.creationOrError === 'loading' ? (
-                            <LoadingSpinner className="icon-inline" />
-                        ) : (
-                            <AddIcon className="icon-inline" />
-                        )}{' '}
-                        Generate token
-                    </button>
-                    <Link
-                        className="btn btn-secondary ml-1 test-create-access-token-cancel"
-                        to={this.props.match.url.replace(/\/new$/, '')}
-                    >
-                        Cancel
-                    </Link>
-                </Form>
-                {isErrorLike(this.state.creationOrError) && (
-                    <ErrorAlert
-                        className="invite-form__alert"
-                        error={this.state.creationOrError}
-                        history={this.props.history}
-                    />
-                )}
-            </div>
-        )
-    }
+                    )}
+                </div>
+                <button
+                    type="submit"
+                    disabled={creationOrError === 'loading'}
+                    className="btn btn-success test-create-access-token-submit"
+                >
+                    {creationOrError === 'loading' ? (
+                        <LoadingSpinner className="icon-inline" />
+                    ) : (
+                        <AddIcon className="icon-inline" />
+                    )}{' '}
+                    Generate token
+                </button>
+                <Link
+                    className="btn btn-secondary ml-1 test-create-access-token-cancel"
+                    to={match.url.replace(/\/new$/, '')}
+                >
+                    Cancel
+                </Link>
+            </Form>
 
-    private onNoteChange: React.ChangeEventHandler<HTMLInputElement> = event =>
-        this.setState({ note: event.currentTarget.value })
-
-    private onScopesChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        const checked = event.currentTarget.checked
-        const value = event.currentTarget.value
-        this.setState(previousState => ({
-            scopes: checked ? [...previousState.scopes, value] : previousState.scopes.filter(scope => scope !== value),
-        }))
-    }
-
-    private onSubmit: React.FormEventHandler<HTMLFormElement> = event => this.submits.next(event)
+            {isErrorLike(creationOrError) && (
+                <ErrorAlert className="invite-form__alert" error={creationOrError} history={history} />
+            )}
+        </div>
+    )
 }
