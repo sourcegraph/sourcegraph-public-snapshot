@@ -26,6 +26,8 @@ import {
     DeleteOrganizationResult,
     DeleteOrganizationVariables,
     Scalars,
+    SiteUpdateCheckVariables,
+    SiteUpdateCheckResult,
 } from '../graphql-operations'
 
 /**
@@ -695,12 +697,8 @@ export function deleteOrganization(organization: Scalars['ID']): Promise<void> {
         .toPromise()
 }
 
-export function fetchSiteUpdateCheck(): Observable<{
-    buildVersion: string
-    productVersion: string
-    updateCheck: GQL.IUpdateCheck
-}> {
-    return queryGraphQL(
+export function fetchSiteUpdateCheck(): Observable<SiteUpdateCheckResult['site']> {
+    return requestGraphQL<SiteUpdateCheckResult, SiteUpdateCheckVariables>(
         gql`
             query SiteUpdateCheck {
                 site {
