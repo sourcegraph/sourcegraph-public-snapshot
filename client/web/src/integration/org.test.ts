@@ -52,10 +52,11 @@ describe('Organizations', () => {
                         totalCount: 0,
                     },
                 }),
-                createOrganization: ({ name }) => ({
+                CreateOrganization: ({ name }) => ({
                     createOrganization: {
                         id: 'TestOrg',
                         name,
+                        settingsURL: '/organizations/test-org/settings',
                     },
                 }),
             }
@@ -77,7 +78,7 @@ describe('Organizations', () => {
 
             const variables = await testContext.waitForGraphQLRequest(async () => {
                 await driver.page.click('.test-create-org-submit-button')
-            }, 'createOrganization')
+            }, 'CreateOrganization')
             assert.deepStrictEqual(variables, {
                 displayName: testOrg.displayName,
                 name: testOrg.name,
@@ -172,7 +173,7 @@ describe('Organizations', () => {
                             },
                         },
                     }),
-                    removeUserFromOrganization: () => ({
+                    RemoveUserFromOrganization: () => ({
                         removeUserFromOrganization: emptyResponse,
                     }),
                 }
@@ -209,7 +210,7 @@ describe('Organizations', () => {
                         driver.acceptNextDialog(),
                         driver.page.click('[data-test-username="testmember"] .test-remove-org-member'),
                     ])
-                }, 'removeUserFromOrganization')
+                }, 'RemoveUserFromOrganization')
 
                 assert.deepStrictEqual(variables, {
                     user: testMember.id,
