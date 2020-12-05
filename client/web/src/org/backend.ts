@@ -90,7 +90,7 @@ export function removeUserFromOrganization(args: {
  * @param displayName The display name of the organization.
  * @returns Observable that emits `undefined`, then completes
  */
-export function updateOrganization(id: Scalars['ID'], displayName: string): Observable<void> {
+export function updateOrganization(id: Scalars['ID'], displayName: string): Promise<void> {
     return requestGraphQL<UpdateOrganizationResult, UpdateOrganizationVariables>(
         gql`
             mutation UpdateOrganization($id: ID!, $displayName: String) {
@@ -103,14 +103,16 @@ export function updateOrganization(id: Scalars['ID'], displayName: string): Obse
             id,
             displayName,
         }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                eventLogger.log('UpdateOrgSettingsFailed')
-                throw createAggregateError(errors)
-            }
-            eventLogger.log('OrgSettingsUpdated')
-            return
-        })
     )
+        .pipe(
+            map(({ data, errors }) => {
+                if (!data || (errors && errors.length > 0)) {
+                    eventLogger.log('UpdateOrgSettingsFailed')
+                    throw createAggregateError(errors)
+                }
+                eventLogger.log('OrgSettingsUpdated')
+                return
+            })
+        )
+        .toPromise()
 }
