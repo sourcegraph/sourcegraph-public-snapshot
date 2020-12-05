@@ -11568,7 +11568,7 @@ graphql-config@^3.2.0:
     string-env-interpolation "1.0.1"
     tslib "^2.0.0"
 
-graphql-language-service-interface@^2.0.0, graphql-language-service-interface@^2.4.3:
+graphql-language-service-interface@^2.4.1, graphql-language-service-interface@^2.4.3:
   version "2.4.3"
   resolved "https://registry.npmjs.org/graphql-language-service-interface/-/graphql-language-service-interface-2.4.3.tgz#bba756d9282b7a2ee818a3cba5702ec9e5da1f7e"
   integrity sha512-WVWdviRYzb+/z+GS/6ds87OW5qqP0J6l6pGGOE0694x4It57x97//mkRHY5vfNa3knHw5OYwkUYymVzqYu4xTw==
@@ -11585,7 +11585,7 @@ graphql-language-service-parser@^1.6.5:
   dependencies:
     graphql-language-service-types "^1.6.3"
 
-graphql-language-service-types@^1.5.2, graphql-language-service-types@^1.6.3:
+graphql-language-service-types@^1.6.1, graphql-language-service-types@^1.6.3:
   version "1.6.3"
   resolved "https://registry.npmjs.org/graphql-language-service-types/-/graphql-language-service-types-1.6.3.tgz#1a6ba25140ec9ffc6d7f36eca7a4069e91500f3d"
   integrity sha512-VDtBhdan1iSe7ad7+eBbsO5rrzWQpC6aV4SxSHEi8AtEQOFXpnL9Lq5jSaN8O02pGvAUr4wNUPu0oRU5g2XmVA==
@@ -22078,13 +22078,13 @@ ts-essentials@^2.0.3:
   resolved "https://registry.npmjs.org/ts-essentials/-/ts-essentials-2.0.12.tgz#c9303f3d74f75fa7528c3d49b80e089ab09d8745"
   integrity sha512-3IVX4nI6B5cc31/GFFE+i8ey/N2eA0CZDbo6n0yrz0zDX8ZJ8djmU1p+XRz7G3is0F3bB3pu2pAroFdAWQKU3w==
 
-ts-graphql-plugin@^1.12.1:
-  version "1.12.1"
-  resolved "https://registry.npmjs.org/ts-graphql-plugin/-/ts-graphql-plugin-1.12.1.tgz#84e779405f289b2d834aedfb8cc8039dcddaa395"
-  integrity sha512-GK3u50pSHKZATE8uuo71ElTlk2HGQxd5EMFvEOrOyYz+Ph0TT/f7QrR8xTs+0ju0ETfzcoY5kok1YlPRzEL48Q==
+ts-graphql-plugin@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.npmjs.org/ts-graphql-plugin/-/ts-graphql-plugin-2.1.1.tgz#f832b970b1b0159b6acb91d6e16c17e1ec5d762b"
+  integrity sha512-r4zVxvC9K1lFUlwL0sDD9sDHzq/keD+8vu5fqedP1+ECS10uVWrU/ojGruVO1Qdi8pqOAaHYPILoJASLaThY+w==
   dependencies:
-    graphql-language-service-interface "^2.0.0"
-    graphql-language-service-types "^1.5.2"
+    graphql-language-service-interface "^2.4.1"
+    graphql-language-service-types "^1.6.1"
 
 ts-key-enum@^2.0.0, ts-key-enum@^2.0.3:
   version "2.0.3"
