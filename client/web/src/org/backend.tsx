@@ -4,7 +4,8 @@ import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { refreshAuthenticatedUser } from '../auth'
-import { mutateGraphQL } from '../backend/graphql'
+import { mutateGraphQL, requestGraphQL } from '../backend/graphql'
+import { CreateOrganizationResult, CreateOrganizationVariables } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 /**
@@ -16,27 +17,30 @@ export function createOrganization(args: {
     name: string
     /** The new organization's display name (e.g. full name) in the organization profile. */
     displayName?: string
-}): Observable<GQL.IOrg> {
-    return mutateGraphQL(
+}): Promise<CreateOrganizationResult['createOrganization']> {
+    return requestGraphQL<CreateOrganizationResult, CreateOrganizationVariables>(
         gql`
-            mutation createOrganization($name: String!, $displayName: String) {
+            mutation CreateOrganization($name: String!, $displayName: String) {
                 createOrganization(name: $name, displayName: $displayName) {
                     id
                     name
+                    settingsURL
                 }
             }
         `,
-        args
-    ).pipe(
-        mergeMap(({ data, errors }) => {
-            if (!data || !data.createOrganization) {
-                eventLogger.log('NewOrgFailed')
-                throw createAggregateError(errors)
-            }
-            eventLogger.log('NewOrgCreated')
-            return concat(refreshAuthenticatedUser(), [data.createOrganization])
-        })
+        { name: args.name, displayName: args.displayName ?? null }
     )
+        .pipe(
+            mergeMap(({ data, errors }) => {
+                if (!data || !data.createOrganization) {
+                    eventLogger.log('NewOrgFailed')
+                    throw createAggregateError(errors)
+                }
+                eventLogger.log('NewOrgCreated')
+                return concat(refreshAuthenticatedUser(), [data.createOrganization])
+            })
+        )
+        .toPromise()
 }
 
 /**
