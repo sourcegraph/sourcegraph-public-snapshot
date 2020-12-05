@@ -13,7 +13,6 @@ import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumb
 import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
 import { CodeMonitorFields, MonitorEmailPriority } from '../../graphql-operations'
-import { fetchCodeMonitor, updateCodeMonitor } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
 export interface ManageCodeMonitorPageProps
@@ -27,7 +26,19 @@ export interface ManageCodeMonitorPageProps
 }
 
 export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPageProps> = props => {
+    props.useBreadcrumb(
+        React.useMemo(
+            () => ({
+                key: 'Manage Code Monitor',
+                element: <>Manage code monitor</>,
+            }),
+            []
+        )
+    )
+
     const LOADING = 'loading' as const
+
+    const { authenticatedUser, fetchCodeMonitor, updateCodeMonitor, match } = props
 
     const [codeMonitorState, setCodeMonitorState] = React.useState<CodeMonitorFields>({
         id: '',
@@ -40,7 +51,7 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
     const codeMonitorOrError = useObservable(
         React.useMemo(
             () =>
-                fetchCodeMonitor(props.match.params.id).pipe(
+                fetchCodeMonitor(match.params.id).pipe(
                     tap(monitor => {
                         if (monitor.node !== null) {
                             setCodeMonitorState(monitor.node)
@@ -49,17 +60,7 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
-            [props.match.params.id]
-        )
-    )
-
-    props.useBreadcrumb(
-        React.useMemo(
-            () => ({
-                key: 'Manage Code Monitor',
-                element: <>Manage code monitor</>,
-            }),
-            []
+            [match.params.id, fetchCodeMonitor]
         )
     )
 
@@ -67,9 +68,9 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
         (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> =>
             updateCodeMonitor(
                 {
-                    id: props.match.params.id,
+                    id: match.params.id,
                     update: {
-                        namespace: props.authenticatedUser.id,
+                        namespace: authenticatedUser.id,
                         description: codeMonitor.description,
                         enabled: codeMonitor.enabled,
                     },
@@ -81,13 +82,13 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
                         update: {
                             enabled: action.enabled,
                             priority: MonitorEmailPriority.NORMAL,
-                            recipients: [props.authenticatedUser.id],
+                            recipients: [authenticatedUser.id],
                             header: '',
                         },
                     },
                 }))
             ),
-        [props.authenticatedUser.id, props.match.params.id]
+        [authenticatedUser.id, match.params.id, updateCodeMonitor]
     )
 
     return (
