@@ -20,6 +20,12 @@ import {
     RepositoriesResult,
     ExternalServiceKind,
     UserActivePeriod,
+    OrganizationsResult,
+    OrganizationsVariables,
+    OrganizationsConnectionFields,
+    DeleteOrganizationResult,
+    DeleteOrganizationVariables,
+    Scalars,
 } from '../graphql-operations'
 
 /**
@@ -66,29 +72,43 @@ export function fetchAllUsers(args: { first?: number; query?: string }): Observa
 /**
  * Fetches all organizations.
  */
-export function fetchAllOrganizations(args: { first?: number; query?: string }): Observable<GQL.IOrgConnection> {
-    return queryGraphQL(
+export function fetchAllOrganizations(args: {
+    first?: number
+    query?: string
+}): Observable<OrganizationsConnectionFields> {
+    return requestGraphQL<OrganizationsResult, OrganizationsVariables>(
         gql`
             query Organizations($first: Int, $query: String) {
                 organizations(first: $first, query: $query) {
-                    nodes {
-                        id
-                        name
-                        displayName
-                        createdAt
-                        latestSettings {
-                            createdAt
-                            contents
-                        }
-                        members {
-                            totalCount
-                        }
-                    }
+                    ...OrganizationsConnectionFields
+                }
+            }
+
+            fragment OrganizationsConnectionFields on OrgConnection {
+                nodes {
+                    ...OrganizationFields
+                }
+                totalCount
+            }
+
+            fragment OrganizationFields on Org {
+                id
+                name
+                displayName
+                createdAt
+                latestSettings {
+                    createdAt
+                    contents
+                }
+                members {
                     totalCount
                 }
             }
         `,
-        args
+        {
+            first: args.first ?? null,
+            query: args.query ?? null,
+        }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.organizations)
@@ -163,7 +183,7 @@ export function listUserRepositories(
             notIndexed: args.notIndexed ?? true,
             first: args.first ?? null,
             query: args.query ?? null,
-            externalServiceID: args.externalServiceID! ?? null,
+            externalServiceID: args.externalServiceID ?? null,
         }
     ).pipe(
         map(dataOrThrowErrors),
@@ -653,8 +673,8 @@ export function createUser(username: string, email: string | undefined): Observa
     )
 }
 
-export function deleteOrganization(organization: GQL.ID): Observable<void> {
-    return mutateGraphQL(
+export function deleteOrganization(organization: Scalars['ID']): Promise<void> {
+    return requestGraphQL<DeleteOrganizationResult, DeleteOrganizationVariables>(
         gql`
             mutation DeleteOrganization($organization: ID!) {
                 deleteOrganization(organization: $organization) {
@@ -663,14 +683,16 @@ export function deleteOrganization(organization: GQL.ID): Observable<void> {
             }
         `,
         { organization }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.deleteOrganization) {
-                throw createInvalidGraphQLMutationResponseError('DeleteOrganization')
-            }
-        })
     )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(data => {
+                if (!data.deleteOrganization) {
+                    throw createInvalidGraphQLMutationResponseError('DeleteOrganization')
+                }
+            })
+        )
+        .toPromise()
 }
 
 export function fetchSiteUpdateCheck(): Observable<{
