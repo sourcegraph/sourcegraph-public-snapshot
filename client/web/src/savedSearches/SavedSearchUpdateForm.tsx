@@ -20,8 +20,9 @@ import { fetchSavedSearch, updateSavedSearch } from '../search/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 import { AuthenticatedUser } from '../auth'
+import { Scalars } from '../../../shared/src/graphql-operations'
 
-interface Props extends RouteComponentProps<{ id: GQL.ID }>, NamespaceProps {
+interface Props extends RouteComponentProps<{ id: Scalars['ID'] }>, NamespaceProps {
     authenticatedUser: AuthenticatedUser | null
 }
 

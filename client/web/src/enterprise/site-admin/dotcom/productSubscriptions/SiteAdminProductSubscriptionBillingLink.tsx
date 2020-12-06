@@ -9,6 +9,7 @@ import { asError, createAggregateError, isErrorLike } from '../../../../../../sh
 import { requestGraphQL } from '../../../../backend/graphql'
 import { useEventObservable } from '../../../../../../shared/src/util/useObservable'
 import {
+    Scalars,
     SetProductSubscriptionBillingResult,
     SetProductSubscriptionBillingVariables,
 } from '../../../../graphql-operations'
@@ -34,7 +35,7 @@ export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<Pr
     /** The result of updating this subscription: undefined for done or not started, loading, or an error. */
     const [nextUpdate, update] = useEventObservable(
         useCallback(
-            (updates: Observable<{ id: GQL.ID; billingSubscriptionID: string | null }>) =>
+            (updates: Observable<{ id: Scalars['ID']; billingSubscriptionID: string | null }>) =>
                 updates.pipe(
                     switchMap(({ id, billingSubscriptionID }) =>
                         setProductSubscriptionBilling({ id, billingSubscriptionID }).pipe(

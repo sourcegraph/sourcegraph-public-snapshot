@@ -20,6 +20,7 @@ import {
     DeleteSavedSearchVariables,
     UpdateSavedSearchResult,
     UpdateSavedSearchVariables,
+    Scalars,
 } from '../graphql-operations'
 
 export function search(
@@ -332,7 +333,7 @@ export function fetchSavedSearches(): Observable<GQL.ISavedSearch[]> {
     )
 }
 
-export function fetchSavedSearch(id: GQL.ID): Observable<GQL.ISavedSearch> {
+export function fetchSavedSearch(id: Scalars['ID']): Observable<GQL.ISavedSearch> {
     return queryGraphQL(
         gql`
             query SavedSearch($id: ID!) {
@@ -363,8 +364,8 @@ export function createSavedSearch(
     query: string,
     notify: boolean,
     notifySlack: boolean,
-    userId: GQL.ID | null,
-    orgId: GQL.ID | null
+    userId: Scalars['ID'] | null,
+    orgId: Scalars['ID'] | null
 ): Observable<void> {
     return requestGraphQL<CreateSavedSearchResult, CreateSavedSearchVariables>(
         gql`
@@ -404,13 +405,13 @@ export function createSavedSearch(
 }
 
 export function updateSavedSearch(
-    id: GQL.ID,
+    id: Scalars['ID'],
     description: string,
     query: string,
     notify: boolean,
     notifySlack: boolean,
-    userId: GQL.ID | null,
-    orgId: GQL.ID | null
+    userId: Scalars['ID'] | null,
+    orgId: Scalars['ID'] | null
 ): Observable<void> {
     return requestGraphQL<UpdateSavedSearchResult, UpdateSavedSearchVariables>(
         gql`
@@ -452,7 +453,7 @@ export function updateSavedSearch(
     )
 }
 
-export function deleteSavedSearch(id: GQL.ID): Observable<void> {
+export function deleteSavedSearch(id: Scalars['ID']): Observable<void> {
     return requestGraphQL<DeleteSavedSearchResult, DeleteSavedSearchVariables>(
         gql`
             mutation DeleteSavedSearch($id: ID!) {
@@ -538,7 +539,7 @@ export interface EventLogResult {
     pageInfo: { hasNextPage: boolean }
 }
 
-function fetchEvents(userId: GQL.ID, first: number, eventName: string): Observable<EventLogResult | null> {
+function fetchEvents(userId: Scalars['ID'], first: number, eventName: string): Observable<EventLogResult | null> {
     if (!userId) {
         return of(null)
     }
@@ -579,10 +580,10 @@ function fetchEvents(userId: GQL.ID, first: number, eventName: string): Observab
     )
 }
 
-export function fetchRecentSearches(userId: GQL.ID, first: number): Observable<EventLogResult | null> {
+export function fetchRecentSearches(userId: Scalars['ID'], first: number): Observable<EventLogResult | null> {
     return fetchEvents(userId, first, 'SearchResultsQueried')
 }
 
-export function fetchRecentFileViews(userId: GQL.ID, first: number): Observable<EventLogResult | null> {
+export function fetchRecentFileViews(userId: Scalars['ID'], first: number): Observable<EventLogResult | null> {
     return fetchEvents(userId, first, 'ViewBlob')
 }

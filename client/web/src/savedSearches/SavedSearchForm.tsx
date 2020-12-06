@@ -2,14 +2,14 @@ import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Omit } from 'utility-types'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { Form } from '../../../branded/src/components/Form'
 import { NamespaceProps } from '../namespaces'
 import { ErrorAlert } from '../components/alerts'
 import { AuthenticatedUser } from '../auth'
+import { Scalars } from '../../../shared/src/graphql-operations'
 
 export interface SavedQueryFields {
-    id: GQL.ID
+    id: Scalars['ID']
     description: string
     query: string
     notify: boolean

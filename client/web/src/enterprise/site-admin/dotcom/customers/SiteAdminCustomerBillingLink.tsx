@@ -8,7 +8,7 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { requestGraphQL } from '../../../../backend/graphql'
 import { useEventObservable } from '../../../../../../shared/src/util/useObservable'
-import { SetCustomerBillingResult, SetCustomerBillingVariables } from '../../../../graphql-operations'
+import { Scalars, SetCustomerBillingResult, SetCustomerBillingVariables } from '../../../../graphql-operations'
 
 interface Props {
     /** The customer to show a billing link for. */
@@ -28,7 +28,7 @@ export const SiteAdminCustomerBillingLink: React.FunctionComponent<Props> = ({ c
     /** The result of updating this customer: undefined for done or not started, loading, or an error. */
     const [nextUpdate, update] = useEventObservable(
         useCallback(
-            (updates: Observable<{ user: GQL.ID; billingCustomerID: string | null }>) =>
+            (updates: Observable<{ user: Scalars['ID']; billingCustomerID: string | null }>) =>
                 updates.pipe(
                     switchMap(({ user, billingCustomerID }) =>
                         setCustomerBilling({ user, billingCustomerID }).pipe(
