@@ -4,13 +4,23 @@ import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
-import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
+import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import { SearchSuggestion } from '../../../shared/src/search/suggestions'
 import { Remote } from 'comlink'
 import { FlatExtensionHostAPI } from '../../../shared/src/api/contract'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
 import { DeployType } from '../jscontext'
-import { SearchPatternType, EventLogsDataResult, EventLogsDataVariables } from '../graphql-operations'
+import {
+    SearchPatternType,
+    EventLogsDataResult,
+    EventLogsDataVariables,
+    CreateSavedSearchResult,
+    CreateSavedSearchVariables,
+    DeleteSavedSearchResult,
+    DeleteSavedSearchVariables,
+    UpdateSavedSearchResult,
+    UpdateSavedSearchVariables,
+} from '../graphql-operations'
 
 export function search(
     query: string,
@@ -356,7 +366,7 @@ export function createSavedSearch(
     userId: GQL.ID | null,
     orgId: GQL.ID | null
 ): Observable<void> {
-    return mutateGraphQL(
+    return requestGraphQL<CreateSavedSearchResult, CreateSavedSearchVariables>(
         gql`
             mutation CreateSavedSearch(
                 $description: String!
@@ -402,7 +412,7 @@ export function updateSavedSearch(
     userId: GQL.ID | null,
     orgId: GQL.ID | null
 ): Observable<void> {
-    return mutateGraphQL(
+    return requestGraphQL<UpdateSavedSearchResult, UpdateSavedSearchVariables>(
         gql`
             mutation UpdateSavedSearch(
                 $id: ID!
@@ -443,7 +453,7 @@ export function updateSavedSearch(
 }
 
 export function deleteSavedSearch(id: GQL.ID): Observable<void> {
-    return mutateGraphQL(
+    return requestGraphQL<DeleteSavedSearchResult, DeleteSavedSearchVariables>(
         gql`
             mutation DeleteSavedSearch($id: ID!) {
                 deleteSavedSearch(id: $id) {

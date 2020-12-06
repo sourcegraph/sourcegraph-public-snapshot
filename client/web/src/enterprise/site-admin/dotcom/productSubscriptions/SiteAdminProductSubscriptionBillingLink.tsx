@@ -6,8 +6,12 @@ import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operator
 import { gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, isErrorLike } from '../../../../../../shared/src/util/errors'
-import { mutateGraphQL } from '../../../../backend/graphql'
+import { requestGraphQL } from '../../../../backend/graphql'
 import { useEventObservable } from '../../../../../../shared/src/util/useObservable'
+import {
+    SetProductSubscriptionBillingResult,
+    SetProductSubscriptionBillingVariables,
+} from '../../../../graphql-operations'
 
 interface Props {
     /** The product subscription to show a billing link for. */
@@ -84,10 +88,8 @@ export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<Pr
     )
 }
 
-function setProductSubscriptionBilling(
-    args: GQL.ISetProductSubscriptionBillingOnDotcomMutationArguments
-): Observable<void> {
-    return mutateGraphQL(
+function setProductSubscriptionBilling(args: SetProductSubscriptionBillingVariables): Observable<void> {
+    return requestGraphQL<SetProductSubscriptionBillingResult, SetProductSubscriptionBillingVariables>(
         gql`
             mutation SetProductSubscriptionBilling($id: ID!, $billingSubscriptionID: String) {
                 dotcom {

@@ -3,7 +3,8 @@ import { map, mapTo, switchMap } from 'rxjs/operators'
 import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../../shared/src/util/errors'
-import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
+import { queryGraphQL, requestGraphQL } from '../../../backend/graphql'
+import { DeleteRegistryExtensionResult, DeleteRegistryExtensionVariables } from '../../../graphql-operations'
 
 export function deleteRegistryExtensionWithConfirmation(extension: GQL.ID): Observable<boolean> {
     return of(window.confirm('Really delete this extension from the extension registry?')).pipe(
@@ -11,7 +12,7 @@ export function deleteRegistryExtensionWithConfirmation(extension: GQL.ID): Obse
             if (!wasConfirmed) {
                 return [false]
             }
-            return mutateGraphQL(
+            return requestGraphQL<DeleteRegistryExtensionResult, DeleteRegistryExtensionVariables>(
                 gql`
                     mutation DeleteRegistryExtension($extension: ID!) {
                         extensionRegistry {
