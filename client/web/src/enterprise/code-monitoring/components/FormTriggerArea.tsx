@@ -182,7 +182,11 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             <code className="text-muted test-existing-query">{query}</code>
                         </div>
                         <div>
-                            <button type="button" onClick={editForm} className="btn btn-link p-0 text-left">
+                            <button
+                                type="button"
+                                onClick={editForm}
+                                className="btn btn-link p-0 text-left test-edit-trigger"
+                            >
                                 Edit
                             </button>
                         </div>

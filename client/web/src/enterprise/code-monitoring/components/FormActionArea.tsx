@@ -139,7 +139,11 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                                     className="mr-2"
                                 />
                             </div>
-                            <button type="button" onClick={editForm} className="btn btn-link p-0 text-left">
+                            <button
+                                type="button"
+                                onClick={editForm}
+                                className="btn btn-link p-0 text-left test-edit-action"
+                            >
                                 Edit
                             </button>
                         </div>
