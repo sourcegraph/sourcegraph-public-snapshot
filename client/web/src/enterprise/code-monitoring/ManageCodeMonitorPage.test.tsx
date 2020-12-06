@@ -32,6 +32,7 @@ describe('ManageCodeMonitorPage', () => {
             path: history.location.pathname,
             url: 'https://sourcegraph.com',
         },
+        toggleCodeMonitorEnabled: sinon.spy(),
     }
     test('Form is pre-loaded with code monitor data', () => {
         const component = mount(<ManageCodeMonitorPage {...props} />)

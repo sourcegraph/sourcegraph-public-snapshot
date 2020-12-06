@@ -21,6 +21,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
   history="[History]"
   location="[Location path=/code-monitoring]"
   setBreadcrumb={[Function]}
+  toggleCodeMonitorEnabled={[Function]}
   useBreadcrumb={[Function]}
 >
   <div
@@ -172,6 +173,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
             nodeComponentProps={
               Object {
                 "location": "[Location path=/code-monitoring]",
+                "toggleCodeMonitorEnabled": [Function],
               }
             }
             noun="code monitor"
@@ -463,6 +465,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                 nodeComponentProps={
                   Object {
                     "location": "[Location path=/code-monitoring]",
+                    "toggleCodeMonitorEnabled": [Function],
                   }
                 }
                 noun="code monitor"
@@ -504,6 +507,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -532,6 +536,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -605,6 +610,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -633,6 +639,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -706,6 +713,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -734,6 +742,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -807,6 +816,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -835,6 +845,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -908,6 +919,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -936,6 +948,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -1009,6 +1022,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -1037,6 +1051,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -1110,6 +1125,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -1138,6 +1154,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -1211,6 +1228,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -1239,6 +1257,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -1312,6 +1331,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -1340,6 +1360,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -1413,6 +1434,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -1441,6 +1463,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -1525,6 +1548,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
   history="[History]"
   location="[Location path=/code-monitoring]"
   setBreadcrumb={[Function]}
+  toggleCodeMonitorEnabled={[Function]}
   useBreadcrumb={[Function]}
 >
   <div
@@ -1676,6 +1700,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
             nodeComponentProps={
               Object {
                 "location": "[Location path=/code-monitoring]",
+                "toggleCodeMonitorEnabled": [Function],
               }
             }
             noun="code monitor"
@@ -1785,6 +1810,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                 nodeComponentProps={
                   Object {
                     "location": "[Location path=/code-monitoring]",
+                    "toggleCodeMonitorEnabled": [Function],
                   }
                 }
                 noun="code monitor"
@@ -1826,6 +1852,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -1854,6 +1881,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -1927,6 +1955,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -1955,6 +1984,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -2028,6 +2058,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -2056,6 +2087,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -2140,6 +2172,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
   history="[History]"
   location="[Location path=/code-monitoring]"
   setBreadcrumb={[Function]}
+  toggleCodeMonitorEnabled={[Function]}
   useBreadcrumb={[Function]}
 >
   <div
@@ -2291,6 +2324,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
             nodeComponentProps={
               Object {
                 "location": "[Location path=/code-monitoring]",
+                "toggleCodeMonitorEnabled": [Function],
               }
             }
             noun="code monitor"
@@ -2634,6 +2668,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                 nodeComponentProps={
                   Object {
                     "location": "[Location path=/code-monitoring]",
+                    "toggleCodeMonitorEnabled": [Function],
                   }
                 }
                 noun="code monitor"
@@ -2675,6 +2710,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -2703,6 +2739,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -2776,6 +2813,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -2804,6 +2842,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -2877,6 +2916,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -2905,6 +2945,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -2978,6 +3019,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -3006,6 +3048,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -3079,6 +3122,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -3107,6 +3151,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -3180,6 +3225,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -3208,6 +3254,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -3281,6 +3328,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -3309,6 +3357,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -3382,6 +3431,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -3410,6 +3460,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -3483,6 +3534,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -3511,6 +3563,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -3584,6 +3637,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -3612,6 +3666,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -3685,6 +3740,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -3713,6 +3769,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle
@@ -3786,6 +3843,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         },
                       }
                     }
+                    toggleCodeMonitorEnabled={[Function]}
                   >
                     <div
                       className="card p-3 mb-2"
@@ -3814,6 +3872,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             className="d-flex"
                           >
                             <div
+                              className="test-toggle-monitor-enabled"
                               onClick={[Function]}
                             >
                               <Toggle

@@ -6,6 +6,7 @@ import {
     MonitorEditActionInput,
     MonitorEditInput,
     MonitorEditTriggerInput,
+    ToggleCodeMonitorEnabledResult,
     UpdateCodeMonitorResult,
 } from '../../graphql-operations'
 
@@ -17,4 +18,8 @@ export interface CodeMonitoringProps {
         triggerEditInput: MonitorEditTriggerInput,
         actionEditInput: MonitorEditActionInput[]
     ) => Observable<UpdateCodeMonitorResult['updateCodeMonitor']>
+    toggleCodeMonitorEnabled: (
+        id: string,
+        enabled: boolean
+    ) => Observable<ToggleCodeMonitorEnabledResult['toggleCodeMonitor']>
 }

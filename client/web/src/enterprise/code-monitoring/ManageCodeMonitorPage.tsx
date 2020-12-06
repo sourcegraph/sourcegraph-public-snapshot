@@ -19,7 +19,7 @@ export interface ManageCodeMonitorPageProps
     extends RouteComponentProps<{ id: Scalars['ID'] }>,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        CodeMonitoringProps {
+        Pick<CodeMonitoringProps, 'updateCodeMonitor' | 'fetchCodeMonitor'> {
     authenticatedUser: AuthenticatedUser
     location: H.Location
     history: H.History
