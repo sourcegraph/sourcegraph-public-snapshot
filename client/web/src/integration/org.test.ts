@@ -39,6 +39,8 @@ describe('Organizations', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
+    const settingsID = 12345
+
     describe('Site admin organizations page', () => {
         it('allows to create new organizations', async () => {
             const graphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
@@ -50,6 +52,20 @@ describe('Organizations', () => {
                     organizations: {
                         nodes: [],
                         totalCount: 0,
+                    },
+                }),
+                SettingsCascade: () => ({
+                    settingsSubject: {
+                        settingsCascade: {
+                            subjects: [
+                                {
+                                    latestSettings: {
+                                        id: settingsID,
+                                        contents: JSON.stringify({}),
+                                    },
+                                },
+                            ],
+                        },
                     },
                 }),
                 CreateOrganization: ({ name }) => ({
@@ -96,7 +112,6 @@ describe('Organizations', () => {
     describe('Organization area', () => {
         describe('Settings tab', () => {
             it('allows to change organization-wide settings', async () => {
-                const settingsID = 12345
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
                     Organization: () => ({
