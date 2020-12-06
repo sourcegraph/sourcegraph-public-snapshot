@@ -26,7 +26,7 @@ const additionalProps = {
             },
             totalCount: 12,
         }),
-    toggleCodeMonitorEnabled: sinon.spy(),
+    toggleCodeMonitorEnabled: sinon.spy((id: string, enabled: boolean) => of({ id: 'test', enabled: true })),
 }
 
 const generateMockFetchMonitors = (count: number) => ({ id, first, after }: ListUserCodeMonitorsVariables) => {
