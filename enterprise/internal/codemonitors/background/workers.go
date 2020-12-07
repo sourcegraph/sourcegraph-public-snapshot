@@ -101,7 +101,7 @@ func (r *queryRunner) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 		return err
 	}
 	// Log the actual query we ran and whether we got any new results.
-	err = s.LogSearch(ctx, newQuery, numResults > 0, record.RecordID())
+	err = s.LogSearch(ctx, newQuery, numResults, record.RecordID())
 	if err != nil {
 		return err
 	}
