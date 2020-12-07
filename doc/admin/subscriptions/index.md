@@ -30,4 +30,4 @@ A Sourcegraph user account is created when a user signs up or signs in for the f
 
 ## Updating your license key
 
-- Navigate to Site admin > Configuration and update the `licenseKey` field with the new value and save.
+- Navigate to **Site admin > Configuration > Site configuration**, update the `licenseKey` field with the new value, and then click **Save changes**.
