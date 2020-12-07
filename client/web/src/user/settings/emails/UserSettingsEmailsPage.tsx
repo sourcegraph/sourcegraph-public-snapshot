@@ -90,7 +90,6 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
     return (
         <div className="user-settings-emails-page">
             <PageTitle title="Emails" />
-            <h2>Emails</h2>
 
             {flags && !flags.sendsEmailVerificationEmails && (
                 <div className="alert alert-warning mt-2">
@@ -103,6 +102,8 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
             {isErrorLike(emailActionError) && (
                 <ErrorAlert className="mt-2" error={emailActionError} history={history} />
             )}
+
+            <h2>Emails</h2>
 
             {statusOrError === 'loading' ? (
                 <div className="d-flex justify-content-center">
