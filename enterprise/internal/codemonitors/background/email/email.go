@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
@@ -17,7 +18,13 @@ var externalURL *url.URL
 const utmSourceEmail = "code-monitoring-email"
 const priorityCritical = "CRITICAL"
 
+var MockSendEmailForNewSearchResult func(ctx context.Context, userID int32, data *TemplateDataNewSearchResults) error
+var MockExternalURL func() *url.URL
+
 func SendEmailForNewSearchResult(ctx context.Context, userID int32, data *TemplateDataNewSearchResults) error {
+	if MockSendEmailForNewSearchResult != nil {
+		return MockSendEmailForNewSearchResult(ctx, userID, data)
+	}
 	return sendEmail(ctx, userID, newSearchResultsEmailTemplates, data)
 }
 
@@ -91,10 +98,13 @@ func getSearchURL(ctx context.Context, query, utmSource string) (string, error) 
 }
 
 func getCodeMonitorURL(ctx context.Context, monitorID int64, utmSource string) (string, error) {
-	return sourcegraphURL(ctx, fmt.Sprintf("code-monitoring/%s", relay.MarshalID("FIXME", monitorID)), "", utmSource)
+	return sourcegraphURL(ctx, fmt.Sprintf("code-monitoring/%s", relay.MarshalID(resolvers.MonitorKind, monitorID)), "", utmSource)
 }
 
 func sourcegraphURL(ctx context.Context, path, query, utmSource string) (string, error) {
+	if MockExternalURL != nil {
+		externalURL = MockExternalURL()
+	}
 	if externalURL == nil {
 		// Determine the external URL.
 		externalURLStr, err := api.InternalClient.ExternalURL(ctx)

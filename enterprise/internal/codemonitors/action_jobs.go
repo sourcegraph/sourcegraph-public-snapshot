@@ -13,7 +13,7 @@ import (
 )
 
 type ActionJob struct {
-	Id           int32
+	Id           int
 	Email        int64
 	TriggerEvent int
 

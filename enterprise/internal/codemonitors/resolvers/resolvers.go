@@ -420,7 +420,7 @@ type monitor struct {
 }
 
 const (
-	monitorKind                     = "CodeMonitor"
+	MonitorKind                     = "CodeMonitor"
 	monitorTriggerQueryKind         = "CodeMonitorTriggerQuery"
 	monitorTriggerEventKind         = "CodeMonitorTriggerEvent"
 	monitorActionEmailKind          = "CodeMonitorActionEmail"
@@ -428,7 +428,7 @@ const (
 )
 
 func (m *monitor) ID() graphql.ID {
-	return relay.MarshalID(monitorKind, m.Monitor.ID)
+	return relay.MarshalID(MonitorKind, m.Monitor.ID)
 }
 
 func (m *monitor) CreatedBy(ctx context.Context) (*graphqlbackend.UserResolver, error) {
