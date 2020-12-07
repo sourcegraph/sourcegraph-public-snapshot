@@ -490,6 +490,8 @@ func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, tr
 	if err != nil {
 		return nil, err
 	}
+	var totalCount int32
+	totalCount, err = r.store.TotalCountActionEmails(ctx, monitorID)
 	actions := make([]graphqlbackend.MonitorAction, 0, len(es))
 	for _, e := range es {
 		actions = append(actions, &action{
@@ -500,7 +502,7 @@ func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, tr
 			},
 		})
 	}
-	return &monitorActionConnection{actions: actions}, nil
+	return &monitorActionConnection{actions: actions, totalCount: totalCount}, nil
 }
 
 //
@@ -617,7 +619,8 @@ func (m *monitorTriggerEvent) Actions(ctx context.Context, args *graphqlbackend.
 // ActionConnection
 //
 type monitorActionConnection struct {
-	actions []graphqlbackend.MonitorAction
+	actions    []graphqlbackend.MonitorAction
+	totalCount int32
 }
 
 func (a *monitorActionConnection) Nodes(ctx context.Context) ([]graphqlbackend.MonitorAction, error) {
@@ -625,7 +628,7 @@ func (a *monitorActionConnection) Nodes(ctx context.Context) ([]graphqlbackend.M
 }
 
 func (a *monitorActionConnection) TotalCount(ctx context.Context) (int32, error) {
-	return int32(len(a.actions)), nil
+	return a.totalCount, nil
 }
 
 func (a *monitorActionConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {

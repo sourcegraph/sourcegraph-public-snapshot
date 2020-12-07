@@ -279,6 +279,9 @@ func TestQueryMonitor(t *testing.T) {
 	t.Run("recipients paging", func(t *testing.T) {
 		recipientPaging(ctx, t, schema, user1, user2)
 	})
+	t.Run("actions paging", func(t *testing.T) {
+		actionPaging(ctx, t, schema, user1)
+	})
 }
 
 func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Resolver, user1 *testUser, user2 *testUser) {
@@ -821,6 +824,57 @@ query($userName: String!, $monitorCursor: String!){
 			totalCount
 			nodes{
 				id
+			}
+		}
+	}
+}
+`
+
+func actionPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, user1 *testUser) {
+	queryInput := map[string]interface{}{
+		"userName":     user1.name,
+		"actionCursor": string(relay.MarshalID(monitorActionEmailKind, 1)),
+	}
+	got := apitest.Response{}
+	campaignApitest.MustExec(ctx, t, schema, queryInput, &got, actionPagingFmtStr)
+
+	want := apitest.Response{
+		User: apitest.User{
+			Monitors: apitest.MonitorConnection{
+				Nodes: []apitest.Monitor{{
+					Actions: apitest.ActionConnection{
+						TotalCount: 2,
+						Nodes: []apitest.Action{
+							{
+								ActionEmail: apitest.ActionEmail{
+									Id: string(relay.MarshalID(monitorActionEmailKind, 2)),
+								},
+							},
+						},
+					},
+				}},
+			},
+		},
+	}
+
+	if diff := cmp.Diff(&got, &want); diff != "" {
+		t.Fatalf("diff: %s", diff)
+	}
+}
+
+const actionPagingFmtStr = `
+query($userName: String!, $actionCursor:String!){
+	user(username:$userName){
+		monitors(first:1){
+			nodes{
+				actions(first:1, after:$actionCursor) {
+					totalCount
+					nodes {
+						... on MonitorEmail {
+							id
+						}
+					}
+				}
 			}
 		}
 	}
