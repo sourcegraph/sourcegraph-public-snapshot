@@ -30,6 +30,10 @@ import (
 )
 
 func TestReconcilerProcess(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 

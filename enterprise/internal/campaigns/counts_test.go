@@ -16,6 +16,8 @@ import (
 )
 
 func TestCalcCounts(t *testing.T) {
+	t.Parallel()
+
 	now := timeutil.Now()
 	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
 
