@@ -4,8 +4,9 @@ import { RouteComponentProps } from 'react-router'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
-import { SettingsAreaRepositoryFields } from '../../../graphql-operations'
+import { RepositoryIndexConfigurationFields, SettingsAreaRepositoryFields } from '../../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { getConfiguration, updateConfiguration } from './backend'
 import allConfigSchema from './schema.json'
@@ -23,20 +24,38 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelIndexConfigurationPage'), [telemetryService])
 
+    const [fetchError, setFetchError] = useState<Error>()
+    const [saveError, setSaveError] = useState<Error>()
     const [saving, setSaving] = useState(() => false)
+    const [configuration, setConfiguration] = useState<string>()
 
-    const configuration = useObservable(useMemo(() => getConfiguration({ id: repo.id }), [repo]))
+    useEffect(() => {
+        const subscription = getConfiguration({ id: repo.id }).subscribe(configuration => {
+            setConfiguration(configuration?.indexConfiguration?.configuration || '')
+        }, setFetchError)
+
+        return () => subscription.unsubscribe()
+    }, [repo])
 
     const save = useCallback(
         async (content: string) => {
             setSaving(true)
-            await updateConfiguration({ id: repo.id, content }).toPromise()
+
+            try {
+                await updateConfiguration({ id: repo.id, content }).toPromise()
+            } catch (error) {
+                setSaveError(error)
+            }
+
             setSaving(false)
+            setConfiguration(content)
         },
         [repo]
     )
 
-    return (
+    return fetchError ? (
+        <ErrorAlert prefix="Error fetching index configuration" error={fetchError} history={history} />
+    ) : (
         <div className="code-intel-index-configuration web-content">
             <PageTitle title="Precise code intelligence index configuration" />
             <h2>Precise code intelligence index configuration</h2>
@@ -48,8 +67,10 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
                 .
             </p>
 
+            {saveError && <ErrorAlert prefix="Error saving index configuration" error={saveError} history={history} />}
+
             <DynamicallyImportedMonacoSettingsEditor
-                value={configuration?.indexConfiguration?.configuration || ''}
+                value={configuration || ''}
                 jsonSchema={allConfigSchema}
                 canEdit={true}
                 onSave={save}
