@@ -106,9 +106,7 @@ More behavior can be controlled with
 
 #### Can I consume Sourcegraph's metrics in my own monitoring system (Datadog, New Relic, etc.)?
 
-While It's technically possible to consume all of Sourcegraph's metrics in any external system, our recommended approach is to configure Sourcegraph to send [alerts to your own PagerDuty, Slack, email, etc.](alerting.md) and utilize the built in systems to view the system health.
-The builtin dashboards and alerts provided by Sourcegraph are updated on each release to assure that the information you are monitoring is up-to-date. Defining all of the alerting thresholds and rules that are needed to ensure Sourcegraph is healthy manually would be very tedious as metrics and thresholds can change with each release of Sourcegraph.
-
+While it's technically possible to consume all of Sourcegraph's metrics in any external system, our recommendation is to utilize the builtin monitoring tools and configure Sourcegraph to send [alerts to your own PagerDuty, Slack, email, etc.](alerting.md). Metrics and thresholds can change with each release, therefore manually defining the alerts required to monitor Sourcegraph's health is not recommended as it would be a tedious process. Sourcegraph automatically updates the dashboards and alerts on each release and ensures that the displayed information and alerts are up-to-date.
 
 External monitoring system that supports Prometheus scraping (both Datadog and New Relic support this) or [Prometheus federation](https://prometheus.io/docs/prometheus/latest/federation/) can be used to consume Sourcegraph's metrics, which includes our [high-level alerting metrics](metrics_guide.md).
 Alternatively, you can leverage the provided [HTTP API](alerting_custom_consumption.md) to query which alerts are firing in Sourcegraph and pipe that information into your own monitoring platform.
