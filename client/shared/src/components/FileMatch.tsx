@@ -12,17 +12,17 @@ import { BadgeAttachmentRenderOptions } from 'sourcegraph'
 
 const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
 
-export type IFileMatch = Partial<Pick<GQL.IFileMatch, 'revSpec' | 'symbols' | 'limitHit'>> & {
+export type FileLineMatch = Partial<Pick<GQL.IFileMatch, 'revSpec' | 'symbols' | 'limitHit'>> & {
     file: Pick<GQL.IFile, 'path' | 'url'> & { commit: Pick<GQL.IGitCommit, 'oid'> }
     repository: Pick<GQL.IRepository, 'name' | 'url'>
-    lineMatches: ILineMatch[]
+    lineMatches: LineMatch[]
 }
 
-export type ILineMatch = Pick<GQL.ILineMatch, 'preview' | 'lineNumber' | 'offsetAndLengths' | 'limitHit'> & {
+export type LineMatch = Pick<GQL.ILineMatch, 'preview' | 'lineNumber' | 'offsetAndLengths' | 'limitHit'> & {
     badge?: BadgeAttachmentRenderOptions
 }
 
-export interface IMatchItem {
+export interface MatchItem {
     highlightRanges: {
         start: number
         highlightLength: number
@@ -40,7 +40,7 @@ interface Props extends SettingsCascadeProps {
     /**
      * The file match search result.
      */
-    result: IFileMatch
+    result: FileMatch
 
     /**
      * Formatted repository name to be displayed in repository link. If not
@@ -89,7 +89,7 @@ export class FileMatch extends React.PureComponent<Props> {
 
     public render(): React.ReactNode {
         const result = this.props.result
-        const items: IMatchItem[] = this.props.result.lineMatches.map(match => ({
+        const items: MatchItem[] = this.props.result.lineMatches.map(match => ({
             highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({ start, highlightLength })),
             preview: match.preview,
             line: match.lineNumber,

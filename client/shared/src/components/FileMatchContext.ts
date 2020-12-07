@@ -1,6 +1,6 @@
 import { BadgeAttachmentRenderOptions } from 'sourcegraph'
 import { flatMap } from 'lodash'
-import { IMatchItem } from './FileMatch'
+import { MatchItem } from './FileMatch'
 
 /**
  * Groups highlights that have overlapping or adjacent context. The input must be sorted.
@@ -37,7 +37,7 @@ const calculateGroupPositions = (
     }[],
     context: number,
     highestLineNumberWithinSubsetMatches: number
-): IMatchGroup => {
+): MatchGroup => {
     {
         let startLine = matches[0].line - context
         startLine = startLine < 0 ? 0 : startLine
@@ -82,7 +82,7 @@ const calculateGroupPositions = (
 /**
  * Describes a single group of matches.
  */
-interface IMatchGroup {
+interface MatchGroup {
     // The matches in this group to display.
     matches: {
         line: number
@@ -108,13 +108,13 @@ interface IMatchGroup {
 /**
  * Describes matches that have been grouped together.
  */
-interface IMatchGroups {
+interface MatchGroups {
     // The grouped matches.
-    grouped: IMatchGroup[]
+    grouped: MatchGroup[]
 
     // The subset of sorted matches that should be displayed. Useful if e.g. rendering matches as
     // plaintext.
-    matches: IMatchItem[]
+    matches: MatchItem[]
 }
 
 /**
@@ -129,7 +129,7 @@ interface IMatchGroups {
  * @param maxMatches The maximum number of matches to show, or 0 for all.
  * @param context The number of surrounding context lines to show for each match.
  */
-export const calculateMatchGroups = (matches: IMatchItem[], maxMatches: number, context: number): IMatchGroups => {
+export const calculateMatchGroups = (matches: MatchItem[], maxMatches: number, context: number): MatchGroups => {
     const sortedMatches = matches.sort((a, b) => {
         if (a.line < b.line) {
             return -1

@@ -1,5 +1,5 @@
 import { range } from 'lodash'
-import { IMatchItem } from './FileMatch'
+import { MatchItem } from './FileMatch'
 import { calculateMatchGroups, mergeContext } from './FileMatchContext'
 
 expect.addSnapshotSerializer({
@@ -223,14 +223,14 @@ describe('components/FileMatchContext', () => {
 })
 
 // "error" matched 5 times, once per line.
-const testData6ConsecutiveMatches: IMatchItem[] = range(0, 6).map(index => ({
+const testData6ConsecutiveMatches: MatchItem[] = range(0, 6).map(index => ({
     highlightRanges: [{ start: 0, highlightLength: 5 }],
     preview: 'error',
     line: index,
 }))
 
 // Real match data from searching a file for `error`.
-const testDataRealMatches: IMatchItem[] = [
+const testDataRealMatches: MatchItem[] = [
     {
         highlightRanges: [{ start: 51, highlightLength: 5 }],
         preview: '// Package errwrap implements methods to formalize error wrapping in Go.',

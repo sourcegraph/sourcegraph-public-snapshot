@@ -7,7 +7,7 @@ import { SymbolIcon } from '../symbols/SymbolIcon'
 import { toPositionOrRangeHash, appendSubtreeQueryParameter } from '../util/url'
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import { CodeExcerptUnhighlighted } from './CodeExcerptUnhighlighted'
-import { IFileMatch, IMatchItem } from './FileMatch'
+import { FileMatch, MatchItem } from './FileMatch'
 import { calculateMatchGroups } from './FileMatchContext'
 import { Link } from './Link'
 import { BadgeAttachment } from './BadgeAttachment'
@@ -18,8 +18,8 @@ import { useMemo } from 'react'
 
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
-    items: IMatchItem[]
-    result: IFileMatch
+    items: MatchItem[]
+    result: FileMatch
     /**
      * Whether or not to show all matches for this file, or only a subset.
      */
