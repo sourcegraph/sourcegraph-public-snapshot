@@ -98,10 +98,13 @@ func getSearchURL(ctx context.Context, query, utmSource string) (string, error) 
 }
 
 func getCodeMonitorURL(ctx context.Context, monitorID int64, utmSource string) (string, error) {
-	return sourcegraphURL(ctx, fmt.Sprintf("code-monitoring/%s", relay.MarshalID("FIXME", monitorID)), "", utmSource)
+	return sourcegraphURL(ctx, fmt.Sprintf("code-monitoring/%s", relay.MarshalID(resolvers.MonitorKind, monitorID)), "", utmSource)
 }
 
 func sourcegraphURL(ctx context.Context, path, query, utmSource string) (string, error) {
+	if MockExternalURL != nil {
+		externalURL = MockExternalURL()
+	}
 	if externalURL == nil {
 		// Determine the external URL.
 		externalURLStr, err := api.InternalClient.ExternalURL(ctx)

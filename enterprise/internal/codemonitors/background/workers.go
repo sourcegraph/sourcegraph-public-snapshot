@@ -203,9 +203,9 @@ func (r *actionRunner) Handle(ctx context.Context, workerStore dbworkerstore.Sto
 		return fmt.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
 	}
 
-	data, err = email.NewTemplateDataForNewSearchResults(m.Description, m.Query, e, zeroOrVal(m.NumResults))
+	data, err = email.NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, zeroOrVal(m.NumResults))
 	if err != nil {
-		return fmt.Errorf("email.NewTemplateDataForNewSearchResults")
+		return fmt.Errorf("email.NewTemplateDataForNewSearchResults: %w", err)
 	}
 	for _, rec := range recs {
 		if rec.NamespaceOrgID != nil {
