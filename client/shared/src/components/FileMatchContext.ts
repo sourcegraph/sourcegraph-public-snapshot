@@ -37,7 +37,7 @@ const calculateGroupPositions = (
     }[],
     context: number,
     highestLineNumberWithinSubsetMatches: number
-): IGroupedMatch => {
+): IMatchGroup => {
     {
         let startLine = matches[0].line - context
         startLine = startLine < 0 ? 0 : startLine
@@ -82,7 +82,7 @@ const calculateGroupPositions = (
 /**
  * Describes a single group of matches.
  */
-interface IGroupedMatch {
+interface IMatchGroup {
     // The matches in this group to display.
     matches: {
         line: number
@@ -108,9 +108,9 @@ interface IGroupedMatch {
 /**
  * Describes matches that have been grouped together.
  */
-interface IGroupedMatches {
+interface IMatchGroups {
     // The grouped matches.
-    grouped: IGroupedMatch[]
+    grouped: IMatchGroup[]
 
     // The subset of sorted matches that should be displayed. Useful if e.g. rendering matches as
     // plaintext.
@@ -129,7 +129,7 @@ interface IGroupedMatches {
  * @param maxMatches The maximum number of matches to show, or 0 for all.
  * @param context The number of surrounding context lines to show for each match.
  */
-export const calculateMatchGroups = (matches: IMatchItem[], maxMatches: number, context: number): IGroupedMatches => {
+export const calculateMatchGroups = (matches: IMatchItem[], maxMatches: number, context: number): IMatchGroups => {
     const sortedMatches = matches.sort((a, b) => {
         if (a.line < b.line) {
             return -1
