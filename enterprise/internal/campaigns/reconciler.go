@@ -309,6 +309,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 		ExternalServiceType: e.ch.ExternalServiceType,
 		RepoID:              e.ch.RepoID,
 		ExternalBranch:      e.spec.Spec.HeadRef,
+		// TODO: Do we need to check whether it's published or not?
 	})
 	if err != nil && err != ErrNoResults {
 		return err

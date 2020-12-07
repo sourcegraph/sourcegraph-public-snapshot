@@ -962,72 +962,49 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 	}
 }
 
-func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
+func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
 	store := NewStore(dbconn.Global)
 
-	admin := createTestUser(t, true)
 	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
-
-	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
-		Name: api.RepoName(rs[0].Name),
-		VCS:  protocol.VCSInfo{URL: rs[0].URI},
-	})
-	defer state.Unmock()
 
 	commonHeadRef := "refs/heads/collision"
 
 	// Create a published changeset.
-	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
-	campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
-	changesetSpec := createChangesetSpec(t, ctx, store, testSpecOpts{
-		user:         admin.ID,
-		repo:         rs[0].ID,
-		campaignSpec: campaignSpec.ID,
-		headRef:      commonHeadRef,
-	})
 	createChangeset(t, ctx, store, testChangesetOpts{
 		repo:             rs[0].ID,
 		publicationState: campaigns.ChangesetPublicationStatePublished,
-		campaign:         campaign.ID,
-		ownedByCampaign:  campaign.ID,
-		currentSpec:      changesetSpec.ID,
 		externalBranch:   commonHeadRef,
 		externalID:       "123",
 	})
 
-	// Try to publish a changeset on the same HeadRef/ExternalBranch.
-	otherCampaignSpec := createCampaignSpec(t, ctx, store, "other-test-campaign", admin.ID)
-	otherCampaign := createCampaign(t, ctx, store, "other-test-campaign", admin.ID, otherCampaignSpec.ID)
-	otherChangesetSpec := createChangesetSpec(t, ctx, store, testSpecOpts{
-		user:         admin.ID,
-		repo:         rs[0].ID,
-		campaignSpec: otherCampaignSpec.ID,
-		headRef:      commonHeadRef,
-		published:    true,
+	// Build a changeset that would be pushed on the same HeadRef/ExternalBranch.
+	spec := buildChangesetSpec(t, testSpecOpts{
+		repo:      rs[0].ID,
+		headRef:   commonHeadRef,
+		published: true,
 	})
-	otherChangeset := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:             rs[0].ID,
-		publicationState: campaigns.ChangesetPublicationStateUnpublished,
-		campaign:         otherCampaign.ID,
-		ownedByCampaign:  otherCampaign.ID,
-		currentSpec:      otherChangesetSpec.ID,
-	})
+	changeset := buildChangeset(testChangesetOpts{repo: rs[0].ID})
 
-	// Run the reconciler
-	rec := Reconciler{
-		noSleepBeforeSync: true,
-		Sourcer:           repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{}),
-		Store:             store,
+	executor := &executor{
+		tx:      store,
+		sourcer: repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{}),
+
+		ch:   changeset,
+		spec: spec,
 	}
 
-	err := rec.process(ctx, store, otherChangeset)
+	// Plan only needs a push operation, since that's where we check
+	plan := &ReconcilerPlan{}
+	plan.AddOp(campaigns.ReconcilerOperationPush)
+
+	err := executor.ExecutePlan(ctx, plan)
 	if err == nil {
 		t.Fatal("reconciler did not return error")
 	}
