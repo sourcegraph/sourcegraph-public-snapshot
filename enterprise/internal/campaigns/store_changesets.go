@@ -417,7 +417,7 @@ type ListChangesetsTextSearchExpr struct {
 }
 
 func (expr ListChangesetsTextSearchExpr) query() *sqlf.Query {
-	// The general query format is for a positive query is:
+	// The general SQL query format for a positive query is:
 	//
 	// (field1 ~* value OR field2 ~* value)
 	//
