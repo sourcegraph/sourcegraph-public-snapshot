@@ -277,6 +277,7 @@ function mockCommonGraphQLResponses(
                 },
                 currentSpec: {
                     originalInput: 'name: awesome-campaign\ndescription: somesttring',
+                    supersedingCampaignSpec: null,
                 },
                 ...campaignOverrides,
             },
@@ -537,6 +538,7 @@ describe('Campaigns', () => {
                                           namespaceName: 'test-org',
                                           url: '/organizations/test-org',
                                       },
+                            supersedingCampaignSpec: null,
                             viewerCanAdminister: true,
                             viewerCampaignsCodeHosts: {
                                 totalCount: 0,

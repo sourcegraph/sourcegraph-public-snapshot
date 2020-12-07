@@ -45,7 +45,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
 >
   <Alert
     closeAriaLabel="Close"
-    color="primary"
+    color="info"
     fade={true}
     isOpen={true}
     key="excluded-fork"
@@ -75,7 +75,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       appear={true}
       baseClass="fade"
       baseClassActive="show"
-      className="alert alert-primary"
+      className="alert alert-info"
       enter={true}
       exit={true}
       in={true}
@@ -107,7 +107,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         unmountOnExit={true}
       >
         <div
-          className="alert alert-primary fade"
+          className="alert alert-info fade"
           role="alert"
         >
           <h4
@@ -131,7 +131,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
   </Alert>
   <Alert
     closeAriaLabel="Close"
-    color="primary"
+    color="info"
     fade={true}
     isOpen={true}
     key="excluded-archive"
@@ -161,7 +161,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       appear={true}
       baseClass="fade"
       baseClassActive="show"
-      className="alert alert-primary"
+      className="alert alert-info"
       enter={true}
       exit={true}
       in={true}
@@ -193,7 +193,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         unmountOnExit={true}
       >
         <div
-          className="alert alert-primary fade"
+          className="alert alert-info fade"
           role="alert"
         >
           <h4

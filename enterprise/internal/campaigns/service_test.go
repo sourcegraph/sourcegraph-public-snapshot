@@ -24,12 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-func init() {
-	dbtesting.DBNameSuffix = "campaignsenterpriserdb"
-}
 
 func TestServicePermissionLevels(t *testing.T) {
 	if testing.Short() {
@@ -42,20 +37,9 @@ func TestServicePermissionLevels(t *testing.T) {
 	store := NewStore(dbconn.Global)
 	svc := NewService(store, nil)
 
-	admin := createTestUser(ctx, t)
-	if !admin.SiteAdmin {
-		t.Fatalf("admin is not site admin")
-	}
-
-	user := createTestUser(ctx, t)
-	if user.SiteAdmin {
-		t.Fatalf("user cannot be site admin")
-	}
-
-	otherUser := createTestUser(ctx, t)
-	if otherUser.SiteAdmin {
-		t.Fatalf("user cannot be site admin")
-	}
+	admin := createTestUser(t, true)
+	user := createTestUser(t, false)
+	otherUser := createTestUser(t, false)
 
 	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
@@ -182,15 +166,8 @@ func TestService(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	admin := createTestUser(ctx, t)
-	if !admin.SiteAdmin {
-		t.Fatal("admin is not a site-admin")
-	}
-
-	user := createTestUser(ctx, t)
-	if user.SiteAdmin {
-		t.Fatal("user is admin, want non-admin")
-	}
+	admin := createTestUser(t, true)
+	user := createTestUser(t, false)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -634,7 +611,7 @@ func TestService(t *testing.T) {
 		t.Run("new user namespace", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
 
-			user2 := createTestUser(ctx, t)
+			user2 := createTestUser(t, false)
 
 			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceUserID: user2.ID}
 			moved, err := svc.MoveCampaign(ctx, opts)
@@ -654,7 +631,7 @@ func TestService(t *testing.T) {
 		t.Run("new user namespace but current user is not admin", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
 
-			user2 := createTestUser(ctx, t)
+			user2 := createTestUser(t, false)
 
 			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceUserID: user2.ID}
 
@@ -744,6 +721,38 @@ func TestService(t *testing.T) {
 		}
 	})
 
+	t.Run("GetNewestCampaignSpec", func(t *testing.T) {
+		older := createCampaignSpec(t, ctx, store, "superseding", user.ID)
+		newer := createCampaignSpec(t, ctx, store, "superseding", user.ID)
+
+		for name, in := range map[string]*campaigns.CampaignSpec{
+			"older": older,
+			"newer": newer,
+		} {
+			t.Run(name, func(t *testing.T) {
+				have, err := svc.GetNewestCampaignSpec(ctx, store, in, user.ID)
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+
+				if diff := cmp.Diff(newer, have); diff != "" {
+					t.Errorf("unexpected newer campaign spec (-want +have):\n%s", diff)
+				}
+			})
+		}
+
+		t.Run("different user", func(t *testing.T) {
+			have, err := svc.GetNewestCampaignSpec(ctx, store, older, admin.ID)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+
+			if have != nil {
+				t.Errorf("unexpected non-nil campaign spec: %+v", have)
+			}
+		})
+	})
+
 	t.Run("FetchUsernameForBitbucketServerToken", func(t *testing.T) {
 		fakeSource := &ct.FakeChangesetSource{Username: "my-bbs-username"}
 		sourcer := repos.NewFakeSourcer(nil, fakeSource)
@@ -773,34 +782,6 @@ func TestService(t *testing.T) {
 		}
 	})
 }
-
-var testUser = db.NewUser{
-	Email:                 "thorsten@sourcegraph.com",
-	Username:              "thorsten",
-	DisplayName:           "thorsten",
-	Password:              "1234",
-	EmailVerificationCode: "foobar",
-}
-
-var createTestUser = func() func(context.Context, *testing.T) *types.User {
-	count := 0
-
-	return func(ctx context.Context, t *testing.T) *types.User {
-		t.Helper()
-
-		u := testUser
-		u.Username = fmt.Sprintf("%s-%d", u.Username, count)
-
-		user, err := db.Users.Create(ctx, u)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		count += 1
-
-		return user
-	}
-}()
 
 func testCampaign(user int32, spec *campaigns.CampaignSpec) *campaigns.Campaign {
 	c := &campaigns.Campaign{

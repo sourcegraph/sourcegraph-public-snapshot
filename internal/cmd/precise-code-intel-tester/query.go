@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
@@ -79,6 +80,8 @@ func referencesFromReferencesQueries() []util.ParallelFn {
 // makeTestQueryFunction constructs a function for RunParallel that invokes the given query function and
 // checks the returned locations against the given expected locations.
 func makeTestQueryFunction(name string, location Location, expectedLocations []Location, f QueryFunc) util.ParallelFn {
+	var numFinished int32
+
 	fn := func(ctx context.Context) error {
 		locations, err := f(ctx, location)
 		if err != nil {
@@ -93,6 +96,7 @@ func makeTestQueryFunction(name string, location Location, expectedLocations []L
 			}
 		}
 
+		atomic.AddInt32(&numFinished, 1)
 		return nil
 	}
 
@@ -106,7 +110,12 @@ func makeTestQueryFunction(name string, location Location, expectedLocations []L
 		location.Character,
 	)
 
-	return util.ParallelFn{Fn: fn, Description: description}
+	return util.ParallelFn{
+		Fn:          fn,
+		Description: func() string { return description },
+		Total:       func() int { return 1 },
+		Finished:    func() int { return int(atomic.LoadInt32(&numFinished)) },
+	}
 }
 
 // QueryFunc performs a GraphQL query (definition or references) given the source location.

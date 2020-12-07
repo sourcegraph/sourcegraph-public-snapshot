@@ -19,9 +19,9 @@ type MonitorQuery struct {
 	QueryString  string
 	NextRun      time.Time
 	LatestResult *time.Time
-	CreatedBy    int64
+	CreatedBy    int32
 	CreatedAt    time.Time
-	ChangedBy    int64
+	ChangedBy    int32
 	ChangedAt    time.Time
 }
 
@@ -66,8 +66,8 @@ func (s *Store) TriggerQueryByMonitorIDInt64(ctx context.Context, monitorID int6
 
 const createTriggerQueryFmtStr = `
 INSERT INTO cm_queries
-(monitor, query, created_by, created_at, changed_by, changed_at)
-VALUES (%s,%s,%s,%s,%s,%s)
+(monitor, query, created_by, created_at, changed_by, changed_at, next_run)
+VALUES (%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
@@ -81,6 +81,7 @@ func (s *Store) createTriggerQueryQuery(ctx context.Context, monitorID int64, ar
 		a.UID,
 		now,
 		a.UID,
+		now,
 		now,
 		sqlf.Join(queryColumns, ", "),
 	), nil

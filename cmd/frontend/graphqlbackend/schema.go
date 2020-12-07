@@ -1374,6 +1374,12 @@ type CampaignSpec implements Node {
     appliesToCampaign: Campaign
 
     """
+    The newest version of this campaign spec, as identified by its namespace
+    and name. If this is the newest version, this field will be null.
+    """
+    supersedingCampaignSpec: CampaignSpec
+
+    """
     The code host connections required for applying this spec. Includes the credentials of the current user.
     """
     viewerCampaignsCodeHosts(
@@ -3223,7 +3229,7 @@ type Monitor implements Node {
     """
     Triggers trigger actions. There can only be one trigger per monitor.
     """
-    trigger: MonitorTrigger
+    trigger: MonitorTrigger!
     """
     One or more actions that are triggered by the trigger.
     """

@@ -19,9 +19,9 @@ import { Link } from '../../../../shared/src/components/Link'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 import { deriveInputClassName, useInputValidation } from '../../../../shared/src/util/useInputValidation'
-import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
+import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
 import { FilterType } from '../../../../shared/src/search/interactive/util'
-import { resolveFilter, validateFilter } from '../../../../shared/src/search/parser/filters'
+import { resolveFilter, validateFilter } from '../../../../shared/src/search/query/filters'
 
 export interface CreateCodeMonitorPageProps extends BreadcrumbsProps, BreadcrumbSetters {
     location: H.Location

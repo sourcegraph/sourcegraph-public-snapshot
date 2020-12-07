@@ -96,6 +96,7 @@ $text-muted: var(--text-muted);
     --sourcegraph-logo-text-color: #242427;
     --search-filter-keyword-color: #1c7cd6;
     --search-keyword-color: #{$oc-grape-7};
+    --infobar-warning-color: #{$oc-red-8};
 }
 .theme-dark {
     // Affects default browser styles
@@ -120,4 +121,5 @@ $text-muted: var(--text-muted);
     --sourcegraph-logo-text-color: #ffffff;
     --search-filter-keyword-color: #329af0;
     --search-keyword-color: #{$oc-grape-4};
+    --infobar-warning-color: #{$oc-red-6};
 }
