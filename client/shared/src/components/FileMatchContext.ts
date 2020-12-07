@@ -39,9 +39,7 @@ const calculateGroupPositions = (
     highestLineNumberWithinSubsetMatches: number
 ): IGroupedMatch => {
     {
-        const contextLines = context || context === 0 ? context : 1
-
-        let startLine = matches[0].line - contextLines
+        let startLine = matches[0].line - context
         startLine = startLine < 0 ? 0 : startLine
 
         const highlightRangeLines = matches.map(range => range.line)
@@ -54,19 +52,19 @@ const calculateGroupPositions = (
         const contextLineHasHighlight = lastHighlightLineNumber > highestLineNumberWithinSubsetMatches
 
         // The gap between the last highlight provided to this excerpt, and the line number of the last highlighted
-        // match that is not a context line. If this value is larger than contextLines, it means that we are
+        // match that is not a context line. If this value is larger than context lines, it means that we are
         // displaying _all_ matches, and therefore, do not need to reduce the number of context lines shown.
         const remainingContextLinesToShow = lastHighlightLineNumber - highestLineNumberWithinSubsetMatches
 
         const numberOfContextLinesToShow = contextLineHasHighlight
-            ? contextLines - (remainingContextLinesToShow <= contextLines ? remainingContextLinesToShow : 0)
-            : contextLines
+            ? context - (remainingContextLinesToShow <= context ? remainingContextLinesToShow : 0)
+            : context
 
         // Of the matches in this excerpt, pick the one with the highest line number + lines of context.
-        // Don't add the context value to calculate the last line if the last highlight match is the highlight range + contextLines
+        // Don't add the context value to calculate the last line if the last highlight match is the highlight range + context
         const endLine = contextLineHasHighlight
             ? Math.max(...highlightRangeLines) + numberOfContextLinesToShow
-            : Math.max(...highlightRangeLines) + contextLines
+            : Math.max(...highlightRangeLines) + context
 
         return {
             matches,
