@@ -14,6 +14,7 @@ import { BadgeAttachment } from './BadgeAttachment'
 import { isErrorLike } from '../util/errors'
 import { ISymbol } from '../graphql/schema'
 import { map } from 'rxjs/operators'
+import { useMemo } from 'react'
 
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
@@ -61,7 +62,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
     }
 
     const maxMatches = props.allMatches ? 0 : props.subsetMatches
-    const { matches, grouped } = calculateMatchGroups(props.items, maxMatches, context)
+    const { matches, grouped } = useMemo(() => calculateMatchGroups(props.items, maxMatches, context), [props.items, maxMatches, context])
 
     if (NO_SEARCH_HIGHLIGHTING) {
         return (
