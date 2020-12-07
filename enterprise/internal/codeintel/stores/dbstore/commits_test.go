@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -64,8 +65,8 @@ func TestHasCommit(t *testing.T) {
 		{51, makeCommit(1), false},
 	}
 
-	insertNearestUploads(t, dbconn.Global, 50, map[string][]UploadMeta{makeCommit(1): {{UploadID: 42, Flags: 1}}})
-	insertNearestUploads(t, dbconn.Global, 51, map[string][]UploadMeta{makeCommit(2): {{UploadID: 43, Flags: 2}}})
+	insertNearestUploads(t, dbconn.Global, 50, map[string][]commitgraph.UploadMeta{makeCommit(1): {{UploadID: 42, Flags: 1}}})
+	insertNearestUploads(t, dbconn.Global, 51, map[string][]commitgraph.UploadMeta{makeCommit(2): {{UploadID: 43, Flags: 2}}})
 
 	for _, testCase := range testCases {
 		name := fmt.Sprintf("repositoryID=%d commit=%s", testCase.repositoryID, testCase.commit)
@@ -146,7 +147,7 @@ func TestCalculateVisibleUploads(t *testing.T) {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]UploadMeta{
+	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
 		makeCommit(1): {{UploadID: 1, Flags: 0}},
 		makeCommit(2): {{UploadID: 1, Flags: 1}},
 		makeCommit(3): {{UploadID: 2, Flags: 0}},
@@ -200,7 +201,7 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]UploadMeta{
+	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
 		makeCommit(1): {{UploadID: 1, Flags: 1}},
 		makeCommit(2): {{UploadID: 1, Flags: 0}},
 		makeCommit(3): {{UploadID: 1, Flags: 1}},
@@ -240,7 +241,7 @@ func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]UploadMeta{
+	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
 		makeCommit(1): {{UploadID: 1, Flags: 1}, {UploadID: 2, Flags: 1}},
 		makeCommit(2): {{UploadID: 1, Flags: 0}, {UploadID: 2, Flags: 0}},
 	}
@@ -306,7 +307,7 @@ func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]UploadMeta{
+	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
 		makeCommit(1): {{UploadID: 1, Flags: 0}, {UploadID: 2, Flags: 0}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 1}, {UploadID: 5, Flags: 1}},
 		makeCommit(2): {{UploadID: 1, Flags: 1}, {UploadID: 2, Flags: 1}, {UploadID: 3, Flags: 0}, {UploadID: 4, Flags: 0}, {UploadID: 5, Flags: 0}},
 		makeCommit(3): {{UploadID: 1, Flags: 2}, {UploadID: 2, Flags: 2}, {UploadID: 4, Flags: 1}, {UploadID: 5, Flags: 1}, {UploadID: 6, Flags: 0}},
@@ -358,7 +359,7 @@ func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]UploadMeta{
+	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
 		makeCommit(1): {
 			{UploadID: 1, Flags: 0}, {UploadID: 2, Flags: 1}, {UploadID: 3, Flags: 2}, {UploadID: 4, Flags: 3},
 			{UploadID: 5, Flags: 0}, {UploadID: 6, Flags: 1}, {UploadID: 7, Flags: 2}, {UploadID: 8, Flags: 3},

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -26,7 +27,7 @@ func TestSameRepoPager(t *testing.T) {
 		Upload{ID: 5, Commit: makeCommit(2), Root: "sub5/"},
 	)
 
-	insertNearestUploads(t, dbconn.Global, 50, map[string][]UploadMeta{
+	insertNearestUploads(t, dbconn.Global, 50, map[string][]commitgraph.UploadMeta{
 		makeCommit(1): {
 			{UploadID: 1, Flags: 1},
 			{UploadID: 2, Flags: 2},
@@ -120,7 +121,7 @@ func TestSameRepoPagerMultiplePages(t *testing.T) {
 		Upload{ID: 9, Commit: makeCommit(1), Root: "sub9/"},
 	)
 
-	insertNearestUploads(t, dbconn.Global, 50, map[string][]UploadMeta{
+	insertNearestUploads(t, dbconn.Global, 50, map[string][]commitgraph.UploadMeta{
 		makeCommit(1): {
 			{UploadID: 1},
 			{UploadID: 2},
@@ -186,7 +187,7 @@ func TestSameRepoPagerVisibility(t *testing.T) {
 		Upload{ID: 5, Commit: makeCommit(5), Root: "sub5/"},
 	)
 
-	insertNearestUploads(t, dbconn.Global, 50, map[string][]UploadMeta{
+	insertNearestUploads(t, dbconn.Global, 50, map[string][]commitgraph.UploadMeta{
 		makeCommit(1): {{UploadID: 1, Flags: 0}},
 		makeCommit(2): {{UploadID: 2, Flags: 0}},
 		makeCommit(3): {{UploadID: 3, Flags: 0}},
