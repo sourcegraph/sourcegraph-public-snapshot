@@ -728,7 +728,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			args: &graphqlbackend.ListChangesetsArgs{
 				Search: stringPtr("foo"),
 			},
-			wantSafe: true,
+			wantSafe: false,
 			wantParsed: ee.ListChangesetsOpts{
 				TextSearch: wantSearches[0:1],
 			},
@@ -738,7 +738,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			args: &graphqlbackend.ListChangesetsArgs{
 				Search: stringPtr("-bar"),
 			},
-			wantSafe: true,
+			wantSafe: false,
 			wantParsed: ee.ListChangesetsOpts{
 				TextSearch: wantSearches[1:],
 			},

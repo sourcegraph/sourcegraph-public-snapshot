@@ -648,6 +648,10 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaign
 			return opts, false, errors.Wrap(err, "parsing search")
 		}
 		opts.TextSearch = ts.TextSearch
+		// Since we search for the repository name in text searches, the
+		// presence or absence of results may leak information about hidden
+		// repositories.
+		safe = false
 	}
 
 	return opts, safe, nil
