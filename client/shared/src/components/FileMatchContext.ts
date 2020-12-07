@@ -49,8 +49,8 @@ const calculateGroupPositions = (
         // The highest line number of all highlights in this excerpt.
         const lastHighlightLineNumber = Math.max(...highlightRangeLines)
 
-        // If the highest highlight line number is greater than the last line number of the subsetMatches,
-        // then we know that there's at least one highlight in the context lines.
+        // If the last highlight line is greater than the highest line number within the subset of matches
+        // we are displaying, then we know that there's at least one highlight in the context lines.
         const contextLineHasHighlight = lastHighlightLineNumber > highestLineNumberWithinSubsetMatches
 
         // The gap between the last highlight provided to this excerpt, and the line number of the last highlighted
