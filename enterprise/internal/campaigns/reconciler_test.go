@@ -822,6 +822,8 @@ func TestReconcilerProcess(t *testing.T) {
 }
 
 func TestDetermineReconcilerPlan(t *testing.T) {
+	t.Parallel()
+
 	tcs := []struct {
 		name           string
 		previousSpec   testSpecOpts
@@ -1057,10 +1059,6 @@ func buildGithubPR(now time.Time, externalState campaigns.ChangesetExternalState
 }
 
 func TestDecorateChangesetBody(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	db.Mocks.Namespaces.GetByID = func(ctx context.Context, org, user int32) (*db.Namespace, error) {
 		return &db.Namespace{Name: "my-user", User: user}, nil
 	}
@@ -1125,6 +1123,8 @@ func TestCampaignURL(t *testing.T) {
 }
 
 func TestNamespaceURL(t *testing.T) {
+	t.Parallel()
+
 	for name, tc := range map[string]struct {
 		ns   *db.Namespace
 		want string
