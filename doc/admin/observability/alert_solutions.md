@@ -2576,6 +2576,33 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
+## repo-updater: src_repoupdater_syncer_sync_errors_total
+
+<p class="subtitle">cloud: sync error rate</p>
+
+**Descriptions:**
+
+- _repo-updater: 1+ sync error rate for 10m0s_
+
+**Possible solutions:**
+
+- An alert here indicates errors syncing repo metadata with code hosts. This indicates that there could be a configuration issue
+with your code hosts connections or networking issues affecting communication with your code hosts.
+- Check the code host status indicator (cloud icon in top right of Sourcegraph homepage) for errors.
+- Make sure external services do not have invalid tokens by navigating to them in the web UI and clicking save. If there are no errors, they are valid.
+- Check the repo-updater logs for errors about syncing.
+- Confirm that outbound network connections are allowed where repo-updater is deployed.
+- Check back in an hour to see if the issue has resolved itself.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_repo-updater_src_repoupdater_syncer_sync_errors_total"
+]
+```
+
+<br />
+
 ## repo-updater: syncer_sync_start
 
 <p class="subtitle">cloud: sync was started</p>

@@ -56,6 +56,24 @@ func RepoUpdater() *monitoring.Container {
 								- Check back in an hour to see if the issue has resolved itself.
 							`, syncDurationThreshold),
 						},
+						{
+							Name:            "src_repoupdater_syncer_sync_errors_total",
+							Description:     "sync error rate",
+							Query:           `sum by (family) (rate(src_repoupdater_syncer_sync_errors_total[5m]))`,
+							DataMayNotExist: true,
+							Critical:        monitoring.Alert().GreaterOrEqual(1).For(10 * time.Minute),
+							PanelOptions:    monitoring.PanelOptions().Unit(monitoring.Number),
+							Owner:           monitoring.ObservableOwnerCloud,
+							PossibleSolutions: `
+								An alert here indicates errors syncing repo metadata with code hosts. This indicates that there could be a configuration issue
+								with your code hosts connections or networking issues affecting communication with your code hosts.
+								- Check the code host status indicator (cloud icon in top right of Sourcegraph homepage) for errors.
+								- Make sure external services do not have invalid tokens by navigating to them in the web UI and clicking save. If there are no errors, they are valid.
+								- Check the repo-updater logs for errors about syncing.
+								- Confirm that outbound network connections are allowed where repo-updater is deployed.
+								- Check back in an hour to see if the issue has resolved itself.
+							`,
+						},
 					},
 					{
 						{
