@@ -143,7 +143,6 @@ export const calculateMatchGroups = (matches: IMatchItem[], maxMatches: number, 
             if (a.highlightRanges[0].start === b.highlightRanges[0].start) {
                 return 0
             }
-            return 1
         }
         return 1
     })
