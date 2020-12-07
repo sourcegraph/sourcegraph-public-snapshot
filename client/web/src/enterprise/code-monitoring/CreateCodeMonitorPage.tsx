@@ -12,6 +12,7 @@ import { CodeMonitorForm } from './components/CodeMonitorForm'
 
 export interface CreateCodeMonitorPageProps extends BreadcrumbsProps, BreadcrumbSetters {
     location: H.Location
+    history: H.History
     authenticatedUser: AuthenticatedUser
 }
 
