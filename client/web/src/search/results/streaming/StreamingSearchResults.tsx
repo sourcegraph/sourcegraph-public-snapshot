@@ -236,7 +236,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 )}
 
                 {results?.progress.done && results?.results.length > 0 && (
-                    <small className="d-block mt-2 text-center">Showing {results?.results.length} results</small>
+                    <small className="d-block mt-4 text-center">Showing {results?.results.length} results</small>
                 )}
             </div>
         </div>

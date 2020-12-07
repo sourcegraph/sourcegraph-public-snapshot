@@ -1,9 +1,8 @@
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import React, { useCallback, useState, useMemo } from 'react'
-import { Button, Popover, PopoverBody } from 'reactstrap'
+import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { defaultProgress, StreamingProgressProps } from './StreamingProgress'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
@@ -19,33 +18,25 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<StreamingPr
         <>
             {progress.skipped.length > 0 && (
                 <>
-                    <Button
-                        className={classNames('streaming-progress__skipped mb-0 ml-2 d-flex align-items-center', {
-                            'streaming-progress__skipped--warning': skippedWithWarning,
-                        })}
-                        color="secondary"
-                        onClick={toggleOpen}
-                        id="streaming-progress__skipped"
-                    >
-                        {skippedWithWarning ? (
-                            <AlertCircleIcon className="mr-2 icon-inline" />
-                        ) : (
-                            <InformationOutlineIcon className="mr-2 icon-inline" />
-                        )}
-                        Some repositories excluded
-                        <MenuDownIcon className="icon-inline" />
-                    </Button>
-                    <Popover
-                        placement="bottom-start"
-                        isOpen={isOpen}
-                        toggle={toggleOpen}
-                        target="streaming-progress__skipped"
-                        hideArrow={true}
-                    >
-                        <PopoverBody className="streaming-progress__skipped-popover">
+                    <ButtonDropdown isOpen={isOpen} toggle={toggleOpen}>
+                        <DropdownToggle
+                            className={classNames('streaming-progress__skipped mb-0 ml-2 d-flex align-items-center', {
+                                'streaming-progress__skipped--warning': skippedWithWarning,
+                            })}
+                            caret={true}
+                            color="secondary"
+                        >
+                            {skippedWithWarning ? (
+                                <AlertCircleIcon className="mr-2 icon-inline" />
+                            ) : (
+                                <InformationOutlineIcon className="mr-2 icon-inline" />
+                            )}
+                            Some results excluded
+                        </DropdownToggle>
+                        <DropdownMenu className="streaming-progress__skipped-popover">
                             <StreamingProgressSkippedPopover progress={progress} />
-                        </PopoverBody>
-                    </Popover>
+                        </DropdownMenu>
+                    </ButtonDropdown>
                 </>
             )}
         </>
