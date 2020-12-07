@@ -11,7 +11,7 @@ var newSearchResultsEmailTemplates = txemail.MustValidate(txtypes.Templates{
 Code monitoring triggered a new event:
 
 {{.Description}}
-{{.NumberOfResults}}
+{{.NumberOfResultsWithDetail}}
 
 View search on Sourcegraph {{.SearchURL}}
 	
@@ -24,31 +24,37 @@ Search results may contain confidential data. To protect your privacy and securi
 Sourcegraph limits what information is contained in this notification.
 `,
 	HTML: `
+<!DOCTYPE html>
 <html>
-<body>
-<span style="font-size:16px;line-height:24px;font-weight:400">Code monitoring triggered a new event:</span>
-<br>
-<br>
-<span style="font-size:20px;line-height:30px;font-weight:700">{{.Description}}</span>
-<br>
-<span style="font-size:16px;line-height:24px;font-weight:400">{{.NumberOfResults}}</span>
-<br>
-<br>
-<span style="font-size:16px;line-height:24px;font-weight:400"><a href="{{.SearchURL}}">View search on Sourcegraph</a></span><br>
-<br>
-<br>
-__
-<br>
-<span style="font-size:14px;line-height:24px;font-weight:400">You are receiving this notification because you are a recipient on a code monitor.</span>
-<br>
-<br>
-<span style="font-size:14px;line-height:24px;font-weight:400"><a href="{{.CodeMonitorURL}}">View code monitor</a>
-<br>
-<br>
-<span style="font-size:12px;line-height:24px;font-weight:400">Search results may contain confidential data. To protect your privacy and security,
-<br>
-Sourcegraph limits what information is contained in this notification.<span>
-</body>
+  <body>
+    <p style="font-size: 16px; line-height: 24px">
+      Code monitoring triggered a new event:a
+    </p>
+    <p style="font-size: 20px; line-height: 30px; font-weight: 700">
+      {{.Description}}<br />
+      <span style="font-size: 16px; line-height: 24px"
+        >{{.NumberOfResultsWithDetail}}</span
+      >
+    </p>
+    <p style="font-size: 16px; line-height: 24px">
+      <a href="{{.SearchURL}}">View search on Sourcegraph</a>
+    </p>
+    <br />
+    <br />
+    __
+    <p style="font-size: 14px; line-height: 24px">
+      You are receiving this notification because you are a recipient on a code
+      monitor.
+    </p>
+    <p style="font-size: 14px; line-height: 24px">
+      <a href="{{.CodeMonitorURL}}">View code monitor</a>
+    </p>
+    <p style="font-size: 12px; line-height: 24px">
+      Search results may contain confidential data. To protect your privacy and
+      security, Sourcegraph limits what information is contained in this
+      notification.
+    </p>
+  </body>
 </html>
 `,
 })

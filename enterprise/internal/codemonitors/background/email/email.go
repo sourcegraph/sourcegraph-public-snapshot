@@ -33,19 +33,19 @@ func canSendEmail(ctx context.Context) error {
 }
 
 type TemplateDataNewSearchResults struct {
-	Priority        string
-	CodeMonitorURL  string
-	SearchURL       string
-	Description     string
-	NumberOfResults string
+	Priority                  string
+	CodeMonitorURL            string
+	SearchURL                 string
+	Description               string
+	NumberOfResultsWithDetail string
 }
 
-func NewTemplateDataForNewSearchResults(monitorDescription string, queryString string, email *codemonitors.MonitorEmail, results int) (d *TemplateDataNewSearchResults, err error) {
+func NewTemplateDataForNewSearchResults(monitorDescription string, queryString string, email *codemonitors.MonitorEmail, numResults int) (d *TemplateDataNewSearchResults, err error) {
 	var (
-		searchURL       string
-		codeMonitorURL  string
-		priority        string
-		numberOfResults string
+		searchURL                 string
+		codeMonitorURL            string
+		priority                  string
+		numberOfResultsWithDetail string
 	)
 	searchURL, err = getSearchURL(queryString, utmSourceEmail)
 	if err != nil {
@@ -63,18 +63,18 @@ func NewTemplateDataForNewSearchResults(monitorDescription string, queryString s
 		priority = "New"
 	}
 
-	if results == 1 {
-		numberOfResults = fmt.Sprintf("There was %d new search result for your query", results)
+	if numResults == 1 {
+		numberOfResultsWithDetail = fmt.Sprintf("There was %d new search result for your query", numResults)
 	} else {
-		numberOfResults = fmt.Sprintf("There were %d new search results for your query", results)
+		numberOfResultsWithDetail = fmt.Sprintf("There were %d new search results for your query", numResults)
 	}
 
 	return &TemplateDataNewSearchResults{
-		Priority:        priority,
-		CodeMonitorURL:  codeMonitorURL,
-		SearchURL:       searchURL,
-		Description:     monitorDescription,
-		NumberOfResults: numberOfResults,
+		Priority:                  priority,
+		CodeMonitorURL:            codeMonitorURL,
+		SearchURL:                 searchURL,
+		Description:               monitorDescription,
+		NumberOfResultsWithDetail: numberOfResultsWithDetail,
 	}, nil
 
 }
