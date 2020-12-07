@@ -721,6 +721,38 @@ func TestService(t *testing.T) {
 		}
 	})
 
+	t.Run("GetNewestCampaignSpec", func(t *testing.T) {
+		older := createCampaignSpec(t, ctx, store, "superseding", user.ID)
+		newer := createCampaignSpec(t, ctx, store, "superseding", user.ID)
+
+		for name, in := range map[string]*campaigns.CampaignSpec{
+			"older": older,
+			"newer": newer,
+		} {
+			t.Run(name, func(t *testing.T) {
+				have, err := svc.GetNewestCampaignSpec(ctx, store, in, user.ID)
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+
+				if diff := cmp.Diff(newer, have); diff != "" {
+					t.Errorf("unexpected newer campaign spec (-want +have):\n%s", diff)
+				}
+			})
+		}
+
+		t.Run("different user", func(t *testing.T) {
+			have, err := svc.GetNewestCampaignSpec(ctx, store, older, admin.ID)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+
+			if have != nil {
+				t.Errorf("unexpected non-nil campaign spec: %+v", have)
+			}
+		})
+	})
+
 	t.Run("FetchUsernameForBitbucketServerToken", func(t *testing.T) {
 		fakeSource := &ct.FakeChangesetSource{Username: "my-bbs-username"}
 		sourcer := repos.NewFakeSourcer(nil, fakeSource)

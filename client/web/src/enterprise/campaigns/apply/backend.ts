@@ -29,6 +29,13 @@ export const viewerCampaignsCodeHostsFragment = gql`
     }
 `
 
+const supersedingCampaignSpecFragment = gql`
+    fragment SupersedingCampaignSpecFields on CampaignSpec {
+        createdAt
+        applyURL
+    }
+`
+
 export const campaignSpecFragment = gql`
     fragment CampaignSpecFields on CampaignSpec {
         id
@@ -55,6 +62,9 @@ export const campaignSpecFragment = gql`
         diffStat {
             ...DiffStatFields
         }
+        supersedingCampaignSpec {
+            ...SupersedingCampaignSpecFields
+        }
         viewerCampaignsCodeHosts(onlyWithoutCredential: true) {
             ...ViewerCampaignsCodeHostsFields
         }
@@ -63,6 +73,8 @@ export const campaignSpecFragment = gql`
     ${viewerCampaignsCodeHostsFragment}
 
     ${diffStatFields}
+
+    ${supersedingCampaignSpecFragment}
 `
 
 export const fetchCampaignSpecById = (campaignSpec: Scalars['ID']): Observable<CampaignSpecFields | null> =>
