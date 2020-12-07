@@ -12,7 +12,7 @@ import {
 } from './github'
 import * as changelog from './changelog'
 import * as campaigns from './campaigns'
-import { Config, releaseVersions, loadConfig } from './config'
+import { Config, releaseVersions } from './config'
 import { formatDate, timezoneLink } from './util'
 import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
 import { readFileSync, writeFileSync } from 'fs'
@@ -21,7 +21,7 @@ import commandExists from 'command-exists'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
-type StepID =
+export type StepID =
     | 'help'
     // release tracking
     | 'tracking:release-timeline'
@@ -41,6 +41,24 @@ type StepID =
     | '_test:slack'
     | '_test:campaign-create-from-changes'
     | '_test:config'
+
+/**
+ * Runs given release step with the provided configuration and arguments.
+ */
+export async function runStep(config: Config, step: StepID, ...args: string[]): Promise<void> {
+    if (!steps.map(({ id }) => id as string).includes(step)) {
+        throw new Error(`Unrecognized step ${JSON.stringify(step)}`)
+    }
+    await Promise.all(
+        steps
+            .filter(({ id }) => id === step)
+            .map(async step => {
+                if (step.run) {
+                    await step.run(config, ...args)
+                }
+            })
+    )
+}
 
 interface Step {
     id: StepID
@@ -647,37 +665,3 @@ Campaign: ${campaignURL}`,
         },
     },
 ]
-
-async function run(config: Config, stepIDToRun: StepID, ...stepArguments: string[]): Promise<void> {
-    await Promise.all(
-        steps
-            .filter(({ id }) => id === stepIDToRun)
-            .map(async step => {
-                if (step.run) {
-                    await step.run(config, ...stepArguments)
-                }
-            })
-    )
-}
-
-/**
- * Release captain automation
- */
-async function main(): Promise<void> {
-    const config = loadConfig()
-    const args = process.argv.slice(2)
-    if (args.length === 0) {
-        console.error('This command expects at least 1 argument')
-        await run(config, 'help')
-        return
-    }
-    const step = args[0]
-    if (!steps.map(({ id }) => id as string).includes(step)) {
-        console.error('Unrecognized step', JSON.stringify(step))
-        return
-    }
-    const stepArguments = args.slice(1)
-    await run(config, step as StepID, ...stepArguments)
-}
-
-main().catch(error => console.error(error))
