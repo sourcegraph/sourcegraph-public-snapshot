@@ -121,7 +121,6 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user, history
                                     onEmailResendVerification={fetchEmails}
                                     onDidRemove={onEmailRemove}
                                     onError={setEmailActionError}
-                                    history={history}
                                 />
                             </li>
                         ))}
