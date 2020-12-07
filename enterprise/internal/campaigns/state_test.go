@@ -17,6 +17,8 @@ import (
 )
 
 func TestComputeGithubCheckState(t *testing.T) {
+	t.Parallel()
+
 	now := timeutil.Now()
 	commitEvent := func(minutesSinceSync int, context, state string) *cmpgn.ChangesetEvent {
 		commit := &github.CommitStatus{
@@ -163,6 +165,8 @@ func TestComputeGithubCheckState(t *testing.T) {
 }
 
 func TestComputeBitbucketBuildStatus(t *testing.T) {
+	t.Parallel()
+
 	now := timeutil.Now()
 	sha := "abcdef"
 	statusEvent := func(minutesSinceSync int, key, state string) *cmpgn.ChangesetEvent {
@@ -274,6 +278,8 @@ func TestComputeBitbucketBuildStatus(t *testing.T) {
 }
 
 func TestComputeGitLabCheckState(t *testing.T) {
+	t.Parallel()
+
 	t.Run("no events", func(t *testing.T) {
 		for name, tc := range map[string]struct {
 			mr   *gitlab.MergeRequest
@@ -402,6 +408,8 @@ func TestComputeGitLabCheckState(t *testing.T) {
 }
 
 func TestComputeReviewState(t *testing.T) {
+	t.Parallel()
+
 	now := timeutil.Now()
 	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
 
@@ -547,6 +555,8 @@ func TestComputeReviewState(t *testing.T) {
 }
 
 func TestComputeExternalState(t *testing.T) {
+	t.Parallel()
+
 	now := timeutil.Now()
 	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
 
@@ -725,6 +735,8 @@ func TestComputeExternalState(t *testing.T) {
 }
 
 func TestComputeLabels(t *testing.T) {
+	t.Parallel()
+
 	now := time.Now()
 	labelEvent := func(name string, kind cmpgn.ChangesetEventKind, when time.Time) *cmpgn.ChangesetEvent {
 		removed := kind == cmpgn.ChangesetEventKindGitHubUnlabeled
