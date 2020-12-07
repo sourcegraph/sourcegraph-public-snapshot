@@ -3218,7 +3218,7 @@ type Monitor implements Node {
     """
     Triggers trigger actions. There can only be one trigger per monitor.
     """
-    trigger: MonitorTrigger
+    trigger: MonitorTrigger!
     """
     One or more actions that are triggered by the trigger.
     """
