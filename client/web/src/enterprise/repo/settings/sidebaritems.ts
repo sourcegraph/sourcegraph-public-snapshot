@@ -12,12 +12,12 @@ const codeIntelSettingsGroup = {
         {
             to: '/code-intelligence/index-configuration',
             label: 'Index configuration',
-            // condition: () => Boolean(window.context?.sourcegraphDotComMode),
+            condition: () => Boolean(window.context?.sourcegraphDotComMode),
         },
         {
             to: '/code-intelligence/indexes',
             label: 'Auto indexing',
-            // condition: () => Boolean(window.context?.sourcegraphDotComMode),
+            condition: () => Boolean(window.context?.sourcegraphDotComMode),
         },
     ],
 }

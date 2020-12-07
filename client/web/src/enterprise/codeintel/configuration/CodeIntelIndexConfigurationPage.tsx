@@ -8,17 +8,11 @@ import { PageTitle } from '../../../components/PageTitle'
 import { SettingsAreaRepositoryFields } from '../../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { getConfiguration, updateConfiguration } from './backend'
+import allConfigSchema from './schema.json'
 
 export interface CodeIntelIndexConfigurationPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
     repo: SettingsAreaRepositoryFields
     history: H.History
-}
-
-// TODO
-const allConfigSchema = {
-    $id: 'all.schema.json#',
-    allowComments: true,
-    additionalProperties: true,
 }
 
 export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexConfigurationPageProps> = ({
@@ -46,6 +40,13 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
         <div className="code-intel-index-configuration web-content">
             <PageTitle title="Precise code intelligence index configuration" />
             <h2>Precise code intelligence index configuration</h2>
+            <p>
+                Override the inferred configuration when automatically indexing repositories on{' '}
+                <a href="https://sourcegraph.com" target="_blank" rel="noreferrer noopener">
+                    Sourcegraph.com
+                </a>
+                .
+            </p>
 
             <DynamicallyImportedMonacoSettingsEditor
                 value={configuration?.indexConfiguration?.configuration || ''}

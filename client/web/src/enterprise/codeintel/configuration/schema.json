@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "code_intel_auto_index.schema.json#",
+  "title": "CodeIntelAutoIndex",
+  "description": "Configuration settings for repository code intel auto indexing.",
+  "allowComments": true,
+  "definitions": {
+    "docker_step": {
+      "type": "object",
+      "properties": {
+        "root": {
+          "description": "Allan put in description",
+          "type": "string"
+        },
+        "image": {
+          "description": "Allan put in description",
+          "type": "string"
+        },
+        "commands": {
+          "description": "Allan put in description",
+          "type": "array",
+          "items": {
+            "description": "Allan put in description",
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": ["root", "image", "commands"]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "shared_steps": {
+      "description": "Allan put in description",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/docker_step"
+      },
+      "additionalItems": false
+    },
+    "index_jobs": {
+      "description": "Allan put in description",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "steps": {
+            "description": "Allan put in description",
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/docker_step"
+            },
+            "additionalItems": false
+          },
+          "root": {
+            "description": "Allan put in description",
+            "type": "string"
+          },
+          "indexer": {
+            "description": "Allan put in description",
+            "type": "string"
+          },
+          "indexer_args": {
+            "description": "Allan put in description",
+            "type": "array",
+            "items": {
+              "description": "Allan put in description",
+              "type": "string"
+            },
+            "additionalItems": false
+          },
+          "outfile": {
+            "description": "Allan put in description",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": ["steps", "root", "indexer", "indexer_args", "outfile"]
+      },
+      "additionalItems": false
+    }
+  },
+  "additionalProperties": false,
+  "required": ["shared_steps", "index_jobs"]
+}
