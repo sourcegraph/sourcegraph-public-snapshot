@@ -114,18 +114,35 @@ func TestCleanupInactive(t *testing.T) {
 	}
 }
 
-func TestGitGC(t *testing.T) {
+func TestGitGCAuto(t *testing.T) {
 	// Create a test repository with detectable garbage that GC can prune.
 	root := tmpDir(t)
 	repo := filepath.Join(root, "garbage-repo")
 	defer os.RemoveAll(root)
 	runCmd(t, root, "git", "init", repo)
-	mkFiles(t, repo, ".git/objects/fb/f6228a25d50b1ea329e06e75b2f3f1de3793a0")
-	runCmd(t, repo, "touch", "-amt", "200701010000", ".git/objects/fb/f6228a25d50b1ea329e06e75b2f3f1de3793a0")
-	runCmd(t, repo, "git", "config", "gc.pruneExpire", "1.days.ago")
-	runCmd(t, repo, "git", "config", "sourcegraph.gcTimestamp", "-345600000000000")
+
+	// First we need to generate a moderate number of commits.
+	for i := 0; i < 50; i++ {
+		runCmd(t, repo, "sh", "-c", "echo 1 >> file1")
+		runCmd(t, repo, "git", "add", "file1")
+		runCmd(t, repo, "git", "commit", "-m", "file1")
+	}
+
+	// Now on a second branch, we do the same thing.
+	runCmd(t, repo, "git", "checkout", "-b", "secondary")
+	for i := 0; i < 50; i++ {
+		runCmd(t, repo, "sh", "-c", "echo 2 >> file2")
+		runCmd(t, repo, "git", "add", "file2")
+		runCmd(t, repo, "git", "commit", "-m", "file2")
+	}
+
+	// Bring everything back together in one branch.
+	runCmd(t, repo, "git", "checkout", "master")
+	runCmd(t, repo, "git", "merge", "secondary")
 
 	// `git count-objects -v` can indicate objects, packs, etc.
+	// We'll run this before and after to verify that an action
+	// was taken by `git gc --auto`.
 	countObjects := func() string {
 		t.Helper()
 		return runCmd(t, repo, "git", "count-objects", "-v")
@@ -136,13 +153,17 @@ func TestGitGC(t *testing.T) {
 		t.Fatalf("expected git to report objects but none found")
 	}
 
+	// Configure GC to be more aggressive and synchronous.
+	runCmd(t, repo, "git", "config", "gc.auto", "1")
+	runCmd(t, repo, "git", "config", "gc.autoDetach", "false")
+
 	// Handler must be invoked for Server side-effects.
 	s := &Server{ReposDir: root}
 	s.Handler()
 	s.cleanupRepos()
 
 	// Verify that there are no more GC-able objects in the repository.
-	if !strings.Contains(countObjects(), "count: 0") {
+	if strings.Contains(countObjects(), "count: 250") {
 		t.Log(countObjects())
 		t.Fatalf("expected git to report no objects, but found some")
 	}

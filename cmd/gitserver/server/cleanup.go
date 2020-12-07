@@ -175,26 +175,7 @@ func (s *Server) cleanupRepos() {
 	}
 
 	performGC := func(dir GitDir) (done bool, err error) {
-		// Determine the last GC time, baked into .git/config.
-		gcTime, err := getGCTime(dir)
-		if err != nil {
-			return false, err
-		}
-
-		// If we've passed the timeout threshold, go ahead and try to
-		// perform a garbage collection pass on the repo.
-		if time.Since(gcTime) > repoTTLGC+jitterDuration(string(dir), repoTTLGC/4) {
-			// Set the next GC time so that if an error occurs during
-			// GC we don't constantly reattempt it each pass.
-			if err := setGCTime(dir, gcTime.Add(time.Since(gcTime)/2)); err != nil {
-				return false, err
-			}
-			if err := gitGC(dir); err != nil {
-				return false, err
-			}
-		}
-
-		return false, nil
+		return false, gitGC(dir)
 	}
 
 	type cleanupFn struct {
@@ -627,45 +608,6 @@ func getRecloneTime(dir GitDir) (time.Time, error) {
 	return time.Unix(sec, 0), nil
 }
 
-// setGCTime sets the time at which a repository should have a garbage
-// collection pass attempted.
-func setGCTime(dir GitDir, now time.Time) error {
-	err := gitConfigSet(dir, "sourcegraph.gcTimestamp", strconv.FormatInt(now.Unix(), 10))
-	if err != nil {
-		ensureHead(dir)
-		return errors.Wrap(err, "failed to update gcTimestamp")
-	}
-	return nil
-}
-
-// getGCTime returns an approximate time a repository should have a garbage
-// collection pass attempted. If the  value is not stored in the repository,
-// the gc time is set to now.
-func getGCTime(dir GitDir) (time.Time, error) {
-	update := func() (time.Time, error) {
-		now := time.Now()
-		return now, setGCTime(dir, now)
-	}
-
-	value, err := gitConfigGet(dir, "sourcegraph.gcTimestamp")
-	if err != nil {
-		return time.Unix(0, 0), errors.Wrap(err, "failed to determine gc timestamp")
-	}
-	if value == "" {
-		return update()
-	}
-
-	sec, err := strconv.ParseInt(strings.TrimSpace(value), 10, 0)
-	if err != nil {
-		now, err2 := update()
-		if err2 != nil {
-			err = err2
-		}
-		return now, err
-	}
-	return time.Unix(sec, 0), nil
-}
-
 // maybeCorruptStderrRe matches stderr lines from git which indicate there
 // might be repository corruption.
 //
@@ -689,7 +631,7 @@ func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
 }
 
 func gitGC(dir GitDir) error {
-	cmd := exec.Command("git", "gc")
+	cmd := exec.Command("git", "gc", "--auto")
 	dir.Set(cmd)
 	err := cmd.Run()
 	if err != nil {
