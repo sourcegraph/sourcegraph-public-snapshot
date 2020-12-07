@@ -54,7 +54,7 @@ describe('CodeExcerpt', () => {
 
     it('renders correct number of rows', () => {
         const { container } = render(<CodeExcerpt {...defaultProps} />)
-        expect(container.querySelectorAll('.code-excerpt tr').length).toMatchInlineSnapshot('3')
+        expect(container.querySelectorAll('.code-excerpt tr').length).toBe(3)
     })
 
     it('renders the line number container on each row', () => {
