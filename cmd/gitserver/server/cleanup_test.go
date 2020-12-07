@@ -163,8 +163,7 @@ func TestGitGCAuto(t *testing.T) {
 	s.cleanupRepos()
 
 	// Verify that there are no more GC-able objects in the repository.
-	if strings.Contains(countObjects(), "count: 250") {
-		t.Log(countObjects())
+	if !strings.Contains(countObjects(), "count: 0") {
 		t.Fatalf("expected git to report no objects, but found some")
 	}
 }
