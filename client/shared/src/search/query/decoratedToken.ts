@@ -80,8 +80,41 @@ export interface MetaField extends BaseMetaToken {
     type: 'field'
 }
 
+/**
+ * Coalesces consecutive pattern tokens. Used, for example, when parsing
+ * literal characters like 'f', 'o', 'o' in regular expressions, which are
+ * coalesced to 'foo' for hovers.
+ *
+ * @param tokens
+ */
+const coalescePatterns = (tokens: DecoratedToken[]): DecoratedToken[] => {
+    let previous: Pattern | undefined
+    const newTokens: DecoratedToken[] = []
+    for (const token of tokens) {
+        if (token.type === 'pattern') {
+            if (previous === undefined) {
+                previous = token
+                continue
+            }
+            // Merge with previous
+            previous.value = previous.value + token.value
+            previous.range = { start: previous.range.start, end: token.range.end }
+            continue
+        }
+        if (previous) {
+            newTokens.push(previous)
+            previous = undefined
+        }
+        newTokens.push(token)
+    }
+    if (previous) {
+        newTokens.push(previous)
+    }
+    return newTokens
+}
+
 const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
-    const tokens: DecoratedToken[] = []
+    let tokens: DecoratedToken[] = []
     try {
         const ast = new RegExpParser().parsePattern(pattern.value)
         const offset = pattern.range.start
@@ -243,6 +276,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
     } catch {
         tokens.push(pattern)
     }
+    tokens = coalescePatterns(tokens)
     // The AST is not necessarily traversed in increasing range. We need
     // to sort by increasing range because the ordering is significant to Monaco.
     tokens.sort((left, right) => {

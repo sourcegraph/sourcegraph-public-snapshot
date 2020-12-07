@@ -194,14 +194,14 @@ describe('getHoverResult()', () => {
             {
               "contents": [
                 {
-                  "value": "Matches the character \`a\`."
+                  "value": "Matches the string \`abcd\`."
                 }
               ],
               "range": {
                 "startLineNumber": 1,
                 "endLineNumber": 1,
                 "startColumn": 2,
-                "endColumn": 3
+                "endColumn": 6
               }
             }
         `)
