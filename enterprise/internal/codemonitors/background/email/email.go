@@ -21,17 +21,6 @@ func SendEmailForNewSearchResult(ctx context.Context, userID int32, data *Templa
 	return sendEmail(ctx, userID, newSearchResultsEmailTemplates, data)
 }
 
-func canSendEmail(ctx context.Context) error {
-	canSendEmail, err := api.InternalClient.CanSendEmail(ctx)
-	if err != nil {
-		return fmt.Errorf("InternalClient.CanSendEmail: %w", err)
-	}
-	if !canSendEmail {
-		return fmt.Errorf("SMTP server not set in site configuration")
-	}
-	return nil
-}
-
 type TemplateDataNewSearchResults struct {
 	Priority                  string
 	CodeMonitorURL            string
@@ -40,19 +29,19 @@ type TemplateDataNewSearchResults struct {
 	NumberOfResultsWithDetail string
 }
 
-func NewTemplateDataForNewSearchResults(monitorDescription string, queryString string, email *codemonitors.MonitorEmail, numResults int) (d *TemplateDataNewSearchResults, err error) {
+func NewTemplateDataForNewSearchResults(ctx context.Context, monitorDescription string, queryString string, email *codemonitors.MonitorEmail, numResults int) (d *TemplateDataNewSearchResults, err error) {
 	var (
 		searchURL                 string
 		codeMonitorURL            string
 		priority                  string
 		numberOfResultsWithDetail string
 	)
-	searchURL, err = getSearchURL(queryString, utmSourceEmail)
+	searchURL, err = getSearchURL(ctx, queryString, utmSourceEmail)
 	if err != nil {
 		return nil, err
 	}
 
-	codeMonitorURL, err = getCodeMonitorURL(email.Monitor, utmSourceEmail)
+	codeMonitorURL, err = getCodeMonitorURL(ctx, email.Monitor, utmSourceEmail)
 	if err != nil {
 		return nil, err
 	}
@@ -80,11 +69,6 @@ func NewTemplateDataForNewSearchResults(monitorDescription string, queryString s
 }
 
 func sendEmail(ctx context.Context, userID int32, template txtypes.Templates, data interface{}) error {
-	err := canSendEmail(ctx)
-	if err != nil {
-		return err
-	}
-
 	email, err := api.InternalClient.UserEmailsGetEmail(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("InternalClient.UserEmailsGetEmail for userID=%d: %w", userID, err)
@@ -92,7 +76,6 @@ func sendEmail(ctx context.Context, userID int32, template txtypes.Templates, da
 	if email == nil {
 		return fmt.Errorf("unable to send email to user ID %d with unknown email address", userID)
 	}
-
 	if err := api.InternalClient.SendEmail(ctx, txtypes.Message{
 		To:       []string{*email},
 		Template: template,
@@ -103,18 +86,18 @@ func sendEmail(ctx context.Context, userID int32, template txtypes.Templates, da
 	return nil
 }
 
-func getSearchURL(query, utmSource string) (string, error) {
-	return sourcegraphURL("search", query, utmSource)
+func getSearchURL(ctx context.Context, query, utmSource string) (string, error) {
+	return sourcegraphURL(ctx, "search", query, utmSource)
 }
 
-func getCodeMonitorURL(monitorID int64, utmSource string) (string, error) {
-	return sourcegraphURL(fmt.Sprintf("code-monitoring/%s", relay.MarshalID("FIXME", monitorID)), "", utmSource)
+func getCodeMonitorURL(ctx context.Context, monitorID int64, utmSource string) (string, error) {
+	return sourcegraphURL(ctx, fmt.Sprintf("code-monitoring/%s", relay.MarshalID("FIXME", monitorID)), "", utmSource)
 }
 
-func sourcegraphURL(path, query, utmSource string) (string, error) {
+func sourcegraphURL(ctx context.Context, path, query, utmSource string) (string, error) {
 	if externalURL == nil {
 		// Determine the external URL.
-		externalURLStr, err := api.InternalClient.ExternalURL(context.Background())
+		externalURLStr, err := api.InternalClient.ExternalURL(ctx)
 		if err != nil {
 			return "", fmt.Errorf("failed to get ExternalURL: %w", err)
 		}
