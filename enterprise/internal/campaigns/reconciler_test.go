@@ -37,10 +37,7 @@ func TestReconcilerProcess(t *testing.T) {
 	clock := func() time.Time { return now }
 	store := NewStoreWithClock(dbconn.Global, clock)
 
-	admin := createTestUser(ctx, t)
-	if !admin.SiteAdmin {
-		t.Fatalf("admin is not site admin")
-	}
+	admin := createTestUser(t, true)
 
 	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
@@ -990,11 +987,7 @@ func TestReconcilerProcess_PublishedChangesetDuplicateBranch(t *testing.T) {
 
 	store := NewStore(dbconn.Global)
 
-	admin := createTestUser(ctx, t)
-	if !admin.SiteAdmin {
-		t.Fatalf("admin is not site admin")
-	}
-
+	admin := createTestUser(t, true)
 	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
@@ -1101,86 +1094,6 @@ func buildGithubPR(now time.Time, externalState campaigns.ChangesetExternalState
 	return pr
 }
 
-type testChangesetOpts struct {
-	repo         api.RepoID
-	campaign     int64
-	currentSpec  int64
-	previousSpec int64
-	campaignIDs  []int64
-
-	externalServiceType string
-	externalID          string
-	externalBranch      string
-	externalState       campaigns.ChangesetExternalState
-
-	publicationState campaigns.ChangesetPublicationState
-
-	reconcilerState campaigns.ReconcilerState
-	failureMessage  string
-	numFailures     int64
-
-	ownedByCampaign int64
-
-	unsynced bool
-	closing  bool
-}
-
-func createChangeset(
-	t *testing.T,
-	ctx context.Context,
-	store *Store,
-	opts testChangesetOpts,
-) *campaigns.Changeset {
-	t.Helper()
-
-	changeset := buildChangeset(opts)
-
-	if err := store.CreateChangeset(ctx, changeset); err != nil {
-		t.Fatalf("creating changeset failed: %s", err)
-	}
-
-	return changeset
-}
-
-func buildChangeset(opts testChangesetOpts) *campaigns.Changeset {
-
-	if opts.externalServiceType == "" {
-		opts.externalServiceType = extsvc.TypeGitHub
-	}
-
-	changeset := &campaigns.Changeset{
-		RepoID:         opts.repo,
-		CurrentSpecID:  opts.currentSpec,
-		PreviousSpecID: opts.previousSpec,
-		CampaignIDs:    opts.campaignIDs,
-
-		ExternalServiceType: opts.externalServiceType,
-		ExternalID:          opts.externalID,
-		ExternalBranch:      opts.externalBranch,
-		ExternalState:       opts.externalState,
-
-		PublicationState: opts.publicationState,
-
-		OwnedByCampaignID: opts.ownedByCampaign,
-
-		Unsynced: opts.unsynced,
-		Closing:  opts.closing,
-
-		ReconcilerState: opts.reconcilerState,
-		NumFailures:     opts.numFailures,
-	}
-
-	if opts.failureMessage != "" {
-		changeset.FailureMessage = &opts.failureMessage
-	}
-
-	if opts.campaign != 0 {
-		changeset.CampaignIDs = []int64{opts.campaign}
-	}
-
-	return changeset
-}
-
 func TestDecorateChangesetBody(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1281,15 +1194,8 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 
 	store := NewStore(dbconn.Global)
 
-	admin := createTestUser(ctx, t)
-	if !admin.SiteAdmin {
-		t.Fatal("admin is not site admin")
-	}
-
-	user := createTestUser(ctx, t)
-	if user.SiteAdmin {
-		t.Fatal("user cannot be a site admin")
-	}
+	admin := createTestUser(t, true)
+	user := createTestUser(t, false)
 
 	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 	repo := rs[0]
@@ -1412,15 +1318,8 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 
 	store := NewStore(dbconn.Global)
 
-	admin := createTestUser(ctx, t)
-	if !admin.SiteAdmin {
-		t.Fatal("admin is not site admin")
-	}
-
-	user := createTestUser(ctx, t)
-	if user.SiteAdmin {
-		t.Fatal("user is site admin")
-	}
+	admin := createTestUser(t, true)
+	user := createTestUser(t, false)
 
 	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 	gitHubRepo := rs[0]
