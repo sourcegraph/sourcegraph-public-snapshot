@@ -341,12 +341,6 @@ type CloneURLToRepositoryName struct {
 	To string `json:"to"`
 }
 
-// CodeIntelAutoIndex description: Configuration settings for repository code intel auto indexing.
-type CodeIntelAutoIndex struct {
-	Index_jobs   []*Index_jobs   `json:"index_jobs,omitempty"`
-	Shared_steps []*Shared_steps `json:"shared_steps,omitempty"`
-}
-
 // CustomGitFetchMapping description: Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command.
 type CustomGitFetchMapping struct {
 	// DomainPath description: Git clone URL domain/path
@@ -734,13 +728,6 @@ type ImportChangesets struct {
 	ExternalIDs []interface{} `json:"externalIDs"`
 	// Repository description: The repository name as configured on your Sourcegraph instance.
 	Repository string `json:"repository"`
-}
-type Index_jobs struct {
-	Indexer      string   `json:"indexer"`
-	Indexer_args []string `json:"indexer_args"`
-	Outfile      string   `json:"outfile"`
-	Root         string   `json:"root"`
-	Steps        []string `json:"steps"`
 }
 
 // Log description: Configuration for logging and alerting, including to external services.
@@ -1140,11 +1127,6 @@ type SettingsExperimentalFeatures struct {
 	ShowRepogroupHomepage *bool `json:"showRepogroupHomepage,omitempty"`
 	// SplitSearchModes description: Enables toggling between the current omni search mode, and experimental interactive search mode.
 	SplitSearchModes *bool `json:"splitSearchModes,omitempty"`
-}
-type Shared_steps struct {
-	Commands string `json:"commands"`
-	Image    string `json:"image"`
-	Root     string `json:"root"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
