@@ -8,11 +8,11 @@ export const StreamingProgressCount: React.FunctionComponent<StreamingProgressPr
     progress = defaultProgress,
 }) => (
     <div
-        className={classNames('streaming-progress__count p-2 d-flex align-items-center', {
+        className={classNames('streaming-progress__count d-flex align-items-center', {
             'streaming-progress__count--in-progress': !progress.done,
         })}
     >
-        <CalculatorIcon className="mr-2" />
+        <CalculatorIcon className="mr-2 icon-inline" />
         {progress.matchCount} {pluralize('result', progress.matchCount)} in {(progress.durationMs / 1000).toFixed(2)}s
         {progress.repositoriesCount && (
             <>
