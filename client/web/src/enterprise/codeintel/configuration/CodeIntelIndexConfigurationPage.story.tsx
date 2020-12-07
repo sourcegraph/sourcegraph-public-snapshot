@@ -5,7 +5,6 @@ import React from 'react'
 import { Observable, of } from 'rxjs'
 import { RepositoryIndexConfigurationFields } from '../../../graphql-operations'
 import { SourcegraphContext } from '../../../jscontext'
-import webStyles from '../../../SourcegraphWebApp.scss'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { CodeIntelIndexConfigurationPage } from './CodeIntelIndexConfigurationPage'
 
@@ -14,7 +13,6 @@ window.context = {} as SourcegraphContext & SuiteFunction
 const { add } = storiesOf('web/Codeintel administration/CodeIntelIndexConfiguration', module).addDecorator(story => (
     <>
         <div className="container">{story()}</div>
-        <style>{webStyles}</style>
     </>
 ))
 

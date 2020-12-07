@@ -41,15 +41,16 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
     const save = useCallback(
         async (content: string) => {
             setSaving(true)
+            setSaveError(undefined)
 
             try {
                 await updateConfiguration({ id: repo.id, content }).toPromise()
+                setConfiguration(content)
             } catch (error) {
                 setSaveError(error)
+            } finally {
+                setSaving(false)
             }
-
-            setSaving(false)
-            setConfiguration(content)
         },
         [repo]
     )
