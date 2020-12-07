@@ -38,8 +38,8 @@ A directory can be mounted at `/sg_prometheus_add_ons`. It can contain additiona
   - rule files which must have the suffix `_rules.yml` in their filename (ie `gitserver_rules.yml`)
   - target files which must have the suffix `_targets.yml` in their filename (ie `local_targets.yml`)
 
-[Rule files](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/) 
-and [target files](https://prometheus.io/docs/guides/file-sd/) must use the latest Prometheus 2.x syntax.  
+[Rule files](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/)
+and [target files](https://prometheus.io/docs/guides/file-sd/) must use the latest Prometheus 2.x syntax.
 
 The environment variable `PROMETHEUS_ADDITIONAL_FLAGS` can be used to pass on additional flags to the `prometheus` executable running in the container.
 
@@ -104,13 +104,11 @@ More behavior can be controlled with
 
 ### FAQ
 
-#### Can I consume Sourcegraph's Prometheus metrics in my own monitoring system (Datadog, New Relic, etc.)?
+#### Can I consume Sourcegraph's metrics in my own monitoring system (Datadog, New Relic, etc.)?
 
-It is technically possible to consume all of Sourcegraph's Prometheus metrics in any external monitoring system that supports Prometheus scraping (both Datadog and New Relic support this). However, we would advise against it because Sourcegraph is a very complex system and defining all of the alerting thresholds and rules that are needed to ensure Sourcegraph is healthy is very tedious and changes with each release of Sourcegraph.
+While It's technically possible to consume all of Sourcegraph's metrics in any external system, our recommended approach is to configure Sourcegraph to send [alerts to your own PagerDuty, Slack, email, etc.](alerting.md) and utilize the built in systems to view the system health.
+The builtin dashboards and alerts provided by Sourcegraph are updated on each release to assure that the information you are monitoring is up-to-date. Defining all of the alerting thresholds and rules that are needed to ensure Sourcegraph is healthy manually would be very tedious as metrics and thresholds can change with each release of Sourcegraph.
 
-One of the primary benefits of using Sourcegraph's builtin Prometheus and Grafana monitoring is that you get builtin dashboards and alerting thresholds out-of-the-box, and as Sourcegraph's internals change with each update you can rest assured that the metrics and information you are monitoring is up-to-date.
 
-Most commonly [Sourcegraph's monitoring is configured to send alerts to your own PagerDuty, Slack, email, etc.](alerting.md). Less common approaches include:
-
-- Using [the HTTP API to query which alerts are firing in Sourcegraph](alerting_custom_consumption.md) in order to pipe that information into your own monitoring platform.
-- Using [Prometheus federation](https://prometheus.io/docs/prometheus/latest/federation/) to pull in Sourcegraph's metrics into your own Prometheus instance, which includes our [high-level alerting metrics](metrics_guide.md) which we define via baked-in Prometheus rules.
+External monitoring system that supports Prometheus scraping (both Datadog and New Relic support this) or [Prometheus federation](https://prometheus.io/docs/prometheus/latest/federation/) can be used to consume Sourcegraph's metrics, which includes our [high-level alerting metrics](metrics_guide.md).
+Alternatively, you can leverage the provided [HTTP API](alerting_custom_consumption.md) to query which alerts are firing in Sourcegraph and pipe that information into your own monitoring platform.
