@@ -17,27 +17,25 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<StreamingPr
     return (
         <>
             {progress.skipped.length > 0 && (
-                <>
-                    <ButtonDropdown isOpen={isOpen} toggle={toggleOpen}>
-                        <DropdownToggle
-                            className={classNames('streaming-progress__skipped mb-0 ml-2 d-flex align-items-center', {
-                                'streaming-progress__skipped--warning': skippedWithWarning,
-                            })}
-                            caret={true}
-                            color="secondary"
-                        >
-                            {skippedWithWarning ? (
-                                <AlertCircleIcon className="mr-2 icon-inline" />
-                            ) : (
-                                <InformationOutlineIcon className="mr-2 icon-inline" />
-                            )}
-                            Some results excluded
-                        </DropdownToggle>
-                        <DropdownMenu className="streaming-progress__skipped-popover">
-                            <StreamingProgressSkippedPopover progress={progress} />
-                        </DropdownMenu>
-                    </ButtonDropdown>
-                </>
+                <ButtonDropdown isOpen={isOpen} toggle={toggleOpen}>
+                    <DropdownToggle
+                        className={classNames('streaming-progress__skipped mb-0 ml-2 d-flex align-items-center', {
+                            'streaming-progress__skipped--warning': skippedWithWarning,
+                        })}
+                        caret={true}
+                        color="secondary"
+                    >
+                        {skippedWithWarning ? (
+                            <AlertCircleIcon className="mr-2 icon-inline" />
+                        ) : (
+                            <InformationOutlineIcon className="mr-2 icon-inline" />
+                        )}
+                        Some results excluded
+                    </DropdownToggle>
+                    <DropdownMenu className="streaming-progress__skipped-popover">
+                        <StreamingProgressSkippedPopover progress={progress} />
+                    </DropdownMenu>
+                </ButtonDropdown>
             )}
         </>
     )
