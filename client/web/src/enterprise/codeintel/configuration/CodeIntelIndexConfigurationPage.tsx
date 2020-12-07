@@ -7,12 +7,13 @@ import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { SettingsAreaRepositoryFields } from '../../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
-import { getConfiguration, updateConfiguration } from './backend'
+import { getConfiguration as defaultGetConfiguration, updateConfiguration } from './backend'
 import allConfigSchema from './schema.json'
 
 export interface CodeIntelIndexConfigurationPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
-    repo: SettingsAreaRepositoryFields
+    repo: Pick<SettingsAreaRepositoryFields, 'id'>
     history: H.History
+    getConfiguration?: typeof defaultGetConfiguration
 }
 
 export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexConfigurationPageProps> = ({
@@ -20,6 +21,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
     isLightTheme,
     telemetryService,
     history,
+    getConfiguration = defaultGetConfiguration,
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelIndexConfigurationPage'), [telemetryService])
 
@@ -34,7 +36,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
         }, setFetchError)
 
         return () => subscription.unsubscribe()
-    }, [repo])
+    }, [repo, getConfiguration])
 
     const save = useCallback(
         async (content: string) => {
