@@ -28,7 +28,7 @@ Sourcegraph limits what information is contained in this notification.
 <html>
   <body>
     <p style="font-size: 16px; line-height: 24px">
-      Code monitoring triggered a new event:a
+      Code monitoring triggered a new event:
     </p>
     <p style="font-size: 20px; line-height: 30px; font-weight: 700">
       {{.Description}}<br />
