@@ -830,126 +830,107 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		wantOperations ReconcilerOperations
 	}{
 		{
-			name: "GitHub publish",
-			currentSpec: testSpecOpts{
-				published: true,
-			},
+			name:        "publish true",
+			currentSpec: testSpecOpts{published: true},
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
 			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish},
 		},
 		{
-			name: "GitHub publish as draft",
-			currentSpec: testSpecOpts{
-				published: "draft",
-			},
+			name:        "publish as draft",
+			currentSpec: testSpecOpts{published: "draft"},
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
 			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublishDraft},
 		},
 		{
-			name: "GitHub publish false",
-			currentSpec: testSpecOpts{
-				published: false,
-			},
+			name:        "publish false",
+			currentSpec: testSpecOpts{published: false},
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
 			wantOperations: ReconcilerOperations{},
 		},
 		{
-			name: "set to draft but unsupported",
-			currentSpec: testSpecOpts{
-				published: "draft",
-			},
+			name:        "draft but unsupported",
+			currentSpec: testSpecOpts{published: "draft"},
 			changeset: testChangesetOpts{
 				externalServiceType: extsvc.TypeBitbucketServer,
 				publicationState:    campaigns.ChangesetPublicationStateUnpublished,
 			},
+			// should be a noop
 			wantOperations: ReconcilerOperations{},
 		},
 		{
-			name: "set from draft to publish true",
-			previousSpec: testSpecOpts{
-				published: "draft",
-			},
-			currentSpec: testSpecOpts{
-				published: true,
-			},
+			name:         "draft to publish true",
+			previousSpec: testSpecOpts{published: "draft"},
+			currentSpec:  testSpecOpts{published: true},
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 			},
 			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationUndraft},
 		},
 		{
-			name: "set from draft to publish true on unpublished",
-			previousSpec: testSpecOpts{
-				published: "draft",
-			},
-			currentSpec: testSpecOpts{
-				published: true,
-			},
+			name:         "draft to publish true on unpublished changeset",
+			previousSpec: testSpecOpts{published: "draft"},
+			currentSpec:  testSpecOpts{published: true},
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
 			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish},
 		},
 		{
-			name: "changeset spec changed attribute, needs update",
-			previousSpec: testSpecOpts{
-				published: true,
-				title:     "Before",
-			},
-			currentSpec: testSpecOpts{
-				published: true,
-				title:     "After",
-			},
+			name:         "title changed on published changeset",
+			previousSpec: testSpecOpts{published: true, title: "Before"},
+			currentSpec:  testSpecOpts{published: true, title: "After"},
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 			},
 			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationUpdate},
 		},
 		{
-			name: "changeset spec changed, needs new commit but no update",
-			previousSpec: testSpecOpts{
-				published:  true,
-				commitDiff: "testDiff",
-			},
-			currentSpec: testSpecOpts{
-				published:  true,
-				commitDiff: "newTestDiff",
-			},
+			name:         "commit diff changed on published changeset",
+			previousSpec: testSpecOpts{published: true, commitDiff: "testDiff"},
+			currentSpec:  testSpecOpts{published: true, commitDiff: "newTestDiff"},
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 			},
-			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationSleep, campaigns.ReconcilerOperationSync},
+			wantOperations: ReconcilerOperations{
+				campaigns.ReconcilerOperationPush,
+				campaigns.ReconcilerOperationSleep,
+				campaigns.ReconcilerOperationSync,
+			},
 		},
 		{
-			name: "changeset merged and spec changed is noop",
-			previousSpec: testSpecOpts{
-				published:  true,
-				commitDiff: "testDiff",
+			name:         "commit message changed on published changeset",
+			previousSpec: testSpecOpts{published: true, commitMessage: "old message"},
+			currentSpec:  testSpecOpts{published: true, commitMessage: "new message"},
+			changeset: testChangesetOpts{
+				publicationState: campaigns.ChangesetPublicationStatePublished,
 			},
-			currentSpec: testSpecOpts{
-				published:  true,
-				commitDiff: "newTestDiff",
+			wantOperations: ReconcilerOperations{
+				campaigns.ReconcilerOperationPush,
+				campaigns.ReconcilerOperationSleep,
+				campaigns.ReconcilerOperationSync,
 			},
+		},
+		{
+			name:         "commit diff changed on merge changeset",
+			previousSpec: testSpecOpts{published: true, commitDiff: "testDiff"},
+			currentSpec:  testSpecOpts{published: true, commitDiff: "newTestDiff"},
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalState:    campaigns.ChangesetExternalStateMerged,
 			},
+			// should be a noop
 			wantOperations: ReconcilerOperations{},
 		},
 		{
-			name: "changeset closed-and-detached will reopen",
-			previousSpec: testSpecOpts{
-				published: true,
-			},
-			currentSpec: testSpecOpts{
-				published: true,
-			},
+			name:         "changeset closed-and-detached will reopen",
+			previousSpec: testSpecOpts{published: true},
+			currentSpec:  testSpecOpts{published: true},
 			changeset: testChangesetOpts{
 				publicationState: campaigns.ChangesetPublicationStatePublished,
 				externalState:    campaigns.ChangesetExternalStateClosed,
