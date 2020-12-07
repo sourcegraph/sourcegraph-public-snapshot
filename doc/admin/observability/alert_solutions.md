@@ -2582,7 +2582,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions:**
 
-- _repo-updater: 1+ sync error rate for 10m0s_
+- _repo-updater: 0+ sync error rate for 10m0s_
 
 **Possible solutions:**
 

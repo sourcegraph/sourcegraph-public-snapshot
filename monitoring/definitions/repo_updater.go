@@ -61,7 +61,7 @@ func RepoUpdater() *monitoring.Container {
 							Description:     "sync error rate",
 							Query:           `sum by (family) (rate(src_repoupdater_syncer_sync_errors_total[5m]))`,
 							DataMayNotExist: true,
-							Critical:        monitoring.Alert().GreaterOrEqual(1).For(10 * time.Minute),
+							Critical:        monitoring.Alert().GreaterOrEqual(0).For(10 * time.Minute),
 							PanelOptions:    monitoring.PanelOptions().Unit(monitoring.Number),
 							Owner:           monitoring.ObservableOwnerCloud,
 							PossibleSolutions: `
