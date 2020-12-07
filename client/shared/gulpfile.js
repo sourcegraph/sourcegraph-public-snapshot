@@ -117,7 +117,9 @@ function watchGraphQlOperations() {
     .on('all', (type, name) => {
       ;(async () => {
         if (await shouldRegenerateGraphQlOperations(type, name)) {
+          console.log('Regenerating GraphQL types')
           await generateGraphQlOperations()
+          console.log('Done regenerating GraphQL types')
         }
       })().catch(error => {
         console.error(error)
