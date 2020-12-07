@@ -30,9 +30,10 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
         setShowQueryForm(show => !show)
     }, [])
 
-    const [queryState, nextQueryFieldChange, queryInputReference] = useInputValidation(
+    const [queryState, nextQueryFieldChange, queryInputReference, overrideState] = useInputValidation(
         useMemo(
             () => ({
+                initialValue: query,
                 synchronousValidators: [
                     (value: string) => {
                         const tokens = scanSearchQuery(value)
@@ -70,7 +71,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                     },
                 ],
             }),
-            []
+            [query]
         )
     )
 
@@ -95,8 +96,9 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
         event => {
             event.preventDefault()
             setShowQueryForm(false)
+            overrideState({ value: query })
         },
-        [setShowQueryForm]
+        [setShowQueryForm, overrideState, query]
     )
 
     return (
@@ -162,7 +164,6 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             <button
                                 className="btn btn-outline-secondary mr-1 test-submit-trigger"
                                 onClick={completeForm}
-                                onSubmit={completeForm}
                                 type="submit"
                                 disabled={queryState.kind !== 'VALID'}
                             >
