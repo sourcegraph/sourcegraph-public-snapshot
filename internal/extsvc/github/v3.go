@@ -134,7 +134,7 @@ func (c *V3Client) requestGet(ctx context.Context, requestURI string, result int
 
 	err = c.rateLimit.Wait(ctx)
 	if err != nil {
-		return errors.Wrap(err, "rate limit")
+		return errInternalRateLimitExceeded
 	}
 
 	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
