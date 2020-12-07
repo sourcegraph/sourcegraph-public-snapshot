@@ -9,18 +9,18 @@
       "type": "object",
       "properties": {
         "root": {
-          "description": "Allan put in description",
+          "description": "The working directly within the docker container.",
           "type": "string"
         },
         "image": {
-          "description": "Allan put in description",
+          "description": "The docker image to run.",
           "type": "string"
         },
         "commands": {
-          "description": "Allan put in description",
+          "description": "A list of arguments to pass to docker run.",
           "type": "array",
           "items": {
-            "description": "Allan put in description",
+            "description": "An argument to docker run.",
             "type": "string"
           }
         }
@@ -32,7 +32,7 @@
   "type": "object",
   "properties": {
     "shared_steps": {
-      "description": "Allan put in description",
+      "description": "A set of pre-index steps that are performed before each index job.",
       "type": "array",
       "items": {
         "$ref": "#/definitions/docker_step"
@@ -40,13 +40,13 @@
       "additionalItems": false
     },
     "index_jobs": {
-      "description": "Allan put in description",
+      "description": "The set of index steps to be performed over a repository.",
       "type": "array",
       "items": {
         "type": "object",
         "properties": {
           "steps": {
-            "description": "Allan put in description",
+            "description": "A set of steps performed before this index job.",
             "type": "array",
             "items": {
               "$ref": "#/definitions/docker_step"
@@ -54,24 +54,24 @@
             "additionalItems": false
           },
           "root": {
-            "description": "Allan put in description",
+            "description": "The path relative to the repository root where the indexer runs.",
             "type": "string"
           },
           "indexer": {
-            "description": "Allan put in description",
+            "description": "The name of the docker image containing the indexer.",
             "type": "string"
           },
           "indexer_args": {
-            "description": "Allan put in description",
+            "description": "A list of arguments to pass to docker run.",
             "type": "array",
             "items": {
-              "description": "Allan put in description",
+              "description": "An argument to docker run.",
               "type": "string"
             },
             "additionalItems": false
           },
           "outfile": {
-            "description": "Allan put in description",
+            "description": "The path to the LSIF index relative to the index root.",
             "type": "string"
           }
         },
