@@ -150,6 +150,8 @@ type ValidateExternalServiceConfigOptions struct {
 	HasNamespace bool
 }
 
+var errAuthorizationRequired = errors.New("authorization required")
+
 // ValidateConfig validates the given external service configuration, and returns a normalized
 // version of the configuration (i.e. valid JSON without comments).
 // A positive opt.ID indicates we are updating an existing service, adding a new one otherwise.
@@ -218,12 +220,18 @@ func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return nil, err
 		}
+		if opt.HasNamespace && c.Authorization == nil {
+			errs = multierror.Append(errs, errAuthorizationRequired)
+		}
 		err = e.validateGitHubConnection(ctx, opt.ID, &c)
 
 	case extsvc.KindGitLab:
 		var c schema.GitLabConnection
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return nil, err
+		}
+		if opt.HasNamespace && c.Authorization == nil {
+			errs = multierror.Append(errs, errAuthorizationRequired)
 		}
 		err = e.validateGitLabConnection(ctx, opt.ID, &c, opt.AuthProviders)
 

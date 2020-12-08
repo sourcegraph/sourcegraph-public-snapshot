@@ -1187,7 +1187,18 @@ query($campaignSpec: ID!) {
         nodes {
           __typename
           type
-
+          operations
+          changeset { id }
+          delta {
+              titleChanged
+              bodyChanged
+              undraft
+              baseRefChanged
+              diffChanged
+              commitMessageChanged
+              authorNameChanged
+              authorEmailChanged
+          }
           ... on HiddenChangesetSpec {
             id
           }

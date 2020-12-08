@@ -82,7 +82,7 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 
 		// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
 		// exist).
-		commitID, err := git.ResolveRevision(ctx, repo, nil, revspec, opt)
+		commitID, err := git.ResolveRevision(ctx, repo, revspec, opt)
 		if err != nil {
 			return nil, err
 		}

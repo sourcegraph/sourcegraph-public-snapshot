@@ -14,7 +14,7 @@ type DBStore interface {
 	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
 	GetDumpByID(ctx context.Context, id int) (dbstore.Dump, bool, error)
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) ([]dbstore.Dump, error)
-	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph map[string][]string) ([]dbstore.Dump, error)
+	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph *gitserver.CommitGraph) ([]dbstore.Dump, error)
 	GetPackage(ctx context.Context, scheme, name, version string) (dbstore.Dump, bool, error)
 	SameRepoPager(ctx context.Context, repositoryID int, commit, scheme, name, version string, limit int) (int, ReferencePager, error)
 	PackageReferencePager(ctx context.Context, scheme, name, version string, repositoryID, limit int) (int, ReferencePager, error)
@@ -64,5 +64,5 @@ type LSIFStore interface {
 }
 
 type GitserverClient interface {
-	CommitGraph(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (map[string][]string, error)
+	CommitGraph(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)
 }

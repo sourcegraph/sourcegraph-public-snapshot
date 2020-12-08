@@ -7,6 +7,7 @@ import { AuthenticatedUser } from '../../auth'
 import { ListUserCodeMonitorsVariables } from '../../graphql-operations'
 import { of } from 'rxjs'
 import { mockCodeMonitorNodes } from './testing/util'
+import sinon from 'sinon'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/CodeMonitoringPage', module)
 
@@ -21,6 +22,7 @@ const additionalProps = {
             },
             totalCount: 12,
         }),
+    toggleCodeMonitorEnabled: sinon.fake(),
 }
 
 add(

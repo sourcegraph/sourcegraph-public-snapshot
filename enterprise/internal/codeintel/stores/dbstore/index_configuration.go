@@ -74,3 +74,16 @@ func (s *Store) GetIndexConfigurationByRepositoryID(ctx context.Context, reposit
 		FROM lsif_index_configuration c WHERE c.repository_id = %s
 	`, repositoryID)))
 }
+
+// UpdateIndexConfigurationByRepositoryID updates the index configuration for a repository.
+func (s *Store) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error) {
+	ctx, endObservation := s.operations.updateIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.Store.Exec(ctx, sqlf.Sprintf(`
+		INSERT INTO lsif_index_configuration (repository_id, data) VALUES (%s, %s)
+		ON CONFLICT (repository_id) DO UPDATE SET data = %s
+	`, repositoryID, data, data))
+}

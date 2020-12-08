@@ -199,6 +199,27 @@ func (s *Service) GetCampaignMatchingCampaignSpec(ctx context.Context, spec *cam
 	return campaign, err
 }
 
+// GetNewestCampaignSpec returns the newest campaign spec that matches the given
+// spec's namespace and name and is owned by the given user, or nil if none is found.
+func (s *Service) GetNewestCampaignSpec(ctx context.Context, tx *Store, spec *campaigns.CampaignSpec, userID int32) (*campaigns.CampaignSpec, error) {
+	opts := GetNewestCampaignSpecOpts{
+		UserID:          userID,
+		NamespaceUserID: spec.NamespaceUserID,
+		NamespaceOrgID:  spec.NamespaceOrgID,
+		Name:            spec.Spec.Name,
+	}
+
+	newest, err := tx.GetNewestCampaignSpec(ctx, opts)
+	if err != nil {
+		if err != ErrNoResults {
+			return nil, err
+		}
+		return nil, nil
+	}
+
+	return newest, nil
+}
+
 type MoveCampaignOpts struct {
 	CampaignID int64
 

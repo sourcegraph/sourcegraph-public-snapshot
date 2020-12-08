@@ -7,13 +7,16 @@ import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
-import { CodeMonitorFields, ListUserCodeMonitorsVariables } from '../../graphql-operations'
+import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables } from '../../graphql-operations'
 import { Link } from '../../../../shared/src/components/Link'
 import { CodeMonitoringProps } from '.'
 import PlusIcon from 'mdi-react/PlusIcon'
-import { CodeMonitorNode } from './CodeMonitoringNode'
+import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 
-export interface CodeMonitoringPageProps extends BreadcrumbsProps, BreadcrumbSetters, CodeMonitoringProps {
+export interface CodeMonitoringPageProps
+    extends BreadcrumbsProps,
+        BreadcrumbSetters,
+        Pick<CodeMonitoringProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'> {
     authenticatedUser: AuthenticatedUser
     location: H.Location
     history: H.History
@@ -22,7 +25,7 @@ export interface CodeMonitoringPageProps extends BreadcrumbsProps, BreadcrumbSet
 type CodeMonitorFilter = 'all' | 'user'
 
 export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps> = props => {
-    const { authenticatedUser, fetchUserCodeMonitors } = props
+    const { authenticatedUser, fetchUserCodeMonitors, toggleCodeMonitorEnabled } = props
 
     const queryConnection = useCallback(
         (args: Partial<ListUserCodeMonitorsVariables>) =>
@@ -99,13 +102,21 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         <h3 className="mb-2">
                             {`${monitorListFilter === 'all' ? 'All code monitors' : 'Your code monitors'}`}
                         </h3>
-                        <FilteredConnection<CodeMonitorFields>
+                        <FilteredConnection<
+                            CodeMonitorFields,
+                            Omit<CodeMonitorNodeProps, 'node'>,
+                            (ListUserCodeMonitorsResult['node'] & { __typename: 'User' })['monitors']
+                        >
                             location={props.location}
                             history={props.history}
                             defaultFirst={10}
                             queryConnection={queryConnection}
                             hideSearch={true}
                             nodeComponent={CodeMonitorNode}
+                            nodeComponentProps={{
+                                location: props.location,
+                                toggleCodeMonitorEnabled,
+                            }}
                             noun="code monitor"
                             pluralNoun="code monitors"
                             noSummaryIfAllNodesVisible={true}

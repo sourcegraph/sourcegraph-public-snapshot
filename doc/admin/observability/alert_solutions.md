@@ -1506,6 +1506,28 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <br />
 
+## github-proxy: github_proxy_waiting_requests
+
+<p class="subtitle">cloud: number of requests waiting on the global mutex</p>
+
+**Descriptions:**
+
+- _github-proxy: 100+ number of requests waiting on the global mutex for 5m0s_
+
+**Possible solutions:**
+
+- 								- **Check github-proxy logs for network connection issues.
+								- **Check github status.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_github-proxy_github_proxy_waiting_requests"
+]
+```
+
+<br />
+
 ## github-proxy: container_cpu_usage
 
 <p class="subtitle">cloud: container cpu usage total (1m average) across all cores by instance</p>
@@ -2849,6 +2871,33 @@ with your code hosts connections or networking issues affecting communication wi
 ```json
 "observability.silenceAlerts": [
   "critical_repo-updater_src_repoupdater_max_sync_backoff"
+]
+```
+
+<br />
+
+## repo-updater: src_repoupdater_syncer_sync_errors_total
+
+<p class="subtitle">cloud: sync error rate</p>
+
+**Descriptions:**
+
+- _repo-updater: 0.01+ sync error rate for 10m0s_
+
+**Possible solutions:**
+
+- An alert here indicates errors syncing repo metadata with code hosts. This indicates that there could be a configuration issue
+with your code hosts connections or networking issues affecting communication with your code hosts.
+- Check the code host status indicator (cloud icon in top right of Sourcegraph homepage) for errors.
+- Make sure external services do not have invalid tokens by navigating to them in the web UI and clicking save. If there are no errors, they are valid.
+- Check the repo-updater logs for errors about syncing.
+- Confirm that outbound network connections are allowed where repo-updater is deployed.
+- Check back in an hour to see if the issue has resolved itself.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_repo-updater_src_repoupdater_syncer_sync_errors_total"
 ]
 ```
 

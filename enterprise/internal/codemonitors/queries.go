@@ -6,7 +6,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
 
 type MonitorQuery struct {
@@ -15,10 +19,109 @@ type MonitorQuery struct {
 	QueryString  string
 	NextRun      time.Time
 	LatestResult *time.Time
-	CreatedBy    int64
+	CreatedBy    int32
 	CreatedAt    time.Time
-	ChangedBy    int64
+	ChangedBy    int32
 	ChangedAt    time.Time
+}
+
+var queryColumns = []*sqlf.Query{
+	sqlf.Sprintf("cm_queries.id"),
+	sqlf.Sprintf("cm_queries.monitor"),
+	sqlf.Sprintf("cm_queries.query"),
+	sqlf.Sprintf("cm_queries.next_run"),
+	sqlf.Sprintf("cm_queries.created_by"),
+	sqlf.Sprintf("cm_queries.created_at"),
+	sqlf.Sprintf("cm_queries.changed_by"),
+	sqlf.Sprintf("cm_queries.changed_at"),
+}
+
+func (s *Store) CreateTriggerQuery(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) (err error) {
+	var q *sqlf.Query
+	q, err = s.createTriggerQueryQuery(ctx, monitorID, args)
+	if err != nil {
+		return err
+	}
+	return s.Exec(ctx, q)
+}
+
+func (s *Store) UpdateTriggerQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (err error) {
+	var q *sqlf.Query
+	q, err = s.updateTriggerQueryQuery(ctx, args)
+	if err != nil {
+		return err
+	}
+	return s.Exec(ctx, q)
+}
+
+const triggerQueryByMonitorFmtStr = `
+SELECT id, monitor, query, next_run, latest_result, created_by, created_at, changed_by, changed_at
+FROM cm_queries
+WHERE monitor = %s;
+`
+
+func (s *Store) TriggerQueryByMonitorIDInt64(ctx context.Context, monitorID int64) (*MonitorQuery, error) {
+	return s.runTriggerQuery(ctx, sqlf.Sprintf(triggerQueryByMonitorFmtStr, monitorID))
+}
+
+const createTriggerQueryFmtStr = `
+INSERT INTO cm_queries
+(monitor, query, created_by, created_at, changed_by, changed_at, next_run)
+VALUES (%s,%s,%s,%s,%s,%s,%s)
+RETURNING %s;
+`
+
+func (s *Store) createTriggerQueryQuery(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) (*sqlf.Query, error) {
+	now := s.Now()
+	a := actor.FromContext(ctx)
+	return sqlf.Sprintf(
+		createTriggerQueryFmtStr,
+		monitorID,
+		args.Query,
+		a.UID,
+		now,
+		a.UID,
+		now,
+		now,
+		sqlf.Join(queryColumns, ", "),
+	), nil
+}
+
+const updateTriggerQueryFmtStr = `
+UPDATE cm_queries
+SET query = %s,
+	changed_by = %s,
+	changed_at = %s
+WHERE id = %s
+AND monitor = %s
+RETURNING %s;
+`
+
+func (s *Store) updateTriggerQueryQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (q *sqlf.Query, err error) {
+	now := s.Now()
+	a := actor.FromContext(ctx)
+
+	var triggerID int64
+	err = relay.UnmarshalSpec(args.Trigger.Id, &triggerID)
+	if err != nil {
+		return nil, err
+	}
+
+	var monitorID int64
+	err = relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
+	if err != nil {
+		return nil, err
+	}
+
+	return sqlf.Sprintf(
+		updateTriggerQueryFmtStr,
+		args.Trigger.Update.Query,
+		a.UID,
+		now,
+		triggerID,
+		monitorID,
+		sqlf.Join(queryColumns, ", "),
+	), nil
 }
 
 const getQueryByRecordIDFmtStr = `
@@ -38,7 +141,7 @@ func (s *Store) GetQueryByRecordID(ctx context.Context, recordID int) (query *Mo
 	if err != nil {
 		return nil, err
 	}
-	ms, err = ScanTriggerQueries(rows)
+	ms, err = scanTriggerQueries(rows)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +168,7 @@ func (s *Store) SetTriggerQueryNextRun(ctx context.Context, triggerQueryID int64
 	return s.Exec(ctx, q)
 }
 
-func ScanTriggerQueries(rows *sql.Rows) (ms []*MonitorQuery, err error) {
+func scanTriggerQueries(rows *sql.Rows) (ms []*MonitorQuery, err error) {
 	for rows.Next() {
 		m := &MonitorQuery{}
 		if err := rows.Scan(
@@ -91,4 +194,20 @@ func ScanTriggerQueries(rows *sql.Rows) (ms []*MonitorQuery, err error) {
 		return nil, err
 	}
 	return ms, nil
+}
+
+func (s *Store) runTriggerQuery(ctx context.Context, q *sqlf.Query) (*MonitorQuery, error) {
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	ms, err := scanTriggerQueries(rows)
+	if err != nil {
+		return nil, err
+	}
+	if len(ms) == 0 {
+		return nil, fmt.Errorf("operation failed. Query should have returned 1 row")
+	}
+	return ms[0], nil
 }

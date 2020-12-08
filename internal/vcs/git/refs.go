@@ -180,7 +180,7 @@ func ListBranches(ctx context.Context, repo gitserver.Repo, opt BranchesOptions)
 
 		branch := &Branch{Name: name, Head: ref.CommitID}
 		if opt.IncludeCommit {
-			branch.Commit, err = getCommit(ctx, repo, nil, ref.CommitID, ResolveRevisionOptions{})
+			branch.Commit, err = getCommit(ctx, repo, ref.CommitID, ResolveRevisionOptions{})
 			if err != nil {
 				return nil, err
 			}

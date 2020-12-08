@@ -11,13 +11,16 @@ import (
 func StartBackgroundJobs(ctx context.Context, db *sql.DB) {
 	codeMonitorsStore := codemonitors.NewStore(db)
 
-	metrics := newMetricsForTriggerQueries()
+	triggerMetrics := newMetricsForTriggerQueries()
+	actionMetrics := newActionMetrics()
 
 	routines := []goroutine.BackgroundRoutine{
 		newTriggerQueryEnqueuer(ctx, codeMonitorsStore),
 		newTriggerJobsLogDeleter(ctx, codeMonitorsStore),
-		newTriggerQueryRunner(ctx, codeMonitorsStore, metrics),
-		newTriggerQueryResetter(ctx, codeMonitorsStore, metrics),
+		newTriggerQueryRunner(ctx, codeMonitorsStore, triggerMetrics),
+		newTriggerQueryResetter(ctx, codeMonitorsStore, triggerMetrics),
+		newActionRunner(ctx, codeMonitorsStore, actionMetrics),
+		newActionJobResetter(ctx, codeMonitorsStore, actionMetrics),
 	}
 	go goroutine.MonitorBackgroundRoutines(ctx, routines...)
 }

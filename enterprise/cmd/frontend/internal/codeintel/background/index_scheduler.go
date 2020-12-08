@@ -6,8 +6,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/autoindex/config"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/autoindex/inference"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/inference"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -180,7 +180,7 @@ func (s *IndexScheduler) getIndexJobsFromConfigurationInDatabase(ctx context.Con
 		// We failed here, but do not try to fall back on another method as having
 		// an explicit config in the database should always take precedence, even
 		// if it's broken.
-		log15.Warn("Failed to unmarshal index configuration", "repository_id", repositoryID)
+		log15.Warn("Failed to unmarshal index configuration", "repository_id", repositoryID, "error", err)
 		return nil, true, nil
 	}
 
@@ -206,7 +206,7 @@ func (s *IndexScheduler) getIndexJobsFromConfigurationInRepository(ctx context.C
 		// We failed here, but do not try to fall back on another method as having
 		// an explicit config in the repository should always take precedence over
 		// an auto-inferred configuration, even if it's broken.
-		log15.Warn("Failed to unmarshal index configuration", "repository_id", repositoryID)
+		log15.Warn("Failed to unmarshal index configuration", "repository_id", repositoryID, "error", err)
 		return nil, true, nil
 	}
 

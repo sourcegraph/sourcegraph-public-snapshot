@@ -20,10 +20,12 @@ type CodeIntelResolver interface {
 	LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
 	LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
 	DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
+	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
+	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
 }
 
-var codeIntelOnlyInEnterprise = errors.New("lsif uploads and queries are only available in enterprise")
+var codeIntelOnlyInEnterprise = errors.New("precise code intelligence only available in enterprise")
 
 type defaultCodeIntelResolver struct{}
 
@@ -61,6 +63,14 @@ func (defaultCodeIntelResolver) DeleteLSIFIndex(ctx context.Context, id graphql.
 	return nil, codeIntelOnlyInEnterprise
 }
 
+func (defaultCodeIntelResolver) IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
+func (defaultCodeIntelResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error) {
+	return nil, codeIntelOnlyInEnterprise
+}
+
 func (defaultCodeIntelResolver) GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error) {
 	return nil, codeIntelOnlyInEnterprise
 }
@@ -79,6 +89,10 @@ func (r *schemaResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID 
 
 func (r *schemaResolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
 	return r.CodeIntelResolver.DeleteLSIFIndex(ctx, args.ID)
+}
+
+func (r *schemaResolver) UpdateRepositoryIndexConfigurationArgs(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error) {
+	return r.CodeIntelResolver.UpdateRepositoryIndexConfiguration(ctx, args)
 }
 
 type LSIFUploadsQueryArgs struct {
@@ -130,31 +144,61 @@ type LSIFRepositoryIndexesQueryArgs struct {
 type LSIFIndexResolver interface {
 	ID() graphql.ID
 	InputCommit() string
+	InputRoot() string
+	InputIndexer() string
 	QueuedAt() DateTime
 	State() string
 	Failure() *string
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
-	DockerSteps() []DockerStepResolver
-	InputRoot() string
-	Indexer() string
-	IndexerArgs() []string
-	Outfile() *string
-	LogContents(ctx context.Context) (*string, error)
+	Steps() IndexStepsResolver
 	PlaceInQueue() *int32
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 }
 
-type DockerStepResolver interface {
+type IndexStepsResolver interface {
+	Setup() []ExecutionLogEntryResolver
+	PreIndex() []PreIndexStepResolver
+	Index() IndexStepResolver
+	Upload() ExecutionLogEntryResolver
+	Teardown() []ExecutionLogEntryResolver
+}
+
+type PreIndexStepResolver interface {
 	Root() string
 	Image() string
 	Commands() []string
+	LogEntry() ExecutionLogEntryResolver
+}
+
+type IndexStepResolver interface {
+	IndexerArgs() []string
+	Outfile() *string
+	LogEntry() ExecutionLogEntryResolver
+}
+
+type ExecutionLogEntryResolver interface {
+	Key() string
+	Command() []string
+	StartTime() DateTime
+	ExitCode() int32
+	Out(ctx context.Context) (string, error)
+	DurationMilliseconds() int32
 }
 
 type LSIFIndexConnectionResolver interface {
 	Nodes(ctx context.Context) ([]LSIFIndexResolver, error)
 	TotalCount(ctx context.Context) (*int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type IndexConfigurationResolver interface {
+	Configuration() *string
+}
+
+type UpdateRepositoryIndexConfigurationArgs struct {
+	Repository    graphql.ID
+	Configuration string
 }
 
 type GitTreeLSIFDataResolver interface {

@@ -17,18 +17,10 @@
     &__row {
         display: flex;
         flex-wrap: wrap;
-        justify-content: space-between;
+        justify-content: flex-end;
         height: 100%;
-
-        &-left {
-            display: flex;
-            flex-wrap: wrap;
-        }
-
-        &-right {
-            flex: 1 0 auto;
-            text-align: right;
-        }
+        flex: 1 0 auto;
+        text-align: right;
     }
 
     &__notice {

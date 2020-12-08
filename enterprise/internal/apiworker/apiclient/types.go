@@ -1,5 +1,7 @@
 package apiclient
 
+import "github.com/sourcegraph/sourcegraph/internal/workerutil"
+
 // Job describes a series of steps to perform within an executor.
 type Job struct {
 	// ID is the unique identifier of a job within the source queue. Note
@@ -26,6 +28,12 @@ type Job struct {
 	// These run after all docker commands have been completed successfully. This
 	// may be done inside or outside of a Firecracker virtual machine.
 	CliSteps []CliStep `json:"cliSteps"`
+
+	// RedactedValues is a map from strings to replace to their replacement in the command
+	// output before sending it to the underlying job store. This should contain all worker
+	// environment variables, as well as secret values passed along with the dequeued job
+	// payload, which may be sensitive (e.g. shared API tokens, URLs with credentials).
+	RedactedValues map[string]string `json:"redactedValues"`
 }
 
 func (j Job) RecordID() int {
@@ -61,10 +69,10 @@ type DequeueRequest struct {
 	ExecutorName string `json:"executorName"`
 }
 
-type SetLogRequest struct {
+type AddExecutionLogEntryRequest struct {
 	ExecutorName string `json:"executorName"`
 	JobID        int    `json:"jobId"`
-	Contents     string `json:"payload"`
+	workerutil.ExecutionLogEntry
 }
 
 type MarkCompleteRequest struct {

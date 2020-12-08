@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="953px" height="801px" viewBox="-0.5 -0.5 953 801" content="&lt;mxfile host=&quot;app.diagrams.net&quot; modified=&quot;2020-12-03T01:43:22.114Z&quot; agent=&quot;5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.66 Safari/537.36&quot; etag=&quot;ycB5eejgUkddCN62HMkT&quot; version=&quot;13.10.4&quot; type=&quot;device&quot;&gt;&lt;diagram id=&quot;prtHgNgQTEPvFCAcTncT&quot; name=&quot;Page-1&quot;&gt;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&lt;/diagram&gt;&lt;/mxfile&gt;" style="background-color: rgb(24, 46, 62);">
+	<defs />
+	<g>
+		<path d="M 20 0 L 0 0 L 0 800 L 20 800" fill="#eeeeee" stroke="#ffffff" stroke-miterlimit="10" pointer-events="all" />
+		<path d="M 20 0 L 540 0 L 540 800 L 20 800" fill="none" stroke="#ffffff" stroke-miterlimit="10" pointer-events="none" />
+		<path d="M 20 0 L 20 800" fill="none" stroke="#ffffff" stroke-miterlimit="10" pointer-events="none" />
+		<g transform="translate(-0.5 -0.5)rotate(-90 10 400)">
+			<switch>
+				<foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+					<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 1px; height: 1px; padding-top: 400px; margin-left: 10px;">
+						<div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+							<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #1A1A1A; line-height: 1.2; pointer-events: none; font-weight: bold; white-space: nowrap; ">
+								Extension host bootstrapping
+							</div>
+						</div>
+					</div>
+				</foreignObject>
+				<text x="10" y="404" fill="#1A1A1A" font-family="Helvetica" font-size="12px" text-anchor="middle" font-weight="bold">
+					Extension host bootstrapping
+				</text>
+			</switch>
+		</g>
+		<path d="M 20 20 L 20 0 L 540 0 L 540 20" fill="#eeeeee" stroke="#ffffff" stroke-miterlimit="10" pointer-events="none" />
+		<path d="M 20 20 L 20 800 L 540 800 L 540 20" fill="none" stroke="#ffffff" stroke-miterlimit="10" pointer-events="none" />
+		<path d="M 20 20 L 540 20" fill="none" stroke="#ffffff" stroke-miterlimit="10" pointer-events="none" />
+		<g transform="translate(-0.5 -0.5)">
+			<switch>
+				<foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+					<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 1px; height: 1px; padding-top: 10px; margin-left: 280px;">
+						<div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+							<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #1A1A1A; line-height: 1.2; pointer-events: none; font-weight: bold; white-space: nowrap; ">
+								Main thread
+							</div>
+						</div>
+					</div>
+				</foreignObject>
+				<text x="280" y="14" fill="#1A1A1A" font-family="Helvetica" font-size="12px" text-anchor="middle" font-weight="bold">
+					Main thread
+				</text>
+			</switch>
+		</g>
+		<path d="M 280 90 L 280 98.63" fill="none" stroke="#ffffff" stroke-miterlimit="10" pointer-events="none" />
+		<path d="M 280 103.88 L 276.5 96.88 L 280 98.63 L 283.5 96.88 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" pointer-events="none" />
+		<a xlink:href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/platform/context.ts#L59-65">
+			<rect x="70" y="35" width="420" height="55" rx="8.25" ry="8.25" fill="#eeeeee" stroke="#ffffff" />
+			<g transform="translate(-0.5 -0.5)">
+				<switch>
+					<foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+						<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 418px; height: 1px; padding-top: 63px; margin-left: 71px;">
+							<div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+								<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #1A1A1A; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+									<b>
+										createPlatformContext() =&gt; PlatformContext
+									</b>
+									: Initialize platform-specific implementations shared by multiple platforms
+								</div>
+							</div>
+						</div>
+					</foreignObject>
+					<text x="280" y="66" fill="#1A1A1A" font-family="Helvetica" font-size="12px" text-anchor="middle">
+						createPlatformContext() =&gt; PlatformContext: Initialize platform-specif...
+					</text>
+				</switch>
+			</g>
+		</a>
+		<path d="M 280 170 L 280 190 L 405 190 L 405 198.63" fill="none" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 405 203.88 L 401.5 196.88 L 405 198.63 L 408.5 196.88 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 280 170 L 280 190 L 150 190 L 150 198.63" fill="none" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 150 203.88 L 146.5 196.88 L 150 198.63 L 153.5 196.88 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" />
+		<a xlink:href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/extensions/controller.ts#L65-71">
+			<rect x="70" y="105" width="420" height="65" rx="9.75" ry="9.75" fill="#eeeeee" stroke="#ffffff" />
+			<g transform="translate(-0.5 -0.5)">
+				<switch>
+					<foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+						<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 418px; height: 1px; padding-top: 138px; margin-left: 71px;">
+							<div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+								<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #1A1A1A; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+									<b>
+										createController(context: PlatformContext) =&gt; ExtensionsController
+									</b>
+									: Create the extensions controller, which handles all communication between the main thread and extensions
+								</div>
+							</div>
+						</div>
+					</foreignObject>
+					<text x="280" y="141" fill="#1A1A1A" font-family="Helvetica" font-size="12px" text-anchor="middle">
+						createController(context: PlatformContext) =&gt; ExtensionsController: Cr...
+					</text>
+				</switch>
+			</g>
+		</a>
+		<a xlink:href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/platform/context.ts#L120-128">
+			<rect x="280" y="205" width="250" height="185" rx="11.1" ry="11.1" fill="#eeeeee" stroke="#ffffff" />
+			<g transform="translate(-0.5 -0.5)">
+				<switch>
+					<foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+						<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 239px; height: 1px; padding-top: 298px; margin-left: 284px;">
+							<div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+								<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #1A1A1A; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+									<b>
+										context.createExtensionHost() =&gt; Promise&lt;ClosableEndpointPair&gt;
+									</b>
+									:  Creates the worker thread with the extension host, returns a promise for a pair of endpoints after establishing a bidirectional communication channel:
+									<br />
+									<ul>
+										<li>
+											proxy (endpoint to proxy API of other context)
+										</li>
+										<li>
+											expose (endpoint to expose API to other context)
+										</li>
+									</ul>
+								</div>
+							</div>
+						</div>
+					</foreignObject>
+					<text x="404" y="301" fill="#1A1A1A" font-family="Helvetica" font-size="12px" text-anchor="middle">
+						context.createExtensionHost() =&gt; Promise...
+					</text>
+				</switch>
+			</g>
+		</a>
+		<path d="M 275 467.5 L 275 503.63" fill="none" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 275 508.88 L 271.5 501.88 L 275 503.63 L 278.5 501.88 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" />
+		<a xlink:href="https://github.com/GoogleChromeLabs/comlink#comlinkwrapendpoint-and-comlinkexposevalue-endpoint">
+			<rect x="70" y="422.5" width="410" height="45" rx="6.75" ry="6.75" fill="#eeeeee" stroke="#ffffff" />
+			<g transform="translate(-0.5 -0.5)">
+				<switch>
+					<foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+						<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 408px; height: 1px; padding-top: 445px; margin-left: 71px;">
+							<div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+								<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #1A1A1A; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+									<b>
+										Wrap
+									</b>
+									<b>
+										the extension host API
+									</b>
+									with a proxy using comlink
+								</div>
+							</div>
+						</div>
+					</foreignObject>
+					<text x="275" y="449" fill="#1A1A1A" font-family="Helvetica" font-size="12px" text-anchor="middle">
+						Wrap the extension host API with a proxy using comlink
+					</text>
+				</switch>
+			</g>
+		</a>
+		<path d="M 149.95 235 L 149.95 412.62" fill="none" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 149.95 417.87 L 146.45 410.87 L 149.95 412.62 L 153.45 410.87 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" />
+		<a xlink:href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/api/client/connection.ts#L55">
+			<rect x="30" y="205" width="240" height="30" rx="4.5" ry="4.5" fill="#eeeeee" stroke="#ffffff" />
+			<g transform="translate(-0.5 -0.5)">
+				<switch>
+					<foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+						<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 238px; height: 1px; padding-top: 220px; margin-left: 31px;">
+							<div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+								<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #1A1A1A; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+									<b>
+										createExtensionHostClientConnection()
+									</b>
+								</div>
+							</div>
+						</div>
+					</foreignObject>
+					<text x="150" y="224" fill="#1A1A1A" font-family="Helvetica" font-size="12px" text-anchor="middle">
+						createExtensionHostClientConnection()
+					</text>
+				</switch>
+			</g>
+		</a>
+		<rect x="60" y="725" width="410" height="50" rx="7.5" ry="7.5" fill="#eeeeee" stroke="#ffffff" />
+		<g transform="translate(-0.5 -0.5)">
+			<switch>
+				<foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+					<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 408px; height: 1px; padding-top: 750px; margin-left: 61px;">
+						<div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+							<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #1A1A1A; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+								When an extension is meant to be activated, send the extension's id and script URL to the extension host to fetch the extension bundle
+							</div>
+						</div>
+					</div>
+				</foreignObject>
+				<text x="265" y="754" fill="#1A1A1A" font-family="Helvetica" font-size="12px" text-anchor="middle">
+					When an extension is meant to be activated, send the extension's id...
+				</text>
+			</switch>
+		</g>
+		<rect x="70" y="510" width="410" height="55" rx="8.25" ry="8.25" fill="#eeeeee" stroke="#ffffff" />
+		<g transform="translate(-0.5 -0.5)">
+			<switch>
+				<foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+					<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 408px; height: 1px; padding-top: 538px; margin-left: 71px;">
+						<div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+							<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #1A1A1A; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+								<b>
+									Create the main thread API
+								</b>
+								by which the extension host communicates with the client.
+								<b>
+									Expose
+								</b>
+								<b>
+									to the extension host
+								</b>
+								using comlink
+							</div>
+						</div>
+					</div>
+				</foreignObject>
+				<text x="275" y="541" fill="#1A1A1A" font-family="Helvetica" font-size="12px" text-anchor="middle">
+					Create the main thread API by which the extension host communicates...
+				</text>
+			</switch>
+		</g>
+		<path d="M 280 275 L 161.37 275" fill="none" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 156.12 275 L 163.12 271.5 L 161.37 275 L 163.12 278.5 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" />
+		<g transform="translate(-0.5 -0.5)">
+			<switch>
+				<foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+					<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 1px; height: 1px; padding-top: 266px; margin-left: 228px;">
+						<div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+							<div style="display: inline-block; font-size: 14px; font-family: Helvetica; color: #FFFFFF; line-height: 1.2; pointer-events: none; font-weight: bold; background-color: #182E3E; white-space: nowrap; ">
+								await
+							</div>
+						</div>
+					</div>
+				</foreignObject>
+				<text x="228" y="270" fill="#FFFFFF" font-family="Helvetica" font-size="14px" text-anchor="middle" font-weight="bold">
+					await
+				</text>
+			</switch>
+		</g>
+		<path d="M 20 665 L 950 665" fill="none" stroke="#ffffff" stroke-width="2" stroke-miterlimit="10" stroke-dasharray="2 6" />
+		<path d="M 540 20 L 540 0 L 950 0 L 950 20" fill="#eeeeee" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 540 20 L 540 800 L 950 800 L 950 20" fill="none" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 540 20 L 950 20" fill="none" stroke="#ffffff" stroke-miterlimit="10" />
+		<g transform="translate(-0.5 -0.5)">
+			<switch>
+				<foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+					<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 1px; height: 1px; padding-top: 10px; margin-left: 745px;">
+						<div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+							<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #1A1A1A; line-height: 1.2; pointer-events: none; font-weight: bold; white-space: nowrap; ">
+								Extension host worker
+							</div>
+						</div>
+					</div>
+				</foreignObject>
+				<text x="745" y="14" fill="#1A1A1A" font-family="Helvetica" font-size="12px" text-anchor="middle" font-weight="bold">
+					Extension host worker
+				</text>
+			</switch>
+		</g>
+		<path d="M 760 305 L 760 403.63" fill="none" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 760 408.88 L 756.5 401.88 L 760 403.63 L 763.5 401.88 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" />
+		<rect x="590" y="255" width="340" height="50" rx="7.5" ry="7.5" fill="#eeeeee" stroke="#ffffff" />
+		<g transform="translate(-0.5 -0.5)">
+			<switch>
+				<foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+					<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 338px; height: 1px; padding-top: 280px; margin-left: 591px;">
+						<div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+							<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #1A1A1A; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+								Worker running. Receive message with endpoint pair
+							</div>
+						</div>
+					</div>
+				</foreignObject>
+				<text x="760" y="284" fill="#1A1A1A" font-family="Helvetica" font-size="12px" text-anchor="middle">
+					Worker running. Receive message with endpoint pair
+				</text>
+			</switch>
+		</g>
+		<rect x="590" y="585" width="340" height="55" rx="8.25" ry="8.25" fill="#eeeeee" stroke="#ffffff" />
+		<g transform="translate(-0.5 -0.5)">
+			<switch>
+				<foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+					<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 338px; height: 1px; padding-top: 613px; margin-left: 591px;">
+						<div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+							<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #1A1A1A; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+								Set `globalThis.require` to a function that returns the public extension API when extensions import "sourcegraph"
+							</div>
+						</div>
+					</div>
+				</foreignObject>
+				<text x="760" y="616" fill="#1A1A1A" font-family="Helvetica" font-size="12px" text-anchor="middle">
+					Set `globalThis.require` to a function that returns the...
+				</text>
+			</switch>
+		</g>
+		<path d="M 760 480 L 760 500 L 760 495 L 760 508.63" fill="none" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 760 513.88 L 756.5 506.88 L 760 508.63 L 763.5 506.88 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" />
+		<rect x="590" y="410" width="340" height="70" rx="10.5" ry="10.5" fill="#eeeeee" stroke="#ffffff" />
+		<g transform="translate(-0.5 -0.5)">
+			<switch>
+				<foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+					<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 338px; height: 1px; padding-top: 445px; margin-left: 591px;">
+						<div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+							<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #1A1A1A; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+								<b>
+									Create the extension host API
+								</b>
+								by which the client communicates with the extension host.
+								<b>
+									Expose
+								</b>
+								<b>
+									to the main thread
+								</b>
+								using comlink
+							</div>
+						</div>
+					</div>
+				</foreignObject>
+				<text x="760" y="449" fill="#1A1A1A" font-family="Helvetica" font-size="12px" text-anchor="middle">
+					Create the extension host API by which the client commun...
+				</text>
+			</switch>
+		</g>
+		<rect x="580" y="725" width="340" height="50" rx="7.5" ry="7.5" fill="#eeeeee" stroke="#ffffff" />
+		<g transform="translate(-0.5 -0.5)">
+			<switch>
+				<foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+					<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 338px; height: 1px; padding-top: 750px; margin-left: 581px;">
+						<div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+							<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #1A1A1A; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+								Call
+								<b>
+									`
+								</b>
+								importScripts` with the extension's script URL
+								<b>
+									,
+								</b>
+								then
+								<b>
+								</b>
+								call the `activate` function exported by the extension
+							</div>
+						</div>
+					</div>
+				</foreignObject>
+				<text x="750" y="754" fill="#1A1A1A" font-family="Helvetica" font-size="12px" text-anchor="middle">
+					Call `importScripts` with the extension's script URL, th...
+				</text>
+			</switch>
+		</g>
+		<path d="M 760 560 L 760 578.63" fill="none" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 760 583.88 L 756.5 576.88 L 760 578.63 L 763.5 576.88 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" />
+		<rect x="590" y="515" width="340" height="45" rx="6.75" ry="6.75" fill="#eeeeee" stroke="#ffffff" />
+		<g transform="translate(-0.5 -0.5)">
+			<switch>
+				<foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+					<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 338px; height: 1px; padding-top: 538px; margin-left: 591px;">
+						<div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+							<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #1A1A1A; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+								<b>
+									Wrap
+								</b>
+								<b>
+									the main thread API
+								</b>
+								with a proxy using comlink
+							</div>
+						</div>
+					</div>
+				</foreignObject>
+				<text x="760" y="541" fill="#1A1A1A" font-family="Helvetica" font-size="12px" text-anchor="middle">
+					Wrap the main thread API with a proxy using comlink
+				</text>
+			</switch>
+		</g>
+		<rect x="648.5" y="685" width="223" height="20" fill="none" stroke="none" />
+		<g transform="translate(-0.5 -0.5)">
+			<switch>
+				<foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+					<div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 221px; height: 1px; padding-top: 695px; margin-left: 650px;">
+						<div style="box-sizing: border-box; font-size: 0; text-align: center; ">
+							<div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: #FFFFFF; line-height: 1.2; pointer-events: none; font-weight: bold; white-space: normal; word-wrap: normal; ">
+								The extension host is now ready to activate extensions
+							</div>
+						</div>
+					</div>
+				</foreignObject>
+				<text x="760" y="699" fill="#FFFFFF" font-family="Helvetica" font-size="12px" text-anchor="middle" font-weight="bold">
+					The extension host is now ready to ac...
+				</text>
+			</switch>
+		</g>
+		<path d="M 486.37 445 L 583.63 445" fill="none" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 481.12 445 L 488.12 441.5 L 486.37 445 L 488.12 448.5 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 588.88 445 L 581.88 448.5 L 583.63 445 L 581.88 441.5 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 531 276 L 584.63 276" fill="none" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 589.88 276 L 582.88 279.5 L 584.63 276 L 582.88 272.5 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 486.37 537.5 L 583.63 537.5" fill="none" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 481.12 537.5 L 488.12 534 L 486.37 537.5 L 488.12 541 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 588.88 537.5 L 581.88 541 L 583.63 537.5 L 581.88 534 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 470 750 L 573.63 750" fill="none" stroke="#ffffff" stroke-miterlimit="10" />
+		<path d="M 578.88 750 L 571.88 753.5 L 573.63 750 L 571.88 746.5 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" />
+	</g>
+	<switch>
+		<g requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" />
+		<a transform="translate(0,-5)" xlink:href="https://desk.draw.io/support/solutions/articles/16000042487" target="_blank">
+			<text text-anchor="middle" font-size="10px" x="50%" y="100%">
+				Viewer does not support full SVG 1.1
+			</text>
+		</a>
+	</switch>
+</svg>

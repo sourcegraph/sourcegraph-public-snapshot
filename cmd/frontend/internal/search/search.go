@@ -14,8 +14,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-// ServeStream is an http handler which streams back search results.
-func ServeStream(w http.ResponseWriter, r *http.Request) {
+// StreamHandler is an http handler which streams back search results.
+var StreamHandler http.Handler = &streamHandler{
+	newSearchResolver: defaultNewSearchResolver,
+}
+
+type streamHandler struct {
+	newSearchResolver func(context.Context, *graphqlbackend.SearchArgs) (searchResolver, error)
+}
+
+func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 
@@ -44,14 +52,14 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 	// Log events to trace
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
-	search, err := graphqlbackend.NewSearchImplementer(ctx, &graphqlbackend.SearchArgs{
+	search, err := h.newSearchResolver(ctx, &graphqlbackend.SearchArgs{
 		Query:          args.Query,
 		Version:        args.Version,
 		PatternType:    strPtr(args.PatternType),
 		VersionContext: strPtr(args.VersionContext),
 	})
 	if err != nil {
-		eventWriter.Event("error", err.Error())
+		_ = eventWriter.Event("error", err.Error())
 		return
 	}
 
@@ -126,7 +134,7 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 	final := <-resultsStreamDone
 	resultsResolver, err := final.resultsResolver, final.err
 	if err != nil {
-		eventWriter.Event("error", err.Error())
+		_ = eventWriter.Event("error", err.Error())
 		return
 	}
 
@@ -167,8 +175,29 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	// TODO stats
+	pr := resultsResolver.Progress()
+	pr.Done = true
+	_ = eventWriter.Event("progress", pr)
+
+	// TODO done event includes progress
 	_ = eventWriter.Event("done", map[string]interface{}{})
+}
+
+type searchResolver interface {
+	Results(context.Context) (*graphqlbackend.SearchResultsResolver, error)
+	SetResultChannel(c chan<- []graphqlbackend.SearchResultResolver)
+}
+
+func defaultNewSearchResolver(ctx context.Context, args *graphqlbackend.SearchArgs) (searchResolver, error) {
+	searchImpl, err := graphqlbackend.NewSearchImplementer(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	search, ok := searchImpl.(searchResolver)
+	if !ok {
+		return nil, errors.New("SearchImplementer does not support streaming")
+	}
+	return search, nil
 }
 
 type args struct {
@@ -227,21 +256,14 @@ type finalResult struct {
 //
 //   - results is written to 0 or more times before closing.
 //   - final is written to once.
-func newResultsStream(ctx context.Context, search graphqlbackend.SearchImplementer) (results <-chan []graphqlbackend.SearchResultResolver, final <-chan finalResult) {
+func newResultsStream(ctx context.Context, search searchResolver) (results <-chan []graphqlbackend.SearchResultResolver, final <-chan finalResult) {
 	resultsC := make(chan []graphqlbackend.SearchResultResolver)
 	finalC := make(chan finalResult, 1)
 	go func() {
 		defer close(finalC)
 		defer close(resultsC)
 
-		if setter, ok := search.(interface {
-			SetResultChannel(c chan<- []graphqlbackend.SearchResultResolver)
-		}); !ok {
-			finalC <- finalResult{err: errors.New("SearchImplementer does not support streaming")}
-			return
-		} else {
-			setter.SetResultChannel(resultsC)
-		}
+		search.SetResultChannel(resultsC)
 
 		r, err := search.Results(ctx)
 		finalC <- finalResult{resultsResolver: r, err: err}

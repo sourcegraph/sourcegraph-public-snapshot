@@ -8,8 +8,8 @@ import { ListCodeMonitors, ListUserCodeMonitorsVariables } from '../../graphql-o
 import sinon from 'sinon'
 import { mockCodeMonitorNodes } from './testing/util'
 
-const history = H.createBrowserHistory()
-
+const history = H.createBrowserHistory({})
+history.replace({ pathname: '/code-monitoring' })
 const additionalProps = {
     history,
     location: history.location,
@@ -26,6 +26,7 @@ const additionalProps = {
             },
             totalCount: 12,
         }),
+    toggleCodeMonitorEnabled: sinon.spy((id: string, enabled: boolean) => of({ id: 'test', enabled: true })),
 }
 
 const generateMockFetchMonitors = (count: number) => ({ id, first, after }: ListUserCodeMonitorsVariables) => {
@@ -55,5 +56,14 @@ describe('CodeMonitoringListPage', () => {
         expect(
             mount(<CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(12)} />)
         ).toMatchSnapshot()
+    })
+
+    test('Clicking enabled toggle calls toggleCodeMonitorEnabled', () => {
+        const component = mount(
+            <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(1)} />
+        )
+        const toggle = component.find('.test-toggle-monitor-enabled')
+        toggle.simulate('click')
+        expect(additionalProps.toggleCodeMonitorEnabled.calledOnce)
     })
 })

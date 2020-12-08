@@ -168,37 +168,38 @@ const toGQLLineMatch = (line: LineMatch): GQL.ILineMatch => ({
     preview: line.line,
 })
 
-function toGQLFileMatchBase(fm: Omit<FileMatch, 'lineMatches' | 'type'>): GQL.IFileMatch {
+function toGQLFileMatchBase(fileMatch: FileMatch | FileSymbolMatch): GQL.IFileMatch {
     let revision = ''
-    if (fm.branches) {
-        const branch = fm.branches[0]
+    if (fileMatch.branches) {
+        const branch = fileMatch.branches[0]
         if (branch !== '') {
             revision = '@' + branch
         }
-    } else if (fm.version) {
-        revision = '@' + fm.version
+    } else if (fileMatch.version) {
+        revision = '@' + fileMatch.version
     }
 
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const file: GQL.IGitBlob = {
-        path: fm.name,
+        path: fileMatch.name,
         // /github.com/gorilla/mux@v1.7.2/-/blob/mux_test.go
         // TODO return in response?
-        url: '/' + fm.repository + revision + '/-/blob/' + fm.name,
+        url: '/' + fileMatch.repository + revision + '/-/blob/' + fileMatch.name,
         commit: {
-            oid: fm.version || '',
+            oid: fileMatch.version || '',
         },
     } as GQL.IGitBlob
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const repository: GQL.IRepository = {
-        name: fm.repository,
-    } as GQL.IRepository
+    const repository = toGQLRepositoryMatch({
+        type: 'repo',
+        repository: fileMatch.repository,
+        branches: fileMatch.branches,
+    })
     return {
         __typename: 'FileMatch',
         file,
         repository,
         revSpec: null,
-        resource: fm.name,
+        resource: fileMatch.name,
         symbols: [],
         lineMatches: [],
         limitHit: false,
@@ -243,6 +244,7 @@ function toGQLRepositoryMatch(repo: RepositoryMatch): GQL.IRepository {
         url: '/' + label,
         detail: toMarkdown('Repository name match'),
         matches: [],
+        name: repo.repository,
     }
 
     return gqlRepo as GQL.IRepository

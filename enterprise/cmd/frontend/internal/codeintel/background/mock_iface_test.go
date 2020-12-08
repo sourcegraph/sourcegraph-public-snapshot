@@ -67,6 +67,9 @@ type MockDBStore struct {
 	// LockFunc is an instance of a mock function object controlling the
 	// behavior of the method Lock.
 	LockFunc *DBStoreLockFunc
+	// OldestDumpForRepositoryFunc is an instance of a mock function object
+	// controlling the behavior of the method OldestDumpForRepository.
+	OldestDumpForRepositoryFunc *DBStoreOldestDumpForRepositoryFunc
 	// RepoNameFunc is an instance of a mock function object controlling the
 	// behavior of the method RepoName.
 	RepoNameFunc *DBStoreRepoNameFunc
@@ -94,7 +97,7 @@ type MockDBStore struct {
 func NewMockDBStore() *MockDBStore {
 	return &MockDBStore{
 		CalculateVisibleUploadsFunc: &DBStoreCalculateVisibleUploadsFunc{
-			defaultHook: func(context.Context, int, map[string][]string, string, int) error {
+			defaultHook: func(context.Context, int, *gitserver.CommitGraph, string, int) error {
 				return nil
 			},
 		},
@@ -166,6 +169,11 @@ func NewMockDBStore() *MockDBStore {
 		LockFunc: &DBStoreLockFunc{
 			defaultHook: func(context.Context, int, bool) (bool, dbstore.UnlockFunc, error) {
 				return false, nil, nil
+			},
+		},
+		OldestDumpForRepositoryFunc: &DBStoreOldestDumpForRepositoryFunc{
+			defaultHook: func(context.Context, int) (dbstore.Dump, bool, error) {
+				return dbstore.Dump{}, false, nil
 			},
 		},
 		RepoNameFunc: &DBStoreRepoNameFunc{
@@ -250,6 +258,9 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		LockFunc: &DBStoreLockFunc{
 			defaultHook: i.Lock,
 		},
+		OldestDumpForRepositoryFunc: &DBStoreOldestDumpForRepositoryFunc{
+			defaultHook: i.OldestDumpForRepository,
+		},
 		RepoNameFunc: &DBStoreRepoNameFunc{
 			defaultHook: i.RepoName,
 		},
@@ -275,15 +286,15 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 // CalculateVisibleUploads method of the parent MockDBStore instance is
 // invoked.
 type DBStoreCalculateVisibleUploadsFunc struct {
-	defaultHook func(context.Context, int, map[string][]string, string, int) error
-	hooks       []func(context.Context, int, map[string][]string, string, int) error
+	defaultHook func(context.Context, int, *gitserver.CommitGraph, string, int) error
+	hooks       []func(context.Context, int, *gitserver.CommitGraph, string, int) error
 	history     []DBStoreCalculateVisibleUploadsFuncCall
 	mutex       sync.Mutex
 }
 
 // CalculateVisibleUploads delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockDBStore) CalculateVisibleUploads(v0 context.Context, v1 int, v2 map[string][]string, v3 string, v4 int) error {
+func (m *MockDBStore) CalculateVisibleUploads(v0 context.Context, v1 int, v2 *gitserver.CommitGraph, v3 string, v4 int) error {
 	r0 := m.CalculateVisibleUploadsFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.CalculateVisibleUploadsFunc.appendCall(DBStoreCalculateVisibleUploadsFuncCall{v0, v1, v2, v3, v4, r0})
 	return r0
@@ -292,7 +303,7 @@ func (m *MockDBStore) CalculateVisibleUploads(v0 context.Context, v1 int, v2 map
 // SetDefaultHook sets function that is called when the
 // CalculateVisibleUploads method of the parent MockDBStore instance is
 // invoked and the hook queue is empty.
-func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultHook(hook func(context.Context, int, map[string][]string, string, int) error) {
+func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultHook(hook func(context.Context, int, *gitserver.CommitGraph, string, int) error) {
 	f.defaultHook = hook
 }
 
@@ -300,7 +311,7 @@ func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultHook(hook func(context.Co
 // CalculateVisibleUploads method of the parent MockDBStore instance inovkes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *DBStoreCalculateVisibleUploadsFunc) PushHook(hook func(context.Context, int, map[string][]string, string, int) error) {
+func (f *DBStoreCalculateVisibleUploadsFunc) PushHook(hook func(context.Context, int, *gitserver.CommitGraph, string, int) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -309,7 +320,7 @@ func (f *DBStoreCalculateVisibleUploadsFunc) PushHook(hook func(context.Context,
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, map[string][]string, string, int) error {
+	f.SetDefaultHook(func(context.Context, int, *gitserver.CommitGraph, string, int) error {
 		return r0
 	})
 }
@@ -317,12 +328,12 @@ func (f *DBStoreCalculateVisibleUploadsFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBStoreCalculateVisibleUploadsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, map[string][]string, string, int) error {
+	f.PushHook(func(context.Context, int, *gitserver.CommitGraph, string, int) error {
 		return r0
 	})
 }
 
-func (f *DBStoreCalculateVisibleUploadsFunc) nextHook() func(context.Context, int, map[string][]string, string, int) error {
+func (f *DBStoreCalculateVisibleUploadsFunc) nextHook() func(context.Context, int, *gitserver.CommitGraph, string, int) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -364,7 +375,7 @@ type DBStoreCalculateVisibleUploadsFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 map[string][]string
+	Arg2 *gitserver.CommitGraph
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 string
@@ -1930,6 +1941,120 @@ func (c DBStoreLockFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
+// DBStoreOldestDumpForRepositoryFunc describes the behavior when the
+// OldestDumpForRepository method of the parent MockDBStore instance is
+// invoked.
+type DBStoreOldestDumpForRepositoryFunc struct {
+	defaultHook func(context.Context, int) (dbstore.Dump, bool, error)
+	hooks       []func(context.Context, int) (dbstore.Dump, bool, error)
+	history     []DBStoreOldestDumpForRepositoryFuncCall
+	mutex       sync.Mutex
+}
+
+// OldestDumpForRepository delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockDBStore) OldestDumpForRepository(v0 context.Context, v1 int) (dbstore.Dump, bool, error) {
+	r0, r1, r2 := m.OldestDumpForRepositoryFunc.nextHook()(v0, v1)
+	m.OldestDumpForRepositoryFunc.appendCall(DBStoreOldestDumpForRepositoryFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// OldestDumpForRepository method of the parent MockDBStore instance is
+// invoked and the hook queue is empty.
+func (f *DBStoreOldestDumpForRepositoryFunc) SetDefaultHook(hook func(context.Context, int) (dbstore.Dump, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// OldestDumpForRepository method of the parent MockDBStore instance inovkes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *DBStoreOldestDumpForRepositoryFunc) PushHook(hook func(context.Context, int) (dbstore.Dump, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreOldestDumpForRepositoryFunc) SetDefaultReturn(r0 dbstore.Dump, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (dbstore.Dump, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreOldestDumpForRepositoryFunc) PushReturn(r0 dbstore.Dump, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (dbstore.Dump, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *DBStoreOldestDumpForRepositoryFunc) nextHook() func(context.Context, int) (dbstore.Dump, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreOldestDumpForRepositoryFunc) appendCall(r0 DBStoreOldestDumpForRepositoryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreOldestDumpForRepositoryFuncCall
+// objects describing the invocations of this function.
+func (f *DBStoreOldestDumpForRepositoryFunc) History() []DBStoreOldestDumpForRepositoryFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreOldestDumpForRepositoryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreOldestDumpForRepositoryFuncCall is an object that describes an
+// invocation of method OldestDumpForRepository on an instance of
+// MockDBStore.
+type DBStoreOldestDumpForRepositoryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 dbstore.Dump
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreOldestDumpForRepositoryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreOldestDumpForRepositoryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
 // DBStoreRepoNameFunc describes the behavior when the RepoName method of
 // the parent MockDBStore instance is invoked.
 type DBStoreRepoNameFunc struct {
@@ -2587,6 +2712,9 @@ func (c DBStoreUpdateIndexableRepositoryFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background)
 // used for unit testing.
 type MockGitserverClient struct {
+	// CommitDateFunc is an instance of a mock function object controlling
+	// the behavior of the method CommitDate.
+	CommitDateFunc *GitserverClientCommitDateFunc
 	// CommitGraphFunc is an instance of a mock function object controlling
 	// the behavior of the method CommitGraph.
 	CommitGraphFunc *GitserverClientCommitGraphFunc
@@ -2609,8 +2737,13 @@ type MockGitserverClient struct {
 // overwritten.
 func NewMockGitserverClient() *MockGitserverClient {
 	return &MockGitserverClient{
+		CommitDateFunc: &GitserverClientCommitDateFunc{
+			defaultHook: func(context.Context, int, string) (time.Time, error) {
+				return time.Time{}, nil
+			},
+		},
 		CommitGraphFunc: &GitserverClientCommitGraphFunc{
-			defaultHook: func(context.Context, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
+			defaultHook: func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error) {
 				return nil, nil
 			},
 		},
@@ -2642,6 +2775,9 @@ func NewMockGitserverClient() *MockGitserverClient {
 // overwritten.
 func NewMockGitserverClientFrom(i GitserverClient) *MockGitserverClient {
 	return &MockGitserverClient{
+		CommitDateFunc: &GitserverClientCommitDateFunc{
+			defaultHook: i.CommitDate,
+		},
 		CommitGraphFunc: &GitserverClientCommitGraphFunc{
 			defaultHook: i.CommitGraph,
 		},
@@ -2660,18 +2796,130 @@ func NewMockGitserverClientFrom(i GitserverClient) *MockGitserverClient {
 	}
 }
 
+// GitserverClientCommitDateFunc describes the behavior when the CommitDate
+// method of the parent MockGitserverClient instance is invoked.
+type GitserverClientCommitDateFunc struct {
+	defaultHook func(context.Context, int, string) (time.Time, error)
+	hooks       []func(context.Context, int, string) (time.Time, error)
+	history     []GitserverClientCommitDateFuncCall
+	mutex       sync.Mutex
+}
+
+// CommitDate delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverClient) CommitDate(v0 context.Context, v1 int, v2 string) (time.Time, error) {
+	r0, r1 := m.CommitDateFunc.nextHook()(v0, v1, v2)
+	m.CommitDateFunc.appendCall(GitserverClientCommitDateFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CommitDate method of
+// the parent MockGitserverClient instance is invoked and the hook queue is
+// empty.
+func (f *GitserverClientCommitDateFunc) SetDefaultHook(hook func(context.Context, int, string) (time.Time, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CommitDate method of the parent MockGitserverClient instance inovkes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitserverClientCommitDateFunc) PushHook(hook func(context.Context, int, string) (time.Time, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *GitserverClientCommitDateFunc) SetDefaultReturn(r0 time.Time, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) (time.Time, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *GitserverClientCommitDateFunc) PushReturn(r0 time.Time, r1 error) {
+	f.PushHook(func(context.Context, int, string) (time.Time, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverClientCommitDateFunc) nextHook() func(context.Context, int, string) (time.Time, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientCommitDateFunc) appendCall(r0 GitserverClientCommitDateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverClientCommitDateFuncCall objects
+// describing the invocations of this function.
+func (f *GitserverClientCommitDateFunc) History() []GitserverClientCommitDateFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientCommitDateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientCommitDateFuncCall is an object that describes an
+// invocation of method CommitDate on an instance of MockGitserverClient.
+type GitserverClientCommitDateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 time.Time
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientCommitDateFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientCommitDateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // GitserverClientCommitGraphFunc describes the behavior when the
 // CommitGraph method of the parent MockGitserverClient instance is invoked.
 type GitserverClientCommitGraphFunc struct {
-	defaultHook func(context.Context, int, gitserver.CommitGraphOptions) (map[string][]string, error)
-	hooks       []func(context.Context, int, gitserver.CommitGraphOptions) (map[string][]string, error)
+	defaultHook func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)
+	hooks       []func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)
 	history     []GitserverClientCommitGraphFuncCall
 	mutex       sync.Mutex
 }
 
 // CommitGraph delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverClient) CommitGraph(v0 context.Context, v1 int, v2 gitserver.CommitGraphOptions) (map[string][]string, error) {
+func (m *MockGitserverClient) CommitGraph(v0 context.Context, v1 int, v2 gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error) {
 	r0, r1 := m.CommitGraphFunc.nextHook()(v0, v1, v2)
 	m.CommitGraphFunc.appendCall(GitserverClientCommitGraphFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -2680,7 +2928,7 @@ func (m *MockGitserverClient) CommitGraph(v0 context.Context, v1 int, v2 gitserv
 // SetDefaultHook sets function that is called when the CommitGraph method
 // of the parent MockGitserverClient instance is invoked and the hook queue
 // is empty.
-func (f *GitserverClientCommitGraphFunc) SetDefaultHook(hook func(context.Context, int, gitserver.CommitGraphOptions) (map[string][]string, error)) {
+func (f *GitserverClientCommitGraphFunc) SetDefaultHook(hook func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)) {
 	f.defaultHook = hook
 }
 
@@ -2688,7 +2936,7 @@ func (f *GitserverClientCommitGraphFunc) SetDefaultHook(hook func(context.Contex
 // CommitGraph method of the parent MockGitserverClient instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientCommitGraphFunc) PushHook(hook func(context.Context, int, gitserver.CommitGraphOptions) (map[string][]string, error)) {
+func (f *GitserverClientCommitGraphFunc) PushHook(hook func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2696,21 +2944,21 @@ func (f *GitserverClientCommitGraphFunc) PushHook(hook func(context.Context, int
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *GitserverClientCommitGraphFunc) SetDefaultReturn(r0 map[string][]string, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
+func (f *GitserverClientCommitGraphFunc) SetDefaultReturn(r0 *gitserver.CommitGraph, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *GitserverClientCommitGraphFunc) PushReturn(r0 map[string][]string, r1 error) {
-	f.PushHook(func(context.Context, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
+func (f *GitserverClientCommitGraphFunc) PushReturn(r0 *gitserver.CommitGraph, r1 error) {
+	f.PushHook(func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientCommitGraphFunc) nextHook() func(context.Context, int, gitserver.CommitGraphOptions) (map[string][]string, error) {
+func (f *GitserverClientCommitGraphFunc) nextHook() func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2754,7 +3002,7 @@ type GitserverClientCommitGraphFuncCall struct {
 	Arg2 gitserver.CommitGraphOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 map[string][]string
+	Result0 *gitserver.CommitGraph
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

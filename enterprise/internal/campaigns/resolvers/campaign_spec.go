@@ -56,7 +56,7 @@ func (r *campaignSpecResolver) ParsedInput() (graphqlbackend.JSONValue, error) {
 }
 
 func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context, args *graphqlbackend.ChangesetSpecsConnectionArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
-	opts := ee.ListChangesetSpecsOpts{CampaignSpecID: r.campaignSpec.ID}
+	opts := ee.ListChangesetSpecsOpts{}
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
@@ -70,9 +70,10 @@ func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context, args *graphql
 	}
 
 	return &changesetSpecConnectionResolver{
-		store:       r.store,
-		httpFactory: r.httpFactory,
-		opts:        opts,
+		store:          r.store,
+		httpFactory:    r.httpFactory,
+		opts:           opts,
+		campaignSpecID: r.campaignSpec.ID,
 	}, nil
 }
 
@@ -154,11 +155,9 @@ func (r *campaignDescriptionResolver) Description() string {
 
 func (r *campaignSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
 	specsConnection := &changesetSpecConnectionResolver{
-		store:       r.store,
-		httpFactory: r.httpFactory,
-		opts: ee.ListChangesetSpecsOpts{
-			CampaignSpecID: r.campaignSpec.ID,
-		},
+		store:          r.store,
+		httpFactory:    r.httpFactory,
+		campaignSpecID: r.campaignSpec.ID,
 	}
 
 	specs, err := specsConnection.Nodes(ctx)
@@ -202,6 +201,46 @@ func (r *campaignSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlba
 		httpFactory: r.httpFactory,
 		Campaign:    campaign,
 	}, nil
+}
+
+func (r *campaignSpecResolver) SupersedingCampaignSpec(ctx context.Context) (graphqlbackend.CampaignSpecResolver, error) {
+	svc := ee.NewService(r.store, r.httpFactory)
+	newest, err := svc.GetNewestCampaignSpec(ctx, r.store, r.campaignSpec, actor.FromContext(ctx).UID)
+	if err != nil {
+		return nil, err
+	}
+
+	// If this is the newest spec, then we can just return nil.
+	if newest == nil || newest.ID == r.campaignSpec.ID {
+		return nil, nil
+	}
+
+	// If this spec and the new spec have different creators, we shouldn't
+	// return this as a superseding spec.
+	if newest.UserID != r.campaignSpec.UserID {
+		return nil, nil
+	}
+
+	// Create our new resolver, reusing as many fields as we can from this one.
+	resolver := &campaignSpecResolver{
+		store:        r.store,
+		httpFactory:  r.httpFactory,
+		campaignSpec: newest,
+		namespace:    r.namespace,
+		namespaceErr: r.namespaceErr,
+	}
+
+	// If namespace is set on the new resolver, then we don't want
+	// computeNamespace() to recompute the namespace. computeNamespace() uses
+	// the sync.Once value in the namespaceOnce field to implement its
+	// memoisation, but we can't copy r.namespaceOnce in because sync.Once
+	// values cannot be copied. Therefore, we'll fuse resolver.namespaceOnce in
+	// that case and get the same behaviour.
+	if resolver.namespace != nil {
+		resolver.namespaceOnce.Do(func() {})
+	}
+
+	return resolver, nil
 }
 
 func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {

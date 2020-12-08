@@ -7,7 +7,7 @@ import {
     RevisionNotFoundError,
 } from '../../../shared/src/backend/errors'
 import { FetchFileParameters } from '../../../shared/src/components/CodeExcerpt'
-import { gql } from '../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
@@ -19,8 +19,14 @@ import {
     RepoSpec,
     ResolvedRevisionSpec,
 } from '../../../shared/src/util/url'
-import { queryGraphQL } from '../backend/graphql'
-import { TreeFields, ExternalLinkFields } from '../graphql-operations'
+import { queryGraphQL, requestGraphQL } from '../backend/graphql'
+import {
+    TreeFields,
+    ExternalLinkFields,
+    RepositoryRedirectResult,
+    RepositoryRedirectVariables,
+    RepositoryFields,
+} from '../graphql-operations'
 
 export const externalLinkFieldsFragment = gql`
     fragment ExternalLinkFields on ExternalLink {
@@ -29,42 +35,47 @@ export const externalLinkFieldsFragment = gql`
     }
 `
 
+export const repositoryFragment = gql`
+    fragment RepositoryFields on Repository {
+        id
+        name
+        url
+        externalURLs {
+            url
+            serviceType
+        }
+        description
+        viewerCanAdminister
+        defaultBranch {
+            displayName
+        }
+    }
+`
+
 /**
  * Fetch the repository.
  */
 export const fetchRepository = memoizeObservable(
-    (args: { repoName: string }): Observable<GQL.IRepository> =>
-        queryGraphQL(
+    (args: { repoName: string }): Observable<RepositoryFields> =>
+        requestGraphQL<RepositoryRedirectResult, RepositoryRedirectVariables>(
             gql`
                 query RepositoryRedirect($repoName: String!) {
                     repositoryRedirect(name: $repoName) {
                         __typename
                         ... on Repository {
-                            id
-                            name
-                            url
-                            externalURLs {
-                                url
-                                serviceType
-                            }
-                            description
-                            viewerCanAdminister
-                            defaultBranch {
-                                displayName
-                            }
+                            ...RepositoryFields
                         }
                         ... on Redirect {
                             url
                         }
                     }
                 }
+                ${repositoryFragment}
             `,
             args
         ).pipe(
-            map(({ data, errors }) => {
-                if (!data) {
-                    throw createAggregateError(errors)
-                }
+            map(dataOrThrowErrors),
+            map(data => {
                 if (!data.repositoryRedirect) {
                     throw new RepoNotFoundError(args.repoName)
                 }

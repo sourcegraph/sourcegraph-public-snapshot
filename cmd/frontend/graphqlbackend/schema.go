@@ -210,6 +210,12 @@ type Mutation {
     """
     setUserEmailVerified(user: ID!, email: String!, verified: Boolean!): EmptyResponse!
     """
+    Resend a verification email, no op if the email is already verified.
+
+    Only the user and site admins may perform this mutation.
+    """
+    resendVerificationEmail(user: ID!, email: String!): EmptyResponse!
+    """
     Deletes a user account. Only site admins may perform this mutation.
 
     If hard == true, a hard delete is performed. By default, deletes are
@@ -562,6 +568,11 @@ type Mutation {
     deleteLSIFIndex(id: ID!): EmptyResponse
 
     """
+    Updates the indexing configuration associated with a repository.
+    """
+    updateRepositoryIndexConfiguration(repository: ID!, configuration: String!): EmptyResponse
+
+    """
     Set the permissions of a repository (i.e., which users may view it on Sourcegraph). This
     operation overwrites the previous permissions for the repository.
     """
@@ -707,11 +718,16 @@ type Mutation {
     syncChangeset(changeset: ID!): EmptyResponse!
 
     """
-    Create a new credential for the requesting user for the given code host.
+    Create a new credential for the given user for the given code host.
     If another token for that code host already exists, an error with the error code
     ErrDuplicateCredential is returned.
     """
     createCampaignsCredential(
+        """
+        The user for which to create the credential.
+        """
+        user: ID!
+
         """
         The kind of external service being configured.
         """
@@ -1356,6 +1372,12 @@ type CampaignSpec implements Node {
     campaign doesn't yet exist.
     """
     appliesToCampaign: Campaign
+
+    """
+    The newest version of this campaign spec, as identified by its namespace
+    and name. If this is the newest version, this field will be null.
+    """
+    supersedingCampaignSpec: CampaignSpec
 
     """
     The code host connections required for applying this spec. Includes the credentials of the current user.
@@ -3207,7 +3229,7 @@ type Monitor implements Node {
     """
     Triggers trigger actions. There can only be one trigger per monitor.
     """
-    trigger: MonitorTrigger
+    trigger: MonitorTrigger!
     """
     One or more actions that are triggered by the trigger.
     """
@@ -4094,6 +4116,11 @@ type Repository implements Node & GenericSearchResultInterface {
         """
         after: String
     ): LSIFIndexConnection!
+
+    """
+    Gets the indexing configuration associated with the repository.
+    """
+    indexConfiguration: IndexConfiguration
 
     """
     A list of authorized users to access this repository with the given permission.
@@ -8034,6 +8061,16 @@ type LSIFIndex implements Node {
     inputCommit: String!
 
     """
+    The original root supplied at index schedule time.
+    """
+    inputRoot: String!
+
+    """
+    The name of the target indexer Docker image (e.g., sourcegraph/lsif-go@sha256:...).
+    """
+    inputIndexer: String!
+
+    """
     The index's current state.
     """
     state: LSIFIndexState!
@@ -8059,34 +8096,9 @@ type LSIFIndex implements Node {
     failure: String
 
     """
-    A series of pre-indexing steps to perform.
+    The configuration and execution summary (if completed or errored) of this index job.
     """
-    dockerSteps: [DockerStep!]!
-
-    """
-    The original root supplied at index schedule time.
-    """
-    inputRoot: String!
-
-    """
-    The name of the target indexer Docker image (e.g., sourcegraph/lsif-go@sha256:...).
-    """
-    indexer: String!
-
-    """
-    The arguments to supply to the indexer container.
-    """
-    indexerArgs: [String!]!
-
-    """
-    The path to the index file relative to the root directory (dump.lsif by default).
-    """
-    outfile: String
-
-    """
-    The output of the configured docker step, indexer, and src-cli invocations.
-    """
-    logContents: String
+    steps: IndexSteps!
 
     """
     The rank of this index in the queue. The value of this field is null if the index has been processed.
@@ -8095,9 +8107,40 @@ type LSIFIndex implements Node {
 }
 
 """
-A description of a command to run inside of a Docker container.
+Configuration and execution summary of an index job.
 """
-type DockerStep {
+type IndexSteps {
+    """
+    Execution log entries related to setting up the indexing workspace.
+    """
+    setup: [ExecutionLogEntry!]!
+
+    """
+    Configuration and execution summary (if completed or errored) of steps to be performed prior to indexing.
+    """
+    preIndex: [PreIndexStep!]!
+
+    """
+    Configuration and execution summary (if completed or errored) of the indexer.
+    """
+    index: IndexStep!
+
+    """
+    Execution log entry related to uploading the dump produced by the indexing step.
+    This field be missing if the upload step had not been executed.
+    """
+    upload: ExecutionLogEntry
+
+    """
+    Execution log entries related to tearing down the indexing workspace.
+    """
+    teardown: [ExecutionLogEntry!]!
+}
+
+"""
+The configuration and execution summary of a step to be performed prior to indexing.
+"""
+type PreIndexStep {
     """
     The working directory relative to the cloned repository root.
     """
@@ -8112,6 +8155,66 @@ type DockerStep {
     The arguments to supply to the Docker container's entrypoint.
     """
     commands: [String!]!
+
+    """
+    The execution summary (if completed or errored) of the docker command.
+    """
+    logEntry: ExecutionLogEntry
+}
+
+"""
+The configuration and execution summary of the indexer.
+"""
+type IndexStep {
+    """
+    The arguments to supply to the indexer container.
+    """
+    indexerArgs: [String!]!
+
+    """
+    The path to the index file relative to the root directory (dump.lsif by default).
+    """
+    outfile: String
+
+    """
+    The execution summary (if completed or errored) of the index command.
+    """
+    logEntry: ExecutionLogEntry
+}
+
+"""
+A description of a command run inside the executor to during processing of the parent record.
+"""
+type ExecutionLogEntry {
+    """
+    An internal tag used to correlate this log entry with other records.
+    """
+    key: String!
+
+    """
+    The arguments of the command run inside the executor.
+    """
+    command: [String!]!
+
+    """
+    The date when this command started.
+    """
+    startTime: DateTime!
+
+    """
+    The exit code of the command.
+    """
+    exitCode: Int!
+
+    """
+    The combined stdout and stderr logs of the command.
+    """
+    out: String!
+
+    """
+    The duration in milliseconds of the command.
+    """
+    durationMilliseconds: Int!
 }
 
 """
@@ -8132,6 +8235,16 @@ type LSIFIndexConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+"""
+Explicit configuration for indexing a repository.
+"""
+type IndexConfiguration {
+    """
+    The raw JSON-encoded index configuration.
+    """
+    configuration: String
 }
 
 """
@@ -8713,17 +8826,22 @@ FOR INTERNAL USE ONLY: A status message
 union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
 
 """
+An arbitrarily large integer encoded as a decimal string.
+"""
+scalar BigInt
+
+"""
 FOR INTERNAL USE ONLY: A repository statistic
 """
 type RepositoryStats {
     """
     The amount of bytes stored in .git directories
     """
-    gitDirBytes: Int!
+    gitDirBytes: BigInt!
     """
     The number of lines indexed
     """
-    indexedLinesCount: Int!
+    indexedLinesCount: BigInt!
 }
 
 """

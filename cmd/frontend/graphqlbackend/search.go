@@ -50,6 +50,9 @@ type SearchArgs struct {
 	After          *string
 	First          *int32
 	VersionContext *string
+
+	// For tests
+	Settings *schema.Settings
 }
 
 type SearchImplementer interface {
@@ -66,9 +69,14 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	settings, err := decodedViewerFinalSettings(ctx)
-	if err != nil {
-		return nil, err
+
+	settings := args.Settings
+	if settings == nil {
+		var err error
+		settings, err = decodedViewerFinalSettings(ctx)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	useNewParser := getBoolPtr(settings.SearchMigrateParser, true)
@@ -217,7 +225,7 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 		case "V2":
 			searchType = query.SearchTypeLiteral
 		default:
-			return -1, fmt.Errorf("unrecognized version: %v", version)
+			return -1, fmt.Errorf("unrecognized version want \"V1\" or \"V2\": %v", version)
 		}
 	}
 	return searchType, nil
@@ -1014,7 +1022,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 			// taking a long time because they all ask gitserver to try to fetch from the remote
 			// repo.
 			trimmedRefSpec := strings.TrimPrefix(rev.RevSpec, "^") // handle negated revisions, such as ^<branch>, ^<tag>, or ^<commit>
-			if _, err := git.ResolveRevision(ctx, repoRev.GitserverRepo(), nil, trimmedRefSpec, git.ResolveRevisionOptions{NoEnsureRevision: true}); err != nil {
+			if _, err := git.ResolveRevision(ctx, repoRev.GitserverRepo(), trimmedRefSpec, git.ResolveRevisionOptions{NoEnsureRevision: true}); err != nil {
 				if errors.Is(err, context.DeadlineExceeded) {
 					return resolvedRepositories{}, context.DeadlineExceeded
 				}

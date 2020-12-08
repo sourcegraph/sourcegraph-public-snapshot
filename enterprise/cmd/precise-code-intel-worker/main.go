@@ -93,7 +93,11 @@ func main() {
 	)
 
 	// Initialize health server
-	server := httpserver.NewFromAddr(addr, &http.Server{Handler: httpserver.NewHandler(nil)})
+	server := httpserver.NewFromAddr(addr, &http.Server{
+		ReadTimeout:  75 * time.Second,
+		WriteTimeout: 10 * time.Minute,
+		Handler:      httpserver.NewHandler(nil),
+	})
 
 	// Go!
 	goroutine.MonitorBackgroundRoutines(context.Background(), worker, server)

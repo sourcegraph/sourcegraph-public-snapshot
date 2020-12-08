@@ -164,7 +164,7 @@ func hydrateBranchCommits(ctx context.Context, repo gitserver.Repo, interactive 
 	}
 
 	for _, branch := range branches {
-		branch.Commit, err = git.GetCommit(ctx, repo, nil, branch.Head, git.ResolveRevisionOptions{})
+		branch.Commit, err = git.GetCommit(ctx, repo, branch.Head, git.ResolveRevisionOptions{})
 		if err != nil {
 			if parentCtx.Err() == nil && ctx.Err() != nil {
 				// reached interactive timeout

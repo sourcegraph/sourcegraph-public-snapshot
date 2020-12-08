@@ -83,26 +83,6 @@ Triggers:
 
 ```
 
-# Table "public.campaigns_old"
-```
-       Column       |           Type           | Modifiers 
---------------------+--------------------------+-----------
- id                 | bigint                   | 
- name               | text                     | 
- description        | text                     | 
- initial_applier_id | integer                  | 
- namespace_user_id  | integer                  | 
- namespace_org_id   | integer                  | 
- created_at         | timestamp with time zone | 
- updated_at         | timestamp with time zone | 
- changeset_ids      | jsonb                    | 
- closed_at          | timestamp with time zone | 
- campaign_spec_id   | bigint                   | 
- last_applier_id    | bigint                   | 
- last_applied_at    | timestamp with time zone | 
-
-```
-
 # Table "public.changeset_events"
 ```
     Column    |           Type           |                           Modifiers                           
@@ -192,6 +172,7 @@ Referenced by:
  closing               | boolean                  | not null default false
  num_failures          | integer                  | not null default 0
  log_contents          | text                     | 
+ execution_logs        | json[]                   | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -211,40 +192,26 @@ Referenced by:
 
 ```
 
-# Table "public.changesets_old"
+# Table "public.cm_action_jobs"
 ```
-        Column         |           Type           | Modifiers 
------------------------+--------------------------+-----------
- id                    | bigint                   | 
- campaign_ids          | jsonb                    | 
- repo_id               | integer                  | 
- created_at            | timestamp with time zone | 
- updated_at            | timestamp with time zone | 
- metadata              | jsonb                    | 
- external_id           | text                     | 
- external_service_type | text                     | 
- external_deleted_at   | timestamp with time zone | 
- external_branch       | text                     | 
- external_updated_at   | timestamp with time zone | 
- external_state        | text                     | 
- external_review_state | text                     | 
- external_check_state  | text                     | 
- created_by_campaign   | boolean                  | 
- added_to_campaign     | boolean                  | 
- diff_stat_added       | integer                  | 
- diff_stat_changed     | integer                  | 
- diff_stat_deleted     | integer                  | 
- sync_state            | jsonb                    | 
- current_spec_id       | bigint                   | 
- previous_spec_id      | bigint                   | 
- publication_state     | text                     | 
- owned_by_campaign_id  | bigint                   | 
- reconciler_state      | text                     | 
- failure_message       | text                     | 
- started_at            | timestamp with time zone | 
- finished_at           | timestamp with time zone | 
- process_after         | timestamp with time zone | 
- num_resets            | integer                  | 
+     Column      |           Type           |                          Modifiers                          
+-----------------+--------------------------+-------------------------------------------------------------
+ id              | integer                  | not null default nextval('cm_action_jobs_id_seq'::regclass)
+ email           | bigint                   | not null
+ state           | text                     | default 'queued'::text
+ failure_message | text                     | 
+ started_at      | timestamp with time zone | 
+ finished_at     | timestamp with time zone | 
+ process_after   | timestamp with time zone | 
+ num_resets      | integer                  | not null default 0
+ num_failures    | integer                  | not null default 0
+ log_contents    | text                     | 
+ trigger_event   | integer                  | 
+Indexes:
+    "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "cm_action_jobs_email_fk" FOREIGN KEY (email) REFERENCES cm_emails(id) ON DELETE CASCADE
+    "cm_action_jobs_trigger_event_fk" FOREIGN KEY (trigger_event) REFERENCES cm_trigger_jobs(id) ON DELETE CASCADE
 
 ```
 
@@ -268,6 +235,7 @@ Foreign-key constraints:
     "cm_emails_created_by_fk" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
     "cm_emails_monitor" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
 Referenced by:
+    TABLE "cm_action_jobs" CONSTRAINT "cm_action_jobs_email_fk" FOREIGN KEY (email) REFERENCES cm_emails(id) ON DELETE CASCADE
     TABLE "cm_recipients" CONSTRAINT "cm_recipients_emails" FOREIGN KEY (email) REFERENCES cm_emails(id) ON DELETE CASCADE
 
 ```
@@ -355,10 +323,13 @@ Foreign-key constraints:
  log_contents    | text                     | 
  query_string    | text                     | 
  results         | boolean                  | 
+ num_results     | integer                  | 
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
     "cm_trigger_jobs_query_fk" FOREIGN KEY (query) REFERENCES cm_queries(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "cm_action_jobs" CONSTRAINT "cm_action_jobs_trigger_event_fk" FOREIGN KEY (trigger_event) REFERENCES cm_trigger_jobs(id) ON DELETE CASCADE
 
 ```
 
@@ -532,7 +503,6 @@ Check constraints:
 Indexes:
     "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
     "external_service_repos_external_service_id" btree (external_service_id)
-    "external_service_repos_repo_id" btree (repo_id)
 Foreign-key constraints:
     "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
     "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
@@ -555,6 +525,7 @@ Triggers:
  external_service_id | bigint                   | 
  num_failures        | integer                  | not null default 0
  log_contents        | text                     | 
+ execution_logs      | json[]                   | 
 Indexes:
     "external_service_sync_jobs_state_idx" btree (state)
 Foreign-key constraints:
@@ -717,7 +688,7 @@ Indexes:
  id              | bigint                   | not null default nextval('lsif_indexes_id_seq'::regclass)
  commit          | text                     | not null
  queued_at       | timestamp with time zone | not null default now()
- state           | lsif_index_state         | not null default 'queued'::lsif_index_state
+ state           | text                     | not null default 'queued'::text
  failure_message | text                     | 
  started_at      | timestamp with time zone | 
  finished_at     | timestamp with time zone | 
@@ -731,6 +702,7 @@ Indexes:
  indexer_args    | text[]                   | not null
  outfile         | text                     | not null
  log_contents    | text                     | 
+ execution_logs  | json[]                   | 
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -796,7 +768,7 @@ Foreign-key constraints:
  commit          | text                     | not null
  root            | text                     | not null default ''::text
  uploaded_at     | timestamp with time zone | not null default now()
- state           | lsif_upload_state        | not null default 'queued'::lsif_upload_state
+ state           | text                     | not null default 'queued'::text
  failure_message | text                     | 
  started_at      | timestamp with time zone | 
  finished_at     | timestamp with time zone | 
@@ -810,7 +782,7 @@ Foreign-key constraints:
  num_failures    | integer                  | not null default 0
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
-    "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::lsif_upload_state
+    "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
     "lsif_uploads_state" btree (state)
     "lsif_uploads_uploaded_at" btree (uploaded_at)
 Check constraints:

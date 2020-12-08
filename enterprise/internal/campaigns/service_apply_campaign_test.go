@@ -6,13 +6,10 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -29,16 +26,10 @@ func TestServiceApplyCampaign(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	admin := createTestUser(ctx, t)
-	if !admin.SiteAdmin {
-		t.Fatal("admin is not a site-admin")
-	}
+	admin := createTestUser(t, true)
 	adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
 
-	user := createTestUser(ctx, t)
-	if user.SiteAdmin {
-		t.Fatal("user is admin, want non-admin")
-	}
+	user := createTestUser(t, false)
 	userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
 	repos, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 4)
@@ -157,7 +148,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			t.Run("apply campaign spec with same name but different namespace", func(t *testing.T) {
-				user2 := createTestUser(ctx, t)
+				user2 := createTestUser(t, false)
 				campaignSpec2 := createCampaignSpec(t, ctx, store, "campaign2", user2.ID)
 
 				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
@@ -499,21 +490,15 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// We apply the spec and expect 1 changeset
-			_, changesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 1)
+			applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 1)
 
 			// But the changeset was not published yet.
 			// And now we apply a new spec without any changesets.
 			campaignSpec2 := createCampaignSpec(t, ctx, store, "unpublished-changesets", admin.ID)
 
-			// That should close no changesets, but leave the campaign with 0 changesets
+			// That should close no changesets, but leave the campaign with 0 changesets,
+			// and the unpublished changesets should be detached
 			applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 0)
-
-			// And the unpublished changesets should be deleted
-			toBeDeleted := changesets[0]
-			_, err := store.GetChangeset(ctx, GetChangesetOpts{ID: toBeDeleted.ID})
-			if err != ErrNoResults {
-				t.Fatalf("expected changeset to be deleted but was not")
-			}
 		})
 
 		t.Run("campaign with changeset that wasn't processed before reapply", func(t *testing.T) {
@@ -572,7 +557,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// Make sure the reconciler wants to update this changeset.
-			plan, err := determinePlan(
+			plan, err := DetermineReconcilerPlan(
 				// changesets[0].PreviousSpecID
 				spec1,
 				// changesets[0].CurrentSpecID
@@ -582,8 +567,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !plan.ops.Equal(operations{campaigns.ReconcilerOperationUpdate}) {
-				t.Fatalf("Got invalid reconciler operations: %q", plan.ops.String())
+			if !plan.Ops.Equal(ReconcilerOperations{campaigns.ReconcilerOperationUpdate}) {
+				t.Fatalf("Got invalid reconciler operations: %q", plan.Ops.String())
 			}
 
 			// And now we apply a new spec before the reconciler could process the changeset.
@@ -610,7 +595,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// Make sure the reconciler would still update this changeset.
-			plan, err = determinePlan(
+			plan, err = DetermineReconcilerPlan(
 				// changesets[0].PreviousSpecID
 				spec1,
 				// changesets[0].CurrentSpecID
@@ -620,8 +605,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !plan.ops.Equal(operations{campaigns.ReconcilerOperationUpdate}) {
-				t.Fatalf("Got invalid reconciler operations: %q", plan.ops.String())
+			if !plan.Ops.Equal(ReconcilerOperations{campaigns.ReconcilerOperationUpdate}) {
+				t.Fatalf("Got invalid reconciler operations: %q", plan.Ops.String())
 			}
 
 			// Now test that it still updates when this update failed.
@@ -650,7 +635,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// Make sure the reconciler would still update this changeset.
-			plan, err = determinePlan(
+			plan, err = DetermineReconcilerPlan(
 				// changesets[0].PreviousSpecID
 				spec1,
 				// changesets[0].CurrentSpecID
@@ -660,8 +645,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !plan.ops.Equal(operations{campaigns.ReconcilerOperationUpdate}) {
-				t.Fatalf("Got invalid reconciler operations: %q", plan.ops.String())
+			if !plan.Ops.Equal(ReconcilerOperations{campaigns.ReconcilerOperationUpdate}) {
+				t.Fatalf("Got invalid reconciler operations: %q", plan.Ops.String())
 			}
 		})
 
@@ -766,7 +751,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// Make sure the reconciler would still publish this changeset.
-			plan, err := determinePlan(
+			plan, err := DetermineReconcilerPlan(
 				// c2.previousSpec is 0
 				nil,
 				// c2.currentSpec is newSpec2
@@ -776,8 +761,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !plan.ops.Equal(operations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish}) {
-				t.Fatalf("Got invalid reconciler operations: %q", plan.ops.String())
+			if !plan.Ops.Equal(ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish}) {
+				t.Fatalf("Got invalid reconciler operations: %q", plan.Ops.String())
 			}
 		})
 
@@ -1083,332 +1068,4 @@ func TestServiceApplyCampaign(t *testing.T) {
 			t.Fatalf("ApplyCampaign returned unexpected error: %s", err)
 		}
 	})
-}
-
-type changesetAssertions struct {
-	repo             api.RepoID
-	currentSpec      int64
-	previousSpec     int64
-	ownedByCampaign  int64
-	reconcilerState  campaigns.ReconcilerState
-	publicationState campaigns.ChangesetPublicationState
-	externalState    campaigns.ChangesetExternalState
-	externalID       string
-	externalBranch   string
-	diffStat         *diff.Stat
-	unsynced         bool
-	closing          bool
-
-	title string
-	body  string
-
-	failureMessage *string
-	numFailures    int64
-}
-
-func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions) {
-	t.Helper()
-
-	if c == nil {
-		t.Fatalf("changeset is nil")
-	}
-
-	if have, want := c.RepoID, a.repo; have != want {
-		t.Fatalf("changeset RepoID wrong. want=%d, have=%d", want, have)
-	}
-
-	if have, want := c.CurrentSpecID, a.currentSpec; have != want {
-		t.Fatalf("changeset CurrentSpecID wrong. want=%d, have=%d", want, have)
-	}
-
-	if have, want := c.PreviousSpecID, a.previousSpec; have != want {
-		t.Fatalf("changeset PreviousSpecID wrong. want=%d, have=%d", want, have)
-	}
-
-	if have, want := c.OwnedByCampaignID, a.ownedByCampaign; have != want {
-		t.Fatalf("changeset OwnedByCampaignID wrong. want=%d, have=%d", want, have)
-	}
-
-	if have, want := c.ReconcilerState, a.reconcilerState; have != want {
-		t.Fatalf("changeset ReconcilerState wrong. want=%s, have=%s", want, have)
-	}
-
-	if have, want := c.PublicationState, a.publicationState; have != want {
-		t.Fatalf("changeset PublicationState wrong. want=%s, have=%s", want, have)
-	}
-
-	if have, want := c.ExternalState, a.externalState; have != want {
-		t.Fatalf("changeset ExternalState wrong. want=%s, have=%s", want, have)
-	}
-
-	if have, want := c.ExternalID, a.externalID; have != want {
-		t.Fatalf("changeset ExternalID wrong. want=%s, have=%s", want, have)
-	}
-
-	if have, want := c.ExternalBranch, a.externalBranch; have != want {
-		t.Fatalf("changeset ExternalBranch wrong. want=%s, have=%s", want, have)
-	}
-
-	if want, have := a.failureMessage, c.FailureMessage; want == nil && have != nil {
-		t.Fatalf("expected no failure message, but have=%q", *have)
-	}
-
-	if diff := cmp.Diff(a.diffStat, c.DiffStat()); diff != "" {
-		t.Fatalf("changeset DiffStat wrong. (-want +got):\n%s", diff)
-	}
-
-	if diff := cmp.Diff(a.unsynced, c.Unsynced); diff != "" {
-		t.Fatalf("changeset Unsynced wrong. (-want +got):\n%s", diff)
-	}
-
-	if diff := cmp.Diff(a.closing, c.Closing); diff != "" {
-		t.Fatalf("changeset Closing wrong. (-want +got):\n%s", diff)
-	}
-
-	if want := c.FailureMessage; want != nil {
-		if c.FailureMessage == nil {
-			t.Fatalf("expected failure message %q but have none", *want)
-		}
-		if want, have := *a.failureMessage, *c.FailureMessage; have != want {
-			t.Fatalf("wrong failure message. want=%q, have=%q", want, have)
-		}
-	}
-
-	if have, want := c.NumFailures, a.numFailures; have != want {
-		t.Fatalf("changeset NumFailures wrong. want=%d, have=%d", want, have)
-	}
-
-	if have, want := c.ExternalBranch, a.externalBranch; have != want {
-		t.Fatalf("changeset ExternalBranch wrong. want=%s, have=%s", want, have)
-	}
-
-	if want := a.title; want != "" {
-		have, err := c.Title()
-		if err != nil {
-			t.Fatalf("changeset.Title failed: %s", err)
-		}
-
-		if have != want {
-			t.Fatalf("changeset Title wrong. want=%s, have=%s", want, have)
-		}
-	}
-
-	if want := a.body; want != "" {
-		have, err := c.Body()
-		if err != nil {
-			t.Fatalf("changeset.Body failed: %s", err)
-		}
-
-		if have != want {
-			t.Fatalf("changeset Body wrong. want=%s, have=%s", want, have)
-		}
-	}
-}
-
-func reloadAndAssertChangeset(t *testing.T, ctx context.Context, s *Store, c *campaigns.Changeset, a changesetAssertions) (reloaded *campaigns.Changeset) {
-	t.Helper()
-
-	reloaded, err := s.GetChangeset(ctx, GetChangesetOpts{ID: c.ID})
-	if err != nil {
-		t.Fatalf("reloading changeset %d failed: %s", c.ID, err)
-	}
-
-	assertChangeset(t, reloaded, a)
-
-	return reloaded
-}
-
-func applyAndListChangesets(ctx context.Context, t *testing.T, svc *Service, campaignSpecRandID string, wantChangesets int) (*campaigns.Campaign, campaigns.Changesets) {
-	t.Helper()
-
-	campaign, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
-		CampaignSpecRandID: campaignSpecRandID,
-	})
-	if err != nil {
-		t.Fatalf("failed to apply campaign: %s", err)
-	}
-
-	if campaign.ID == 0 {
-		t.Fatalf("campaign ID is zero")
-	}
-
-	changesets, _, err := svc.store.ListChangesets(ctx, ListChangesetsOpts{CampaignID: campaign.ID})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if have, want := len(changesets), wantChangesets; have != want {
-		t.Fatalf("wrong number of changesets. want=%d, have=%d", want, have)
-	}
-
-	return campaign, changesets
-}
-
-func setChangesetPublished(t *testing.T, ctx context.Context, s *Store, c *campaigns.Changeset, externalID, externalBranch string) {
-	t.Helper()
-
-	c.ExternalBranch = externalBranch
-	c.ExternalID = externalID
-	c.PublicationState = campaigns.ChangesetPublicationStatePublished
-	c.ReconcilerState = campaigns.ReconcilerStateCompleted
-	c.ExternalState = campaigns.ChangesetExternalStateOpen
-	c.Unsynced = false
-
-	if err := s.UpdateChangeset(ctx, c); err != nil {
-		t.Fatalf("failed to update changeset: %s", err)
-	}
-}
-
-func setChangesetFailed(t *testing.T, ctx context.Context, s *Store, c *campaigns.Changeset) {
-	t.Helper()
-
-	c.ReconcilerState = campaigns.ReconcilerStateErrored
-	c.FailureMessage = &canceledChangesetFailureMessage
-	c.NumFailures = 5
-
-	if err := s.UpdateChangeset(ctx, c); err != nil {
-		t.Fatalf("failed to update changeset: %s", err)
-	}
-}
-
-func setChangesetClosed(t *testing.T, ctx context.Context, s *Store, c *campaigns.Changeset) {
-	t.Helper()
-
-	c.PublicationState = campaigns.ChangesetPublicationStatePublished
-	c.ReconcilerState = campaigns.ReconcilerStateCompleted
-	c.Closing = false
-	c.ExternalState = campaigns.ChangesetExternalStateClosed
-
-	if err := s.UpdateChangeset(ctx, c); err != nil {
-		t.Fatalf("failed to update changeset: %s", err)
-	}
-}
-
-type testSpecOpts struct {
-	user         int32
-	repo         api.RepoID
-	campaignSpec int64
-
-	// If this is non-blank, the changesetSpec will be an import/track spec for
-	// the changeset with the given externalID in the given repo.
-	externalID string
-
-	// If this is set, the changesetSpec will be a "create commit on this
-	// branch" changeset spec.
-	headRef string
-
-	// If this is set along with headRef, the changesetSpec will have published
-	// set.
-	published interface{}
-
-	title             string
-	body              string
-	commitMessage     string
-	commitDiff        string
-	commitAuthorEmail string
-	commitAuthorName  string
-}
-
-var testChangsetSpecDiffStat = &diff.Stat{Added: 10, Changed: 5, Deleted: 2}
-
-func buildChangesetSpec(t *testing.T, opts testSpecOpts) *campaigns.ChangesetSpec {
-	t.Helper()
-
-	published := campaigns.PublishedValue{Val: opts.published}
-	if opts.published == nil {
-		// Set false as the default.
-		published.Val = false
-	}
-	if !published.Valid() {
-		t.Fatalf("invalid value for published passed, got %v (%T)", opts.published, opts.published)
-	}
-
-	spec := &campaigns.ChangesetSpec{
-		UserID:         opts.user,
-		RepoID:         opts.repo,
-		CampaignSpecID: opts.campaignSpec,
-		Spec: &campaigns.ChangesetSpecDescription{
-			BaseRepository: graphqlbackend.MarshalRepositoryID(opts.repo),
-
-			ExternalID: opts.externalID,
-			HeadRef:    opts.headRef,
-			Published:  published,
-
-			Title: opts.title,
-			Body:  opts.body,
-
-			Commits: []campaigns.GitCommitDescription{
-				{
-					Message:     opts.commitMessage,
-					Diff:        opts.commitDiff,
-					AuthorEmail: opts.commitAuthorEmail,
-					AuthorName:  opts.commitAuthorName,
-				},
-			},
-		},
-		DiffStatAdded:   testChangsetSpecDiffStat.Added,
-		DiffStatChanged: testChangsetSpecDiffStat.Changed,
-		DiffStatDeleted: testChangsetSpecDiffStat.Deleted,
-	}
-
-	return spec
-}
-
-func createChangesetSpec(
-	t *testing.T,
-	ctx context.Context,
-	store *Store,
-	opts testSpecOpts,
-) *campaigns.ChangesetSpec {
-	t.Helper()
-
-	spec := buildChangesetSpec(t, opts)
-
-	if err := store.CreateChangesetSpec(ctx, spec); err != nil {
-		t.Fatal(err)
-	}
-
-	return spec
-}
-
-func createCampaignSpec(t *testing.T, ctx context.Context, store *Store, name string, userID int32) *campaigns.CampaignSpec {
-	t.Helper()
-
-	s := &campaigns.CampaignSpec{
-		UserID:          userID,
-		NamespaceUserID: userID,
-		Spec: campaigns.CampaignSpecFields{
-			Name:        name,
-			Description: "the description",
-			ChangesetTemplate: campaigns.ChangesetTemplate{
-				Branch: "branch-name",
-			},
-		},
-	}
-
-	if err := store.CreateCampaignSpec(ctx, s); err != nil {
-		t.Fatal(err)
-	}
-
-	return s
-}
-
-func createCampaign(t *testing.T, ctx context.Context, store *Store, name string, userID int32, spec int64) *campaigns.Campaign {
-	t.Helper()
-
-	c := &campaigns.Campaign{
-		InitialApplierID: userID,
-		LastApplierID:    userID,
-		LastAppliedAt:    store.Clock()(),
-		NamespaceUserID:  userID,
-		CampaignSpecID:   spec,
-		Name:             name,
-		Description:      "campaign description",
-	}
-
-	if err := store.CreateCampaign(ctx, c); err != nil {
-		t.Fatal(err)
-	}
-
-	return c
 }

@@ -21,7 +21,8 @@ type changesetSpecConnectionResolver struct {
 	store       *ee.Store
 	httpFactory *httpcli.Factory
 
-	opts ee.ListChangesetSpecsOpts
+	opts           ee.ListChangesetSpecsOpts
+	campaignSpecID int64
 
 	// Cache results because they are used by multiple fields
 	once           sync.Once
@@ -33,7 +34,7 @@ type changesetSpecConnectionResolver struct {
 
 func (r *changesetSpecConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	count, err := r.store.CountChangesetSpecs(ctx, ee.CountChangesetSpecsOpts{
-		CampaignSpecID: r.opts.CampaignSpecID,
+		CampaignSpecID: r.campaignSpecID,
 	})
 	if err != nil {
 		return 0, err
@@ -62,6 +63,12 @@ func (r *changesetSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlb
 		return nil, err
 	}
 
+	// Create a shared previewer so the expensive operations can be cached across changeset spec resolvers.
+	previewer := &changesetSpecPreviewer{
+		store:          r.store,
+		campaignSpecID: r.campaignSpecID,
+	}
+
 	resolvers := make([]graphqlbackend.ChangesetSpecResolver, 0, len(changesetSpecs))
 	for _, c := range changesetSpecs {
 		repo := reposByID[c.RepoID]
@@ -70,7 +77,7 @@ func (r *changesetSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlb
 		// In that case we'll set it anyway to nil and changesetSpecResolver
 		// will treat it as "hidden".
 
-		resolvers = append(resolvers, NewChangesetSpecResolverWithRepo(r.store, r.httpFactory, repo, c))
+		resolvers = append(resolvers, NewChangesetSpecResolverWithRepo(r.store, r.httpFactory, repo, c).WithPreviewer(previewer))
 	}
 
 	return resolvers, nil
@@ -78,7 +85,9 @@ func (r *changesetSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlb
 
 func (r *changesetSpecConnectionResolver) compute(ctx context.Context) (campaigns.ChangesetSpecs, map[api.RepoID]*types.Repo, int64, error) {
 	r.once.Do(func() {
-		r.changesetSpecs, r.next, r.err = r.store.ListChangesetSpecs(ctx, r.opts)
+		opts := r.opts
+		opts.CampaignSpecID = r.campaignSpecID
+		r.changesetSpecs, r.next, r.err = r.store.ListChangesetSpecs(ctx, opts)
 		if r.err != nil {
 			return
 		}
