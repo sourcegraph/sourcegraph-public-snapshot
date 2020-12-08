@@ -96,6 +96,17 @@ func (s *Store) MonitorByIDInt64(ctx context.Context, monitorID int64) (m *Monit
 	return s.runMonitorQuery(ctx, sqlf.Sprintf(monitorByIDFmtStr, monitorID))
 }
 
+const totalCountMonitorsFmtStr = `
+SELECT COUNT(*)
+FROM cm_monitors
+WHERE namespace_user_id = %s;
+`
+
+func (s *Store) TotalCountMonitors(ctx context.Context, userID int32) (count int32, err error) {
+	err = s.QueryRow(ctx, sqlf.Sprintf(totalCountMonitorsFmtStr, userID)).Scan(&count)
+	return count, err
+}
+
 const monitorsFmtStr = `
 SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id, namespace_org_id
 FROM cm_monitors

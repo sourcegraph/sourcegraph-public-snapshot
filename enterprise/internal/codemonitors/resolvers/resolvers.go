@@ -40,6 +40,10 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 	if err != nil {
 		return nil, err
 	}
+	totalCount, err := r.store.TotalCountMonitors(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
 	mrs := make([]graphqlbackend.MonitorResolver, 0, len(ms))
 	for _, m := range ms {
 		mrs = append(mrs, &monitor{
@@ -47,7 +51,7 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 			Monitor:  m,
 		})
 	}
-	return &monitorConnection{r, mrs}, nil
+	return &monitorConnection{Resolver: r, monitors: mrs, totalCount: totalCount}, nil
 }
 
 func (r *Resolver) MonitorByID(ctx context.Context, ID graphql.ID) (m graphqlbackend.MonitorResolver, err error) {
@@ -393,7 +397,8 @@ func ownerForID64Query(ctx context.Context, monitorID int64) (*sqlf.Query, error
 //
 type monitorConnection struct {
 	*Resolver
-	monitors []graphqlbackend.MonitorResolver
+	monitors   []graphqlbackend.MonitorResolver
+	totalCount int32
 }
 
 func (m *monitorConnection) Nodes(ctx context.Context) ([]graphqlbackend.MonitorResolver, error) {
@@ -401,7 +406,7 @@ func (m *monitorConnection) Nodes(ctx context.Context) ([]graphqlbackend.Monitor
 }
 
 func (m *monitorConnection) TotalCount(ctx context.Context) (int32, error) {
-	return int32(len(m.monitors)), nil
+	return m.totalCount, nil
 }
 
 func (m *monitorConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
