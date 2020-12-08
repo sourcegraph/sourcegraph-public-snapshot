@@ -1860,7 +1860,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- A database migration has been in progress for 5 minutes, ensure that the migration has succeeded or contact Sourcegraph
+- The database migration has been in progress for 5 or more minutes, please contact Sourcegraph if this persists
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1881,7 +1881,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 **Possible solutions:**
 
-- Cache hit ratio should be at least 99%, please open an issue on Sourcegraph to add additional indexes  to add additional indexes
+- Cache hit ratio should be at least 99%, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose) to add additional indexes
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
