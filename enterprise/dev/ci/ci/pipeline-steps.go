@@ -371,7 +371,7 @@ func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 			// Building Docker image located under $REPO_ROOT/docker-images/
 			cmds = append(cmds, bk.Cmd(filepath.Join("docker-images", app, "build.sh")))
 		} else {
-			// Building Docker images located under 4REPO_ROOT/cmd/
+			// Building Docker images located under $REPO_ROOT/cmd/
 			cmdDir := func() string {
 				if _, err := os.Stat(filepath.Join("enterprise/cmd", app)); err != nil {
 					fmt.Fprintf(os.Stderr, "github.com/sourcegraph/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead\n", app, app)
