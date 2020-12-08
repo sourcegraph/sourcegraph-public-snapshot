@@ -5,7 +5,10 @@
 # Order is important; the last matching pattern takes the most
 # precedence.
 
-# We are experimenting with not using CODEOWNERS until the end of October.
-# More context: https://github.com/sourcegraph/sourcegraph/pull/13838
+# We prefer to use Codenotify (https://github.com/sourcegraph/codenotify) instead of CODEOWNERS.
+# More context is in this blog post: https://about.sourcegraph.com/blog/a-different-way-to-think-about-code-ownership/
+# If you are tempted to add an entry to CODEOWNERS, please try using Codenotify first for some amount of time.
+# If Codenotify does not satisfy your needs, then you can open a PR to propose adding a new entry to CODEOWNERS and Nick will review.
+# The PR description should describe why using Codenotify was insufficient. Thanks!
 CODEOWNERS @nicksnyder
 .github/CODEOWNERS @nicksnyder

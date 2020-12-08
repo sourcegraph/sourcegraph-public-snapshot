@@ -3,6 +3,7 @@ package codemonitors
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/sqlf"
@@ -78,6 +79,22 @@ func scanRecipients(rows *sql.Rows) (ms []*Recipient, err error) {
 		return nil, err
 	}
 	return ms, nil
+}
+
+const allRecipientsForEmailIDInt64FmtStr = `
+SELECT id, email, namespace_user_id, namespace_org_id
+FROM cm_recipients
+WHERE email = %s
+`
+
+func (s *Store) AllRecipientsForEmailIDInt64(ctx context.Context, emailID int64) (rs []*Recipient, err error) {
+	var rows *sql.Rows
+	rows, err = s.Query(ctx, sqlf.Sprintf(allRecipientsForEmailIDInt64FmtStr, emailID))
+	if err != nil {
+		return nil, fmt.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
+	}
+	defer func() { err = rows.Close() }()
+	return scanRecipients(rows)
 }
 
 const createRecipientFmtStr = `

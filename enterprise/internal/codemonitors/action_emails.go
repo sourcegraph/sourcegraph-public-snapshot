@@ -67,6 +67,16 @@ func (s *Store) DeleteActionsInt64(ctx context.Context, actionIDs []int64, monit
 	return nil
 }
 
+const actionEmailByIDFmtStr = `
+SELECT id, monitor, enabled, priority, header, created_by, created_at, changed_by, changed_at
+FROM cm_emails
+WHERE id = %s
+`
+
+func (s *Store) ActionEmailByIDInt64(ctx context.Context, emailID int64) (m *MonitorEmail, err error) {
+	return s.runEmailQuery(ctx, sqlf.Sprintf(actionEmailByIDFmtStr, emailID))
+}
+
 func (s *Store) runEmailQuery(ctx context.Context, q *sqlf.Query) (*MonitorEmail, error) {
 	rows, err := s.Query(ctx, q)
 	if err != nil {

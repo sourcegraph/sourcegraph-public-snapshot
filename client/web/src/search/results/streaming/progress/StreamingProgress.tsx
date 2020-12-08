@@ -16,7 +16,7 @@ export const defaultProgress: Progress = {
 }
 
 export const StreamingProgress: React.FunctionComponent<StreamingProgressProps> = props => (
-    <div className="d-flex streaming-progress">
+    <div className="d-flex align-items-center streaming-progress">
         <StreamingProgressCount {...props} />
         <StreamingProgressSkippedButton {...props} />
     </div>

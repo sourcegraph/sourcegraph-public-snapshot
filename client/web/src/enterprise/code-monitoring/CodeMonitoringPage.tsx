@@ -13,7 +13,10 @@ import { CodeMonitoringProps } from '.'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 
-export interface CodeMonitoringPageProps extends BreadcrumbsProps, BreadcrumbSetters, CodeMonitoringProps {
+export interface CodeMonitoringPageProps
+    extends BreadcrumbsProps,
+        BreadcrumbSetters,
+        Pick<CodeMonitoringProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'> {
     authenticatedUser: AuthenticatedUser
     location: H.Location
     history: H.History
@@ -22,7 +25,7 @@ export interface CodeMonitoringPageProps extends BreadcrumbsProps, BreadcrumbSet
 type CodeMonitorFilter = 'all' | 'user'
 
 export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps> = props => {
-    const { authenticatedUser, fetchUserCodeMonitors } = props
+    const { authenticatedUser, fetchUserCodeMonitors, toggleCodeMonitorEnabled } = props
 
     const queryConnection = useCallback(
         (args: Partial<ListUserCodeMonitorsVariables>) =>
@@ -110,7 +113,10 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                             queryConnection={queryConnection}
                             hideSearch={true}
                             nodeComponent={CodeMonitorNode}
-                            nodeComponentProps={{ location: props.location }}
+                            nodeComponentProps={{
+                                location: props.location,
+                                toggleCodeMonitorEnabled,
+                            }}
                             noun="code monitor"
                             pluralNoun="code monitors"
                             noSummaryIfAllNodesVisible={true}

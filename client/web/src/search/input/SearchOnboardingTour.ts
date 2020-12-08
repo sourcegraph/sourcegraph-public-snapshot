@@ -4,7 +4,7 @@
 import Shepherd from 'shepherd.js'
 import { eventLogger } from '../../tracking/eventLogger'
 import { isEqual } from 'lodash'
-import { LANGUAGES } from '../../../../shared/src/search/parser/filters'
+import { LANGUAGES } from '../../../../shared/src/search/query/filters'
 
 export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'
 export const HAS_SEEN_TOUR_KEY = 'has-seen-onboarding-tour'

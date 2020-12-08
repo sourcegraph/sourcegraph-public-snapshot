@@ -67,6 +67,21 @@ const { add } = storiesOf('web/search/results/streaming/StreamingSearchResults',
 
 add('standard render', () => <WebStory>{() => <StreamingSearchResults {...defaultProps} />}</WebStory>)
 
+add('no results', () => {
+    const result: AggregateStreamingSearchResults = {
+        results: [],
+        filters: [],
+        progress: {
+            done: true,
+            durationMs: 500,
+            matchCount: 0,
+            skipped: [],
+        },
+    }
+
+    return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
+})
+
 add('diffs tab selected', () => {
     const history = createBrowserHistory()
     history.replace({ search: 'q=r:golang/oauth2+test+f:travis+type:diff' })
@@ -155,4 +170,23 @@ add('show version context warning', () => {
             )}
         </WebStory>
     )
+})
+
+add('loading with no results', () => (
+    <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => NEVER} />}</WebStory>
+))
+
+add('loading with some results', () => {
+    const result: AggregateStreamingSearchResults = {
+        results: MULTIPLE_SEARCH_RESULT.results,
+        filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
+        progress: {
+            done: false,
+            durationMs: 500,
+            matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
+            skipped: [],
+        },
+    }
+
+    return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
 })

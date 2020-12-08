@@ -17,6 +17,8 @@ import (
 )
 
 func TestNextSync(t *testing.T) {
+	t.Parallel()
+
 	clock := func() time.Time { return time.Date(2020, 01, 01, 01, 01, 01, 01, time.UTC) }
 	tests := []struct {
 		name string
@@ -90,6 +92,8 @@ func TestNextSync(t *testing.T) {
 }
 
 func TestChangesetPriorityQueue(t *testing.T) {
+	t.Parallel()
+
 	assertOrder := func(t *testing.T, q *changesetPriorityQueue, expected []int64) {
 		t.Helper()
 		ids := make([]int64, len(q.items))
@@ -178,6 +182,8 @@ func TestChangesetPriorityQueue(t *testing.T) {
 }
 
 func TestPrioritizeChangesetsWithoutDiffStats(t *testing.T) {
+	t.Parallel()
+
 	for name, tc := range map[string]struct {
 		listChangesets func(context.Context, ListChangesetsOpts) (campaigns.Changesets, int64, error)
 		wantError      bool
@@ -355,6 +361,8 @@ func TestSyncerRun(t *testing.T) {
 }
 
 func TestSyncRegistry(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

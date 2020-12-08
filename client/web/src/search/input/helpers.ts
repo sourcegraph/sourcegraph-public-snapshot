@@ -4,9 +4,9 @@ import {
     isNegatedFilter,
     resolveNegatedFilter,
 } from '../../../../shared/src/search/interactive/util'
-import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
+import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
 import { uniqueId } from 'lodash'
-import { validateFilter, isSingularFilter } from '../../../../shared/src/search/parser/filters'
+import { validateFilter, isSingularFilter } from '../../../../shared/src/search/query/filters'
 
 /**
  * Converts a plain text query into a an object containing the two components

@@ -14,6 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
+func (r *TriggerJobs) RecordID() int {
+	return r.Id
+}
+
 const enqueueTriggerQueryFmtStr = `
 WITH due AS (
     SELECT cm_queries.id as id
@@ -27,7 +31,7 @@ busy AS (
     OR state = 'processing'
 )
 INSERT INTO cm_trigger_jobs (query)
-SELECT id from due EXCEPT SELECT id from busy
+SELECT id from due EXCEPT SELECT id from busy ORDER BY id
 `
 
 func (s *Store) EnqueueTriggerQueries(ctx context.Context) (err error) {
@@ -37,12 +41,13 @@ func (s *Store) EnqueueTriggerQueries(ctx context.Context) (err error) {
 const logSearchFmtStr = `
 UPDATE cm_trigger_jobs
 SET query_string = %s,
-	results = %s
+	results = %s,
+	num_results = %s
 WHERE id = %s
 `
 
-func (s *Store) LogSearch(ctx context.Context, queryString string, results bool, recordID int) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, results, recordID))
+func (s *Store) LogSearch(ctx context.Context, queryString string, numResults int, recordID int) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, numResults > 0, numResults, recordID))
 }
 
 const deleteObsoleteJobLogsFmtStr = `
@@ -58,7 +63,7 @@ func (s *Store) DeleteObsoleteJobLogs(ctx context.Context) error {
 }
 
 const getEventsForQueryIDInt64FmtStr = `
-SELECT id, query, query_string, results, state, failure_message, started_at, finished_at, process_after, num_resets, num_failures, log_contents
+SELECT id, query, query_string, results, num_results, state, failure_message, started_at, finished_at, process_after, num_resets, num_failures, log_contents
 FROM cm_trigger_jobs
 WHERE ((state = 'completed' AND results IS TRUE) OR (state != 'completed'))
 AND query = %s
@@ -91,7 +96,8 @@ type TriggerJobs struct {
 	QueryString *string
 
 	// Whether we got any results.
-	Results *bool
+	Results    *bool
+	NumResults *int
 
 	// Fields demanded for any dbworker.
 	State          string
@@ -102,10 +108,6 @@ type TriggerJobs struct {
 	NumResets      int32
 	NumFailures    int32
 	LogContents    *string
-}
-
-func (r *TriggerJobs) RecordID() int {
-	return r.Id
 }
 
 func ScanTriggerJobs(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
@@ -129,6 +131,7 @@ func scanTriggerJobs(rows *sql.Rows, err error) ([]*TriggerJobs, error) {
 			&m.Query,
 			&m.QueryString,
 			&m.Results,
+			&m.NumResults,
 			&m.State,
 			&m.FailureMessage,
 			&m.StartedAt,
@@ -157,6 +160,7 @@ var TriggerJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_trigger_jobs.query"),
 	sqlf.Sprintf("cm_trigger_jobs.query_string"),
 	sqlf.Sprintf("cm_trigger_jobs.results"),
+	sqlf.Sprintf("cm_trigger_jobs.num_results"),
 	sqlf.Sprintf("cm_trigger_jobs.state"),
 	sqlf.Sprintf("cm_trigger_jobs.failure_message"),
 	sqlf.Sprintf("cm_trigger_jobs.started_at"),

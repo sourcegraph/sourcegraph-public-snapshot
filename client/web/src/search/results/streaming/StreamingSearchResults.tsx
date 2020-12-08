@@ -34,6 +34,8 @@ import { Observable } from 'rxjs'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import { isDefined } from '../../../../../shared/src/util/types'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import SearchIcon from 'mdi-react/SearchIcon'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
@@ -218,6 +220,24 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     onShowMoreItems={onBottomHit}
                     items={results?.results.map(result => renderResult(result)).filter(isDefined) || []}
                 />
+
+                {!results?.progress.done && (
+                    <div className="text-center my-2" data-testid="loading-container">
+                        <LoadingSpinner className="icon-inline" />
+                    </div>
+                )}
+
+                {results?.progress.done && !results?.alert && results?.results.length === 0 && (
+                    <div className="alert alert-info d-flex m-2">
+                        <h3 className="m-0">
+                            <SearchIcon className="icon-inline" /> No results
+                        </h3>
+                    </div>
+                )}
+
+                {results?.progress.done && results?.results.length > 0 && (
+                    <small className="d-block mt-2 text-center">Showing {results?.results.length} results</small>
+                )}
             </div>
         </div>
     )

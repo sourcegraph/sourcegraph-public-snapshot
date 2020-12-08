@@ -20,17 +20,17 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<StreamingPr
             {progress.skipped.length > 0 && (
                 <>
                     <Button
-                        className={classNames('streaming-progress__skipped p-2 mb-0 d-flex align-items-center', {
-                            'alert alert-danger': skippedWithWarning,
+                        className={classNames('streaming-progress__skipped mb-0 ml-2 d-flex align-items-center', {
+                            'streaming-progress__skipped--warning': skippedWithWarning,
                         })}
-                        color={skippedWithWarning ? 'danger' : 'secondary'}
+                        color="secondary"
                         onClick={toggleOpen}
                         id="streaming-progress__skipped"
                     >
                         {skippedWithWarning ? (
-                            <AlertCircleIcon className="mr-2" />
+                            <AlertCircleIcon className="mr-2 icon-inline" />
                         ) : (
-                            <InformationOutlineIcon className="mr-2" />
+                            <InformationOutlineIcon className="mr-2 icon-inline" />
                         )}
                         Some repositories excluded
                         <MenuDownIcon className="icon-inline" />

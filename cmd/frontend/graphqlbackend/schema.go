@@ -568,6 +568,11 @@ type Mutation {
     deleteLSIFIndex(id: ID!): EmptyResponse
 
     """
+    Updates the indexing configuration associated with a repository.
+    """
+    updateRepositoryIndexConfiguration(repository: ID!, configuration: String!): EmptyResponse
+
+    """
     Set the permissions of a repository (i.e., which users may view it on Sourcegraph). This
     operation overwrites the previous permissions for the repository.
     """
@@ -1367,6 +1372,12 @@ type CampaignSpec implements Node {
     campaign doesn't yet exist.
     """
     appliesToCampaign: Campaign
+
+    """
+    The newest version of this campaign spec, as identified by its namespace
+    and name. If this is the newest version, this field will be null.
+    """
+    supersedingCampaignSpec: CampaignSpec
 
     """
     The code host connections required for applying this spec. Includes the credentials of the current user.
@@ -3218,7 +3229,7 @@ type Monitor implements Node {
     """
     Triggers trigger actions. There can only be one trigger per monitor.
     """
-    trigger: MonitorTrigger
+    trigger: MonitorTrigger!
     """
     One or more actions that are triggered by the trigger.
     """
@@ -4105,6 +4116,11 @@ type Repository implements Node & GenericSearchResultInterface {
         """
         after: String
     ): LSIFIndexConnection!
+
+    """
+    Gets the indexing configuration associated with the repository.
+    """
+    indexConfiguration: IndexConfiguration
 
     """
     A list of authorized users to access this repository with the given permission.
@@ -8219,6 +8235,16 @@ type LSIFIndexConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+"""
+Explicit configuration for indexing a repository.
+"""
+type IndexConfiguration {
+    """
+    The raw JSON-encoded index configuration.
+    """
+    configuration: String
 }
 
 """

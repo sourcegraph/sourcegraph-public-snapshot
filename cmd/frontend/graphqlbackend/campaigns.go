@@ -145,6 +145,8 @@ type CampaignSpecResolver interface {
 
 	AppliesToCampaign(ctx context.Context) (CampaignResolver, error)
 
+	SupersedingCampaignSpec(context.Context) (CampaignSpecResolver, error)
+
 	ViewerCampaignsCodeHosts(ctx context.Context, args *ListViewerCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
 }
 

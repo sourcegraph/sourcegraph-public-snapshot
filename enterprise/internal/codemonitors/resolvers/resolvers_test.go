@@ -62,7 +62,7 @@ func TestCreateCodeMonitor(t *testing.T) {
 
 	// Toggle field enabled from true to false.
 	got, err = r.ToggleCodeMonitor(ctx, &graphqlbackend.ToggleCodeMonitorArgs{
-		Id:      relay.MarshalID(monitorKind, got.(*monitor).Monitor.ID),
+		Id:      relay.MarshalID(MonitorKind, got.(*monitor).Monitor.ID),
 		Enabled: false,
 	})
 	if err != nil {
@@ -206,6 +206,15 @@ func TestIsAllowedToCreate(t *testing.T) {
 	}
 }
 
+type testUser struct {
+	name    string
+	idInt32 int32
+}
+
+func (u *testUser) id() graphql.ID {
+	return relay.MarshalID("User", u.idInt32)
+}
+
 func TestQueryMonitor(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -215,39 +224,81 @@ func TestQueryMonitor(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	r := newTestResolver(t)
 
-	userName := "cm-user1"
-	userID := insertTestUser(t, dbconn.Global, userName, true)
+	// Create 2 test users.
+	user1 := &testUser{name: "cm-user1"}
+	user1.idInt32 = insertTestUser(t, dbconn.Global, user1.name, true)
+	user2 := &testUser{name: "cm-user2"}
+	user2.idInt32 = insertTestUser(t, dbconn.Global, user2.name, true)
 
-	// Create a monitor and make sure the trigger query is enqueued.
-	ctx = actor.WithActor(ctx, actor.FromUser(userID))
+	// Create 2 code monitors, each with 1 trigger, 2 actions and two recipients per action.
+	ctx = actor.WithActor(ctx, actor.FromUser(user1.idInt32))
+	actionOpt := WithActions([]*graphqlbackend.CreateActionArgs{
+		{
+			Email: &graphqlbackend.CreateActionEmailArgs{
+				Enabled:    false,
+				Priority:   "NORMAL",
+				Recipients: []graphql.ID{user1.id(), user2.id()},
+				Header:     "test header 1",
+			},
+		},
+		{
+			Email: &graphqlbackend.CreateActionEmailArgs{
+				Enabled:    true,
+				Priority:   "CRITICAL",
+				Recipients: []graphql.ID{user1.id(), user2.id()},
+				Header:     "test header 2",
+			},
+		},
+	})
+	var err error
+	var m graphqlbackend.MonitorResolver
+	m, err = r.insertTestMonitorWithOpts(ctx, t, actionOpt)
+	if err != nil {
+		t.Fatal(err)
+	}
 	postHookOpt := WithPostHooks([]hook{func() error { return r.store.EnqueueTriggerQueries(ctx) }})
-	_, err := r.insertTestMonitorWithOpts(ctx, t, postHookOpt)
+	_, err = r.insertTestMonitorWithOpts(ctx, t, actionOpt, postHookOpt)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	t.Run("query by user", func(t *testing.T) {
+		queryByUser(ctx, t, schema, r, user1, user2)
+	})
+	t.Run("query by ID", func(t *testing.T) {
+		queryByID(ctx, t, schema, r, m.(*monitor), user1, user2)
+	})
+	t.Run("monitor paging", func(t *testing.T) {
+		monitorPaging(ctx, t, schema, user1)
+	})
+	t.Run("recipients paging", func(t *testing.T) {
+		recipientPaging(ctx, t, schema, user1, user2)
+	})
+}
+
+func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Resolver, user1 *testUser, user2 *testUser) {
 	input := map[string]interface{}{
-		"userName": userName,
+		"userName": user1.name,
 	}
 	response := apitest.Response{}
-	campaignApitest.MustExec(actorCtx, t, schema, input, &response, queryMonitor)
+	campaignApitest.MustExec(ctx, t, schema, input, &response, queryByUserFmtStr)
 
 	triggerEventEndCursor := string(relay.MarshalID(monitorTriggerEventKind, 1))
 	want := apitest.Response{
 		User: apitest.User{
 			Monitors: apitest.MonitorConnection{
-				TotalCount: 1,
+				TotalCount: 2,
 				Nodes: []apitest.Monitor{{
-					Id:          string(relay.MarshalID(monitorKind, 1)),
+					Id:          string(relay.MarshalID(MonitorKind, 1)),
 					Description: "test monitor",
 					Enabled:     true,
-					Owner:       apitest.UserOrg{Name: userName},
-					CreatedBy:   apitest.UserOrg{Name: userName},
+					Owner:       apitest.UserOrg{Name: user1.name},
+					CreatedBy:   apitest.UserOrg{Name: user1.name},
 					CreatedAt:   marshalDateTime(t, r.Now()),
 					Trigger: apitest.Trigger{
 						Id:    string(relay.MarshalID(monitorTriggerQueryKind, 1)),
@@ -269,38 +320,56 @@ func TestQueryMonitor(t *testing.T) {
 						},
 					},
 					Actions: apitest.ActionConnection{
-						TotalCount: 1,
-						Nodes: []apitest.Action{{
-							ActionEmail: apitest.ActionEmail{
-								Id:       string(relay.MarshalID(monitorActionEmailKind, 1)),
-								Enabled:  true,
-								Priority: "NORMAL",
-								Recipients: apitest.RecipientsConnection{
-									TotalCount: 1,
-									Nodes: []apitest.UserOrg{{
-										Name: userName,
-									}},
+						TotalCount: 2,
+						Nodes: []apitest.Action{
+							{
+								ActionEmail: apitest.ActionEmail{
+									Id:       string(relay.MarshalID(monitorActionEmailKind, 1)),
+									Enabled:  false,
+									Priority: "NORMAL",
+									Recipients: apitest.RecipientsConnection{
+										TotalCount: 2,
+										Nodes: []apitest.UserOrg{
+											{Name: user1.name},
+											{Name: user2.name},
+										},
+									},
+									Header: "test header 1",
 								},
-								Header: "test header",
 							},
-						}},
+							{
+								ActionEmail: apitest.ActionEmail{
+									Id:       string(relay.MarshalID(monitorActionEmailKind, 2)),
+									Enabled:  true,
+									Priority: "CRITICAL",
+									Recipients: apitest.RecipientsConnection{
+										TotalCount: 2,
+										Nodes: []apitest.UserOrg{
+											{Name: user1.name},
+											{Name: user2.name},
+										},
+									},
+									Header: "test header 2",
+								},
+							},
+						},
 					},
 				}},
 			},
 		},
 	}
-	if !reflect.DeepEqual(&response, &want) {
-		t.Fatalf("\ngot:\t%+v\nwant:\t%+v\n", response, want)
+	if diff := cmp.Diff(response, want); diff != "" {
+		t.Fatalf("diff: %s", diff)
 	}
 }
 
-const queryMonitor = `
+const queryByUserFmtStr = `
 fragment u on User { id, username }
 fragment o on Org { id, name }
 
 query($userName: String!){
 	user(username:$userName){
-		monitors{
+		monitors(first:1){
 			totalCount
 			nodes{
 				id
@@ -404,7 +473,7 @@ func TestEditCodeMonitor(t *testing.T) {
 		t.Fatal(err)
 	}
 	updateInput := map[string]interface{}{
-		"monitorID": string(relay.MarshalID(monitorKind, 1)),
+		"monitorID": string(relay.MarshalID(MonitorKind, 1)),
 		"triggerID": string(relay.MarshalID(monitorTriggerQueryKind, 1)),
 		"actionID":  string(relay.MarshalID(monitorActionEmailKind, 1)),
 		"user1ID":   ns1,
@@ -415,7 +484,7 @@ func TestEditCodeMonitor(t *testing.T) {
 
 	want := apitest.UpdateCodeMonitorResponse{
 		UpdateCodeMonitor: apitest.Monitor{
-			Id:          string(relay.MarshalID(monitorKind, 1)),
+			Id:          string(relay.MarshalID(MonitorKind, 1)),
 			Description: "updated test monitor",
 			Enabled:     false,
 			Owner: apitest.UserOrg{
@@ -535,56 +604,18 @@ mutation ($monitorID: ID!, $triggerID: ID!, $actionID: ID!, $user1ID: ID!, $user
 }
 `
 
-func TestRecipientsPaging(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
-	r := newTestResolver(t)
-
-	// Create 2 test users.
-	user1Name := "cm-user1"
-	user1ID := insertTestUser(t, dbconn.Global, user1Name, true)
-	ns1 := relay.MarshalID("User", user1ID)
-
-	user2Name := "cm-user2"
-	user2ID := insertTestUser(t, dbconn.Global, user2Name, true)
-	ns2 := relay.MarshalID("User", user2ID)
-
-	// Create a code monitor with 1 trigger, and 1 action with two recipients.
-	ctx = actor.WithActor(ctx, actor.FromUser(user1ID))
-	actionOpt := WithActions([]*graphqlbackend.CreateActionArgs{
-		{
-			Email: &graphqlbackend.CreateActionEmailArgs{
-				Enabled:    true,
-				Priority:   "NORMAL",
-				Recipients: []graphql.ID{ns1, ns2},
-				Header:     "header action 1",
-			},
-		},
-	})
-	_, err := r.insertTestMonitorWithOpts(ctx, t, actionOpt)
-	if err != nil {
-		t.Fatal(err)
-	}
-
+func recipientPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, user1 *testUser, user2 *testUser) {
 	queryInput := map[string]interface{}{
-		"userName":        user1Name,
+		"userName":        user1.name,
 		"recipientCursor": string(relay.MarshalID(monitorActionEmailRecipientKind, 1)),
 	}
-	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r)
-	if err != nil {
-		t.Fatal(err)
-	}
 	got := apitest.Response{}
-	campaignApitest.MustExec(ctx, t, schema, queryInput, &got, queryRecipients)
+	campaignApitest.MustExec(ctx, t, schema, queryInput, &got, recipientsPagingFmtStr)
 
 	want := apitest.Response{
 		User: apitest.User{
 			Monitors: apitest.MonitorConnection{
-				TotalCount: 1,
+				TotalCount: 2,
 				Nodes: []apitest.Monitor{{
 					Actions: apitest.ActionConnection{
 						Nodes: []apitest.Action{{
@@ -592,7 +623,7 @@ func TestRecipientsPaging(t *testing.T) {
 								Recipients: apitest.RecipientsConnection{
 									TotalCount: 2,
 									Nodes: []apitest.UserOrg{{
-										Name: user2Name,
+										Name: user2.name,
 									}},
 								},
 							},
@@ -602,22 +633,21 @@ func TestRecipientsPaging(t *testing.T) {
 			},
 		},
 	}
-
-	if !reflect.DeepEqual(&got, &want) {
-		t.Fatalf("\ngot:\t%+v\nwant:\t%+v\n", got, want)
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Fatalf("diff: %s", diff)
 	}
 }
 
-const queryRecipients = `
+const recipientsPagingFmtStr = `
 fragment u on User { id, username }
 fragment o on Org { id, name }
 
 query($userName: String!, $recipientCursor: String!){
 	user(username:$userName){
-		monitors{
+		monitors(first:1){
 			totalCount
 			nodes{
-				actions{
+				actions(first:1){
 					nodes{
 						... on MonitorEmail{
 							recipients(first:1, after:$recipientCursor){
@@ -636,64 +666,67 @@ query($userName: String!, $recipientCursor: String!){
 }
 `
 
-func TestQueryMonitorByID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
-	r := newTestResolver(t)
-
-	userName := "cm-user1"
-	userID := insertTestUser(t, dbconn.Global, userName, true)
-
-	// Create a monitor.
-	ctx = actor.WithActor(ctx, actor.FromUser(userID))
-	m, err := r.insertTestMonitorWithOpts(ctx, t)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
-	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r)
-	if err != nil {
-		t.Fatal(err)
-	}
+func queryByID(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Resolver, m *monitor, user1 *testUser, user2 *testUser) {
 	input := map[string]interface{}{
 		"id": m.ID(),
 	}
 	response := apitest.Node{}
-	campaignApitest.MustExec(actorCtx, t, schema, input, &response, queryMonitorByID)
+	campaignApitest.MustExec(ctx, t, schema, input, &response, queryMonitorByIDFmtStr)
 
 	want := apitest.Node{
 		Node: apitest.Monitor{
-			Id:          string(relay.MarshalID(monitorKind, 1)),
+			Id:          string(relay.MarshalID(MonitorKind, 1)),
 			Description: "test monitor",
 			Enabled:     true,
-			Owner:       apitest.UserOrg{Name: userName},
-			CreatedBy:   apitest.UserOrg{Name: userName},
+			Owner:       apitest.UserOrg{Name: user1.name},
+			CreatedBy:   apitest.UserOrg{Name: user1.name},
 			CreatedAt:   marshalDateTime(t, r.Now()),
 			Trigger: apitest.Trigger{
 				Id:    string(relay.MarshalID(monitorTriggerQueryKind, 1)),
 				Query: "repo:foo",
 			},
 			Actions: apitest.ActionConnection{
-				TotalCount: 1,
-				Nodes: []apitest.Action{{
-					ActionEmail: apitest.ActionEmail{
-						Id:       string(relay.MarshalID(monitorActionEmailKind, 1)),
-						Enabled:  true,
-						Priority: "NORMAL",
-						Recipients: apitest.RecipientsConnection{
-							TotalCount: 1,
-							Nodes: []apitest.UserOrg{{
-								Name: userName,
-							}},
+				TotalCount: 2,
+				Nodes: []apitest.Action{
+					{
+						ActionEmail: apitest.ActionEmail{
+							Id:       string(relay.MarshalID(monitorActionEmailKind, 1)),
+							Enabled:  false,
+							Priority: "NORMAL",
+							Recipients: apitest.RecipientsConnection{
+								TotalCount: 2,
+								Nodes: []apitest.UserOrg{
+									{
+										Name: user1.name,
+									},
+									{
+										Name: user2.name,
+									},
+								},
+							},
+							Header: "test header 1",
 						},
-						Header: "test header",
 					},
-				}},
+					{
+						ActionEmail: apitest.ActionEmail{
+							Id:       string(relay.MarshalID(monitorActionEmailKind, 2)),
+							Enabled:  true,
+							Priority: "CRITICAL",
+							Recipients: apitest.RecipientsConnection{
+								TotalCount: 2,
+								Nodes: []apitest.UserOrg{
+									{
+										Name: user1.name,
+									},
+									{
+										Name: user2.name,
+									},
+								},
+							},
+							Header: "test header 2",
+						},
+					},
+				},
 			},
 		},
 	}
@@ -702,7 +735,7 @@ func TestQueryMonitorByID(t *testing.T) {
 	}
 }
 
-const queryMonitorByID = `
+const queryMonitorByIDFmtStr = `
 fragment u on User { id, username }
 fragment o on Org { id, name }
 
@@ -755,5 +788,41 @@ query ($id: ID!) {
     }
   }
 }
+`
 
+func monitorPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, user1 *testUser) {
+	queryInput := map[string]interface{}{
+		"userName":      user1.name,
+		"monitorCursor": string(relay.MarshalID(MonitorKind, 1)),
+	}
+	got := apitest.Response{}
+	campaignApitest.MustExec(ctx, t, schema, queryInput, &got, monitorPagingFmtStr)
+
+	want := apitest.Response{
+		User: apitest.User{
+			Monitors: apitest.MonitorConnection{
+				TotalCount: 2,
+				Nodes: []apitest.Monitor{{
+					Id: string(relay.MarshalID(MonitorKind, 2)),
+				}},
+			},
+		},
+	}
+
+	if diff := cmp.Diff(&got, &want); diff != "" {
+		t.Fatalf("diff: %s", diff)
+	}
+}
+
+const monitorPagingFmtStr = `
+query($userName: String!, $monitorCursor: String!){
+	user(username:$userName){
+		monitors(first:1, after:$monitorCursor){
+			totalCount
+			nodes{
+				id
+			}
+		}
+	}
+}
 `

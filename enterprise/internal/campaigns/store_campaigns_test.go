@@ -10,7 +10,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
@@ -473,17 +474,18 @@ func TestUserDeleteCascades(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, *dsn)
-	orgID := insertTestOrg(t, db)
-	userID := insertTestUser(t, db)
+	dbtesting.SetupGlobalTestDB(t)
 
-	t.Run("user delete", storeTest(db, func(t *testing.T, ctx context.Context, store *Store, rs repos.Store, clock clock) {
+	orgID := insertTestOrg(t, dbconn.Global)
+	user := createTestUser(t, false)
+
+	t.Run("user delete", storeTest(dbconn.Global, func(t *testing.T, ctx context.Context, store *Store, rs repos.Store, clock clock) {
 		// Set up two campaigns and specs: one in the user's namespace (which
 		// should be deleted when the user is hard deleted), and one that is
 		// merely created by the user (which should remain).
 		ownedSpec := &campaigns.CampaignSpec{
-			NamespaceUserID: userID,
-			UserID:          userID,
+			NamespaceUserID: user.ID,
+			UserID:          user.ID,
 		}
 		if err := store.CreateCampaignSpec(ctx, ownedSpec); err != nil {
 			t.Fatal(err)
@@ -491,7 +493,7 @@ func TestUserDeleteCascades(t *testing.T) {
 
 		unownedSpec := &campaigns.CampaignSpec{
 			NamespaceOrgID: orgID,
-			UserID:         userID,
+			UserID:         user.ID,
 		}
 		if err := store.CreateCampaignSpec(ctx, unownedSpec); err != nil {
 			t.Fatal(err)
@@ -499,9 +501,9 @@ func TestUserDeleteCascades(t *testing.T) {
 
 		ownedCampaign := &campaigns.Campaign{
 			Name:             "owned",
-			NamespaceUserID:  userID,
-			InitialApplierID: userID,
-			LastApplierID:    userID,
+			NamespaceUserID:  user.ID,
+			InitialApplierID: user.ID,
+			LastApplierID:    user.ID,
 			LastAppliedAt:    clock.now(),
 			CampaignSpecID:   ownedSpec.ID,
 		}
@@ -512,8 +514,8 @@ func TestUserDeleteCascades(t *testing.T) {
 		unownedCampaign := &campaigns.Campaign{
 			Name:             "unowned",
 			NamespaceOrgID:   orgID,
-			InitialApplierID: userID,
-			LastApplierID:    userID,
+			InitialApplierID: user.ID,
+			LastApplierID:    user.ID,
 			LastAppliedAt:    clock.now(),
 			CampaignSpecID:   ownedSpec.ID,
 		}
@@ -524,7 +526,7 @@ func TestUserDeleteCascades(t *testing.T) {
 		// Now we'll try actually deleting the user.
 		if err := store.Store.Exec(ctx, sqlf.Sprintf(
 			"DELETE FROM users WHERE id = %s",
-			userID,
+			user.ID,
 		)); err != nil {
 			t.Fatal(err)
 		}

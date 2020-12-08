@@ -208,6 +208,72 @@ func getCampaignSpecQuery(opts *GetCampaignSpecOpts) *sqlf.Query {
 	)
 }
 
+// GetNewestCampaignSpecOpts captures the query options needed to get the latest
+// campaign spec for the given parameters. One of the namespace fields and all
+// the others must be defined.
+type GetNewestCampaignSpecOpts struct {
+	NamespaceUserID int32
+	NamespaceOrgID  int32
+	UserID          int32
+	Name            string
+}
+
+// GetNewestCampaignSpec returns the newest campaign spec that matches the given
+// options.
+func (s *Store) GetNewestCampaignSpec(ctx context.Context, opts GetNewestCampaignSpecOpts) (*campaigns.CampaignSpec, error) {
+	q := getNewestCampaignSpecQuery(&opts)
+
+	var c campaigns.CampaignSpec
+	err := s.query(ctx, q, func(sc scanner) (err error) {
+		return scanCampaignSpec(&c, sc)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if c.ID == 0 {
+		return nil, ErrNoResults
+	}
+
+	return &c, nil
+}
+
+const getNewestCampaignSpecQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store_campaign_specs.go:GetNewestCampaignSpec
+SELECT %s FROM campaign_specs
+WHERE %s
+ORDER BY id DESC
+LIMIT 1
+`
+
+func getNewestCampaignSpecQuery(opts *GetNewestCampaignSpecOpts) *sqlf.Query {
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("user_id = %s", opts.UserID),
+		sqlf.Sprintf("spec->>'name' = %s", opts.Name),
+	}
+
+	if opts.NamespaceUserID != 0 {
+		preds = append(preds, sqlf.Sprintf(
+			"namespace_user_id = %s",
+			opts.NamespaceUserID,
+		))
+	}
+
+	if opts.NamespaceOrgID != 0 {
+		preds = append(preds, sqlf.Sprintf(
+			"namespace_org_id = %s",
+			opts.NamespaceOrgID,
+		))
+	}
+
+	return sqlf.Sprintf(
+		getNewestCampaignSpecQueryFmtstr,
+		sqlf.Join(campaignSpecColumns, ", "),
+		sqlf.Join(preds, "\n AND "),
+	)
+
+}
+
 // ListCampaignSpecsOpts captures the query options needed for
 // listing code mods.
 type ListCampaignSpecsOpts struct {

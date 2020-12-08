@@ -99,6 +99,11 @@ func (u *CommitUpdater) tryUpdate(ctx context.Context, repositoryID, dirtyToken 
 			return errors.Wrap(err, "gitserver.CommitDate")
 		}
 
+		// The --since flag for git log is exclusive, but we want to include the commit where the
+		// oldest dump is defined. This flag only has second resolution, so we shouldn't be pulling
+		// back any more data than we wanted.
+		oldestCommitDateWithUpload = oldestCommitDateWithUpload.Add(-time.Second)
+
 		graph, err = u.gitserverClient.CommitGraph(ctx, repositoryID, gitserver.CommitGraphOptions{
 			Since: &oldestCommitDateWithUpload,
 		})

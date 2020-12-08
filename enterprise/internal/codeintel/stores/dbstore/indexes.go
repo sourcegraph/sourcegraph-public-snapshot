@@ -293,6 +293,13 @@ func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error)
 	}})
 	defer endObservation(1, observation.Args{})
 
+	if index.DockerSteps == nil {
+		index.DockerSteps = []DockerStep{}
+	}
+	if index.IndexerArgs == nil {
+		index.IndexerArgs = []string{}
+	}
+
 	id, _, err := basestore.ScanFirstInt(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(`

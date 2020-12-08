@@ -50,6 +50,12 @@ const campaignSpec = (): CampaignSpecFields => ({
         namespaceName: 'alice',
         url: '/users/alice',
     },
+    supersedingCampaignSpec: boolean('supersedingCampaignSpec', false)
+        ? {
+              createdAt: subDays(new Date(), 1).toISOString(),
+              applyURL: '/users/alice/campaigns/apply/newspecid',
+          }
+        : null,
     viewerCanAdminister: boolean('viewerCanAdminister', true),
     viewerCampaignsCodeHosts: {
         totalCount: 0,
