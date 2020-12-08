@@ -5,16 +5,12 @@
 
 set -euf -o pipefail
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-
-PG_EXPORTER_QUERIES=${DIR}/pg_exporter/queries.yaml
-
 if [ ! -e "${PG_EXPORTER_QUERIES}" ]; then
   echo "Could not find postgres exporter config, expected /dev/pg_exporter"
   exit 1
 fi
 
-IMAGE=wrouesnel/postgres_exporter:v0.7.0@sha256:785c919627c06f540d515aac88b7966f352403f73e931e70dc2cbf783146a98b
+IMAGE=sourcegraph/postgres_exporter
 CONTAINER=postgres_exporter
 
 # Use psql to read the effective values for PG* env vars (instead of, e.g., hardcoding the default
@@ -42,6 +38,4 @@ fi
 set -x
 
 exec docker run --rm -p9187:9187 ${NET_ARG} --name="$CONTAINER" \
-  -e DATA_SOURCE_NAME="${DATA_SOURCE_NAME}" \
-  --mount type=bind,src="${PG_EXPORTER_QUERIES}",target=/queries.yaml \
-  -e PG_EXPORTER_EXTEND_QUERY_PATH=/queries.yaml ${IMAGE}
+  -e DATA_SOURCE_NAME="${DATA_SOURCE_NAME}" ${IMAGE}
