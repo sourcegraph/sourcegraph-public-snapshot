@@ -61,7 +61,7 @@ func Postgres() *monitoring.Container {
 					},
 					monitoring.Observable{
 						Name:              "pg_exporter_err",
-						Description:       "error scraping postgres exporter",
+						Description:       "errors scraping postgres exporter",
 						Owner:             monitoring.ObservableOwnerCloud,
 						Query:             "pg_exporter_last_scrape_error",
 						DataMayNotExist:   true,
