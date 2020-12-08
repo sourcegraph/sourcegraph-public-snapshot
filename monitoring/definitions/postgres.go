@@ -88,7 +88,7 @@ func Postgres() *monitoring.Container {
 						DataMayNotExist: true,
 						DataMayNotBeNaN: true,
 						Warning:         monitoring.Alert().LessOrEqual(0.98).For(5 * time.Minute),
-						PossibleSolutions: "Cache hit ratio should be at least 99%, please open an issue on Sourcegraph to add additional indexes  " +
+						PossibleSolutions: "Cache hit ratio should be at least 99%, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose) " +
 							"to add additional indexes",
 						PanelOptions: monitoring.PanelOptions().Unit(monitoring.Percentage)},
 				}},
