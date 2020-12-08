@@ -32,12 +32,15 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
         'editor.hoverHighlightBackground': '#495057',
     },
     rules: [
+        // Sourcegraph base language tokens
         { token: 'identifier', foreground: '#f2f4f8' },
         { token: 'field', foreground: '#569cd6' },
         { token: 'keyword', foreground: '#da77f2' },
         { token: 'openingParen', foreground: '#da77f2' },
         { token: 'closingParen', foreground: '#da77f2' },
         { token: 'comment', foreground: '#ffa94d' },
+        // Sourcegraph decorated language tokens
+        { token: 'metaRepoRevisionSeparator', foreground: '#569cd9' },
         // Regexp pattern highlighting
         { token: 'metaRegexpDelimited', foreground: '#ff6b6b' },
         { token: 'metaRegexpAssertion', foreground: '#ff6b6b' },
@@ -49,6 +52,13 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
         { token: 'metaRegexpAlternative', foreground: '#3bc9db' },
         // Structural pattern highlighting
         { token: 'metaStructuralHole', foreground: '#ff6b6b' },
+        // Revision highlighting
+        { token: 'metaRevisionSeparator', foreground: '#ffa94d' },
+        { token: 'metaRevisionWildcard', foreground: '#3bc9db' },
+        { token: 'metaRevisionNegate', foreground: '#ff6b6b' },
+        { token: 'metaRevisionCommitHash', foreground: '#f2f4f8' },
+        { token: 'metaRevisionLabel', foreground: '#f2f4f8' },
+        { token: 'metaRevisionPathLike', foreground: '#f2f4f8' },
     ],
 })
 
@@ -72,12 +82,15 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
         'editor.hoverHighlightBackground': '#dee2e6',
     },
     rules: [
+        // Sourcegraph base language tokens
         { token: 'identifier', foreground: '#2b3750' },
         { token: 'field', foreground: '#268bd2' },
         { token: 'keyword', foreground: '#ae3ec9' },
         { token: 'openingParen', foreground: '#ae3ec9' },
         { token: 'closingParen', foreground: '#ae3ec9' },
         { token: 'comment', foreground: '#d9480f' },
+        // Sourcegraph decorated language tokens
+        { token: 'metaRepoRevisionSeparator', foreground: '#268bd2' },
         // Regexp pattern highlighting
         { token: 'metaRegexpDelimited', foreground: '#c92a2a' },
         { token: 'metaRegexpAssertion', foreground: '#c92a2a' },
@@ -89,6 +102,13 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
         { token: 'metaRegexpAlternative', foreground: '#1098ad' },
         // Structural pattern highlighting
         { token: 'metaStructuralHole', foreground: '#c92a2a' },
+        // Revision highlighting
+        { token: 'metaRevisionSeparator', foreground: '#d9480f' },
+        { token: 'metaRevisionWildcard', foreground: '#1098ad' },
+        { token: 'metaRevisionNegate', foreground: '#c92a2a' },
+        { token: 'metaRevisionCommitHash', foreground: '#2b3750' },
+        { token: 'metaRevisionLabel', foreground: '#2b3750' },
+        { token: 'metaRevisionPathLike', foreground: '#2b3750' },
     ],
 })
 

@@ -831,6 +831,7 @@ describe('getMonacoTokens()', () => {
             ]
         `)
     })
+
     test('decorate structural hole ... alias', () => {
         expect(getMonacoTokens(toSuccess(scanSearchQuery('r:foo ...:...', false, SearchPatternType.structural)), true))
             .toMatchInlineSnapshot(`
@@ -858,6 +859,160 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 10,
                 "scopes": "metaStructuralHole"
+              }
+            ]
+        `)
+    })
+
+    test('decorate repo revision syntax, separate revisions', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:foo@HEAD:v1.2:3')), true)).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "metaRepoRevisionSeparator"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaRevisionLabel"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "metaRevisionSeparator"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "metaRevisionLabel"
+              },
+              {
+                "startIndex": 18,
+                "scopes": "metaRevisionSeparator"
+              },
+              {
+                "startIndex": 19,
+                "scopes": "metaRevisionLabel"
+              }
+            ]
+        `)
+    })
+
+    test('decorate revision field syntax, separate revisions', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:foo rev:HEAD:v1.2:3')), true)).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "metaRevisionLabel"
+              },
+              {
+                "startIndex": 17,
+                "scopes": "metaRevisionSeparator"
+              },
+              {
+                "startIndex": 18,
+                "scopes": "metaRevisionLabel"
+              },
+              {
+                "startIndex": 22,
+                "scopes": "metaRevisionSeparator"
+              },
+              {
+                "startIndex": 23,
+                "scopes": "metaRevisionLabel"
+              }
+            ]
+        `)
+    })
+
+    test('decorate repo revision syntax, path with wildcard and negation', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:foo@*refs/heads/*:*!refs/heads/release*')), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "metaRepoRevisionSeparator"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaRevisionLabel"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaRevisionWildcard"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "metaRevisionPathLike"
+              },
+              {
+                "startIndex": 21,
+                "scopes": "metaRevisionWildcard"
+              },
+              {
+                "startIndex": 22,
+                "scopes": "metaRevisionLabel"
+              },
+              {
+                "startIndex": 22,
+                "scopes": "metaRevisionSeparator"
+              },
+              {
+                "startIndex": 23,
+                "scopes": "metaRevisionLabel"
+              },
+              {
+                "startIndex": 23,
+                "scopes": "metaRevisionWildcard"
+              },
+              {
+                "startIndex": 24,
+                "scopes": "metaRevisionLabel"
+              },
+              {
+                "startIndex": 24,
+                "scopes": "metaRevisionNegate"
+              },
+              {
+                "startIndex": 25,
+                "scopes": "metaRevisionPathLike"
+              },
+              {
+                "startIndex": 43,
+                "scopes": "metaRevisionWildcard"
+              },
+              {
+                "startIndex": 44,
+                "scopes": "metaRevisionLabel"
               }
             ]
         `)
