@@ -580,7 +580,7 @@ Campaign: ${campaignURL}`,
             const githubClient = await getAuthenticatedGitHubClient()
 
             // Set up announcement message
-            const versionAnchor = release.version.replaceAll('.', '-')
+            const versionAnchor = release.format().replaceAll('.', '-')
             const campaignURL = campaigns.campaignURL(
                 campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphCLIConfig())
             )
