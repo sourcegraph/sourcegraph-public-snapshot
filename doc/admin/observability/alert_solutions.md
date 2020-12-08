@@ -1768,12 +1768,12 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ## postgres: transactions
 
-<p class="subtitle">cloud: transaction_durations</p>
+<p class="subtitle">cloud: transaction durations</p>
 
 **Descriptions:**
 
-- _postgres: 300ms+ transaction_durations for 5m0s_
-- _postgres: 500ms+ transaction_durations for 5m0s_
+- _postgres: 300ms+ transaction durations for 5m0s_
+- _postgres: 500ms+ transaction durations for 5m0s_
 
 **Possible solutions:**
 
@@ -1810,11 +1810,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ## postgres: pg_exporter_err
 
-<p class="subtitle">cloud: error scraping postgres exporter</p>
+<p class="subtitle">cloud: errors scraping postgres exporter</p>
 
 **Descriptions:**
 
-- _postgres: 1+ error scraping postgres exporter for 5m0s_
+- _postgres: 1+ errors scraping postgres exporter for 5m0s_
 
 **Possible solutions:**
 
@@ -1851,14 +1851,15 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ## postgres: cache_hit_ratio
 
-<p class="subtitle">cloud: ratio of cache hits (should be 99%)</p>
+<p class="subtitle">cloud: ratio of cache hits over 5m</p>
 
 **Descriptions:**
 
-- _postgres: less than 0.98 ratio of cache hits (should be 99%) for 5m0s_
+- _postgres: less than 0.98% ratio of cache hits over 5m for 5m0s_
 
 **Possible solutions:**
 
+- Cache hit ratio should be at least 99%, please open an issue on Sourcegraph to add additional indexes  to add additional indexes
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
