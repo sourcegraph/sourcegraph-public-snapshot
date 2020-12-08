@@ -63,7 +63,7 @@ const toHover = (token: DecoratedToken): string => {
                             description = 'Match a carriage return.'
                             break
                     }
-                    return `**Escaped Character. ${description}`
+                    return `**Escaped Character**. ${description}`
                 }
                 case MetaRegexpKind.LazyQuantifier:
                     return '**Lazy**. Match as few as characters as possible that match the previous expression.'
