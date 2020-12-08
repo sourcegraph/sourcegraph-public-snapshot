@@ -25,7 +25,7 @@ import { TreeFields, ExternalLinkFields } from '../graphql-operations'
 export const externalLinkFieldsFragment = gql`
     fragment ExternalLinkFields on ExternalLink {
         url
-        serviceType
+        serviceKind
     }
 `
 
@@ -45,7 +45,7 @@ export const fetchRepository = memoizeObservable(
                             url
                             externalURLs {
                                 url
-                                serviceType
+                                serviceKind
                             }
                             description
                             viewerCanAdminister

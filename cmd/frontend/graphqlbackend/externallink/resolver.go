@@ -9,19 +9,22 @@ import "fmt"
 // and one to the repository on Phabricator.
 type Resolver struct {
 	url         string // the URL to the resource
-	serviceType string // the type of service that the URL points to, used for showing a nice icon
+	serviceKind string // the kind of service that the URL points to, used for showing a nice icon
 }
 
-func NewResolver(url, serviceType string) *Resolver {
-	return &Resolver{url: url, serviceType: serviceType}
+func NewResolver(url, serviceKind string) *Resolver {
+	return &Resolver{url: url, serviceKind: serviceKind}
 }
 
 func (r *Resolver) URL() string { return r.url }
-func (r *Resolver) ServiceType() *string {
-	if r.serviceType == "" {
+
+func (r *Resolver) ServiceKind() *string {
+	if r.serviceKind == "" {
 		return nil
+	} else {
+		return &r.serviceKind
 	}
-	return &r.serviceType
+
 }
 
-func (r *Resolver) String() string { return fmt.Sprintf("%s@%s", r.serviceType, r.url) }
+func (r *Resolver) String() string { return fmt.Sprintf("%s@%s", r.serviceKind, r.url) }

@@ -3,6 +3,7 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { WebStory } from '../../components/WebStory'
 import { InstallBrowserExtensionAlert } from './InstallBrowserExtensionAlert'
+import { ExternalServiceKind } from '../../../../shared/src/graphql/schema'
 
 const onAlertDismissed = action('onAlertDismissed')
 
@@ -12,11 +13,16 @@ const { add } = storiesOf('web/repo/actions/InstallBrowserExtensionAlert', modul
 
 // Disable Chromatic for the non-GitHub alerts since they are mostly the same
 
-const services = ['github', 'gitlab', 'phabricator', 'bitbucketServer'] as const
+const services = [
+    ExternalServiceKind.GITHUB,
+    ExternalServiceKind.GITLAB,
+    ExternalServiceKind.PHABRICATOR,
+    ExternalServiceKind.BITBUCKETSERVER,
+] as const
 
-for (const serviceType of services) {
+for (const serviceKind of services) {
     add(
-        `${serviceType} (Chrome)`,
+        `${serviceKind} (Chrome)`,
         () => (
             <WebStory>
                 {() => (
@@ -28,7 +34,7 @@ for (const serviceType of services) {
                             {
                                 __typename: 'ExternalLink',
                                 url: '',
-                                serviceType,
+                                serviceKind,
                             },
                         ]}
                     />
@@ -37,13 +43,13 @@ for (const serviceType of services) {
         ),
         {
             chromatic: {
-                disable: serviceType !== 'github',
+                disable: serviceKind !== ExternalServiceKind.GITHUB,
             },
         }
     )
 
     add(
-        `${serviceType} (non-Chrome)`,
+        `${serviceKind} (non-Chrome)`,
         () => (
             <WebStory>
                 {() => (
@@ -55,7 +61,7 @@ for (const serviceType of services) {
                             {
                                 __typename: 'ExternalLink',
                                 url: '',
-                                serviceType,
+                                serviceKind,
                             },
                         ]}
                     />
@@ -64,13 +70,13 @@ for (const serviceType of services) {
         ),
         {
             chromatic: {
-                disable: serviceType !== 'github',
+                disable: serviceKind !== ExternalServiceKind.GITHUB,
             },
         }
     )
 
     add(
-        `${serviceType} (native integration installed)`,
+        `${serviceKind} (native integration installed)`,
         () => (
             <WebStory>
                 {() => (
@@ -82,7 +88,7 @@ for (const serviceType of services) {
                             {
                                 __typename: 'ExternalLink',
                                 url: '',
-                                serviceType,
+                                serviceKind,
                             },
                         ]}
                     />
@@ -91,7 +97,7 @@ for (const serviceType of services) {
         ),
         {
             chromatic: {
-                disable: serviceType !== 'github',
+                disable: serviceKind !== ExternalServiceKind.GITHUB,
             },
         }
     )

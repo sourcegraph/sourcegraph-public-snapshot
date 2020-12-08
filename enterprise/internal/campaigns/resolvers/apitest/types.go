@@ -114,7 +114,7 @@ type Repository struct {
 
 type ExternalURL struct {
 	URL         string
-	ServiceType string
+	ServiceKind string
 }
 
 type Changeset struct {

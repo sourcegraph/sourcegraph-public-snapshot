@@ -242,7 +242,7 @@ func TestChangesetResolver(t *testing.T) {
 				Repository:    apitest.Repository{Name: repo.Name},
 				ExternalURL: apitest.ExternalURL{
 					URL:         "https://github.com/sourcegraph/sourcegraph/pull/12345",
-					ServiceType: "github",
+					ServiceKind: "GITHUB",
 				},
 				PublicationState: string(campaigns.ChangesetPublicationStatePublished),
 				ReconcilerState:  string(campaigns.ReconcilerStateCompleted),
@@ -316,7 +316,7 @@ query($changeset: ID!) {
       externalState
       reviewState
       checkState
-      externalURL { url, serviceType }
+      externalURL { url, serviceKind }
       nextSyncAt
       publicationState
       reconcilerState
