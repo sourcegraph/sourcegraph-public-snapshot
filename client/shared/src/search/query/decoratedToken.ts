@@ -114,7 +114,7 @@ const coalescePatterns = (tokens: DecoratedToken[]): DecoratedToken[] => {
 }
 
 const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
-    let tokens: DecoratedToken[] = []
+    const tokens: DecoratedToken[] = []
     try {
         const ast = new RegExpParser().parsePattern(pattern.value)
         const offset = pattern.range.start
@@ -276,7 +276,6 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
     } catch {
         tokens.push(pattern)
     }
-    tokens = coalescePatterns(tokens)
     // The AST is not necessarily traversed in increasing range. We need
     // to sort by increasing range because the ordering is significant to Monaco.
     tokens.sort((left, right) => {
@@ -285,7 +284,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
         }
         return 0
     })
-    return tokens
+    return coalescePatterns(tokens)
 }
 
 const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
