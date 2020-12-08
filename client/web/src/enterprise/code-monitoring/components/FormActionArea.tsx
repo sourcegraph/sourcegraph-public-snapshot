@@ -128,7 +128,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                     <div className="d-flex justify-content-between align-items-center">
                         <div>
                             <div className="font-weight-bold">Send email notifications</div>
-                            <span className="text-muted">{authenticatedUser.email}</span>
+                            <span className="text-muted test-existing-action-email">{authenticatedUser.email}</span>
                         </div>
                         <div className="d-flex">
                             <div className="flex my-4">
@@ -139,7 +139,11 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                                     className="mr-2"
                                 />
                             </div>
-                            <button type="button" onClick={editForm} className="btn btn-link p-0 text-left">
+                            <button
+                                type="button"
+                                onClick={editForm}
+                                className="btn btn-link p-0 text-left test-edit-action"
+                            >
                                 Edit
                             </button>
                         </div>

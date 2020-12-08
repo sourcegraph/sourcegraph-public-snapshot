@@ -8,9 +8,9 @@ import { Link } from '../../../../shared/src/components/Link'
 import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { useEventObservable } from '../../../../shared/src/util/useObservable'
 import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
-import { toggleCodeMonitorEnabled } from './backend'
+import { CodeMonitoringProps } from '.'
 
-export interface CodeMonitorNodeProps {
+export interface CodeMonitorNodeProps extends Pick<CodeMonitoringProps, 'toggleCodeMonitorEnabled'> {
     node: CodeMonitorFields
     location: H.Location
 }
@@ -18,6 +18,7 @@ export interface CodeMonitorNodeProps {
 const LOADING = 'LOADING' as const
 
 export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
+    toggleCodeMonitorEnabled,
     location,
     node,
 }: CodeMonitorNodeProps) => {
@@ -49,7 +50,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                         )
                     })
                 ),
-            [node, enabled, setEnabled]
+            [node, enabled, setEnabled, toggleCodeMonitorEnabled]
         )
     )
 
@@ -66,7 +67,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                 <div className="d-flex flex-column">
                     <div className="d-flex">
                         {toggleMonitorOrError === LOADING && <LoadingSpinner className="icon-inline mr-2" />}
-                        <div onClick={toggleMonitor}>
+                        <div onClick={toggleMonitor} className="test-toggle-monitor-enabled">
                             <Toggle value={enabled} className="mr-3" disabled={toggleMonitorOrError === LOADING} />
                         </div>
                         {/** TODO: link to edit pages. */}

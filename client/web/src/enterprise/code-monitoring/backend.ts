@@ -91,7 +91,7 @@ export interface ListCodeMonitorsResult {
     monitors: ListCodeMonitors
 }
 
-export const listUserCodeMonitors = ({
+export const fetchUserCodeMonitors = ({
     id,
     first,
     after,

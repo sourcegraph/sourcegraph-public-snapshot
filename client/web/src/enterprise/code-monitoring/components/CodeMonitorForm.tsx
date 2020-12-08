@@ -1,5 +1,5 @@
 import classnames from 'classnames'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { AuthenticatedUser } from '../../../auth'
@@ -11,8 +11,10 @@ import { mergeMap, startWith, catchError, tap } from 'rxjs/operators'
 import { Form } from '../../../../../branded/src/components/Form'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
 import { CodeMonitorFields } from '../../../graphql-operations'
+import { isEqual } from 'lodash'
 
 export interface CodeMonitorFormProps {
+    history: H.History
     location: H.Location
     authenticatedUser: AuthenticatedUser
     /**
@@ -34,6 +36,7 @@ interface FormCompletionSteps {
 export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     authenticatedUser,
     onSubmit,
+    history,
     submitButtonLabel,
     codeMonitor,
 }) => {
@@ -88,13 +91,35 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                     mergeMap(() =>
                         onSubmit(currentCodeMonitorState).pipe(
                             startWith(LOADING),
-                            catchError(error => [asError(error)])
+                            catchError(error => [asError(error)]),
+                            tap(successOrError => {
+                                if (!isErrorLike(successOrError) && successOrError !== LOADING) {
+                                    history.push('/code-monitoring')
+                                }
+                            })
                         )
                     )
                 ),
-            [onSubmit, currentCodeMonitorState]
+            [onSubmit, currentCodeMonitorState, history]
         )
     )
+
+    const initialCodeMonitor = useMemo(() => codeMonitor, [codeMonitor])
+
+    // Determine whether the form has changed. If there was no intial state (i.e. we're creating a monitor), always return
+    // true.
+    const hasChangedFields = useMemo(
+        () => (codeMonitor ? !isEqual(initialCodeMonitor, currentCodeMonitorState) : true),
+        [initialCodeMonitor, codeMonitor, currentCodeMonitorState]
+    )
+
+    const onCancel = useCallback(() => {
+        if (hasChangedFields) {
+            if (window.confirm('Leave page? All unsaved changes will be lost.')) {
+                history.push('/code-monitoring')
+            }
+        }
+    }, [history, hasChangedFields])
 
     return (
         <Form className="my-4" onSubmit={requestOnSubmit}>
@@ -174,24 +199,19 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         type="submit"
                         disabled={
                             !formCompletion.actionCompleted ||
-                            isErrorLike(codeMonitorOrError) ||
-                            codeMonitorOrError === LOADING
+                            !formCompletion.triggerCompleted ||
+                            codeMonitorOrError === LOADING ||
+                            !hasChangedFields
                         }
                         className="btn btn-primary mr-2 test-submit-monitor"
                     >
                         {submitButtonLabel}
                     </button>
-                    <button type="button" className="btn btn-outline-secondary">
+                    <button type="button" className="btn btn-outline-secondary test-cancel-monitor" onClick={onCancel}>
                         {/* TODO: this should link somewhere */}
                         Cancel
                     </button>
                 </div>
-                {/** TODO: Error and success states. We will probably redirect the user to another page, so we could remove the success state. */}
-                {!isErrorLike(codeMonitorOrError) && !!codeMonitorOrError && codeMonitorOrError !== LOADING && (
-                    <div className="alert alert-success">
-                        Successfully created monitor {codeMonitorOrError.description}
-                    </div>
-                )}
                 {isErrorLike(codeMonitorOrError) && (
                     <div className="alert alert-danger">Failed to create monitor: {codeMonitorOrError.message}</div>
                 )}

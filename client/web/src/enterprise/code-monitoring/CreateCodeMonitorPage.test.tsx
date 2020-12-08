@@ -20,6 +20,7 @@ describe('CreateCodeMonitorPage', () => {
         breadcrumbs: [{ depth: 0, breadcrumb: null }],
         setBreadcrumb: sinon.spy(),
         useBreadcrumb: sinon.spy(),
+        history,
     }
     test('Actions area button is disabled while trigger is incomplete', () => {
         const component = mount(<CreateCodeMonitorPage {...props} />)

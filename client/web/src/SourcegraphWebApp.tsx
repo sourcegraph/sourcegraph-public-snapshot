@@ -69,7 +69,12 @@ import {
 } from './util/settings'
 import { SearchPatternType } from '../../shared/src/graphql-operations'
 import { HTTPStatusError } from '../../shared/src/backend/fetch'
-import { listUserCodeMonitors } from './enterprise/code-monitoring/backend'
+import {
+    fetchCodeMonitor,
+    fetchUserCodeMonitors,
+    toggleCodeMonitorEnabled,
+    updateCodeMonitor,
+} from './enterprise/code-monitoring/backend'
 import { aggregateStreamingSearch } from './search/stream'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
@@ -460,7 +465,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     fetchSavedSearches={fetchSavedSearches}
                                     fetchRecentSearches={fetchRecentSearches}
                                     fetchRecentFileViews={fetchRecentFileViews}
-                                    fetchUserCodeMonitors={listUserCodeMonitors}
+                                    fetchUserCodeMonitors={fetchUserCodeMonitors}
+                                    fetchCodeMonitor={fetchCodeMonitor}
+                                    updateCodeMonitor={updateCodeMonitor}
+                                    toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
                                     streamSearch={aggregateStreamingSearch}
                                 />
                             )}
