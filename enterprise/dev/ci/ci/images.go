@@ -50,6 +50,7 @@ var SourcegraphDockerImages = []string{
 	"jaeger-all-in-one",
 	"codeintel-db",
 	"minio",
+	"postgres_exporter",
 }
 
 // candidateImageTag provides the tag for a candidate image built for this Buildkite run.
