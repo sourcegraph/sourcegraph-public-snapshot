@@ -83,26 +83,6 @@ Triggers:
 
 ```
 
-# Table "public.campaigns_old"
-```
-       Column       |           Type           | Modifiers 
---------------------+--------------------------+-----------
- id                 | bigint                   | 
- name               | text                     | 
- description        | text                     | 
- initial_applier_id | integer                  | 
- namespace_user_id  | integer                  | 
- namespace_org_id   | integer                  | 
- created_at         | timestamp with time zone | 
- updated_at         | timestamp with time zone | 
- changeset_ids      | jsonb                    | 
- closed_at          | timestamp with time zone | 
- campaign_spec_id   | bigint                   | 
- last_applier_id    | bigint                   | 
- last_applied_at    | timestamp with time zone | 
-
-```
-
 # Table "public.changeset_events"
 ```
     Column    |           Type           |                           Modifiers                           
@@ -209,43 +189,6 @@ Foreign-key constraints:
     "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
     TABLE "changeset_events" CONSTRAINT "changeset_events_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
-
-```
-
-# Table "public.changesets_old"
-```
-        Column         |           Type           | Modifiers 
------------------------+--------------------------+-----------
- id                    | bigint                   | 
- campaign_ids          | jsonb                    | 
- repo_id               | integer                  | 
- created_at            | timestamp with time zone | 
- updated_at            | timestamp with time zone | 
- metadata              | jsonb                    | 
- external_id           | text                     | 
- external_service_type | text                     | 
- external_deleted_at   | timestamp with time zone | 
- external_branch       | text                     | 
- external_updated_at   | timestamp with time zone | 
- external_state        | text                     | 
- external_review_state | text                     | 
- external_check_state  | text                     | 
- created_by_campaign   | boolean                  | 
- added_to_campaign     | boolean                  | 
- diff_stat_added       | integer                  | 
- diff_stat_changed     | integer                  | 
- diff_stat_deleted     | integer                  | 
- sync_state            | jsonb                    | 
- current_spec_id       | bigint                   | 
- previous_spec_id      | bigint                   | 
- publication_state     | text                     | 
- owned_by_campaign_id  | bigint                   | 
- reconciler_state      | text                     | 
- failure_message       | text                     | 
- started_at            | timestamp with time zone | 
- finished_at           | timestamp with time zone | 
- process_after         | timestamp with time zone | 
- num_resets            | integer                  | 
 
 ```
 

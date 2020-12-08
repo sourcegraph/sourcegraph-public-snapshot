@@ -158,6 +158,8 @@
 // 1528395761_remove_enums.up.sql (1.454kB)
 // 1528395762_add_col_num_results_trigger_event.down.sql (150B)
 // 1528395762_add_col_num_results_trigger_event.up.sql (327B)
+// 1528395763_remove_old_campaign_tables.down.sql (1.433kB)
+// 1528395763_remove_old_campaign_tables.up.sql (90B)
 
 package migrations
 
@@ -3386,6 +3388,46 @@ func _1528395762_add_col_num_results_trigger_eventUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395763_remove_old_campaign_tablesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xbc\x94\xc1\x8e\xda\x30\x10\x86\xef\x3c\x85\x8f\xad\xd4\x37\xd8\x13\xa9\x5c\xea\x6a\x49\xaa\xc5\x52\x57\xbd\x58\x83\x3d\x01\xab\x8e\x6d\x79\x9c\xdd\xf2\xf6\x15\x21\x40\x80\xc0\xe6\xd4\xa3\xf3\xfd\x9e\x19\xff\x33\x93\x82\x2f\x44\xf9\x34\x9b\x7d\x7d\xe1\x73\xc9\x99\x9c\x17\xcf\x9c\x89\x6f\xac\xac\x24\xe3\xaf\x62\x25\x57\x4c\x43\x13\xc1\x6e\x3c\xa9\xe0\x0c\xfb\x34\x63\x8c\x31\x6b\x58\x21\x16\xa2\x94\x5f\xba\xa3\x87\x06\x99\xe4\xaf\xfd\xd1\x20\xe9\x64\x63\xb6\xc1\x0f\xbe\x5a\x6f\xb3\x05\xa7\x20\x46\x67\x31\x29\x6b\x98\x28\x25\x5f\xf0\x97\x73\x10\x8a\xa0\x51\xb5\xf4\x10\x87\xb4\xb9\xa1\x3a\x21\x64\x34\x0a\x32\x93\x62\xc9\x57\x72\xbe\xfc\xc9\x7e\x09\xf9\xbd\x3b\xb2\xdf\x55\xc9\x0f\xc2\x36\x9a\x69\x42\xbd\x05\xbf\x41\xc2\xac\xac\x21\xf6\x63\x55\x95\x45\x0f\x5c\xa0\x49\x01\x7a\xdf\x14\x45\xd4\xea\xca\x31\x07\x94\x87\x4e\xdc\x61\x0f\xd3\xcc\x3e\x7f\xd0\xb8\xe3\x0b\x1e\x74\xee\x54\xe4\xd5\x23\x13\xc6\xf0\x1f\x4c\x6e\x30\x83\x81\x0c\xc3\xd4\xf8\x37\x63\xf2\xe0\xf6\xe9\xcf\xd3\x73\xfa\x4a\x98\xde\xac\x46\x95\x77\x11\xc7\xb8\x41\x87\x93\x72\x9f\x6e\xac\x13\x78\xbd\x1d\x8b\x35\xf9\x1d\xe7\xea\x32\xe4\xd1\xb2\x12\xbe\x59\x7c\xbf\xcf\xf5\x16\xf5\x9f\x1b\x7c\x74\x7c\xbd\x53\xc7\x4e\xb1\xa2\xaa\x9e\xf9\xbc\x3c\x08\xc0\x18\x34\x2a\x87\x3b\xd8\xd8\xba\xee\x82\xaa\x4e\x78\xd9\xce\x33\x3c\x4c\xca\x5d\xdc\x5b\x7a\x89\x69\xe7\x75\x5f\xef\x70\x39\xda\x94\xd0\xe7\xd1\x99\x8f\x7b\x0f\x42\x4b\xe3\xb0\x5d\x3b\xab\x61\xff\xcf\xb8\x71\x21\xbc\xfb\x4b\x0f\xae\x2f\x27\xd4\xc1\x6b\xeb\x30\xdd\xdc\xad\xc1\xba\x36\xa1\x6a\x90\x08\x36\x43\x42\x19\xd2\xa4\xe6\xd6\xd6\x5b\xda\x4e\x51\xc6\x14\x34\x12\x29\xa8\x33\xa6\x0f\xb4\xbe\x6d\x54\xea\xb6\xf3\xe8\xeb\x61\x9f\xab\xe5\x52\xc8\xa7\xd9\xbf\x00\x00\x00\xff\xff\x23\x17\x84\x15\x99\x05\x00\x00")
+
+func _1528395763_remove_old_campaign_tablesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395763_remove_old_campaign_tablesDownSql,
+		"1528395763_remove_old_campaign_tables.down.sql",
+	)
+}
+
+func _1528395763_remove_old_campaign_tablesDownSql() (*asset, error) {
+	bytes, err := _1528395763_remove_old_campaign_tablesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395763_remove_old_campaign_tables.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xaa, 0x92, 0x8f, 0x18, 0x67, 0xb, 0x19, 0xa8, 0xbf, 0x4c, 0x80, 0x33, 0xd5, 0xdf, 0x3c, 0x9e, 0x50, 0xd6, 0x1f, 0x6c, 0x34, 0xa4, 0x79, 0x5f, 0xf7, 0xb2, 0xce, 0x69, 0x48, 0x37, 0xa4, 0xd5}}
+	return a, nil
+}
+
+var __1528395763_remove_old_campaign_tablesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x2b\x8e\xcf\xcf\x49\xb1\xc6\xa1\x26\x23\x31\x2f\x3d\xb5\x38\xb5\x04\xaa\x88\xcb\xd9\xdf\xd7\xd7\x33\xc4\x9a\x0b\x10\x00\x00\xff\xff\x40\x93\x7e\xb1\x5a\x00\x00\x00")
+
+func _1528395763_remove_old_campaign_tablesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395763_remove_old_campaign_tablesUpSql,
+		"1528395763_remove_old_campaign_tables.up.sql",
+	)
+}
+
+func _1528395763_remove_old_campaign_tablesUpSql() (*asset, error) {
+	bytes, err := _1528395763_remove_old_campaign_tablesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395763_remove_old_campaign_tables.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xeb, 0xb, 0xe7, 0x7b, 0x6c, 0xc5, 0xc, 0x9, 0x89, 0x5c, 0x10, 0x2b, 0xc3, 0x2c, 0xfd, 0x19, 0xb3, 0x79, 0x55, 0x5b, 0xcc, 0xe2, 0x65, 0xb6, 0x93, 0x8c, 0x37, 0xe8, 0xc4, 0x44, 0xb8, 0x10}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3635,6 +3677,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395761_remove_enums.up.sql":                                                         _1528395761_remove_enumsUpSql,
 	"1528395762_add_col_num_results_trigger_event.down.sql":                                  _1528395762_add_col_num_results_trigger_eventDownSql,
 	"1528395762_add_col_num_results_trigger_event.up.sql":                                    _1528395762_add_col_num_results_trigger_eventUpSql,
+	"1528395763_remove_old_campaign_tables.down.sql":                                         _1528395763_remove_old_campaign_tablesDownSql,
+	"1528395763_remove_old_campaign_tables.up.sql":                                           _1528395763_remove_old_campaign_tablesUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3839,6 +3883,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395761_remove_enums.up.sql":                                                         {_1528395761_remove_enumsUpSql, map[string]*bintree{}},
 	"1528395762_add_col_num_results_trigger_event.down.sql":                                  {_1528395762_add_col_num_results_trigger_eventDownSql, map[string]*bintree{}},
 	"1528395762_add_col_num_results_trigger_event.up.sql":                                    {_1528395762_add_col_num_results_trigger_eventUpSql, map[string]*bintree{}},
+	"1528395763_remove_old_campaign_tables.down.sql":                                         {_1528395763_remove_old_campaign_tablesDownSql, map[string]*bintree{}},
+	"1528395763_remove_old_campaign_tables.up.sql":                                           {_1528395763_remove_old_campaign_tablesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
