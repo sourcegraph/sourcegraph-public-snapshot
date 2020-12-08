@@ -49,7 +49,6 @@ var _ Source = &GithubSource{}
 var _ UserSource = &GithubSource{}
 var _ DraftChangesetSource = &GithubSource{}
 var _ ChangesetSource = &GithubSource{}
-var _ AffiliatedRepositorySource = &GithubSource{}
 
 // NewGithubSource returns a new GithubSource from the given external service.
 func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
@@ -776,36 +775,4 @@ func exampleRepositoryQuerySplit(q string) string {
 	enc.SetEscapeHTML(false)
 	_ = enc.Encode(qs)
 	return strings.TrimSpace(b.String())
-}
-
-func (s *GithubSource) AffiliatedRepositories(ctx context.Context, opts AffiliatedRepositoryOptions) ([]types.AffiliatedRepository, error) {
-	var (
-		repos []*github.Repository
-		cost  int
-		err   error
-	)
-	defer func() {
-		remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
-		log15.Debug(
-			"github sync: ListAffiliated",
-			"repos", len(repos),
-			"rateLimitCost", cost,
-			"rateLimitRemaining", remaining,
-			"rateLimitReset", reset,
-			"retryAfter", retry,
-		)
-	}()
-	repos, _, cost, err = s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, opts.Page)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]types.AffiliatedRepository, 0, len(repos))
-	for _, repo := range repos {
-		out = append(out, types.AffiliatedRepository{
-			Name:       repo.NameWithOwner,
-			Private:    repo.IsPrivate,
-			CodeHostID: s.svc.ID,
-		})
-	}
-	return out, nil
 }

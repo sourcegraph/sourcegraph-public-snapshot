@@ -126,15 +126,6 @@ type ChangesetSource interface {
 	ReopenChangeset(context.Context, *Changeset) error
 }
 
-type AffiliatedRepositorySource interface {
-	AffiliatedRepositories(ctx context.Context, opt AffiliatedRepositoryOptions) ([]types.AffiliatedRepository, error)
-}
-
-type AffiliatedRepositoryOptions struct {
-	Page  int
-	Query string
-}
-
 // UnsupportedAuthenticatorError is returned by WithAuthenticator if the
 // authenticator isn't supported on that code host.
 type UnsupportedAuthenticatorError struct {
