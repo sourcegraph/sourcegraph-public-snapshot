@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-// This is set a bit longer than maxSyncInterval in cmd/repo-updater/repos/syncer.go
+// This is set a bit longer than maxSyncInterval in internal/repos/syncer.go
 const syncDurationThreshold = 9 * time.Hour
 
 func RepoUpdater() *monitoring.Container {

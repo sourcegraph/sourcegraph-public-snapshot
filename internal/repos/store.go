@@ -251,7 +251,7 @@ func (s *DBStore) ListExternalServices(ctx context.Context, args StoreListExtern
 }
 
 const listExternalServicesQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.ListExternalServices
+-- source: internal/repos/store.go:DBStore.ListExternalServices
 SELECT
   id,
   kind,
@@ -385,7 +385,7 @@ const upsertExternalServicesQueryValueFmtstr = `
 `
 
 const upsertExternalServicesQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.UpsertExternalServices
+-- source: internal/repos/store.go:DBStore.UpsertExternalServices
 INSERT INTO external_services (
   id,
   kind,
@@ -610,7 +610,7 @@ func (s *DBStore) ListRepos(ctx context.Context, args StoreListReposArgs) (repos
 }
 
 const listReposQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.ListRepos
+-- source: internal/repos/store.go:DBStore.ListRepos
 SELECT
   id,
   name,
@@ -732,7 +732,7 @@ func listReposQuery(args StoreListReposArgs) (paginatedQuery, error) {
 
 func (s *DBStore) ListExternalRepoSpecs(ctx context.Context) (map[api.ExternalRepoSpec]struct{}, error) {
 	const ListExternalRepoSpecsQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.ListExternalRepoSpecs
+-- source: internal/repos/store.go:DBStore.ListExternalRepoSpecs
 SELECT
 	id,
 	external_id,
@@ -844,7 +844,7 @@ var upsertSourcesQueryFmtstr = upsertSourcesFmtstrPrefix + upsertSourcesFmtstrSu
 var upsertSourcesWithDeletesQueryFmtstr = upsertSourcesFmtstrPrefix + upsertSourcesFmtstrDeletes + upsertSourcesFmtstrSuffix
 
 const upsertSourcesFmtstrPrefix = `
--- source: cmd/repo-updater/repos/store.go:DBStore.UpsertSources
+-- source: internal/repos/store.go:DBStore.UpsertSources
 WITH updated_sources_list AS (
   SELECT * FROM
   unnest(%s::bigint[], %s::integer[], %s::text[]) AS
@@ -913,7 +913,7 @@ func (s *DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error
 }
 
 const setClonedReposQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
+-- source: internal/repos/store.go:DBStore.SetClonedRepos
 WITH repo_names AS (
   SELECT unnest(%s::citext[])::citext AS name
 ),
@@ -940,7 +940,7 @@ func (s *DBStore) CountNotClonedRepos(ctx context.Context) (uint64, error) {
 }
 
 const CountNotClonedReposQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.CountNotClonedRepos
+-- source: internal/repos/store.go:DBStore.CountNotClonedRepos
 SELECT COUNT(*) FROM repo WHERE deleted_at IS NULL AND NOT cloned
 `
 
@@ -956,7 +956,7 @@ func (s *DBStore) CountUserAddedRepos(ctx context.Context) (uint64, error) {
 }
 
 const CountTotalUserAddedReposQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.CountUserAddedRepos
+-- source: internal/repos/store.go:DBStore.CountUserAddedRepos
 SELECT COUNT(*)
 FROM
     repo r

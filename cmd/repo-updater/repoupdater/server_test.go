@@ -20,7 +20,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -31,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"

@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
 func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {

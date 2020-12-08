@@ -11,11 +11,11 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )

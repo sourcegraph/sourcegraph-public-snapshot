@@ -5,11 +5,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
 func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {

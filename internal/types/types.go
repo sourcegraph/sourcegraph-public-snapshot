@@ -396,6 +396,12 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	return fs
 }
 
+type AffiliatedRepository struct {
+	Name       string
+	CodeHostID int64
+	Private    bool
+}
+
 // ExternalService is a connection to an external service.
 type ExternalService struct {
 	ID              int64

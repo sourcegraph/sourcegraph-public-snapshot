@@ -15,7 +15,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	idb "github.com/sourcegraph/sourcegraph/internal/db"
@@ -27,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )

@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	extsvcGitHub "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )

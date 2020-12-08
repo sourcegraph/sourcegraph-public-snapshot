@@ -20,7 +20,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared/assets"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -36,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
