@@ -80,4 +80,34 @@ describe('ManageCodeMonitorPage', () => {
         triggerInput = component.find('.test-action-form')
         expect(triggerInput.length).toBe(1)
     })
+
+    test('Save button is disabled when no changes have been made, enabled when changes have been made', () => {
+        const component = mount(<ManageCodeMonitorPage {...props} />)
+        let submitButton = component.find('.test-submit-monitor')
+        expect(submitButton.prop('disabled')).toBe(true)
+        const nameInput = component.find('.test-name-input')
+        nameInput.simulate('change', { target: { value: 'Test code monitor updated' } })
+        submitButton = component.find('.test-submit-monitor')
+        expect(submitButton.prop('disabled')).toBe(false)
+    })
+
+    test('Cancelling after changes have been made shows confirmation prompt', () => {
+        const component = mount(<ManageCodeMonitorPage {...props} />)
+        const confirmStub = sinon.stub(window, 'confirm')
+        const nameInput = component.find('.test-name-input')
+        nameInput.simulate('change', { target: { value: 'Test code monitor updated' } })
+        const cancelButton = component.find('.test-cancel-monitor')
+        cancelButton.simulate('click')
+        expect(confirmStub.calledOnce)
+        confirmStub.restore()
+    })
+
+    test('Cancelling without any changes made does not show confirmation prompt', () => {
+        const component = mount(<ManageCodeMonitorPage {...props} />)
+        const confirmStub = sinon.stub(window, 'confirm')
+        const cancelButton = component.find('.test-cancel-monitor')
+        cancelButton.simulate('click')
+        expect(confirmStub.notCalled)
+        confirmStub.restore()
+    })
 })
