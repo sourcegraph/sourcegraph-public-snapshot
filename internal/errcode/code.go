@@ -100,8 +100,11 @@ func (e *Mock) NotFound() bool {
 // methods like Repo.Get when the repo is not found. It will also *not* map
 // HTTPStatusCode into not found.
 func IsNotFound(err error) bool {
+	type notFounder interface {
+		NotFound() bool
+	}
 	return isErrorPredicate(err, func(err error) bool {
-		e, ok := err.(interface{ NotFound() bool })
+		e, ok := err.(notFounder)
 		return ok && e.NotFound()
 	})
 }
@@ -109,16 +112,22 @@ func IsNotFound(err error) bool {
 // IsUnauthorized will check if err or one of its causes is an unauthorized
 // error.
 func IsUnauthorized(err error) bool {
+	type unauthorizeder interface {
+		Unauthorized() bool
+	}
 	return isErrorPredicate(err, func(err error) bool {
-		e, ok := err.(interface{ Unauthorized() bool })
+		e, ok := err.(unauthorizeder)
 		return ok && e.Unauthorized()
 	})
 }
 
 // IsBadRequest will check if err or one of its causes is a bad request.
 func IsBadRequest(err error) bool {
+	type badRequester interface {
+		BadRequest() bool
+	}
 	return isErrorPredicate(err, func(err error) bool {
-		badrequest, ok := err.(interface{ BadRequest() bool })
+		badrequest, ok := err.(badRequester)
 		return ok && badrequest.BadRequest()
 	})
 }
@@ -127,8 +136,11 @@ func IsBadRequest(err error) bool {
 // temporary error can be retried. Many errors in the go stdlib implement the
 // temporary interface.
 func IsTemporary(err error) bool {
+	type temporaryer interface {
+		Temporary() bool
+	}
 	return isErrorPredicate(err, func(err error) bool {
-		e, ok := err.(interface{ Temporary() bool })
+		e, ok := err.(temporaryer)
 		return ok && e.Temporary()
 	})
 }
@@ -136,16 +148,22 @@ func IsTemporary(err error) bool {
 // IsTimeout will check if err or one of its causes is a timeout. Many errors
 // in the go stdlib implement the timeout interface.
 func IsTimeout(err error) bool {
+	type timeouter interface {
+		Timeout() bool
+	}
 	return isErrorPredicate(err, func(err error) bool {
-		e, ok := err.(interface{ Timeout() bool })
+		e, ok := err.(timeouter)
 		return ok && e.Timeout()
 	})
 }
 
 // IsNonRetryable will check if err or one of its causes is a error that cannot be retried.
 func IsNonRetryable(err error) bool {
+	type nonRetryabler interface {
+		NonRetryable() bool
+	}
 	return isErrorPredicate(err, func(err error) bool {
-		e, ok := err.(interface{ NonRetryable() bool })
+		e, ok := err.(nonRetryabler)
 		return ok && e.NonRetryable()
 	})
 }
