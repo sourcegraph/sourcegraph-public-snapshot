@@ -1,5 +1,4 @@
 import { storiesOf } from '@storybook/react'
-import * as H from 'history'
 import { SuiteFunction } from 'mocha'
 import React from 'react'
 import { Observable, of } from 'rxjs'
