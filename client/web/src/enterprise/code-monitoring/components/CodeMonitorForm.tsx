@@ -115,7 +115,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
 
     const onCancel = useCallback(() => {
         if (hasChangedFields) {
-            if (confirm('Leave page? All unsaved changes will be lost.')) {
+            if (window.confirm('Leave page? All unsaved changes will be lost.')) {
                 history.push('/code-monitoring')
             }
         }
