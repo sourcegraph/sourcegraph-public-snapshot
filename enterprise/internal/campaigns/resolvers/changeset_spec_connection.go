@@ -61,12 +61,6 @@ func (r *changesetSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlb
 		return nil, err
 	}
 
-	// Create a shared previewer so the expensive operations can be cached across changeset spec resolvers.
-	previewer := &changesetSpecPreviewer{
-		store:          r.store,
-		campaignSpecID: r.campaignSpecID,
-	}
-
 	resolvers := make([]graphqlbackend.ChangesetSpecResolver, 0, len(changesetSpecs))
 	for _, c := range changesetSpecs {
 		repo := reposByID[c.RepoID]
@@ -75,7 +69,7 @@ func (r *changesetSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlb
 		// In that case we'll set it anyway to nil and changesetSpecResolver
 		// will treat it as "hidden".
 
-		resolvers = append(resolvers, NewChangesetSpecResolverWithRepo(r.store, repo, c).WithPreviewer(previewer))
+		resolvers = append(resolvers, NewChangesetSpecResolverWithRepo(r.store, repo, c))
 	}
 
 	return resolvers, nil

@@ -1,21 +1,21 @@
 import * as H from 'history'
 import React, { useCallback, useState } from 'react'
-import { VisibleChangesetSpecFields } from '../../../graphql-operations'
-import { ThemeProps } from '../../../../../shared/src/theme'
-import { FileDiffNode } from '../../../components/diff/FileDiffNode'
-import { FileDiffConnection } from '../../../components/diff/FileDiffConnection'
+import { ChangesetApplyPreviewFields, VisibleChangesetSpecFields } from '../../../../graphql-operations'
+import { ThemeProps } from '../../../../../../shared/src/theme'
+import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
+import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { map } from 'rxjs/operators'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
-import { FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
-import { Link } from '../../../../../shared/src/components/Link'
-import { DiffStat } from '../../../components/diff/DiffStat'
+import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
+import { Link } from '../../../../../../shared/src/components/Link'
+import { DiffStat } from '../../../../components/diff/DiffStat'
 import { ChangesetSpecAction } from './ChangesetSpecAction'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
 
 export interface VisibleChangesetSpecNodeProps extends ThemeProps {
-    node: VisibleChangesetSpecFields
+    node: ChangesetApplyPreviewFields
     history: H.History
     location: H.Location
 
@@ -48,10 +48,10 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
             queryChangesetSpecFileDiffs({
                 after: args.after ?? null,
                 first: args.first ?? null,
-                changesetSpec: node.id,
+                changesetSpec: node.changesetSpec!.id,
                 isLightTheme,
             }).pipe(map(diff => diff.fileDiffs)),
-        [node.id, isLightTheme, queryChangesetSpecFileDiffs]
+        [node.changesetSpec, isLightTheme, queryChangesetSpecFileDiffs]
     )
 
     return (
@@ -68,7 +68,7 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
             </button>
-            <ChangesetSpecAction spec={node} className="visible-changeset-spec-node__action" />
+            <ChangesetSpecAction node={node} className="visible-changeset-spec-node__action" />
             <div className="visible-changeset-spec-node__information">
                 <div className="d-flex flex-column">
                     <ChangesetSpecTitle spec={node} />
@@ -157,8 +157,14 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
     )
 }
 
-const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetSpecFields }> = ({ spec }) => {
-    if (spec.description.__typename === 'ExistingChangesetReference') {
+const ChangesetSpecTitle: React.FunctionComponent<{ spec: ChangesetApplyPreviewFields }> = ({ spec }) => {
+    if (spec.delta.titleChanged) {
+    }
+    if (spec.changeset && spec.changeset.__typename === 'ExternalChangeset') {
+        return <h3>{spec.changeset.title}</h3>
+    }
+
+    if (spec.changesetSpec.description.__typename === 'ExistingChangesetReference') {
         return <h3>Import changeset #{spec.description.externalID}</h3>
     }
     if (

@@ -4,13 +4,13 @@ import React from 'react'
 import { CampaignApplyPage } from './CampaignApplyPage'
 import { of, Observable } from 'rxjs'
 import {
-    CampaignSpecChangesetSpecsResult,
     ChangesetSpecFields,
     CampaignSpecFields,
     ExternalServiceKind,
+    CampaignSpecChangesetApplyPreviewResult,
 } from '../../../graphql-operations'
-import { visibleChangesetSpecStories } from './VisibleChangesetSpecNode.story'
-import { hiddenChangesetSpecStories } from './HiddenChangesetSpecNode.story'
+import { visibleChangesetSpecStories } from './list/VisibleChangesetSpecNode.story'
+import { hiddenChangesetSpecStories } from './list/HiddenChangesetSpecNode.story'
 import { fetchCampaignSpecById } from './backend'
 import { addDays, subDays } from 'date-fns'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
@@ -93,8 +93,8 @@ const fetchCampaignSpecUpdate: typeof fetchCampaignSpecById = () =>
         },
     })
 
-const queryChangesetSpecs = (): Observable<
-    (CampaignSpecChangesetSpecsResult['node'] & { __typename: 'CampaignSpec' })['changesetSpecs']
+const queryChangesetApplyPreviews = (): Observable<
+    (CampaignSpecChangesetApplyPreviewResult['node'] & { __typename: 'CampaignSpec' })['applyPreview']
 > =>
     of({
         pageInfo: {
@@ -106,7 +106,7 @@ const queryChangesetSpecs = (): Observable<
     })
 
 const queryEmptyChangesetSpecs = (): Observable<
-    (CampaignSpecChangesetSpecsResult['node'] & { __typename: 'CampaignSpec' })['changesetSpecs']
+    (CampaignSpecChangesetApplyPreviewResult['node'] & { __typename: 'CampaignSpec' })['applyPreview']
 > =>
     of({
         pageInfo: {
@@ -128,7 +128,7 @@ add('Create', () => (
                 expandChangesetDescriptions={true}
                 specID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecCreate}
-                queryChangesetSpecs={queryChangesetSpecs}
+                queryChangesetApplyPreviews={queryChangesetApplyPreviews}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 authenticatedUser={{ url: '/users/alice' }}
             />
@@ -144,7 +144,7 @@ add('Update', () => (
                 expandChangesetDescriptions={true}
                 specID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecUpdate}
-                queryChangesetSpecs={queryChangesetSpecs}
+                queryChangesetApplyPreviews={queryChangesetApplyPreviews}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 authenticatedUser={{ url: '/users/alice' }}
             />
@@ -160,7 +160,7 @@ add('Missing credentials', () => (
                 expandChangesetDescriptions={true}
                 specID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecMissingCredentials}
-                queryChangesetSpecs={queryChangesetSpecs}
+                queryChangesetApplyPreviews={queryChangesetApplyPreviews}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 authenticatedUser={{ url: '/users/alice' }}
             />
@@ -176,7 +176,7 @@ add('No changesets', () => (
                 expandChangesetDescriptions={true}
                 specID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecCreate}
-                queryChangesetSpecs={queryEmptyChangesetSpecs}
+                queryChangesetApplyPreviews={queryEmptyChangesetSpecs}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 authenticatedUser={{ url: '/users/alice' }}
             />

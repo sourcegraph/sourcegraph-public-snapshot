@@ -1,6 +1,6 @@
 import React from 'react'
 
-export const EmptyChangesetSpecListElement: React.FunctionComponent<{}> = () => (
+export const EmptyPreviewListElement: React.FunctionComponent<{}> = () => (
     <div className="col-md-8 offset-md-2 col-sm-12 card mt-5">
         <div className="card-body p-5 empty-changeset-spec-list-element__body">
             <h2 className="text-center mb-4">No changesets will be created by this campaign</h2>

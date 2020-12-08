@@ -1,5 +1,5 @@
 import React from 'react'
-import { ChangesetSpecFields, ChangesetSpecOperation } from '../../../graphql-operations'
+import { ChangesetApplyPreviewFields, ChangesetSpecOperation } from '../../../../graphql-operations'
 import BlankCircleIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import ImportIcon from 'mdi-react/ImportIcon'
 import UploadIcon from 'mdi-react/UploadIcon'
@@ -11,16 +11,17 @@ import classNames from 'classnames'
 import CloseCircleOutlineIcon from 'mdi-react/CloseCircleOutlineIcon'
 
 export interface ChangesetSpecActionProps {
-    spec: ChangesetSpecFields
+    node: ChangesetApplyPreviewFields
     className?: string
 }
 
-export const ChangesetSpecAction: React.FunctionComponent<ChangesetSpecActionProps> = ({ spec, className }) => {
-    if (spec.operations.length === 0) {
+export const ChangesetSpecAction: React.FunctionComponent<ChangesetSpecActionProps> = ({ node, className }) => {
+    if (node.operations.length === 0) {
         return (
             <ChangesetSpecActionNoAction
                 reason={
-                    spec.__typename === 'HiddenChangesetSpec'
+                    (node.changesetSpec && node.changesetSpec.__typename === 'HiddenChangesetSpec') ||
+                    (node.changeset && node.changeset.__typename === 'HiddenExternalChangeset')
                         ? NoActionReasonStrings[NoActionReason.NO_ACCESS]
                         : undefined
                 }
@@ -28,31 +29,31 @@ export const ChangesetSpecAction: React.FunctionComponent<ChangesetSpecActionPro
             />
         )
     }
-    if (spec.operations.includes(ChangesetSpecOperation.IMPORT)) {
+    if (node.operations.includes(ChangesetSpecOperation.IMPORT)) {
         return <ChangesetSpecActionImport className={className} />
     }
-    if (spec.operations.includes(ChangesetSpecOperation.PUBLISH)) {
+    if (node.operations.includes(ChangesetSpecOperation.PUBLISH)) {
         return <ChangesetSpecActionPublish className={className} />
     }
-    if (spec.operations.includes(ChangesetSpecOperation.PUBLISH_DRAFT)) {
+    if (node.operations.includes(ChangesetSpecOperation.PUBLISH_DRAFT)) {
         return <ChangesetSpecActionPublishDraft className={className} />
     }
-    if (spec.operations.includes(ChangesetSpecOperation.CLOSE)) {
+    if (node.operations.includes(ChangesetSpecOperation.CLOSE)) {
         return <ChangesetSpecActionClose className={className} />
     }
-    if (spec.operations.includes(ChangesetSpecOperation.REOPEN)) {
+    if (node.operations.includes(ChangesetSpecOperation.REOPEN)) {
         return <ChangesetSpecActionReopen className={className} />
     }
-    if (spec.operations.includes(ChangesetSpecOperation.UNDRAFT)) {
+    if (node.operations.includes(ChangesetSpecOperation.UNDRAFT)) {
         return <ChangesetSpecActionUndraft className={className} />
     }
     if (
-        spec.operations.includes(ChangesetSpecOperation.UPDATE) ||
-        spec.operations.includes(ChangesetSpecOperation.PUSH)
+        node.operations.includes(ChangesetSpecOperation.UPDATE) ||
+        node.operations.includes(ChangesetSpecOperation.PUSH)
     ) {
         return <ChangesetSpecActionUpdate className={className} />
     }
-    return <ChangesetSpecActionUnknown operations={spec.operations.join(' => ')} className={className} />
+    return <ChangesetSpecActionUnknown operations={node.operations.join(' => ')} className={className} />
 }
 
 const iconClassNames = 'm-0 text-nowrap d-block d-sm-flex flex-column align-items-center justify-content-center'

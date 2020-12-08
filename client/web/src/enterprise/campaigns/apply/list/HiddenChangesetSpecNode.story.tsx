@@ -2,33 +2,37 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { HiddenChangesetSpecNode } from './HiddenChangesetSpecNode'
 import { addDays } from 'date-fns'
-import { HiddenChangesetSpecFields, ChangesetSpecType } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { ChangesetSpecType, ChangesetApplyPreviewFields } from '../../../../graphql-operations'
+import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
 const { add } = storiesOf('web/campaigns/apply/HiddenChangesetSpecNode', module).addDecorator(story => (
     <div className="p-3 container web-content changeset-spec-list__grid">{story()}</div>
 ))
 
-export const hiddenChangesetSpecStories: Record<string, HiddenChangesetSpecFields> = {
+export const hiddenChangesetSpecStories: Record<string, ChangesetApplyPreviewFields> = {
     'Import changeset': {
-        __typename: 'HiddenChangesetSpec',
-        id: 'someidh1',
-        expiresAt: addDays(new Date(), 7).toISOString(),
-        type: ChangesetSpecType.EXISTING,
         operations: [],
         delta: {
             titleChanged: false,
         },
+        changesetSpec: {
+            __typename: 'HiddenChangesetSpec',
+            id: 'someidh1',
+            expiresAt: addDays(new Date(), 7).toISOString(),
+            type: ChangesetSpecType.EXISTING,
+        },
         changeset: null,
     },
     'Create changeset': {
-        __typename: 'HiddenChangesetSpec',
-        id: 'someidh2',
-        expiresAt: addDays(new Date(), 7).toISOString(),
-        type: ChangesetSpecType.BRANCH,
         operations: [],
         delta: {
             titleChanged: false,
+        },
+        changesetSpec: {
+            __typename: 'HiddenChangesetSpec',
+            id: 'someidh2',
+            expiresAt: addDays(new Date(), 7).toISOString(),
+            type: ChangesetSpecType.BRANCH,
         },
         changeset: null,
     },

@@ -2,10 +2,10 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { ChangesetSpecList } from './ChangesetSpecList'
 import { of, Observable } from 'rxjs'
-import { CampaignSpecChangesetSpecsResult, ChangesetSpecFields } from '../../../graphql-operations'
+import { CampaignSpecChangesetSpecsResult, ChangesetSpecFields } from '../../../../graphql-operations'
 import { visibleChangesetSpecStories } from './VisibleChangesetSpecNode.story'
 import { hiddenChangesetSpecStories } from './HiddenChangesetSpecNode.story'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
 const { add } = storiesOf('web/campaigns/apply/ChangesetSpecList', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)

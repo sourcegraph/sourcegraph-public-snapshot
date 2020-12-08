@@ -10,7 +10,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // changesetSpecInsertColumns is the list of changeset_specs columns that are
@@ -403,6 +405,7 @@ type RewirerMapping struct {
 	ChangesetID     int64
 	Changeset       *campaigns.Changeset
 	RepoID          api.RepoID
+	Repo            *types.Repo
 }
 
 type RewirerMappings []*RewirerMapping
@@ -418,6 +421,11 @@ func (rm RewirerMappings) Hydrate(ctx context.Context, store *Store) error {
 	if err != nil {
 		return err
 	}
+	accessibleReposByID, err := db.Repos.GetReposSetByIDs(ctx, rm.RepoIDs()...)
+	if err != nil {
+		return err
+	}
+
 	changesetsByID := map[int64]*campaigns.Changeset{}
 	changesetSpecsByID := map[int64]*campaigns.ChangesetSpec{}
 
@@ -434,6 +442,10 @@ func (rm RewirerMappings) Hydrate(ctx context.Context, store *Store) error {
 		}
 		if m.ChangesetSpecID != 0 {
 			m.ChangesetSpec = changesetSpecsByID[m.ChangesetSpecID]
+		}
+		if m.RepoID != 0 {
+			// This can be nil, but that's okay. It just means the ctx actor has no access to the repo.
+			m.Repo = accessibleReposByID[m.RepoID]
 		}
 	}
 	return nil
@@ -485,6 +497,8 @@ func (rm RewirerMappings) RepoIDs() []api.RepoID {
 type GetRewirerMappingsOpts struct {
 	CampaignSpecID int64
 	CampaignID     int64
+
+	LimitOffset *db.LimitOffset
 }
 
 // GetRewirerMappings returns RewirerMappings between changeset specs and changesets.
@@ -561,56 +575,62 @@ func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) *sqlf.Query {
 		opts.CampaignID,
 		opts.CampaignSpecID,
 		opts.CampaignID,
+		opts.LimitOffset.SQL(),
 	)
 }
 
 var getRewirerMappingsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changeset_specs.go:GetRewirerMappings
 
--- Fetch all changeset specs in the campaign spec that want to import/track an ChangesetSpecDescriptionTypeExisting changeset.
--- Match the entries to changesets in the target campaign by external ID and repo.
-SELECT
-	changeset_spec_id, changeset_id, repo_id
-FROM
-	tracking_changeset_specs_and_changesets
-WHERE
-	campaign_spec_id = %s
+SELECT mappings.changeset_spec_id, mappings.changeset_id, mappings.repo_id FROM (
+	-- Fetch all changeset specs in the campaign spec that want to import/track an ChangesetSpecDescriptionTypeExisting changeset.
+	-- Match the entries to changesets in the target campaign by external ID and repo.
+	SELECT
+		changeset_spec_id, changeset_id, repo_id
+	FROM
+		tracking_changeset_specs_and_changesets
+	WHERE
+		campaign_spec_id = %s
 
-UNION ALL
+	UNION ALL
 
--- Fetch all changeset specs in the campaign spec that are of type ChangesetSpecDescriptionTypeBranch.
--- Match the entries to changesets in the target campaign by head ref and repo.
-SELECT
-	changeset_spec_id, MAX(CASE WHEN owner_campaign_id = %s THEN changeset_id ELSE 0 END), repo_id
-FROM
-	branch_changeset_specs_and_changesets
-WHERE
-	campaign_spec_id = %s
-GROUP BY changeset_spec_id, repo_id
+	-- Fetch all changeset specs in the campaign spec that are of type ChangesetSpecDescriptionTypeBranch.
+	-- Match the entries to changesets in the target campaign by head ref and repo.
+	SELECT
+		changeset_spec_id, MAX(CASE WHEN owner_campaign_id = %s THEN changeset_id ELSE 0 END), repo_id
+	FROM
+		branch_changeset_specs_and_changesets
+	WHERE
+		campaign_spec_id = %s
+	GROUP BY changeset_spec_id, repo_id
 
-UNION ALL
+	UNION ALL
 
--- Finally, fetch all changesets that didn't match a changeset spec in the campaign spec and that aren't part of tracked_mappings and branch_mappings. Those are to be closed or detached.
-SELECT 0 as changeset_spec_id, changesets.id as changeset_id, changesets.repo_id as repo_id
-FROM changesets
-INNER JOIN repo ON changesets.repo_id = repo.id
-WHERE
-	repo.deleted_at IS NULL AND
- 	changesets.id NOT IN (
-			SELECT
-				changeset_id
-			FROM
-				tracking_changeset_specs_and_changesets
-			WHERE
-				campaign_spec_id = %s
-		UNION
-			SELECT
-				MAX(CASE WHEN owner_campaign_id = %s THEN changeset_id ELSE 0 END)
-			FROM
-				branch_changeset_specs_and_changesets
-			WHERE
-				campaign_spec_id = %s
-			GROUP BY changeset_spec_id, repo_id
- 	) AND
- 	changesets.campaign_ids ? %s
+	-- Finally, fetch all changesets that didn't match a changeset spec in the campaign spec and that aren't part of tracked_mappings and branch_mappings. Those are to be closed or detached.
+	SELECT 0 as changeset_spec_id, changesets.id as changeset_id, changesets.repo_id as repo_id
+	FROM changesets
+	INNER JOIN repo ON changesets.repo_id = repo.id
+	WHERE
+		repo.deleted_at IS NULL AND
+		changesets.id NOT IN (
+				SELECT
+					changeset_id
+				FROM
+					tracking_changeset_specs_and_changesets
+				WHERE
+					campaign_spec_id = %s
+			UNION
+				SELECT
+					MAX(CASE WHEN owner_campaign_id = %s THEN changeset_id ELSE 0 END)
+				FROM
+					branch_changeset_specs_and_changesets
+				WHERE
+					campaign_spec_id = %s
+				GROUP BY changeset_spec_id, repo_id
+		) AND
+		changesets.campaign_ids ? %s
+) AS mappings
+ORDER BY mappings.changeset_spec_id ASC, mappings.changeset_id ASC
+-- LIMIT, OFFSET
+%s
 `
