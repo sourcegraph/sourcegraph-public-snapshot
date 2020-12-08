@@ -449,7 +449,10 @@ cc @${config.captainGitHubUsername}
                         edits: [
                             `${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' 'website/src/components/GetStarted.tsx'`,
                         ],
-                        ...prBodyAndDraftState([], 'Note that this PR does *not* include the release blog post.'),
+                        ...prBodyAndDraftState(
+                            [],
+                            notPatchRelease ? 'Note that this PR does *not* include the release blog post.' : undefined
+                        ),
                     },
                     {
                         owner: 'sourcegraph',
