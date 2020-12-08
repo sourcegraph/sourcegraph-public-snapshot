@@ -337,7 +337,7 @@ describe('Search', () => {
 
         test('Streaming search with single repo result', async () => {
             const searchStreamEvents: SearchEvent[] = [
-                { type: 'matches', data: [{ type: 'repo', repository: 'github.com/sourcegraph/sourcegraph' }] },
+                { type: 'results', data: [progres: {}, matches: { type: 'repo', repository: 'github.com/sourcegraph/sourcegraph' })] },
                 { type: 'done', data: {} },
             ]
 

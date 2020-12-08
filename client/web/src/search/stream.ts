@@ -347,18 +347,13 @@ const switchAggregateSearchResults: OperatorFunction<SearchEvent, AggregateStrea
             switch (newEvent.kind) {
                 case 'N': {
                     switch (newEvent.value?.type) {
-                        case 'matches':
+                        case 'results':
                             return {
                                 ...results,
                                 // Matches are additive
-                                results: results.results.concat(newEvent.value.data.map(toGQLSearchResult)),
-                            }
-
-                        case 'progress':
-                            return {
-                                ...results,
+                                results: results.results.concat(newEvent.value.data.matches.map(toGQLSearchResult)),
                                 // Progress updates replace
-                                progress: newEvent.value.data,
+                                progress: newEvent.value.data.progress,
                             }
 
                         case 'filters':
@@ -463,8 +458,7 @@ const messageHandlers: {
             }
             eventSource.close()
         }),
-    matches: observeMessages,
-    progress: observeMessages,
+    results: observeMessages,
     filters: observeMessages,
     alert: observeMessages,
 }
