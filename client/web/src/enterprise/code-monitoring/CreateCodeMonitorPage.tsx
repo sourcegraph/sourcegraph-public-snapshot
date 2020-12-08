@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import VideoInputAntennaIcon from 'mdi-react/VideoInputAntennaIcon'
 import React, { useCallback, useMemo } from 'react'
@@ -50,9 +51,11 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
     )
 
     return (
-        <div className="container mt-3 web-content">
+        <div className="container col-8 mt-5">
             <PageTitle title="Create new code monitor" />
-            <PageHeader title="Create new code monitor" icon={VideoInputAntennaIcon} />
+            <div className="page-header d-flex flex-wrap align-items-center">
+                <h2 className="flex-grow-1">Create code monitor</h2>
+            </div>
             Code monitors watch your code for specific triggers and run actions in response.{' '}
             <a href="" target="_blank" rel="noopener">
                 {/* TODO: populate link */}

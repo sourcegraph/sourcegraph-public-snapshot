@@ -92,9 +92,11 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
     )
 
     return (
-        <div>
+        <div className="container col-8 mt-5">
             <PageTitle title="Manage code monitor" />
-            <PageHeader title="Manage code monitor" />
+            <div className="page-header d-flex flex-wrap align-items-center">
+                <h2 className="flex-grow-1">Manage code monitor</h2>
+            </div>
             Code monitors watch your code for specific triggers and run actions in response.{' '}
             <a href="" target="_blank" rel="noopener">
                 {/* TODO: populate link */}
