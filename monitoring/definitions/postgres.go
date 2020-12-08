@@ -87,7 +87,7 @@ func Postgres() *monitoring.Container {
 						DataMayNotExist:   false,
 						DataMayNotBeNaN:   false,
 						Warning:           monitoring.Alert().LessOrEqual(0.98).For(5 * time.Minute),
-						PossibleSolutions: "none",
+						PossibleSolutions: "Cache hit ratio should be at least 99%.",
 					},
 				}},
 			},
