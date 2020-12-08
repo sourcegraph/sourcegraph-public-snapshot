@@ -58,6 +58,7 @@ describe('ManageCodeMonitorPage', () => {
         const submitButton = component.find('.test-submit-monitor')
         submitButton.simulate('click')
         expect(props.updateCodeMonitor.calledOnce)
+        expect(props.updateCodeMonitor.calledWith({ ...mockCodeMonitor, name: 'Test code monitor' }))
         component.unmount()
     })
 
