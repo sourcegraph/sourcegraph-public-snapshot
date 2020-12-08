@@ -107,6 +107,12 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 	}
 }
 
+func addBrandedTests(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":jest: Test branded client code",
+		bk.Cmd("dev/ci/yarn-test.sh client/branded"),
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
+}
+
 // Adds PostgreSQL backcompat tests.
 func addPostgresBackcompat(pipeline *bk.Pipeline) {
 	// TODO: We do not test Postgres DB backcompat anymore.
