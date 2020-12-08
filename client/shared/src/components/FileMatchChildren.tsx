@@ -65,12 +65,12 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
 
     const { result, isLightTheme, fetchHighlightedFileLines } = props
     const fetchHighlightedFileRangeLines = React.useCallback(
-        (startLine, endLine) => props.fetchHighlightedFileLines({
+        (startLine, endLine) => fetchHighlightedFileLines({
             repoName: result.repository.name,
             commitID: result.file.commit.oid,
             filePath: result.file.path,
             disableTimeout: false,
-            isLightTheme: isLightTheme,
+            isLightTheme,
         }, false).pipe(map(lines => lines.slice(startLine, endLine))),
         [result, isLightTheme, fetchHighlightedFileLines],
     )
