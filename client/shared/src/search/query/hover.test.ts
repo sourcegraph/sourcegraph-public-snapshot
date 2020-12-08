@@ -228,7 +228,7 @@ describe('getHoverResult()', () => {
             {
               "contents": [
                 {
-                  "value": "**Escaped Character. The character \`q\` is escaped."
+                  "value": "**Escaped Character**. The character \`q\` is escaped."
                 }
               ],
               "range": {
@@ -243,7 +243,7 @@ describe('getHoverResult()', () => {
             {
               "contents": [
                 {
-                  "value": "**Escaped Character. Match a carriage return."
+                  "value": "**Escaped Character**. Match a carriage return."
                 }
               ],
               "range": {
@@ -258,7 +258,7 @@ describe('getHoverResult()', () => {
             {
               "contents": [
                 {
-                  "value": "**Escaped Character. Match a new line."
+                  "value": "**Escaped Character**. Match a new line."
                 }
               ],
               "range": {
@@ -273,7 +273,7 @@ describe('getHoverResult()', () => {
             {
               "contents": [
                 {
-                  "value": "**Escaped Character. Match the character \`.\`."
+                  "value": "**Escaped Character**. Match the character \`.\`."
                 }
               ],
               "range": {
@@ -288,7 +288,7 @@ describe('getHoverResult()', () => {
             {
               "contents": [
                 {
-                  "value": "**Escaped Character. Match the character \`\\\\\`."
+                  "value": "**Escaped Character**. Match the character \`\\\\\`."
                 }
               ],
               "range": {
