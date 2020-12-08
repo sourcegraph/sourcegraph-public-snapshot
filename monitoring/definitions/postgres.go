@@ -33,7 +33,7 @@ func Postgres() *monitoring.Container {
 						},
 						monitoring.Observable{
 							Name:              "transactions",
-							Description:       "transaction_durations",
+							Description:       "transaction durations",
 							Owner:             monitoring.ObservableOwnerCloud,
 							Query:             "sum by (datname) (pg_stat_activity_max_tx_duration{datname!~\"template.*|postgres|cloudsqladmin\"})",
 							DataMayNotExist:   true,
