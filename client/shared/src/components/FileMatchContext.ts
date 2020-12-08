@@ -117,7 +117,7 @@ interface MatchGroup {
  * @param maxMatches The maximum number of matches to show, or 0 for all.
  * @param context The number of surrounding context lines to show for each match.
  * @returns The subset of matches that were sorted and chosen for display, as well as that same
- *          list of matches grouped together.
+ * list of matches grouped together.
  */
 export const calculateMatchGroups = (matches: MatchItem[], maxMatches: number, context: number): [MatchItem[], MatchGroup[]] => {
     const sortedMatches = matches.sort((a, b) => {

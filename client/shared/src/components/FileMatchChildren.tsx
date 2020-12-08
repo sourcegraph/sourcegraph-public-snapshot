@@ -14,7 +14,6 @@ import { BadgeAttachment } from './BadgeAttachment'
 import { isErrorLike } from '../util/errors'
 import { ISymbol } from '../graphql/schema'
 import { map } from 'rxjs/operators'
-import { useCallback, useMemo } from 'react'
 
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
@@ -62,33 +61,34 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
     }
 
     const maxMatches = props.allMatches ? 0 : props.subsetMatches
-    const [ matches, grouped ] = useMemo(() => calculateMatchGroups(props.items, maxMatches, context), [props.items, maxMatches, context])
+    const [ matches, grouped ] = React.useMemo(() => calculateMatchGroups(props.items, maxMatches, context), [props.items, maxMatches, context])
+
+    const { result, isLightTheme, fetchHighlightedFileLines } = props
+    const fetchHighlightedFileRangeLines = React.useCallback(
+        (startLine, endLine) => props.fetchHighlightedFileLines({
+            repoName: result.repository.name,
+            commitID: result.file.commit.oid,
+            filePath: result.file.path,
+            disableTimeout: false,
+            isLightTheme: isLightTheme,
+        }, false).pipe(map(lines => lines.slice(startLine, endLine))),
+        [result, isLightTheme, fetchHighlightedFileLines],
+    )
 
     if (NO_SEARCH_HIGHLIGHTING) {
         return (
             <CodeExcerptUnhighlighted
-                urlWithoutPosition={props.result.file.url}
+                urlWithoutPosition={result.file.url}
                 items={matches}
                 onSelect={props.onSelect}
             />
         )
     }
 
-    const fetchHighlightedFileRangeLines = useCallback(
-        (startLine, endLine) => props.fetchHighlightedFileLines({
-            repoName: props.result.repository.name,
-            commitID: props.result.file.commit.oid,
-            filePath: props.result.file.path,
-            disableTimeout: false,
-            isLightTheme: props.isLightTheme,
-        }, false).pipe(map(lines => lines.slice(startLine, endLine))),
-        [props.result, props.isLightTheme, props.fetchHighlightedFileLines],
-    )
-
     return (
         <div className="file-match-children">
             {/* Symbols */}
-            {(props.result.symbols || []).map((symbol: ISymbol) => (
+            {(result.symbols || []).map((symbol: ISymbol) => (
                 <Link
                     to={symbol.url}
                     className="file-match-children__item test-file-match-children-item"
@@ -103,25 +103,25 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
             ))}
             {grouped.map(group => (
                 <div
-                    key={`linematch:${props.result.file.url}${group.position.line}:${group.position.character}`}
+                    key={`linematch:${result.file.url}${group.position.line}:${group.position.character}`}
                     className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
                 >
                     <Link
                         to={appendSubtreeQueryParameter(
-                            `${props.result.file.url}${toPositionOrRangeHash({ position: group.position })}`
+                            `${result.file.url}${toPositionOrRangeHash({ position: group.position })}`
                         )}
                         className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
                         onClick={props.onSelect}
                     >
                         <CodeExcerpt
-                            repoName={props.result.repository.name}
-                            commitID={props.result.file.commit.oid}
-                            filePath={props.result.file.path}
+                            repoName={result.repository.name}
+                            commitID={result.file.commit.oid}
+                            filePath={result.file.path}
                             startLine={group.startLine}
                             endLine={group.endLine}
                             highlightRanges={group.matches}
                             className="file-match-children__item-code-excerpt"
-                            isLightTheme={props.isLightTheme}
+                            isLightTheme={isLightTheme}
                             fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
                         />
                     </Link>
@@ -134,7 +134,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                             <div>
                                 <BadgeAttachment
                                     attachment={group.matches[0].badge}
-                                    isLightTheme={props.isLightTheme}
+                                    isLightTheme={isLightTheme}
                                 />
                             </div>
                         )}
