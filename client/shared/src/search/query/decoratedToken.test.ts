@@ -343,6 +343,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "metaRegexpCharacterClass"
               },
               {
+                "startIndex": 4,
+                "scopes": "identifier"
+              },
+              {
                 "startIndex": 5,
                 "scopes": "metaRegexpCharacterClass"
               },
@@ -371,6 +375,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "metaRegexpCharacterClass"
               },
               {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
                 "startIndex": 4,
                 "scopes": "metaRegexpCharacterClass"
               },
@@ -387,6 +395,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "metaRegexpCharacterClass"
               },
               {
+                "startIndex": 8,
+                "scopes": "identifier"
+              },
+              {
                 "startIndex": 9,
                 "scopes": "metaRegexpCharacterClass"
               },
@@ -401,6 +413,10 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 12,
                 "scopes": "metaRegexpCharacterClass"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "identifier"
               },
               {
                 "startIndex": 14,
@@ -515,6 +531,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "metaRegexpAlternative"
               },
               {
+                "startIndex": 9,
+                "scopes": "identifier"
+              },
+              {
                 "startIndex": 10,
                 "scopes": "metaRegexpDelimited"
               },
@@ -523,12 +543,20 @@ describe('getMonacoTokens()', () => {
                 "scopes": "metaRegexpAlternative"
               },
               {
+                "startIndex": 12,
+                "scopes": "identifier"
+              },
+              {
                 "startIndex": 13,
                 "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 14,
                 "scopes": "metaRegexpAlternative"
+              },
+              {
+                "startIndex": 15,
+                "scopes": "identifier"
               }
             ]
         `)
@@ -556,6 +584,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "metaRegexpAlternative"
               },
               {
+                "startIndex": 8,
+                "scopes": "identifier"
+              },
+              {
                 "startIndex": 9,
                 "scopes": "metaRegexpDelimited"
               },
@@ -576,6 +608,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "metaRegexpAlternative"
               },
               {
+                "startIndex": 14,
+                "scopes": "identifier"
+              },
+              {
                 "startIndex": 15,
                 "scopes": "metaRegexpDelimited"
               },
@@ -594,6 +630,10 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 19,
                 "scopes": "metaRegexpAlternative"
+              },
+              {
+                "startIndex": 20,
+                "scopes": "identifier"
               },
               {
                 "startIndex": 21,
