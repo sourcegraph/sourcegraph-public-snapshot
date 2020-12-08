@@ -8,7 +8,7 @@ export const StreamingProgressCount: React.FunctionComponent<StreamingProgressPr
     progress = defaultProgress,
 }) => (
     <div
-        className={classNames('streaming-progress__count d-flex align-items-center toolbar-button', {
+        className={classNames('streaming-progress__count d-flex align-items-center', {
             'streaming-progress__count--in-progress': !progress.done,
         })}
     >

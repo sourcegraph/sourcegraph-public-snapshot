@@ -189,7 +189,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     <SearchResultTypeTabs
                         {...props}
                         query={props.navbarSearchQueryState.query}
-                        className="search-results-list__tabs flex-grow-1"
+                        className="search-results-list__tabs"
                     />
 
                     <SearchResultsInfoBar

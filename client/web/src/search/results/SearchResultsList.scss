@@ -16,6 +16,10 @@
         border-bottom: 1px solid var(--border-color);
     }
 
+    &__tabs {
+        flex-grow: 1;
+    }
+
     // In narrow windows, make the results flush with the left/right sides,
     // but we still need padding for the header and alerts.
     @include media-breakpoint-down(lg) {
