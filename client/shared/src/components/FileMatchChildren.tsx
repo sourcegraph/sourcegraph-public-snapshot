@@ -7,19 +7,19 @@ import { SymbolIcon } from '../symbols/SymbolIcon'
 import { toPositionOrRangeHash, appendSubtreeQueryParameter } from '../util/url'
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import { CodeExcerptUnhighlighted } from './CodeExcerptUnhighlighted'
-import { FileMatch, MatchItem } from './FileMatch'
+import { FileLineMatch, MatchItem } from './FileMatch'
 import { calculateMatchGroups } from './FileMatchContext'
 import { Link } from './Link'
 import { BadgeAttachment } from './BadgeAttachment'
 import { isErrorLike } from '../util/errors'
 import { ISymbol } from '../graphql/schema'
 import { map } from 'rxjs/operators'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
     items: MatchItem[]
-    result: FileMatch
+    result: FileLineMatch
     /**
      * Whether or not to show all matches for this file, or only a subset.
      */
@@ -74,6 +74,17 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         )
     }
 
+    const fetchHighlightedFileRangeLines = useCallback(
+        (startLine, endLine) => props.fetchHighlightedFileLines({
+            repoName: props.result.repository.name,
+            commitID: props.result.file.commit.oid,
+            filePath: props.result.file.path,
+            disableTimeout: false,
+            isLightTheme: props.isLightTheme,
+        }, false).pipe(map(lines => lines.slice(startLine, endLine))),
+        [props.result, props.isLightTheme, props.fetchHighlightedFileLines],
+    )
+
     return (
         <div className="file-match-children">
             {/* Symbols */}
@@ -111,21 +122,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                             highlightRanges={group.matches}
                             className="file-match-children__item-code-excerpt"
                             isLightTheme={props.isLightTheme}
-                            /* eslint-disable react/jsx-no-bind */
-                            fetchHighlightedFileRangeLines={() =>
-                                props
-                                    .fetchHighlightedFileLines(
-                                        {
-                                            repoName: props.result.repository.name,
-                                            commitID: props.result.file.commit.oid,
-                                            filePath: props.result.file.path,
-                                            disableTimeout: false,
-                                            isLightTheme: props.isLightTheme,
-                                        },
-                                        false
-                                    )
-                                    .pipe(map(lines => lines.slice(group.startLine, group.endLine)))
-                            }
+                            fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
                         />
                     </Link>
 

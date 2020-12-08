@@ -40,7 +40,7 @@ interface Props extends SettingsCascadeProps {
     /**
      * The file match search result.
      */
-    result: FileMatch
+    result: FileLineMatch
 
     /**
      * Formatted repository name to be displayed in repository link. If not

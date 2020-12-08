@@ -26,8 +26,9 @@ interface Props extends Repo {
     endLine: number
     isLightTheme: boolean
     className?: string
-    /** A function to fetch the range of lines this code excerpt will display. */
-    fetchHighlightedFileRangeLines: () => Observable<string[]>
+    /** A function to fetch the range of lines this code excerpt will display. It will be provided
+     * the same start and end lines properties that were provided as component props */
+    fetchHighlightedFileRangeLines: (startLine: number, endLine: number) => Observable<string[]>
 }
 
 interface HighlightRange {
@@ -66,15 +67,17 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
             combineLatest([this.propsChanges, this.visibilityChanges])
                 .pipe(
                     filter(([, isVisible]) => isVisible),
-                    map(([{ repoName, filePath, commitID, isLightTheme }]) => ({
+                    map(([{ repoName, filePath, commitID, isLightTheme, startLine, endLine }]) => ({
                         repoName,
                         filePath,
                         commitID,
                         isLightTheme,
+                        startLine,
+                        endLine,
                     })),
                     distinctUntilChanged((a, b) => isEqual(a, b)),
-                    switchMap(({ repoName, filePath, commitID, isLightTheme }) =>
-                        props.fetchHighlightedFileRangeLines()
+                    switchMap(({ repoName, filePath, commitID, isLightTheme, startLine, endLine }) =>
+                        props.fetchHighlightedFileRangeLines(startLine, endLine)
                     ),
                     catchError(error => [asError(error)])
                 )
