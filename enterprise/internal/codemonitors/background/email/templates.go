@@ -32,7 +32,7 @@ Sourcegraph limits what information is contained in this notification.
     </p>
     <p style="font-size: 20px; line-height: 30px; font-weight: 700">
       {{.Description}}<br />
-      <span style="font-size: 16px; line-height: 24px"
+      <span style="font-size: 16px; line-height: 24px; font-weight: 400"
         >{{.NumberOfResultsWithDetail}}</span
       >
     </p>
