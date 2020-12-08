@@ -1828,7 +1828,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <br />
 
-## postgres: database_migration_status
+## postgres: migration_in_progress
 
 <p class="subtitle">cloud: schema migration status</p>
 
@@ -1843,7 +1843,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "critical_postgres_database_migration_status"
+  "critical_postgres_migration_in_progress"
 ]
 ```
 
