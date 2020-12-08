@@ -106,18 +106,6 @@ interface MatchGroup {
 }
 
 /**
- * Describes matches that have been grouped together.
- */
-interface MatchGroups {
-    // The grouped matches.
-    grouped: MatchGroup[]
-
-    // The subset of sorted matches that should be displayed. Useful if e.g. rendering matches as
-    // plaintext.
-    matches: MatchItem[]
-}
-
-/**
  * Calculates how to group together matches for display. Takes into account:
  *
  * - Whether or not displaying a subset or all matches is desired
@@ -128,8 +116,10 @@ interface MatchGroups {
  * @param matches The matches to split into groups.
  * @param maxMatches The maximum number of matches to show, or 0 for all.
  * @param context The number of surrounding context lines to show for each match.
+ * @returns The subset of matches that were sorted and chosen for display, as well as that same
+ *          list of matches grouped together.
  */
-export const calculateMatchGroups = (matches: MatchItem[], maxMatches: number, context: number): MatchGroups => {
+export const calculateMatchGroups = (matches: MatchItem[], maxMatches: number, context: number): [MatchItem[], MatchGroup[]] => {
     const sortedMatches = matches.sort((a, b) => {
         if (a.line < b.line) {
             return -1
@@ -174,8 +164,5 @@ export const calculateMatchGroups = (matches: MatchItem[], maxMatches: number, c
         )
     ).map(group => calculateGroupPositions(group, context, highestLineNumberWithinSubsetMatches))
 
-    return {
-        grouped,
-        matches: showMatches,
-    }
+    return [showMatches, grouped]
 }

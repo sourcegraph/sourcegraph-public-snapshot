@@ -62,7 +62,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
     }
 
     const maxMatches = props.allMatches ? 0 : props.subsetMatches
-    const { matches, grouped } = useMemo(() => calculateMatchGroups(props.items, maxMatches, context), [props.items, maxMatches, context])
+    const [ matches, grouped ] = useMemo(() => calculateMatchGroups(props.items, maxMatches, context), [props.items, maxMatches, context])
 
     if (NO_SEARCH_HIGHLIGHTING) {
         return (
