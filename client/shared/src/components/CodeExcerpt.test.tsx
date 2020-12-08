@@ -1,6 +1,5 @@
 import * as React from 'react'
 import _VisibilitySensor from 'react-visibility-sensor'
-import sinon from 'sinon'
 export class MockVisibilitySensor extends React.Component<{ onChange?: (isVisible: boolean) => void }> {
     constructor(props: { onChange?: (isVisible: boolean) => void }) {
         super(props)
@@ -20,20 +19,22 @@ jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children
     </>
 ))
 
-import { cleanup, getAllByText, getByText, render } from '@testing-library/react'
-import { of } from 'rxjs'
+import { cleanup, getByText, render } from '@testing-library/react'
 
 import { CodeExcerpt } from './CodeExcerpt'
 import {
     HIGHLIGHTED_FILE_LINES,
-    HIGHLIGHTED_FILE_LINES_REQUEST,
-    HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
     HIGHLIGHTED_FILE_LINES_LONG,
+    HIGHLIGHTED_FILE_LINES_SIMPLE,
 } from '../util/searchTestHelpers'
+import { of } from 'rxjs'
+import { map } from 'rxjs/operators'
 
 describe('CodeExcerpt', () => {
     afterAll(cleanup)
 
+    const startLine = 0
+    const endLine = 3
     const defaultProps = {
         repoName: 'github.com/golang/oauth2',
         commitID: 'e64efc72b421e893cbf63f17ba2221e7d6d0b0f3',
@@ -43,27 +44,17 @@ describe('CodeExcerpt', () => {
             { line: 1, character: 7, highlightLength: 4 },
             { line: 2, character: 6, highlightLength: 4 },
         ],
-        lastSubsetMatchLineNumber: 2,
+        startLine,
+        endLine,
         isLightTheme: false,
         className: 'file-match__item-code-excerpt',
-        fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
+        fetchHighlightedFileRangeLines: () =>
+            of(HIGHLIGHTED_FILE_LINES_SIMPLE).pipe(map(lines => lines.slice(startLine, endLine))),
     }
 
     it('renders correct number of rows', () => {
         const { container } = render(<CodeExcerpt {...defaultProps} />)
-        expect(container.querySelectorAll('.code-excerpt tr').length).toBe(4)
-    })
-
-    it('renders correct number of rows with context value as 5', () => {
-        const { container } = render(
-            <CodeExcerpt
-                {...defaultProps}
-                context={5}
-                highlightRanges={[{ line: 4, character: 1, highlightLength: 2 }]}
-                lastSubsetMatchLineNumber={4}
-            />
-        )
-        expect(container.querySelectorAll('.code-excerpt tr').length).toBe(10)
+        expect(container.querySelectorAll('.code-excerpt tr').length).toBe(3)
     })
 
     it('renders the line number container on each row', () => {
@@ -72,7 +63,7 @@ describe('CodeExcerpt', () => {
         // at least exist.
         const { container } = render(<CodeExcerpt {...defaultProps} />)
         const dataLines = container.querySelectorAll('[data-line]')
-        expect(dataLines.length).toBe(4)
+        expect(dataLines.length).toMatchInlineSnapshot('3')
     })
 
     it('renders the code portion of each row', () => {
@@ -80,8 +71,6 @@ describe('CodeExcerpt', () => {
         expect(getByText(container, 'first of code')).toBeTruthy()
         expect(getByText(container, 'second of code')).toBeTruthy()
         expect(getByText(container, 'third of code')).toBeTruthy()
-        expect(getAllByText(container, 'line').length).toBe(3)
-        expect(getByText(container, 'fourth')).toBeTruthy()
     })
 
     it('highlights matches correctly', () => {
@@ -94,12 +83,18 @@ describe('CodeExcerpt', () => {
     })
 
     it('highlights matches correctly in syntax highlighted code blocks', () => {
-        const highlightRange = [{ line: 12, character: 7, highlightLength: 4 }]
+        const highlightRanges = [{ line: 12, character: 7, highlightLength: 4 }]
+        const startLine = 0
+        const endLine = 13
         const { container } = render(
             <CodeExcerpt
                 {...defaultProps}
-                highlightRanges={highlightRange}
-                fetchHighlightedFileLines={HIGHLIGHTED_FILE_LINES_REQUEST}
+                startLine={startLine}
+                endLine={endLine}
+                highlightRanges={highlightRanges}
+                fetchHighlightedFileRangeLines={() =>
+                    of(HIGHLIGHTED_FILE_LINES).pipe(map(highlights => highlights.slice(startLine, endLine)))
+                }
             />
         )
         const highlightedSpans = container.querySelectorAll('.selection-highlight')
@@ -109,28 +104,7 @@ describe('CodeExcerpt', () => {
         }
     })
 
-    it('does not disable the highlighting timeout', () => {
-        /*
-            Because disabling the timeout should only ever be done in response
-            to the user asking us to do so, something that we do not do for
-            code excerpts because falling back to plaintext rendering is most
-            ideal.
-        */
-        const fetchHighlightedFileLines = sinon.spy(context => of(HIGHLIGHTED_FILE_LINES))
-        const highlightRange = [{ line: 12, character: 7, highlightLength: 4 }]
-        render(
-            <CodeExcerpt
-                {...defaultProps}
-                highlightRanges={highlightRange}
-                fetchHighlightedFileLines={fetchHighlightedFileLines}
-            />
-        )
-        sinon.assert.calledOnce(fetchHighlightedFileLines)
-        sinon.assert.calledWithMatch(fetchHighlightedFileLines, { disableTimeout: false })
-    })
-
     it('displays the correct number of lines, with no highlight matches on the context lines', () => {
-        const fetchHighlightedFileLines = sinon.spy(context => of(HIGHLIGHTED_FILE_LINES_LONG))
         const highlightRanges = [
             { line: 0, character: 0, highlightLength: 1 },
             { line: 1, character: 0, highlightLength: 1 },
@@ -143,13 +117,17 @@ describe('CodeExcerpt', () => {
             { line: 17, character: 0, highlightLength: 1 },
             { line: 19, character: 0, highlightLength: 1 },
         ]
+        const startLine = 0
+        const endLine = 22
         const { container } = render(
             <CodeExcerpt
                 {...defaultProps}
-                context={2}
-                lastSubsetMatchLineNumber={20}
+                startLine={startLine}
+                endLine={endLine}
                 highlightRanges={highlightRanges}
-                fetchHighlightedFileLines={fetchHighlightedFileLines}
+                fetchHighlightedFileRangeLines={() =>
+                    of(HIGHLIGHTED_FILE_LINES_LONG).pipe(map(highlights => highlights.slice(startLine, endLine)))
+                }
             />
         )
         const rows = container.querySelectorAll('tr')
@@ -157,7 +135,6 @@ describe('CodeExcerpt', () => {
     })
 
     it('displays the correct number of lines, with matches on the context line', () => {
-        const fetchHighlightedFileLines = sinon.spy(context => of(HIGHLIGHTED_FILE_LINES_LONG))
         const highlightRanges = [
             { line: 0, character: 0, highlightLength: 1 },
             { line: 1, character: 0, highlightLength: 1 },
@@ -171,13 +148,17 @@ describe('CodeExcerpt', () => {
             { line: 19, character: 0, highlightLength: 1 },
             { line: 20, character: 0, highlightLength: 1 },
         ]
+        const startLine = 0
+        const endLine = 22
         const { container } = render(
             <CodeExcerpt
                 {...defaultProps}
-                context={2}
-                lastSubsetMatchLineNumber={19}
+                startLine={startLine}
+                endLine={endLine}
                 highlightRanges={highlightRanges}
-                fetchHighlightedFileLines={fetchHighlightedFileLines}
+                fetchHighlightedFileRangeLines={() =>
+                    of(HIGHLIGHTED_FILE_LINES_LONG).pipe(map(highlights => highlights.slice(startLine, endLine)))
+                }
             />
         )
         const rows = container.querySelectorAll('tr')
