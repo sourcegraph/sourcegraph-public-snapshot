@@ -84,7 +84,7 @@ func Postgres() *monitoring.Container {
 						Name:            "cache_hit_ratio",
 						Description:     "ratio of cache hits over 5m",
 						Owner:           monitoring.ObservableOwnerCloud,
-						Query:           "avg(rate(pg_stat_database_blks_hit{datname!~\"template.*|postgres|cloudsqladmin\"}[5m]) / (rate(pg_stat_database_blks_hit{datname!~\"template.*|postgres|cloudsqladmin\"}[5m]) + rate(pg_stat_database_blks_read{datname!~\"template.*|postgres|cloudsqladmin\"}[5m]))) by (datname)",
+						Query:           "avg(rate(pg_stat_database_blks_hit{datname!~\"template.*|postgres|cloudsqladmin\"}[5m]) / (rate(pg_stat_database_blks_hit{datname!~\"template.*|postgres|cloudsqladmin\"}[5m]) + rate(pg_stat_database_blks_read{datname!~\"template.*|postgres|cloudsqladmin\"}[5m]))) by (datname) * 100",
 						DataMayNotExist: true,
 						DataMayNotBeNaN: true,
 						Warning:         monitoring.Alert().LessOrEqual(0.98).For(5 * time.Minute),
