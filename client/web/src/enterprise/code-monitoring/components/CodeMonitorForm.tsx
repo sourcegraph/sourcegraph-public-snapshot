@@ -1,5 +1,5 @@
 import classnames from 'classnames'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { AuthenticatedUser } from '../../../auth'
@@ -10,8 +10,11 @@ import { FormTriggerArea } from './FormTriggerArea'
 import { mergeMap, startWith, catchError, tap } from 'rxjs/operators'
 import { Form } from '../../../../../branded/src/components/Form'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
+import { CodeMonitorFields } from '../../../graphql-operations'
+import { isEqual } from 'lodash'
 
 export interface CodeMonitorFormProps {
+    history: H.History
     location: H.Location
     authenticatedUser: AuthenticatedUser
     /**
@@ -21,6 +24,8 @@ export interface CodeMonitorFormProps {
     onSubmit: (codeMonitor: CodeMonitorFields) => Observable<Partial<CodeMonitorFields>>
     /** The text for the submit button. */
     submitButtonLabel: string
+    /** A code monitor to initialize the form with. */
+    codeMonitor?: CodeMonitorFields
 }
 
 interface FormCompletionSteps {
@@ -28,52 +33,30 @@ interface FormCompletionSteps {
     actionCompleted: boolean
 }
 
-export interface Action {
-    recipient: string
-    enabled: boolean
-}
-
-export interface CodeMonitorFields {
-    description: string
-    query: string
-    enabled: boolean
-    actions: Action[]
-}
-
 export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     authenticatedUser,
     onSubmit,
+    history,
     submitButtonLabel,
+    codeMonitor,
 }) => {
     const LOADING = 'loading' as const
 
-    const [currentCodeMonitorState, setCodeMonitor] = useState<CodeMonitorFields>({
-        description: '',
-        query: '',
-        actions: [{ recipient: authenticatedUser.id, enabled: true }],
-        enabled: true,
-    })
-
-    const onNameChange = useCallback(
-        (description: string): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, description })),
-        []
-    )
-    const onQueryChange = useCallback(
-        (query: string): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, query })),
-        []
-    )
-    const onEnabledChange = useCallback(
-        (enabled: boolean): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, enabled })),
-        []
-    )
-    const onActionsChange = useCallback(
-        (actions: Action[]): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, action: actions[0] })),
-        []
+    const [currentCodeMonitorState, setCodeMonitor] = useState<CodeMonitorFields>(
+        codeMonitor ?? {
+            id: '',
+            description: '',
+            enabled: true,
+            trigger: { id: '', query: '' },
+            actions: {
+                nodes: [],
+            },
+        }
     )
 
     const [formCompletion, setFormCompletion] = useState<FormCompletionSteps>({
-        triggerCompleted: false,
-        actionCompleted: false,
+        triggerCompleted: currentCodeMonitorState.trigger.query.length > 0,
+        actionCompleted: currentCodeMonitorState.actions.nodes.length > 0,
     })
     const setTriggerCompleted = useCallback((complete: boolean) => {
         setFormCompletion(previousState => ({ ...previousState, triggerCompleted: complete }))
@@ -81,6 +64,24 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     const setActionsCompleted = useCallback((complete: boolean) => {
         setFormCompletion(previousState => ({ ...previousState, actionCompleted: complete }))
     }, [])
+
+    const onNameChange = useCallback(
+        (description: string): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, description })),
+        []
+    )
+    const onQueryChange = useCallback(
+        (query: string): void =>
+            setCodeMonitor(codeMonitor => ({ ...codeMonitor, trigger: { ...codeMonitor.trigger, query } })),
+        []
+    )
+    const onEnabledChange = useCallback(
+        (enabled: boolean): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, enabled })),
+        []
+    )
+    const onActionsChange = useCallback(
+        (actions: CodeMonitorFields['actions']): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, actions })),
+        []
+    )
 
     const [requestOnSubmit, codeMonitorOrError] = useEventObservable(
         useCallback(
@@ -90,13 +91,35 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                     mergeMap(() =>
                         onSubmit(currentCodeMonitorState).pipe(
                             startWith(LOADING),
-                            catchError(error => [asError(error)])
+                            catchError(error => [asError(error)]),
+                            tap(successOrError => {
+                                if (!isErrorLike(successOrError) && successOrError !== LOADING) {
+                                    history.push('/code-monitoring')
+                                }
+                            })
                         )
                     )
                 ),
-            [onSubmit, currentCodeMonitorState]
+            [onSubmit, currentCodeMonitorState, history]
         )
     )
+
+    const initialCodeMonitor = useMemo(() => codeMonitor, [codeMonitor])
+
+    // Determine whether the form has changed. If there was no intial state (i.e. we're creating a monitor), always return
+    // true.
+    const hasChangedFields = useMemo(
+        () => (codeMonitor ? !isEqual(initialCodeMonitor, currentCodeMonitorState) : true),
+        [initialCodeMonitor, codeMonitor, currentCodeMonitorState]
+    )
+
+    const onCancel = useCallback(() => {
+        if (hasChangedFields) {
+            if (window.confirm('Leave page? All unsaved changes will be lost.')) {
+                history.push('/code-monitoring')
+            }
+        }
+    }, [history, hasChangedFields])
 
     return (
         <Form className="my-4" onSubmit={requestOnSubmit}>
@@ -110,6 +133,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         onChange={event => {
                             onNameChange(event.target.value)
                         }}
+                        value={currentCodeMonitorState.description}
                         autoFocus={true}
                     />
                 </div>
@@ -135,7 +159,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
             <hr className="my-4" />
             <div className="create-monitor-page__triggers mb-4">
                 <FormTriggerArea
-                    query={currentCodeMonitorState.query}
+                    query={currentCodeMonitorState.trigger.query}
                     onQueryChange={onQueryChange}
                     triggerCompleted={formCompletion.triggerCompleted}
                     setTriggerCompleted={setTriggerCompleted}
@@ -175,24 +199,19 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         type="submit"
                         disabled={
                             !formCompletion.actionCompleted ||
-                            isErrorLike(codeMonitorOrError) ||
-                            codeMonitorOrError === LOADING
+                            !formCompletion.triggerCompleted ||
+                            codeMonitorOrError === LOADING ||
+                            !hasChangedFields
                         }
                         className="btn btn-primary mr-2 test-submit-monitor"
                     >
                         {submitButtonLabel}
                     </button>
-                    <button type="button" className="btn btn-outline-secondary">
+                    <button type="button" className="btn btn-outline-secondary test-cancel-monitor" onClick={onCancel}>
                         {/* TODO: this should link somewhere */}
                         Cancel
                     </button>
                 </div>
-                {/** TODO: Error and success states. We will probably redirect the user to another page, so we could remove the success state. */}
-                {!isErrorLike(codeMonitorOrError) && !!codeMonitorOrError && codeMonitorOrError !== LOADING && (
-                    <div className="alert alert-success">
-                        Successfully created monitor {codeMonitorOrError.description}
-                    </div>
-                )}
                 {isErrorLike(codeMonitorOrError) && (
                     <div className="alert alert-danger">Failed to create monitor: {codeMonitorOrError.message}</div>
                 )}

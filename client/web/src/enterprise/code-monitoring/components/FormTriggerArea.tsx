@@ -30,9 +30,10 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
         setShowQueryForm(show => !show)
     }, [])
 
-    const [queryState, nextQueryFieldChange, queryInputReference] = useInputValidation(
+    const [queryState, nextQueryFieldChange, queryInputReference, overrideState] = useInputValidation(
         useMemo(
             () => ({
+                initialValue: query,
                 synchronousValidators: [
                     (value: string) => {
                         const tokens = scanSearchQuery(value)
@@ -70,7 +71,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                     },
                 ],
             }),
-            []
+            [query]
         )
     )
 
@@ -95,8 +96,9 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
         event => {
             event.preventDefault()
             setShowQueryForm(false)
+            overrideState({ value: query })
         },
-        [setShowQueryForm]
+        [setShowQueryForm, overrideState, query]
     )
 
     return (
@@ -162,7 +164,6 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             <button
                                 className="btn btn-outline-secondary mr-1 test-submit-trigger"
                                 onClick={completeForm}
-                                onSubmit={completeForm}
                                 type="submit"
                                 disabled={queryState.kind !== 'VALID'}
                             >
@@ -178,10 +179,14 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                     <div className="d-flex justify-content-between align-items-center">
                         <div>
                             <div className="font-weight-bold">When there are new search results</div>
-                            <code className="text-muted">{query}</code>
+                            <code className="text-muted test-existing-query">{query}</code>
                         </div>
                         <div>
-                            <button type="button" onClick={editForm} className="btn btn-link p-0 text-left">
+                            <button
+                                type="button"
+                                onClick={editForm}
+                                className="btn btn-link p-0 text-left test-edit-trigger"
+                            >
                                 Edit
                             </button>
                         </div>

@@ -11,6 +11,7 @@ import { BreadcrumbsProps, BreadcrumbSetters, Breadcrumbs } from '../../../compo
 import { lazyComponent } from '../../../util/lazyComponent'
 import { CodeMonitoringPageProps } from '../CodeMonitoringPage'
 import { CreateCodeMonitorPageProps } from '../CreateCodeMonitorPage'
+import { ManageCodeMonitorPageProps } from '../ManageCodeMonitorPage'
 
 interface Props
     extends RouteComponentProps<{}>,
@@ -34,7 +35,7 @@ const CreateCodeMonitorPage = lazyComponent<CreateCodeMonitorPageProps, 'CreateC
     'CreateCodeMonitorPage'
 )
 
-const ManageCodeMonitorPage = lazyComponent<{}, 'ManageCodeMonitorPage'>(
+const ManageCodeMonitorPage = lazyComponent<ManageCodeMonitorPageProps, 'ManageCodeMonitorPage'>(
     () => import('../ManageCodeMonitorPage'),
     'ManageCodeMonitorPage'
 )
