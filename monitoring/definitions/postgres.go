@@ -81,7 +81,7 @@ func Postgres() *monitoring.Container {
 					},
 					monitoring.Observable{
 						Name:              "cache_hit_ratio",
-						Description:       "ratio of cache hits (should be 99%)",
+						Description:       "ratio of cache hits over 5m",
 						Owner:             monitoring.ObservableOwnerCloud,
 						Query:             "avg(rate(pg_stat_database_blks_hit{datname!~\"template.*|postgres|cloudsqladmin\"}[5m]) / (rate(pg_stat_database_blks_hit{datname!~\"template.*|postgres|cloudsqladmin\"}[5m]) + rate(pg_stat_database_blks_read{datname!~\"template.*|postgres|cloudsqladmin\"}[5m]))) by (datname)",
 						DataMayNotExist:   false,
