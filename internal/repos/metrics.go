@@ -113,7 +113,7 @@ func MustRegisterMetrics(db dbutil.DB) {
 		Help: "The total number of external services added",
 	}, func() float64 {
 		count, err := scanCount(`
--- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_external_services_total
+-- source: internal/repos/metrics.go:src_repoupdater_external_services_total
 SELECT COUNT(*) FROM external_services
 WHERE deleted_at IS NULL
 `)
@@ -129,7 +129,7 @@ WHERE deleted_at IS NULL
 		Help: "The total number of external services added by users",
 	}, func() float64 {
 		count, err := scanCount(`
--- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_user_external_services_total
+-- source: internal/repos/metrics.go:src_repoupdater_user_external_services_total
 SELECT COUNT(*) FROM external_services
 WHERE namespace_user_id IS NOT NULL
 AND deleted_at IS NULL
@@ -146,7 +146,7 @@ AND deleted_at IS NULL
 		Help: "The total number of repositories added by users",
 	}, func() float64 {
 		count, err := scanCount(`
--- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_user_repos_total
+-- source: internal/repos/metrics.go:src_repoupdater_user_repos_total
 SELECT COUNT(*)
 FROM external_service_repos esr
 JOIN external_services es ON (
@@ -170,7 +170,7 @@ JOIN repo ON (
 		Help: "The total number of users who have added external services",
 	}, func() float64 {
 		count, err := scanCount(`
--- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_user_with_external_services_total
+-- source: internal/repos/metrics.go:src_repoupdater_user_with_external_services_total
 SELECT COUNT(DISTINCT(namespace_user_id)) AS total
 FROM external_services
 WHERE namespace_user_id IS NOT NULL
@@ -188,7 +188,7 @@ AND deleted_at IS NULL
 		Help: "The total number of queued sync jobs",
 	}, func() float64 {
 		count, err := scanCount(`
--- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_queued_sync_jobs_total
+-- source: internal/repos/metrics.go:src_repoupdater_queued_sync_jobs_total
 SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'queued'
 `)
 		if err != nil {
@@ -203,7 +203,7 @@ SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'queued'
 		Help: "The total number of completed sync jobs",
 	}, func() float64 {
 		count, err := scanCount(`
--- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_completed_sync_jobs_total
+-- source: internal/repos/metrics.go:src_repoupdater_completed_sync_jobs_total
 SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'completed'
 `)
 		if err != nil {
@@ -218,7 +218,7 @@ SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'completed'
 		Help: "The total number of errored sync jobs",
 	}, func() float64 {
 		count, err := scanCount(`
--- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_errored_sync_jobs_total
+-- source: internal/repos/metrics.go:src_repoupdater_errored_sync_jobs_total
 SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'errored'
 `)
 		if err != nil {
@@ -233,7 +233,7 @@ SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'errored'
 		Help: "The maximum number of seconds since any external service synced",
 	}, func() float64 {
 		seconds, err := scanNullFloat(`
--- source: cmd/repo-updater/repos/metrics.go:src_repoupdater_errored_sync_jobs_total
+-- source: internal/repos/metrics.go:src_repoupdater_errored_sync_jobs_total
 SELECT extract(epoch from max(now() - last_sync_at)) FROM external_services
 WHERE deleted_at IS NULL
 AND last_sync_at IS NOT NULL

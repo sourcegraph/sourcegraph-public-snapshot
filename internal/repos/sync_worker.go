@@ -136,7 +136,7 @@ func runJobCleaner(ctx context.Context, db dbutil.DB, interval time.Duration) {
 
 	for {
 		_, err := db.ExecContext(ctx, `
--- source: cmd/repo-updater/repos/sync_worker.go:runJobCleaner
+-- source: internal/repos/sync_worker.go:runJobCleaner
 DELETE FROM external_service_sync_jobs
 WHERE
   finished_at < now() - INTERVAL '1 day'
