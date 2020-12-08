@@ -119,7 +119,11 @@ interface MatchGroup {
  * @returns The subset of matches that were sorted and chosen for display, as well as that same
  * list of matches grouped together.
  */
-export const calculateMatchGroups = (matches: MatchItem[], maxMatches: number, context: number): [MatchItem[], MatchGroup[]] => {
+export const calculateMatchGroups = (
+    matches: MatchItem[],
+    maxMatches: number,
+    context: number
+): [MatchItem[], MatchGroup[]] => {
     const sortedMatches = matches.sort((a, b) => {
         if (a.line < b.line) {
             return -1

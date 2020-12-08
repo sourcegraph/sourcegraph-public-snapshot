@@ -61,27 +61,31 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
     }
 
     const maxMatches = props.allMatches ? 0 : props.subsetMatches
-    const [ matches, grouped ] = React.useMemo(() => calculateMatchGroups(props.items, maxMatches, context), [props.items, maxMatches, context])
+    const [matches, grouped] = React.useMemo(() => calculateMatchGroups(props.items, maxMatches, context), [
+        props.items,
+        maxMatches,
+        context,
+    ])
 
     const { result, isLightTheme, fetchHighlightedFileLines } = props
     const fetchHighlightedFileRangeLines = React.useCallback(
-        (startLine, endLine) => fetchHighlightedFileLines({
-            repoName: result.repository.name,
-            commitID: result.file.commit.oid,
-            filePath: result.file.path,
-            disableTimeout: false,
-            isLightTheme,
-        }, false).pipe(map(lines => lines.slice(startLine, endLine))),
-        [result, isLightTheme, fetchHighlightedFileLines],
+        (startLine, endLine) =>
+            fetchHighlightedFileLines(
+                {
+                    repoName: result.repository.name,
+                    commitID: result.file.commit.oid,
+                    filePath: result.file.path,
+                    disableTimeout: false,
+                    isLightTheme,
+                },
+                false
+            ).pipe(map(lines => lines.slice(startLine, endLine))),
+        [result, isLightTheme, fetchHighlightedFileLines]
     )
 
     if (NO_SEARCH_HIGHLIGHTING) {
         return (
-            <CodeExcerptUnhighlighted
-                urlWithoutPosition={result.file.url}
-                items={matches}
-                onSelect={props.onSelect}
-            />
+            <CodeExcerptUnhighlighted urlWithoutPosition={result.file.url} items={matches} onSelect={props.onSelect} />
         )
     }
 
@@ -132,10 +136,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                             // has flex display and would cause the hover tooltip to be offset
                             // in a weird way (centered in the code context, not on the icon).
                             <div>
-                                <BadgeAttachment
-                                    attachment={group.matches[0].badge}
-                                    isLightTheme={isLightTheme}
-                                />
+                                <BadgeAttachment attachment={group.matches[0].badge} isLightTheme={isLightTheme} />
                             </div>
                         )}
                     </div>

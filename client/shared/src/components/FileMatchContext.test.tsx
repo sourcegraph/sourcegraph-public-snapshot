@@ -30,9 +30,8 @@ describe('components/FileMatchContext', () => {
         test('simple', () => {
             const maxMatches = 3
             const context = 1
-            const [ , grouped ] = calculateMatchGroups(testData6ConsecutiveMatches, maxMatches, context)
-            expect(grouped)
-                .toMatchInlineSnapshot(`
+            const [, grouped] = calculateMatchGroups(testData6ConsecutiveMatches, maxMatches, context)
+            expect(grouped).toMatchInlineSnapshot(`
                 [
                   {
                     "matches": [
@@ -75,9 +74,8 @@ describe('components/FileMatchContext', () => {
         test('no context', () => {
             const maxMatches = 3
             const context = 0
-            const [ , grouped ] = calculateMatchGroups(testData6ConsecutiveMatches, maxMatches, context)
-            expect(grouped)
-                .toMatchInlineSnapshot(`
+            const [, grouped] = calculateMatchGroups(testData6ConsecutiveMatches, maxMatches, context)
+            expect(grouped).toMatchInlineSnapshot(`
                 [
                   {
                     "matches": [
@@ -114,7 +112,7 @@ describe('components/FileMatchContext', () => {
         test('complex grouping', () => {
             const maxMatches = 10
             const context = 2
-            const [ , grouped ] = calculateMatchGroups(testDataRealMatches, maxMatches, context)
+            const [, grouped] = calculateMatchGroups(testDataRealMatches, maxMatches, context)
             expect(grouped).toMatchInlineSnapshot(`
                 [
                   {
