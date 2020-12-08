@@ -3,11 +3,11 @@ import classnames from 'classnames'
 import React, { useState, useCallback, useMemo } from 'react'
 import { Link } from '../../../../../shared/src/components/Link'
 import { FilterType } from '../../../../../shared/src/search/interactive/util'
-import { resolveFilter, validateFilter } from '../../../../../shared/src/search/parser/filters'
-import { scanSearchQuery } from '../../../../../shared/src/search/parser/scanner'
 import { buildSearchURLQuery } from '../../../../../shared/src/util/url'
 import { useInputValidation, deriveInputClassName } from '../../../../../shared/src/util/useInputValidation'
 import { SearchPatternType } from '../../../graphql-operations'
+import { scanSearchQuery } from '../../../../../shared/src/search/query/scanner'
+import { resolveFilter, validateFilter } from '../../../../../shared/src/search/query/filters'
 
 interface TriggerAreaProps {
     query: string
