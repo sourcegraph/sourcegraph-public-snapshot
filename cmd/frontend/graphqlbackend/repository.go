@@ -326,6 +326,10 @@ func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *LSIFIndexesQ
 	})
 }
 
+func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (IndexConfigurationResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.IndexConfiguration(ctx, r.ID())
+}
+
 type AuthorizedUserArgs struct {
 	RepositoryID graphql.ID
 	Permission   string

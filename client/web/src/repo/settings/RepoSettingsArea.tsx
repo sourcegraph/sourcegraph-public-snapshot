@@ -17,6 +17,7 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { AuthenticatedUser } from '../../auth'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { RepositoryFields, SettingsAreaRepositoryFields } from '../../graphql-operations'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -26,13 +27,13 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
-export interface RepoSettingsAreaRouteContext extends TelemetryProps {
+export interface RepoSettingsAreaRouteContext extends ThemeProps, TelemetryProps {
     repo: SettingsAreaRepositoryFields
 }
 
 export interface RepoSettingsAreaRoute extends RouteDescriptor<RepoSettingsAreaRouteContext> {}
 
-interface Props extends RouteComponentProps<{}>, BreadcrumbSetters, TelemetryProps {
+interface Props extends RouteComponentProps<{}>, BreadcrumbSetters, ThemeProps, TelemetryProps {
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: RepoSettingsSideBarGroups
     repo: RepositoryFields
@@ -88,6 +89,7 @@ export const RepoSettingsArea: React.FunctionComponent<Props> = ({
     }
     const context: RepoSettingsAreaRouteContext = {
         repo: repoOrError,
+        isLightTheme: props.isLightTheme,
         telemetryService: props.telemetryService,
     }
 

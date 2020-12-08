@@ -6,6 +6,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -22,6 +23,8 @@ type Resolver interface {
 	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver
 	DeleteUploadByID(ctx context.Context, uploadID int) error
 	DeleteIndexByID(ctx context.Context, id int) error
+	IndexConfiguration(ctx context.Context, repositoryID int) (store.IndexConfiguration, error)
+	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
 	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)
 }
 
@@ -68,6 +71,23 @@ func (r *resolver) DeleteUploadByID(ctx context.Context, uploadID int) error {
 func (r *resolver) DeleteIndexByID(ctx context.Context, id int) error {
 	_, err := r.dbStore.DeleteIndexByID(ctx, id)
 	return err
+}
+
+func (r *resolver) IndexConfiguration(ctx context.Context, repositoryID int) (store.IndexConfiguration, error) {
+	configuration, ok, err := r.dbStore.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
+	if err != nil || !ok {
+		return store.IndexConfiguration{}, err
+	}
+
+	return configuration, nil
+}
+
+func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error {
+	if _, err := config.UnmarshalJSON([]byte(configuration)); err != nil {
+		return err
+	}
+
+	return r.dbStore.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, []byte(configuration))
 }
 
 const slowQueryResolverRequestThreshold = time.Second

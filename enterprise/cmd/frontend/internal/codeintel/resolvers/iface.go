@@ -37,6 +37,8 @@ type DBStore interface {
 	GetIndexByID(ctx context.Context, id int) (dbstore.Index, bool, error)
 	GetIndexes(ctx context.Context, opts dbstore.GetIndexesOptions) ([]dbstore.Index, int, error)
 	DeleteIndexByID(ctx context.Context, id int) (bool, error)
+	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (store.IndexConfiguration, bool, error)
+	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error
 }
 
 type DBStoreShim struct {
