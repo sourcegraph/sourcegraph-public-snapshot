@@ -29,6 +29,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 3.22.1
+
+### Changed
+
+- Reduced memory and CPU required for updating the code intelligence commit graph [#16517](https://github.com/sourcegraph/sourcegraph/pull/16517)
+
 ## 3.22.0
 
 ### Added
