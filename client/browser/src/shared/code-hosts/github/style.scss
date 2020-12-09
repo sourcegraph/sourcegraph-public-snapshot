@@ -1,6 +1,22 @@
+@mixin github-dark-theme {
+    [data-color-mode='dark'] {
+        @content;
+    }
+    [data-color-mode='auto'] {
+        @media (prefers-color-scheme: dark) {
+            @content;
+        }
+    }
+}
+
 :root {
     // Map out CSS variables to the theme-aware GitHub ones
     --border-color: var(--color-border-primary);
+    --secondary: var(--color-auto-gray-2);
+}
+
+@include github-dark-theme {
+    --mark-bg: #{$mark-bg-dark};
 }
 
 .command-palette-action-item--github {
