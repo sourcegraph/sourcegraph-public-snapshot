@@ -86,7 +86,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                 <div className="code-monitor-form__card card p-3 my-3">
                     <div className="font-weight-bold">Send email notifications</div>
                     <span className="text-muted">Deliver email notifications to specified recipients.</span>
-                    <div className="mt-4 test-action-form">
+                    <div className="mt-3 test-action-form">
                         Recipients
                         <input
                             type="text"
