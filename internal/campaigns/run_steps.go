@@ -66,6 +66,8 @@ func runSteps(ctx context.Context, wc *WorkspaceCreator, repo *graphql.Repositor
 	results := make([]StepResult, len(steps))
 
 	for i, step := range steps {
+		reportProgress(fmt.Sprintf("Preparing step %d", i+1))
+
 		stepContext := StepContext{Repository: *repo}
 		if i > 0 {
 			stepContext.PreviousStep = results[i-1]
