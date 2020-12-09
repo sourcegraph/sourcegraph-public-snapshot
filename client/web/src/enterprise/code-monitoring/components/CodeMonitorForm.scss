@@ -1,0 +1,38 @@
+.code-monitor-form {
+    &__card {
+        border-radius: 4px;
+
+        &-link {
+            &:hover {
+                text-decoration: none;
+                color: var(--link-color);
+            }
+        }
+
+        &--button {
+            &:hover {
+                border: 2px solid #329af0;
+            }
+
+            .create-monitor-page__trigger--disabled & {
+                &:hover {
+                    border: 1px solid var(--border-color);
+                }
+            }
+
+            .create-monitor-page__actions--disabled & {
+                &:hover {
+                    border: 1px solid var(--border-color);
+                }
+            }
+        }
+    }
+
+    &__horizontal-rule {
+        margin: 2rem 0;
+    }
+
+    &__owner-dropdown {
+        min-width: 50%;
+    }
+}

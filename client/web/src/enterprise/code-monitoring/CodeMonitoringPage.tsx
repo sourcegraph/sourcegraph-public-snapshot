@@ -48,7 +48,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
     }, [])
 
     return (
-        <div className="container mt-3 web-content">
+        <div className="container mt-5">
             <PageTitle title="Code Monitoring" />
             <PageHeader
                 title={
@@ -63,7 +63,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                 actions={
                     <Link to="/code-monitoring/new" className="btn btn-secondary">
                         <PlusIcon className="icon-inline" />
-                        Add new code monitor
+                        Create new code monitor
                     </Link>
                 }
             />

@@ -149,14 +149,14 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
             </div>
             <div className="flex">
                 Owner
-                <select className="form-control my-2 w-auto" disabled={true}>
+                <select className="form-control my-2 code-monitor-form__owner-dropdown w-auto" disabled={true}>
                     <option value={authenticatedUser.displayName || authenticatedUser.username}>
                         {authenticatedUser.username}
                     </option>
                 </select>
                 <small className="text-muted">Event history and configuration will not be shared.</small>
             </div>
-            <hr className="my-4" />
+            <hr className="code-monitor-form__horizontal-rule" />
             <div className="create-monitor-page__triggers mb-4">
                 <FormTriggerArea
                     query={currentCodeMonitorState.trigger.query}
@@ -179,6 +179,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                     onActionsChange={onActionsChange}
                 />
             </div>
+            <hr className="code-monitor-form__horizontal-rule" />
             <div>
                 <div className="d-flex my-4">
                     <div>
