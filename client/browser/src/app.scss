@@ -49,6 +49,7 @@ $theme-colors-light: (
 @import 'bootstrap/scss/utilities/screenreaders';
 @import '../../shared/src/global-styles/icons';
 @import './highlight';
+@import './shared';
 @import './shared/components/CodeViewToolbar.scss';
 @import './shared/code-hosts/bitbucket/style.scss';
 @import './shared/code-hosts/gitlab/style.scss';
@@ -57,4 +58,3 @@ $theme-colors-light: (
 @import './shared/code-hosts/shared/HoverOverlay.scss';
 @import './shared/code-hosts/shared/ViewOnSourcegraphButton';
 @import './shared/code-hosts/shared/nativeTooltips';
-@import './shared';

@@ -11,6 +11,7 @@
 
 :root {
     // Map out CSS variables to the theme-aware GitHub ones
+    --body-bg: var(--color-bg-canvas);
     --border-color: var(--color-border-primary);
     --secondary: var(--color-auto-gray-2);
 }
