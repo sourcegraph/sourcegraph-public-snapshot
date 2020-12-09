@@ -35,7 +35,7 @@ func repositoryCloningHandler(resultsResolver *SearchResultsResolver) (search.Sk
 		Reason: search.RepositoryCloning,
 		Title:  fmt.Sprintf("%s cloning", amount),
 		// TODO sample of repos in message
-		Message:  fmt.Sprintf("%s %s could not be searched since they are still cloning. Try searching again or reducing the scope of your query with `repo:`,  `repogroup:` or other filters.", amount, plural("repository", "repositories", len(repos))),
+		Message:  fmt.Sprintf("%s %s could not be searched since %s still cloning. Try searching again or reducing the scope of your query with `repo:`,  `repogroup:` or other filters.", amount, plural("repository", "repositories", len(repos)), plural("it is", "they are", len(repos))),
 		Severity: search.SeverityInfo,
 	}, true
 }
