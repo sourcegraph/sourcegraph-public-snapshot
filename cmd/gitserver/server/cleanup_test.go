@@ -115,6 +115,12 @@ func TestCleanupInactive(t *testing.T) {
 }
 
 func TestGitGCAuto(t *testing.T) {
+	// We have `git gc --auto` passes disabled currently.
+	enableGCAuto = true
+	defer func() {
+		enableGCAuto = false
+	}()
+
 	// Create a test repository with detectable garbage that GC can prune.
 	root := tmpDir(t)
 	repo := filepath.Join(root, "garbage-repo")

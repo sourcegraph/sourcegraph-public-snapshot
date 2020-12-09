@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
@@ -36,6 +37,11 @@ const (
 	// reporting git gc issues.
 	repoTTLGC = time.Hour * 24 * 2
 )
+
+// EnableGCAuto is a temporary flag that allows us to control whether or not
+// `git gc --auto` is invoked during janitorial activities. This flag will
+// likely evolve into some form of site config value in the future.
+var enableGCAuto, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "false", "Use git-gc during janitorial cleanup phases"))
 
 var (
 	reposRemoved = promauto.NewCounter(prometheus.CounterOpts{
@@ -175,6 +181,9 @@ func (s *Server) cleanupRepos() {
 	}
 
 	performGC := func(dir GitDir) (done bool, err error) {
+		if !enableGCAuto {
+			return false, nil
+		}
 		return false, gitGC(dir)
 	}
 
