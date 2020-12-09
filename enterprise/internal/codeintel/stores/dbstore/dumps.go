@@ -209,7 +209,7 @@ func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 
 	commits := make([]*sqlf.Query, 0, len(graph.Graph()))
 	for commit := range graph.Graph() {
-		commits = append(commits, sqlf.Sprintf("%s", commit))
+		commits = append(commits, sqlf.Sprintf("%s", dbutil.CommitBytea(commit)))
 	}
 
 	commitGraphView, err := scanCommitGraphView(s.Store.Query(ctx, sqlf.Sprintf(
@@ -217,7 +217,7 @@ func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 			SELECT nu.upload_id, encode(nu.commit_bytea, 'hex'), md5(u.root || ':' || u.indexer) as token, nu.distance, nu.ancestor_visible, nu.overwritten
 			FROM lsif_nearest_uploads nu
 			JOIN lsif_uploads u ON u.id = nu.upload_id
-			WHERE nu.repository_id = %s AND encode(nu.commit_bytea, 'hex') IN (%s) AND nu.ancestor_visible
+			WHERE nu.repository_id = %s AND nu.commit_bytea IN (%s) AND nu.ancestor_visible
 		`,
 		repositoryID,
 		sqlf.Join(commits, ", "),
