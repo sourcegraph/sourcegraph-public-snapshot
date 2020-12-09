@@ -5,12 +5,9 @@
 
 set -euf -o pipefail
 
-if [ ! -e "${PG_EXPORTER_QUERIES}" ]; then
-  echo "Could not find postgres exporter config, expected /dev/pg_exporter"
-  exit 1
-fi
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null 2>&1 && pwd)"
 
-IMAGE=sourcegraph/postgres_exporter
+IMAGE=postgres_exporter:dev
 CONTAINER=postgres_exporter
 
 # Use psql to read the effective values for PG* env vars (instead of, e.g., hardcoding the default
@@ -35,7 +32,11 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
   DATA_SOURCE_NAME="postgresql://${PGUSER}:${PGPASSWORD}@${ADJUSTED_HOST}:${PGPORT}/${PGDATABASE}?sslmode=${PGSSLMODE:-disable}"
 fi
 
-set -x
+echo "Building pg_exporter docker image"
+docker build -f "$REPO_ROOT"/docker-images/postgres_exporter/Dockerfile -t ${IMAGE} \
+    --progress=plain  \
+    --quiet >/dev/null \
+    "$REPO_ROOT"/docker-images/postgres_exporter/
 
 exec docker run --rm -p9187:9187 ${NET_ARG} --name="$CONTAINER" \
   -e DATA_SOURCE_NAME="${DATA_SOURCE_NAME}" ${IMAGE}
