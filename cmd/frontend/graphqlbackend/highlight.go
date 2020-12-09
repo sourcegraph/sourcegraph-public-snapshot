@@ -42,15 +42,23 @@ type HighlightArgs struct {
 	DisableTimeout     bool
 	IsLightTheme       bool
 	HighlightLongLines bool
+	Ranges             *[]highlight.LineRange
 }
 
 type highlightedFileResolver struct {
-	aborted bool
-	html    string
+	aborted    bool
+	html       string
+	lineRanges [][]string
 }
 
 func (h *highlightedFileResolver) Aborted() bool { return h.aborted }
-func (h *highlightedFileResolver) HTML() string  { return h.html }
+func (h *highlightedFileResolver) HTML() *string { return strptr(h.html) }
+func (h *highlightedFileResolver) LineRanges() *[][]string {
+	if len(h.lineRanges) == 0 {
+		return nil
+	}
+	return &h.lineRanges
+}
 
 func highlightContent(ctx context.Context, args *HighlightArgs, content, path string, metadata highlight.Metadata) (*highlightedFileResolver, error) {
 	var (
@@ -71,6 +79,13 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 	if err != nil {
 		return nil, err
 	}
-	result.html = string(html)
+	if args.Ranges == nil || len(*args.Ranges) == 0 {
+		result.html = string(html)
+	} else {
+		result.lineRanges, err = highlight.SplitLineRanges(html, *args.Ranges)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return result, nil
 }
