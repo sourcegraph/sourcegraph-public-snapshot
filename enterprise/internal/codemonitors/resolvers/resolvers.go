@@ -429,6 +429,7 @@ const (
 	monitorTriggerQueryKind         = "CodeMonitorTriggerQuery"
 	monitorTriggerEventKind         = "CodeMonitorTriggerEvent"
 	monitorActionEmailKind          = "CodeMonitorActionEmail"
+	monitorActionEventKind          = "CodeMonitorActionEmailEvent"
 	monitorActionEmailRecipientKind = "CodeMonitorActionEmailRecipient"
 )
 
@@ -717,7 +718,19 @@ func (m *monitorEmail) ID() graphql.ID {
 }
 
 func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) (graphqlbackend.MonitorActionEventConnectionResolver, error) {
-	return &monitorActionEventConnection{}, nil
+	ajs, err := m.store.ReadActionEmailEvents(ctx, m.Id, m.triggerEventID, args)
+	if err != nil {
+		return nil, err
+	}
+	totalCount, err := m.store.TotalActionEmailEvents(ctx, m.Id, m.triggerEventID)
+	if err != nil {
+		return nil, err
+	}
+	events := make([]graphqlbackend.MonitorActionEventResolver, len(ajs))
+	for i, aj := range ajs {
+		events[i] = &monitorActionEvent{Resolver: m.Resolver, ActionJob: aj}
+	}
+	return &monitorActionEventConnection{events: events, totalCount: totalCount}, nil
 }
 
 //
@@ -748,47 +761,52 @@ func (a *monitorActionEmailRecipientsConnection) PageInfo(ctx context.Context) (
 // MonitorActionEventConnection
 //
 type monitorActionEventConnection struct {
+	events     []graphqlbackend.MonitorActionEventResolver
+	totalCount int32
 }
 
 func (a *monitorActionEventConnection) Nodes(ctx context.Context) ([]graphqlbackend.MonitorActionEventResolver, error) {
-	notImplemented := "message not implemented"
-	return []graphqlbackend.MonitorActionEventResolver{
-			&monitorActionEvent{id: "314", status: "SUCCESS", timestamp: graphqlbackend.DateTime{Time: time.Now()}},
-			&monitorActionEvent{id: "315", status: "ERROR", message: &notImplemented, timestamp: graphqlbackend.DateTime{Time: time.Now()}},
-		},
-		nil
+	return a.events, nil
 }
 
 func (a *monitorActionEventConnection) TotalCount(ctx context.Context) (int32, error) {
-	return 1, nil
+	return a.totalCount, nil
 }
 
 func (a *monitorActionEventConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(false), nil
+	if len(a.events) == 0 {
+		return graphqlutil.HasNextPage(false), nil
+	}
+	return graphqlutil.NextPageCursor(string(a.events[len(a.events)-1].ID())), nil
 }
 
 //
 // MonitorEvent
 //
 type monitorActionEvent struct {
-	id        graphql.ID
-	status    string
-	message   *string
-	timestamp graphqlbackend.DateTime
+	*Resolver
+	*cm.ActionJob
 }
 
 func (m *monitorActionEvent) ID() graphql.ID {
-	return m.id
+	return relay.MarshalID(monitorActionEventKind, m.Id)
 }
 
-func (m *monitorActionEvent) Status() string {
-	return m.status
+func (m *monitorActionEvent) Status() (string, error) {
+	status, ok := stateToStatus[m.State]
+	if !ok {
+		return "", fmt.Errorf("unknown state: %s", m.State)
+	}
+	return status, nil
 }
 
 func (m *monitorActionEvent) Message() *string {
-	return m.message
+	return m.FailureMessage
 }
 
 func (m *monitorActionEvent) Timestamp() graphqlbackend.DateTime {
-	return m.timestamp
+	if m.FinishedAt == nil {
+		return graphqlbackend.DateTime{Time: m.store.Now()}
+	}
+	return graphqlbackend.DateTime{Time: *m.FinishedAt}
 }
