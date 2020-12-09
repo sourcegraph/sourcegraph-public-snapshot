@@ -88,6 +88,25 @@ func (s *Store) GetEventsForQueryIDInt64(ctx context.Context, queryID int64, arg
 	return scanTriggerJobs(rows, err)
 }
 
+const totalCountEventsForQueryIDInt64FmtStr = `
+SELECT COUNT(*)
+FROM cm_trigger_jobs
+WHERE ((state = 'completed' AND results IS TRUE) OR (state != 'completed'))
+AND query = %s
+`
+
+func (s *Store) TotalCountEventsForQueryIDInt64(ctx context.Context, queryID int64) (totalCount int32, err error) {
+	q := sqlf.Sprintf(
+		totalCountEventsForQueryIDInt64FmtStr,
+		queryID,
+	)
+	err = s.Store.QueryRow(ctx, q).Scan(&totalCount)
+	if err != nil {
+		return -1, nil
+	}
+	return totalCount, nil
+}
+
 type TriggerJobs struct {
 	Id    int
 	Query int64
