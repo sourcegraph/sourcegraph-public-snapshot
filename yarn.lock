@@ -23046,10 +23046,10 @@ webext-patterns@^0.9.0:
   resolved "https://registry.npmjs.org/webext-patterns/-/webext-patterns-0.9.0.tgz#4d475f0f8fab94438529c04b35d70185311ff403"
   integrity sha512-eJDQjdJ8QmbURZtmRVnkLm4xHoG3YUNJzpIIJPmBKC4rjfT89IzZvUn70qJSKM9+S3sqefI1hzQIvSLp2uGWfw==
 
-webextension-polyfill@^0.6.0:
-  version "0.6.0"
-  resolved "https://registry.npmjs.org/webextension-polyfill/-/webextension-polyfill-0.6.0.tgz#1afd925f3274a0d4848083579b9c0b649a5c6763"
-  integrity sha512-PlYwiX8e4bNZrEeBFxbFFsLtm0SMPxJliLTGdNCA0Bq2XkWrAn2ejUd+89vZm+8BnfFB1BclJyCz3iKsm2atNg==
+webextension-polyfill@^0.7.0:
+  version "0.7.0"
+  resolved "https://registry.npmjs.org/webextension-polyfill/-/webextension-polyfill-0.7.0.tgz#0df1120ff0266056319ce1a622b09ad8d4a56505"
+  integrity sha512-su48BkMLxqzTTvPSE1eWxKToPS2Tv5DLGxKexLEVpwFd6Po6N8hhSLIvG6acPAg7qERoEaDL+Y5HQJeJeml5Aw==
 
 webidl-conversions@^4.0.2:
   version "4.0.2"
