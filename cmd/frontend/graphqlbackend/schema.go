@@ -5833,7 +5833,17 @@ type GitBlob implements TreeEntry & File2 {
     """
     Highlight the blob contents.
     """
-    highlight(disableTimeout: Boolean!, isLightTheme: Boolean!, highlightLongLines: Boolean = false): HighlightedFile!
+    highlight(
+        disableTimeout: Boolean!
+        isLightTheme: Boolean!
+        """
+        If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
+        2000 bytes is enabled. This may produce a significant amount of HTML
+        which some browsers (such as Chrome, but not Firefox) may have trouble
+        rendering efficiently.
+        """
+        highlightLongLines: Boolean = false
+    ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule
     """

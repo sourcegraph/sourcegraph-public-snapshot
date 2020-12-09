@@ -1,22 +1,17 @@
 # Indexing a C++ repository with LSIF
 
-This guide walks through setting up LSIF generation for a C++ codebase using Docker and
+This guide walks through setting up LSIF generation for a C++ codebase using
 [`lsif-clang`](https://github.com/sourcegraph/lsif-clang). These instructions should apply to any
-C++ project that is buildable with `clang` or `clang++` (which also covers *most* projects built
-with `gcc` or `g++`).
+C++ project that is buildable with `clang` or `clang++`. (This should also cover most projects built
+with `gcc` or `g++`.)
 
-Note on Docker: LSIF generation requires a working build environment (the LSIF indexer essentially
-takes the place of the compiler), and Docker allows us to recreate this environment consistently. If
-you prefer not to use Docker, you can easily adapt these instructions to a non-Docker-based system
-simply by converting all the steps in the Dockerfile to a script or steps in your CI configuration.
+## Local dev setup
 
-We will be using [github.com/sourcegraph/tesseract](https://github.com/sourcegraph/tesseract) as an
-example C++ repository.
+### With Docker (recommended)
 
 1. Copy the files in the [`lsif-docker` directory of
    sourcegraph/tesseract](https://github.com/sourcegraph/tesseract/tree/master/lsif-docker) to a
-   local `lsif-docker` directory. We recommend adding this directory to the repository being
-   indexed.
+   local `lsif-docker` directory in your C++ repository (the one you wish to index).
 
 1. Replace the contents of `lsif-docker/install_build_deps.sh` with commands that install any
    requisite build dependencies of the project. These should be dependencies that **do not** vary
@@ -68,10 +63,61 @@ example C++ repository.
   * `PROJECT_REV=`: the revision of you repository to be indexed
   * `$IMAGE_ID`: the ID of the Docker image you just built
 
-Finally, you can incorporate the Dockerized LSIF generation into your CI pipeline so it runs on
-every new revision on any appropriate branch.
+If successful, you should see the upload visible in [the repository settings page like
+this](https://sourcegraph.com/github.com/tesseract-ocr/tesseract/-/settings/code-intelligence/uploads).
+
+For reference, some examples of Dockerized C++ LSIF generation are:
+
+* [`github.com/opencv/opencv`](https://github.com/sourcegraph/opencv/tree/master/docker)
+* [`github.com/osquery/osquery`](https://github.com/sourcegraph/osquery/tree/master/lsif-docker)
+* [`github.com/google/tcmalloc`](https://github.com/sourcegraph/tcmalloc/tree/master/docker)
+* [`github.com/tesseract-ocr/tesseract`](https://github.com/sourcegraph/tesseract/tree/master/lsif-docker)
+
+### Without Docker
+
+It can sometimes be difficult to replicate the build environment inside a separate Docker
+container. If this situation applies to you, you'll need to install `lsif-clang` directly to your
+local dev environment.
+
+1. Install `lsif-clang` in your environment using the [instructions in the `lsif-clang`
+   repository](https://github.com/sourcegraph/lsif-clang/blob/llvmorg-10.0.0-lsif-clang/docs/install.md).
+
+1. [Install the `src` CLI](https://github.com/sourcegraph/src-cli).
+
+1. You'll need a way to generate a compilation database (i.e., a `compile_commands.json`
+   file). There are different methods of doing so depending on your build tool, and we recommend
+   reading [these excellent
+   notes](https://sarcasm.github.io/notes/dev/compilation-database.html). If there isn't an explicit
+   way to generate one with your build tool, we recommend using
+   [Bear](https://github.com/rizsotto/Bear), which should be generic enough to handle any C++ build
+   (but might be less efficient than explicit generation methods).
+
+1. Generate the `compile_commands.json` file in the root directory of the repository.
+
+1. Run `lsif-clang compile_commands.json` from the root directory. This should emit a `dump.lsif`
+   file.
+
+1. Run `src lsif upload` from the root directory. You may first have to [authenticate to your
+   Sourcegraph instance](https://github.com/sourcegraph/src-cli#log-into-your-sourcegraph-instance).
+
+If you run into issues along the way, a useful reference is [one of the
+`Dockerfile`s](https://github.com/sourcegraph/tesseract/blob/master/lsif-docker/Dockerfile)
+currently used for LSIF generation for an open-source repository.
+
+## CI setup
+
+Incorporating LSIF generation and uploading in CI will allow precise code navigation to remain
+up-to-date without any human intervention.
+
+If you created a `Dockerfile` that encapsulates LSIF generation, you can use the same one in your CI
+pipeline.
+
+If you installed `lsif-clang` directly into your host machine in development, you'll need to
+incorporate those steps into your build scripts.
 
 ## Troubleshooting
+
+### With Docker
 
 If the `docker run` command fails, you likely have an error in one of the `lsif-docker/*.sh`
 files. The general rule is if you can get your project to build normally (i.e., generate an

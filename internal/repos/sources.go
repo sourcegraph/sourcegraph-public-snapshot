@@ -188,6 +188,10 @@ func (s *SourceError) Error() string {
 	return s.Err.Error()
 }
 
+func (s *SourceError) Cause() error {
+	return s.Err
+}
+
 func sourceErrorFormatFunc(es []error) string {
 	if len(es) == 1 {
 		return es[0].Error()

@@ -9,7 +9,7 @@ import * as React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { FetchFileParameters } from '../../../../../shared/src/components/CodeExcerpt'
-import { FileMatch, IFileMatch, ILineMatch } from '../../../../../shared/src/components/FileMatch'
+import { FileLineMatch, FileMatch, LineMatch } from '../../../../../shared/src/components/FileMatch'
 import { VirtualList } from '../../../../../shared/src/components/VirtualList'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
@@ -142,7 +142,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
                             key={index}
                             location={this.props.location}
                             expanded={true}
-                            result={referencesToFileMatch(uri, locationsByURI.get(uri)!)}
+                            result={referencesToFileLineMatch(uri, locationsByURI.get(uri)!)}
                             icon={this.props.icon}
                             onSelect={this.onSelect}
                             showAllMatches={true}
@@ -167,7 +167,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
     }
 }
 
-function referencesToFileMatch(uri: string, references: Badged<Location>[]): IFileMatch {
+function referencesToFileLineMatch(uri: string, references: Badged<Location>[]): FileLineMatch {
     const parsedUri = parseRepoURI(uri)
     return {
         file: {
@@ -190,7 +190,7 @@ function referencesToFileMatch(uri: string, references: Badged<Location>[]): IFi
         },
         limitHit: false,
         lineMatches: references.filter(property('range', isDefined)).map(
-            (reference): ILineMatch => ({
+            (reference): LineMatch => ({
                 preview: '',
                 limitHit: false,
                 lineNumber: reference.range.start.line,

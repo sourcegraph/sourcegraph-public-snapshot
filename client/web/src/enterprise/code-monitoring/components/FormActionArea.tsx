@@ -68,63 +68,63 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
         <>
             <h3 className="mb-1">Actions</h3>
             <span className="text-muted">Run any number of actions in response to an event</span>
-            <div className="card p-3 my-3">
-                {/* This should be its own component when you can add multiple email actions */}
-                {!showEmailNotificationForm && !actionsCompleted && (
-                    <>
+            {/* This should be its own component when you can add multiple email actions */}
+            {!showEmailNotificationForm && !actionsCompleted && (
+                <button
+                    type="button"
+                    className="code-monitor-form__card card p-3 my-3 w-100 test-action-button"
+                    onClick={toggleEmailNotificationForm}
+                    disabled={disabled}
+                >
+                    <div className="code-monitor-form__card-link btn btn-link font-weight-bold p-0 text-left">
+                        Send email notifications
+                    </div>
+                    <span className="text-muted">Deliver email notifications to specified recipients.</span>
+                </button>
+            )}
+            {showEmailNotificationForm && (
+                <div className="code-monitor-form__card card p-3 my-3">
+                    <div className="font-weight-bold">Send email notifications</div>
+                    <span className="text-muted">Deliver email notifications to specified recipients.</span>
+                    <div className="mt-4 test-action-form">
+                        Recipients
+                        <input
+                            type="text"
+                            className="form-control my-2"
+                            value={`${authenticatedUser.email || ''} (you)`}
+                            disabled={true}
+                            autoFocus={true}
+                        />
+                        <small className="text-muted">
+                            Code monitors are currently limited to sending emails to your primary email address.
+                        </small>
+                    </div>
+                    <div className="flex">
+                        <Toggle
+                            title="Enabled"
+                            value={emailNotificationEnabled}
+                            onToggle={toggleEmailNotificationEnabled}
+                            className="mr-2"
+                        />
+                        Enabled
+                    </div>
+                    <div>
                         <button
-                            type="button"
-                            onClick={toggleEmailNotificationForm}
-                            className="btn btn-link font-weight-bold p-0 text-left test-action-button"
-                            disabled={disabled}
+                            type="submit"
+                            className="btn btn-secondary mr-1 test-submit-action"
+                            onClick={completeForm}
+                            onSubmit={completeForm}
                         >
-                            Send email notifications
+                            Done
                         </button>
-                        <span className="text-muted">Deliver email notifications to specified recipients.</span>
-                    </>
-                )}
-                {showEmailNotificationForm && (
-                    <>
-                        <div className="font-weight-bold">Send email notifications</div>
-                        <span className="text-muted">Deliver email notifications to specified recipients.</span>
-                        <div className="mt-4 test-action-form">
-                            Recipients
-                            <input
-                                type="text"
-                                className="form-control my-2"
-                                value={`${authenticatedUser.email || ''} (you)`}
-                                disabled={true}
-                                autoFocus={true}
-                            />
-                            <small className="text-muted">
-                                Code monitors are currently limited to sending emails to your primary email address.
-                            </small>
-                        </div>
-                        <div className="flex my-4">
-                            <Toggle
-                                title="Enabled"
-                                value={emailNotificationEnabled}
-                                onToggle={toggleEmailNotificationEnabled}
-                                className="mr-2"
-                            />
-                            Enabled
-                        </div>
-                        <div>
-                            <button
-                                type="submit"
-                                className="btn btn-outline-secondary mr-1 test-submit-action"
-                                onClick={completeForm}
-                                onSubmit={completeForm}
-                            >
-                                Done
-                            </button>
-                            <button type="button" className="btn btn-outline-secondary" onClick={cancelForm}>
-                                Cancel
-                            </button>
-                        </div>
-                    </>
-                )}
-                {actionsCompleted && !showEmailNotificationForm && (
+                        <button type="button" className="btn btn-outline-secondary" onClick={cancelForm}>
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
+            {actionsCompleted && !showEmailNotificationForm && (
+                <div className="code-monitor-form__card card p-3 my-3">
                     <div className="d-flex justify-content-between align-items-center">
                         <div>
                             <div className="font-weight-bold">Send email notifications</div>
@@ -148,8 +148,8 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                             </button>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
             <small className="text-muted">
                 What other actions would you like to do?{' '}
                 <a href="" target="_blank" rel="noopener">

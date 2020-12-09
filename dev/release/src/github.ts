@@ -136,6 +136,7 @@ export async function ensurePatchReleaseIssue({
             repo: 'sourcegraph',
             assignees,
             body: issueBody,
+            labels: ['release-tracking'],
         },
         dryRun
     )

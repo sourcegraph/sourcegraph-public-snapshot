@@ -114,6 +114,18 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                                
                             </td>
                           </tr>
+                          <tr>
+                            <td
+                              className="line"
+                            >
+                              3
+                            </td>
+                            <td
+                              className="code"
+                            >
+                               
+                            </td>
+                          </tr>
                         </tbody>
                       </table>
                     </code>
@@ -338,6 +350,18 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                                
                             </td>
                           </tr>
+                          <tr>
+                            <td
+                              className="line"
+                            >
+                              5
+                            </td>
+                            <td
+                              className="code"
+                            >
+                               
+                            </td>
+                          </tr>
                         </tbody>
                       </table>
                     </code>
@@ -463,6 +487,18 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                               className="line"
                             >
                               2
+                            </td>
+                            <td
+                              className="code"
+                            >
+                               
+                            </td>
+                          </tr>
+                          <tr>
+                            <td
+                              className="line"
+                            >
+                              3
                             </td>
                             <td
                               className="code"

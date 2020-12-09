@@ -5,7 +5,7 @@ import { cleanup, getAllByTestId, getByTestId, render } from '@testing-library/r
 import _VisibilitySensor from 'react-visibility-sensor'
 import sinon from 'sinon'
 import { MockVisibilitySensor } from './CodeExcerpt.test'
-import { FileMatch, IFileMatch } from './FileMatch'
+import { FileLineMatch, FileMatch } from './FileMatch'
 import { HIGHLIGHTED_FILE_LINES_REQUEST, NOOP_SETTINGS_CASCADE, RESULT } from '../util/searchTestHelpers'
 
 jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children, onChange }) => (
@@ -19,7 +19,7 @@ describe('FileMatch', () => {
     const history = createBrowserHistory()
     const defaultProps = {
         location: history.location,
-        result: RESULT as IFileMatch,
+        result: RESULT as FileLineMatch,
         icon: FileIcon,
         onSelect: sinon.spy(),
         expanded: true,

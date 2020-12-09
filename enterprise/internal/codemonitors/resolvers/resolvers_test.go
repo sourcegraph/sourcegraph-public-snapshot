@@ -256,7 +256,10 @@ func TestQueryMonitor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	postHookOpt := WithPostHooks([]hook{func() error { return r.store.EnqueueTriggerQueries(ctx) }})
+	postHookOpt := WithPostHooks([]hook{
+		func() error { return r.store.EnqueueTriggerQueries(ctx) },
+		func() error { return r.store.EnqueueActionEmailsForQueryIDInt64(ctx, 1, 1) },
+	})
 	_, err = r.insertTestMonitorWithOpts(ctx, t, actionOpt, postHookOpt)
 	if err != nil {
 		t.Fatal(err)
@@ -279,16 +282,21 @@ func TestQueryMonitor(t *testing.T) {
 	t.Run("recipients paging", func(t *testing.T) {
 		recipientPaging(ctx, t, schema, user1, user2)
 	})
+	t.Run("actions paging", func(t *testing.T) {
+		actionPaging(ctx, t, schema, user1)
+	})
 }
 
 func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Resolver, user1 *testUser, user2 *testUser) {
 	input := map[string]interface{}{
-		"userName": user1.name,
+		"userName":     user1.name,
+		"actionCursor": relay.MarshalID(monitorActionEventKind, 1),
 	}
 	response := apitest.Response{}
 	campaignApitest.MustExec(ctx, t, schema, input, &response, queryByUserFmtStr)
 
 	triggerEventEndCursor := string(relay.MarshalID(monitorTriggerEventKind, 1))
+	actionEventEndCursor := string(relay.MarshalID(monitorActionEventKind, 1))
 	want := apitest.Response{
 		User: apitest.User{
 			Monitors: apitest.MonitorConnection{
@@ -324,21 +332,6 @@ func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *R
 						Nodes: []apitest.Action{
 							{
 								ActionEmail: apitest.ActionEmail{
-									Id:       string(relay.MarshalID(monitorActionEmailKind, 1)),
-									Enabled:  false,
-									Priority: "NORMAL",
-									Recipients: apitest.RecipientsConnection{
-										TotalCount: 2,
-										Nodes: []apitest.UserOrg{
-											{Name: user1.name},
-											{Name: user2.name},
-										},
-									},
-									Header: "test header 1",
-								},
-							},
-							{
-								ActionEmail: apitest.ActionEmail{
 									Id:       string(relay.MarshalID(monitorActionEmailKind, 2)),
 									Enabled:  true,
 									Priority: "CRITICAL",
@@ -350,6 +343,19 @@ func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *R
 										},
 									},
 									Header: "test header 2",
+									Events: apitest.ActionEventConnection{
+										Nodes: []apitest.ActionEvent{{
+											Id:        string(relay.MarshalID(monitorActionEventKind, 1)),
+											Status:    "PENDING",
+											Timestamp: r.Now().UTC().Format(time.RFC3339),
+											Message:   nil,
+										}},
+										TotalCount: 1,
+										PageInfo: apitest.PageInfo{
+											HasNextPage: true,
+											EndCursor:   &actionEventEndCursor,
+										},
+									},
 								},
 							},
 						},
@@ -367,7 +373,7 @@ const queryByUserFmtStr = `
 fragment u on User { id, username }
 fragment o on Org { id, name }
 
-query($userName: String!){
+query($userName: String!, $actionCursor: String!){
 	user(username:$userName){
 		monitors(first:1){
 			totalCount
@@ -400,7 +406,7 @@ query($userName: String!){
 						}
 					}
 				}
-				actions{
+				actions(first:1, after:$actionCursor){
 					totalCount
 					nodes{
 						... on MonitorEmail{
@@ -413,6 +419,19 @@ query($userName: String!){
 								nodes {
 									... on User { ...u }
 									... on Org { ...o }
+								}
+							}
+							events {
+								totalCount
+								nodes {
+									id
+									status
+									timestamp
+									message
+								}
+								pageInfo {
+									hasNextPage
+									endCursor
 								}
 							}
 						}
@@ -821,6 +840,57 @@ query($userName: String!, $monitorCursor: String!){
 			totalCount
 			nodes{
 				id
+			}
+		}
+	}
+}
+`
+
+func actionPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, user1 *testUser) {
+	queryInput := map[string]interface{}{
+		"userName":     user1.name,
+		"actionCursor": string(relay.MarshalID(monitorActionEmailKind, 1)),
+	}
+	got := apitest.Response{}
+	campaignApitest.MustExec(ctx, t, schema, queryInput, &got, actionPagingFmtStr)
+
+	want := apitest.Response{
+		User: apitest.User{
+			Monitors: apitest.MonitorConnection{
+				Nodes: []apitest.Monitor{{
+					Actions: apitest.ActionConnection{
+						TotalCount: 2,
+						Nodes: []apitest.Action{
+							{
+								ActionEmail: apitest.ActionEmail{
+									Id: string(relay.MarshalID(monitorActionEmailKind, 2)),
+								},
+							},
+						},
+					},
+				}},
+			},
+		},
+	}
+
+	if diff := cmp.Diff(&got, &want); diff != "" {
+		t.Fatalf("diff: %s", diff)
+	}
+}
+
+const actionPagingFmtStr = `
+query($userName: String!, $actionCursor:String!){
+	user(username:$userName){
+		monitors(first:1){
+			nodes{
+				actions(first:1, after:$actionCursor) {
+					totalCount
+					nodes {
+						... on MonitorEmail {
+							id
+						}
+					}
+				}
 			}
 		}
 	}

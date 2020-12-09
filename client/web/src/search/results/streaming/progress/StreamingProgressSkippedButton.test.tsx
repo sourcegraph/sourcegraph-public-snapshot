@@ -1,6 +1,6 @@
 import { mount } from 'enzyme'
 import React from 'react'
-import { Popover } from 'reactstrap'
+import { ButtonDropdown } from 'reactstrap'
 import { Progress } from '../../../stream'
 import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton'
 
@@ -136,18 +136,18 @@ describe('StreamingProgressSkippedButton', () => {
 
         const element = mount(<StreamingProgressSkippedButton progress={progress} />, { attachTo: div })
 
-        let popover = element.find(Popover)
+        let popover = element.find(ButtonDropdown)
         expect(popover.prop('isOpen')).toBe(false)
 
         const button = element.find('.btn.streaming-progress__skipped')
         button.simulate('click')
 
-        popover = element.find(Popover)
+        popover = element.find(ButtonDropdown)
         expect(popover.prop('isOpen')).toBe(true)
 
         button.simulate('click')
 
-        popover = element.find(Popover)
+        popover = element.find(ButtonDropdown)
         expect(popover.prop('isOpen')).toBe(false)
     })
 })

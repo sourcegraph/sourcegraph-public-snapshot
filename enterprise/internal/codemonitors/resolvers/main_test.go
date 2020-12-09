@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID int32) {
@@ -137,7 +136,7 @@ func (r *Resolver) insertTestMonitorWithOpts(ctx context.Context, t *testing.T, 
 func newTestResolver(t *testing.T) *Resolver {
 	t.Helper()
 
-	now := timeutil.Now()
+	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now }
 	return newResolverWithClock(dbconn.Global, clock).(*Resolver)
 }
