@@ -4,9 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"golang.org/x/sync/errgroup"
 	"log"
 	"os"
+	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -26,17 +32,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_graphql_field_seconds",
-	Help:    "GraphQL field resolver latencies in seconds.",
-	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-}, []string{"type", "field", "error", "source", "request_name"})
+var (
+	graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_graphql_field_seconds",
+		Help:    "GraphQL field resolver latencies in seconds.",
+		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	}, []string{"type", "field", "error", "source", "request_name"})
 
-var codeIntelSearchHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_graphql_code_intel_search_seconds",
-	Help:    "Code intel search latencies in seconds.",
-	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-}, []string{"exact", "error"})
+	codeIntelSearchHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_graphql_code_intel_search_seconds",
+		Help:    "Code intel search latencies in seconds.",
+		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	}, []string{"exact", "error"})
+
+	cf = httpcli.NewExternalHTTPClientFactory()
+)
 
 func init() {
 	prometheus.MustRegister(graphqlFieldHistogram)
@@ -729,4 +739,146 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 
 func (r *schemaResolver) CurrentUser(ctx context.Context) (*UserResolver, error) {
 	return CurrentUser(ctx)
+}
+
+func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struct {
+	User     graphql.ID
+	CodeHost *graphql.ID
+	Page     *int32
+}) (*codeHostRepositoryConnectionResolver, error) {
+	userID, err := UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+	// 🚨 SECURITY: make sure the user is either site admin or the same user being requested
+	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+		return nil, err
+	}
+	var codeHost int64
+	if args.CodeHost != nil {
+		codeHost, err = unmarshalExternalServiceID(*args.CodeHost)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &codeHostRepositoryConnectionResolver{
+		userID:   userID,
+		codeHost: codeHost,
+		page: func() int32 {
+			if args.Page != nil {
+				return *args.Page
+			}
+			return 0
+		}(),
+	}, nil
+}
+
+type codeHostRepositoryConnectionResolver struct {
+	userID   int32
+	codeHost int64
+	page     int32
+
+	once  sync.Once
+	nodes []*codeHostRepositoryResolver
+	err   error
+}
+
+func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*codeHostRepositoryResolver, error) {
+	r.once.Do(func() {
+		var (
+			svcs []*types.ExternalService
+			err  error
+		)
+		// get all external services for user, or for the specified external service
+		if r.codeHost == 0 {
+			svcs, err = db.ExternalServices.List(ctx, db.ExternalServicesListOptions{NamespaceUserID: r.userID})
+			if err != nil {
+				r.err = err
+				return
+			}
+		} else {
+			svc, err := db.ExternalServices.GetByID(ctx, r.codeHost)
+			if err != nil {
+				r.err = err
+				return
+			}
+			// 🚨 SECURITY: if the user doesn't own this service, check they're site admin
+			if svc.NamespaceUserID != r.userID {
+				backend.CheckUserIsSiteAdmin(ctx, r.userID)
+			}
+			svcs = []*types.ExternalService{svc}
+		}
+		// get Source for all external services
+		var (
+			results = make(chan []types.CodeHostRepository, 1024)
+			g       = errgroup.Group{}
+			done    = make(chan struct{})
+		)
+		// collect all results in a goroutine
+		go func() {
+			defer close(done)
+			r.nodes = []*codeHostRepositoryResolver{}
+			for repos := range results {
+				for _, repo := range repos {
+					repo := repo
+					r.nodes = append(r.nodes, &codeHostRepositoryResolver{
+						repo: &repo,
+					})
+				}
+			}
+		}()
+		for _, svc := range svcs {
+			src, err := repos.NewSource(svc, cf)
+			if err != nil {
+				r.err = err
+				return
+			}
+			if af, ok := src.(repos.AffiliatedRepositorySource); ok {
+				g.Go(func() error {
+					repos, err := af.AffiliatedRepositories(ctx)
+					if err != nil {
+						return err
+					}
+					results <- repos
+					return nil
+				})
+			}
+		}
+		// wait for all sources to return their repos
+		err = g.Wait()
+		// signal the collector to finish
+		close(results)
+		if err != nil {
+			r.err = err
+			return
+		}
+		// make sure the result collector goroutine has finished
+		<-done
+		sort.Slice(r.nodes, func(i, j int) bool {
+			return r.nodes[i].repo.Name < r.nodes[j].repo.Name
+		})
+	})
+	return r.nodes, r.err
+}
+
+type codeHostRepositoryResolver struct {
+	repo *types.CodeHostRepository
+}
+
+func (r *codeHostRepositoryResolver) Name() string {
+	return r.repo.Name
+}
+
+func (r *codeHostRepositoryResolver) Private() bool {
+	return r.repo.Private
+}
+
+func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) (*externalServiceResolver, error) {
+	svc, err := db.ExternalServices.GetByID(ctx, r.repo.CodeHostID)
+	if err != nil {
+		return nil, err
+	}
+	return &externalServiceResolver{
+		externalService: svc,
+	}, nil
 }

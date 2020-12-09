@@ -396,7 +396,7 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	return fs
 }
 
-type AffiliatedRepository struct {
+type CodeHostRepository struct {
 	Name       string
 	CodeHostID int64
 	Private    bool
