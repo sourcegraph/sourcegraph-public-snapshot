@@ -473,11 +473,10 @@ func (m *monitor) Actions(ctx context.Context, args *graphqlbackend.ListActionAr
 	return m.actionConnectionResolverWithTriggerID(ctx, nil, m.Monitor.ID, args)
 }
 
-func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, triggerEventID *int, monitorID int64, args *graphqlbackend.ListActionArgs) (c graphqlbackend.MonitorActionConnectionResolver, err error) {
+func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, triggerEventID *int, monitorID int64, args *graphqlbackend.ListActionArgs) (graphqlbackend.MonitorActionConnectionResolver, error) {
 	// For now, we only support emails as actions. Once we add other actions such as
 	// webhooks, we have to query those tables here too.
-	var q *sqlf.Query
-	q, err = r.store.ReadActionEmailQuery(ctx, monitorID, args)
+	q, err := r.store.ReadActionEmailQuery(ctx, monitorID, args)
 	if err != nil {
 		return nil, err
 	}
@@ -490,8 +489,10 @@ func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, tr
 	if err != nil {
 		return nil, err
 	}
-	var totalCount int32
-	totalCount, err = r.store.TotalCountActionEmails(ctx, monitorID)
+	totalCount, err := r.store.TotalCountActionEmails(ctx, monitorID)
+	if err != nil {
+		return nil, err
+	}
 	actions := make([]graphqlbackend.MonitorAction, 0, len(es))
 	for _, e := range es {
 		actions = append(actions, &action{
