@@ -110,6 +110,9 @@ func (r *Resolver) DeleteCodeMonitor(ctx context.Context, args *graphqlbackend.D
 		return nil, fmt.Errorf("DeleteCodeMonitor: %w", err)
 	}
 	err = r.store.DeleteMonitor(ctx, args)
+	if err != nil {
+		return nil, err
+	}
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
@@ -698,6 +701,9 @@ func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.List
 
 	var total int32
 	total, err = m.store.TotalCountRecipients(ctx, m.Id)
+	if err != nil {
+		return nil, err
+	}
 	return &monitorActionEmailRecipientsConnection{ns, nextPageCursor, total}, nil
 }
 
