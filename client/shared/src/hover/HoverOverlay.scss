@@ -95,7 +95,9 @@
         margin: 0;
         border-radius: 0;
         border: none;
-        border-bottom: 1px solid var(--border-color);
+        &:not(:last-child) {
+            border-bottom: 1px solid var(--border-color);
+        }
 
         // this is necessary otherwise single line alerts will render on two lines
         // if they are dismissible.
@@ -111,6 +113,7 @@
 
     &__actions {
         display: flex;
+        border-top: 1px solid var(--border-color);
     }
 
     &__action:not(:first-child) {
