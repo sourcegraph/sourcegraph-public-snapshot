@@ -1,6 +1,6 @@
 import * as H from 'history'
 import classnames from 'classnames'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import VideoInputAntennaIcon from 'mdi-react/VideoInputAntennaIcon'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../../components/Breadcrumbs'
 import { PageHeader } from '../../components/PageHeader'
@@ -12,7 +12,7 @@ import { Link } from '../../../../shared/src/components/Link'
 import { CodeMonitoringProps } from '.'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
-import { catchError, map, startWith, tap } from 'rxjs/operators'
+import { catchError, map, startWith } from 'rxjs/operators'
 import { asError, isErrorLike } from '../../../../shared/src/util/errors'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -75,7 +75,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
     }, [])
 
     return (
-        <div className="container mt-5">
+        <div className="code-monitoring-page container mt-5">
             <PageTitle title="Code Monitoring" />
             <PageHeader
                 title={
@@ -117,7 +117,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     </div>
                     <div className="code-monitoring-page__start-points container">
                         <h3>Starting points for your first monitor</h3>
-                        <div className="row no-gutters code-monitoring-page__start-points-panel-container">
+                        <div className="row no-gutters code-monitoring-page__start-points-panel-container mb-3">
                             <div className="col-6">
                                 <div className="code-monitoring-page__start-points-panel">
                                     <h3>Watch for AWS secrets in commits</h3>
@@ -125,6 +125,8 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                         Use a search query to watch for new search results, and choose how to receive
                                         notifications in response.
                                     </p>
+                                    {/* TODO: add link */}
+                                    <a className="btn btn-secondary">View in docs →</a>
                                 </div>
                             </div>
                             <div className="col-6">
@@ -133,6 +135,43 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                     <p className="text-muted">
                                         Keep an eye on commits with new consumers of deprecated methods to keep your
                                         code base up-to-date.
+                                    </p>
+                                    {/* TODO: add link */}
+                                    <a className="btn btn-secondary">View in docs →</a>
+                                </div>
+                            </div>
+                        </div>
+                        <a className="link">Find more starting points in the docs</a>
+                    </div>
+                    <div className="code-monitoring-page__learn-more container mt-5">
+                        <h3 className="mb-3">Learn more about code monitoring</h3>
+                        <div className="row">
+                            <div className="col-4">
+                                <div>
+                                    <h4>Core concepts</h4>
+                                    <p className="text-muted">
+                                        Craft searches that will monitor your code and trigger actions.{' '}
+                                        {/* TODO: add link */}
+                                        <a className="link">Read the docs</a>
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="col-4">
+                                <div>
+                                    <h4>Starting points and ideas</h4>
+                                    <p className="text-muted">
+                                        Find specific examples of useful code monitors to keep on top of security and
+                                        consistency concerns. {/* TODO: add link */}
+                                        <a className="link">Explore starting points</a>
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="col-4">
+                                <div>
+                                    <h4>Questions and feedback</h4>
+                                    <p className="text-muted">
+                                        We want to hear your feedback. {/* TODO: add link */}
+                                        <a className="link">Share your thoughts</a>
                                     </p>
                                 </div>
                             </div>

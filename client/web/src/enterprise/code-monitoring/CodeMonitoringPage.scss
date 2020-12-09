@@ -1,4 +1,19 @@
 .code-monitoring-page {
+    .theme-light & {
+        h3,
+        h4 {
+            // Overriding the custom header colors in web-content styles.
+            color: var(--body-color);
+        }
+    }
+    .theme-dark & {
+        h3,
+        h4 {
+            // Overriding the custom header colors in web-content styles.
+            color: var(--body-color);
+        }
+    }
+
     &__start {
         &-subheading {
             font-size: 16px;
@@ -9,7 +24,9 @@
         }
 
         &-points {
-            color: $gray-17;
+            color: var(--body-color);
+            padding-right: 0;
+            padding-left: 0;
 
             &-panel {
                 &-container {
@@ -29,5 +46,10 @@
                 padding: 1rem;
             }
         }
+    }
+
+    &__learn-more {
+        padding-right: 0;
+        padding-left: 0;
     }
 }
