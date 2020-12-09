@@ -712,6 +712,8 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 }
 
 func TestValidateGitLabSecret(t *testing.T) {
+	t.Parallel()
+
 	t.Run("empty secret", func(t *testing.T) {
 		ok, err := validateGitLabSecret(nil, "")
 		if ok {
