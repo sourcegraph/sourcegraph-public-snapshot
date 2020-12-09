@@ -13,7 +13,7 @@
    {
     "reason": "repository-cloning",
     "title": "1 cloning",
-    "message": "1 repository could not be searched since they are still cloning. Try searching again or reducing the scope of your query with `repo:`,  `repogroup:` or other filters.",
+    "message": "1 repository could not be searched since it is still cloning. Try searching again or reducing the scope of your query with `repo:`,  `repogroup:` or other filters.",
     "severity": "info"
    },
    {
