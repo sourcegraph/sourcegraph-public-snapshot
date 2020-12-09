@@ -95,9 +95,7 @@
         margin: 0;
         border-radius: 0;
         border: none;
-        &:not(:last-child) {
-            border-bottom: 1px solid var(--border-color);
-        }
+        border-bottom: 1px solid var(--border-color);
 
         // this is necessary otherwise single line alerts will render on two lines
         // if they are dismissible.

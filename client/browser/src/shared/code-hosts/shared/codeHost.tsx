@@ -317,7 +317,7 @@ export interface CodeIntelligenceProps extends TelemetryProps {
 
 export const createOverlayMount = (codeHostName: string, container: HTMLElement): HTMLElement => {
     const mount = document.createElement('div')
-    mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`, 'theme-light')
+    mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`)
     container.append(mount)
     return mount
 }
