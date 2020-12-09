@@ -108,12 +108,9 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                 <button
                     type="button"
                     onClick={toggleQueryForm}
-                    className="code-monitor-form__card--button card p-3 my-3 w-100 test-trigger-button"
+                    className="code-monitor-form__card--button card p-3 w-100 test-trigger-button text-left"
                 >
-                    <div
-                        onClick={toggleQueryForm}
-                        className="code-monitor-form__card-link btn btn-link font-weight-bold p-0 text-left"
-                    >
+                    <div className="code-monitor-form__card-link btn-link font-weight-bold p-0">
                         When there are new search results
                     </div>
                     <span className="text-muted">
