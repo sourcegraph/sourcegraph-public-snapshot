@@ -106,7 +106,8 @@ More behavior can be controlled with
 
 #### Can I consume Sourcegraph's metrics in my own monitoring system (Datadog, New Relic, etc.)?
 
-While it is technically possible to consume all of Sourcegraph's metrics in any external system, our recommendation is to utilize the builtin monitoring tools and configure Sourcegraph to [send alerts to your own PagerDuty, Slack, email, etc.](alerting.md). Metrics and thresholds can change with each release, therefore manually defining the alerts required to monitor Sourcegraph's health is not recommended as it would be a tedious process. Sourcegraph automatically updates the dashboards and alerts on each release and ensures that the displayed information and alerts are up-to-date.
+Sourcegraph provides an [HTTP API](alerting_custom_consumption.md) and [high-level alerting metrics](metrics_guide.md) which you can integrate into your own monitoring system.
 
-External monitoring systems that support Prometheus scraping (for example, Datadog and New Relic) or [Prometheus federation](https://prometheus.io/docs/prometheus/latest/federation/) can be used to consume Sourcegraph's metrics, which includes our [high-level alerting metrics](metrics_guide.md).
-Alternatively, you can leverage the provided [HTTP API](alerting_custom_consumption.md) to query which alerts are firing in Sourcegraph and pipe that information into your own monitoring platform.
+While it is technically possible to consume all of Sourcegraph's metrics in an external system, our recommendation is to utilize the builtin monitoring tools and configure Sourcegraph to [send alerts to your own PagerDuty, Slack, email, etc.](alerting.md). Metrics and thresholds can change with each release, therefore manually defining the alerts required to monitor Sourcegraph's health is not recommended. Sourcegraph automatically updates the dashboards and alerts on each release to ensure the displayed information is up-to-date.
+
+Other monitoring systems that support Prometheus scraping (for example, Datadog and New Relic) or [Prometheus federation](https://prometheus.io/docs/prometheus/latest/federation/) can be configured to federate Sourcegraph's [high-level alerting metric](metrics_guide.md). For information on how to configure those systems, please check your provider's documentation.
