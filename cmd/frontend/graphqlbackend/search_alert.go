@@ -540,8 +540,8 @@ func alertForStructuralSearch(multiErr *multierror.Error) (newMultiErr *multierr
 				}
 				alert = &searchAlert{
 					prometheusType: "structural_search_on_zero_indexed_repos",
-					title:          "Unindexed repositories with structural search",
-					description:    fmt.Sprintf("Structural search currently only works on indexed repositories. Some of the repositories to search are not indexed, so we can't return results for them. %s", msg),
+					title:          "Unindexed repositories or repository revisions with structural search",
+					description:    fmt.Sprintf("Structural search currently only works on indexed repositories or revisions. Some of the repositories or revisions to search are not indexed, so we can't return results for them. %s", msg),
 				}
 			} else {
 				newMultiErr = multierror.Append(newMultiErr, err)
