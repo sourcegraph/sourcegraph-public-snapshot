@@ -6,9 +6,9 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"go.uber.org/atomic"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -281,8 +281,8 @@ func TestSearchSuggestions(t *testing.T) {
 					Limit: 1,
 				},
 			}
-			if !reflect.DeepEqual(have, want) {
-				t.Error(cmp.Diff(have, want))
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Error(diff)
 			}
 			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
@@ -294,8 +294,8 @@ func TestSearchSuggestions(t *testing.T) {
 					Limit: 1,
 				},
 			}
-			if !reflect.DeepEqual(have, want) {
-				t.Error(cmp.Diff(have, want))
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Error(diff)
 			}
 			return []*types.RepoName{{Name: "foo-repo"}}, nil
 		}
