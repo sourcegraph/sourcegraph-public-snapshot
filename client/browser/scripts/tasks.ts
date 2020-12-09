@@ -70,6 +70,24 @@ function buildSafariExtensionApp(): void {
     shelljs.echo('y').exec(`xcrun safari-web-extension-converter ${safariWebExtensionConverterOptions.join(' ')}`)
     shelljs.exec(`xcodebuild ${xcodebuildOptions.join(' ')}`)
     shelljs.mv('./build/Sourcegraph for Safari/build/Release/Sourcegraph for Safari.app', './build/bundles')
+
+    setSafariBuildVersion(version)
+}
+
+/**
+ * Set the version string in the Xcode project that contains the Safari extension.
+ *
+ * See documentation of `agvtool`:
+ * https://developer.apple.com/library/archive/qa/qa1827/_index.html
+ */
+function setSafariBuildVersion(version: string): void {
+    if (typeof version !== 'string') {
+        throw new TypeError('Set Safari build version: version must be a string')
+    }
+    shelljs.pushd('./build/Sourcegraph for Safari')
+    shelljs.exec(`xcrun agvtool new-version -all "${version}"`)
+    shelljs.exec(`xcrun agvtool new-marketing-version -all "${version}"`)
+    shelljs.popd()
 }
 
 export function copyAssets(): void {
