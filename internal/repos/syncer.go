@@ -15,9 +15,11 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -236,7 +238,12 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	// Fetch repos from the source
 	var sourced Repos
 	if sourced, err = s.sourced(ctx, svcs, onSourced); err != nil {
-		return errors.Wrap(err, "syncer.sync.sourced")
+		// As a special case, if we fail due to bad credentials we should behave as if zero repos were found. This is
+		// so that revoked tokens cause repos to be removed correctly.
+		if !errcode.IsUnauthorized(err) {
+			return errors.Wrap(err, "syncer.sync.sourced")
+		}
+		log15.Warn("Unauthorized while syncing", "externalService", svc.ID)
 	}
 
 	// Unless explicitly specified with the "all" setting or the owner of the service has the "AllowUserExternalServicePrivate" tag,
@@ -246,7 +253,6 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 		if err != nil {
 			return errors.Wrap(err, "checking user tag")
 		}
-
 		if !ok {
 			sourced = sourced.Filter(func(r *Repo) bool { return !r.Private })
 		}

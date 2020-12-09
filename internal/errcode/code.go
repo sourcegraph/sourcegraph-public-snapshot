@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/schema"
+	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
@@ -175,15 +176,25 @@ func isErrorPredicate(err error, p func(err error) bool) bool {
 		Cause() error
 	}
 
-	for err != nil {
-		if p(err) {
-			return true
-		}
-		cause, ok := err.(causer)
-		if !ok {
-			break
-		}
-		err = cause.Cause()
+	errs := []error{err}
+
+	// We often use multierr.Error which doesn't implement causer
+	if me, ok := err.(*multierror.Error); ok {
+		errs = me.Errors
 	}
+
+	for _, err := range errs {
+		for err != nil {
+			if p(err) {
+				return true
+			}
+			cause, ok := err.(causer)
+			if !ok {
+				break
+			}
+			err = cause.Cause()
+		}
+	}
+
 	return false
 }
