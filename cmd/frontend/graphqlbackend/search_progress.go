@@ -36,7 +36,7 @@ func repositoryCloningHandler(resultsResolver *SearchResultsResolver) (search.Sk
 		Title:  fmt.Sprintf("%s cloning", amount),
 		// TODO sample of repos in message
 		Message:  fmt.Sprintf("%s %s could not be searched since they are still cloning. Try searching again or reducing the scope of your query with repo: repogroup: or other filters.", amount, plural("repository", "repositories", len(repos))),
-		Severity: search.SeverityWarn,
+		Severity: search.SeverityInfo,
 	}, true
 }
 
@@ -52,7 +52,7 @@ func repositoryMissingHandler(resultsResolver *SearchResultsResolver) (search.Sk
 		Title:  fmt.Sprintf("%s missing", amount),
 		// TODO sample of repos in message
 		Message:  fmt.Sprintf("%s %s could not be searched. Try reducing the scope of your query with repo: repogroup: or other filters.", amount, plural("repository", "repositories", len(repos))),
-		Severity: search.SeverityWarn,
+		Severity: search.SeverityInfo,
 	}, true
 }
 
@@ -85,7 +85,7 @@ func shardMatchLimitHandler(resultsResolver *SearchResultsResolver) (search.Skip
 		Reason:   search.ShardMatchLimit,
 		Title:    "result limit hit",
 		Message:  "Not all results have been returned due to hitting a match limit. Sourcegraph has limits for the number of results returned from a line, document and repository.",
-		Severity: search.SeverityWarn,
+		Severity: search.SeverityInfo,
 	}, true
 }
 
