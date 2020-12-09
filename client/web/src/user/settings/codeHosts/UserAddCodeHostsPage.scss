@@ -1,0 +1,18 @@
+.add-user-code-hosts-page {
+    &__button {
+        display: block;
+    }
+
+    &__icon_check.mdi-icon {
+        fill: var(--success);
+    }
+    &__icon_warn.mdi-icon {
+        fill: var(--warning);
+    }
+    &__icon_warn.mdi-icon {
+        fill: var(--warning);
+    }
+    &__icon_off.mdi-icon {
+        fill: var(--border-color);
+    }
+}

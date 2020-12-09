@@ -497,7 +497,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
 
 const GITHUB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITHUB,
-    title: 'GitHub.com',
+    title: 'GitHub',
     icon: GithubIcon,
     jsonSchema: githubSchemaJSON,
     editorActions: githubEditorActions(false),
@@ -884,7 +884,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
 }
 const GITLAB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITLAB,
-    title: 'GitLab.com',
+    title: 'GitLab',
     icon: GitLabIcon,
     jsonSchema: gitlabSchemaJSON,
     defaultDisplayName: 'GitLab',
