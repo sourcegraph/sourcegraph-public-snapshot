@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
@@ -31,8 +32,26 @@ func skippedReposHandler(repos []*RepositoryResolver, titleVerb, messageReason s
 
 	amount := number(len(repos))
 	base.Title = fmt.Sprintf("%s %s", amount, titleVerb)
-	// TODO sample of repos in message
-	base.Message = fmt.Sprintf("%s %s %s. Try searching again or reducing the scope of your query with `repo:`, `repogroup:` or other filters.", amount, plural("repository", "repositories", len(repos)), messageReason)
+
+	if len(repos) == 1 {
+		base.Message = fmt.Sprintf("`%s` %s. Try searching again or reducing the scope of your query with `repo:`,  `repogroup:` or other filters.", repos[0].Name(), messageReason)
+	} else {
+		sampleSize := 10
+		if sampleSize > len(repos) {
+			sampleSize = len(repos)
+		}
+
+		var b strings.Builder
+		_, _ = fmt.Fprintf(&b, "%s repositories %s. Try searching again or reducing the scope of your query with `repo:`, `repogroup:` or other filters.", amount, messageReason)
+		for _, repo := range repos[:sampleSize] {
+			_, _ = fmt.Fprintf(&b, "\n* `%s`", repo.Name())
+		}
+		if sampleSize < len(repos) {
+			b.WriteString("\n* ...")
+		}
+		base.Message = b.String()
+	}
+
 	return base, true
 }
 
