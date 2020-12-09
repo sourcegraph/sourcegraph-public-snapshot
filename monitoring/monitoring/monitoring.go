@@ -566,9 +566,8 @@ func (c *Container) dashboard() *sdk.Board {
 						Value:     float32(*o.Warning.greaterOrEqual),
 						Op:        "gt",
 						ColorMode: "custom",
-						Fill:      true,
-						Line:      false,
-						FillColor: "rgba(255, 73, 53, 0.8)",
+						Line:      true,
+						LineColor: "rgba(255, 73, 53, 0.8)",
 					})
 				}
 				if o.Critical != nil && o.Critical.greaterOrEqual != nil {
@@ -577,9 +576,8 @@ func (c *Container) dashboard() *sdk.Board {
 						Value:     float32(*o.Critical.greaterOrEqual),
 						Op:        "gt",
 						ColorMode: "custom",
-						Fill:      true,
-						Line:      false,
-						FillColor: "rgba(255, 17, 36, 0.8)",
+						Line:      true,
+						LineColor: "rgba(255, 17, 36, 0.8)",
 					})
 				}
 				if o.Warning != nil && o.Warning.lessOrEqual != nil {
@@ -588,9 +586,8 @@ func (c *Container) dashboard() *sdk.Board {
 						Value:     float32(*o.Warning.lessOrEqual),
 						Op:        "lt",
 						ColorMode: "custom",
-						Fill:      true,
-						Line:      false,
-						FillColor: "rgba(255, 73, 53, 0.8)",
+						Line:      true,
+						LineColor: "rgba(255, 73, 53, 0.8)",
 					})
 				}
 				if o.Critical != nil && o.Critical.lessOrEqual != nil {
@@ -599,9 +596,8 @@ func (c *Container) dashboard() *sdk.Board {
 						Value:     float32(*o.Critical.lessOrEqual),
 						Op:        "lt",
 						ColorMode: "custom",
-						Fill:      true,
-						Line:      false,
-						FillColor: "rgba(255, 17, 36, 0.8)",
+						Line:      true,
+						LineColor: "rgba(255, 17, 36, 0.8)",
 					})
 				}
 
