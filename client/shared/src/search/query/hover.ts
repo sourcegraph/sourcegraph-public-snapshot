@@ -1,6 +1,14 @@
 import * as Monaco from 'monaco-editor'
 import { Token } from './token'
-import { decorate, toMonacoRange, DecoratedToken, MetaRegexp, MetaRegexpKind } from './decoratedToken'
+import {
+    decorate,
+    toMonacoRange,
+    DecoratedToken,
+    MetaRegexp,
+    MetaRegexpKind,
+    MetaRevision,
+    MetaRevisionKind,
+} from './decoratedToken'
 import { resolveFilter } from './filters'
 
 const toRegexpHover = (token: MetaRegexp): string => {
@@ -85,15 +93,59 @@ const toRegexpHover = (token: MetaRegexp): string => {
     }
 }
 
+const toRevisionHover = (token: MetaRevision): string => {
+    let title: string
+    let description: string
+    switch (token.kind) {
+        case MetaRevisionKind.CommitHash:
+            title = 'commit hash'
+            description = 'Search the repository at this commit.'
+            break
+        case MetaRevisionKind.Label:
+            if (token.value.match(/^head$/i)) {
+                title = 'HEAD'
+                description = 'Search the repository at the latest HEAD commit of the default branch.'
+                break
+            }
+            title = 'branch name or tag'
+            description = 'Search the branch name or tag at the head commit.'
+            break
+        case MetaRevisionKind.Negate:
+            title = 'negation'
+            description =
+                'A prefix of a glob pattern or path that does **not** match a set of git objects, like a commit or branch name. Typically used in conjunction with a glob pattern that matches a set of commits or branches, followed by a negated set to exclude. For example, `*refs/heads/*:*!refs/heads/release*` searches all branches at the head commit, excluding branches matching `release*`.'
+            break
+        case MetaRevisionKind.PathLike:
+            title = 'using git reference path'
+            description =
+                'Search across git objects, like commits or branches, that match this git reference path. Typically used in conjunction with glob patterns, where a pattern like `*refs/heads/*` searches across all repository branches at the head commit.'
+            break
+        case MetaRevisionKind.Separator:
+            title = 'separator'
+            description =
+                'Separates multiple revisions to search across. For example, `1a35d48:feature:3.15` searches the repository for matches at commit `1a35d48`, or a branch named `feature`, or a tag `3.15`.'
+            break
+        case MetaRevisionKind.Wildcard:
+            title = 'wildcard'
+            description =
+                'Glob syntax to match zero or more characters in a revision. Typically used to match multiple branches or tags based on a git reference path. For example, `refs/tags/v3.*` matches all tags that start with `v3.`.'
+            break
+    }
+    return `**Revision ${title}**. ${description}`
+}
+
 const toHover = (token: DecoratedToken): string => {
     switch (token.type) {
         case 'pattern': {
             const quantity = token.value.length > 1 ? 'string' : 'character'
             return `Matches the ${quantity} \`${token.value}\`.`
         }
-        case 'metaRegexp': {
+        case 'metaRegexp':
             return toRegexpHover(token)
-        }
+        case 'metaRevision':
+            return toRevisionHover(token)
+        case 'metaRepoRevisionSeparator':
+            return '**Search at revision.** Separates a repository pattern and the revisions to search, like commits or branches. The part before the `@` specifies the repositories to search, the part after the `@` specifies which revisions to search.'
     }
     return ''
 }
@@ -146,6 +198,8 @@ export const getHoverResult = (
                 break
             }
             case 'pattern':
+            case 'metaRevision':
+            case 'metaRepoRevisionSeparator':
                 values.push(toHover(token))
                 range = toMonacoRange(token.range)
                 break
