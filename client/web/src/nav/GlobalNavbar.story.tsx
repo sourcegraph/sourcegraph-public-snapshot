@@ -105,5 +105,11 @@ add('Authenticated viewer', () => (
                 isSearchRelatedPage={false}
             />
         )}
-    </WebStory>
-))
+    </WebStory>),
+    {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/SFhXbl23TJ2j5tOF51NDtF/%F0%9F%93%9AWeb?node-id=985%3A1281',
+        },
+    }
+)
