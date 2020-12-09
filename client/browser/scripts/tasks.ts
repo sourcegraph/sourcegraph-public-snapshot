@@ -51,6 +51,9 @@ function ensurePaths(): void {
     shelljs.mkdir('-p', 'build/safari')
 }
 
+/**
+ * Create the Safari extension app Xcode project and build it.
+ */
 function buildSafariExtensionApp(): void {
     const safariWebExtensionConverterOptions = [
         'build/safari',
@@ -67,11 +70,11 @@ function buildSafariExtensionApp(): void {
 
     const xcodebuildOptions = ['-project', '"./build/Sourcegraph for Safari/Sourcegraph for Safari.xcodeproj"', 'build']
 
+    setSafariBuildVersion(version)
+
     shelljs.echo('y').exec(`xcrun safari-web-extension-converter ${safariWebExtensionConverterOptions.join(' ')}`)
     shelljs.exec(`xcodebuild ${xcodebuildOptions.join(' ')}`)
     shelljs.mv('./build/Sourcegraph for Safari/build/Release/Sourcegraph for Safari.app', './build/bundles')
-
-    setSafariBuildVersion(version)
 }
 
 /**
