@@ -487,7 +487,7 @@ var listChangesetsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListChangesets
 SELECT %s FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
-LEFT JOIN changeset_specs ON changesets.current_spec_id = changeset_specs.id
+%s -- optional LEFT JOIN to changeset_specs if required
 WHERE %s
 ORDER BY id ASC
 `
@@ -551,7 +551,12 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("repo.external_service_id = %s", opts.ExternalServiceID))
 	}
 
+	join := sqlf.Sprintf("")
 	if len(opts.TextSearch) != 0 {
+		// TextSearch predicates require changeset_specs to be joined into the
+		// query as well.
+		join = sqlf.Sprintf("LEFT JOIN changeset_specs ON changesets.current_spec_id = changeset_specs.id")
+
 		for _, expr := range opts.TextSearch {
 			preds = append(preds, expr.query())
 		}
@@ -560,6 +565,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	return sqlf.Sprintf(
 		listChangesetsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(ChangesetColumns, ", "),
+		join,
 		sqlf.Join(preds, "\n AND "),
 	)
 }
