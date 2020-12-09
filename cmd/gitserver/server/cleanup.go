@@ -639,8 +639,11 @@ func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
 	}
 }
 
+// gitGC will invoke `git-gc` to clean up any garbage in the repo. It will
+// operate synchronously and be aggressive with its internal heurisitcs when
+// deciding to act (meaning it will act now at lower thresholds).
 func gitGC(dir GitDir) error {
-	cmd := exec.Command("git", "gc", "--auto")
+	cmd := exec.Command("git", "-c", "gc.auto=1", "-c", "gc.autoDetach=false", "gc", "--auto")
 	dir.Set(cmd)
 	err := cmd.Run()
 	if err != nil {

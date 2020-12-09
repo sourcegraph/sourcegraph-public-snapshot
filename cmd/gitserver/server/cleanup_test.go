@@ -114,6 +114,11 @@ func TestCleanupInactive(t *testing.T) {
 	}
 }
 
+// Note that the exact values (e.g. 50 commits) below are related to git's
+// internal heuristics regarding whether or not to invoke `git gc --auto`.
+//
+// They are stable today, but may become flaky in the future if/when the
+// relevant internal magic numbers and transformations change.
 func TestGitGCAuto(t *testing.T) {
 	// We have `git gc --auto` passes disabled currently.
 	enableGCAuto = true
@@ -158,10 +163,6 @@ func TestGitGCAuto(t *testing.T) {
 	if strings.Contains(countObjects(), "count: 0") {
 		t.Fatalf("expected git to report objects but none found")
 	}
-
-	// Configure GC to be more aggressive and synchronous.
-	runCmd(t, repo, "git", "config", "gc.auto", "1")
-	runCmd(t, repo, "git", "config", "gc.autoDetach", "false")
 
 	// Handler must be invoked for Server side-effects.
 	s := &Server{ReposDir: root}
