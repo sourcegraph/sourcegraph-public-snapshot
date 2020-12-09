@@ -684,6 +684,8 @@ type Mutation {
 
     The returned CampaignSpec is immutable and expires after a certain period of time (if not used
     in a call to applyCampaign), which can be queried on CampaignSpec.expiresAt.
+
+    If campaigns are unlicensed, an error with the error code ErrCampaignsUnlicensed is returned.
     """
     createCampaignSpec(
         """
