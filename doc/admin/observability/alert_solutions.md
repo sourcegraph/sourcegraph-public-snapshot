@@ -1171,32 +1171,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <br />
 
-## gitserver: echo_command_duration_test
-
-<p class="subtitle">cloud: echo command duration test</p>
-
-**Descriptions:**
-
-- _gitserver: 1s+ echo command duration test_
-- _gitserver: 2s+ echo command duration test_
-
-**Possible solutions:**
-
-- **Query a graph for individual commands** using `sum by (cmd)(src_gitserver_exec_running)` in Grafana (`/-/debug/grafana`) to see if a command might be spiking in frequency.
-- **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
-- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
-- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_gitserver_echo_command_duration_test",
-  "critical_gitserver_echo_command_duration_test"
-]
-```
-
-<br />
-
 ## gitserver: frontend_internal_api_error_responses
 
 <p class="subtitle">cloud: frontend-internal API error responses every 5m by route</p>
