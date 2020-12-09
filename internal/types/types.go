@@ -390,14 +390,6 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	return fs
 }
 
-<<<<<<< HEAD
-type AffiliatedRepository struct {
-	Name       string
-	CodeHostID int64
-	Private    bool
-}
-
-=======
 // RepoName represents a source code repository name and its ID.
 type RepoName struct {
 	ID   api.RepoID
@@ -418,7 +410,12 @@ func (rs RepoNames) Len() int           { return len(rs) }
 func (rs RepoNames) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
 func (rs RepoNames) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
 
->>>>>>> 2fa16812b5... Replace Repo type by RepoName type
+type AffiliatedRepository struct {
+	Name       string
+	CodeHostID int64
+	Private    bool
+}
+
 // ExternalService is a connection to an external service.
 type ExternalService struct {
 	ID              int64

@@ -25,18 +25,18 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 	repoName := "indexed/one"
 	indexedFileName := "indexed.go"
 
-	indexedRepo := &types.Repo{Name: api.RepoName(repoName)}
+	indexedRepo := &types.RepoName{Name: api.RepoName(repoName)}
 
-	unindexedRepo := &types.Repo{Name: api.RepoName("unindexed/one")}
+	unindexedRepo := &types.RepoName{Name: api.RepoName("unindexed/one")}
 
-	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-		return []*types.Repo{indexedRepo, unindexedRepo}, nil
+	db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+		return []*types.RepoName{indexedRepo, unindexedRepo}, nil
 	}
 	defer func() { db.Mocks = db.MockStores{} }()
 
 	mockSearchFilesInRepo = func(
 		ctx context.Context,
-		repo *types.Repo,
+		repo *types.RepoName,
 		gitserverRepo gitserver.Repo,
 		rev string,
 		info *search.TextPatternInfo,
