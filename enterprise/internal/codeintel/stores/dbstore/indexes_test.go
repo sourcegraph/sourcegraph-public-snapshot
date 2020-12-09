@@ -46,6 +46,9 @@ func TestGetIndexByID(t *testing.T) {
 				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
 			},
 		},
+		LocalSteps: LocalStep{
+			ShellBlob: "echo hello",
+		},
 		Root:        "/foo/bar",
 		Indexer:     "sourcegraph/lsif-tsc:latest",
 		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
@@ -269,6 +272,9 @@ func TestInsertIndex(t *testing.T) {
 				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
 			},
 		},
+		LocalSteps: LocalStep{
+			ShellBlob: "echo hello",
+		},
 		Root:        "/foo/bar",
 		Indexer:     "sourcegraph/lsif-tsc:latest",
 		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
@@ -298,6 +304,9 @@ func TestInsertIndex(t *testing.T) {
 				Image:    "cimg/node:12.16",
 				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
 			},
+		},
+		LocalSteps: LocalStep{
+			ShellBlob: "echo hello",
 		},
 		Root:        "/foo/bar",
 		Indexer:     "sourcegraph/lsif-tsc:latest",

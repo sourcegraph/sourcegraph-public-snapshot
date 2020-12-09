@@ -13,10 +13,15 @@ type yamlIndexConfiguration struct {
 
 type yamlIndexJob struct {
 	Steps       []yamlDockerStep `yaml:"steps"`
+	LocalSteps  yamlLocalSteps   `yaml:"local_steps"`
 	Root        string           `yaml:"root"`
 	Indexer     string           `yaml:"indexer"`
 	IndexerArgs []string         `yaml:"indexer_args"`
 	Outfile     string           `yaml:"outfile"`
+}
+
+type yamlLocalSteps struct {
+	ShellBlob string `yaml:"shellblob"`
 }
 
 type yamlDockerStep struct {
@@ -34,7 +39,10 @@ func UnmarshalYAML(data []byte) (IndexConfiguration, error) {
 	var indexJobs []IndexJob
 	for _, value := range configuration.IndexJobs {
 		indexJobs = append(indexJobs, IndexJob{
-			Steps:       convertYAMLDockerSteps(value.Steps),
+			Steps: convertYAMLDockerSteps(value.Steps),
+			LocalSteps: LocalSteps{
+				ShellBlob: value.LocalSteps.ShellBlob,
+			},
 			Root:        value.Root,
 			Indexer:     value.Indexer,
 			IndexerArgs: sliceize(value.IndexerArgs),

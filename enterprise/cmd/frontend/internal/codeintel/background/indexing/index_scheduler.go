@@ -260,11 +260,16 @@ func convertIndexConfiguration(repositoryID int, commit string, indexConfigurati
 			})
 		}
 
+		localSteps := store.LocalStep{
+			ShellBlob: indexJob.LocalSteps.ShellBlob,
+		}
+
 		indexes = append(indexes, store.Index{
 			Commit:       commit,
 			RepositoryID: repositoryID,
 			State:        "queued",
 			DockerSteps:  dockerSteps,
+			LocalSteps:   localSteps,
 			Root:         indexJob.Root,
 			Indexer:      indexJob.Indexer,
 			IndexerArgs:  indexJob.IndexerArgs,
@@ -286,11 +291,16 @@ func convertInferredConfiguration(repositoryID int, commit string, indexJobs []i
 			})
 		}
 
+		localSteps := store.LocalStep{
+			ShellBlob: indexJob.LocalSteps.ShellBlob,
+		}
+
 		indexes = append(indexes, store.Index{
 			RepositoryID: repositoryID,
 			Commit:       commit,
 			State:        "queued",
 			DockerSteps:  dockerSteps,
+			LocalSteps:   localSteps,
 			Root:         indexJob.Root,
 			Indexer:      indexJob.Indexer,
 			IndexerArgs:  indexJob.IndexerArgs,

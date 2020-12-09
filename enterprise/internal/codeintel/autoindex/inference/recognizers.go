@@ -21,6 +21,7 @@ type IndexJobRecognizer interface {
 
 type IndexJob struct {
 	DockerSteps []DockerStep
+	LocalSteps  LocalSteps
 	Root        string
 	Indexer     string
 	IndexerArgs []string
@@ -31,6 +32,10 @@ type DockerStep struct {
 	Root     string
 	Image    string
 	Commands []string
+}
+
+type LocalSteps struct {
+	ShellBlob string
 }
 
 // Recognizers is a list of registered index job recognizers.
