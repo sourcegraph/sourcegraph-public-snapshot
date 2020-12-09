@@ -7,13 +7,13 @@
    {
     "reason": "repository-missing",
     "title": "1 missing",
-    "message": "1 repository could not be searched. Try reducing the scope of your query with repo: repogroup: or other filters.",
+    "message": "1 repository could not be searched. Try reducing the scope of your query with `repo:`, `repogroup:` or other filters.",
     "severity": "info"
    },
    {
     "reason": "repository-cloning",
     "title": "1 cloning",
-    "message": "1 repository could not be searched since they are still cloning. Try searching again or reducing the scope of your query with repo: repogroup: or other filters.",
+    "message": "1 repository could not be searched since they are still cloning. Try searching again or reducing the scope of your query with `repo:`,  `repogroup:` or other filters.",
     "severity": "info"
    },
    {
@@ -25,7 +25,7 @@
    {
     "reason": "shard-timeout",
     "title": "1 timedout",
-    "message": "1 repository could not be searched in time. Try reducing the scope of your query with repo: repogroup: or other filters.",
+    "message": "1 repository could not be searched in time. Try reducing the scope of your query with `repo:`, `repogroup:` or other filters.",
     "severity": "warn"
    },
    {
