@@ -473,11 +473,10 @@ func (m *monitor) Actions(ctx context.Context, args *graphqlbackend.ListActionAr
 	return m.actionConnectionResolverWithTriggerID(ctx, nil, m.Monitor.ID, args)
 }
 
-func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, triggerEventID *int, monitorID int64, args *graphqlbackend.ListActionArgs) (c graphqlbackend.MonitorActionConnectionResolver, err error) {
+func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, triggerEventID *int, monitorID int64, args *graphqlbackend.ListActionArgs) (graphqlbackend.MonitorActionConnectionResolver, error) {
 	// For now, we only support emails as actions. Once we add other actions such as
 	// webhooks, we have to query those tables here too.
-	var q *sqlf.Query
-	q, err = r.store.ReadActionEmailQuery(ctx, monitorID, args)
+	q, err := r.store.ReadActionEmailQuery(ctx, monitorID, args)
 	if err != nil {
 		return nil, err
 	}
@@ -487,6 +486,10 @@ func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, tr
 	}
 	defer rows.Close()
 	es, err := cm.ScanEmails(rows)
+	if err != nil {
+		return nil, err
+	}
+	totalCount, err := r.store.TotalCountActionEmails(ctx, monitorID)
 	if err != nil {
 		return nil, err
 	}
@@ -500,7 +503,7 @@ func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, tr
 			},
 		})
 	}
-	return &monitorActionConnection{actions: actions}, nil
+	return &monitorActionConnection{actions: actions, totalCount: totalCount}, nil
 }
 
 //
@@ -617,7 +620,8 @@ func (m *monitorTriggerEvent) Actions(ctx context.Context, args *graphqlbackend.
 // ActionConnection
 //
 type monitorActionConnection struct {
-	actions []graphqlbackend.MonitorAction
+	actions    []graphqlbackend.MonitorAction
+	totalCount int32
 }
 
 func (a *monitorActionConnection) Nodes(ctx context.Context) ([]graphqlbackend.MonitorAction, error) {
@@ -625,7 +629,7 @@ func (a *monitorActionConnection) Nodes(ctx context.Context) ([]graphqlbackend.M
 }
 
 func (a *monitorActionConnection) TotalCount(ctx context.Context) (int32, error) {
-	return int32(len(a.actions)), nil
+	return a.totalCount, nil
 }
 
 func (a *monitorActionConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
