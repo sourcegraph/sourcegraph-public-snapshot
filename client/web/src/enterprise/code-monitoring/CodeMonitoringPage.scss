@@ -1,0 +1,33 @@
+.code-monitoring-page {
+    &__start {
+        &-subheading {
+            font-size: 16px;
+        }
+
+        &-button {
+            width: fit-content;
+        }
+
+        &-points {
+            color: $gray-17;
+
+            &-panel {
+                &-container {
+                    .col,
+                    [class*='col-'] {
+                        &:first-child {
+                            padding-right: 0.75rem;
+                        }
+                        &:not(:first-child) {
+                            padding-left: 0.75rem;
+                        }
+                    }
+                }
+
+                border: 1px solid var(--border-color);
+                border-radius: 4px;
+                padding: 1rem;
+            }
+        }
+    }
+}
