@@ -8931,6 +8931,9 @@ type EventLogsConnection {
     pageInfo: PageInfo!
 }
 
+"""
+A list of code host repositories
+"""
 type CodeHostRepositoryConnection {
     """
     A list of repositories affiliated with a code host.
