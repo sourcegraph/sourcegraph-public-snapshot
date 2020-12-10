@@ -27,41 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// RepoFields are lazy loaded data fields on a Repo (from the DB).
-type RepoFields struct {
-	// URI is the full name for this repository (e.g.,
-	// "github.com/user/repo"). See the documentation for the Name field.
-	URI string
-
-	// Description is a brief description of the repository.
-	Description string
-
-	// Fork is whether this repository is a fork of another repository.
-	Fork bool
-
-	// Archived is whether this repository has been archived.
-	Archived bool
-
-	// Cloned is whether this repository is cloned.
-	Cloned bool
-
-	// CreatedAt indicates when the repository record was created.
-	CreatedAt time.Time
-
-	// UpdatedAt is when this repository's metadata was last updated on Sourcegraph.
-	UpdatedAt time.Time
-
-	// DeletedAt is when this repository was soft-deleted from Sourcegraph.
-	DeletedAt time.Time
-
-	// Metadata contains the raw source code host JSON metadata.
-	Metadata interface{}
-
-	// Sources identifies all the repo sources this Repo belongs to.
-	// The key is a URN created by extsvc.URN
-	Sources map[string]*SourceInfo
-}
-
 // A SourceInfo represents a source a Repo belongs to (such as an external service).
 type SourceInfo struct {
 	ID       string
