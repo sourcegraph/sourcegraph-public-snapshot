@@ -35,6 +35,7 @@ import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { QueryState } from '../helpers'
 import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
 import { SearchResultsStats } from './SearchResultsStats'
+import { SearchAlert } from './SearchAlert'
 
 const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     typeof value === 'object' &&
@@ -386,41 +387,13 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
                                     {/* Server-provided help message */}
                                     {results.alert && (
-                                        <div className="alert alert-info m-2" data-testid="alert-container">
-                                            <h3>
-                                                <AlertCircleIcon className="icon-inline" /> {results.alert.title}
-                                            </h3>
-                                            <p>{results.alert.description}</p>
-                                            {results.alert.proposedQueries && (
-                                                <>
-                                                    <h4>Did you mean:</h4>
-                                                    <ul className="list-unstyled">
-                                                        {results.alert.proposedQueries.map(proposedQuery => (
-                                                            <li key={proposedQuery.query}>
-                                                                <Link
-                                                                    className="btn btn-secondary btn-sm"
-                                                                    data-testid="proposed-query-link"
-                                                                    to={
-                                                                        '/search?' +
-                                                                        buildSearchURLQuery(
-                                                                            proposedQuery.query,
-                                                                            this.props.patternType,
-                                                                            this.props.caseSensitive,
-                                                                            this.props.versionContext,
-                                                                            {}
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    {proposedQuery.query || proposedQuery.description}
-                                                                </Link>
-                                                                {proposedQuery.query &&
-                                                                    proposedQuery.description &&
-                                                                    ` — ${proposedQuery.description}`}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </>
-                                            )}{' '}
+                                        <SearchAlert
+                                            alert={results.alert}
+                                            caseSensitive={this.props.caseSensitive}
+                                            patternType={this.props.patternType}
+                                            versionContext={this.props.versionContext}
+                                        >
+                                            {' '}
                                             {results.timedout.length > 0 &&
                                                 results.timedout.length === results.repositoriesCount &&
                                                 /* All repositories timed out. */
@@ -438,7 +411,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                           ]
                                                         : []
                                                 )}
-                                        </div>
+                                        </SearchAlert>
                                     )}
 
                                     {/* Results */}
