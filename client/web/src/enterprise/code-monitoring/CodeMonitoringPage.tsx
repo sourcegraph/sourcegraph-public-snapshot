@@ -51,12 +51,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     first: 1,
                     after: null,
                 }).pipe(
-                    map(monitors => {
-                        if (monitors.nodes.length > 0) {
-                            return true
-                        }
-                        return false
-                    }),
+                    map(monitors => monitors.nodes.length > 0),
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
