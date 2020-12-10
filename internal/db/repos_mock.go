@@ -9,12 +9,13 @@ import (
 )
 
 type MockRepos struct {
-	Get       func(ctx context.Context, repo api.RepoID) (*types.Repo, error)
-	GetByName func(ctx context.Context, repo api.RepoName) (*types.Repo, error)
-	GetByIDs  func(ctx context.Context, ids ...api.RepoID) ([]*types.Repo, error)
-	List      func(v0 context.Context, v1 ReposListOptions) ([]*types.Repo, error)
-	Create    func(ctx context.Context, repos ...*types.Repo) (err error)
-	Count     func(ctx context.Context, opt ReposListOptions) (int, error)
+	Get           func(ctx context.Context, repo api.RepoID) (*types.Repo, error)
+	GetByName     func(ctx context.Context, repo api.RepoName) (*types.Repo, error)
+	GetByIDs      func(ctx context.Context, ids ...api.RepoID) ([]*types.Repo, error)
+	List          func(v0 context.Context, v1 ReposListOptions) ([]*types.Repo, error)
+	ListRepoNames func(v0 context.Context, v1 ReposListOptions) ([]*types.RepoName, error)
+	Create        func(ctx context.Context, repos ...*types.Repo) (err error)
+	Count         func(ctx context.Context, opt ReposListOptions) (int, error)
 }
 
 func (s *MockRepos) MockGet(t *testing.T, wantRepo api.RepoID) (called *bool) {
@@ -63,6 +64,19 @@ func (s *MockRepos) MockList(t testing.TB, wantRepos ...api.RepoName) (called *b
 		repos := make([]*types.Repo, len(wantRepos))
 		for i, repo := range wantRepos {
 			repos[i] = &types.Repo{Name: repo}
+		}
+		return repos, nil
+	}
+	return
+}
+
+func (s *MockRepos) MockListRepoNames(t testing.TB, wantRepos ...api.RepoName) (called *bool) {
+	called = new(bool)
+	s.ListRepoNames = func(ctx context.Context, opt ReposListOptions) ([]*types.RepoName, error) {
+		*called = true
+		repos := make([]*types.RepoName, len(wantRepos))
+		for i, repo := range wantRepos {
+			repos[i] = &types.RepoName{Name: repo}
 		}
 		return repos, nil
 	}

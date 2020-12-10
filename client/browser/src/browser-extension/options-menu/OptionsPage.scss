@@ -26,6 +26,10 @@
 
     &__logo {
         width: 9.5rem;
+
+        /* On Chrome and Firefox, the SVG element's height is automatically
+        taken from the viewbox. On Safari, it must be explicitly set: */
+        height: 1.625rem;
     }
 
     &__version {

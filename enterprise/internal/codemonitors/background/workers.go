@@ -17,6 +17,10 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
+const (
+	eventRetentionInDays int = 7
+)
+
 func newTriggerQueryRunner(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		NumHandlers: 1,
@@ -52,12 +56,22 @@ func newTriggerQueryResetter(ctx context.Context, s *cm.Store, metrics codeMonit
 }
 
 func newTriggerJobsLogDeleter(ctx context.Context, store *cm.Store) goroutine.BackgroundRoutine {
-	deleteObsoleteLogs := goroutine.NewHandlerWithErrorMessage(
+	deleteLogs := goroutine.NewHandlerWithErrorMessage(
 		"code_monitors_trigger_jobs_log_deleter",
 		func(ctx context.Context) error {
-			return store.DeleteObsoleteJobLogs(ctx)
+			// Delete logs without search results.
+			err := store.DeleteObsoleteJobLogs(ctx)
+			if err != nil {
+				return err
+			}
+			// Delete old logs, even if they have search results.
+			err = store.DeleteOldJobLogs(ctx, eventRetentionInDays)
+			if err != nil {
+				return err
+			}
+			return nil
 		})
-	return goroutine.NewPeriodicGoroutine(ctx, 60*time.Minute, deleteObsoleteLogs)
+	return goroutine.NewPeriodicGoroutine(ctx, 60*time.Minute, deleteLogs)
 }
 
 func newActionRunner(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *workerutil.Worker {

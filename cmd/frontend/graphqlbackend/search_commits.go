@@ -307,7 +307,7 @@ func doSearchCommitsInRepoStream(ctx context.Context, op search.CommitParameters
 		}
 	}()
 
-	repoResolver := &RepositoryResolver{repo: op.RepoRevs.Repo}
+	repoResolver := &RepositoryResolver{repo: op.RepoRevs.Repo.ToRepo()}
 	for event := range events {
 		// if the result is incomplete, git log timed out and the client
 		// should be notified of that.
@@ -570,7 +570,7 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 		unflattened [][]*CommitSearchResultResolver
 		common      = &searchResultsCommon{}
 	)
-	common.repos = make([]*types.Repo, len(args.Repos))
+	common.repos = make([]*types.RepoName, len(args.Repos))
 	for i, repo := range args.Repos {
 		common.repos[i] = repo.Repo
 	}

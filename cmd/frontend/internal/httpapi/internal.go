@@ -205,7 +205,7 @@ type reposListServer struct {
 	// interface for testing.
 	Repos interface {
 		// ListDefault returns the repositories to index on Sourcegraph.com
-		ListDefault(context.Context) ([]*types.Repo, error)
+		ListDefault(context.Context) ([]*types.RepoName, error)
 		// List returns a list of repositories
 		List(context.Context, db.ReposListOptions) ([]*types.Repo, error)
 	}
