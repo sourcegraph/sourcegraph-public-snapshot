@@ -23,6 +23,7 @@ func TestIntegration(t *testing.T) {
 		t.Run("Changesets", storeTest(dbconn.Global, testStoreChangesets))
 		t.Run("ChangesetEvents", storeTest(dbconn.Global, testStoreChangesetEvents))
 		t.Run("ListChangesetSyncData", storeTest(dbconn.Global, testStoreListChangesetSyncData))
+		t.Run("ListChangesetsTextSearch", storeTest(dbconn.Global, testStoreListChangesetsTextSearch))
 		t.Run("CampaignSpecs", storeTest(dbconn.Global, testStoreCampaignSpecs))
 		t.Run("ChangesetSpecs", storeTest(dbconn.Global, testStoreChangesetSpecs))
 		t.Run("CodeHosts", storeTest(dbconn.Global, testStoreCodeHost))

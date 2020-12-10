@@ -110,6 +110,9 @@ func (r *Resolver) DeleteCodeMonitor(ctx context.Context, args *graphqlbackend.D
 		return nil, fmt.Errorf("DeleteCodeMonitor: %w", err)
 	}
 	err = r.store.DeleteMonitor(ctx, args)
+	if err != nil {
+		return nil, err
+	}
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
@@ -535,7 +538,11 @@ func (q *monitorQuery) Query() string {
 }
 
 func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) (graphqlbackend.MonitorTriggerEventConnectionResolver, error) {
-	es, err := q.Resolver.store.GetEventsForQueryIDInt64(ctx, q.Id, args)
+	es, err := q.store.GetEventsForQueryIDInt64(ctx, q.Id, args)
+	if err != nil {
+		return nil, err
+	}
+	totalCount, err := q.store.TotalCountEventsForQueryIDInt64(ctx, q.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -547,7 +554,7 @@ func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEven
 			TriggerJobs: e,
 		}))
 	}
-	return &monitorTriggerEventConnection{q.Resolver, events}, nil
+	return &monitorTriggerEventConnection{Resolver: q.Resolver, events: events, totalCount: totalCount}, nil
 }
 
 //
@@ -555,7 +562,8 @@ func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEven
 //
 type monitorTriggerEventConnection struct {
 	*Resolver
-	events []graphqlbackend.MonitorTriggerEventResolver
+	events     []graphqlbackend.MonitorTriggerEventResolver
+	totalCount int32
 }
 
 func (a *monitorTriggerEventConnection) Nodes(ctx context.Context) ([]graphqlbackend.MonitorTriggerEventResolver, error) {
@@ -563,7 +571,7 @@ func (a *monitorTriggerEventConnection) Nodes(ctx context.Context) ([]graphqlbac
 }
 
 func (a *monitorTriggerEventConnection) TotalCount(ctx context.Context) (int32, error) {
-	return int32(len(a.events)), nil
+	return a.totalCount, nil
 }
 
 func (a *monitorTriggerEventConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
@@ -698,6 +706,9 @@ func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.List
 
 	var total int32
 	total, err = m.store.TotalCountRecipients(ctx, m.Id)
+	if err != nil {
+		return nil, err
+	}
 	return &monitorActionEmailRecipientsConnection{ns, nextPageCursor, total}, nil
 }
 
