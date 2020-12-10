@@ -13,7 +13,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<StreamingP
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
     const submitHandler = useCallback(
         (event: React.FormEvent) => {
-            onSearchAgain?.([...selectedSuggestedSearches])
+            onSearchAgain([...selectedSuggestedSearches])
             event.preventDefault()
         },
         [selectedSuggestedSearches, onSearchAgain]

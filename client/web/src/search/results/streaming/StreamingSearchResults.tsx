@@ -23,7 +23,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { SearchResult } from '../../../components/SearchResult'
 import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
 import { VersionContext } from '../../../schema/site.schema'
-import { QueryState } from '../../helpers'
+import { QueryState, submitSearch } from '../../helpers'
 import { SearchAlert } from '../SearchAlert'
 import { LATEST_VERSION } from '../SearchResults'
 import { SearchResultsInfoBar } from '../SearchResultsInfoBar'
@@ -183,6 +183,14 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         )
     }
 
+    const onSearchAgain = useCallback(
+        (additionalFilters: string[]) => {
+            const newQuery = [query, ...additionalFilters].join(' ')
+            submitSearch({ ...props, query: newQuery, source: 'excludedResults' })
+        },
+        [query, props]
+    )
+
     return (
         <div className="test-search-results search-results d-flex flex-column w-100">
             <PageTitle key="page-title" title={query} />
@@ -203,7 +211,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         allExpanded={allExpanded}
                         onExpandAllResultsToggle={onExpandAllResultsToggle}
                         onSaveQueryClick={onSaveQueryClick}
-                        stats={<StreamingProgress progress={results?.progress} />}
+                        stats={<StreamingProgress progress={results?.progress} onSearchAgain={onSearchAgain} />}
                     />
                 </div>
 
