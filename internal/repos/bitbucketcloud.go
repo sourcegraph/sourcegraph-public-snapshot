@@ -89,7 +89,7 @@ func (s BitbucketCloudSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *Repo {
+func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *types.Repo {
 	host, err := url.Parse(s.config.Url)
 	if err != nil {
 		// This should never happen
@@ -98,12 +98,12 @@ func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *Repo {
 	host = extsvc.NormalizeBaseURL(host)
 
 	urn := s.svc.URN()
-	return &Repo{
-		Name: string(reposource.BitbucketCloudRepoName(
+	return &types.Repo{
+		Name: reposource.BitbucketCloudRepoName(
 			s.config.RepositoryPathPattern,
 			host.Hostname(),
 			r.FullName,
-		)),
+		),
 		URI: string(reposource.BitbucketCloudRepoName(
 			"",
 			host.Hostname(),
@@ -117,7 +117,7 @@ func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *Repo {
 		Description: r.Description,
 		Fork:        r.Parent != nil,
 		Private:     r.IsPrivate,
-		Sources: map[string]*SourceInfo{
+		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
 				CloneURL: s.authenticatedRemoteURL(r),

@@ -204,7 +204,7 @@ func TestSources_ListRepos(t *testing.T) {
 			name: "excluded repos are never yielded",
 			svcs: svcs,
 			assert: func(s *types.ExternalService) ReposAssertion {
-				return func(t testing.TB, rs Repos) {
+				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
 					set := make(map[string]bool)
@@ -350,7 +350,7 @@ func TestSources_ListRepos(t *testing.T) {
 			name: "included repos that exist are yielded",
 			svcs: svcs,
 			assert: func(s *types.ExternalService) ReposAssertion {
-				return func(t testing.TB, rs Repos) {
+				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
 					have := rs.Names()
@@ -457,7 +457,7 @@ func TestSources_ListRepos(t *testing.T) {
 			name: "repositoryPathPattern determines the repo name",
 			svcs: svcs,
 			assert: func(s *types.ExternalService) ReposAssertion {
-				return func(t testing.TB, rs Repos) {
+				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
 					haveNames := rs.Names()
@@ -558,7 +558,7 @@ func TestSources_ListRepos(t *testing.T) {
 			name: "nameTransformations updates the repo name",
 			svcs: svcs,
 			assert: func(s *types.ExternalService) ReposAssertion {
-				return func(t testing.TB, rs Repos) {
+				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
 					have := rs.Names()
@@ -602,7 +602,7 @@ func TestSources_ListRepos(t *testing.T) {
 			name: "yielded repos have authenticated CloneURLs",
 			svcs: svcs,
 			assert: func(s *types.ExternalService) ReposAssertion {
-				return func(t testing.TB, rs Repos) {
+				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
 					urls := []string{}
@@ -645,7 +645,7 @@ func TestSources_ListRepos(t *testing.T) {
 			name: "phabricator",
 			svcs: svcs,
 			assert: func(*types.ExternalService) ReposAssertion {
-				return func(t testing.TB, rs Repos) {
+				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
 					if len(rs) == 0 {
@@ -700,7 +700,7 @@ func TestSources_ListRepos(t *testing.T) {
 			name: "bitbucketserver archived",
 			svcs: svcs,
 			assert: func(s *types.ExternalService) ReposAssertion {
-				return func(t testing.TB, rs Repos) {
+				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
 					want := map[string]bool{

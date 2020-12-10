@@ -528,7 +528,7 @@ func (o *ObservedStore) UpsertExternalServices(ctx context.Context, svcs ...*typ
 }
 
 // InsertRepos calls into the inner Store and registers the observed results.
-func (o *ObservedStore) InsertRepos(ctx context.Context, repos ...*Repo) (err error) {
+func (o *ObservedStore) InsertRepos(ctx context.Context, repos ...*types.Repo) (err error) {
 	tr, ctx := o.trace(ctx, "Store.InsertRepos")
 	tr.LogFields(otlog.Int("count", len(repos)))
 
@@ -566,7 +566,7 @@ func (o *ObservedStore) DeleteRepos(ctx context.Context, ids ...api.RepoID) (err
 }
 
 // ListRepos calls into the inner Store and registers the observed results.
-func (o *ObservedStore) ListRepos(ctx context.Context, args StoreListReposArgs) (rs []*Repo, err error) {
+func (o *ObservedStore) ListRepos(ctx context.Context, args StoreListReposArgs) (rs []*types.Repo, err error) {
 	tr, ctx := o.trace(ctx, "Store.ListRepos")
 	tr.LogFields(
 		otlog.Object("args.names", args.Names),
@@ -614,7 +614,7 @@ func (o *ObservedStore) ListExternalRepoSpecs(ctx context.Context) (ids map[api.
 }
 
 // UpsertRepos calls into the inner Store and registers the observed results.
-func (o *ObservedStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
+func (o *ObservedStore) UpsertRepos(ctx context.Context, repos ...*types.Repo) (err error) {
 	tr, ctx := o.trace(ctx, "Store.UpsertRepos")
 	tr.LogFields(otlog.Int("count", len(repos)))
 
@@ -633,7 +633,7 @@ func (o *ObservedStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err er
 }
 
 // UpsertSources calls into the inner Store and registers the observed results.
-func (o *ObservedStore) UpsertSources(ctx context.Context, added, modified, deleted map[api.RepoID][]SourceInfo) (err error) {
+func (o *ObservedStore) UpsertSources(ctx context.Context, added, modified, deleted map[api.RepoID][]types.SourceInfo) (err error) {
 	tr, ctx := o.trace(ctx, "Store.UpsertSources")
 	tr.LogFields(otlog.Int("count", len(added)+len(deleted)))
 

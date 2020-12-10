@@ -73,7 +73,7 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 	testCases := []struct {
 		name                 string
 		projectWithNamespace string
-		assert               func(*testing.T, *Repo)
+		assert               func(*testing.T, *types.Repo)
 		err                  string
 	}{
 		{
@@ -84,10 +84,10 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 		{
 			name:                 "found",
 			projectWithNamespace: "gitlab-org/gitaly",
-			assert: func(t *testing.T, have *Repo) {
+			assert: func(t *testing.T, have *types.Repo) {
 				t.Helper()
 
-				want := &Repo{
+				want := &types.Repo{
 					Name:        "gitlab.com/gitlab-org/gitaly",
 					Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
 					URI:         "gitlab.com/gitlab-org/gitaly",
@@ -96,7 +96,7 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 						ServiceType: "gitlab",
 						ServiceID:   "https://gitlab.com/",
 					},
-					Sources: map[string]*SourceInfo{
+					Sources: map[string]*types.SourceInfo{
 						"extsvc:gitlab:0": {
 							ID:       "extsvc:gitlab:0",
 							CloneURL: "https://gitlab.com/gitlab-org/gitaly.git",
@@ -210,7 +210,7 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			var got []*Repo
+			var got []*types.Repo
 			for _, r := range repos {
 				got = append(got, s.makeRepo(r))
 			}
@@ -229,7 +229,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			_, _ = p.source.CreateChangeset(p.ctx, &Changeset{
-				Repo: &Repo{
+				Repo: &types.Repo{
 					Metadata: struct{}{},
 				},
 			})
@@ -325,7 +325,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			_ = p.source.CloseChangeset(p.ctx, &Changeset{
-				Repo: &Repo{
+				Repo: &types.Repo{
 					Metadata: struct{}{},
 				},
 			})
@@ -368,7 +368,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			_ = p.source.ReopenChangeset(p.ctx, &Changeset{
-				Repo: &Repo{
+				Repo: &types.Repo{
 					Metadata: struct{}{},
 				},
 			})
@@ -412,7 +412,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p := newGitLabChangesetSourceTestProvider(t)
 
 			_ = p.source.LoadChangeset(p.ctx, &Changeset{
-				Repo: &Repo{Metadata: struct{}{}},
+				Repo: &types.Repo{Metadata: struct{}{}},
 			})
 			t.Error("invalid metadata did not panic")
 		})
@@ -424,7 +424,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 					ExternalID: "foo",
 					Metadata:   &gitlab.MergeRequest{},
 				},
-				Repo: &Repo{Metadata: &gitlab.Project{}},
+				Repo: &types.Repo{Metadata: &gitlab.Project{}},
 			}); err == nil {
 				t.Error("invalid ExternalID did not result in an error")
 			}
@@ -802,7 +802,7 @@ func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTe
 	p := &gitLabChangesetSourceTestProvider{
 		changeset: &Changeset{
 			Changeset: &campaigns.Changeset{},
-			Repo:      &Repo{Metadata: &gitlab.Project{}},
+			Repo:      &types.Repo{Metadata: &gitlab.Project{}},
 			HeadRef:   "refs/heads/head",
 			BaseRef:   "refs/heads/base",
 			Title:     "title",
