@@ -124,6 +124,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                     <span className="text-muted">
                         This trigger will fire when new search results are found for a given search query.
                     </span>
+                    <span className="mt-4">Search query</span>
                     <div className="create-monitor-page__query-input">
                         <input
                             type="text"
@@ -139,7 +140,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         />
                         {queryState.kind === 'VALID' && (
                             <Link
-                                to={buildSearchURLQuery(query, SearchPatternType.literal, false)}
+                                to={`/search?${buildSearchURLQuery(query, SearchPatternType.literal, false)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="create-monitor-page__query-input-preview-link test-preview-link"

@@ -118,11 +118,13 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
             if (window.confirm('Leave page? All unsaved changes will be lost.')) {
                 history.push('/code-monitoring')
             }
+        } else {
+            history.push('/code-monitoring')
         }
     }, [history, hasChangedFields])
 
     return (
-        <Form className="my-4" onSubmit={requestOnSubmit}>
+        <Form className="my-4 pb-5" onSubmit={requestOnSubmit}>
             <div className="flex mb-4">
                 Name
                 <div>
@@ -154,7 +156,10 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         {authenticatedUser.username}
                     </option>
                 </select>
-                <small className="text-muted">Event history and configuration will not be shared.</small>
+                <small className="text-muted">
+                    Event history and configuration will not be shared. Code monitoring currently only supports
+                    individual owners.
+                </small>
             </div>
             <hr className="code-monitor-form__horizontal-rule" />
             <div className="create-monitor-page__triggers mb-4">
@@ -209,7 +214,6 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         {submitButtonLabel}
                     </button>
                     <button type="button" className="btn btn-outline-secondary test-cancel-monitor" onClick={onCancel}>
-                        {/* TODO: this should link somewhere */}
                         Cancel
                     </button>
                 </div>
