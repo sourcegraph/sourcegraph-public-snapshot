@@ -356,8 +356,6 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 	var sources dbutil.NullJSONRawMessage
 	var metadata json.RawMessage
 
-	r.RepoFields = &types.RepoFields{}
-
 	err = rows.Scan(
 		&r.ID,
 		&r.Name,
