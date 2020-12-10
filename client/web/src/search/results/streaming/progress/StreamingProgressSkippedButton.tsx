@@ -19,11 +19,14 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<StreamingPr
             {progress.skipped.length > 0 && (
                 <ButtonDropdown isOpen={isOpen} toggle={toggleOpen}>
                     <DropdownToggle
-                        className={classNames('streaming-progress__skipped mb-0 ml-2 d-flex align-items-center', {
-                            'streaming-progress__skipped--warning': skippedWithWarning,
-                        })}
+                        className={classNames(
+                            'streaming-progress__skipped mb-0 ml-2 d-flex align-items-center text-decoration-none',
+                            {
+                                'streaming-progress__skipped--warning': skippedWithWarning,
+                            }
+                        )}
                         caret={true}
-                        color="secondary"
+                        color="link"
                     >
                         {skippedWithWarning ? (
                             <AlertCircleIcon className="mr-2 icon-inline" />

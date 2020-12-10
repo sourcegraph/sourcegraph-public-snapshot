@@ -8,12 +8,8 @@
 }
 
 .streaming-progress {
-    &__count,
-    &__skipped {
-        padding: 0.25rem 0.5rem;
-    }
-
     &__count {
+        padding: 0.375rem 0.75rem; // Match padding for .btn (but this is not a button)
         color: var(--link-color);
 
         &--in-progress {
@@ -29,15 +25,9 @@
     }
 
     &__skipped {
-        &.btn.btn-secondary {
-            border: none;
-            margin-left: 0.25rem;
-            color: var(--link-color);
-            background-color: transparent;
-            box-shadow: none;
-        }
+        margin-left: 0.25rem;
 
-        &--warning.btn.btn-secondary {
+        &--warning {
             color: var(--infobar-warning-color);
         }
 

@@ -9,7 +9,7 @@ export interface StreamingProgressProps {
 }
 
 export const defaultProgress: Progress = {
-    done: true,
+    done: false,
     durationMs: 0,
     matchCount: 0,
     skipped: [],
