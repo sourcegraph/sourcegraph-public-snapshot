@@ -10,17 +10,13 @@
         }
 
         &--button {
-            margin-top: calc(16px - 1px);
-            margin-bottom: calc(16px - 1px);
-            margin-left: -1px;
-            margin-right: -1px;
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            margin: calc(16px - 1px) -1px;
             border-radius: 4px;
 
             &:hover {
-                margin-left: -2px;
-                margin-right: -2px;
-                margin-top: calc(16px - 2px);
-                margin-bottom: calc(16px - 2px);
+                // stylelint-disable-next-line declaration-property-unit-whitelist
+                margin: calc(16px - 2px) -2px;
                 border: 2px solid #329af0;
             }
 
