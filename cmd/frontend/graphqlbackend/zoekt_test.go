@@ -800,11 +800,9 @@ func generateRepos(count int) ([]*types.Repo, []*types.Repo, []*zoekt.RepoListEn
 			ID:           repoWithIDs.ID,
 			Name:         repoWithIDs.Name,
 			ExternalRepo: repoWithIDs.ExternalRepo,
-
-			RepoFields: &types.RepoFields{
-				URI:         fmt.Sprintf("https://github.com/foobar/%s", repoWithIDs.Name),
-				Description: "this repositoriy contains a side project that I haven't maintained in 2 years",
-			}})
+			URI:          fmt.Sprintf("https://github.com/foobar/%s", repoWithIDs.Name),
+			Description:  "this repositoriy contains a side project that I haven't maintained in 2 years",
+		})
 
 		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
 			Repository: zoekt.Repository{

@@ -93,7 +93,7 @@ type Repo struct {
 	// repositoryPathPattern.
 	//
 	// Previously, this was called RepoURI.
-	Name string
+	Name api.RepoName
 	// URI is the full name for this repository (e.g.,
 	// "github.com/user/repo"). See the documentation for the Name field.
 	URI string
@@ -315,7 +315,7 @@ func (rs Repos) IDs() []api.RepoID {
 func (rs Repos) Names() []string {
 	names := make([]string, len(rs))
 	for i := range rs {
-		names[i] = rs[i].Name
+		names[i] = string(rs[i].Name)
 	}
 	return names
 }
@@ -412,7 +412,7 @@ type RepoName struct {
 func (r *RepoName) ToRepo() *Repo {
 	return &Repo{
 		ID:   r.ID,
-		Name: string(r.Name),
+		Name: r.Name,
 	}
 }
 

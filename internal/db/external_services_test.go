@@ -490,7 +490,8 @@ VALUES (%d, 1, ''), (%d, 2, '')
 	}
 
 	repos = types.Repos(repos).With(func(r *types.Repo) {
-		r.RepoFields = nil
+		r.CreatedAt = time.Time{}
+		r.Sources = nil
 	})
 	if diff := cmp.Diff(want, repos); diff != "" {
 		t.Fatalf("Repos mismatch (-want +got):\n%s", diff)

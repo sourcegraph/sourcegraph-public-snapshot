@@ -165,17 +165,15 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 			ExternalRepo: r.ExternalRepo,
 			Name:         api.RepoName(r.Name),
 			Private:      r.Private,
-			RepoFields: &types.RepoFields{
-				URI:         r.URI,
-				Description: r.Description,
-				Fork:        r.Fork,
-				Archived:    r.Archived,
-				Cloned:      r.Cloned,
-				CreatedAt:   r.CreatedAt,
-				UpdatedAt:   r.UpdatedAt,
-				DeletedAt:   r.DeletedAt,
-				Metadata:    r.Metadata,
-			},
+			URI:          r.URI,
+			Description:  r.Description,
+			Fork:         r.Fork,
+			Archived:     r.Archived,
+			Cloned:       r.Cloned,
+			CreatedAt:    r.CreatedAt,
+			UpdatedAt:    r.UpdatedAt,
+			DeletedAt:    r.DeletedAt,
+			Metadata:     r.Metadata,
 		}
 	}
 

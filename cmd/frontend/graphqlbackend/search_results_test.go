@@ -907,12 +907,10 @@ func TestSearchResultsHydration(t *testing.T) {
 		ID:           repoWithIDs.ID,
 		ExternalRepo: repoWithIDs.ExternalRepo,
 		Name:         repoWithIDs.Name,
-
-		RepoFields: &types.RepoFields{
-			URI:         fmt.Sprintf("github.com/my-org/%s", repoWithIDs.Name),
-			Description: "This is a description of a repository",
-			Fork:        false,
-		}}
+		URI:          fmt.Sprintf("github.com/my-org/%s", repoWithIDs.Name),
+		Description:  "This is a description of a repository",
+		Fork:         false,
+	}
 
 	db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 		return hydratedRepo, nil
