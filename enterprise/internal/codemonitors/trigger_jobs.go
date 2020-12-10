@@ -62,6 +62,17 @@ func (s *Store) DeleteObsoleteJobLogs(ctx context.Context) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(deleteObsoleteJobLogsFmtStr))
 }
 
+const deleteOldJobLogsFmtStr = `
+DELETE FROM cm_trigger_jobs
+WHERE finished_at < (NOW() - (%s * '1 day'::interval));
+`
+
+// DeleteOldJobLogs deletes trigger jobs which have finished and are older than
+// 'retention' days. Due to cascading, action jobs will be deleted as well.
+func (s *Store) DeleteOldJobLogs(ctx context.Context, retentionInDays int) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(deleteOldJobLogsFmtStr, retentionInDays))
+}
+
 const getEventsForQueryIDInt64FmtStr = `
 SELECT id, query, query_string, results, num_results, state, failure_message, started_at, finished_at, process_after, num_resets, num_failures, log_contents
 FROM cm_trigger_jobs
