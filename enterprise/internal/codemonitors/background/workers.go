@@ -56,7 +56,7 @@ func newTriggerQueryResetter(ctx context.Context, s *cm.Store, metrics codeMonit
 }
 
 func newTriggerJobsLogDeleter(ctx context.Context, store *cm.Store) goroutine.BackgroundRoutine {
-	deleteObsoleteLogs := goroutine.NewHandlerWithErrorMessage(
+	deleteLogs := goroutine.NewHandlerWithErrorMessage(
 		"code_monitors_trigger_jobs_log_deleter",
 		func(ctx context.Context) error {
 			// Delete logs without search results.
@@ -71,7 +71,7 @@ func newTriggerJobsLogDeleter(ctx context.Context, store *cm.Store) goroutine.Ba
 			}
 			return nil
 		})
-	return goroutine.NewPeriodicGoroutine(ctx, 60*time.Minute, deleteObsoleteLogs)
+	return goroutine.NewPeriodicGoroutine(ctx, 60*time.Minute, deleteLogs)
 }
 
 func newActionRunner(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *workerutil.Worker {
