@@ -815,7 +815,6 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 		var (
 			results = make(chan []types.CodeHostRepository)
 			g, ctx  = errgroup.WithContext(ctx)
-			done    = make(chan struct{})
 		)
 		for _, svc := range svcs {
 			src, err := repos.NewSource(svc, cf)
@@ -858,8 +857,6 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 			r.err = err
 			return
 		}
-		// make sure the result collector goroutine has finished
-		<-done
 		sort.Slice(r.nodes, func(i, j int) bool {
 			return r.nodes[i].repo.Name < r.nodes[j].repo.Name
 		})
