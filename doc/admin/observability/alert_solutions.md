@@ -1852,11 +1852,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ## postgres: migration_in_progress
 
-<p class="subtitle">cloud: schema migration status</p>
+<p class="subtitle">cloud: schema migration status (where 0 is no migration in progress)</p>
 
 **Descriptions:**
 
-- _postgres: 1+ schema migration status for 5m0s_
+- _postgres: 1+ schema migration status (where 0 is no migration in progress) for 5m0s_
 
 **Possible solutions:**
 
@@ -1866,27 +1866,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "critical_postgres_migration_in_progress"
-]
-```
-
-<br />
-
-## postgres: cache_hit_ratio
-
-<p class="subtitle">cloud: ratio of cache hits over 5m</p>
-
-**Descriptions:**
-
-- _postgres: less than 0.98% ratio of cache hits over 5m for 5m0s_
-
-**Possible solutions:**
-
-- Cache hit ratio should be at least 99%, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose) to add additional indexes
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_postgres_cache_hit_ratio"
 ]
 ```
 
