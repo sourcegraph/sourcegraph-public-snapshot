@@ -27,7 +27,7 @@ const setStatusFmtStr = `
 UPDATE %s
 SET state = %s,
     started_at = %s,
-	finished_at = %s
+    finished_at = %s
 WHERE id = %s;
 `
 

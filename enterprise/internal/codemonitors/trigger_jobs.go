@@ -23,7 +23,7 @@ WITH due AS (
     SELECT cm_queries.id as id
     FROM cm_queries INNER JOIN cm_monitors ON cm_queries.monitor = cm_monitors.id
     WHERE (cm_queries.next_run <= clock_timestamp() OR cm_queries.next_run IS NULL)
-	AND cm_monitors.enabled = true
+    AND cm_monitors.enabled = true
 ),
 busy AS (
     SELECT DISTINCT query as id FROM cm_trigger_jobs
@@ -41,8 +41,8 @@ func (s *Store) EnqueueTriggerQueries(ctx context.Context) (err error) {
 const logSearchFmtStr = `
 UPDATE cm_trigger_jobs
 SET query_string = %s,
-	results = %s,
-	num_results = %s
+    results = %s,
+    num_results = %s
 WHERE id = %s
 `
 
@@ -102,7 +102,7 @@ func (s *Store) TotalCountEventsForQueryIDInt64(ctx context.Context, queryID int
 	)
 	err = s.Store.QueryRow(ctx, q).Scan(&totalCount)
 	if err != nil {
-		return -1, nil
+		return -1, err
 	}
 	return totalCount, nil
 }
