@@ -193,7 +193,7 @@ func TestChangesetResolver(t *testing.T) {
 				Typename:   "ExternalChangeset",
 				Title:      unpublishedSpec.Spec.Title,
 				Body:       unpublishedSpec.Spec.Body,
-				Repository: apitest.Repository{Name: repo.Name},
+				Repository: apitest.Repository{Name: string(repo.Name)},
 				// Not scheduled for sync, because it's not published.
 				NextSyncAt: "",
 				Labels:     []apitest.Label{},
@@ -213,7 +213,7 @@ func TestChangesetResolver(t *testing.T) {
 				Typename:   "ExternalChangeset",
 				Title:      erroredSpec.Spec.Title,
 				Body:       erroredSpec.Spec.Body,
-				Repository: apitest.Repository{Name: repo.Name},
+				Repository: apitest.Repository{Name: string(repo.Name)},
 				// Not scheduled for sync, because it's not published.
 				NextSyncAt: "",
 				Labels:     []apitest.Label{},
@@ -239,7 +239,7 @@ func TestChangesetResolver(t *testing.T) {
 				CheckState:    "PENDING",
 				ReviewState:   "CHANGES_REQUESTED",
 				NextSyncAt:    marshalDateTime(t, now.Add(8*time.Hour)),
-				Repository:    apitest.Repository{Name: repo.Name},
+				Repository:    apitest.Repository{Name: string(repo.Name)},
 				ExternalURL: apitest.ExternalURL{
 					URL:         "https://github.com/sourcegraph/sourcegraph/pull/12345",
 					ServiceType: "github",
@@ -265,7 +265,7 @@ func TestChangesetResolver(t *testing.T) {
 			want: apitest.Changeset{
 				Typename:         "ExternalChangeset",
 				ExternalID:       "9876",
-				Repository:       apitest.Repository{Name: repo.Name},
+				Repository:       apitest.Repository{Name: string(repo.Name)},
 				Labels:           []apitest.Label{},
 				PublicationState: string(campaigns.ChangesetPublicationStatePublished),
 				ReconcilerState:  string(campaigns.ReconcilerStateQueued),

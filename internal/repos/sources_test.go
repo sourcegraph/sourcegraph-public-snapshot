@@ -268,12 +268,12 @@ func TestSources_ListRepos(t *testing.T) {
 							t.Errorf("excluded fork was yielded: %s", r.Name)
 						}
 
-						if set[r.Name] || set[r.ExternalRepo.ID] {
+						if set[string(r.Name)] || set[r.ExternalRepo.ID] {
 							t.Errorf("excluded repo{name=%s, id=%s} was yielded", r.Name, r.ExternalRepo.ID)
 						}
 
 						for _, re := range patterns {
-							if re.MatchString(r.Name) {
+							if re.MatchString(string(r.Name)) {
 								t.Errorf("excluded repo{name=%s} matching %q was yielded", r.Name, re.String())
 							}
 						}
@@ -709,7 +709,7 @@ func TestSources_ListRepos(t *testing.T) {
 					}
 					got := map[string]bool{}
 					for _, r := range rs {
-						got[r.Name] = r.Archived
+						got[string(r.Name)] = r.Archived
 					}
 
 					if !reflect.DeepEqual(got, want) {

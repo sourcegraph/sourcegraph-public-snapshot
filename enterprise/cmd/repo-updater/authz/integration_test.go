@@ -87,7 +87,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	authz.SetProviders(false, []authz.Provider{provider})
 	defer authz.SetProviders(true, nil)
 
-	repo := repos.Repo{
+	repo := types.Repo{
 		Name:    "github.com/sourcegraph-vcr-repos/private-org-repo-1",
 		Private: true,
 		URI:     "github.com/sourcegraph-vcr-repos/private-org-repo-1",
@@ -95,7 +95,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
-		Sources: map[string]*repos.SourceInfo{
+		Sources: map[string]*types.SourceInfo{
 			svc.URN(): {
 				ID: svc.URN(),
 			},

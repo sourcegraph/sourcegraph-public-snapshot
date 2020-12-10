@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
@@ -70,7 +71,7 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, reposStore r
 	})
 
 	t.Run("GetExternalServiceID", func(t *testing.T) {
-		for _, repo := range []*repos.Repo{repo, otherRepo, gitlabRepo, bitbucketRepo} {
+		for _, repo := range []*types.Repo{repo, otherRepo, gitlabRepo, bitbucketRepo} {
 			id, err := s.GetExternalServiceID(ctx, GetExternalServiceIDOpts{
 				ExternalServiceType: repo.ExternalRepo.ServiceType,
 				ExternalServiceID:   repo.ExternalRepo.ServiceID,

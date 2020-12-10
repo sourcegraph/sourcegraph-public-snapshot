@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // PermsSyncer is a permissions syncing manager that is in charge of keeping
@@ -280,7 +281,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		}
 	}
 
-	var rs []*repos.Repo
+	var rs []*types.Repo
 	if len(repoSpecs) > 0 {
 		// Get corresponding internal database IDs
 		rs, err = s.reposStore.ListRepos(ctx, repos.StoreListReposArgs{

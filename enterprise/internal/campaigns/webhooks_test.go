@@ -392,14 +392,14 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 	}
 }
 
-func getSingleRepo(ctx context.Context, bitbucketSource *repos.BitbucketServerSource, name string) (*repos.Repo, error) {
+func getSingleRepo(ctx context.Context, bitbucketSource *repos.BitbucketServerSource, name string) (*types.Repo, error) {
 	repoChan := make(chan repos.SourceResult)
 	go func() {
 		bitbucketSource.ListRepos(ctx, repoChan)
 		close(repoChan)
 	}()
 
-	var bitbucketRepo *repos.Repo
+	var bitbucketRepo *types.Repo
 	for result := range repoChan {
 		if result.Err != nil {
 			return nil, result.Err
@@ -407,7 +407,7 @@ func getSingleRepo(ctx context.Context, bitbucketSource *repos.BitbucketServerSo
 		if result.Repo == nil {
 			continue
 		}
-		if result.Repo.Name == name {
+		if string(result.Repo.Name) == name {
 			bitbucketRepo = result.Repo
 		}
 	}

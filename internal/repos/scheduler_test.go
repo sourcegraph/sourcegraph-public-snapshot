@@ -579,7 +579,7 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 			},
 			diff: Diff{
 				Deleted: []*types.Repo{
-					{ID: a.ID, Name: string(a.Name), URI: a.URL},
+					{ID: a.ID, Name: a.Name, URI: a.URL},
 				},
 			},
 		},
@@ -589,7 +589,7 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 				Added: []*types.Repo{
 					{
 						ID:   a.ID,
-						Name: string(a.Name),
+						Name: a.Name,
 						Sources: map[string]*types.SourceInfo{
 							string(a.Name): {CloneURL: a.URL},
 						},
@@ -598,7 +598,7 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 				Modified: []*types.Repo{
 					{
 						ID:   b.ID,
-						Name: string(b.Name),
+						Name: b.Name,
 						Sources: map[string]*types.SourceInfo{
 							string(b.Name): {CloneURL: b.URL},
 						},
@@ -626,12 +626,12 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 				Unmodified: []*types.Repo{
 					{
 						ID:        a.ID,
-						Name:      string(a.Name),
+						Name:      a.Name,
 						DeletedAt: defaultTime,
 					},
 					{
 						ID:   b.ID,
-						Name: string(b.Name),
+						Name: b.Name,
 						Sources: map[string]*types.SourceInfo{
 							string(b.Name): {CloneURL: b.URL},
 						},
