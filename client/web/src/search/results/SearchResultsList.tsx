@@ -71,9 +71,7 @@ export interface SearchResultsListProps
     showSavedQueryButton?: boolean
     showSavedQueryModal: boolean
     onSavedQueryModalClose: () => void
-    onDidCreateSavedQuery: () => void
     onSaveQueryClick: () => void
-    didSave: boolean
 
     interactiveSearchMode: boolean
 

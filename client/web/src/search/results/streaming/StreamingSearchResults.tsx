@@ -36,6 +36,7 @@ import FileIcon from 'mdi-react/FileIcon'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import SearchIcon from 'mdi-react/SearchIcon'
+import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
@@ -75,6 +76,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         history,
         availableVersionContexts,
         previousVersionContext,
+        authenticatedUser,
     } = props
 
     const { query = '', patternType, caseSensitive, versionContext } = parseSearchURL(props.location.search)
@@ -114,9 +116,9 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     const [allExpanded, setAllExpanded] = useState(false)
     const onExpandAllResultsToggle = useCallback(() => setAllExpanded(oldValue => !oldValue), [setAllExpanded])
 
-    const onDidCreateSavedQuery = useCallback(() => {}, [])
-    const onSaveQueryClick = useCallback(() => {}, [])
-    const didSave = false
+    const [showSavedSearchModal, setShowSavedSearchModal] = useState(false)
+    const onSaveQueryClick = useCallback(() => setShowSavedSearchModal(true), [])
+    const onSaveQueryModalClose = useCallback(() => setShowSavedSearchModal(false), [])
 
     const [showVersionContextWarning, setShowVersionContextWarning] = useState(false)
     useEffect(
@@ -200,8 +202,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         allExpanded={allExpanded}
                         onExpandAllResultsToggle={onExpandAllResultsToggle}
                         onSaveQueryClick={onSaveQueryClick}
-                        onDidCreateSavedQuery={onDidCreateSavedQuery}
-                        didSave={didSave}
                         stats={<StreamingProgress progress={results?.progress} />}
                     />
                 </div>
@@ -210,6 +210,15 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     <VersionContextWarning
                         versionContext={currentVersionContext}
                         onDismissWarning={onDismissVersionContextWarning}
+                    />
+                )}
+
+                {showSavedSearchModal && (
+                    <SavedSearchModal
+                        {...props}
+                        query={query}
+                        authenticatedUser={authenticatedUser}
+                        onDidCancel={onSaveQueryModalClose}
                     />
                 )}
 
