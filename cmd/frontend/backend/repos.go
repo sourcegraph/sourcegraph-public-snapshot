@@ -153,7 +153,7 @@ func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*typ
 }
 
 // ListDefault calls db.DefaultRepos.List, with tracing.
-func (s *repos) ListDefault(ctx context.Context) (repos []*types.Repo, err error) {
+func (s *repos) ListDefault(ctx context.Context) (repos []*types.RepoName, err error) {
 	ctx, done := trace(ctx, "Repos", "ListDefault", nil, &err)
 	defer func() {
 		if err == nil {

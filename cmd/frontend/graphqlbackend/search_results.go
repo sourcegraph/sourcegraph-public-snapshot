@@ -51,11 +51,11 @@ import (
 type searchResultsCommon struct {
 	limitHit bool // whether the limit on results was hit
 
-	repos    []*types.Repo             // repos that were matched by the repo-related filters
-	searched []*types.Repo             // repos that were searched
-	indexed  []*types.Repo             // repos that were searched using an index
-	cloning  []*types.Repo             // repos that could not be searched because they were still being cloned
-	missing  []*types.Repo             // repos that could not be searched because they do not exist
+	repos    []*types.RepoName         // repos that were matched by the repo-related filters
+	searched []*types.RepoName         // repos that were searched
+	indexed  []*types.RepoName         // repos that were searched using an index
+	cloning  []*types.RepoName         // repos that could not be searched because they were still being cloned
+	missing  []*types.RepoName         // repos that could not be searched because they do not exist
 	excluded excludedRepos             // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
 	partial  map[api.RepoName]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
 
@@ -64,7 +64,7 @@ type searchResultsCommon struct {
 	// timedout usually contains repos that haven't finished being fetched yet.
 	// This should only happen for large repos and the searcher caches are
 	// purged.
-	timedout []*types.Repo
+	timedout []*types.RepoName
 
 	indexUnavailable bool // True if indexed search is enabled but was not available during this search.
 }
@@ -109,7 +109,7 @@ func (c *searchResultsCommon) Equal(other *searchResultsCommon) bool {
 	return reflect.DeepEqual(c, other)
 }
 
-func RepositoryResolvers(repos types.Repos) []*RepositoryResolver {
+func RepositoryResolvers(repos types.RepoNames) []*RepositoryResolver {
 	dedupSort(&repos)
 	return toRepositoryResolvers(repos)
 }
@@ -141,7 +141,7 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 
 // dedupSort sorts (by ID in ascending order) and deduplicates
 // the given repos in-place.
-func dedupSort(repos *types.Repos) {
+func dedupSort(repos *types.RepoNames) {
 	if len(*repos) == 0 {
 		return
 	}
