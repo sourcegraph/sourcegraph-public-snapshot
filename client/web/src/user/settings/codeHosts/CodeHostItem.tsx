@@ -7,7 +7,8 @@ import CircleOutlineIcon from 'mdi-react/CircleOutlineIcon'
 
 import { Link } from '../../../../../shared/src/components/Link'
 import { ExternalServiceKind } from '../../../graphql-operations'
-import { AddCodeHostTokenModal } from './AddCodeHostTokenModal'
+import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
+import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 
 interface CodeHostItemProps {
     onDidConnect: () => void
@@ -61,24 +62,40 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     icon: Icon,
     shortDescription,
 }) => {
-    const [showAddTokenModal, setShowAddTokenModal] = useState(false)
-    const toggleAddTokenModal = useCallback(() => setShowAddTokenModal(!showAddTokenModal), [showAddTokenModal])
+    const [showAddConnectionModal, setShowAddConnectionModal] = useState(false)
+    const toggleAddConnectionModal = useCallback(() => setShowAddConnectionModal(!showAddConnectionModal), [
+        showAddConnectionModal,
+    ])
+
+    const [showRemoveConnectionModal, setShowRemoveConnectionModal] = useState(false)
+    const toggleRemoveConnectionModal = useCallback(() => setShowRemoveConnectionModal(!showRemoveConnectionModal), [
+        showRemoveConnectionModal,
+    ])
 
     const onCodeHostConnect = useCallback((token: string): void => {
-        console.log(`Addind token: ${token}`)
+        console.log(`Adding token: ${token}`)
     }, [])
     // const onEdit
     // const onRemove
 
     return (
         <div className="p-2 d-flex align-items-start">
-            {showAddTokenModal && (
-                <AddCodeHostTokenModal
+            {showAddConnectionModal && (
+                <AddCodeHostConnectionModal
                     kind={kind}
                     name={name}
                     onDidAdd={onCodeHostConnect}
-                    onDidCancel={toggleAddTokenModal}
+                    onDidCancel={toggleAddConnectionModal}
                     hintFragment={MODAL_HINTS[kind]}
+                />
+            )}
+            {showRemoveConnectionModal && (
+                <RemoveCodeHostConnectionModal
+                    kind={kind}
+                    name={name}
+                    repoCount="256"
+                    onDidRemove={() => {}}
+                    onDidCancel={toggleRemoveConnectionModal}
                 />
             )}
             <div className="align-self-center">
@@ -93,7 +110,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
             </div>
             <div className="align-self-center">
                 {true && (
-                    <button type="button" className="btn btn-success" onClick={toggleAddTokenModal}>
+                    <button type="button" className="btn btn-success" onClick={toggleAddConnectionModal}>
                         Connect
                     </button>
                 )}
@@ -108,7 +125,12 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     </button>
                 )}
                 {true && (
-                    <button type="button" className="btn btn-link text-danger p-0" disabled={false}>
+                    <button
+                        type="button"
+                        className="btn btn-link text-danger p-0"
+                        onClick={toggleRemoveConnectionModal}
+                        disabled={false}
+                    >
                         Remove
                     </button>
                 )}

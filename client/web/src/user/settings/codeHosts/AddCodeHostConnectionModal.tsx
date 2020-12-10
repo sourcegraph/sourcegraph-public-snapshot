@@ -3,7 +3,7 @@ import Dialog from '@reach/dialog'
 
 import { Form } from '../../../../../branded/src/components/Form'
 
-export const AddCodeHostTokenModal: React.FunctionComponent<{
+export const AddCodeHostConnectionModal: React.FunctionComponent<{
     name: string
     kind: string
     onDidAdd: (token: string) => void
@@ -31,23 +31,23 @@ export const AddCodeHostTokenModal: React.FunctionComponent<{
     return (
         <Dialog
             className="modal-body modal-body--top-third p-4 rounded border"
-            aria-labelledby={`label--${kind}-token`}
+            aria-labelledby={`label--add-${kind}-token`}
             onDismiss={onDidCancel}
         >
-            <div className="web-content test-add-credential-modal">
+            <div className="web-content">
                 <h3 className="mb-4">Connect with {name}</h3>
                 <Form onSubmit={onTokenSubmit}>
                     <div className="form-group mb-4">
-                        <label htmlFor="token">Personal access token</label>
+                        <label htmlFor="code-host-token">Personal access token</label>
                         <input
-                            id="token"
-                            name="token"
-                            type=" "
-                            className="form-control test-add-credential-modal-input"
-                            required={true}
-                            minLength={1}
+                            id="code-host-token"
+                            name="code-host-token"
+                            type="text"
                             value={token}
                             onChange={onChangeToken}
+                            className="form-control"
+                            required={true}
+                            minLength={1}
                         />
                         {hintFragment}
                     </div>
@@ -60,11 +60,7 @@ export const AddCodeHostTokenModal: React.FunctionComponent<{
                         >
                             Cancel
                         </button>
-                        <button
-                            type="submit"
-                            disabled={false}
-                            className="btn btn-primary test-add-credential-modal-submit"
-                        >
+                        <button type="submit" disabled={false} className="btn btn-primary">
                             Add code host connection
                         </button>
                     </div>
