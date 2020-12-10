@@ -4,6 +4,7 @@ import * as H from 'history'
 import { AuthenticatedUser } from '../../auth'
 import sinon from 'sinon'
 import { mount } from 'enzyme'
+import { NEVER } from 'rxjs'
 
 describe('CreateCodeMonitorPage', () => {
     const mockUser = {
@@ -21,6 +22,7 @@ describe('CreateCodeMonitorPage', () => {
         setBreadcrumb: sinon.spy(),
         useBreadcrumb: sinon.spy(),
         history,
+        deleteCodeMonitor: sinon.spy((id: string) => NEVER),
     }
     test('Actions area button is disabled while trigger is incomplete', () => {
         const component = mount(<CreateCodeMonitorPage {...props} />)

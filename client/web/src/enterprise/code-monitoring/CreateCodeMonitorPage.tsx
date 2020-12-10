@@ -1,6 +1,7 @@
 import * as H from 'history'
 import React, { useCallback, useMemo } from 'react'
 import { Observable } from 'rxjs'
+import { CodeMonitoringProps } from '.'
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
@@ -8,7 +9,10 @@ import { CodeMonitorFields, MonitorEmailPriority } from '../../graphql-operation
 import { createCodeMonitor } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-export interface CreateCodeMonitorPageProps extends BreadcrumbsProps, BreadcrumbSetters {
+export interface CreateCodeMonitorPageProps
+    extends BreadcrumbsProps,
+        BreadcrumbSetters,
+        Pick<CodeMonitoringProps, 'deleteCodeMonitor'> {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser
