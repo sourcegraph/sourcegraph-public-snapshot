@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -184,10 +185,10 @@ func TestSyncerRun(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		now := time.Now()
 		store := MockSyncStore{
-			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
+			listChangesets: func(ctx context.Context, opts store.ListChangesetsOpts) (campaigns.Changesets, int64, error) {
 				return nil, 0, nil
 			},
-			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
+			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
 				return []*campaigns.ChangesetSyncData{
 					{
 						ChangesetID:       1,
@@ -221,7 +222,7 @@ func TestSyncerRun(t *testing.T) {
 		now := time.Now()
 		store := MockSyncStore{
 			listChangesets: mockListChangesets,
-			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
+			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
 				return []*campaigns.ChangesetSyncData{
 					{
 						ChangesetID:       1,
@@ -253,7 +254,7 @@ func TestSyncerRun(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		store := MockSyncStore{
 			listChangesets: mockListChangesets,
-			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
+			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
 				return []*campaigns.ChangesetSyncData{}, nil
 			},
 		}
@@ -305,7 +306,7 @@ func TestSyncRegistry(t *testing.T) {
 
 	syncStore := MockSyncStore{
 		listChangesets: mockListChangesets,
-		listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) (data []*campaigns.ChangesetSyncData, err error) {
+		listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) (data []*campaigns.ChangesetSyncData, err error) {
 			return []*campaigns.ChangesetSyncData{
 				{
 					ChangesetID:           1,
@@ -386,23 +387,23 @@ func TestSyncRegistry(t *testing.T) {
 }
 
 type MockSyncStore struct {
-	listChangesetSyncData func(context.Context, ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error)
-	getChangeset          func(context.Context, GetChangesetOpts) (*campaigns.Changeset, error)
-	listChangesets        func(context.Context, ListChangesetsOpts) (campaigns.Changesets, int64, error)
+	listChangesetSyncData func(context.Context, store.ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error)
+	getChangeset          func(context.Context, store.GetChangesetOpts) (*campaigns.Changeset, error)
+	listChangesets        func(context.Context, store.ListChangesetsOpts) (campaigns.Changesets, int64, error)
 	updateChangeset       func(context.Context, *campaigns.Changeset) error
 	upsertChangesetEvents func(context.Context, ...*campaigns.ChangesetEvent) error
-	transact              func(context.Context) (*Store, error)
+	transact              func(context.Context) (*store.Store, error)
 }
 
-func (m MockSyncStore) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
+func (m MockSyncStore) ListChangesetSyncData(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error) {
 	return m.listChangesetSyncData(ctx, opts)
 }
 
-func (m MockSyncStore) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*campaigns.Changeset, error) {
+func (m MockSyncStore) GetChangeset(ctx context.Context, opts store.GetChangesetOpts) (*campaigns.Changeset, error) {
 	return m.getChangeset(ctx, opts)
 }
 
-func (m MockSyncStore) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
+func (m MockSyncStore) ListChangesets(ctx context.Context, opts store.ListChangesetsOpts) (campaigns.Changesets, int64, error) {
 	return m.listChangesets(ctx, opts)
 }
 
@@ -414,7 +415,7 @@ func (m MockSyncStore) UpsertChangesetEvents(ctx context.Context, cs ...*campaig
 	return m.upsertChangesetEvents(ctx, cs...)
 }
 
-func (m MockSyncStore) Transact(ctx context.Context) (*Store, error) {
+func (m MockSyncStore) Transact(ctx context.Context) (*store.Store, error) {
 	return m.transact(ctx)
 }
 
@@ -447,6 +448,6 @@ func (m MockRepoStore) CountNotClonedRepos(ctx context.Context) (uint64, error) 
 	panic("implement me")
 }
 
-func mockListChangesets(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
+func mockListChangesets(ctx context.Context, opts store.ListChangesetsOpts) (campaigns.Changesets, int64, error) {
 	return nil, 0, nil
 }

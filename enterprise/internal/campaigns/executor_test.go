@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -35,7 +36,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := NewStoreWithClock(dbconn.Global, clock)
+	store := store.NewStoreWithClock(dbconn.Global, clock)
 
 	admin := createTestUser(t, true)
 
@@ -548,7 +549,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := NewStore(dbconn.Global)
+	store := store.NewStore(dbconn.Global)
 
 	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
@@ -597,7 +598,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := NewStore(dbconn.Global)
+	store := store.NewStore(dbconn.Global)
 
 	admin := createTestUser(t, true)
 	user := createTestUser(t, false)
@@ -721,7 +722,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := NewStore(dbconn.Global)
+	store := store.NewStore(dbconn.Global)
 
 	admin := createTestUser(t, true)
 	user := createTestUser(t, false)

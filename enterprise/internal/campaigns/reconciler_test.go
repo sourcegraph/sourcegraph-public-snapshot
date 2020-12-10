@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -29,7 +30,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := NewStore(dbconn.Global)
+	store := store.NewStore(dbconn.Global)
 
 	admin := createTestUser(t, true)
 
@@ -398,7 +399,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 	defer func() { internalClient = api.InternalClient }()
 
 	fs := &FakeStore{
-		GetCampaignMock: func(ctx context.Context, opts GetCampaignOpts) (*campaigns.Campaign, error) {
+		GetCampaignMock: func(ctx context.Context, opts store.GetCampaignOpts) (*campaigns.Campaign, error) {
 			return &campaigns.Campaign{ID: 1234, Name: "reconciler-test-campaign"}, nil
 		},
 	}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -22,20 +23,20 @@ import (
 )
 
 // NewService returns a Service.
-func NewService(store *Store, cf *httpcli.Factory) *Service {
+func NewService(store *store.Store, cf *httpcli.Factory) *Service {
 	return NewServiceWithClock(store, cf, store.Clock())
 }
 
 // NewServiceWithClock returns a Service the given clock used
 // to generate timestamps.
-func NewServiceWithClock(store *Store, cf *httpcli.Factory, clock func() time.Time) *Service {
+func NewServiceWithClock(store *store.Store, cf *httpcli.Factory, clock func() time.Time) *Service {
 	svc := &Service{store: store, sourcer: repos.NewSourcer(cf), clock: clock}
 
 	return svc
 }
 
 type Service struct {
-	store *Store
+	store *store.Store
 
 	sourcer repos.Sourcer
 
@@ -44,7 +45,7 @@ type Service struct {
 
 // WithStore returns a copy of the Service with its store attribute set to the
 // given Store.
-func (s *Service) WithStore(store *Store) *Service {
+func (s *Service) WithStore(store *store.Store) *Service {
 	return &Service{store: store, sourcer: s.sourcer, clock: s.clock}
 }
 
@@ -84,7 +85,7 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 		return spec, s.store.CreateCampaignSpec(ctx, spec)
 	}
 
-	listOpts := ListChangesetSpecsOpts{RandIDs: opts.ChangesetSpecRandIDs}
+	listOpts := store.ListChangesetSpecsOpts{RandIDs: opts.ChangesetSpecRandIDs}
 	cs, _, err := s.store.ListChangesetSpecs(ctx, listOpts)
 	if err != nil {
 		return nil, err
@@ -181,9 +182,9 @@ func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 // GetCampaignMatchingCampaignSpec returns the Campaign that the CampaignSpec
 // applies to, if that Campaign already exists.
 // If it doesn't exist yet, both return values are nil.
-// It accepts a *Store so that it can be used inside a transaction.
+// It accepts a *store.Store so that it can be used inside a transaction.
 func (s *Service) GetCampaignMatchingCampaignSpec(ctx context.Context, spec *campaigns.CampaignSpec) (*campaigns.Campaign, error) {
-	opts := GetCampaignOpts{
+	opts := store.GetCampaignOpts{
 		Name:            spec.Spec.Name,
 		NamespaceUserID: spec.NamespaceUserID,
 		NamespaceOrgID:  spec.NamespaceOrgID,
@@ -191,7 +192,7 @@ func (s *Service) GetCampaignMatchingCampaignSpec(ctx context.Context, spec *cam
 
 	campaign, err := s.store.GetCampaign(ctx, opts)
 	if err != nil {
-		if err != ErrNoResults {
+		if err != store.ErrNoResults {
 			return nil, err
 		}
 		err = nil
@@ -201,8 +202,8 @@ func (s *Service) GetCampaignMatchingCampaignSpec(ctx context.Context, spec *cam
 
 // GetNewestCampaignSpec returns the newest campaign spec that matches the given
 // spec's namespace and name and is owned by the given user, or nil if none is found.
-func (s *Service) GetNewestCampaignSpec(ctx context.Context, tx *Store, spec *campaigns.CampaignSpec, userID int32) (*campaigns.CampaignSpec, error) {
-	opts := GetNewestCampaignSpecOpts{
+func (s *Service) GetNewestCampaignSpec(ctx context.Context, tx *store.Store, spec *campaigns.CampaignSpec, userID int32) (*campaigns.CampaignSpec, error) {
+	opts := store.GetNewestCampaignSpecOpts{
 		UserID:          userID,
 		NamespaceUserID: spec.NamespaceUserID,
 		NamespaceOrgID:  spec.NamespaceOrgID,
@@ -211,7 +212,7 @@ func (s *Service) GetNewestCampaignSpec(ctx context.Context, tx *Store, spec *ca
 
 	newest, err := tx.GetNewestCampaignSpec(ctx, opts)
 	if err != nil {
-		if err != ErrNoResults {
+		if err != store.ErrNoResults {
 			return nil, err
 		}
 		return nil, nil
@@ -254,7 +255,7 @@ func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (camp
 	}
 	defer func() { err = tx.Done(err) }()
 
-	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: opts.CampaignID})
+	campaign, err = tx.GetCampaign(ctx, store.GetCampaignOpts{ID: opts.CampaignID})
 	if err != nil {
 		return nil, err
 	}
@@ -300,7 +301,7 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 		tr.Finish()
 	}()
 
-	campaign, err = s.store.GetCampaign(ctx, GetCampaignOpts{ID: id})
+	campaign, err = s.store.GetCampaign(ctx, store.GetCampaignOpts{ID: id})
 	if err != nil {
 		return nil, errors.Wrap(err, "getting campaign")
 	}
@@ -350,7 +351,7 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64) (err error) {
 		tr.Finish()
 	}()
 
-	campaign, err := s.store.GetCampaign(ctx, GetCampaignOpts{ID: id})
+	campaign, err := s.store.GetCampaign(ctx, store.GetCampaignOpts{ID: id})
 	if err != nil {
 		return err
 	}
@@ -374,7 +375,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	}()
 
 	// Check for existence of changeset so we don't swallow that error.
-	changeset, err := s.store.GetChangeset(ctx, GetChangesetOpts{ID: id})
+	changeset, err := s.store.GetChangeset(ctx, store.GetChangesetOpts{ID: id})
 	if err != nil {
 		return err
 	}
@@ -385,7 +386,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 		return err
 	}
 
-	campaigns, _, err := s.store.ListCampaigns(ctx, ListCampaignsOpts{ChangesetID: id})
+	campaigns, _, err := s.store.ListCampaigns(ctx, store.ListCampaignsOpts{ChangesetID: id})
 	if err != nil {
 		return err
 	}
@@ -465,7 +466,7 @@ func checkRepoSupported(repo *types.Repo) error {
 // Since Bitbucket sends the username as a header in REST responses, we can
 // take it from there and complete the UserCredential.
 func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, externalServiceID, externalServiceType, token string) (string, error) {
-	extSvcID, err := s.store.GetExternalServiceID(ctx, GetExternalServiceIDOpts{
+	extSvcID, err := s.store.GetExternalServiceID(ctx, store.GetExternalServiceIDOpts{
 		ExternalServiceID:   externalServiceID,
 		ExternalServiceType: externalServiceType,
 	})

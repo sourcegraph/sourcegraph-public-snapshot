@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	cstore "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -31,7 +32,7 @@ import (
 )
 
 func TestNullIDResilience(t *testing.T) {
-	sr := &Resolver{store: ee.NewStore(dbconn.Global)}
+	sr := &Resolver{store: cstore.NewStore(dbconn.Global)}
 
 	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {
@@ -92,7 +93,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 	username := "create-campaign-spec-username"
 	userID := insertTestUser(t, dbconn.Global, username, true)
 
-	store := ee.NewStore(dbconn.Global)
+	store := cstore.NewStore(dbconn.Global)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
@@ -206,7 +207,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 
 	userID := insertTestUser(t, dbconn.Global, "create-changeset-spec", true)
 
-	store := ee.NewStore(dbconn.Global)
+	store := cstore.NewStore(dbconn.Global)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
@@ -246,7 +247,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cs, err := store.GetChangesetSpec(ctx, ee.GetChangesetSpecOpts{RandID: randID})
+	cs, err := store.GetChangesetSpec(ctx, cstore.GetChangesetSpecOpts{RandID: randID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -280,7 +281,7 @@ func TestApplyCampaign(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := ee.NewStoreWithClock(dbconn.Global, clock)
+	store := cstore.NewStoreWithClock(dbconn.Global, clock)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
@@ -440,7 +441,7 @@ func TestCreateCampaign(t *testing.T) {
 
 	userID := insertTestUser(t, dbconn.Global, "apply-campaign", true)
 
-	store := ee.NewStore(dbconn.Global)
+	store := cstore.NewStore(dbconn.Global)
 
 	campaignSpec := &campaigns.CampaignSpec{
 		RawSpec: ct.TestRawCampaignSpec,
@@ -508,7 +509,7 @@ func TestMoveCampaign(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	store := ee.NewStore(dbconn.Global)
+	store := cstore.NewStore(dbconn.Global)
 
 	campaignSpec := &campaigns.CampaignSpec{
 		RawSpec:         ct.TestRawCampaignSpec,
@@ -610,20 +611,20 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	wantReviewStates := []campaigns.ChangesetReviewState{"APPROVED", "INVALID"}
 	wantCheckStates := []campaigns.ChangesetCheckState{"PENDING", "INVALID"}
 	wantOnlyPublishedByThisCampaign := []bool{true}
-	wantSearches := []ee.ListChangesetsTextSearchExpr{{Term: "foo"}, {Term: "bar", Not: true}}
+	wantSearches := []cstore.ListChangesetsTextSearchExpr{{Term: "foo"}, {Term: "bar", Not: true}}
 	var campaignID int64 = 1
 
 	tcs := []struct {
 		args       *graphqlbackend.ListChangesetsArgs
 		wantSafe   bool
 		wantErr    string
-		wantParsed ee.ListChangesetsOpts
+		wantParsed cstore.ListChangesetsOpts
 	}{
 		// No args given.
 		{
 			args:       nil,
 			wantSafe:   true,
-			wantParsed: ee.ListChangesetsOpts{},
+			wantParsed: cstore.ListChangesetsOpts{},
 		},
 		// First argument is set in opts, and considered safe.
 		{
@@ -631,7 +632,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 				First: wantFirst,
 			},
 			wantSafe:   true,
-			wantParsed: ee.ListChangesetsOpts{LimitOpts: ee.LimitOpts{Limit: 10}},
+			wantParsed: cstore.ListChangesetsOpts{LimitOpts: cstore.LimitOpts{Limit: 10}},
 		},
 		// Setting publication state is safe and transferred to opts.
 		{
@@ -639,7 +640,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 				PublicationState: &wantPublicationStates[0],
 			},
 			wantSafe: true,
-			wantParsed: ee.ListChangesetsOpts{
+			wantParsed: cstore.ListChangesetsOpts{
 				PublicationState: &wantPublicationStates[0],
 			},
 		},
@@ -656,7 +657,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 				ReconcilerState: &reconcilerStates[0],
 			},
 			wantSafe: true,
-			wantParsed: ee.ListChangesetsOpts{
+			wantParsed: cstore.ListChangesetsOpts{
 				ReconcilerStates: reconcilerStates[1],
 			},
 		},
@@ -673,7 +674,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 				ExternalState: &wantExternalStates[0],
 			},
 			wantSafe:   true,
-			wantParsed: ee.ListChangesetsOpts{ExternalState: &wantExternalStates[0]},
+			wantParsed: cstore.ListChangesetsOpts{ExternalState: &wantExternalStates[0]},
 		},
 		// Setting invalid external state fails.
 		{
@@ -688,7 +689,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 				ReviewState: &wantReviewStates[0],
 			},
 			wantSafe:   false,
-			wantParsed: ee.ListChangesetsOpts{ExternalReviewState: &wantReviewStates[0]},
+			wantParsed: cstore.ListChangesetsOpts{ExternalReviewState: &wantReviewStates[0]},
 		},
 		// Setting invalid review state fails.
 		{
@@ -703,7 +704,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 				CheckState: &wantCheckStates[0],
 			},
 			wantSafe:   false,
-			wantParsed: ee.ListChangesetsOpts{ExternalCheckState: &wantCheckStates[0]},
+			wantParsed: cstore.ListChangesetsOpts{ExternalCheckState: &wantCheckStates[0]},
 		},
 		// Setting invalid check state fails.
 		{
@@ -718,7 +719,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 				OnlyPublishedByThisCampaign: &wantOnlyPublishedByThisCampaign[0],
 			},
 			wantSafe: true,
-			wantParsed: ee.ListChangesetsOpts{
+			wantParsed: cstore.ListChangesetsOpts{
 				PublicationState:  &wantPublicationStates[0],
 				OwnedByCampaignID: campaignID,
 			},
@@ -729,7 +730,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 				Search: stringPtr("foo"),
 			},
 			wantSafe: false,
-			wantParsed: ee.ListChangesetsOpts{
+			wantParsed: cstore.ListChangesetsOpts{
 				TextSearch: wantSearches[0:1],
 			},
 		},
@@ -739,7 +740,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 				Search: stringPtr("-bar"),
 			},
 			wantSafe: false,
-			wantParsed: ee.ListChangesetsOpts{
+			wantParsed: cstore.ListChangesetsOpts{
 				TextSearch: wantSearches[1:],
 			},
 		},
@@ -780,7 +781,7 @@ func TestCreateCampaignsCredential(t *testing.T) {
 
 	userID := insertTestUser(t, dbconn.Global, "create-credential", false)
 
-	store := ee.NewStore(dbconn.Global)
+	store := cstore.NewStore(dbconn.Global)
 
 	r := &Resolver{store: store}
 	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
@@ -844,7 +845,7 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	store := ee.NewStore(dbconn.Global)
+	store := cstore.NewStore(dbconn.Global)
 
 	r := &Resolver{store: store}
 	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)

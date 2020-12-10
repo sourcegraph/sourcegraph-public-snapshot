@@ -1,4 +1,4 @@
-package campaigns
+package store
 
 import (
 	"context"
@@ -614,11 +614,11 @@ func (s *Store) GetChangesetExternalIDs(ctx context.Context, spec api.ExternalRe
 	return basestore.ScanStrings(s.Store.Query(ctx, q))
 }
 
-// canceledChangesetFailureMessage is set on changesets as the FailureMessage
+// CanceledChangesetFailureMessage is set on changesets as the FailureMessage
 // by CancelQueuedCampaignChangesets which is called at the beginning of
 // ApplyCampaign to stop enqueued changesets being processed while we're
 // applying the new campaign spec.
-var canceledChangesetFailureMessage = "Canceled"
+var CanceledChangesetFailureMessage = "Canceled"
 
 func (s *Store) CancelQueuedCampaignChangesets(ctx context.Context, campaignID int64) error {
 	// Note that we don't cancel queued "syncing" changesets, since their
@@ -628,7 +628,7 @@ func (s *Store) CancelQueuedCampaignChangesets(ctx context.Context, campaignID i
 	q := sqlf.Sprintf(
 		cancelQueuedCampaignChangesetsFmtstr,
 		campaignID,
-		canceledChangesetFailureMessage,
+		CanceledChangesetFailureMessage,
 	)
 	return s.Store.Exec(ctx, q)
 }

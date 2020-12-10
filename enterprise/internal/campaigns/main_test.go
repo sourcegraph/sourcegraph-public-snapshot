@@ -14,6 +14,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -113,10 +114,14 @@ type testChangesetOpts struct {
 	closing  bool
 }
 
+type CreateChangeseter interface {
+	CreateChangeset(ctx context.Context, changeset *campaigns.Changeset) error
+}
+
 func createChangeset(
 	t *testing.T,
 	ctx context.Context,
-	store *Store,
+	store CreateChangeseter,
 	opts testChangesetOpts,
 ) *campaigns.Changeset {
 	t.Helper()
@@ -288,10 +293,10 @@ func assertChangeset(t *testing.T, c *campaigns.Changeset, a changesetAssertions
 	}
 }
 
-func reloadAndAssertChangeset(t *testing.T, ctx context.Context, s *Store, c *campaigns.Changeset, a changesetAssertions) (reloaded *campaigns.Changeset) {
+func reloadAndAssertChangeset(t *testing.T, ctx context.Context, s *store.Store, c *campaigns.Changeset, a changesetAssertions) (reloaded *campaigns.Changeset) {
 	t.Helper()
 
-	reloaded, err := s.GetChangeset(ctx, GetChangesetOpts{ID: c.ID})
+	reloaded, err := s.GetChangeset(ctx, store.GetChangesetOpts{ID: c.ID})
 	if err != nil {
 		t.Fatalf("reloading changeset %d failed: %s", c.ID, err)
 	}
@@ -315,7 +320,7 @@ func applyAndListChangesets(ctx context.Context, t *testing.T, svc *Service, cam
 		t.Fatalf("campaign ID is zero")
 	}
 
-	changesets, _, err := svc.store.ListChangesets(ctx, ListChangesetsOpts{CampaignID: campaign.ID})
+	changesets, _, err := svc.store.ListChangesets(ctx, store.ListChangesetsOpts{CampaignID: campaign.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -327,7 +332,7 @@ func applyAndListChangesets(ctx context.Context, t *testing.T, svc *Service, cam
 	return campaign, changesets
 }
 
-func setChangesetPublished(t *testing.T, ctx context.Context, s *Store, c *campaigns.Changeset, externalID, externalBranch string) {
+func setChangesetPublished(t *testing.T, ctx context.Context, s *store.Store, c *campaigns.Changeset, externalID, externalBranch string) {
 	t.Helper()
 
 	c.ExternalBranch = externalBranch
@@ -342,11 +347,11 @@ func setChangesetPublished(t *testing.T, ctx context.Context, s *Store, c *campa
 	}
 }
 
-func setChangesetFailed(t *testing.T, ctx context.Context, s *Store, c *campaigns.Changeset) {
+func setChangesetFailed(t *testing.T, ctx context.Context, s *store.Store, c *campaigns.Changeset) {
 	t.Helper()
 
 	c.ReconcilerState = campaigns.ReconcilerStateErrored
-	c.FailureMessage = &canceledChangesetFailureMessage
+	c.FailureMessage = &store.CanceledChangesetFailureMessage
 	c.NumFailures = 5
 
 	if err := s.UpdateChangeset(ctx, c); err != nil {
@@ -354,7 +359,7 @@ func setChangesetFailed(t *testing.T, ctx context.Context, s *Store, c *campaign
 	}
 }
 
-func setChangesetClosed(t *testing.T, ctx context.Context, s *Store, c *campaigns.Changeset) {
+func setChangesetClosed(t *testing.T, ctx context.Context, s *store.Store, c *campaigns.Changeset) {
 	t.Helper()
 
 	c.PublicationState = campaigns.ChangesetPublicationStatePublished
@@ -440,7 +445,7 @@ func buildChangesetSpec(t *testing.T, opts testSpecOpts) *campaigns.ChangesetSpe
 func createChangesetSpec(
 	t *testing.T,
 	ctx context.Context,
-	store *Store,
+	store *store.Store,
 	opts testSpecOpts,
 ) *campaigns.ChangesetSpec {
 	t.Helper()
@@ -454,7 +459,7 @@ func createChangesetSpec(
 	return spec
 }
 
-func createCampaignSpec(t *testing.T, ctx context.Context, store *Store, name string, userID int32) *campaigns.CampaignSpec {
+func createCampaignSpec(t *testing.T, ctx context.Context, store *store.Store, name string, userID int32) *campaigns.CampaignSpec {
 	t.Helper()
 
 	s := &campaigns.CampaignSpec{
@@ -476,7 +481,7 @@ func createCampaignSpec(t *testing.T, ctx context.Context, store *Store, name st
 	return s
 }
 
-func createCampaign(t *testing.T, ctx context.Context, store *Store, name string, userID int32, spec int64) *campaigns.Campaign {
+func createCampaign(t *testing.T, ctx context.Context, store *store.Store, name string, userID int32, spec int64) *campaigns.Campaign {
 	t.Helper()
 
 	c := &campaigns.Campaign{

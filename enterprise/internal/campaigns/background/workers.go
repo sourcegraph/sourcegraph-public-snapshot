@@ -7,6 +7,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -26,7 +27,7 @@ const reconcilerMaxNumResets = 60
 // processing.
 func newWorker(
 	ctx context.Context,
-	s *campaigns.Store,
+	s *store.Store,
 	gitClient campaigns.GitserverClient,
 	sourcer repos.Sourcer,
 	metrics campaignsMetrics,
@@ -47,7 +48,7 @@ func newWorker(
 	return worker
 }
 
-func newWorkerResetter(s *campaigns.Store, metrics campaignsMetrics) *dbworker.Resetter {
+func newWorkerResetter(s *store.Store, metrics campaignsMetrics) *dbworker.Resetter {
 	workerStore := createDBWorkerStore(s)
 
 	options := dbworker.ResetterOptions{
@@ -65,14 +66,14 @@ func newWorkerResetter(s *campaigns.Store, metrics campaignsMetrics) *dbworker.R
 }
 
 func scanFirstChangesetRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	return campaigns.ScanFirstChangeset(rows, err)
+	return store.ScanFirstChangeset(rows, err)
 }
 
-func createDBWorkerStore(s *campaigns.Store) dbworkerstore.Store {
+func createDBWorkerStore(s *store.Store) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		TableName:            "changesets",
 		AlternateColumnNames: map[string]string{"state": "reconciler_state"},
-		ColumnExpressions:    campaigns.ChangesetColumns,
+		ColumnExpressions:    store.ChangesetColumns,
 		Scan:                 scanFirstChangesetRecord,
 
 		// Order changesets by state, so that freshly enqueued changesets have

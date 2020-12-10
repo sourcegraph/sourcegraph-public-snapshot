@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -112,7 +113,7 @@ func (s *SyncRegistry) handlePriorityItems() {
 	fetchSyncData := func(ids []int64) ([]*campaigns.ChangesetSyncData, error) {
 		ctx, cancel := context.WithTimeout(s.Ctx, 10*time.Second)
 		defer cancel()
-		return s.SyncStore.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ChangesetIDs: ids})
+		return s.SyncStore.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ChangesetIDs: ids})
 	}
 	for {
 		select {
@@ -260,12 +261,12 @@ func init() {
 }
 
 type SyncStore interface {
-	ListChangesetSyncData(context.Context, ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error)
-	GetChangeset(context.Context, GetChangesetOpts) (*campaigns.Changeset, error)
-	ListChangesets(context.Context, ListChangesetsOpts) (campaigns.Changesets, int64, error)
+	ListChangesetSyncData(context.Context, store.ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error)
+	GetChangeset(context.Context, store.GetChangesetOpts) (*campaigns.Changeset, error)
+	ListChangesets(context.Context, store.ListChangesetsOpts) (campaigns.Changesets, int64, error)
 	UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) error
 	UpsertChangesetEvents(ctx context.Context, cs ...*campaigns.ChangesetEvent) error
-	Transact(context.Context) (*Store, error)
+	Transact(context.Context) (*store.Store, error)
 }
 
 // Run will start the process of changeset syncing. It is long running
@@ -439,7 +440,7 @@ func absDuration(d time.Duration) time.Duration {
 }
 
 func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync, error) {
-	syncData, err := s.syncStore.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ExternalServiceID: s.codeHostURL})
+	syncData, err := s.syncStore.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ExternalServiceID: s.codeHostURL})
 	if err != nil {
 		return nil, errors.Wrap(err, "listing changeset sync data")
 	}
@@ -460,7 +461,7 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 // SyncChangeset will sync a single changeset given its id.
 func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	log15.Debug("SyncChangeset", "id", id)
-	cs, err := s.syncStore.GetChangeset(ctx, GetChangesetOpts{
+	cs, err := s.syncStore.GetChangeset(ctx, store.GetChangesetOpts{
 		ID: id,
 	})
 	if err != nil {

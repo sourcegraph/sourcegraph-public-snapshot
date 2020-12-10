@@ -1,4 +1,4 @@
-package campaigns
+package store
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
+func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock ct.Clock) {
 	repo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
 	otherRepo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
 	gitlabRepo := ct.TestRepo(t, reposStore, extsvc.KindGitLab)
@@ -23,7 +23,7 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, reposStore r
 	if err := reposStore.InsertRepos(ctx, repo, otherRepo, gitlabRepo, bitbucketRepo, awsRepo); err != nil {
 		t.Fatal(err)
 	}
-	deletedRepo := otherRepo.With(types.Opt.RepoDeletedAt(clock.now()))
+	deletedRepo := otherRepo.With(types.Opt.RepoDeletedAt(clock.Now()))
 	if err := reposStore.DeleteRepos(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}

@@ -12,7 +12,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	cstore "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -38,7 +38,7 @@ func TestPermissionLevels(t *testing.T) {
 
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := ee.NewStore(dbconn.Global)
+	store := cstore.NewStore(dbconn.Global)
 	sr := &Resolver{store: store}
 	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {
@@ -72,7 +72,7 @@ func TestPermissionLevels(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	createCampaign := func(t *testing.T, s *ee.Store, name string, userID int32, campaignSpecID int64) (campaignID int64) {
+	createCampaign := func(t *testing.T, s *cstore.Store, name string, userID int32, campaignSpecID int64) (campaignID int64) {
 		t.Helper()
 
 		c := &campaigns.Campaign{
@@ -101,7 +101,7 @@ func TestPermissionLevels(t *testing.T) {
 		return c.ID
 	}
 
-	createCampaignSpec := func(t *testing.T, s *ee.Store, userID int32) (randID string, id int64) {
+	createCampaignSpec := func(t *testing.T, s *cstore.Store, userID int32) (randID string, id int64) {
 		t.Helper()
 
 		cs := &campaigns.CampaignSpec{UserID: userID, NamespaceUserID: userID}
@@ -112,10 +112,10 @@ func TestPermissionLevels(t *testing.T) {
 		return cs.RandID, cs.ID
 	}
 
-	cleanUpCampaigns := func(t *testing.T, s *ee.Store) {
+	cleanUpCampaigns := func(t *testing.T, s *cstore.Store) {
 		t.Helper()
 
-		campaigns, next, err := s.ListCampaigns(ctx, ee.ListCampaignsOpts{LimitOpts: ee.LimitOpts{Limit: 1000}})
+		campaigns, next, err := s.ListCampaigns(ctx, cstore.ListCampaignsOpts{LimitOpts: cstore.LimitOpts{Limit: 1000}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -756,7 +756,7 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := ee.NewStore(dbconn.Global)
+	store := cstore.NewStore(dbconn.Global)
 	sr := &Resolver{store: store}
 	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {

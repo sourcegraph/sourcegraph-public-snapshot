@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
@@ -16,10 +17,10 @@ func (e mockMissingErr) Error() string {
 }
 
 type FakeStore struct {
-	GetCampaignMock func(context.Context, GetCampaignOpts) (*campaigns.Campaign, error)
+	GetCampaignMock func(context.Context, store.GetCampaignOpts) (*campaigns.Campaign, error)
 }
 
-func (fs *FakeStore) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*campaigns.Campaign, error) {
+func (fs *FakeStore) GetCampaign(ctx context.Context, opts store.GetCampaignOpts) (*campaigns.Campaign, error) {
 	if fs.GetCampaignMock != nil {
 		return fs.GetCampaignMock(ctx, opts)
 	}

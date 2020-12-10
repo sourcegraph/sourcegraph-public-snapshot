@@ -12,6 +12,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -37,7 +38,7 @@ type GitserverClient interface {
 type Reconciler struct {
 	GitserverClient GitserverClient
 	Sourcer         repos.Sourcer
-	Store           *Store
+	Store           *store.Store
 
 	// This is used to disable a time.Sleep for operationSleep so that the
 	// tests don't run slower.
@@ -66,7 +67,7 @@ func (r *Reconciler) HandlerFunc() dbworker.HandlerFunc {
 // If an error is returned, the workerutil.Worker that called this function
 // (through the HandlerFunc) will set the changeset's ReconcilerState to
 // errored and set its FailureMessage to the error.
-func (r *Reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Changeset) error {
+func (r *Reconciler) process(ctx context.Context, tx *store.Store, ch *campaigns.Changeset) error {
 	// Reset the error message.
 	ch.FailureMessage = nil
 
@@ -115,7 +116,7 @@ type executor struct {
 	sourcer           repos.Sourcer
 	noSleepBeforeSync bool
 
-	tx  *Store
+	tx  *store.Store
 	ccs repos.ChangesetSource
 
 	repo   *types.Repo
@@ -305,13 +306,13 @@ func (e ErrMissingCredentials) NonRetryable() bool { return true }
 
 // pushChangesetPatch creates the commits for the changeset on its codehost.
 func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
-	existingSameBranch, err := e.tx.GetChangeset(ctx, GetChangesetOpts{
+	existingSameBranch, err := e.tx.GetChangeset(ctx, store.GetChangesetOpts{
 		ExternalServiceType: e.ch.ExternalServiceType,
 		RepoID:              e.ch.RepoID,
 		ExternalBranch:      e.spec.Spec.HeadRef,
 		// TODO: Do we need to check whether it's published or not?
 	})
-	if err != nil && err != ErrNoResults {
+	if err != nil && err != store.ErrNoResults {
 		return err
 	}
 
@@ -870,7 +871,7 @@ func loadExternalService(ctx context.Context, reposStore RepoStore, repo *types.
 }
 
 type getCampaigner interface {
-	GetCampaign(ctx context.Context, opts GetCampaignOpts) (*campaigns.Campaign, error)
+	GetCampaign(ctx context.Context, opts store.GetCampaignOpts) (*campaigns.Campaign, error)
 }
 
 func loadCampaign(ctx context.Context, tx getCampaigner, id int64) (*campaigns.Campaign, error) {
@@ -878,8 +879,8 @@ func loadCampaign(ctx context.Context, tx getCampaigner, id int64) (*campaigns.C
 		return nil, errors.New("changeset has no owning campaign")
 	}
 
-	campaign, err := tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
-	if err != nil && err != ErrNoResults {
+	campaign, err := tx.GetCampaign(ctx, store.GetCampaignOpts{ID: id})
+	if err != nil && err != store.ErrNoResults {
 		return nil, errors.Wrapf(err, "retrieving owning campaign: %d", id)
 	} else if campaign == nil {
 		return nil, errors.Errorf("campaign not found: %d", id)
@@ -888,7 +889,7 @@ func loadCampaign(ctx context.Context, tx getCampaigner, id int64) (*campaigns.C
 	return campaign, nil
 }
 
-func loadChangesetSpecs(ctx context.Context, tx *Store, ch *campaigns.Changeset) (prev, curr *campaigns.ChangesetSpec, err error) {
+func loadChangesetSpecs(ctx context.Context, tx *store.Store, ch *campaigns.Changeset) (prev, curr *campaigns.ChangesetSpec, err error) {
 	if ch.CurrentSpecID != 0 {
 		curr, err = tx.GetChangesetSpecByID(ctx, ch.CurrentSpecID)
 		if err != nil {

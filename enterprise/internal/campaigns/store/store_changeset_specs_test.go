@@ -1,4 +1,4 @@
-package campaigns
+package store
 
 import (
 	"context"
@@ -14,9 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs repos.Store, clock clock) {
+func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs repos.Store, clock ct.Clock) {
 	repo := ct.TestRepo(t, rs, extsvc.KindGitHub)
-	deletedRepo := ct.TestRepo(t, rs, extsvc.KindGitHub).With(types.Opt.RepoDeletedAt(clock.now()))
+	deletedRepo := ct.TestRepo(t, rs, extsvc.KindGitHub).With(types.Opt.RepoDeletedAt(clock.Now()))
 
 	if err := rs.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
@@ -82,8 +82,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 
 			want.ID = have.ID
 			want.RandID = have.RandID
-			want.CreatedAt = clock.now()
-			want.UpdatedAt = clock.now()
+			want.CreatedAt = clock.Now()
+			want.UpdatedAt = clock.Now()
 
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
@@ -286,10 +286,10 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 			c.DiffStatChanged += 1234
 			c.DiffStatDeleted += 1234
 
-			clock.add(1 * time.Second)
+			clock.Add(1 * time.Second)
 
 			want := c
-			want.UpdatedAt = clock.now()
+			want.UpdatedAt = clock.Now()
 
 			have := c.Clone()
 			if err := s.UpdateChangesetSpec(ctx, have); err != nil {
@@ -354,8 +354,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 	})
 
 	t.Run("DeleteExpiredChangesetSpecs", func(t *testing.T) {
-		underTTL := clock.now().Add(-cmpgn.ChangesetSpecTTL + 24*time.Hour)
-		overTTL := clock.now().Add(-cmpgn.ChangesetSpecTTL - 24*time.Hour)
+		underTTL := clock.Now().Add(-cmpgn.ChangesetSpecTTL + 24*time.Hour)
+		overTTL := clock.Now().Add(-cmpgn.ChangesetSpecTTL - 24*time.Hour)
 
 		type testCase struct {
 			createdAt time.Time

@@ -10,6 +10,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -22,7 +23,7 @@ import (
 
 type GitLabWebhook struct{ *Webhook }
 
-func NewGitLabWebhook(store *Store, repos repos.Store, now func() time.Time) *GitLabWebhook {
+func NewGitLabWebhook(store *store.Store, repos repos.Store, now func() time.Time) *GitLabWebhook {
 	return &GitLabWebhook{&Webhook{store, repos, now, extsvc.TypeGitLab}}
 }
 
@@ -257,8 +258,8 @@ func (h *GitLabWebhook) handlePipelineEvent(ctx context.Context, esID string, ev
 	return nil
 }
 
-func (h *GitLabWebhook) getChangesetForPR(ctx context.Context, tx *Store, pr *PR, repo *types.Repo) (*campaigns.Changeset, error) {
-	return tx.GetChangeset(ctx, GetChangesetOpts{
+func (h *GitLabWebhook) getChangesetForPR(ctx context.Context, tx *store.Store, pr *PR, repo *types.Repo) (*campaigns.Changeset, error) {
+	return tx.GetChangeset(ctx, store.GetChangesetOpts{
 		RepoID:              repo.ID,
 		ExternalID:          strconv.FormatInt(pr.ID, 10),
 		ExternalServiceType: h.ServiceType,
