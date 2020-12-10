@@ -293,8 +293,6 @@ func TestRepos_GetByIDs(t *testing.T) {
 		t.Fatalf("got %d repos, but want 1", len(repos))
 	}
 
-	// We don't need the RepoFields to identify a repository.
-	want[0].RepoFields = nil
 	if !jsonEqual(t, repos[0], want[0]) {
 		t.Errorf("got %v, want %v", repos[0], want[0])
 	}

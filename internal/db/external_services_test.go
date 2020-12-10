@@ -488,6 +488,10 @@ VALUES (%d, 1, ''), (%d, 2, '')
 	want := []*types.Repo{
 		{ID: 2, Name: "github.com/user/repo2"},
 	}
+
+	repos = types.Repos(repos).With(func(r *types.Repo) {
+		r.RepoFields = nil
+	})
 	if diff := cmp.Diff(want, repos); diff != "" {
 		t.Fatalf("Repos mismatch (-want +got):\n%s", diff)
 	}
