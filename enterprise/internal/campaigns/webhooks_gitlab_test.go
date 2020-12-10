@@ -926,7 +926,7 @@ func createGitLabRepo(t *testing.T, ctx context.Context, rstore repos.Store, es 
 			ServiceType: extsvc.TypeGitLab,
 			ServiceID:   "https://gitlab.com/",
 		},
-	}).With(repos.Opt.RepoSources(es.URN()))
+	}).With(types.Opt.RepoSources(es.URN()))
 	if err := rstore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}

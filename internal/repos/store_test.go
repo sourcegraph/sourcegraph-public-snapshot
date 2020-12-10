@@ -195,7 +195,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 			args func(stored types.ExternalServices) repos.StoreListExternalServicesArgs
 
 			stored types.ExternalServices
-			assert repos.ExternalServicesAssertion
+			assert types.ExternalServicesAssertion
 			err    error
 		}
 
@@ -209,7 +209,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 					}
 				},
 				stored: svcs,
-				assert: repos.Assert.ExternalServicesEqual(svcs...),
+				assert: types.Assert.ExternalServicesEqual(svcs...),
 			},
 			testCase{
 				name: "case-insensitive kinds",
@@ -220,17 +220,17 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 					return args
 				},
 				stored: svcs,
-				assert: repos.Assert.ExternalServicesEqual(svcs...),
+				assert: types.Assert.ExternalServicesEqual(svcs...),
 			},
 			testCase{
 				name:   "excludes soft deleted external services by default",
-				stored: svcs.With(repos.Opt.ExternalServiceDeletedAt(now)),
-				assert: repos.Assert.ExternalServicesEqual(),
+				stored: svcs.With(types.Opt.ExternalServiceDeletedAt(now)),
+				assert: types.Assert.ExternalServicesEqual(),
 			},
 			testCase{
 				name:   "results are in ascending order by id",
 				stored: generateExternalServices(7, svcs...),
-				assert: repos.Assert.ExternalServicesOrderedBy(
+				assert: types.Assert.ExternalServicesOrderedBy(
 					func(a, b *types.ExternalService) bool {
 						return a.ID < b.ID
 					},
@@ -239,7 +239,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 			testCase{
 				name:   "excludes phabricator by default",
 				stored: svcs,
-				assert: repos.Assert.ExternalServicesEqual(func() (es types.ExternalServices) {
+				assert: types.Assert.ExternalServicesEqual(func() (es types.ExternalServices) {
 					for _, e := range svcs {
 						if e.Kind != extsvc.KindPhabricator {
 							es = append(es, e)
@@ -255,7 +255,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 					args.Kinds = []string{extsvc.KindPhabricator}
 					return args
 				},
-				assert: repos.Assert.ExternalServicesEqual(&phabricatorService),
+				assert: types.Assert.ExternalServicesEqual(&phabricatorService),
 			},
 			testCase{
 				name:   "returns svcs by their ids",
@@ -265,7 +265,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 						IDs: []int64{stored[0].ID, stored[1].ID},
 					}
 				},
-				assert: repos.Assert.ExternalServicesEqual(svcs[:2].Clone()...),
+				assert: types.Assert.ExternalServicesEqual(svcs[:2].Clone()...),
 			},
 			testCase{
 				name:   "filter services by owner",
@@ -275,7 +275,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 						NamespaceUserID: userID,
 					}
 				},
-				assert: repos.Assert.ExternalServicesEqual(svcs[:1].Clone()...),
+				assert: types.Assert.ExternalServicesEqual(svcs[:1].Clone()...),
 			},
 			testCase{
 				name:   "fetch services with NO owner",
@@ -287,7 +287,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 				},
 				// Skip GitHub since it has an owner
 				// Also don't expect Phabricator since by default we should not include it
-				assert: repos.Assert.ExternalServicesEqual(svcs[1:6].Clone()...),
+				assert: types.Assert.ExternalServicesEqual(svcs[1:6].Clone()...),
 			},
 			testCase{
 				name:   "limit and zero cursor",
@@ -297,7 +297,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 					args.Limit = 1
 					return args
 				},
-				assert: repos.Assert.ExternalServicesEqual(func() (es types.ExternalServices) {
+				assert: types.Assert.ExternalServicesEqual(func() (es types.ExternalServices) {
 					return types.ExternalServices{
 						svcs[0],
 					}
@@ -311,7 +311,7 @@ func testStoreListExternalServices(userID int32) func(*testing.T, repos.Store) f
 					args.Limit = 1
 					return args
 				},
-				assert: repos.Assert.ExternalServicesEqual(func() (es types.ExternalServices) {
+				assert: types.Assert.ExternalServicesEqual(func() (es types.ExternalServices) {
 					return types.ExternalServices{
 						svcs[1],
 					}
@@ -469,7 +469,7 @@ func testStoreUpsertExternalServices(t *testing.T, store repos.Store) func(*test
 				t.Errorf("ListExternalServices:\n%s", diff)
 			}
 
-			want.Apply(repos.Opt.ExternalServiceDeletedAt(now))
+			want.Apply(types.Opt.ExternalServiceDeletedAt(now))
 			args := repos.StoreListExternalServicesArgs{}
 
 			if err = tx.UpsertExternalServices(ctx, want.Clone()...); err != nil {
@@ -841,7 +841,7 @@ func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
 
-			deleted := want.Clone().With(repos.Opt.RepoDeletedAt(now))
+			deleted := want.Clone().With(types.Opt.RepoDeletedAt(now))
 			args := repos.StoreListReposArgs{}
 
 			if err = tx.UpsertRepos(ctx, deleted...); err != nil {
@@ -853,7 +853,7 @@ func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 			}
 
 			// Insert previously soft-deleted repos. Ensure we get back the same ID.
-			if err = tx.UpsertRepos(ctx, want.Clone().With(repos.Opt.RepoID(0))...); err != nil {
+			if err = tx.UpsertRepos(ctx, want.Clone().With(types.Opt.RepoID(0))...); err != nil {
 				t.Errorf("UpsertRepos error: %s", err)
 			} else if err = tx.UpsertSources(ctx, want.Clone().Sources(), nil, nil); err != nil {
 				t.Fatalf("UpsertSources error: %s", err)
@@ -911,7 +911,7 @@ func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 				t.Fatalf("ListRepos:\n%s", diff)
 			}
 
-			allDeleted := all.Clone().With(repos.Opt.RepoDeletedAt(now))
+			allDeleted := all.Clone().With(types.Opt.RepoDeletedAt(now))
 			args := repos.StoreListReposArgs{}
 
 			if err = tx.UpsertRepos(ctx, allDeleted...); err != nil {
@@ -924,7 +924,7 @@ func testStoreUpsertRepos(t *testing.T, store repos.Store) func(*testing.T) {
 
 			// Insert one of the previously soft-deleted repos. Ensure ID on upserted repo is set and we get back the same ID.
 			want := types.Repos{all[0]}
-			upsert := want.Clone().With(repos.Opt.RepoID(0))
+			upsert := want.Clone().With(types.Opt.RepoID(0))
 			if err = tx.UpsertRepos(ctx, upsert...); err != nil {
 				t.Fatalf("UpsertRepos error: %s", err)
 			}
@@ -1576,7 +1576,7 @@ func testStoreListRepos(t *testing.T, store repos.Store) func(*testing.T) {
 	})
 
 	{
-		stored := repositories.With(repos.Opt.RepoDeletedAt(now))
+		stored := repositories.With(types.Opt.RepoDeletedAt(now))
 		testCases = append(testCases, testCase{
 			name:   "excludes soft deleted repos by default",
 			stored: stored,

@@ -28,7 +28,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		name   string
 		svcs   types.ExternalServices
 		repos  types.Repos
-		assert ExternalServicesAssertion
+		assert types.ExternalServicesAssertion
 	}
 
 	githubService := types.ExternalService{
@@ -259,7 +259,7 @@ func TestExternalService_Exclude(t *testing.T) {
 			name:   "already excluded repos are ignored",
 			svcs:   svcs,
 			repos:  repos,
-			assert: Assert.ExternalServicesEqual(svcs...),
+			assert: types.Assert.ExternalServicesEqual(svcs...),
 		})
 	}
 	{
@@ -342,7 +342,7 @@ func TestExternalService_Exclude(t *testing.T) {
 			name:  "repos are excluded",
 			svcs:  svcs,
 			repos: repos,
-			assert: Assert.ExternalServicesEqual(
+			assert: types.Assert.ExternalServicesEqual(
 				githubService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{

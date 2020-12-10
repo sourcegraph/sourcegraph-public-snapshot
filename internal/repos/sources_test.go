@@ -107,7 +107,7 @@ func TestSources_ListRepos(t *testing.T) {
 		name   string
 		ctx    context.Context
 		svcs   types.ExternalServices
-		assert func(*types.ExternalService) ReposAssertion
+		assert func(*types.ExternalService) types.ReposAssertion
 		err    string
 	}
 
@@ -203,7 +203,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "excluded repos are never yielded",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) ReposAssertion {
+			assert: func(s *types.ExternalService) types.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
@@ -349,7 +349,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "included repos that exist are yielded",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) ReposAssertion {
+			assert: func(s *types.ExternalService) types.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
@@ -456,7 +456,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "repositoryPathPattern determines the repo name",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) ReposAssertion {
+			assert: func(s *types.ExternalService) types.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
@@ -557,7 +557,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "nameTransformations updates the repo name",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) ReposAssertion {
+			assert: func(s *types.ExternalService) types.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
@@ -601,7 +601,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "yielded repos have authenticated CloneURLs",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) ReposAssertion {
+			assert: func(s *types.ExternalService) types.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
@@ -644,7 +644,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "phabricator",
 			svcs: svcs,
-			assert: func(*types.ExternalService) ReposAssertion {
+			assert: func(*types.ExternalService) types.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
@@ -699,7 +699,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "bitbucketserver archived",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) ReposAssertion {
+			assert: func(s *types.ExternalService) types.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 

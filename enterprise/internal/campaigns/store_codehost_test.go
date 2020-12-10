@@ -23,7 +23,7 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, reposStore r
 	if err := reposStore.InsertRepos(ctx, repo, otherRepo, gitlabRepo, bitbucketRepo, awsRepo); err != nil {
 		t.Fatal(err)
 	}
-	deletedRepo := otherRepo.With(repos.Opt.RepoDeletedAt(clock.now()))
+	deletedRepo := otherRepo.With(types.Opt.RepoDeletedAt(clock.now()))
 	if err := reposStore.DeleteRepos(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}

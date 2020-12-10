@@ -211,7 +211,7 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 				ID:            "bar",
 				NameWithOwner: "foo/bar",
 			},
-		}).With(repos.Opt.RepoSources(githubService.URN()))
+		}).With(types.Opt.RepoSources(githubService.URN()))
 
 		gitlabService := &types.ExternalService{
 			ID:          1,
@@ -240,7 +240,7 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 					PathWithNamespace: "foo/bar",
 				},
 			},
-		}).With(repos.Opt.RepoSources(gitlabService.URN()))
+		}).With(types.Opt.RepoSources(gitlabService.URN()))
 
 		bitbucketServerService := &types.ExternalService{
 			ID:          1,
@@ -271,7 +271,7 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 					Key: "foo",
 				},
 			},
-		}).With(repos.Opt.RepoSources(bitbucketServerService.URN()))
+		}).With(types.Opt.RepoSources(bitbucketServerService.URN()))
 
 		type testCase struct {
 			name  string
@@ -303,7 +303,7 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 			testCases = append(testCases, testCase{
 				name:  "excluded from every external service of the same kind/" + k.svc.Kind,
 				svcs:  svcs,
-				repos: types.Repos{k.repo}.With(repos.Opt.RepoSources()),
+				repos: types.Repos{k.repo}.With(types.Opt.RepoSources()),
 				kind:  k.svc.Kind,
 				res: &protocol.ExcludeRepoResponse{
 					ExternalServices: apiExternalServices(svcs.With(func(e *types.ExternalService) {
@@ -598,7 +598,7 @@ func testServerRepoExternalServices(t *testing.T, store repos.Store) func(t *tes
 				ServiceID:   "http://github.com",
 			},
 			Metadata: new(github.Repository),
-		}).With(repos.Opt.RepoSources(service1.URN(), service2.URN()))
+		}).With(types.Opt.RepoSources(service1.URN(), service2.URN()))
 
 		if err := store.InsertRepos(ctx, repoNoSources, repoSources); err != nil {
 			t.Fatal(err)
