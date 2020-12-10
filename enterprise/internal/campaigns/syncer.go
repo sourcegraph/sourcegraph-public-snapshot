@@ -293,11 +293,6 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 		s.queue.Upsert(sched...)
 	}
 
-	// Prioritize changesets without diffstats on startup.
-	if err := s.prioritizeChangesetsWithoutDiffStats(ctx); err != nil {
-		log15.Error("Prioritizing changesets", "err", err)
-	}
-
 	var next scheduledSync
 	var ok bool
 
@@ -460,31 +455,6 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 	}
 
 	return ss, nil
-}
-
-func (s *ChangesetSyncer) prioritizeChangesetsWithoutDiffStats(ctx context.Context) error {
-	published := campaigns.ChangesetPublicationStatePublished
-	changesets, _, err := s.syncStore.ListChangesets(ctx, ListChangesetsOpts{
-		OnlyWithoutDiffStats: true,
-		ExternalServiceID:    s.codeHostURL,
-		PublicationState:     &published,
-		ReconcilerStates:     []campaigns.ReconcilerState{campaigns.ReconcilerStateCompleted},
-	})
-	if err != nil {
-		return err
-	}
-
-	if len(changesets) == 0 {
-		return nil
-	}
-
-	ids := make([]int64, 0, len(changesets))
-	for _, cs := range changesets {
-		ids = append(ids, cs.ID)
-	}
-	s.priorityNotify <- ids
-
-	return nil
 }
 
 // SyncChangeset will sync a single changeset given its id.

@@ -114,6 +114,61 @@ func TestCleanupInactive(t *testing.T) {
 	}
 }
 
+// Note that the exact values (e.g. 50 commits) below are related to git's
+// internal heuristics regarding whether or not to invoke `git gc --auto`.
+//
+// They are stable today, but may become flaky in the future if/when the
+// relevant internal magic numbers and transformations change.
+func TestGitGCAuto(t *testing.T) {
+	// Create a test repository with detectable garbage that GC can prune.
+	root := tmpDir(t)
+	repo := filepath.Join(root, "garbage-repo")
+	defer os.RemoveAll(root)
+	runCmd(t, root, "git", "init", repo)
+
+	// First we need to generate a moderate number of commits.
+	for i := 0; i < 50; i++ {
+		runCmd(t, repo, "sh", "-c", "echo 1 >> file1")
+		runCmd(t, repo, "git", "add", "file1")
+		runCmd(t, repo, "git", "commit", "-m", "file1")
+	}
+
+	// Now on a second branch, we do the same thing.
+	runCmd(t, repo, "git", "checkout", "-b", "secondary")
+	for i := 0; i < 50; i++ {
+		runCmd(t, repo, "sh", "-c", "echo 2 >> file2")
+		runCmd(t, repo, "git", "add", "file2")
+		runCmd(t, repo, "git", "commit", "-m", "file2")
+	}
+
+	// Bring everything back together in one branch.
+	runCmd(t, repo, "git", "checkout", "master")
+	runCmd(t, repo, "git", "merge", "secondary")
+
+	// `git count-objects -v` can indicate objects, packs, etc.
+	// We'll run this before and after to verify that an action
+	// was taken by `git gc --auto`.
+	countObjects := func() string {
+		t.Helper()
+		return runCmd(t, repo, "git", "count-objects", "-v")
+	}
+
+	// Verify that we have GC-able objects in the repository.
+	if strings.Contains(countObjects(), "count: 0") {
+		t.Fatalf("expected git to report objects but none found")
+	}
+
+	// Handler must be invoked for Server side-effects.
+	s := &Server{ReposDir: root}
+	s.Handler()
+	s.cleanupRepos()
+
+	// Verify that there are no more GC-able objects in the repository.
+	if !strings.Contains(countObjects(), "count: 0") {
+		t.Fatalf("expected git to report no objects, but found some")
+	}
+}
+
 func TestCleanupExpired(t *testing.T) {
 	root, err := ioutil.TempDir("", "gitserver-test-")
 	if err != nil {
