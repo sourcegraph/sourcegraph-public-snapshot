@@ -4,10 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"golang.org/x/sync/errgroup"
 	"log"
 	"os"
 	"sort"
@@ -21,16 +17,20 @@ import (
 	"github.com/graph-gophers/graphql-go/introspection"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graph-gophers/graphql-go/trace"
-	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var (
@@ -745,7 +745,6 @@ func (r *schemaResolver) CurrentUser(ctx context.Context) (*UserResolver, error)
 func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struct {
 	User     graphql.ID
 	CodeHost *graphql.ID
-	Page     *int32
 	Query    *string
 }) (*codeHostRepositoryConnectionResolver, error) {
 	userID, err := UnmarshalUserID(args.User)
@@ -763,21 +762,15 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 			return nil, err
 		}
 	}
+	var query string
+	if args.Query != nil {
+		query = *args.Query
+	}
+
 	return &codeHostRepositoryConnectionResolver{
 		userID:   userID,
 		codeHost: codeHost,
-		page: func() int32 {
-			if args.Page != nil {
-				return *args.Page
-			}
-			return 0
-		}(),
-		query: func() string {
-			if args.Query != nil {
-				return *args.Query
-			}
-			return ""
-		}(),
+		query:    query,
 	}, nil
 }
 
@@ -812,30 +805,18 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 				return
 			}
 			// 🚨 SECURITY: if the user doesn't own this service, check they're site admin
-			if svc.NamespaceUserID != r.userID {
-				backend.CheckUserIsSiteAdmin(ctx, r.userID)
+			if err := backend.CheckUserIsSiteAdmin(ctx, r.userID); svc.NamespaceUserID != r.userID && err != nil {
+				r.err = err
+				return
 			}
 			svcs = []*types.ExternalService{svc}
 		}
 		// get Source for all external services
 		var (
-			results = make(chan []types.CodeHostRepository, 1024)
-			g       = errgroup.Group{}
+			results = make(chan []types.CodeHostRepository)
+			g, ctx  = errgroup.WithContext(ctx)
 			done    = make(chan struct{})
 		)
-		// collect all results in a goroutine
-		go func() {
-			defer close(done)
-			r.nodes = []*codeHostRepositoryResolver{}
-			for repos := range results {
-				for _, repo := range repos {
-					repo := repo
-					r.nodes = append(r.nodes, &codeHostRepositoryResolver{
-						repo: &repo,
-					})
-				}
-			}
-		}()
 		for _, svc := range svcs {
 			src, err := repos.NewSource(svc, cf)
 			if err != nil {
@@ -848,15 +829,31 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 					if err != nil {
 						return err
 					}
-					results <- repos
+					select {
+					case results <- repos:
+					case <-ctx.Done():
+						return ctx.Err()
+					}
 					return nil
 				})
 			}
 		}
-		// wait for all sources to return their repos
-		err = g.Wait()
-		// signal the collector to finish
-		close(results)
+		go func() {
+			// wait for all sources to return their repos
+			err = g.Wait()
+			// signal the collector to finish
+			close(results)
+		}()
+		// collect all results
+		r.nodes = []*codeHostRepositoryResolver{}
+		for repos := range results {
+			for _, repo := range repos {
+				repo := repo
+				r.nodes = append(r.nodes, &codeHostRepositoryResolver{
+					repo: &repo,
+				})
+			}
+		}
 		if err != nil {
 			r.err = err
 			return
@@ -867,7 +864,7 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 			return r.nodes[i].repo.Name < r.nodes[j].repo.Name
 		})
 		if r.query != "" {
-			out := []*codeHostRepositoryResolver{}
+			out := r.nodes[:0]
 			for _, node := range r.nodes {
 				if !strings.Contains(strings.ToLower(node.repo.Name), r.query) {
 					continue
