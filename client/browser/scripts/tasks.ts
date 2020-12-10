@@ -85,7 +85,7 @@ function buildSafariExtensionApp(): void {
  */
 function setSafariBuildVersion(version: string): void {
     if (typeof version !== 'string') {
-        throw new TypeError('Set Safari build version: version must be a string')
+        throw new TypeError('Problem setting Safari extension version: the version string is not available')
     }
     shelljs.pushd('./build/Sourcegraph for Safari')
     shelljs.exec(`xcrun agvtool new-version -all "${version}"`)
