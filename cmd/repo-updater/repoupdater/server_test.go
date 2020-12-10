@@ -312,17 +312,15 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 							ExternalRepo: k.repo.ExternalRepo,
 							Name:         api.RepoName(k.repo.Name),
 							Private:      k.repo.Private,
-							RepoFields: &types.RepoFields{
-								URI:         k.repo.URI,
-								Description: k.repo.Description,
-								Fork:        k.repo.Fork,
-								Archived:    k.repo.Archived,
-								Cloned:      k.repo.Cloned,
-								CreatedAt:   k.repo.CreatedAt,
-								UpdatedAt:   k.repo.UpdatedAt,
-								DeletedAt:   k.repo.DeletedAt,
-								Metadata:    k.repo.Metadata,
-							},
+							URI:          k.repo.URI,
+							Description:  k.repo.Description,
+							Fork:         k.repo.Fork,
+							Archived:     k.repo.Archived,
+							Cloned:       k.repo.Cloned,
+							CreatedAt:    k.repo.CreatedAt,
+							UpdatedAt:    k.repo.UpdatedAt,
+							DeletedAt:    k.repo.DeletedAt,
+							Metadata:     k.repo.Metadata,
 						}
 
 						if err := e.Exclude(tmp); err != nil {

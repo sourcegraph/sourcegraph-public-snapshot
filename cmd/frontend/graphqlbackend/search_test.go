@@ -674,20 +674,19 @@ func TestComputeExcludedRepositories(t *testing.T) {
 			Query: "repo:repo",
 			Repos: []types.Repo{
 				{
-					Name:       "repo-ordinary",
-					RepoFields: &types.RepoFields{},
+					Name: "repo-ordinary",
 				},
 				{
-					Name:       "repo-forked",
-					RepoFields: &types.RepoFields{Fork: true},
+					Name: "repo-forked",
+					Fork: true,
 				},
 				{
-					Name:       "repo-forked-2",
-					RepoFields: &types.RepoFields{Fork: true},
+					Name: "repo-forked-2",
+					Fork: true,
 				},
 				{
-					Name:       "repo-archived",
-					RepoFields: &types.RepoFields{Archived: true},
+					Name:     "repo-archived",
+					Archived: true,
 				},
 			},
 			WantExcludedRepos: excludedRepos{forks: 2, archived: 1},
@@ -697,8 +696,8 @@ func TestComputeExcludedRepositories(t *testing.T) {
 			Query: "repo:^repo-forked$",
 			Repos: []types.Repo{
 				{
-					Name:       "repo-forked",
-					RepoFields: &types.RepoFields{Fork: true},
+					Name: "repo-forked",
+					Fork: true,
 				},
 			},
 			WantExcludedRepos: excludedRepos{forks: 0, archived: 0},
@@ -708,12 +707,11 @@ func TestComputeExcludedRepositories(t *testing.T) {
 			Query: "repo:repo fork:no",
 			Repos: []types.Repo{
 				{
-					Name:       "repo",
-					RepoFields: &types.RepoFields{},
+					Name: "repo",
 				},
 				{
-					Name:       "repo-forked",
-					RepoFields: &types.RepoFields{Fork: true},
+					Name: "repo-forked",
+					Fork: true,
 				},
 			},
 			WantExcludedRepos: excludedRepos{forks: 0, archived: 0},

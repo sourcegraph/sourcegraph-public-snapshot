@@ -29,13 +29,11 @@ func MakeRepo(name, serviceID, serviceType string, services ...*ExternalService)
 			ServiceType: serviceType,
 			ServiceID:   serviceID,
 		},
-		Name: api.RepoName(name),
-		RepoFields: &RepoFields{
-			URI:         name,
-			Description: "The description",
-			CreatedAt:   now,
-			Sources:     make(map[string]*SourceInfo),
-		},
+		Name:        api.RepoName(name),
+		URI:         name,
+		Description: "The description",
+		CreatedAt:   now,
+		Sources:     make(map[string]*SourceInfo),
 	}
 
 	for _, svc := range services {
@@ -50,28 +48,28 @@ func MakeRepo(name, serviceID, serviceType string, services ...*ExternalService)
 // MakeGithubRepo returns a configured Github repository.
 func MakeGithubRepo(services ...*ExternalService) *Repo {
 	repo := MakeRepo("github.com/foo/bar", "http://github.com", extsvc.TypeGitHub, services...)
-	repo.RepoFields.Metadata = new(github.Repository)
+	repo.Metadata = new(github.Repository)
 	return repo
 }
 
 // MakeGitlabRepo returns a configured Gitlab repository.
 func MakeGitlabRepo(services ...*ExternalService) *Repo {
 	repo := MakeRepo("gitlab.com/foo/bar", "http://gitlab.com", extsvc.TypeGitLab, services...)
-	repo.RepoFields.Metadata = new(gitlab.Project)
+	repo.Metadata = new(gitlab.Project)
 	return repo
 }
 
 // MakeBitbucketServerRepo returns a configured Bitbucket Server repository.
 func MakeBitbucketServerRepo(services ...*ExternalService) *Repo {
 	repo := MakeRepo("bitbucketserver.mycorp.com/foo/bar", "http://bitbucketserver.mycorp.com", extsvc.TypeBitbucketServer, services...)
-	repo.RepoFields.Metadata = new(bitbucketserver.Repo)
+	repo.Metadata = new(bitbucketserver.Repo)
 	return repo
 }
 
 // MakeAWSCodeCommitRepo returns a configured AWS Code Commit repository.
 func MakeAWSCodeCommitRepo(services ...*ExternalService) *Repo {
 	repo := MakeRepo("git-codecommit.us-west-1.amazonaws.com/stripe-go", "arn:aws:codecommit:us-west-1:999999999999:", extsvc.KindAWSCodeCommit, services...)
-	repo.RepoFields.Metadata = new(awscodecommit.Repository)
+	repo.Metadata = new(awscodecommit.Repository)
 	return repo
 }
 
@@ -84,7 +82,7 @@ func MakeOtherRepo(services ...*ExternalService) *Repo {
 // MakeGitoliteRepo returns a configured Gitolite repository.
 func MakeGitoliteRepo(services ...*ExternalService) *Repo {
 	repo := MakeRepo("gitolite.mycorp.com/bar", "git@gitolite.mycorp.com", extsvc.KindGitolite, services...)
-	repo.RepoFields.Metadata = new(gitolite.Repo)
+	repo.Metadata = new(gitolite.Repo)
 	return repo
 }
 
