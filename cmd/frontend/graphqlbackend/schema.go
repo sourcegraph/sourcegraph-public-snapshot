@@ -2813,7 +2813,7 @@ type Query {
     affiliatedRepositories(
         user: ID!
         codeHost: ID
-        page: Int
+        query: String
     ): CodeHostRepositoryConnection!
 }
 

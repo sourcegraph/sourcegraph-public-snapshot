@@ -12,6 +12,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -745,6 +746,7 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 	User     graphql.ID
 	CodeHost *graphql.ID
 	Page     *int32
+	Query    *string
 }) (*codeHostRepositoryConnectionResolver, error) {
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
@@ -770,6 +772,12 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 			}
 			return 0
 		}(),
+		query: func() string {
+			if args.Query != nil {
+				return *args.Query
+			}
+			return ""
+		}(),
 	}, nil
 }
 
@@ -777,6 +785,7 @@ type codeHostRepositoryConnectionResolver struct {
 	userID   int32
 	codeHost int64
 	page     int32
+	query    string
 
 	once  sync.Once
 	nodes []*codeHostRepositoryResolver
@@ -857,6 +866,16 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 		sort.Slice(r.nodes, func(i, j int) bool {
 			return r.nodes[i].repo.Name < r.nodes[j].repo.Name
 		})
+		if r.query != "" {
+			out := []*codeHostRepositoryResolver{}
+			for _, node := range r.nodes {
+				if !strings.Contains(strings.ToLower(node.repo.Name), r.query) {
+					continue
+				}
+				out = append(out, node)
+			}
+			r.nodes = out
+		}
 	})
 	return r.nodes, r.err
 }
