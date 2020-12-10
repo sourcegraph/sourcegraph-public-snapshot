@@ -777,7 +777,6 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 type codeHostRepositoryConnectionResolver struct {
 	userID   int32
 	codeHost int64
-	page     int32
 	query    string
 
 	once  sync.Once
@@ -813,10 +812,12 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 		}
 		// get Source for all external services
 		var (
-			results = make(chan []types.CodeHostRepository)
-			g, ctx  = errgroup.WithContext(ctx)
+			results  = make(chan []types.CodeHostRepository)
+			g, ctx   = errgroup.WithContext(ctx)
+			svcsByID = make(map[int64]*types.ExternalService)
 		)
 		for _, svc := range svcs {
+			svcsByID[svc.ID] = svc
 			src, err := repos.NewSource(svc, cf)
 			if err != nil {
 				r.err = err
@@ -852,7 +853,8 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 					continue
 				}
 				r.nodes = append(r.nodes, &codeHostRepositoryResolver{
-					repo: &repo,
+					codeHost: svcsByID[repo.CodeHostID],
+					repo:     &repo,
 				})
 			}
 		}
