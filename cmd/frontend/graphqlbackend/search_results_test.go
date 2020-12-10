@@ -81,7 +81,6 @@ func TestSearchResults(t *testing.T) {
 			// Validate that the following options are invariant
 			// when calling the DB through Repos.ListRepoNames, no matter how
 			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.OnlyRepoIDs, true)
 			assertEqual(t, op.LimitOffset, limitOffset)
 			assertEqual(t, op.IncludePatterns, []string{"r", "p"})
 
@@ -116,7 +115,6 @@ func TestSearchResults(t *testing.T) {
 			// Validate that the following options are invariant
 			// when calling the DB through Repos.List, no matter how
 			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.OnlyRepoIDs, true)
 			assertEqual(t, op.LimitOffset, limitOffset)
 
 			return []*types.RepoName{{ID: 1, Name: "repo"}}, nil
@@ -182,7 +180,6 @@ func TestSearchResults(t *testing.T) {
 			// Validate that the following options are invariant
 			// when calling the DB through Repos.List, no matter how
 			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.OnlyRepoIDs, true)
 			assertEqual(t, op.LimitOffset, limitOffset)
 
 			return []*types.RepoName{{ID: 1, Name: "repo"}}, nil
