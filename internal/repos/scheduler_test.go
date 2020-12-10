@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var defaultTime = time.Date(2000, 1, 1, 1, 1, 1, 1, time.UTC)
@@ -577,28 +578,28 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 				{Repo: a, Seq: 1, Updating: false},
 			},
 			diff: Diff{
-				Deleted: []*Repo{
-					{ID: a.ID, Name: string(a.Name), URI: a.URL},
+				Deleted: []*types.Repo{
+					{ID: a.ID, Name: a.Name, URI: a.URL},
 				},
 			},
 		},
 		{
 			name: "diff with add and modified repos",
 			diff: Diff{
-				Added: []*Repo{
+				Added: []*types.Repo{
 					{
 						ID:   a.ID,
-						Name: string(a.Name),
-						Sources: map[string]*SourceInfo{
+						Name: a.Name,
+						Sources: map[string]*types.SourceInfo{
 							string(a.Name): {CloneURL: a.URL},
 						},
 					},
 				},
-				Modified: []*Repo{
+				Modified: []*types.Repo{
 					{
 						ID:   b.ID,
-						Name: string(b.Name),
-						Sources: map[string]*SourceInfo{
+						Name: b.Name,
+						Sources: map[string]*types.SourceInfo{
 							string(b.Name): {CloneURL: b.URL},
 						},
 					},
@@ -622,16 +623,16 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 				{Repo: a, Seq: 1, Updating: false},
 			},
 			diff: Diff{
-				Unmodified: []*Repo{
+				Unmodified: []*types.Repo{
 					{
 						ID:        a.ID,
-						Name:      string(a.Name),
+						Name:      a.Name,
 						DeletedAt: defaultTime,
 					},
 					{
 						ID:   b.ID,
-						Name: string(b.Name),
-						Sources: map[string]*SourceInfo{
+						Name: b.Name,
+						Sources: map[string]*types.SourceInfo{
 							string(b.Name): {CloneURL: b.URL},
 						},
 					},

@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestChangesetSpecConnectionResolver(t *testing.T) {
@@ -40,7 +41,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	repos := make([]*repos.Repo, 0, 3)
+	repos := make([]*types.Repo, 0, 3)
 	for i := 0; i < cap(repos); i++ {
 		name := fmt.Sprintf("github.com/sourcegraph/repo-%d", i)
 		r := newGitHubTestRepo(name, newGitHubExternalService(t, reposStore))

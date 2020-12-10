@@ -14,6 +14,7 @@ import (
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // schedulerConfig tracks the active scheduler configuration.
@@ -282,7 +283,7 @@ func (s *updateScheduler) SetCloned(names []string) {
 //
 // If enqueue is true then r is also enqueued to the update queue for a git
 // fetch/clone soon.
-func (s *updateScheduler) upsert(r *Repo, enqueue bool) {
+func (s *updateScheduler) upsert(r *types.Repo, enqueue bool) {
 	repo := configuredRepoFromRepo(r)
 
 	updated := s.schedule.upsert(repo)
@@ -295,7 +296,7 @@ func (s *updateScheduler) upsert(r *Repo, enqueue bool) {
 	log15.Debug("scheduler.updateQueue.enqueued", "repo", r.Name, "updated", updated)
 }
 
-func (s *updateScheduler) remove(r *Repo) {
+func (s *updateScheduler) remove(r *types.Repo) {
 	repo := configuredRepoFromRepo(r)
 
 	if s.schedule.remove(repo) {
@@ -307,7 +308,7 @@ func (s *updateScheduler) remove(r *Repo) {
 	}
 }
 
-func configuredRepoFromRepo(r *Repo) configuredRepo {
+func configuredRepoFromRepo(r *types.Repo) configuredRepo {
 	repo := configuredRepo{
 		ID:   r.ID,
 		Name: api.RepoName(r.Name),

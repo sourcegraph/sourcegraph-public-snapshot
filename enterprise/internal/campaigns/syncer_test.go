@@ -420,14 +420,14 @@ func (m MockSyncStore) Transact(ctx context.Context) (*Store, error) {
 
 type MockRepoStore struct {
 	listExternalServices func(context.Context, repos.StoreListExternalServicesArgs) ([]*types.ExternalService, error)
-	listRepos            func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error)
+	listRepos            func(context.Context, repos.StoreListReposArgs) ([]*types.Repo, error)
 }
 
 func (m MockRepoStore) UpsertExternalServices(ctx context.Context, svcs ...*types.ExternalService) error {
 	panic("implement me")
 }
 
-func (m MockRepoStore) UpsertRepos(ctx context.Context, repos ...*repos.Repo) error {
+func (m MockRepoStore) UpsertRepos(ctx context.Context, repos ...*types.Repo) error {
 	panic("implement me")
 }
 
@@ -435,7 +435,7 @@ func (m MockRepoStore) ListExternalServices(ctx context.Context, args repos.Stor
 	return m.listExternalServices(ctx, args)
 }
 
-func (m MockRepoStore) ListRepos(ctx context.Context, args repos.StoreListReposArgs) ([]*repos.Repo, error) {
+func (m MockRepoStore) ListRepos(ctx context.Context, args repos.StoreListReposArgs) ([]*types.Repo, error) {
 	return m.listRepos(ctx, args)
 }
 

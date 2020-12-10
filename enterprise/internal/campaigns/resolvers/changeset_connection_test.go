@@ -119,17 +119,17 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		{
 			Typename:   "ExternalChangeset",
 			ID:         string(marshalChangesetID(changeset1.ID)),
-			Repository: apitest.Repository{Name: repo.Name},
+			Repository: apitest.Repository{Name: string(repo.Name)},
 		},
 		{
 			Typename:   "ExternalChangeset",
 			ID:         string(marshalChangesetID(changeset2.ID)),
-			Repository: apitest.Repository{Name: repo.Name},
+			Repository: apitest.Repository{Name: string(repo.Name)},
 		},
 		{
 			Typename:   "ExternalChangeset",
 			ID:         string(marshalChangesetID(changeset3.ID)),
-			Repository: apitest.Repository{Name: repo.Name},
+			Repository: apitest.Repository{Name: string(repo.Name)},
 		},
 		{
 			Typename: "HiddenExternalChangeset",

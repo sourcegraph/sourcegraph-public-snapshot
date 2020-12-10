@@ -21,8 +21,8 @@ import (
 )
 
 func TestBitbucketCloudSource_ListRepos(t *testing.T) {
-	assertAllReposListed := func(want []string) ReposAssertion {
-		return func(t testing.TB, rs Repos) {
+	assertAllReposListed := func(want []string) types.ReposAssertion {
+		return func(t testing.TB, rs types.Repos) {
 			t.Helper()
 
 			have := rs.Names()
@@ -37,7 +37,7 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 
 	testCases := []struct {
 		name   string
-		assert ReposAssertion
+		assert types.ReposAssertion
 		conf   *schema.BitbucketCloudConnection
 		err    string
 	}{
@@ -159,7 +159,7 @@ func TestBitbucketCloudSource_makeRepo(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			var got []*Repo
+			var got []*types.Repo
 			for _, r := range repos {
 				got = append(got, s.makeRepo(r))
 			}

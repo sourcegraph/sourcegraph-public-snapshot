@@ -31,10 +31,10 @@ type Store interface {
 	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*types.ExternalService, error)
 	UpsertExternalServices(ctx context.Context, svcs ...*types.ExternalService) error
 
-	ListRepos(context.Context, StoreListReposArgs) ([]*Repo, error)
-	UpsertRepos(ctx context.Context, repos ...*Repo) error
+	ListRepos(context.Context, StoreListReposArgs) ([]*types.Repo, error)
+	UpsertRepos(ctx context.Context, repos ...*types.Repo) error
 	ListExternalRepoSpecs(context.Context) (map[api.ExternalRepoSpec]struct{}, error)
-	UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]SourceInfo) error
+	UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]types.SourceInfo) error
 	SetClonedRepos(ctx context.Context, repoNames ...string) error
 	CountNotClonedRepos(ctx context.Context) (uint64, error)
 	CountUserAddedRepos(ctx context.Context) (uint64, error)
@@ -45,7 +45,7 @@ type Store interface {
 
 	// TODO: These two methods should not be used in production, move them to
 	// an extension interface that's explicitly for testing.
-	InsertRepos(context.Context, ...*Repo) error
+	InsertRepos(context.Context, ...*types.Repo) error
 	DeleteRepos(ctx context.Context, ids ...api.RepoID) error
 }
 
@@ -143,7 +143,7 @@ type repoRecord struct {
 	Sources             json.RawMessage `json:"sources,omitempty"`
 }
 
-func newRepoRecord(r *Repo) (*repoRecord, error) {
+func newRepoRecord(r *types.Repo) (*repoRecord, error) {
 	metadata, err := metadataColumn(r.Metadata)
 	if err != nil {
 		return nil, errors.Wrapf(err, "newRecord: metadata marshalling failed")
@@ -156,7 +156,7 @@ func newRepoRecord(r *Repo) (*repoRecord, error) {
 
 	return &repoRecord{
 		ID:                  r.ID,
-		Name:                r.Name,
+		Name:                string(r.Name),
 		URI:                 nullStringColumn(r.URI),
 		Description:         r.Description,
 		CreatedAt:           r.CreatedAt.UTC(),
@@ -415,7 +415,7 @@ RETURNING *
 
 // InsertRepos inserts the given repos and their associated sources.
 // It sets the ID field of each given repo to the value of its corresponding row.
-func (s *DBStore) InsertRepos(ctx context.Context, repos ...*Repo) error {
+func (s *DBStore) InsertRepos(ctx context.Context, repos ...*types.Repo) error {
 	records := make([]*repoRecord, 0, len(repos))
 
 	for _, r := range repos {
@@ -592,14 +592,14 @@ AND repo.id = repo_ids.id::int
 `
 
 // ListRepos lists all stored repos that match the given arguments.
-func (s *DBStore) ListRepos(ctx context.Context, args StoreListReposArgs) (repos []*Repo, _ error) {
+func (s *DBStore) ListRepos(ctx context.Context, args StoreListReposArgs) (repos []*types.Repo, _ error) {
 	listQuery, err := listReposQuery(args)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating list repos query function")
 	}
 	return repos, s.paginate(ctx, args.Limit, args.PerPage, 0, listQuery,
 		func(sc scanner) (last, count int64, err error) {
-			var r Repo
+			var r types.Repo
 			if err := scanRepo(&r, sc); err != nil {
 				return 0, 0, err
 			}
@@ -775,7 +775,7 @@ type externalServiceRepo struct {
 	CloneURL          string `json:"clone_url"`
 }
 
-func (s *DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]SourceInfo) error {
+func (s *DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]types.SourceInfo) error {
 	if len(inserts)+len(updates)+len(deletes) == 0 {
 		return nil
 	}
@@ -786,7 +786,7 @@ func (s *DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes m
 		cloneURLs          []string
 	}
 
-	makeSourceSlices := func(sources map[api.RepoID][]SourceInfo) sourceSlices {
+	makeSourceSlices := func(sources map[api.RepoID][]types.SourceInfo) sourceSlices {
 		srcs := sourceSlices{
 			externalServiceIDs: make([]int64, 0, len(sources)),
 			repoIDs:            make([]int64, 0, len(sources)),
@@ -1020,17 +1020,17 @@ func (s *DBStore) list(ctx context.Context, q *sqlf.Query, scan scanFunc) (last,
 }
 
 // UpsertRepos updates or inserts the given repos in the Sourcegraph repository store.
-// The ID field is used to distinguish between Repos that need to be updated and Repos
+// The ID field is used to distinguish between Repos that need to be updated and types.Repos
 // that need to be inserted. On inserts, the _ID field of each given Repo is set on inserts.
 // The cloned column is not updated by this function.
 // This method does NOT update sources in the external_services_repo table.
 // Use UpsertSources for that purpose.
-func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
+func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*types.Repo) (err error) {
 	if len(repos) == 0 {
 		return nil
 	}
 
-	var deletes, updates, inserts []*Repo
+	var deletes, updates, inserts []*types.Repo
 	for _, r := range repos {
 		switch {
 		case r.IsDeleted():
@@ -1048,7 +1048,7 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 	for _, op := range []struct {
 		name  string
 		query string
-		repos []*Repo
+		repos []*types.Repo
 	}{
 		{"delete", batchDeleteReposQuery, deletes},
 		{"update", batchUpdateReposQuery, updates},
@@ -1194,7 +1194,7 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 	return jobs, nil
 }
 
-func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
+func batchReposQuery(fmtstr string, repos []*types.Repo) (_ *sqlf.Query, err error) {
 	records := make([]*repoRecord, 0, len(repos))
 	for _, r := range repos {
 		rec, err := newRepoRecord(r)
@@ -1362,7 +1362,7 @@ func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
 	return
 }
 
-func sourcesColumn(repoID api.RepoID, sources map[string]*SourceInfo) (json.RawMessage, error) {
+func sourcesColumn(repoID api.RepoID, sources map[string]*types.SourceInfo) (json.RawMessage, error) {
 	var records []externalServiceRepo
 	for _, src := range sources {
 		records = append(records, externalServiceRepo{
@@ -1421,7 +1421,7 @@ func scanExternalService(svc *types.ExternalService, s scanner) error {
 	)
 }
 
-func scanRepo(r *Repo, s scanner) error {
+func scanRepo(r *types.Repo, s scanner) error {
 	var sources dbutil.NullJSONRawMessage
 	var metadata json.RawMessage
 	err := s.Scan(
@@ -1451,7 +1451,7 @@ func scanRepo(r *Repo, s scanner) error {
 		CloneURL string
 		Kind     string
 	}
-	r.Sources = make(map[string]*SourceInfo)
+	r.Sources = make(map[string]*types.SourceInfo)
 
 	if sources.Raw != nil {
 		var srcs []sourceInfo
@@ -1460,7 +1460,7 @@ func scanRepo(r *Repo, s scanner) error {
 		}
 		for _, src := range srcs {
 			urn := extsvc.URN(src.Kind, src.ID)
-			r.Sources[urn] = &SourceInfo{
+			r.Sources[urn] = &types.SourceInfo{
 				ID:       urn,
 				CloneURL: src.CloneURL,
 			}

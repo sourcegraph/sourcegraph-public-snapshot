@@ -11,11 +11,12 @@ import (
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs repos.Store, clock clock) {
 	repo := ct.TestRepo(t, rs, extsvc.KindGitHub)
-	deletedRepo := ct.TestRepo(t, rs, extsvc.KindGitHub).With(repos.Opt.RepoDeletedAt(clock.now()))
+	deletedRepo := ct.TestRepo(t, rs, extsvc.KindGitHub).With(types.Opt.RepoDeletedAt(clock.now()))
 
 	if err := rs.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)

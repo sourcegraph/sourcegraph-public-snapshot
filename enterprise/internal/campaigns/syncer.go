@@ -37,7 +37,7 @@ type SyncRegistry struct {
 
 type RepoStore interface {
 	ListExternalServices(context.Context, repos.StoreListExternalServicesArgs) ([]*types.ExternalService, error)
-	ListRepos(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error)
+	ListRepos(context.Context, repos.StoreListReposArgs) ([]*types.Repo, error)
 }
 
 // NewSyncRegistry creates a new sync registry which starts a syncer for each code host and will update them
@@ -486,7 +486,7 @@ func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 
 // SyncChangeset refreshes the metadata of the given changeset and
 // updates them in the database.
-func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore, source repos.ChangesetSource, repo *repos.Repo, c *campaigns.Changeset) (err error) {
+func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore, source repos.ChangesetSource, repo *types.Repo, c *campaigns.Changeset) (err error) {
 	repoChangeset := &repos.Changeset{Repo: repo, Changeset: c}
 	if err := source.LoadChangeset(ctx, repoChangeset); err != nil {
 		_, ok := err.(repos.ChangesetNotFoundError)

@@ -113,7 +113,7 @@ func otherRepoCloneURL(base *url.URL, repo string) (*url.URL, error) {
 	return base.Parse(repo)
 }
 
-func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*Repo, error) {
+func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*types.Repo, error) {
 	repoURL := u.String()
 	repoSource := reposource.Other{OtherExternalServiceConnection: s.conn}
 	repoName, err := repoSource.CloneURLToRepoName(u.String())
@@ -127,15 +127,15 @@ func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*Repo, error
 	u.Path, u.RawQuery = "", ""
 	serviceID := u.String()
 
-	return &Repo{
-		Name: string(repoName),
+	return &types.Repo{
+		Name: repoName,
 		URI:  repoURI,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          string(repoName),
 			ServiceType: extsvc.TypeOther,
 			ServiceID:   serviceID,
 		},
-		Sources: map[string]*SourceInfo{
+		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
 				CloneURL: repoURL,
@@ -144,7 +144,7 @@ func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*Repo, error
 	}, nil
 }
 
-func (s OtherSource) srcExpose(ctx context.Context) ([]*Repo, error) {
+func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 	req, err := http.NewRequest("GET", s.conn.Url+"/v1/list-repos", nil)
 	if err != nil {
 		return nil, err
@@ -161,7 +161,7 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*Repo, error) {
 	}
 
 	var data struct {
-		Items []*Repo
+		Items []*types.Repo
 	}
 	err = json.Unmarshal(b, &data)
 	if err != nil {
@@ -186,7 +186,7 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*Repo, error) {
 			ServiceType: extsvc.TypeOther,
 			ServiceID:   s.conn.Url,
 		}
-		r.Sources = map[string]*SourceInfo{
+		r.Sources = map[string]*types.SourceInfo{
 			urn: {
 				ID: urn,
 				// TODO we should allow this to be set
@@ -196,7 +196,7 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*Repo, error) {
 
 		// The only required field left is Name
 		if r.Name == "" {
-			r.Name = r.URI
+			r.Name = api.RepoName(r.URI)
 		}
 	}
 

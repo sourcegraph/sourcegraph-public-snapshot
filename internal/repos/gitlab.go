@@ -120,7 +120,7 @@ func (s GitLabSource) ListRepos(ctx context.Context, results chan SourceResult) 
 }
 
 // GetRepo returns the GitLab repository with the given pathWithNamespace.
-func (s GitLabSource) GetRepo(ctx context.Context, pathWithNamespace string) (*Repo, error) {
+func (s GitLabSource) GetRepo(ctx context.Context, pathWithNamespace string) (*types.Repo, error) {
 	proj, err := s.client.GetProject(ctx, gitlab.GetProjectOp{
 		PathWithNamespace: pathWithNamespace,
 		CommonOp:          gitlab.CommonOp{NoCache: true},
@@ -138,15 +138,15 @@ func (s GitLabSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
+func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 	urn := s.svc.URN()
-	return &Repo{
-		Name: string(reposource.GitLabRepoName(
+	return &types.Repo{
+		Name: reposource.GitLabRepoName(
 			s.config.RepositoryPathPattern,
 			s.baseURL.Hostname(),
 			proj.PathWithNamespace,
 			s.nameTransformations,
-		)),
+		),
 		URI: string(reposource.GitLabRepoName(
 			"",
 			s.baseURL.Hostname(),
@@ -158,7 +158,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
 		Fork:         proj.ForkedFromProject != nil,
 		Archived:     proj.Archived,
 		Private:      proj.Visibility == "private",
-		Sources: map[string]*SourceInfo{
+		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
 				CloneURL: s.authenticatedRemoteURL(proj),

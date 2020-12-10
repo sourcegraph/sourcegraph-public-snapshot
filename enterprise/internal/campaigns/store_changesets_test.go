@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
@@ -49,7 +50,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	if err := reposStore.InsertRepos(ctx, repo, otherRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
-	deletedRepo := otherRepo.With(repos.Opt.RepoDeletedAt(clock.now()))
+	deletedRepo := otherRepo.With(types.Opt.RepoDeletedAt(clock.now()))
 	if err := reposStore.DeleteRepos(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -1374,7 +1375,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 
 	createChangeset := func(
 		esType string,
-		repo *repos.Repo,
+		repo *types.Repo,
 		externalID string,
 		metadata interface{},
 		spec *cmpgn.ChangesetSpec,
@@ -1571,7 +1572,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		},
 		"repo name": {
 			textSearch: []ListChangesetsTextSearchExpr{
-				{Term: githubRepo.Name},
+				{Term: string(githubRepo.Name)},
 			},
 			want: cmpgn.Changesets{
 				githubChangeset,
@@ -1581,7 +1582,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		},
 		"title and repo name together": {
 			textSearch: []ListChangesetsTextSearchExpr{
-				{Term: githubRepo.Name},
+				{Term: string(githubRepo.Name)},
 				{Term: "Eventually"},
 			},
 			want: cmpgn.Changesets{
@@ -1599,7 +1600,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		},
 		"negated repo name": {
 			textSearch: []ListChangesetsTextSearchExpr{
-				{Term: githubRepo.Name, Not: true},
+				{Term: string(githubRepo.Name), Not: true},
 			},
 			want: cmpgn.Changesets{
 				gitlabChangeset,
@@ -1608,15 +1609,15 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		},
 		"combined negated repo names": {
 			textSearch: []ListChangesetsTextSearchExpr{
-				{Term: githubRepo.Name, Not: true},
-				{Term: gitlabRepo.Name, Not: true},
+				{Term: string(githubRepo.Name), Not: true},
+				{Term: string(gitlabRepo.Name), Not: true},
 			},
 			want: cmpgn.Changesets{bbsChangeset},
 		},
 		"no results due to conflicting requirements": {
 			textSearch: []ListChangesetsTextSearchExpr{
-				{Term: githubRepo.Name},
-				{Term: gitlabRepo.Name},
+				{Term: string(githubRepo.Name)},
+				{Term: string(gitlabRepo.Name)},
 			},
 			want: cmpgn.Changesets{},
 		},
