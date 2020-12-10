@@ -2809,6 +2809,12 @@ type Query {
         """
         after: String
     ): LSIFIndexConnection!
+
+    """
+    Repos affiliated with the user & code hosts, these repos are not necessarily synced, but ones that
+    the configured code hosts are able to see.
+    """
+    affiliatedRepositories(user: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
 }
 
 """
@@ -8927,5 +8933,33 @@ type EventLogsConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+"""
+A list of code host repositories
+"""
+type CodeHostRepositoryConnection {
+    """
+    A list of repositories affiliated with a code host.
+    """
+    nodes: [CodeHostRepository!]!
+}
+
+"""
+A repository returned directly from a code host
+"""
+type CodeHostRepository {
+    """
+    The Name "owner/reponame" of the repo
+    """
+    name: String!
+    """
+    The code host the repo came from
+    """
+    codeHost: ExternalService
+    """
+    Is the repo private
+    """
+    private: Boolean!
 }
 `

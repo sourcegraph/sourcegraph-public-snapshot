@@ -49,6 +49,7 @@ var _ Source = &GithubSource{}
 var _ UserSource = &GithubSource{}
 var _ DraftChangesetSource = &GithubSource{}
 var _ ChangesetSource = &GithubSource{}
+var _ AffiliatedRepositorySource = &GithubSource{}
 
 // NewGithubSource returns a new GithubSource from the given external service.
 func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
@@ -775,4 +776,52 @@ func exampleRepositoryQuerySplit(q string) string {
 	enc.SetEscapeHTML(false)
 	_ = enc.Encode(qs)
 	return strings.TrimSpace(b.String())
+}
+
+func (s *GithubSource) AffiliatedRepositories(ctx context.Context) ([]types.CodeHostRepository, error) {
+	var (
+		repos    []*github.Repository
+		nextPage string
+		done     bool
+		page     = 1
+		cost     int
+		err      error
+	)
+	defer func() {
+		remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
+		log15.Debug(
+			"github sync: ListAffiliated",
+			"repos", len(repos),
+			"rateLimitCost", cost,
+			"rateLimitRemaining", remaining,
+			"rateLimitReset", reset,
+			"retryAfter", retry,
+		)
+	}()
+	out := make([]types.CodeHostRepository, 0, len(repos))
+	for done == false {
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("context canceled")
+		default:
+		}
+		repos, nextPage, cost, err = s.v4Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, nextPage)
+		if err != nil {
+			return nil, err
+		}
+		if nextPage == "" {
+			done = true
+		}
+		for _, repo := range repos {
+			// the github user repositories API doesn't support query strings, so we'll have to filter here 😬
+			// this does make pagination more awkward though, as we won't paginate futher if you don't match anything
+			out = append(out, types.CodeHostRepository{
+				Name:       repo.NameWithOwner,
+				Private:    repo.IsPrivate,
+				CodeHostID: s.svc.ID,
+			})
+		}
+		page++
+	}
+	return out, nil
 }
