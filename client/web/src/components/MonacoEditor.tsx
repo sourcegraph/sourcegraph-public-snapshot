@@ -54,11 +54,12 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
         { token: 'metaStructuralHole', foreground: '#ff6b6b' },
         // Revision highlighting
         { token: 'metaRevisionSeparator', foreground: '#ffa94d' },
-        { token: 'metaRevisionWildcard', foreground: '#3bc9db' },
-        { token: 'metaRevisionNegate', foreground: '#ff6b6b' },
+        { token: 'metaRevisionIncludeGlobMarker', foreground: '#ff6b6b' },
+        { token: 'metaRevisionExcludeGlobMarker', foreground: '#ff6b6b' },
         { token: 'metaRevisionCommitHash', foreground: '#f2f4f8' },
         { token: 'metaRevisionLabel', foreground: '#f2f4f8' },
-        { token: 'metaRevisionPathLike', foreground: '#f2f4f8' },
+        { token: 'metaRevisionReferencePath', foreground: '#f2f4f8' },
+        { token: 'metaRevisionWildcard', foreground: '#3bc9db' },
     ],
 })
 
@@ -104,11 +105,12 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
         { token: 'metaStructuralHole', foreground: '#c92a2a' },
         // Revision highlighting
         { token: 'metaRevisionSeparator', foreground: '#d9480f' },
-        { token: 'metaRevisionWildcard', foreground: '#1098ad' },
-        { token: 'metaRevisionNegate', foreground: '#c92a2a' },
+        { token: 'metaRevisionIncludeGlobMarker', foreground: '#c92a2a' },
+        { token: 'metaRevisionExcludeGlobMarker', foreground: '#c92a2a' },
         { token: 'metaRevisionCommitHash', foreground: '#2b3750' },
         { token: 'metaRevisionLabel', foreground: '#2b3750' },
-        { token: 'metaRevisionPathLike', foreground: '#2b3750' },
+        { token: 'metaRevisionReferencePath', foreground: '#2b3750' },
+        { token: 'metaRevisionWildcard', foreground: '#1098ad' },
     ],
 })
 
