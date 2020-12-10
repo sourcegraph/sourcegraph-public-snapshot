@@ -466,22 +466,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		}
 
 		{
-			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{OnlyWithoutDiffStats: true})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			want := 1
-			if len(have) != want {
-				t.Fatalf("have %d changesets; want %d", len(have), want)
-			}
-
-			if have[0].ID != changesets[cap(changesets)-1].ID {
-				t.Fatalf("unexpected changeset: have %+v; want %+v", have[0], changesets[cap(changesets)-1])
-			}
-		}
-
-		{
 			gitlabMR := &gitlab.MergeRequest{
 				ID:        gitlab.ID(1),
 				Title:     "Fix a bunch of bugs",
