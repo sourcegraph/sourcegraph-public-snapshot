@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"regexp"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
@@ -388,23 +389,75 @@ func listChangesetSyncDataQuery(opts ListChangesetSyncDataOpts) *sqlf.Query {
 	return sqlf.Sprintf(listChangesetSyncDataQueryFmtstr, sqlf.Join(preds, "\n AND"))
 }
 
-// ListChangesetsOpts captures the query options needed for
-// listing changesets.
+// ListChangesetsOpts captures the query options needed for listing changesets.
+//
+// Note that TextSearch is potentially expensive, and should only be specified
+// in conjunction with at least one other option (most likely, CampaignID).
 type ListChangesetsOpts struct {
 	LimitOpts
-	Cursor               int64
-	CampaignID           int64
-	IDs                  []int64
-	WithoutDeleted       bool
-	PublicationState     *campaigns.ChangesetPublicationState
-	ReconcilerStates     []campaigns.ReconcilerState
-	ExternalState        *campaigns.ChangesetExternalState
-	ExternalReviewState  *campaigns.ChangesetReviewState
-	ExternalCheckState   *campaigns.ChangesetCheckState
-	OwnedByCampaignID    int64
-	OnlyWithoutDiffStats bool
-	OnlySynced           bool
-	ExternalServiceID    string
+	Cursor              int64
+	CampaignID          int64
+	IDs                 []int64
+	WithoutDeleted      bool
+	PublicationState    *campaigns.ChangesetPublicationState
+	ReconcilerStates    []campaigns.ReconcilerState
+	ExternalState       *campaigns.ChangesetExternalState
+	ExternalReviewState *campaigns.ChangesetReviewState
+	ExternalCheckState  *campaigns.ChangesetCheckState
+	OwnedByCampaignID   int64
+	OnlySynced          bool
+	ExternalServiceID   string
+	TextSearch          []ListChangesetsTextSearchExpr
+}
+
+type ListChangesetsTextSearchExpr struct {
+	Term string
+	Not  bool
+}
+
+func (expr ListChangesetsTextSearchExpr) query() *sqlf.Query {
+	// The general SQL query format for a positive query is:
+	//
+	// (field1 ~* value OR field2 ~* value)
+	//
+	// For negative queries, we negate both the regex and boolean
+	//
+	// (field !~* value AND field !~* value)
+	//
+	// Note that we're using the case insensitive versions of the regex
+	// operators here.
+	var boolOp *sqlf.Query
+	var textOp *sqlf.Query
+	if expr.Not {
+		boolOp = sqlf.Sprintf("AND")
+		textOp = sqlf.Sprintf("!~*")
+	} else {
+		boolOp = sqlf.Sprintf("OR")
+		textOp = sqlf.Sprintf("~*")
+	}
+
+	// Since we're using regular expressions here, we need to ensure the search
+	// term is correctly quoted to avoid issues with escape characters having
+	// unexpected meaning in searches.
+	term := regexp.QuoteMeta(expr.Term)
+
+	return sqlf.Sprintf(
+		// There are a couple of things going on in this predicate.
+		//
+		// The COALESCE() is required to handle the actual title on the
+		// changeset, if it has been published or if it's tracked.
+		// Unfortunately, the metadata field isn't standard, so we have to get
+		// both variations that exist between the code hosts we support.
+		//
+		// The ugly ('\m'||%s||'\M') construction gives us a regex that only
+		// matches on word boundaries.
+		`(COALESCE(changesets.metadata->>'Title', changesets.metadata->>'title', changeset_specs.spec->>'title') %s ('\m'||%s||'\M') %s repo.name %s ('\m'||%s||'\M'))`,
+		textOp,
+		term,
+		boolOp,
+		textOp,
+		term,
+	)
 }
 
 // ListChangesets lists Changesets with the given filters.
@@ -433,6 +486,7 @@ var listChangesetsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListChangesets
 SELECT %s FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
+%s -- optional LEFT JOIN to changeset_specs if required
 WHERE %s
 ORDER BY id ASC
 `
@@ -483,22 +537,28 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	if opts.OwnedByCampaignID != 0 {
 		preds = append(preds, sqlf.Sprintf("changesets.owned_by_campaign_id = %s", opts.OwnedByCampaignID))
 	}
-
-	if opts.OnlyWithoutDiffStats {
-		preds = append(preds, sqlf.Sprintf("(changesets.diff_stat_added IS NULL OR changesets.diff_stat_changed IS NULL OR changesets.diff_stat_deleted IS NULL)"))
-	}
-
 	if opts.OnlySynced {
 		preds = append(preds, sqlf.Sprintf("changesets.unsynced IS FALSE"))
 	}
-
 	if opts.ExternalServiceID != "" {
 		preds = append(preds, sqlf.Sprintf("repo.external_service_id = %s", opts.ExternalServiceID))
+	}
+
+	join := sqlf.Sprintf("")
+	if len(opts.TextSearch) != 0 {
+		// TextSearch predicates require changeset_specs to be joined into the
+		// query as well.
+		join = sqlf.Sprintf("LEFT JOIN changeset_specs ON changesets.current_spec_id = changeset_specs.id")
+
+		for _, expr := range opts.TextSearch {
+			preds = append(preds, expr.query())
+		}
 	}
 
 	return sqlf.Sprintf(
 		listChangesetsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(ChangesetColumns, ", "),
+		join,
 		sqlf.Join(preds, "\n AND "),
 	)
 }

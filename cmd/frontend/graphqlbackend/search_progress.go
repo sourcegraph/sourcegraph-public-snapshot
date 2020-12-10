@@ -35,8 +35,8 @@ func repositoryCloningHandler(resultsResolver *SearchResultsResolver) (search.Sk
 		Reason: search.RepositoryCloning,
 		Title:  fmt.Sprintf("%s cloning", amount),
 		// TODO sample of repos in message
-		Message:  fmt.Sprintf("%s %s could not be searched since they are still cloning. Try searching again or reducing the scope of your query with repo: repogroup: or other filters.", amount, plural("repository", "repositories", len(repos))),
-		Severity: search.SeverityWarn,
+		Message:  fmt.Sprintf("%s %s could not be searched since %s still cloning. Try searching again or reducing the scope of your query with `repo:`,  `repogroup:` or other filters.", amount, plural("repository", "repositories", len(repos)), plural("it is", "they are", len(repos))),
+		Severity: search.SeverityInfo,
 	}, true
 }
 
@@ -51,8 +51,8 @@ func repositoryMissingHandler(resultsResolver *SearchResultsResolver) (search.Sk
 		Reason: search.RepositoryMissing,
 		Title:  fmt.Sprintf("%s missing", amount),
 		// TODO sample of repos in message
-		Message:  fmt.Sprintf("%s %s could not be searched. Try reducing the scope of your query with repo: repogroup: or other filters.", amount, plural("repository", "repositories", len(repos))),
-		Severity: search.SeverityWarn,
+		Message:  fmt.Sprintf("%s %s could not be searched. Try reducing the scope of your query with `repo:`, `repogroup:` or other filters.", amount, plural("repository", "repositories", len(repos))),
+		Severity: search.SeverityInfo,
 	}, true
 }
 
@@ -69,7 +69,7 @@ func shardTimeoutHandler(resultsResolver *SearchResultsResolver) (search.Skipped
 		Reason: search.ShardTimeout,
 		Title:  fmt.Sprintf("%s timedout", amount),
 		// TODO sample of repos in message
-		Message:  fmt.Sprintf("%s %s could not be searched in time. Try reducing the scope of your query with repo: repogroup: or other filters.", amount, plural("repository", "repositories", len(repos))),
+		Message:  fmt.Sprintf("%s %s could not be searched in time. Try reducing the scope of your query with `repo:`, `repogroup:` or other filters.", amount, plural("repository", "repositories", len(repos))),
 		Severity: search.SeverityWarn,
 	}, true
 }
@@ -85,7 +85,7 @@ func shardMatchLimitHandler(resultsResolver *SearchResultsResolver) (search.Skip
 		Reason:   search.ShardMatchLimit,
 		Title:    "result limit hit",
 		Message:  "Not all results have been returned due to hitting a match limit. Sourcegraph has limits for the number of results returned from a line, document and repository.",
-		Severity: search.SeverityWarn,
+		Severity: search.SeverityInfo,
 	}, true
 }
 

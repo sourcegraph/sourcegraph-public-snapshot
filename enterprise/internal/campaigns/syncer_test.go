@@ -3,12 +3,10 @@ package campaigns
 import (
 	"container/heap"
 	"context"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -178,86 +176,6 @@ func TestChangesetPriorityQueue(t *testing.T) {
 	// Len() should be zero after all items popped
 	if q.Len() != 0 {
 		t.Fatalf("Expected %d, got %d", q.Len(), 0)
-	}
-}
-
-func TestPrioritizeChangesetsWithoutDiffStats(t *testing.T) {
-	t.Parallel()
-
-	for name, tc := range map[string]struct {
-		listChangesets func(context.Context, ListChangesetsOpts) (campaigns.Changesets, int64, error)
-		wantError      bool
-		wantIDs        []int64
-	}{
-		"ListChangesets error": {
-			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
-				return nil, 0, errors.New("hello!")
-			},
-			wantError: true,
-		},
-		"empty list": {
-			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
-				return []*campaigns.Changeset{}, 0, nil
-			},
-		},
-		"non-empty list with published changesets": {
-			listChangesets: func(ctx context.Context, opts ListChangesetsOpts) (campaigns.Changesets, int64, error) {
-				return []*campaigns.Changeset{
-					{
-						ID:               1,
-						ReconcilerState:  campaigns.ReconcilerStateCompleted,
-						PublicationState: campaigns.ChangesetPublicationStatePublished,
-					},
-					{
-						ID:               2,
-						ReconcilerState:  campaigns.ReconcilerStateCompleted,
-						PublicationState: campaigns.ChangesetPublicationStatePublished,
-					},
-				}, 0, nil
-			},
-			wantIDs: []int64{1, 2},
-		},
-	} {
-		t.Run(name, func(t *testing.T) {
-			var wg sync.WaitGroup
-
-			syncer := &ChangesetSyncer{
-				syncStore:      MockSyncStore{listChangesets: tc.listChangesets},
-				priorityNotify: make(chan []int64),
-			}
-
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				var (
-					ids  []int64
-					seen bool
-				)
-
-				for ids = range syncer.priorityNotify {
-					if seen {
-						t.Error("received more than one message on priorityNotify")
-					}
-					seen = true
-				}
-
-				if diff := cmp.Diff(ids, tc.wantIDs); diff != "" {
-					t.Errorf("invalid IDs received on the priorityNotify channel: have %+v; want %+v", ids, tc.wantIDs)
-				}
-			}()
-
-			err := syncer.prioritizeChangesetsWithoutDiffStats(context.Background())
-			if tc.wantError && err == nil {
-				t.Error("expected an error; got nil")
-			} else if !tc.wantError && err != nil {
-				t.Errorf("got unexpected error: %+v", err)
-			}
-
-			// We have to wait for the goroutine to exit lest we fail after this
-			// function is complete.
-			close(syncer.priorityNotify)
-			wg.Wait()
-		})
 	}
 }
 
