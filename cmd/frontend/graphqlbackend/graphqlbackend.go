@@ -848,6 +848,9 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 		for repos := range results {
 			for _, repo := range repos {
 				repo := repo
+				if r.query != "" && !strings.Contains(strings.ToLower(repo.Name), r.query) {
+					continue
+				}
 				r.nodes = append(r.nodes, &codeHostRepositoryResolver{
 					repo: &repo,
 				})
@@ -860,22 +863,13 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 		sort.Slice(r.nodes, func(i, j int) bool {
 			return r.nodes[i].repo.Name < r.nodes[j].repo.Name
 		})
-		if r.query != "" {
-			out := r.nodes[:0]
-			for _, node := range r.nodes {
-				if !strings.Contains(strings.ToLower(node.repo.Name), r.query) {
-					continue
-				}
-				out = append(out, node)
-			}
-			r.nodes = out
-		}
 	})
 	return r.nodes, r.err
 }
 
 type codeHostRepositoryResolver struct {
-	repo *types.CodeHostRepository
+	repo     *types.CodeHostRepository
+	codeHost *types.ExternalService
 }
 
 func (r *codeHostRepositoryResolver) Name() string {
@@ -886,12 +880,8 @@ func (r *codeHostRepositoryResolver) Private() bool {
 	return r.repo.Private
 }
 
-func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) (*externalServiceResolver, error) {
-	svc, err := db.ExternalServices.GetByID(ctx, r.repo.CodeHostID)
-	if err != nil {
-		return nil, err
-	}
+func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) *externalServiceResolver {
 	return &externalServiceResolver{
-		externalService: svc,
-	}, nil
+		externalService: r.codeHost,
+	}
 }
