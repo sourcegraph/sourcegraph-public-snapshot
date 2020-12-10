@@ -395,20 +395,19 @@ func listChangesetSyncDataQuery(opts ListChangesetSyncDataOpts) *sqlf.Query {
 // in conjunction with at least one other option (most likely, CampaignID).
 type ListChangesetsOpts struct {
 	LimitOpts
-	Cursor               int64
-	CampaignID           int64
-	IDs                  []int64
-	WithoutDeleted       bool
-	PublicationState     *campaigns.ChangesetPublicationState
-	ReconcilerStates     []campaigns.ReconcilerState
-	ExternalState        *campaigns.ChangesetExternalState
-	ExternalReviewState  *campaigns.ChangesetReviewState
-	ExternalCheckState   *campaigns.ChangesetCheckState
-	OwnedByCampaignID    int64
-	OnlyWithoutDiffStats bool
-	OnlySynced           bool
-	ExternalServiceID    string
-	TextSearch           []ListChangesetsTextSearchExpr
+	Cursor              int64
+	CampaignID          int64
+	IDs                 []int64
+	WithoutDeleted      bool
+	PublicationState    *campaigns.ChangesetPublicationState
+	ReconcilerStates    []campaigns.ReconcilerState
+	ExternalState       *campaigns.ChangesetExternalState
+	ExternalReviewState *campaigns.ChangesetReviewState
+	ExternalCheckState  *campaigns.ChangesetCheckState
+	OwnedByCampaignID   int64
+	OnlySynced          bool
+	ExternalServiceID   string
+	TextSearch          []ListChangesetsTextSearchExpr
 }
 
 type ListChangesetsTextSearchExpr struct {
@@ -538,15 +537,9 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	if opts.OwnedByCampaignID != 0 {
 		preds = append(preds, sqlf.Sprintf("changesets.owned_by_campaign_id = %s", opts.OwnedByCampaignID))
 	}
-
-	if opts.OnlyWithoutDiffStats {
-		preds = append(preds, sqlf.Sprintf("(changesets.diff_stat_added IS NULL OR changesets.diff_stat_changed IS NULL OR changesets.diff_stat_deleted IS NULL)"))
-	}
-
 	if opts.OnlySynced {
 		preds = append(preds, sqlf.Sprintf("changesets.unsynced IS FALSE"))
 	}
-
 	if opts.ExternalServiceID != "" {
 		preds = append(preds, sqlf.Sprintf("repo.external_service_id = %s", opts.ExternalServiceID))
 	}
