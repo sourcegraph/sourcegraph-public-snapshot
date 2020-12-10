@@ -2810,11 +2810,7 @@ type Query {
     Repos affiliated with the user & code hosts, these repos are not necessarily synced, but ones that
     the configured code hosts are able to see.
     """
-    affiliatedRepositories(
-        user: ID!
-        codeHost: ID
-        query: String
-    ): CodeHostRepositoryConnection!
+    affiliatedRepositories(user: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
 }
 
 """
@@ -8942,6 +8938,9 @@ type CodeHostRepositoryConnection {
     nodes: [CodeHostRepository!]!
 }
 
+"""
+A repository returned directly from a code host
+"""
 type CodeHostRepository {
     """
     The Name "owner/reponame" of the repo
