@@ -74,7 +74,7 @@ func repositoryMissingHandler(resultsResolver *SearchResultsResolver) (search.Sk
 func shardTimeoutHandler(resultsResolver *SearchResultsResolver) (search.Skipped, bool) {
 	// This is not the same, but once we expose this more granular details
 	// from our backend it will be shard specific.
-	return skippedReposHandler(resultsResolver.Timedout(), "timedout", "could not be searched in time", search.Skipped{
+	return skippedReposHandler(resultsResolver.Timedout(), "timed out", "could not be searched in time", search.Skipped{
 		Reason:   search.ShardTimeout,
 		Severity: search.SeverityWarn,
 	})
