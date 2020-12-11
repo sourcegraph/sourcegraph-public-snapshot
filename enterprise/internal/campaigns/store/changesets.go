@@ -250,6 +250,12 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 	return sqlf.Sprintf(countChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
+// GetChangesetByID is a convenience method if only the ID needs to be passed in. It's also used for abstraction in
+// the testing package.
+func (s *Store) GetChangesetByID(ctx context.Context, id int64) (*campaigns.Changeset, error) {
+	return s.GetChangeset(ctx, GetChangesetOpts{ID: id})
+}
+
 // GetChangesetOpts captures the query options needed for getting a Changeset
 type GetChangesetOpts struct {
 	ID                  int64

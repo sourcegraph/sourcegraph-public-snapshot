@@ -7,8 +7,12 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
@@ -64,263 +68,263 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 		}
 	})
 
-	// t.Run("Count", func(t *testing.T) {
-	// 	count, err := s.CountCampaigns(ctx, CountCampaignsOpts{})
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
+	t.Run("Count", func(t *testing.T) {
+		count, err := s.CountCampaigns(ctx, CountCampaignsOpts{})
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	// 	if have, want := count, len(campaigns); have != want {
-	// 		t.Fatalf("have count: %d, want: %d", have, want)
-	// 	}
+		if have, want := count, len(campaigns); have != want {
+			t.Fatalf("have count: %d, want: %d", have, want)
+		}
 
-	// 	changeset := createChangeset(t, ctx, s, testChangesetOpts{
-	// 		campaignIDs: []int64{campaigns[0].ID},
-	// 	})
+		changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+			CampaignIDs: []int64{campaigns[0].ID},
+		})
 
-	// 	count, err = s.CountCampaigns(ctx, CountCampaignsOpts{ChangesetID: changeset.ID})
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
+		count, err = s.CountCampaigns(ctx, CountCampaignsOpts{ChangesetID: changeset.ID})
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	// 	if have, want := count, 1; have != want {
-	// 		t.Fatalf("have count: %d, want: %d", have, want)
-	// 	}
+		if have, want := count, 1; have != want {
+			t.Fatalf("have count: %d, want: %d", have, want)
+		}
 
-	// 	t.Run("OnlyForAuthor set", func(t *testing.T) {
-	// 		for _, c := range campaigns {
-	// 			count, err = s.CountCampaigns(ctx, CountCampaignsOpts{InitialApplierID: c.InitialApplierID})
-	// 			if err != nil {
-	// 				t.Fatal(err)
-	// 			}
-	// 			if have, want := count, 1; have != want {
-	// 				t.Fatalf("Incorrect number of campaigns counted, want=%d have=%d", want, have)
-	// 			}
-	// 		}
-	// 	})
+		t.Run("OnlyForAuthor set", func(t *testing.T) {
+			for _, c := range campaigns {
+				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{InitialApplierID: c.InitialApplierID})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if have, want := count, 1; have != want {
+					t.Fatalf("Incorrect number of campaigns counted, want=%d have=%d", want, have)
+				}
+			}
+		})
 
-	// 	t.Run("NamespaceUserID", func(t *testing.T) {
-	// 		wantCounts := map[int32]int{}
-	// 		for _, c := range campaigns {
-	// 			if c.NamespaceUserID == 0 {
-	// 				continue
-	// 			}
-	// 			wantCounts[c.NamespaceUserID] += 1
-	// 		}
-	// 		if len(wantCounts) == 0 {
-	// 			t.Fatalf("No campaigns with NamespaceUserID")
-	// 		}
+		t.Run("NamespaceUserID", func(t *testing.T) {
+			wantCounts := map[int32]int{}
+			for _, c := range campaigns {
+				if c.NamespaceUserID == 0 {
+					continue
+				}
+				wantCounts[c.NamespaceUserID] += 1
+			}
+			if len(wantCounts) == 0 {
+				t.Fatalf("No campaigns with NamespaceUserID")
+			}
 
-	// 		for userID, want := range wantCounts {
-	// 			have, err := s.CountCampaigns(ctx, CountCampaignsOpts{NamespaceUserID: userID})
-	// 			if err != nil {
-	// 				t.Fatal(err)
-	// 			}
+			for userID, want := range wantCounts {
+				have, err := s.CountCampaigns(ctx, CountCampaignsOpts{NamespaceUserID: userID})
+				if err != nil {
+					t.Fatal(err)
+				}
 
-	// 			if have != want {
-	// 				t.Fatalf("campaigns count for NamespaceUserID=%d wrong. want=%d, have=%d", userID, want, have)
-	// 			}
-	// 		}
-	// 	})
+				if have != want {
+					t.Fatalf("campaigns count for NamespaceUserID=%d wrong. want=%d, have=%d", userID, want, have)
+				}
+			}
+		})
 
-	// 	t.Run("NamespaceOrgID", func(t *testing.T) {
-	// 		wantCounts := map[int32]int{}
-	// 		for _, c := range campaigns {
-	// 			if c.NamespaceOrgID == 0 {
-	// 				continue
-	// 			}
-	// 			wantCounts[c.NamespaceOrgID] += 1
-	// 		}
-	// 		if len(wantCounts) == 0 {
-	// 			t.Fatalf("No campaigns with NamespaceOrgID")
-	// 		}
+		t.Run("NamespaceOrgID", func(t *testing.T) {
+			wantCounts := map[int32]int{}
+			for _, c := range campaigns {
+				if c.NamespaceOrgID == 0 {
+					continue
+				}
+				wantCounts[c.NamespaceOrgID] += 1
+			}
+			if len(wantCounts) == 0 {
+				t.Fatalf("No campaigns with NamespaceOrgID")
+			}
 
-	// 		for orgID, want := range wantCounts {
-	// 			have, err := s.CountCampaigns(ctx, CountCampaignsOpts{NamespaceOrgID: orgID})
-	// 			if err != nil {
-	// 				t.Fatal(err)
-	// 			}
+			for orgID, want := range wantCounts {
+				have, err := s.CountCampaigns(ctx, CountCampaignsOpts{NamespaceOrgID: orgID})
+				if err != nil {
+					t.Fatal(err)
+				}
 
-	// 			if have != want {
-	// 				t.Fatalf("campaigns count for NamespaceOrgID=%d wrong. want=%d, have=%d", orgID, want, have)
-	// 			}
-	// 		}
-	// 	})
-	// })
+				if have != want {
+					t.Fatalf("campaigns count for NamespaceOrgID=%d wrong. want=%d, have=%d", orgID, want, have)
+				}
+			}
+		})
+	})
 
-	// t.Run("List", func(t *testing.T) {
-	// 	t.Run("By ChangesetID", func(t *testing.T) {
-	// 		for i := 1; i <= len(campaigns); i++ {
-	// 			changeset := createChangeset(t, ctx, s, testChangesetOpts{
-	// 				campaignIDs: []int64{campaigns[i-1].ID},
-	// 			})
-	// 			opts := ListCampaignsOpts{ChangesetID: changeset.ID}
+	t.Run("List", func(t *testing.T) {
+		t.Run("By ChangesetID", func(t *testing.T) {
+			for i := 1; i <= len(campaigns); i++ {
+				changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+					CampaignIDs: []int64{campaigns[i-1].ID},
+				})
+				opts := ListCampaignsOpts{ChangesetID: changeset.ID}
 
-	// 			ts, next, err := s.ListCampaigns(ctx, opts)
-	// 			if err != nil {
-	// 				t.Fatal(err)
-	// 			}
+				ts, next, err := s.ListCampaigns(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-	// 			if have, want := next, int64(0); have != want {
-	// 				t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
-	// 			}
+				if have, want := next, int64(0); have != want {
+					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				}
 
-	// 			have, want := ts, campaigns[i-1:i]
-	// 			if len(have) != len(want) {
-	// 				t.Fatalf("listed %d campaigns, want: %d", len(have), len(want))
-	// 			}
+				have, want := ts, campaigns[i-1:i]
+				if len(have) != len(want) {
+					t.Fatalf("listed %d campaigns, want: %d", len(have), len(want))
+				}
 
-	// 			if diff := cmp.Diff(have, want); diff != "" {
-	// 				t.Fatalf("opts: %+v, diff: %s", opts, diff)
-	// 			}
-	// 		}
-	// 	})
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+		})
 
-	// 	// The campaigns store returns the campaigns in reversed order.
-	// 	reversedCampaigns := make([]*cmpgn.Campaign, len(campaigns))
-	// 	for i, c := range campaigns {
-	// 		reversedCampaigns[len(campaigns)-i-1] = c
-	// 	}
+		// The campaigns store returns the campaigns in reversed order.
+		reversedCampaigns := make([]*cmpgn.Campaign, len(campaigns))
+		for i, c := range campaigns {
+			reversedCampaigns[len(campaigns)-i-1] = c
+		}
 
-	// 	t.Run("With Limit", func(t *testing.T) {
-	// 		for i := 1; i <= len(reversedCampaigns); i++ {
-	// 			cs, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{LimitOpts: LimitOpts{Limit: i}})
-	// 			if err != nil {
-	// 				t.Fatal(err)
-	// 			}
+		t.Run("With Limit", func(t *testing.T) {
+			for i := 1; i <= len(reversedCampaigns); i++ {
+				cs, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{LimitOpts: LimitOpts{Limit: i}})
+				if err != nil {
+					t.Fatal(err)
+				}
 
-	// 			{
-	// 				have, want := next, int64(0)
-	// 				if i < len(reversedCampaigns) {
-	// 					want = reversedCampaigns[i].ID
-	// 				}
+				{
+					have, want := next, int64(0)
+					if i < len(reversedCampaigns) {
+						want = reversedCampaigns[i].ID
+					}
 
-	// 				if have != want {
-	// 					t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
-	// 				}
-	// 			}
+					if have != want {
+						t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+					}
+				}
 
-	// 			{
-	// 				have, want := cs, reversedCampaigns[:i]
-	// 				if len(have) != len(want) {
-	// 					t.Fatalf("listed %d campaigns, want: %d", len(have), len(want))
-	// 				}
+				{
+					have, want := cs, reversedCampaigns[:i]
+					if len(have) != len(want) {
+						t.Fatalf("listed %d campaigns, want: %d", len(have), len(want))
+					}
 
-	// 				if diff := cmp.Diff(have, want); diff != "" {
-	// 					t.Fatal(diff)
-	// 				}
-	// 			}
-	// 		}
-	// 	})
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				}
+			}
+		})
 
-	// 	t.Run("With Cursor", func(t *testing.T) {
-	// 		var cursor int64
-	// 		for i := 1; i <= len(reversedCampaigns); i++ {
-	// 			opts := ListCampaignsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
-	// 			have, next, err := s.ListCampaigns(ctx, opts)
-	// 			if err != nil {
-	// 				t.Fatal(err)
-	// 			}
+		t.Run("With Cursor", func(t *testing.T) {
+			var cursor int64
+			for i := 1; i <= len(reversedCampaigns); i++ {
+				opts := ListCampaignsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
+				have, next, err := s.ListCampaigns(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-	// 			want := reversedCampaigns[i-1 : i]
-	// 			if diff := cmp.Diff(have, want); diff != "" {
-	// 				t.Fatalf("opts: %+v, diff: %s", opts, diff)
-	// 			}
+				want := reversedCampaigns[i-1 : i]
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
 
-	// 			cursor = next
-	// 		}
-	// 	})
+				cursor = next
+			}
+		})
 
-	// 	filterTests := []struct {
-	// 		name  string
-	// 		state cmpgn.CampaignState
-	// 		want  []*cmpgn.Campaign
-	// 	}{
-	// 		{
-	// 			name:  "Any",
-	// 			state: cmpgn.CampaignStateAny,
-	// 			want:  reversedCampaigns,
-	// 		},
-	// 		{
-	// 			name:  "Closed",
-	// 			state: cmpgn.CampaignStateClosed,
-	// 			want:  reversedCampaigns[:len(reversedCampaigns)-1],
-	// 		},
-	// 		{
-	// 			name:  "Open",
-	// 			state: cmpgn.CampaignStateOpen,
-	// 			want:  campaigns[0:1],
-	// 		},
-	// 	}
+		filterTests := []struct {
+			name  string
+			state cmpgn.CampaignState
+			want  []*cmpgn.Campaign
+		}{
+			{
+				name:  "Any",
+				state: cmpgn.CampaignStateAny,
+				want:  reversedCampaigns,
+			},
+			{
+				name:  "Closed",
+				state: cmpgn.CampaignStateClosed,
+				want:  reversedCampaigns[:len(reversedCampaigns)-1],
+			},
+			{
+				name:  "Open",
+				state: cmpgn.CampaignStateOpen,
+				want:  campaigns[0:1],
+			},
+		}
 
-	// 	for _, tc := range filterTests {
-	// 		t.Run("ListCampaigns State "+tc.name, func(t *testing.T) {
-	// 			have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{State: tc.state})
-	// 			if err != nil {
-	// 				t.Fatal(err)
-	// 			}
-	// 			if diff := cmp.Diff(have, tc.want); diff != "" {
-	// 				t.Fatal(diff)
-	// 			}
-	// 		})
-	// 	}
+		for _, tc := range filterTests {
+			t.Run("ListCampaigns State "+tc.name, func(t *testing.T) {
+				have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{State: tc.state})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if diff := cmp.Diff(have, tc.want); diff != "" {
+					t.Fatal(diff)
+				}
+			})
+		}
 
-	// 	t.Run("ListCampaigns OnlyForAuthor set", func(t *testing.T) {
-	// 		for _, c := range campaigns {
-	// 			have, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{InitialApplierID: c.InitialApplierID})
-	// 			if err != nil {
-	// 				t.Fatal(err)
-	// 			}
-	// 			if next != 0 {
-	// 				t.Fatal("Next value was true, but false expected")
-	// 			}
-	// 			if have, want := len(have), 1; have != want {
-	// 				t.Fatalf("Incorrect number of campaigns returned, want=%d have=%d", want, have)
-	// 			}
-	// 			if diff := cmp.Diff(have[0], c); diff != "" {
-	// 				t.Fatal(diff)
-	// 			}
-	// 		}
-	// 	})
+		t.Run("ListCampaigns OnlyForAuthor set", func(t *testing.T) {
+			for _, c := range campaigns {
+				have, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{InitialApplierID: c.InitialApplierID})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if next != 0 {
+					t.Fatal("Next value was true, but false expected")
+				}
+				if have, want := len(have), 1; have != want {
+					t.Fatalf("Incorrect number of campaigns returned, want=%d have=%d", want, have)
+				}
+				if diff := cmp.Diff(have[0], c); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+		})
 
-	// 	t.Run("ListCampaigns by NamespaceUserID", func(t *testing.T) {
-	// 		for _, c := range campaigns {
-	// 			if c.NamespaceUserID == 0 {
-	// 				continue
-	// 			}
-	// 			opts := ListCampaignsOpts{NamespaceUserID: c.NamespaceUserID}
-	// 			have, _, err := s.ListCampaigns(ctx, opts)
-	// 			if err != nil {
-	// 				t.Fatal(err)
-	// 			}
+		t.Run("ListCampaigns by NamespaceUserID", func(t *testing.T) {
+			for _, c := range campaigns {
+				if c.NamespaceUserID == 0 {
+					continue
+				}
+				opts := ListCampaignsOpts{NamespaceUserID: c.NamespaceUserID}
+				have, _, err := s.ListCampaigns(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-	// 			for _, haveCampaign := range have {
-	// 				if have, want := haveCampaign.NamespaceUserID, opts.NamespaceUserID; have != want {
-	// 					t.Fatalf("campaign has wrong NamespaceUserID. want=%d, have=%d", want, have)
-	// 				}
-	// 			}
-	// 		}
-	// 	})
+				for _, haveCampaign := range have {
+					if have, want := haveCampaign.NamespaceUserID, opts.NamespaceUserID; have != want {
+						t.Fatalf("campaign has wrong NamespaceUserID. want=%d, have=%d", want, have)
+					}
+				}
+			}
+		})
 
-	// 	t.Run("ListCampaigns by NamespaceOrgID", func(t *testing.T) {
-	// 		for _, c := range campaigns {
-	// 			if c.NamespaceOrgID == 0 {
-	// 				continue
-	// 			}
-	// 			opts := ListCampaignsOpts{NamespaceOrgID: c.NamespaceOrgID}
-	// 			have, _, err := s.ListCampaigns(ctx, opts)
-	// 			if err != nil {
-	// 				t.Fatal(err)
-	// 			}
+		t.Run("ListCampaigns by NamespaceOrgID", func(t *testing.T) {
+			for _, c := range campaigns {
+				if c.NamespaceOrgID == 0 {
+					continue
+				}
+				opts := ListCampaignsOpts{NamespaceOrgID: c.NamespaceOrgID}
+				have, _, err := s.ListCampaigns(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-	// 			for _, haveCampaign := range have {
-	// 				if have, want := haveCampaign.NamespaceOrgID, opts.NamespaceOrgID; have != want {
-	// 					t.Fatalf("campaign has wrong NamespaceOrgID. want=%d, have=%d", want, have)
-	// 				}
-	// 			}
-	// 		}
-	// 	})
-	// })
+				for _, haveCampaign := range have {
+					if have, want := haveCampaign.NamespaceOrgID, opts.NamespaceOrgID; have != want {
+						t.Fatalf("campaign has wrong NamespaceOrgID. want=%d, have=%d", want, have)
+					}
+				}
+			}
+		})
+	})
 
 	t.Run("Update", func(t *testing.T) {
 		for _, c := range campaigns {
@@ -466,89 +470,89 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 	})
 }
 
-// func TestUserDeleteCascades(t *testing.T) {
-// 	if testing.Short() {
-// 		t.Skip()
-// 	}
+func TestUserDeleteCascades(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
 
-// 	dbtesting.SetupGlobalTestDB(t)
+	dbtesting.SetupGlobalTestDB(t)
 
-// 	orgID := insertTestOrg(t, dbconn.Global)
-// 	user := createTestUser(t)
+	orgID := ct.InsertTestOrg(t, dbconn.Global)
+	user := createTestUser(t)
 
-// 	t.Run("user delete", storeTest(dbconn.Global, func(t *testing.T, ctx context.Context, store *Store, rs repos.Store, clock clock) {
-// 		// Set up two campaigns and specs: one in the user's namespace (which
-// 		// should be deleted when the user is hard deleted), and one that is
-// 		// merely created by the user (which should remain).
-// 		ownedSpec := &campaigns.CampaignSpec{
-// 			NamespaceUserID: user.ID,
-// 			UserID:          user.ID,
-// 		}
-// 		if err := store.CreateCampaignSpec(ctx, ownedSpec); err != nil {
-// 			t.Fatal(err)
-// 		}
+	t.Run("user delete", storeTest(dbconn.Global, func(t *testing.T, ctx context.Context, store *Store, rs repos.Store, clock ct.Clock) {
+		// Set up two campaigns and specs: one in the user's namespace (which
+		// should be deleted when the user is hard deleted), and one that is
+		// merely created by the user (which should remain).
+		ownedSpec := &campaigns.CampaignSpec{
+			NamespaceUserID: user.ID,
+			UserID:          user.ID,
+		}
+		if err := store.CreateCampaignSpec(ctx, ownedSpec); err != nil {
+			t.Fatal(err)
+		}
 
-// 		unownedSpec := &campaigns.CampaignSpec{
-// 			NamespaceOrgID: orgID,
-// 			UserID:         user.ID,
-// 		}
-// 		if err := store.CreateCampaignSpec(ctx, unownedSpec); err != nil {
-// 			t.Fatal(err)
-// 		}
+		unownedSpec := &campaigns.CampaignSpec{
+			NamespaceOrgID: orgID,
+			UserID:         user.ID,
+		}
+		if err := store.CreateCampaignSpec(ctx, unownedSpec); err != nil {
+			t.Fatal(err)
+		}
 
-// 		ownedCampaign := &campaigns.Campaign{
-// 			Name:             "owned",
-// 			NamespaceUserID:  user.ID,
-// 			InitialApplierID: user.ID,
-// 			LastApplierID:    user.ID,
-// 			LastAppliedAt:    clock.Now(),
-// 			CampaignSpecID:   ownedSpec.ID,
-// 		}
-// 		if err := store.CreateCampaign(ctx, ownedCampaign); err != nil {
-// 			t.Fatal(err)
-// 		}
+		ownedCampaign := &campaigns.Campaign{
+			Name:             "owned",
+			NamespaceUserID:  user.ID,
+			InitialApplierID: user.ID,
+			LastApplierID:    user.ID,
+			LastAppliedAt:    clock.Now(),
+			CampaignSpecID:   ownedSpec.ID,
+		}
+		if err := store.CreateCampaign(ctx, ownedCampaign); err != nil {
+			t.Fatal(err)
+		}
 
-// 		unownedCampaign := &campaigns.Campaign{
-// 			Name:             "unowned",
-// 			NamespaceOrgID:   orgID,
-// 			InitialApplierID: user.ID,
-// 			LastApplierID:    user.ID,
-// 			LastAppliedAt:    clock.Now(),
-// 			CampaignSpecID:   ownedSpec.ID,
-// 		}
-// 		if err := store.CreateCampaign(ctx, unownedCampaign); err != nil {
-// 			t.Fatal(err)
-// 		}
+		unownedCampaign := &campaigns.Campaign{
+			Name:             "unowned",
+			NamespaceOrgID:   orgID,
+			InitialApplierID: user.ID,
+			LastApplierID:    user.ID,
+			LastAppliedAt:    clock.Now(),
+			CampaignSpecID:   ownedSpec.ID,
+		}
+		if err := store.CreateCampaign(ctx, unownedCampaign); err != nil {
+			t.Fatal(err)
+		}
 
-// 		// Now we'll try actually deleting the user.
-// 		if err := store.Store.Exec(ctx, sqlf.Sprintf(
-// 			"DELETE FROM users WHERE id = %s",
-// 			user.ID,
-// 		)); err != nil {
-// 			t.Fatal(err)
-// 		}
+		// Now we'll try actually deleting the user.
+		if err := store.Store.Exec(ctx, sqlf.Sprintf(
+			"DELETE FROM users WHERE id = %s",
+			user.ID,
+		)); err != nil {
+			t.Fatal(err)
+		}
 
-// 		// We should now have the unowned campaign still be valid, but the
-// 		// owned campaign should have gone away.
-// 		cs, _, err := store.ListCampaigns(ctx, ListCampaignsOpts{})
-// 		if err != nil {
-// 			t.Fatal(err)
-// 		}
-// 		if len(cs) != 1 {
-// 			t.Errorf("unexpected number of campaigns: have %d; want %d", len(cs), 1)
-// 		}
-// 		if cs[0].ID != unownedCampaign.ID {
-// 			t.Errorf("unexpected campaign: %+v", cs[0])
-// 		}
+		// We should now have the unowned campaign still be valid, but the
+		// owned campaign should have gone away.
+		cs, _, err := store.ListCampaigns(ctx, ListCampaignsOpts{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(cs) != 1 {
+			t.Errorf("unexpected number of campaigns: have %d; want %d", len(cs), 1)
+		}
+		if cs[0].ID != unownedCampaign.ID {
+			t.Errorf("unexpected campaign: %+v", cs[0])
+		}
 
-// 		// Both campaign specs should still be in place, at least until we add
-// 		// a foreign key constraint to campaign_specs.namespace_user_id.
-// 		specs, _, err := store.ListCampaignSpecs(ctx, ListCampaignSpecsOpts{})
-// 		if err != nil {
-// 			t.Fatal(err)
-// 		}
-// 		if len(specs) != 2 {
-// 			t.Errorf("unexpected number of campaign specs: have %d; want %d", len(specs), 2)
-// 		}
-// 	}))
-// }
+		// Both campaign specs should still be in place, at least until we add
+		// a foreign key constraint to campaign_specs.namespace_user_id.
+		specs, _, err := store.ListCampaignSpecs(ctx, ListCampaignSpecsOpts{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(specs) != 2 {
+			t.Errorf("unexpected number of campaign specs: have %d; want %d", len(specs), 2)
+		}
+	}))
+}
