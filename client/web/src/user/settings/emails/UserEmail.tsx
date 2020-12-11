@@ -123,9 +123,7 @@ export const UserEmail: FunctionComponent<Props> = ({
             setIsLoading(false)
             eventLogger.log('UserEmailAddressVerificationResent')
 
-            if (onEmailResendVerification) {
-                onEmailResendVerification()
-            }
+            onEmailResendVerification?.()
         } catch (error) {
             handleError(error)
         }
