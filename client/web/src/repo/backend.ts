@@ -186,10 +186,7 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
                             file(path: $filePath) {
                                 isDirectory
                                 richHTML
-                                highlight(
-                                    disableTimeout: $disableTimeout
-                                    isLightTheme: $isLightTheme
-                                ) {
+                                highlight(disableTimeout: $disableTimeout, isLightTheme: $isLightTheme) {
                                     aborted
                                     lineRanges(ranges: $ranges)
                                 }
@@ -213,7 +210,9 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
         ),
     context =>
         makeRepoURI(context) +
-        `?disableTimeout=${String(context.disableTimeout)}&isLightTheme=${String(context.isLightTheme)}&ranges=${String(context.ranges)}`
+        `?disableTimeout=${String(context.disableTimeout)}&isLightTheme=${String(context.isLightTheme)}&ranges=${String(
+            context.ranges
+        )}`
 )
 
 export const fetchFileExternalLinks = memoizeObservable(

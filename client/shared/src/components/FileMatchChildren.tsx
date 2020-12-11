@@ -87,22 +87,19 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     isLightTheme,
                     ranges: optimizeHighlighting
                         ? grouped.map(
-                            (group): IHighlightLineRange => ({
-                                startLine: group.startLine,
-                                endLine: group.endLine,
-                            })
-                        )
-                        : [{startLine: 0, endLine: 2147483647}] // entire file,
+                              (group): IHighlightLineRange => ({
+                                  startLine: group.startLine,
+                                  endLine: group.endLine,
+                              })
+                          )
+                        : [{ startLine: 0, endLine: 2147483647 }], // entire file,
                 },
                 false
             ).pipe(
                 map(lines =>
                     optimizeHighlighting
-                        ? lines[
-                            grouped.findIndex(
-                                group => group.startLine === startLine && group.endLine === endLine
-                            )
-                        ] : lines[0].slice(startLine, endLine)
+                        ? lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
+                        : lines[0].slice(startLine, endLine)
                 )
             ),
         [result, isLightTheme, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting]
