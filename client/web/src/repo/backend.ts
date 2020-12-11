@@ -213,7 +213,7 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
         ),
     context =>
         makeRepoURI(context) +
-        `?disableTimeout=${String(context.disableTimeout)}&isLightTheme=${String(context.isLightTheme)}`
+        `?disableTimeout=${String(context.disableTimeout)}&isLightTheme=${String(context.isLightTheme)}&ranges=${String(context.ranges)}`
 )
 
 export const fetchFileExternalLinks = memoizeObservable(
