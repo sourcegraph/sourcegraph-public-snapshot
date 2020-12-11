@@ -108,12 +108,9 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                 <button
                     type="button"
                     onClick={toggleQueryForm}
-                    className="code-monitor-form__card--button card p-3 my-3 w-100 test-trigger-button"
+                    className="code-monitor-form__card--button card p-3 w-100 test-trigger-button text-left"
                 >
-                    <div
-                        onClick={toggleQueryForm}
-                        className="code-monitor-form__card-link btn btn-link font-weight-bold p-0 text-left"
-                    >
+                    <div className="code-monitor-form__card-link btn-link font-weight-bold p-0">
                         When there are new search results
                     </div>
                     <span className="text-muted">
@@ -127,6 +124,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                     <span className="text-muted">
                         This trigger will fire when new search results are found for a given search query.
                     </span>
+                    <span className="mt-4">Search query</span>
                     <div className="create-monitor-page__query-input">
                         <input
                             type="text"
@@ -142,7 +140,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         />
                         {queryState.kind === 'VALID' && (
                             <Link
-                                to={buildSearchURLQuery(query, SearchPatternType.literal, false)}
+                                to={`/search?${buildSearchURLQuery(query, SearchPatternType.literal, false)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="create-monitor-page__query-input-preview-link test-preview-link"

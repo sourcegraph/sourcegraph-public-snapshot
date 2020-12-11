@@ -72,11 +72,11 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
             {!showEmailNotificationForm && !actionsCompleted && (
                 <button
                     type="button"
-                    className="code-monitor-form__card card p-3 my-3 w-100 test-action-button"
+                    className="code-monitor-form__card--button card p-3 w-100 test-action-button text-left"
                     onClick={toggleEmailNotificationForm}
                     disabled={disabled}
                 >
-                    <div className="code-monitor-form__card-link btn btn-link font-weight-bold p-0 text-left">
+                    <div className="code-monitor-form__card-link btn-link font-weight-bold p-0">
                         Send email notifications
                     </div>
                     <span className="text-muted">Deliver email notifications to specified recipients.</span>
@@ -104,7 +104,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                             title="Enabled"
                             value={emailNotificationEnabled}
                             onToggle={toggleEmailNotificationEnabled}
-                            className="mr-2"
+                            className="mr-2 my-4"
                         />
                         Enabled
                     </div>
@@ -131,7 +131,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                             <span className="text-muted test-existing-action-email">{authenticatedUser.email}</span>
                         </div>
                         <div className="d-flex">
-                            <div className="flex my-4">
+                            <div className="flex">
                                 <Toggle
                                     title="Enabled"
                                     value={emailNotificationEnabled}
