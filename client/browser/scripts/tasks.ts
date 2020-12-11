@@ -61,12 +61,15 @@ function buildSafariExtensionApp(): void {
         'build/',
         '--app-name',
         '"Sourcegraph for Safari"',
+        '--bundle-identifier',
+        '"com.sourcegraph.Sourcegraph-for-Safari"',
+        '--copy-resources',
         '--swift',
         '--force',
         '--no-open',
     ]
 
-    const xcodebuildOptions = ['-project', '"./build/Sourcegraph for Safari/Sourcegraph for Safari.xcodeproj"', 'build']
+    const xcodebuildOptions = ['-quiet', '-project', '"./build/Sourcegraph for Safari/Sourcegraph for Safari.xcodeproj"', 'build']
 
     setSafariBuildVersion(version)
 
@@ -87,7 +90,7 @@ function setSafariBuildVersion(version: string): void {
     }
     shelljs.pushd('./build/Sourcegraph for Safari')
     shelljs.exec(`xcrun agvtool new-version -all "${version}"`)
-    shelljs.exec(`xcrun agvtool new-marketing-version -all "${version}"`)
+    shelljs.exec(`xcrun agvtool new-marketing-version "${version}"`)
     shelljs.popd()
 }
 
