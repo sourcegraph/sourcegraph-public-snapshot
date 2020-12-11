@@ -75,15 +75,6 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         props.settingsCascade.final.experimentalFeatures &&
         props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
 
-    const highlightRanges = optimizeHighlighting
-        ? grouped.map(
-              (group): IHighlightLineRange => ({
-                  startLine: group.startLine,
-                  endLine: group.endLine,
-              })
-          )
-          : [{startLine: 0, endLine: 2147483647}] // entire file
-
     const { result, isLightTheme, fetchHighlightedFileLineRanges } = props
     const fetchHighlightedFileRangeLines = React.useCallback(
         (startLine, endLine) =>
@@ -94,7 +85,14 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     filePath: result.file.path,
                     disableTimeout: false,
                     isLightTheme,
-                    ranges: highlightRanges,
+                    ranges: optimizeHighlighting
+                        ? grouped.map(
+                            (group): IHighlightLineRange => ({
+                                startLine: group.startLine,
+                                endLine: group.endLine,
+                            })
+                        )
+                        : [{startLine: 0, endLine: 2147483647}] // entire file,
                 },
                 false
             ).pipe(
@@ -107,7 +105,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                         ] : lines[0].slice(startLine, endLine)
                 )
             ),
-        [result, isLightTheme, fetchHighlightedFileLineRanges, highlightRanges, grouped, optimizeHighlighting]
+        [result, isLightTheme, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting]
     )
 
     if (NO_SEARCH_HIGHLIGHTING) {
