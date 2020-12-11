@@ -383,7 +383,7 @@ describe('getHoverResult()', () => {
             {
               "contents": [
                 {
-                  "value": "**Search at revision.** Separates a repository pattern and the revisions to search, like commits or branches. The part before the \`@\` specifies the repositories to search, the part after the \`@\` specifies which revisions to search."
+                  "value": "**Search at revision**. Separates a repository pattern and the revisions to search, like commits or branches. The part before the \`@\` specifies the repositories to search, the part after the \`@\` specifies which revisions to search."
                 }
               ],
               "range": {
@@ -463,7 +463,7 @@ describe('getHoverResult()', () => {
             {
               "contents": [
                 {
-                  "value": "**Revision using git reference path**. Search across git objects, like commits or branches, that match this git reference path. Typically used in conjunction with glob patterns, where a pattern like \`*refs/heads/*\` searches across all repository branches at the head commit."
+                  "value": "**Revision using git reference path**. Search the branch name or tag at the head commit. Search across git objects, like commits or branches, that match this git reference path. Typically used in conjunction with glob patterns, where a pattern like \`*refs/heads/*\` searches across all repository branches at the head commit."
                 }
               ],
               "range": {

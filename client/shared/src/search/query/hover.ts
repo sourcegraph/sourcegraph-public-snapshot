@@ -108,11 +108,11 @@ const toRevisionHover = (token: MetaRevision): string => {
         case MetaGitRevision.Wildcard:
             return '**Revision wildcard**. Glob syntax to match zero or more characters in a revision. Typically used to match multiple branches or tags based on a git reference path. For example, `refs/tags/v3.*` matches all tags that start with `v3.`.'
         case MetaSourcegraphRevision.IncludeGlobMarker:
-            return '**Revision glob pattern to include.** A prefixing indicating that a glob pattern follows. Git references matching the glob pattern are included in the search. Typically used where a pattern like `*refs/heads/*` searches across all repository branches at the head commit.'
+            return '**Revision glob pattern to include**. A prefixing indicating that a glob pattern follows. Git references matching the glob pattern are included in the search. Typically used where a pattern like `*refs/heads/*` searches across all repository branches at the head commit.'
         case MetaSourcegraphRevision.ExcludeGlobMarker:
-            return '**Revision glob pattern to exclude.** A prefix indicating that git references, like a commit or branch name, should be **excluded** from search based on the glob pattern that follows. Used in conjunction with a glob pattern that matches a set of commits or branches, followed by a a pattern to exclude from the set. For example, `*refs/heads/*:*!refs/heads/release*` searches all branches at the head commit, excluding branches matching `release*`.'
+            return '**Revision glob pattern to exclude**. A prefix indicating that git references, like a commit or branch name, should be **excluded** from search based on the glob pattern that follows. Used in conjunction with a glob pattern that matches a set of commits or branches, followed by a a pattern to exclude from the set. For example, `*refs/heads/*:*!refs/heads/release*` searches all branches at the head commit, excluding branches matching `release*`.'
         case MetaSourcegraphRevision.Separator:
-            return '**Revision separator.** Separates multiple revisions to search across. For example, `1a35d48:feature:3.15` searches the repository for matches at commit `1a35d48`, or a branch named `feature`, or a tag `3.15`.'
+            return '**Revision separator**. Separates multiple revisions to search across. For example, `1a35d48:feature:3.15` searches the repository for matches at commit `1a35d48`, or a branch named `feature`, or a tag `3.15`.'
     }
 }
 
@@ -127,7 +127,7 @@ const toHover = (token: DecoratedToken): string => {
         case 'metaRevision':
             return toRevisionHover(token)
         case 'metaRepoRevisionSeparator':
-            return '**Search at revision.** Separates a repository pattern and the revisions to search, like commits or branches. The part before the `@` specifies the repositories to search, the part after the `@` specifies which revisions to search.'
+            return '**Search at revision**. Separates a repository pattern and the revisions to search, like commits or branches. The part before the `@` specifies the repositories to search, the part after the `@` specifies which revisions to search.'
     }
     return ''
 }
