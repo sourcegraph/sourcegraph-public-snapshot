@@ -103,7 +103,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
                     showSavedQueryModal={false}
                     deployType={window.context.deployType}
                     showSavedQueryButton={false}
-                    didSave={false}
                 />
             ) : (
                 <Redirect to="/search" />

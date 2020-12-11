@@ -23,6 +23,7 @@ import {
 } from '../../../../../shared/src/util/searchTestHelpers'
 import { VirtualList } from '../../../../../shared/src/components/VirtualList'
 import { SearchResult } from '../../../components/SearchResult'
+import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
 
 describe('StreamingSearchResults', () => {
     const history = createBrowserHistory()
@@ -489,5 +490,50 @@ describe('StreamingSearchResults', () => {
         sinon.assert.calledWith(logSpy, 'SearchResultClicked')
 
         element.unmount()
+    })
+
+    it('should not show saved search modal on first load', () => {
+        const element = mount(
+            <BrowserRouter>
+                <StreamingSearchResults {...defaultProps} />
+            </BrowserRouter>
+        )
+
+        const modal = element.find(SavedSearchModal)
+        expect(modal.length).toBe(0)
+    })
+
+    it('should open saved search modal when triggering event from infobar', () => {
+        const element = mount(
+            <BrowserRouter>
+                <StreamingSearchResults {...defaultProps} />
+            </BrowserRouter>
+        )
+
+        const infobar = element.find(SearchResultsInfoBar)
+        act(() => infobar.prop('onSaveQueryClick')())
+        element.update()
+
+        const modal = element.find(SavedSearchModal)
+        expect(modal.length).toBe(1)
+    })
+
+    it('should close saved search modal if close event triggers', () => {
+        const element = mount(
+            <BrowserRouter>
+                <StreamingSearchResults {...defaultProps} />
+            </BrowserRouter>
+        )
+
+        const infobar = element.find(SearchResultsInfoBar)
+        act(() => infobar.prop('onSaveQueryClick')())
+        element.update()
+
+        let modal = element.find(SavedSearchModal)
+        act(() => modal.prop('onDidCancel')())
+        element.update()
+
+        modal = element.find(SavedSearchModal)
+        expect(modal.length).toBe(0)
     })
 })
