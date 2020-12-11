@@ -75,7 +75,7 @@ func newSubscribedSiteConfig(config schema.SiteConfiguration) *subscribedSiteCon
 
 type siteConfigDiff struct {
 	Type   string
-	Change Change
+	change Change
 }
 
 // Diff returns a set of changes to apply.
@@ -83,15 +83,15 @@ func (c *subscribedSiteConfig) Diff(other *subscribedSiteConfig) []siteConfigDif
 	var changes []siteConfigDiff
 
 	if !bytes.Equal(c.alertsSum[:], other.alertsSum[:]) || c.ExternalURL != other.ExternalURL {
-		changes = append(changes, siteConfigDiff{Type: "alerts", Change: changeReceivers})
+		changes = append(changes, siteConfigDiff{Type: "alerts", change: changeReceivers})
 	}
 
 	if !bytes.Equal(c.emailSum[:], other.emailSum[:]) {
-		changes = append(changes, siteConfigDiff{Type: "email", Change: changeSMTP})
+		changes = append(changes, siteConfigDiff{Type: "email", change: changeSMTP})
 	}
 
 	if !bytes.Equal(c.silencedAlertsSum[:], other.silencedAlertsSum[:]) {
-		changes = append(changes, siteConfigDiff{Type: "silenced-alerts", Change: changeSilences})
+		changes = append(changes, siteConfigDiff{Type: "silenced-alerts", change: changeSilences})
 	}
 
 	return changes
@@ -220,7 +220,7 @@ func (c *SiteConfigSubscriber) execDiffs(ctx context.Context, newConfig *subscri
 	}
 	for _, diff := range diffs {
 		c.log.Info(fmt.Sprintf("applying changes for %q diff", diff.Type))
-		result := diff.Change(ctx, c.log.New("change", diff.Type), changeContext, newConfig)
+		result := diff.change(ctx, c.log.New("change", diff.Type), changeContext, newConfig)
 		c.problems = append(c.problems, result.Problems...)
 	}
 
