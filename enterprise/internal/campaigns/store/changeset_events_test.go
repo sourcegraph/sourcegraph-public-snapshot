@@ -8,8 +8,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 
-	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
+	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
 func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock ct.Clock) {

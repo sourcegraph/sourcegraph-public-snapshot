@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
+	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
