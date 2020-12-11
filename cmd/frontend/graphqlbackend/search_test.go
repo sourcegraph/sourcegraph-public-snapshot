@@ -303,15 +303,15 @@ func TestDefaultRepositories(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
 
-			var drs []*types.RepoName
+			var drs []*types.Repo
 			for i, name := range tc.defaultsInDb {
-				r := &types.RepoName{
+				r := &types.Repo{
 					ID:   api.RepoID(i),
 					Name: api.RepoName(name),
 				}
 				drs = append(drs, r)
 			}
-			getRawDefaultRepos := func(ctx context.Context) ([]*types.RepoName, error) {
+			getRawDefaultRepos := func(ctx context.Context) ([]*types.Repo, error) {
 				return drs, nil
 			}
 
@@ -635,13 +635,13 @@ func TestVersionContext(t *testing.T) {
 				userSettings:   &schema.Settings{},
 			}
 
-			db.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts db.ReposListOptions) ([]*types.RepoName, error) {
+			db.Mocks.Repos.List = func(ctx context.Context, opts db.ReposListOptions) ([]*types.Repo, error) {
 				if diff := cmp.Diff(tc.wantReposListOptionsNames, opts.Names, cmpopts.EquateEmpty()); diff != "" {
 					t.Fatalf("db.RepostListOptions.Names mismatch (-want, +got):\n%s", diff)
 				}
-				var repos []*types.RepoName
+				var repos []*types.Repo
 				for _, name := range tc.reposGetListNames {
-					repos = append(repos, &types.RepoName{Name: api.RepoName(name)})
+					repos = append(repos, &types.Repo{Name: api.RepoName(name)})
 				}
 				return repos, nil
 			}
@@ -803,8 +803,8 @@ func TestRevisionValidation(t *testing.T) {
 	}
 	defer func() { git.Mocks.ResolveRevision = nil }()
 
-	db.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts db.ReposListOptions) ([]*types.RepoName, error) {
-		return []*types.RepoName{{Name: "repoFoo"}}, nil
+	db.Mocks.Repos.List = func(ctx context.Context, opts db.ReposListOptions) ([]*types.Repo, error) {
+		return []*types.Repo{{Name: "repoFoo"}}, nil
 	}
 	defer func() { db.Mocks.Repos.List = nil }()
 
@@ -817,7 +817,7 @@ func TestRevisionValidation(t *testing.T) {
 		{
 			repoFilters: []string{"repoFoo@revBar:^revBas"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: &types.RepoName{Name: "repoFoo"},
+				Repo: &types.Repo{Name: "repoFoo"},
 				Revs: []search.RevisionSpecifier{
 					{
 						RevSpec:        "revBar",
@@ -836,7 +836,7 @@ func TestRevisionValidation(t *testing.T) {
 		{
 			repoFilters: []string{"repoFoo@*revBar:*!revBas"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: &types.RepoName{Name: "repoFoo"},
+				Repo: &types.Repo{Name: "repoFoo"},
 				Revs: []search.RevisionSpecifier{
 					{
 						RevSpec:        "",
@@ -855,7 +855,7 @@ func TestRevisionValidation(t *testing.T) {
 		{
 			repoFilters: []string{"repoFoo@revBar:^revQux"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: &types.RepoName{Name: "repoFoo"},
+				Repo: &types.Repo{Name: "repoFoo"},
 				Revs: []search.RevisionSpecifier{
 					{
 						RevSpec:        "revBar",
@@ -866,7 +866,7 @@ func TestRevisionValidation(t *testing.T) {
 				ListRefs: nil,
 			}},
 			wantMissingRepoRevisions: []*search.RepositoryRevisions{{
-				Repo: &types.RepoName{Name: "repoFoo"},
+				Repo: &types.Repo{Name: "repoFoo"},
 				Revs: []search.RevisionSpecifier{
 					{
 						RevSpec:        "^revQux",
@@ -897,7 +897,7 @@ func TestRevisionValidation(t *testing.T) {
 		{
 			repoFilters: []string{"repoFoo"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: &types.RepoName{Name: "repoFoo"},
+				Repo: &types.Repo{Name: "repoFoo"},
 				Revs: []search.RevisionSpecifier{
 					{
 						RevSpec:        "",
@@ -974,7 +974,7 @@ func TestRepoGroupValuesToRegexp(t *testing.T) {
 
 func repoRev(revSpec string) *search.RepositoryRevisions {
 	return &search.RepositoryRevisions{
-		Repo: &types.RepoName{ID: api.RepoID(0), Name: "test/repo"},
+		Repo: &types.Repo{ID: api.RepoID(0), Name: "test/repo"},
 		Revs: []search.RevisionSpecifier{
 			{RevSpec: revSpec},
 		},

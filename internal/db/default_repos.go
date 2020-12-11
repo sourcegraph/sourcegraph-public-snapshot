@@ -16,22 +16,22 @@ import (
 const defaultReposMaxAge = time.Minute
 
 type cachedRepos struct {
-	repos   []*types.RepoName
+	repos   []*types.Repo
 	fetched time.Time
 }
 
-func (c *cachedRepos) Repos() []*types.RepoName {
+func (c *cachedRepos) Repos() []*types.Repo {
 	if c == nil || time.Since(c.fetched) > defaultReposMaxAge {
 		return nil
 	}
-	return append([]*types.RepoName{}, c.repos...)
+	return append([]*types.Repo{}, c.repos...)
 }
 
 type defaultRepos struct {
 	cache atomic.Value
 }
 
-func (s *defaultRepos) List(ctx context.Context) (results []*types.RepoName, err error) {
+func (s *defaultRepos) List(ctx context.Context) (results []*types.Repo, err error) {
 	cached, _ := s.cache.Load().(*cachedRepos)
 	if repos := cached.Repos(); repos != nil {
 		return repos, nil
@@ -70,9 +70,9 @@ UNION
 		return nil, errors.Wrap(err, "querying default_repos table")
 	}
 	defer rows.Close()
-	var repos []*types.RepoName
+	var repos []*types.Repo
 	for rows.Next() {
-		var r types.RepoName
+		var r types.Repo
 		if err := rows.Scan(&r.ID, &r.Name); err != nil {
 			return nil, errors.Wrap(err, "scanning row from default_repos table")
 		}
@@ -84,7 +84,7 @@ UNION
 
 	s.cache.Store(&cachedRepos{
 		// Copy since repos will be mutated by the caller
-		repos:   append([]*types.RepoName{}, repos...),
+		repos:   append([]*types.Repo{}, repos...),
 		fetched: time.Now(),
 	})
 
