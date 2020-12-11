@@ -69,7 +69,12 @@ function buildSafariExtensionApp(): void {
         '--no-open',
     ]
 
-    const xcodebuildOptions = ['-quiet', '-project', '"./build/Sourcegraph for Safari/Sourcegraph for Safari.xcodeproj"', 'build']
+    const xcodebuildOptions = [
+        '-quiet',
+        '-project',
+        '"./build/Sourcegraph for Safari/Sourcegraph for Safari.xcodeproj"',
+        'build',
+    ]
 
     setSafariBuildVersion(version)
 
@@ -186,6 +191,9 @@ function writeManifest(environment: BuildEnvironment, browser: Browser, writeDir
     if (browser === 'safari') {
         // If any modifications need to be done to the manifest for Safari, they
         // can be done here.
+        if (manifest.description!.length > 120) {
+            throw new Error('Manifest description field cannot be longer than 120 characters. (Safari)')
+        }
     }
 
     if (shouldBuildWithInlineExtensions(browser)) {
