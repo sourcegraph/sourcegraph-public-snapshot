@@ -12,6 +12,11 @@ import (
 // returned directly as an error value if needed.
 type UnsupportedRepoSet map[*graphql.Repository]struct{}
 
+func (e UnsupportedRepoSet) includes(r *graphql.Repository) bool {
+	_, ok := e[r]
+	return ok
+}
+
 func (e UnsupportedRepoSet) Error() string {
 	repos := []string{}
 	typeSet := map[string]struct{}{}

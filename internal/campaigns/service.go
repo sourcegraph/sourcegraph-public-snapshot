@@ -391,12 +391,12 @@ func (svc *Service) ResolveRepositories(ctx context.Context, spec *CampaignSpec)
 
 			if other, ok := seen[repo.ID]; !ok {
 				seen[repo.ID] = repo
+
 				switch st := strings.ToLower(repo.ExternalRepository.ServiceType); st {
 				case "github", "gitlab", "bitbucketserver":
 				default:
-					unsupported.appendRepo(repo)
 					if !svc.allowUnsupported {
-						continue
+						unsupported.appendRepo(repo)
 					}
 				}
 			} else {
@@ -410,10 +410,12 @@ func (svc *Service) ResolveRepositories(ctx context.Context, spec *CampaignSpec)
 
 	final := make([]*graphql.Repository, 0, len(seen))
 	for _, repo := range seen {
-		final = append(final, repo)
+		if !unsupported.includes(repo) {
+			final = append(final, repo)
+		}
 	}
 
-	if unsupported.hasUnsupported() && !svc.allowUnsupported {
+	if unsupported.hasUnsupported() {
 		return final, unsupported
 	}
 

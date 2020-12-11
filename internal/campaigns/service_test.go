@@ -30,17 +30,8 @@ func TestSetDefaultQueryCount(t *testing.T) {
 }
 
 func TestResolveRepositorySearch(t *testing.T) {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/.api/graphql", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(testResolveRepositorySearchResult))
-	})
-
-	ts := httptest.NewServer(mux)
-	defer ts.Close()
-
-	var clientBuffer bytes.Buffer
-	client := api.NewClient(api.ClientOpts{Endpoint: ts.URL, Out: &clientBuffer})
+	client, done := mockGraphQLClient(testResolveRepositorySearchResult)
+	defer done()
 
 	svc := &Service{client: client}
 
@@ -112,6 +103,104 @@ const testResolveRepositorySearchResult = `{
               "externalRepository": { "serviceType": "github" },
               "defaultBranch": { "name": "refs/heads/main", "target": { "oid": "e612c34f2e27005928ff3dfdd8e5ead5a0cb1526" } }
             }
+          }
+        ]
+      }
+    }
+  }
+}
+`
+
+func mockGraphQLClient(response string) (client api.Client, done func()) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/.api/graphql", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(response))
+	})
+
+	ts := httptest.NewServer(mux)
+
+	var clientBuffer bytes.Buffer
+	client = api.NewClient(api.ClientOpts{Endpoint: ts.URL, Out: &clientBuffer})
+
+	return client, ts.Close
+}
+
+func TestResolveRepositories_Unsupported(t *testing.T) {
+	client, done := mockGraphQLClient(testResolveRepositoriesUnsupported)
+	defer done()
+
+	spec := &CampaignSpec{
+		On: []OnQueryOrRepository{
+			{RepositoriesMatchingQuery: "testquery"},
+		},
+	}
+
+	t.Run("allowUnsupported:true", func(t *testing.T) {
+		svc := &Service{client: client, allowUnsupported: true}
+
+		repos, err := svc.ResolveRepositories(context.Background(), spec)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+		if len(repos) != 4 {
+			t.Fatalf("wrong number of repos. want=%d, have=%d", 4, len(repos))
+		}
+	})
+
+	t.Run("allowUnsupported:false", func(t *testing.T) {
+		svc := &Service{client: client, allowUnsupported: false}
+
+		repos, err := svc.ResolveRepositories(context.Background(), spec)
+		repoSet, ok := err.(UnsupportedRepoSet)
+		if !ok {
+			t.Fatalf("err is not UnsupportedRepoSet")
+		}
+		if len(repoSet) != 1 {
+			t.Fatalf("wrong number of repos. want=%d, have=%d", 1, len(repoSet))
+		}
+		if len(repos) != 3 {
+			t.Fatalf("wrong number of repos. want=%d, have=%d", 4, len(repos))
+		}
+	})
+}
+
+const testResolveRepositoriesUnsupported = `{
+  "data": {
+    "search": {
+      "results": {
+        "results": [
+          {
+            "__typename": "Repository",
+            "id": "UmVwb3NpdG9yeToxMw==",
+            "name": "bitbucket.sgdev.org/SOUR/automation-testing",
+            "url": "/bitbucket.sgdev.org/SOUR/automation-testing",
+            "externalRepository": { "serviceType": "bitbucketserver" },
+            "defaultBranch": { "name": "refs/heads/master", "target": { "oid": "b978d56de5578a935ca0bf07b56528acc99d5a61" } }
+          },
+          {
+            "__typename": "Repository",
+            "id": "UmVwb3NpdG9yeTo0",
+            "name": "github.com/sourcegraph/automation-testing",
+            "url": "/github.com/sourcegraph/automation-testing",
+            "externalRepository": { "serviceType": "github" },
+            "defaultBranch": { "name": "refs/heads/master", "target": { "oid": "6ac8a32ecaf6c4dc5ce050b9af51bce3db8efd63" } }
+          },
+          {
+            "__typename": "Repository",
+            "id": "UmVwb3NpdG9yeTo2MQ==",
+            "name": "gitlab.sgdev.org/sourcegraph/automation-testing",
+            "url": "/gitlab.sgdev.org/sourcegraph/automation-testing",
+            "externalRepository": { "serviceType": "gitlab" },
+            "defaultBranch": { "name": "refs/heads/master", "target": { "oid": "3b79a5d479d2af9cfe91e0aad4e9dddca7278150" } }
+          },
+		  {
+            "__typename": "Repository",
+            "id": "UmVwb3NpdG9yeToxNDg=",
+            "name": "git-codecommit.us-est-1.amazonaws.com/stripe-go",
+            "url": "/git-codecommit.us-est-1.amazonaws.com/stripe-go",
+            "externalRepository": { "serviceType": "awscodecommit" },
+            "defaultBranch": { "name": "refs/heads/master", "target": { "oid": "3b79a5d479d2af9cfe91e0aad4e9dddca7278150" } }
           }
         ]
       }
