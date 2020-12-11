@@ -73,8 +73,8 @@ func TestSearchSuggestions(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		var calledReposListNamesAll, calledReposListFoo bool
-		db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+		var calledReposListAll, calledReposListFoo bool
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 
 			// Validate that the following options are invariant
 			// when calling the DB through Repos.List, no matter how
@@ -84,12 +84,13 @@ func TestSearchSuggestions(t *testing.T) {
 			if reflect.DeepEqual(op.IncludePatterns, []string{"foo"}) {
 				// when treating term as repo: field
 				calledReposListFoo = true
-				return []*types.RepoName{{Name: "foo-repo"}}, nil
+				return []*types.Repo{{Name: "foo-repo"}}, nil
 			} else {
 				// when treating term as text query
-				calledReposListNamesAll = true
-				return []*types.RepoName{{Name: "bar-repo"}}, nil
+				calledReposListAll = true
+				return []*types.Repo{{Name: "bar-repo"}}, nil
 			}
+			return nil, nil
 		}
 		db.Mocks.Repos.Count = mockCount
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
@@ -115,8 +116,8 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockSearchFilesInRepos = nil }()
 		for _, v := range searchVersions {
 			testSuggestions(t, "foo", v, []string{"repo:foo-repo", "file:dir/file"})
-			if !calledReposListNamesAll {
-				t.Error("!calledReposListNamesAll")
+			if !calledReposListAll {
+				t.Error("!calledReposListAll")
 			}
 			if !calledReposListFoo {
 				t.Error("!calledReposListFoo")
@@ -134,21 +135,21 @@ func TestSearchSuggestions(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		var calledReposListRepoNamesInGroup, calledReposListFooRepo3 bool
-		db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+		var calledReposListReposInGroup, calledReposListFooRepo3 bool
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			wantReposInGroup := db.ReposListOptions{IncludePatterns: []string{`^foo-repo1$|^repo3$`}, LimitOffset: limitOffset}    // when treating term as repo: field
 			wantFooRepo3 := db.ReposListOptions{IncludePatterns: []string{"foo", `^foo-repo1$|^repo3$`}, LimitOffset: limitOffset} // when treating term as repo: field
 			if reflect.DeepEqual(op, wantReposInGroup) {
-				calledReposListRepoNamesInGroup = true
-				return []*types.RepoName{
+				calledReposListReposInGroup = true
+				return []*types.Repo{
 					{Name: "foo-repo1"},
 					{Name: "repo3"},
 				}, nil
 			} else if reflect.DeepEqual(op, wantFooRepo3) {
 				calledReposListFooRepo3 = true
-				return []*types.RepoName{{Name: "foo-repo1"}}, nil
+				return []*types.Repo{{Name: "foo-repo1"}}, nil
 			}
 			t.Errorf("got %+v, want %+v or %+v", op, wantReposInGroup, wantFooRepo3)
 			return nil, nil
@@ -195,8 +196,8 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockResolveRepoGroups = nil }()
 		for _, v := range searchVersions {
 			testSuggestions(t, "repogroup:baz foo", v, []string{"repo:foo-repo1", "file:dir/foo-repo3-file-name-match", "file:dir/foo-repo1-file-name-match", "file:dir/file-content-match"})
-			if !calledReposListRepoNamesInGroup {
-				t.Error("!calledReposListRepoNamesInGroup")
+			if !calledReposListReposInGroup {
+				t.Error("!calledReposListReposInGroup")
 			}
 			if !calledReposListFooRepo3 {
 				t.Error("!calledReposListFooRepo3")
@@ -217,11 +218,11 @@ func TestSearchSuggestions(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		calledReposListRepoNames := false
-		db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+		calledReposList := false
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			calledReposListRepoNames = true
+			calledReposList = true
 
 			// Validate that the following options are invariant
 			// when calling the DB through Repos.List, no matter how
@@ -229,10 +230,10 @@ func TestSearchSuggestions(t *testing.T) {
 			assertEqual(t, op.LimitOffset, limitOffset)
 			assertEqual(t, op.IncludePatterns, []string{"foo"})
 
-			return []*types.RepoName{{Name: "foo-repo"}}, nil
+			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
 		db.Mocks.Repos.Count = mockCount
-		defer func() { db.Mocks.Repos.ListRepoNames = nil }()
+		defer func() { db.Mocks.Repos.List = nil }()
 
 		// Mock to bypass language suggestions.
 		mockShowLangSuggestions = func() ([]*searchSuggestionResolver, error) { return nil, nil }
@@ -258,8 +259,8 @@ func TestSearchSuggestions(t *testing.T) {
 
 		for _, v := range searchVersions {
 			testSuggestions(t, "repo:foo", v, []string{"repo:foo-repo", "file:dir/file"})
-			if !calledReposListRepoNames {
-				t.Error("!calledReposListRepoNames")
+			if !calledReposList {
+				t.Error("!calledReposList")
 			}
 			if !calledSearchFilesInRepos.Load() {
 				t.Error("!calledSearchFilesInRepos")
@@ -278,26 +279,13 @@ func TestSearchSuggestions(t *testing.T) {
 					Limit: 1,
 				},
 			}
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Error(diff)
+			if !reflect.DeepEqual(have, want) {
+				t.Error(cmp.Diff(have, want))
 			}
 			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
-		db.Mocks.Repos.ListRepoNames = func(_ context.Context, have db.ReposListOptions) ([]*types.RepoName, error) {
-			want := db.ReposListOptions{
-				IncludePatterns: []string{"foo"},
-				LimitOffset: &db.LimitOffset{
-					Limit: 1,
-				},
-			}
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Error(diff)
-			}
-			return []*types.RepoName{{Name: "foo-repo"}}, nil
-		}
 		db.Mocks.Repos.Count = mockCount
 		defer func() { db.Mocks.Repos.List = nil }()
-		defer func() { db.Mocks.Repos.ListRepoNames = nil }()
 		git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 			return api.CommitID("deadbeef"), nil
 		}
@@ -338,11 +326,11 @@ func TestSearchSuggestions(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		calledReposListRepoNames := false
-		db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+		calledReposList := false
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			calledReposListRepoNames = true
+			calledReposList = true
 
 			// Validate that the following options are invariant
 			// when calling the DB through Repos.List, no matter how
@@ -350,10 +338,10 @@ func TestSearchSuggestions(t *testing.T) {
 			assertEqual(t, op.LimitOffset, limitOffset)
 			assertEqual(t, op.IncludePatterns, []string{"foo"})
 
-			return []*types.RepoName{{Name: "foo-repo"}}, nil
+			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
 		db.Mocks.Repos.Count = mockCount
-		defer func() { db.Mocks.Repos.ListRepoNames = nil }()
+		defer func() { db.Mocks.Repos.List = nil }()
 
 		// Mock to bypass language suggestions.
 		mockShowLangSuggestions = func() ([]*searchSuggestionResolver, error) { return nil, nil }
@@ -379,8 +367,8 @@ func TestSearchSuggestions(t *testing.T) {
 
 		for _, v := range searchVersions {
 			testSuggestions(t, "repo:foo file:bar", v, []string{"file:dir/bar-file"})
-			if !calledReposListRepoNames {
-				t.Error("!calledReposListRepoNames")
+			if !calledReposList {
+				t.Error("!calledReposList")
 			}
 			if !calledSearchFilesInRepos.Load() {
 				t.Error("!calledSearchFilesInRepos")

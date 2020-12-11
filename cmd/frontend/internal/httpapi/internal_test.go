@@ -150,10 +150,10 @@ type mockRepos struct {
 	repos        []string
 }
 
-func (r *mockRepos) ListDefault(context.Context) ([]*types.RepoName, error) {
-	var repos []*types.RepoName
+func (r *mockRepos) ListDefault(context.Context) ([]*types.Repo, error) {
+	var repos []*types.Repo
 	for _, name := range r.defaultRepos {
-		repos = append(repos, &types.RepoName{
+		repos = append(repos, &types.Repo{
 			Name: api.RepoName(name),
 		})
 	}
