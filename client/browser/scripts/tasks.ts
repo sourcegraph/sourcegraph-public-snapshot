@@ -173,8 +173,8 @@ function writeManifest(environment: BuildEnvironment, browser: Browser, writeDir
     if (browser === 'safari') {
         // If any modifications need to be done to the manifest for Safari, they
         // can be done here.
-        if (manifest.description!.length > 120) {
-            throw new Error('Manifest description field cannot be longer than 120 characters. (Safari)')
+        if (manifest.description!.length > 112) {
+            throw new Error('Manifest description field cannot be longer than 112 characters. (Safari)')
         }
     }
 
