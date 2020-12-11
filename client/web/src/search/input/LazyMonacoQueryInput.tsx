@@ -17,8 +17,7 @@ export const PlainQueryInput: React.FunctionComponent<MonacoQueryInputProps> = (
 }) => {
     const onInputChange = React.useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
-            // cursorPosition is only used for legacy suggestions, it's OK to set it to 0 here.
-            onChange({ query: event.target.value, cursorPosition: 0 })
+            onChange({ query: event.target.value })
         },
         [onChange]
     )

@@ -1,7 +1,7 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
-import { escapeRegExp, uniqueId } from 'lodash'
+import { escapeRegExp } from 'lodash'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { NEVER, ObservableInput, of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
@@ -23,8 +23,6 @@ import {
     searchQueryForRepoRevision,
     PatternTypeProps,
     CaseSensitivityProps,
-    InteractiveSearchProps,
-    repoFilterForRepoRevision,
     CopyQueryButtonProps,
     quoteIfNeeded,
 } from '../search'
@@ -40,7 +38,6 @@ import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 import { ErrorMessage } from '../components/alerts'
 import { QueryState } from '../search/helpers'
-import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
 import * as H from 'history'
 import { VersionContextProps } from '../../../shared/src/search/util'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
@@ -110,7 +107,6 @@ interface RepoContainerProps
         ExtensionAlertProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
         BreadcrumbSetters,
@@ -262,48 +258,16 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     }, [props.extensionsController.services.workspace.roots, repoName, resolvedRevisionOrError, revision])
 
     // Update the navbar query to reflect the current repo / revision
-    const { splitSearchModes, interactiveSearchMode, globbing, onFiltersInQueryChange, onNavbarQueryChange } = props
+    const { globbing, onNavbarQueryChange } = props
     useEffect(() => {
-        if (splitSearchModes && interactiveSearchMode) {
-            const filters: FiltersToTypeAndValue = {
-                [uniqueId('repo')]: {
-                    type: FilterType.repo,
-                    value: repoFilterForRepoRevision(repoName, globbing, revision),
-                    editable: false,
-                },
-            }
-            if (filePath) {
-                filters[uniqueId('file')] = {
-                    type: FilterType.file,
-                    value: globbing ? filePath : `^${escapeRegExp(filePath)}`,
-                    editable: false,
-                }
-            }
-            onFiltersInQueryChange(filters)
-            onNavbarQueryChange({
-                query: '',
-                cursorPosition: 0,
-            })
-        } else {
-            let query = searchQueryForRepoRevision(repoName, globbing, revision)
-            if (filePath) {
-                query = `${query.trimEnd()} file:${quoteIfNeeded(globbing ? filePath : '^' + escapeRegExp(filePath))}`
-            }
-            onNavbarQueryChange({
-                query,
-                cursorPosition: query.length,
-            })
+        let query = searchQueryForRepoRevision(repoName, globbing, revision)
+        if (filePath) {
+            query = `${query.trimEnd()} file:${quoteIfNeeded(globbing ? filePath : '^' + escapeRegExp(filePath))}`
         }
-    }, [
-        revision,
-        filePath,
-        repoName,
-        onFiltersInQueryChange,
-        onNavbarQueryChange,
-        splitSearchModes,
-        globbing,
-        interactiveSearchMode,
-    ])
+        onNavbarQueryChange({
+            query,
+        })
+    }, [revision, filePath, repoName, onNavbarQueryChange, globbing])
 
     const isBrowserExtensionInstalled = useObservable(browserExtensionInstalled)
     const codeHostIntegrationMessaging =

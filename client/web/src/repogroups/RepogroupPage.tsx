@@ -10,7 +10,6 @@ import { ActivationProps } from '../../../shared/src/components/activation/Activ
 import {
     PatternTypeProps,
     CaseSensitivityProps,
-    InteractiveSearchProps,
     CopyQueryButtonProps,
     OnboardingTourProps,
     ShowQueryBuilderProps,
@@ -44,7 +43,6 @@ export interface RepogroupPageProps
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
-        InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
         OnboardingTourProps,

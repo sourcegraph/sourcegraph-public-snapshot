@@ -1,20 +1,15 @@
 import * as H from 'history'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { buildSearchURLQuery, generateFiltersQuery } from '../../../shared/src/util/url'
+import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
-import { SearchFilterSuggestions } from './searchFilterSuggestions'
-import { Suggestion, FilterSuggestionTypes, isolatedFuzzySearchFilters, filterAliases } from './input/Suggestion'
-import { FilterType } from '../../../shared/src/search/interactive/util'
-import { NonFilterSuggestionType } from '../../../shared/src/search/suggestions/util'
-import { isolatedFuzzySearchFiltersFilterType } from './input/interactive/filters'
-import { InteractiveSearchProps, CaseSensitivityProps, PatternTypeProps } from '.'
+import { FilterType } from '../../../shared/src/search/query/util'
+import { CaseSensitivityProps, PatternTypeProps } from '.'
 import { VersionContextProps } from '../../../shared/src/search/util'
 
 export interface SubmitSearchParameters
     extends Partial<Pick<ActivationProps, 'activation'>>,
-        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         VersionContextProps {
@@ -35,18 +30,10 @@ export function submitSearch({
     caseSensitive,
     versionContext,
     activation,
-    filtersInQuery,
     source,
     searchParameters,
 }: SubmitSearchParameters): void {
-    let searchQueryParameter = buildSearchURLQuery(
-        query,
-        patternType,
-        caseSensitive,
-        versionContext,
-        filtersInQuery,
-        searchParameters
-    )
+    let searchQueryParameter = buildSearchURLQuery(query, patternType, caseSensitive, versionContext, searchParameters)
 
     // Check if `trace` is set in the query parameters, and retain it if present.
     const existingParameters = new URLSearchParams(history.location.search)
@@ -60,7 +47,7 @@ export function submitSearch({
     // Go to search results page
     const path = '/search?' + searchQueryParameter
     eventLogger.log('SearchSubmitted', {
-        query: [query, generateFiltersQuery(filtersInQuery || {})].filter(query => query.length > 0).join(' '),
+        query,
         source,
     })
     history.push(path, { ...history.location.state, query })
@@ -164,94 +151,6 @@ export function toggleSearchType(query: string, searchType: SearchType): string 
 export const isSearchResults = (value: any): value is GQL.ISearchResults =>
     value && typeof value === 'object' && value.__typename === 'SearchResults'
 
-const isValidFilter = (filter: string = ''): filter is FilterSuggestionTypes =>
-    Object.prototype.hasOwnProperty.call(FilterType, filter) ||
-    Object.prototype.hasOwnProperty.call(filterAliases, filter)
-
-/**
- * Split string, into first and last part, at the character position.
- * E.g: ('query', 3) => { firstPart: 'que', lastPart: 'ry' }
- */
-const splitStringAtPosition = (value: string, position: number): { firstPart: string; lastPart: string } => ({
-    firstPart: value.slice(0, Math.max(0, position)),
-    lastPart: value.slice(Math.max(0, position)),
-})
-
-interface FilterAndValueMatch {
-    /** The filter/value position on the query string */
-    filterIndex: RegExpMatchArray['index']
-    /** Filter match without any formatting */
-    matchedFilter: string
-    /** Filter and value match, with format "filterType:value" */
-    filterAndValue: string
-    /** Only the value match after ':', "archived:Yes" => "Yes" */
-    value: string
-}
-
-interface ValidFilterAndValueMatch extends FilterAndValueMatch {
-    resolvedFilterType: FilterSuggestionTypes
-}
-
-/**
- * Tries to resolve the given string into a valid filter type.
- */
-export const resolveFilterType = (filter: string = ''): FilterSuggestionTypes | null => {
-    const absoluteFilter = filter.replace(/^-/, '')
-    return filterAliases[absoluteFilter] ?? (isValidFilter(absoluteFilter) ? absoluteFilter : null)
-}
-
-/**
- * If a filter value is being typed, try to get its filter and value.
- * E.g: ("|" is the cursor): "lang:go repo:test|" => "repo:test"
- */
-const getFilterAndValueBeforeCursor = (queryState: QueryState): FilterAndValueMatch => {
-    const { firstPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
-    // get string before ":" char until a space is found or start of string
-    const match = firstPart.match(/([^\s:]+)?(:(\S?)+)?$/) || []
-    const [filterAndValue, matchedFilter] = match
-    const value = filterAndValue?.split(':')[1]?.trim() ?? ''
-    return {
-        value,
-        matchedFilter,
-        filterIndex: match.index,
-        filterAndValue: filterAndValue.trim(),
-    }
-}
-
-/**
- * Verifies that the matched filter is a valid Suggestion type, otherwise returns null.
- */
-export const validFilterAndValueBeforeCursor = (queryState: QueryState): ValidFilterAndValueMatch | null => {
-    const filterAndValueBeforeCursor = getFilterAndValueBeforeCursor(queryState)
-    const resolvedFilterType = resolveFilterType(filterAndValueBeforeCursor.matchedFilter)
-    return resolvedFilterType ? { ...filterAndValueBeforeCursor, resolvedFilterType } : null
-}
-
-/**
- * Returns suggestions for a given search query but only at the last typed word.
- * If the word does not contain ":" then it returns filter types as suggestions
- * If the word contains ":" then it returns suggestions for the typed filter.
- * For query "case:| archived:" where "|" is the cursor position, it
- * returns suggestions (filter values) for the "case" filter.
- */
-export const filterStaticSuggestions = (queryState: QueryState, suggestions: SearchFilterSuggestions): Suggestion[] => {
-    const { matchedFilter, value, filterAndValue } = getFilterAndValueBeforeCursor(queryState)
-    const resolvedFilterType = resolveFilterType(matchedFilter)
-
-    if (
-        // suggest values for selected filter
-        resolvedFilterType &&
-        resolvedFilterType !== NonFilterSuggestionType.Filters &&
-        (value || filterAndValue.endsWith(':'))
-    ) {
-        const suggestionsToShow = suggestions[resolvedFilterType] ?? []
-        return suggestionsToShow.values.filter(suggestion => suggestion.value.startsWith(value))
-    }
-
-    // Suggest filter types
-    return suggestions.filters.values.filter(({ value }) => value.startsWith(matchedFilter))
-}
-
 /**
  * The search query and cursor position of where the last character was inserted.
  * Cursor position is used to correctly insert the suggestion when it's selected,
@@ -259,73 +158,11 @@ export const filterStaticSuggestions = (queryState: QueryState, suggestions: Sea
  */
 export interface QueryState {
     query: string
-    /** Where the cursor should be placed in search input */
-    cursorPosition: number
     /**
      * Used to know when the user has typed in the query or selected a suggestion.
      * Prevents fetching/showing suggestions on every component update.
      */
     fromUserInput?: true
-}
-
-/**
- * Used to decide if the search is for a filter value or a fuzzy-search word.
- * "l:go yes" => true
- * "l:go archived:" => false
- */
-const isTypingWordAndNotFilterValue = (value: string): boolean => Boolean(value.match(/\s+([^:]?)+$/))
-
-/**
- * Adds suggestions value to search query where cursor was positioned.
- * ('a test: query', { value: 'suggestion' }, 7) => 'a test:suggestion query'
- */
-export const insertSuggestionInQuery = (
-    queryToInsertIn: string,
-    selectedSuggestion: Suggestion,
-    cursorPosition: number
-): QueryState => {
-    const { firstPart, lastPart } = splitStringAtPosition(queryToInsertIn, cursorPosition)
-    const isFiltersSuggestion = selectedSuggestion.type === NonFilterSuggestionType.Filters
-    // Know where to place the suggestion later on
-    const separatorIndex = firstPart.lastIndexOf(!isFiltersSuggestion ? ':' : ' ')
-    // If a filter value or separate word suggestion was selected, then append a whitespace
-    const valueToAppend = selectedSuggestion.value + (isFiltersSuggestion ? '' : ' ')
-
-    const newFirstPart = (() => {
-        const lastWordOfFirstPartMatch = firstPart.match(/\s+(\S?)+$/)
-        const isSeparateWordSuggestion = isTypingWordAndNotFilterValue(firstPart)
-
-        // A fuzzy-search suggestion was selected but it doesn't have a URL...
-        // This prevents the selected suggestion replacing a previous value in query.
-        // e.g: (with "|" being the cursor)
-        // without: "archived:Yes Query|" -> selection -> "archived:QueryInput"
-        // with: "archived:Yes Query|" -> selection -> "archived:Yes QueryInput"
-        if (!isFiltersSuggestion && isSeparateWordSuggestion && lastWordOfFirstPartMatch?.index) {
-            // adds a space because a separate word was being typed
-            return firstPart.slice(0, lastWordOfFirstPartMatch.index) + ' ' + valueToAppend + lastPart
-        }
-
-        return firstPart.slice(0, separatorIndex + 1) + valueToAppend
-    })()
-
-    return {
-        // .replace() to remove excess whitespace in query
-        query: (newFirstPart + lastPart).replace(/\s+/g, ' '),
-        cursorPosition: newFirstPart.length,
-    }
-}
-
-/**
- * Returns true if word being typed is not a filter value.
- *
- * E.g: where "|" is cursor
- * - "QueryInput lang:|" => false
- * - "archived:Yes QueryInp|" => true
- */
-export const isFuzzyWordSearch = (queryState: QueryState): boolean => {
-    const { firstPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
-    const isTypingFirstWord = Boolean(firstPart.match(/^(\s?)+[^\s:]+$/))
-    return isTypingFirstWord || isTypingWordAndNotFilterValue(firstPart)
 }
 
 /**
@@ -335,64 +172,4 @@ export const isFuzzyWordSearch = (queryState: QueryState): boolean => {
  */
 export const filterAliasForSearch: Record<string, FilterType | undefined> = {
     [FilterType.repohasfile]: FilterType.file,
-}
-
-/**
- * Makes any modification to the query which will only be used
- * for fetching suggestions, and should not mutate the query in state.
- *
- * @returns the query to be used for fuzzy-search
- */
-export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
-    const filterAndValueBeforeCursor = validFilterAndValueBeforeCursor(queryState)
-
-    // If no valid filter was found before `queryState.cursorPosition` then no formatting is necessary
-    if (!filterAndValueBeforeCursor) {
-        return queryState.query
-    }
-
-    const { filterIndex, resolvedFilterType, value } = filterAndValueBeforeCursor
-
-    let formattedFilterAndValue = resolvedFilterType + ':' + value
-
-    // Check if filter should have its suggestions searched without influence from the rest of the query
-    if (isolatedFuzzySearchFilters.includes(resolvedFilterType)) {
-        return formattedFilterAndValue
-    }
-
-    // If filter has an alias that it should use just for fuzzy-search
-    const filterSearchAlias = filterAliasForSearch[resolvedFilterType]
-    if (filterSearchAlias) {
-        formattedFilterAndValue = formattedFilterAndValue.replace(resolvedFilterType, filterSearchAlias)
-    }
-
-    // Split the query so `formattedFilterAndValue` can be placed in between
-    const { firstPart, lastPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
-
-    return firstPart.slice(0, filterIndex) + formattedFilterAndValue + lastPart
-}
-
-/**
- * Formats a query for fetching suggestions in interactive mode.
- *
- * This is a modified version of  formatQueryForFuzzySearch, which accounts for interactive search
- * mode, where we don't have and don't require a cursor position since we don't require splitting
- * queries to add suggestion values.
- *
- * If the resolved filter is an isolated one, we will ignore the rest of the query, and return only
- * the resolved filter and value. Otherwise, we return the entire query.
- *
- * */
-export const formatInteractiveQueryForFuzzySearch = (
-    fullQuery: string,
-    filterType: FilterType,
-    value: string = ''
-): string => {
-    // `repohasfile:` should be converted to `file:`
-    const filterSearchAlias = filterAliasForSearch[filterType]
-    if (filterSearchAlias) {
-        return fullQuery.replace(`${filterType}:${value}`, `${filterSearchAlias}:${value}`)
-    }
-
-    return isolatedFuzzySearchFiltersFilterType.includes(filterType) ? filterType + ':' + value : fullQuery
 }
