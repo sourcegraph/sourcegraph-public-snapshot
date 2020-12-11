@@ -6,9 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
@@ -19,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"gopkg.in/yaml.v2"
 )
 
 func init() {
@@ -207,7 +204,7 @@ func (c *SiteConfigSubscriber) execDiffs(ctx context.Context, newConfig *subscri
 	defer c.mux.Unlock()
 
 	c.log.Debug("applying configuration diffs", "diffs", diffs)
-	c.problems = nil
+	c.problems = nil // reset problems
 
 	amConfig, err := amconfig.LoadFile(alertmanagerConfigPath)
 	if err != nil {
@@ -227,27 +224,16 @@ func (c *SiteConfigSubscriber) execDiffs(ctx context.Context, newConfig *subscri
 		c.problems = append(c.problems, result.Problems...)
 	}
 
-	// persist configuration to disk
+	// attempt to apply changes
 	c.log.Debug("reloading with new configuration")
-	updateProblem := conf.NewSiteProblem("`observability`: failed to update Alertmanager configuration, please refer to Prometheus logs for more details")
-	amConfigData, err := yaml.Marshal(amConfig)
+	err = applyConfiguration(ctx, changeContext.AMConfig)
 	if err != nil {
-		c.log.Error("failed to generate Alertmanager configuration", "error", err)
-		c.problems = append(c.problems, updateProblem)
+		c.log.Error("failed to apply new configuration", "error", err)
+		c.problems = append(c.problems, conf.NewSiteProblem(fmt.Sprintf("`observability`: failed to update Alertmanager configuration (%s)", err.Error())))
 		return
-	}
-	if err := ioutil.WriteFile(alertmanagerConfigPath, amConfigData, os.ModePerm); err != nil {
-		c.log.Error("failed to write Alertmanager configuration", "error", err)
-		c.problems = append(c.problems, updateProblem)
-		return
-	}
-	if err := reloadAlertmanager(ctx); err != nil {
-		c.log.Error("failed to reload Alertmanager configuration", "error", err)
-		// this error can include useful information relevant to configuration, so include it in problem
-		c.problems = append(c.problems, conf.NewSiteProblem(fmt.Sprintf("`observability`: failed to update Alertmanager configuration: %v", err)))
 	}
 
-	// update state
+	// update state if changes applied
 	c.config = newConfig
 	c.log.Debug("configuration diffs applied", "diffs", diffs, "problems", c.problems)
 }

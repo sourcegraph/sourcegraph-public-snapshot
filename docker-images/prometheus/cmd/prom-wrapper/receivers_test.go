@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	amconfig "github.com/prometheus/alertmanager/config"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -12,11 +13,12 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 		newAlerts []*schema.ObservabilityAlerts
 	}
 	tests := []struct {
-		name          string
-		args          args
-		wantProblems  []string
-		wantReceivers int
-		wantRoutes    int
+		name           string
+		args           args
+		wantProblems   []string // partial message matches
+		wantReceivers  int      // generally +1 of actual expected, due to stub receiver
+		wantRoutes     int      // generally 2 without additional routes
+		wantRenderFail bool     // if rendered config is accepted by Alertmanager
 	}{
 		{
 			name: "invalid notifier",
@@ -27,8 +29,26 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 				}},
 			},
 			wantProblems:  []string{"no configuration found"},
-			wantReceivers: 2,
+			wantReceivers: 3,
 			wantRoutes:    2,
+		},
+		{
+			name: "invalid generated configuration",
+			args: args{
+				newAlerts: []*schema.ObservabilityAlerts{{
+					Level: "warning",
+					Notifier: schema.Notifier{
+						// Alertmanager requires a URL here, so this will fail
+						Slack: &schema.NotifierSlack{
+							Type: "email",
+							Url:  "",
+						},
+					},
+				}},
+			},
+			wantReceivers:  3,
+			wantRoutes:     2,
+			wantRenderFail: true,
 		},
 		{
 			name: "one warning one critical",
@@ -51,8 +71,7 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 					},
 				}},
 			},
-			wantProblems:  nil,
-			wantReceivers: 2,
+			wantReceivers: 3,
 			wantRoutes:    2,
 		}, {
 			name: "one custom route",
@@ -68,8 +87,32 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 					Owners: []string{"distribution"},
 				}},
 			},
-			wantProblems:  nil,
-			wantReceivers: 3,
+			wantReceivers: 4,
+			wantRoutes:    3,
+		}, {
+			name: "multiple alerts on same owner-level combination",
+			args: args{
+				newAlerts: []*schema.ObservabilityAlerts{{
+					Level: "warning",
+					Notifier: schema.Notifier{
+						Slack: &schema.NotifierSlack{
+							Type: "slack",
+							Url:  "https://sourcegraph.com",
+						},
+					},
+					Owners: []string{"distribution"},
+				}, {
+					Level: "warning",
+					Notifier: schema.Notifier{
+						Slack: &schema.NotifierSlack{
+							Type: "slack",
+							Url:  "https://ubclaunchpad.com",
+						},
+					},
+					Owners: []string{"distribution"},
+				}},
+			},
+			wantReceivers: 4,
 			wantRoutes:    3,
 		},
 	}
@@ -107,6 +150,18 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 				if _, receiverExists := receiverNames[rt.Receiver]; !receiverExists {
 					t.Errorf("route %d uses receiver %q, but receiver does not exist", i, rt.Receiver)
 				}
+			}
+
+			// ensure configuration is valid
+			data, err := renderConfiguration(&amconfig.Config{
+				Receivers: receivers,
+				Route:     newRootRoute(routes),
+			})
+			t.Log(string(data))
+			if err != nil && !tt.wantRenderFail {
+				t.Errorf("generated config is invalid: %s", err)
+			} else if err == nil && tt.wantRenderFail {
+				t.Error("expected load to fail, but succeeded")
 			}
 		})
 	}
