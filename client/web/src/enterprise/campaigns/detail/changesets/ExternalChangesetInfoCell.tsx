@@ -72,7 +72,7 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                 </Link>{' '}
                 {!isImporting(node) && (
                     <div className="d-block d-sm-inline-block">
-                        <span className="badge badge-primary">{headReference(node)}</span>
+                        <span className="badge badge-secondary text-monospace">{headReference(node)}</span>
                     </div>
                 )}
             </span>
