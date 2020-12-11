@@ -1,4 +1,4 @@
-import React, { useState, useCallback, FunctionComponent } from 'react'
+import React, { useState, FunctionComponent } from 'react'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
@@ -34,15 +34,12 @@ export const UserEmail: FunctionComponent<Props> = ({
 }) => {
     const [isLoading, setIsLoading] = useState(false)
 
-    const handleError = useCallback(
-        (error: ErrorLike): void => {
-            onError(asError(error))
-            setIsLoading(false)
-        },
-        [onError]
-    )
+    const handleError = (error: ErrorLike): void => {
+        onError(asError(error))
+        setIsLoading(false)
+    }
 
-    const removeEmail = useCallback(async (): Promise<void> => {
+    const removeEmail = async (): Promise<void> => {
         setIsLoading(true)
 
         try {
@@ -68,7 +65,7 @@ export const UserEmail: FunctionComponent<Props> = ({
         } catch (error) {
             handleError(error)
         }
-    }, [email, user, onDidRemove, handleError])
+    }
 
     const updateEmailVerification = async (verified: boolean): Promise<void> => {
         setIsLoading(true)
