@@ -164,7 +164,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     map(blob => {
                         const blobInfo: BlobInfo & { richHTML: string; aborted: boolean } = {
                             content: blob.content,
-                            html: blob.highlight.html!,
+                            html: blob.highlight.html,
                             repoName,
                             revision,
                             commitID,

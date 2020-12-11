@@ -222,7 +222,7 @@ export const fetchHighlightedFileLines = memoizeObservable(
                 if (result.isDirectory) {
                     return []
                 }
-                const parsed = result.highlightedFile.html!.slice('<table>'.length, -'</table>'.length)
+                const parsed = result.highlightedFile.html.slice('<table>'.length, -'</table>'.length)
                 const rows = parsed.split('</tr>')
                 for (let index = 0; index < rows.length; ++index) {
                     rows[index] += '</tr>'
