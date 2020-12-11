@@ -2,6 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/binary"
 	"reflect"
 	"sort"
 	"strings"
@@ -229,7 +231,9 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 func mkRepos(names ...string) []*types.Repo {
 	var repos []*types.Repo
 	for _, name := range names {
-		repos = append(repos, &types.Repo{Name: api.RepoName(name)})
+		sum := md5.Sum([]byte(name))
+		id := api.RepoID(binary.BigEndian.Uint64(sum[:]))
+		repos = append(repos, &types.Repo{ID: id, Name: api.RepoName(name)})
 	}
 	return repos
 }
@@ -253,7 +257,7 @@ func TestLimitSearcherRepos(t *testing.T) {
 				continue
 			}
 			result = append(result, &search.RepositoryRevisions{
-				Repo: &types.Repo{Name: api.RepoName(repo)},
+				Repo: mkRepos(repo)[0],
 				Revs: []search.RevisionSpecifier{{RevSpec: rev}},
 			})
 		}
