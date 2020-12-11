@@ -5687,11 +5687,6 @@ interface File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-        """
-        If provided, the specified line ranges will be returned via the HighlightedFile.lineRanges field.
-        This is useful if you only need to display specific subsets of the file.
-        """
-        ranges: [HighlightLineRange!]
     ): HighlightedFile!
 }
 
@@ -5754,11 +5749,6 @@ type VirtualFile implements File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-        """
-        If provided, the specified line ranges will be returned via the HighlightedFile.lineRanges field.
-        This is useful if you only need to display specific subsets of the file.
-        """
-        ranges: [HighlightLineRange!]
     ): HighlightedFile!
 }
 
@@ -5859,11 +5849,6 @@ type GitBlob implements TreeEntry & File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-        """
-        If provided, the specified line ranges will be returned via the HighlightedFile.lineRanges field.
-        This is useful if you only need to display specific subsets of the file.
-        """
-        ranges: [HighlightLineRange!]
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule
@@ -6032,12 +6017,13 @@ type HighlightedFile {
     """
     The HTML table that can be used to display the highlighted file.
     """
-    html: String
+    html: String!
     """
-    A list of the desired line ranges. Only non-null if 'ranges' was specified in the query.
-    Each list is a list of lines, where each element is an HTML table row '<tr>...</tr>' string.
+    A list of the desired line ranges. Each list is a list of lines, where each element is an HTML
+    table row '<tr>...</tr>' string. This is useful if you only need to display specific subsets of
+    the file.
     """
-    lineRanges: [[String!]!]
+    lineRanges(ranges: [HighlightLineRange!]!): [[String!]!]!
 }
 
 """
