@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -564,10 +563,6 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 		unflattened [][]*CommitSearchResultResolver
 		common      = &searchResultsCommon{}
 	)
-	common.repos = make([]*types.Repo, len(args.Repos))
-	for i, repo := range args.Repos {
-		common.repos[i] = repo.Repo
-	}
 	for _, repoRev := range args.Repos {
 		wg.Add(1)
 		go func(repoRev *search.RepositoryRevisions) {

@@ -77,11 +77,6 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		return nil, nil, err
 	}
 
-	common.repos = make([]*types.Repo, len(repos))
-	for i, repo := range repos {
-		common.repos[i] = repo.Repo
-	}
-
 	var searcherRepos []*search.RepositoryRevisions
 	if indexed.DisableUnindexedSearch {
 		tr.LazyPrintf("disabling unindexed search")

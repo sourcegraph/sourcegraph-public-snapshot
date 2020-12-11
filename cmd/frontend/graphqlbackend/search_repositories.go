@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var mockSearchRepositories func(args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error)
@@ -146,17 +145,12 @@ func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions) 
 		offset = next
 	}
 
-	repos := make([]*types.Repo, len(resolved))
-	for i := range resolved {
-		repos[i] = resolved[i].Repo
-	}
-
 	var matched []*search.RepositoryRevisions
 	for w := 0; w < workers; w++ {
 		matched = append(matched, <-results...)
 	}
 
-	return &searchResultsCommon{repos: repos}, matched
+	return &searchResultsCommon{}, matched
 }
 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset

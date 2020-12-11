@@ -574,15 +574,6 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		return nil, common, searchErr
 	}
 
-	repos, err := getRepos(ctx, args.RepoPromise)
-	if err != nil {
-		return nil, common, err
-	}
-	common.repos = make([]*types.Repo, len(repos))
-	for i, repo := range repos {
-		common.repos[i] = repo.Repo
-	}
-
 	flattened := flattenFileMatches(unflattened, int(args.PatternInfo.FileMatchLimit))
 	return flattened, common, nil
 }
