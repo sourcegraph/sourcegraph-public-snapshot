@@ -18,7 +18,7 @@ export interface ManageCodeMonitorPageProps
     extends RouteComponentProps<{ id: Scalars['ID'] }>,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        Pick<CodeMonitoringProps, 'updateCodeMonitor' | 'fetchCodeMonitor'> {
+        Pick<CodeMonitoringProps, 'updateCodeMonitor' | 'fetchCodeMonitor' | 'deleteCodeMonitor'> {
     authenticatedUser: AuthenticatedUser
     location: H.Location
     history: H.History
@@ -109,6 +109,7 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
                         onSubmit={updateMonitorRequest}
                         codeMonitor={codeMonitorState}
                         submitButtonLabel="Save"
+                        showDeleteButton={true}
                     />
                 </>
             )}
