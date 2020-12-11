@@ -250,7 +250,7 @@ func SetChangesetPublished(t *testing.T, ctx context.Context, s UpdateChangesete
 	}
 }
 
-var FailedChangesetFailureMessage = "Canceled"
+var FailedChangesetFailureMessage = "Failed test"
 
 func SetChangesetFailed(t *testing.T, ctx context.Context, s UpdateChangeseter, c *campaigns.Changeset) {
 	t.Helper()
