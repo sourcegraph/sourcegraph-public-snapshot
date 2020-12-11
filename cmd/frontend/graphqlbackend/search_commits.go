@@ -656,17 +656,29 @@ func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForC
 	})
 }
 
-func commitSearchResultsToSearchResults(results []*CommitSearchResultResolver) []SearchResultResolver {
-	// Show most recent commits first.
+// sortCommitSearchResults sorts by most recent commits first. If one of the
+// result type is not a commit, prefer that type.
+func sortCommitSearchResults(results []SearchResultResolver) {
 	sort.Slice(results, func(i, j int) bool {
-		return results[i].commit.commit.Author.Date.After(results[j].commit.commit.Author.Date)
+		if left, ok := results[i].ToCommitSearchResult(); ok {
+			if right, ok := results[j].ToCommitSearchResult(); ok {
+				return left.commit.commit.Author.Date.After(right.commit.commit.Author.Date)
+			}
+		}
+		if _, ok := results[j].ToCommitSearchResult(); ok {
+			return true // left is not a commit but right is; put left before right.
+		}
+		return false
 	})
+}
 
-	results2 := make([]SearchResultResolver, len(results))
+func commitSearchResultsToSearchResults(results []*CommitSearchResultResolver) []SearchResultResolver {
+	newResults := make([]SearchResultResolver, len(results))
 	for i, result := range results {
-		results2[i] = result
+		newResults[i] = result
 	}
-	return results2
+	sortCommitSearchResults(newResults)
+	return newResults
 }
 
 // expandUsernamesToEmails expands references to usernames to mention all possible (known and
