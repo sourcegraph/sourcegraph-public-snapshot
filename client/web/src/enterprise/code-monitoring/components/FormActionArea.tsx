@@ -39,7 +39,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
             setEmailNotificationEnabled(enabled)
             onActionsChange({
                 // TODO farhan: refactor to accomodate more than one action.
-                nodes: [{ id: actions.nodes[0].id, recipients: { nodes: [{ id: authenticatedUser.email }] }, enabled }],
+                nodes: [{ id: actions.nodes[0].id, recipients: { nodes: [{ id: authenticatedUser.id }] }, enabled }],
             })
         },
         [authenticatedUser, onActionsChange, actions.nodes]
