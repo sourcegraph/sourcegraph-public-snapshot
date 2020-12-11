@@ -74,7 +74,7 @@ func TestActionRunner(t *testing.T) {
 
 	var (
 		queryID      int64 = 1
-		triggerEvent       = 1
+		triggerJobID int64 = 1
 		record       *codemonitors.ActionJob
 	)
 	for _, tt := range tests {
@@ -93,15 +93,15 @@ func TestActionRunner(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = ts.LogSearch(ctx, testQuery, tt.numResults, triggerEvent)
+			err = ts.LogSearch(ctx, testQuery, tt.numResults, triggerJobID)
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = ts.EnqueueActionEmailsForQueryIDInt64(ctx, queryID, triggerEvent)
+			err = ts.EnqueueActionEmailsForQueryIDInt64(ctx, queryID, triggerJobID)
 			if err != nil {
 				t.Fatal(err)
 			}
-			record, err = ts.ActionJobForIDInt(ctx, 1)
+			record, err = ts.ActionJobForIDInt64(ctx, 1)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -14,7 +14,7 @@ import (
 )
 
 type ActionJob struct {
-	Id           int
+	Id           int64
 	Email        int64
 	TriggerEvent int
 
@@ -65,7 +65,7 @@ ORDER BY id ASC
 LIMIT %s;
 `
 
-func (s *Store) ReadActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int, args *graphqlbackend.ListEventsArgs) (js []*ActionJob, err error) {
+func (s *Store) ReadActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int64, args *graphqlbackend.ListEventsArgs) (js []*ActionJob, err error) {
 	var where *sqlf.Query
 	if triggerEventID == nil {
 		where = sqlf.Sprintf("email = %s", emailID)
@@ -91,7 +91,7 @@ FROM cm_action_jobs
 WHERE %s
 `
 
-func (s *Store) TotalActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int) (totalCount int32, err error) {
+func (s *Store) TotalActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int64) (totalCount int32, err error) {
 	var where *sqlf.Query
 	if triggerEventID == nil {
 		where = sqlf.Sprintf("email = %s", emailID)
@@ -120,8 +120,8 @@ INSERT INTO cm_action_jobs (email, trigger_event)
 SELECT id, %s::integer from due EXCEPT SELECT id, %s::integer from busy ORDER BY id
 `
 
-func (s *Store) EnqueueActionEmailsForQueryIDInt64(ctx context.Context, queryID int64, triggerEventID int) (err error) {
-	return s.Store.Exec(ctx, sqlf.Sprintf(enqueueActionEmailFmtStr, queryID, triggerEventID, triggerEventID))
+func (s *Store) EnqueueActionEmailsForQueryIDInt64(ctx context.Context, queryID int64, triggerJobID int64) (err error) {
+	return s.Store.Exec(ctx, sqlf.Sprintf(enqueueActionEmailFmtStr, queryID, triggerJobID, triggerJobID))
 }
 
 const getActionJobMetadataFmtStr = `
@@ -133,8 +133,8 @@ inner join cm_monitors cm on cm.id = cq.monitor
 where caj.id = %s
 `
 
-func (s *Store) GetActionJobMetadata(ctx context.Context, recordID int) (m *ActionJobMetadata, err error) {
-	row := s.Store.QueryRow(ctx, sqlf.Sprintf(getActionJobMetadataFmtStr, recordID))
+func (s *Store) GetActionJobMetadata(ctx context.Context, actionJobID int64) (m *ActionJobMetadata, err error) {
+	row := s.Store.QueryRow(ctx, sqlf.Sprintf(getActionJobMetadataFmtStr, actionJobID))
 	m = &ActionJobMetadata{}
 	err = row.Scan(&m.Description, &m.Query, &m.MonitorID, &m.NumResults)
 	if err != nil {
@@ -149,8 +149,8 @@ FROM cm_action_jobs
 WHERE id = %s
 `
 
-func (s *Store) ActionJobForIDInt(ctx context.Context, recordID int) (*ActionJob, error) {
-	return s.runActionJobQuery(ctx, sqlf.Sprintf(actionJobForIDFmtStr, recordID))
+func (s *Store) ActionJobForIDInt64(ctx context.Context, actionJobID int64) (*ActionJob, error) {
+	return s.runActionJobQuery(ctx, sqlf.Sprintf(actionJobForIDFmtStr, actionJobID))
 }
 
 func (s *Store) runActionJobQuery(ctx context.Context, q *sqlf.Query) (ajs *ActionJob, err error) {

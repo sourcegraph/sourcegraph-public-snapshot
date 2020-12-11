@@ -130,10 +130,10 @@ FROM cm_queries q INNER JOIN cm_trigger_jobs j ON q.id = j.query
 WHERE j.id = %s
 `
 
-func (s *Store) GetQueryByRecordID(ctx context.Context, recordID int) (query *MonitorQuery, err error) {
+func (s *Store) GetQueryByRecordID(ctx context.Context, triggerJobID int64) (query *MonitorQuery, err error) {
 	q := sqlf.Sprintf(
 		getQueryByRecordIDFmtStr,
-		recordID,
+		triggerJobID,
 	)
 	var ms []*MonitorQuery
 	var rows *sql.Rows

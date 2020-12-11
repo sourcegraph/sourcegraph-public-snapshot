@@ -15,7 +15,7 @@ import (
 )
 
 func (r *TriggerJobs) RecordID() int {
-	return r.Id
+	return int(r.Id)
 }
 
 const enqueueTriggerQueryFmtStr = `
@@ -46,8 +46,8 @@ SET query_string = %s,
 WHERE id = %s
 `
 
-func (s *Store) LogSearch(ctx context.Context, queryString string, numResults int, recordID int) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, numResults > 0, numResults, recordID))
+func (s *Store) LogSearch(ctx context.Context, queryString string, numResults int, triggerJobID int64) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, numResults > 0, numResults, triggerJobID))
 }
 
 const deleteObsoleteJobLogsFmtStr = `
@@ -119,7 +119,7 @@ func (s *Store) TotalCountEventsForQueryIDInt64(ctx context.Context, queryID int
 }
 
 type TriggerJobs struct {
-	Id    int
+	Id    int64
 	Query int64
 
 	// The query we ran including after: filter.

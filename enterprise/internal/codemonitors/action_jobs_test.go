@@ -30,7 +30,7 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 	}
 
 	var got *ActionJob
-	got, err = s.ActionJobForIDInt(ctx, 1)
+	got, err = s.ActionJobForIDInt64(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,8 +104,8 @@ func TestScanActionJobs(t *testing.T) {
 	}
 
 	var (
-		testRecordID             = 1
-		testTriggerEventID       = 1
+		testRecordID       int64 = 1
+		testTriggerEventID int64 = 1
 		testQueryID        int64 = 1
 	)
 
@@ -130,7 +130,7 @@ func TestScanActionJobs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if record.RecordID() != testRecordID {
+	if int64(record.RecordID()) != testRecordID {
 		t.Fatalf("got %d, want %d", record.RecordID(), testRecordID)
 	}
 }

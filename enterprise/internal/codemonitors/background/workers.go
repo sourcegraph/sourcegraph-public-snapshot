@@ -137,7 +137,7 @@ func (r *queryRunner) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 	s := r.Store.With(workerStore)
 
 	var q *cm.MonitorQuery
-	q, err = s.GetQueryByRecordID(ctx, record.RecordID())
+	q, err = s.GetQueryByRecordID(ctx, int64(record.RecordID()))
 	if err != nil {
 		return err
 	}
@@ -154,7 +154,7 @@ func (r *queryRunner) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 		numResults = len(results.Data.Search.Results.Results)
 	}
 	if numResults > 0 {
-		err := s.EnqueueActionEmailsForQueryIDInt64(ctx, q.Id, record.RecordID())
+		err := s.EnqueueActionEmailsForQueryIDInt64(ctx, q.Id, int64(record.RecordID()))
 		if err != nil {
 			return fmt.Errorf("store.EnqueueActionEmailsForQueryIDInt64: %w", err)
 		}
@@ -166,7 +166,7 @@ func (r *queryRunner) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 		return err
 	}
 	// Log the actual query we ran and whether we got any new results.
-	err = s.LogSearch(ctx, newQuery, numResults, record.RecordID())
+	err = s.LogSearch(ctx, newQuery, numResults, int64(record.RecordID()))
 	if err != nil {
 		return fmt.Errorf("LogSearch: %w", err)
 
@@ -202,7 +202,7 @@ func (r *actionRunner) Handle(ctx context.Context, workerStore dbworkerstore.Sto
 		return fmt.Errorf("type assertion failed")
 	}
 
-	m, err = s.GetActionJobMetadata(ctx, record.RecordID())
+	m, err = s.GetActionJobMetadata(ctx, int64(record.RecordID()))
 	if err != nil {
 		return fmt.Errorf("store.GetActionJobMetadata: %w", err)
 	}
