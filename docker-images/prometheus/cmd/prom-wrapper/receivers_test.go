@@ -16,8 +16,8 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 		name           string
 		args           args
 		wantProblems   []string // partial message matches
-		wantReceivers  int      // generally +1 of actual expected, due to stub receiver
-		wantRoutes     int      // generally 2 without additional routes
+		wantReceivers  int      // = 3 without additional receivers
+		wantRoutes     int      // = 2 without additional routes
 		wantRenderFail bool     // if rendered config is accepted by Alertmanager
 	}{
 		{
@@ -104,9 +104,10 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 				}, {
 					Level: "warning",
 					Notifier: schema.Notifier{
-						Slack: &schema.NotifierSlack{
-							Type: "slack",
-							Url:  "https://ubclaunchpad.com",
+						Opsgenie: &schema.NotifierOpsGenie{
+							Type:   "opsgenie",
+							ApiUrl: "https://ubclaunchpad.com",
+							ApiKey: "hi-im-bob",
 						},
 					},
 					Owners: []string{"distribution"},
