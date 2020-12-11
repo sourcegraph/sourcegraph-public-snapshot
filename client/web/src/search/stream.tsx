@@ -151,12 +151,12 @@ export interface Filter {
 
 interface Alert {
     title: string
-    description?: string
-    proposedQueries: ProposedQuery[]
+    description?: string | null
+    proposedQueries: ProposedQuery[] | null
 }
 
 interface ProposedQuery {
-    description?: string
+    description?: string | null
     query: string
 }
 

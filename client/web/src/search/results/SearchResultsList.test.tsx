@@ -100,9 +100,7 @@ describe('SearchResultsList', () => {
 
         showSavedQueryModal: false,
         onSavedQueryModalClose: sinon.spy(),
-        onDidCreateSavedQuery: sinon.spy(),
         onSaveQueryClick: sinon.spy(),
-        didSave: false,
 
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
 

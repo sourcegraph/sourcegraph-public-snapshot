@@ -33,7 +33,8 @@ type campaignSpecResolver struct {
 	store       *ee.Store
 	httpFactory *httpcli.Factory
 
-	campaignSpec *campaigns.CampaignSpec
+	campaignSpec       *campaigns.CampaignSpec
+	preloadedNamespace *graphqlbackend.NamespaceResolver
 
 	// We cache the namespace on the resolver, since it's accessed more than once.
 	namespaceOnce sync.Once
@@ -98,6 +99,10 @@ func (r *campaignSpecResolver) Namespace(ctx context.Context) (*graphqlbackend.N
 
 func (r *campaignSpecResolver) computeNamespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
 	r.namespaceOnce.Do(func() {
+		if r.preloadedNamespace != nil {
+			r.namespace = r.preloadedNamespace
+			return
+		}
 		var (
 			err error
 			n   = &graphqlbackend.NamespaceResolver{}
@@ -204,6 +209,11 @@ func (r *campaignSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlba
 }
 
 func (r *campaignSpecResolver) SupersedingCampaignSpec(ctx context.Context) (graphqlbackend.CampaignSpecResolver, error) {
+	namespace, err := r.computeNamespace(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	svc := ee.NewService(r.store, r.httpFactory)
 	newest, err := svc.GetNewestCampaignSpec(ctx, r.store, r.campaignSpec, actor.FromContext(ctx).UID)
 	if err != nil {
@@ -223,21 +233,10 @@ func (r *campaignSpecResolver) SupersedingCampaignSpec(ctx context.Context) (gra
 
 	// Create our new resolver, reusing as many fields as we can from this one.
 	resolver := &campaignSpecResolver{
-		store:        r.store,
-		httpFactory:  r.httpFactory,
-		campaignSpec: newest,
-		namespace:    r.namespace,
-		namespaceErr: r.namespaceErr,
-	}
-
-	// If namespace is set on the new resolver, then we don't want
-	// computeNamespace() to recompute the namespace. computeNamespace() uses
-	// the sync.Once value in the namespaceOnce field to implement its
-	// memoisation, but we can't copy r.namespaceOnce in because sync.Once
-	// values cannot be copied. Therefore, we'll fuse resolver.namespaceOnce in
-	// that case and get the same behaviour.
-	if resolver.namespace != nil {
-		resolver.namespaceOnce.Do(func() {})
+		store:              r.store,
+		httpFactory:        r.httpFactory,
+		campaignSpec:       newest,
+		preloadedNamespace: namespace,
 	}
 
 	return resolver, nil

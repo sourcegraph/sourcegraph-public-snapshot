@@ -131,10 +131,9 @@ func monitorCommand(cmd *exec.Cmd, pipeReaderWaitGroup *sync.WaitGroup) (int, er
 
 	pipeReaderWaitGroup.Wait()
 
-	state, err := cmd.Process.Wait()
-	if err != nil {
+	if err := cmd.Wait(); err != nil {
 		return 0, err
 	}
 
-	return state.ExitCode(), nil
+	return cmd.ProcessState.ExitCode(), nil
 }

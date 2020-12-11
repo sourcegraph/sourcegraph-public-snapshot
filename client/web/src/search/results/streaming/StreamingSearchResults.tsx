@@ -1,5 +1,11 @@
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
+import FileIcon from 'mdi-react/FileIcon'
+import SearchIcon from 'mdi-react/SearchIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { Observable } from 'rxjs'
+import { FetchFileParameters } from '../../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../../shared/src/components/FileMatch'
 import { VirtualList } from '../../../../../shared/src/components/VirtualList'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
@@ -10,12 +16,15 @@ import { VersionContextProps } from '../../../../../shared/src/search/util'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { ThemeProps } from '../../../../../shared/src/theme'
+import { isDefined } from '../../../../../shared/src/util/types'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { AuthenticatedUser } from '../../../auth'
 import { PageTitle } from '../../../components/PageTitle'
 import { SearchResult } from '../../../components/SearchResult'
+import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
 import { VersionContext } from '../../../schema/site.schema'
 import { QueryState } from '../../helpers'
+import { SearchAlert } from '../SearchAlert'
 import { LATEST_VERSION } from '../SearchResults'
 import { SearchResultsInfoBar } from '../SearchResultsInfoBar'
 import { SearchResultTypeTabs } from '../SearchResultTypeTabs'
@@ -29,13 +38,6 @@ import {
     SearchStreamingProps,
     resolveVersionContext,
 } from '../..'
-import { FetchFileParameters } from '../../../../../shared/src/components/CodeExcerpt'
-import { Observable } from 'rxjs'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import FileIcon from 'mdi-react/FileIcon'
-import { isDefined } from '../../../../../shared/src/util/types'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import SearchIcon from 'mdi-react/SearchIcon'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
@@ -75,6 +77,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         history,
         availableVersionContexts,
         previousVersionContext,
+        authenticatedUser,
     } = props
 
     const { query = '', patternType, caseSensitive, versionContext } = parseSearchURL(props.location.search)
@@ -114,9 +117,9 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     const [allExpanded, setAllExpanded] = useState(false)
     const onExpandAllResultsToggle = useCallback(() => setAllExpanded(oldValue => !oldValue), [setAllExpanded])
 
-    const onDidCreateSavedQuery = useCallback(() => {}, [])
-    const onSaveQueryClick = useCallback(() => {}, [])
-    const didSave = false
+    const [showSavedSearchModal, setShowSavedSearchModal] = useState(false)
+    const onSaveQueryClick = useCallback(() => setShowSavedSearchModal(true), [])
+    const onSaveQueryModalClose = useCallback(() => setShowSavedSearchModal(false), [])
 
     const [showVersionContextWarning, setShowVersionContextWarning] = useState(false)
     useEffect(
@@ -200,8 +203,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         allExpanded={allExpanded}
                         onExpandAllResultsToggle={onExpandAllResultsToggle}
                         onSaveQueryClick={onSaveQueryClick}
-                        onDidCreateSavedQuery={onDidCreateSavedQuery}
-                        didSave={didSave}
                         stats={<StreamingProgress progress={results?.progress} />}
                     />
                 </div>
@@ -210,6 +211,24 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     <VersionContextWarning
                         versionContext={currentVersionContext}
                         onDismissWarning={onDismissVersionContextWarning}
+                    />
+                )}
+
+                {showSavedSearchModal && (
+                    <SavedSearchModal
+                        {...props}
+                        query={query}
+                        authenticatedUser={authenticatedUser}
+                        onDidCancel={onSaveQueryModalClose}
+                    />
+                )}
+
+                {results?.alert && (
+                    <SearchAlert
+                        alert={results.alert}
+                        caseSensitive={caseSensitive}
+                        patternType={patternType}
+                        versionContext={versionContext}
                     />
                 )}
 

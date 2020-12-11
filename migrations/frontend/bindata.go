@@ -160,6 +160,8 @@
 // 1528395762_add_col_num_results_trigger_event.up.sql (327B)
 // 1528395763_remove_old_campaign_tables.down.sql (1.433kB)
 // 1528395763_remove_old_campaign_tables.up.sql (90B)
+// 1528395764_pg_stat_statement_ext.down.sql (62B)
+// 1528395764_pg_stat_statement_ext.up.sql (68B)
 
 package migrations
 
@@ -3428,6 +3430,46 @@ func _1528395763_remove_old_campaign_tablesUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395764_pg_stat_statement_extDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x70\x8d\x08\x71\xf5\x0b\xf6\xf4\xf7\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x48\x8f\x2f\x2e\x49\x2c\x01\x13\xa9\xb9\xa9\x79\x25\xc5\xd6\x5c\x5c\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\xe2\x7c\xbf\xd5\x3e\x00\x00\x00")
+
+func _1528395764_pg_stat_statement_extDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395764_pg_stat_statement_extDownSql,
+		"1528395764_pg_stat_statement_ext.down.sql",
+	)
+}
+
+func _1528395764_pg_stat_statement_extDownSql() (*asset, error) {
+	bytes, err := _1528395764_pg_stat_statement_extDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395764_pg_stat_statement_ext.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x15, 0x9a, 0x91, 0x10, 0xf0, 0x2e, 0x95, 0xa2, 0x94, 0x35, 0x4a, 0xc0, 0x3a, 0xa, 0x76, 0xfd, 0xff, 0xb, 0xd9, 0x78, 0x99, 0x44, 0x57, 0xdb, 0x72, 0xa5, 0x75, 0x25, 0x61, 0x7e, 0xeb, 0x4d}}
+	return a, nil
+}
+
+var __1528395764_pg_stat_statement_extUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x0e\x72\x75\x0c\x71\x55\x70\x8d\x08\x71\xf5\x0b\xf6\xf4\xf7\x53\xf0\x74\x53\xf0\xf3\x0f\x51\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x48\x8f\x2f\x2e\x49\x2c\x01\x13\xa9\xb9\xa9\x79\x25\xc5\x20\x3d\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\xca\x11\x32\x41\x44\x00\x00\x00")
+
+func _1528395764_pg_stat_statement_extUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395764_pg_stat_statement_extUpSql,
+		"1528395764_pg_stat_statement_ext.up.sql",
+	)
+}
+
+func _1528395764_pg_stat_statement_extUpSql() (*asset, error) {
+	bytes, err := _1528395764_pg_stat_statement_extUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395764_pg_stat_statement_ext.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x35, 0x68, 0x79, 0x4, 0x23, 0xd, 0x39, 0x6f, 0xf, 0x19, 0xb5, 0x29, 0x6f, 0x21, 0x43, 0xd, 0x1b, 0xfe, 0xb1, 0x4c, 0x22, 0xcb, 0xd5, 0x78, 0x6b, 0x89, 0xbd, 0x3b, 0x3a, 0x31, 0xb8, 0x4}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3679,6 +3721,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395762_add_col_num_results_trigger_event.up.sql":                                    _1528395762_add_col_num_results_trigger_eventUpSql,
 	"1528395763_remove_old_campaign_tables.down.sql":                                         _1528395763_remove_old_campaign_tablesDownSql,
 	"1528395763_remove_old_campaign_tables.up.sql":                                           _1528395763_remove_old_campaign_tablesUpSql,
+	"1528395764_pg_stat_statement_ext.down.sql":                                              _1528395764_pg_stat_statement_extDownSql,
+	"1528395764_pg_stat_statement_ext.up.sql":                                                _1528395764_pg_stat_statement_extUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3885,6 +3929,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395762_add_col_num_results_trigger_event.up.sql":                                    {_1528395762_add_col_num_results_trigger_eventUpSql, map[string]*bintree{}},
 	"1528395763_remove_old_campaign_tables.down.sql":                                         {_1528395763_remove_old_campaign_tablesDownSql, map[string]*bintree{}},
 	"1528395763_remove_old_campaign_tables.up.sql":                                           {_1528395763_remove_old_campaign_tablesUpSql, map[string]*bintree{}},
+	"1528395764_pg_stat_statement_ext.down.sql":                                              {_1528395764_pg_stat_statement_extDownSql, map[string]*bintree{}},
+	"1528395764_pg_stat_statement_ext.up.sql":                                                {_1528395764_pg_stat_statement_extUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
