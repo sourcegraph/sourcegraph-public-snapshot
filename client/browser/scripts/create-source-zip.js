@@ -18,7 +18,7 @@ const signale = require('signale')
  */
 
 // Configuration
-const commitId = '350764282631014ea24ccd88fda459a4b19a5669'
+const commitId = '42f4cfe5fc05dbb1e2eb44369e51cf643fe37584'
 const includeCodeIntelExtensions = true
 const rootDirectoryNameForZip = 'sourcegraph-source'
 
