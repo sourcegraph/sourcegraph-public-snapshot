@@ -69,7 +69,12 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
             <span className="mr-2 d-block d-mdinline-block">
                 <Link to={node.repository.url} target="_blank" rel="noopener noreferrer">
                     {node.repository.name}
-                </Link>
+                </Link>{' '}
+                {!isImporting(node) && (
+                    <div className="d-block d-sm-inline-block">
+                        <span className="badge badge-primary">{headReference(node)}</span>
+                    </div>
+                )}
             </span>
             {node.publicationState === ChangesetPublicationState.PUBLISHED && (
                 <ChangesetLastSynced changeset={node} viewerCanAdminister={viewerCanAdminister} />
@@ -83,6 +88,13 @@ function isImporting(node: ExternalChangesetFields): boolean {
         [ChangesetReconcilerState.QUEUED, ChangesetReconcilerState.PROCESSING].includes(node.reconcilerState) &&
         !node.title
     )
+}
+
+function headReference(node: ExternalChangesetFields): string | undefined {
+    if (!isImporting(node) && node.currentSpec?.description.__typename === 'GitBranchChangesetDescription') {
+        return node.currentSpec?.description.headRef
+    }
+    return undefined
 }
 
 function importingFailed(node: ExternalChangesetFields): boolean {
