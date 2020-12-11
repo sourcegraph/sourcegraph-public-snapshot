@@ -71,6 +71,26 @@ Create a campaign by specifying a search query to get a list of repositories and
   </a>
 </div>
 
+## Requirements
+
+- Sourcegraph installation requirements:
+  - Code host version:
+    - Github.com
+    - Github Enterprise: version: 2.20 and later
+    - GitLab: 12.7 and later
+     - 13.2 and later includes burndown chart support
+    - Bitbucket server: 5.7+
+    - Notes: 
+        - Webhook support should be enabled to increase performance at scale
+  - Sourcegraph server version:
+    - 3.22 is the minimum recommended version
+- Developing and running campaign specs
+  - Latest version of [src-cli](https://github.com/sourcegraph/src-cli/releases)
+      - Src cli is supported on Linux or MacOS 
+        - Windows support is experimental
+  - Docker
+  - Git
+
 ## Explanations
 
 - [Introduction to campaigns](explanations/introduction_to_campaigns.md)
