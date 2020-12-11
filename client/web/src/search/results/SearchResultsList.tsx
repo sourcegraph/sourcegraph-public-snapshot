@@ -77,7 +77,7 @@ export interface SearchResultsListProps
 
     interactiveSearchMode: boolean
 
-    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     shouldDisplayPerformanceWarning: (deployType: DeployType) => Observable<boolean>
 }
 
@@ -537,7 +537,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         showAllMatches={false}
                         isLightTheme={this.props.isLightTheme}
                         allExpanded={this.props.allExpanded}
-                        fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
+                        fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
                         repoDisplayName={this.state.fileMatchRepoDisplayNames.get(result.repository.name)}
                         settingsCascade={this.props.settingsCascade}
                     />

@@ -23,12 +23,12 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -392,14 +392,14 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 	}
 }
 
-func getSingleRepo(ctx context.Context, bitbucketSource *repos.BitbucketServerSource, name string) (*repos.Repo, error) {
+func getSingleRepo(ctx context.Context, bitbucketSource *repos.BitbucketServerSource, name string) (*types.Repo, error) {
 	repoChan := make(chan repos.SourceResult)
 	go func() {
 		bitbucketSource.ListRepos(ctx, repoChan)
 		close(repoChan)
 	}()
 
-	var bitbucketRepo *repos.Repo
+	var bitbucketRepo *types.Repo
 	for result := range repoChan {
 		if result.Err != nil {
 			return nil, result.Err
@@ -407,7 +407,7 @@ func getSingleRepo(ctx context.Context, bitbucketSource *repos.BitbucketServerSo
 		if result.Repo == nil {
 			continue
 		}
-		if result.Repo.Name == name {
+		if string(result.Repo.Name) == name {
 			bitbucketRepo = result.Repo
 		}
 	}

@@ -31,7 +31,7 @@ import { updateUserSessionStores } from './marketing/util'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { createPlatformContext } from './platform/context'
-import { fetchHighlightedFileLines } from './repo/backend'
+import { fetchHighlightedFileLineRanges } from './repo/backend'
 import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
@@ -70,6 +70,7 @@ import {
 import { SearchPatternType } from '../../shared/src/graphql-operations'
 import { HTTPStatusError } from '../../shared/src/backend/fetch'
 import {
+    deleteCodeMonitor,
     fetchCodeMonitor,
     fetchUserCodeMonitors,
     toggleCodeMonitorEnabled,
@@ -434,7 +435,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     // Search query
                                     navbarSearchQueryState={this.state.navbarSearchQueryState}
                                     onNavbarQueryChange={this.onNavbarQueryChange}
-                                    fetchHighlightedFileLines={fetchHighlightedFileLines}
+                                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                     searchRequest={search}
                                     // Extensions
                                     platformContext={this.platformContext}
@@ -468,6 +469,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     fetchUserCodeMonitors={fetchUserCodeMonitors}
                                     fetchCodeMonitor={fetchCodeMonitor}
                                     updateCodeMonitor={updateCodeMonitor}
+                                    deleteCodeMonitor={deleteCodeMonitor}
                                     toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
                                     streamSearch={aggregateStreamingSearch}
                                 />

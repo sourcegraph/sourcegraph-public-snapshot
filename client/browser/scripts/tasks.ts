@@ -20,7 +20,7 @@ const EXTENSION_PERMISSIONS_ALL_URLS = Boolean(
 
 export type BuildEnvironment = 'dev' | 'prod'
 
-type Browser = 'firefox' | 'chrome'
+type Browser = 'firefox' | 'chrome' | 'safari'
 
 const BUILDS_DIR = 'build'
 
@@ -48,6 +48,28 @@ function ensurePaths(): void {
     shelljs.mkdir('-p', 'build/bundles')
     shelljs.mkdir('-p', 'build/chrome')
     shelljs.mkdir('-p', 'build/firefox')
+    shelljs.mkdir('-p', 'build/safari')
+}
+
+function buildSafariExtensionApp(): void {
+    const safariWebExtensionConverterOptions = [
+        'build/safari',
+        '--project-location',
+        'build/',
+        '--app-name',
+        '"Sourcegraph for Safari"',
+        '--bundle-identifier',
+        '"com.sourcegraph.sourcegraph-safari-extension"',
+        '--swift',
+        '--force',
+        '--no-open',
+    ]
+
+    const xcodebuildOptions = ['-project', '"./build/Sourcegraph for Safari/Sourcegraph for Safari.xcodeproj"', 'build']
+
+    shelljs.echo('y').exec(`xcrun safari-web-extension-converter ${safariWebExtensionConverterOptions.join(' ')}`)
+    shelljs.exec(`xcodebuild ${xcodebuildOptions.join(' ')}`)
+    shelljs.mv('./build/Sourcegraph for Safari/build/Release/Sourcegraph for Safari.app', './build/bundles')
 }
 
 export function copyAssets(): void {
@@ -95,16 +117,24 @@ export function copyIntegrationAssets(): void {
 const BROWSER_TITLES = {
     firefox: 'Firefox',
     chrome: 'Chrome',
-}
+    safari: 'Safari',
+} as const
 
-const BROWSER_BUNDLE_ZIPS = {
+/**
+ * Names of the zipped bundles for the browsers that use a zipped bundle.
+ */
+const BROWSER_BUNDLE_ZIPS: Partial<Record<Browser, string>> = {
     firefox: 'firefox-bundle.xpi',
     chrome: 'chrome-bundle.zip',
 }
 
+/**
+ * Fields to exclude from the manifest, for each browser.
+ */
 const BROWSER_BLOCKLIST = {
     chrome: ['applications'] as const,
     firefox: ['key'] as const,
+    safari: [] as const,
 }
 
 function writeSchema(environment: BuildEnvironment, browser: Browser, writeDirectory: string): void {
@@ -129,6 +159,11 @@ function writeManifest(environment: BuildEnvironment, browser: Browser, writeDir
     if (browser === 'firefox') {
         manifest.permissions!.push('<all_urls>')
         delete manifest.storage
+    }
+
+    if (browser === 'safari') {
+        // If any modifications need to be done to the manifest for Safari, they
+        // can be done here.
     }
 
     if (shouldBuildWithInlineExtensions(browser)) {
@@ -173,10 +208,19 @@ function buildForBrowser(browser: Browser): (environment: BuildEnvironment) => (
                 copyInlineExtensions(buildDirectory)
             }
 
-            const zipDestination = path.resolve(process.cwd(), `${BUILDS_DIR}/bundles/${BROWSER_BUNDLE_ZIPS[browser]}`)
-            if (zipDestination) {
-                shelljs.mkdir('-p', `./${BUILDS_DIR}/bundles`)
-                shelljs.exec(`cd ${buildDirectory} && zip -q -r ${zipDestination} *`)
+            // Create a bundle by zipping the web extension directory.
+            const browserBundleZip = BROWSER_BUNDLE_ZIPS[browser]
+            if (browserBundleZip) {
+                const zipDestination = path.resolve(process.cwd(), `${BUILDS_DIR}/bundles/${browserBundleZip}`)
+                if (zipDestination) {
+                    shelljs.mkdir('-p', `./${BUILDS_DIR}/bundles`)
+                    shelljs.exec(`cd ${buildDirectory} && zip -q -r ${zipDestination} *`)
+                }
+            }
+
+            // Safari-specific build step
+            if (browser === 'safari') {
+                buildSafariExtensionApp()
             }
 
             signale.success(`Done building the ${title} ${environment} bundle`)
@@ -186,3 +230,4 @@ function buildForBrowser(browser: Browser): (environment: BuildEnvironment) => (
 
 export const buildFirefox = buildForBrowser('firefox')
 export const buildChrome = buildForBrowser('chrome')
+export const buildSafari = buildForBrowser('safari')

@@ -12,7 +12,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -20,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -118,7 +118,7 @@ type executor struct {
 	tx  *Store
 	ccs repos.ChangesetSource
 
-	repo   *repos.Repo
+	repo   *types.Repo
 	extSvc *types.ExternalService
 
 	// au is nil if we want to use the global credentials stored in the external
@@ -215,7 +215,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *ReconcilerPlan) (err e
 	return e.tx.UpdateChangeset(ctx, e.ch)
 }
 
-func (e *executor) buildChangesetSource(repo *repos.Repo, extSvc *types.ExternalService) (repos.ChangesetSource, error) {
+func (e *executor) buildChangesetSource(repo *types.Repo, extSvc *types.ExternalService) (repos.ChangesetSource, error) {
 	sources, err := e.sourcer(extSvc)
 	if err != nil {
 		return nil, err
@@ -283,7 +283,7 @@ func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, e
 				return nil, nil
 			}
 
-			return nil, ErrMissingCredentials{repo: e.repo.Name}
+			return nil, ErrMissingCredentials{repo: string(e.repo.Name)}
 		}
 		return nil, errors.Wrap(err, "failed to load user credential")
 	}
@@ -309,6 +309,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 		ExternalServiceType: e.ch.ExternalServiceType,
 		RepoID:              e.ch.RepoID,
 		ExternalBranch:      e.spec.Spec.HeadRef,
+		// TODO: Do we need to check whether it's published or not?
 	})
 	if err != nil && err != ErrNoResults {
 		return err
@@ -508,7 +509,7 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 	return nil
 }
 
-func buildCommitOpts(repo *repos.Repo, extSvc *types.ExternalService, spec *campaigns.ChangesetSpec, a auth.Authenticator) (protocol.CreateCommitFromPatchRequest, error) {
+func buildCommitOpts(repo *types.Repo, extSvc *types.ExternalService, spec *campaigns.ChangesetSpec, a auth.Authenticator) (protocol.CreateCommitFromPatchRequest, error) {
 	var opts protocol.CreateCommitFromPatchRequest
 
 	desc := spec.Spec
@@ -816,7 +817,7 @@ func reopenAfterDetach(ch *campaigns.Changeset) bool {
 	return ch.AttachedTo(ch.OwnedByCampaignID)
 }
 
-func loadRepo(ctx context.Context, tx RepoStore, id api.RepoID) (*repos.Repo, error) {
+func loadRepo(ctx context.Context, tx RepoStore, id api.RepoID) (*types.Repo, error) {
 	rs, err := tx.ListRepos(ctx, repos.StoreListReposArgs{IDs: []api.RepoID{id}})
 	if err != nil {
 		return nil, err
@@ -827,7 +828,7 @@ func loadRepo(ctx context.Context, tx RepoStore, id api.RepoID) (*repos.Repo, er
 	return rs[0], nil
 }
 
-func loadExternalService(ctx context.Context, reposStore RepoStore, repo *repos.Repo) (*types.ExternalService, error) {
+func loadExternalService(ctx context.Context, reposStore RepoStore, repo *types.Repo) (*types.ExternalService, error) {
 	var externalService *types.ExternalService
 	args := repos.StoreListExternalServicesArgs{IDs: repo.ExternalServiceIDs()}
 
@@ -907,7 +908,7 @@ func loadUser(ctx context.Context, id int32) (*types.User, error) {
 	return db.Users.GetByID(ctx, id)
 }
 
-func loadUserCredential(ctx context.Context, userID int32, repo *repos.Repo) (*db.UserCredential, error) {
+func loadUserCredential(ctx context.Context, userID int32, repo *types.Repo) (*db.UserCredential, error) {
 	return db.UserCredentials.GetByScope(ctx, db.UserCredentialScope{
 		Domain:              db.UserCredentialDomainCampaigns,
 		UserID:              userID,

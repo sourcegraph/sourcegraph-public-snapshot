@@ -10,11 +10,11 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -257,7 +257,7 @@ func (h *GitLabWebhook) handlePipelineEvent(ctx context.Context, esID string, ev
 	return nil
 }
 
-func (h *GitLabWebhook) getChangesetForPR(ctx context.Context, tx *Store, pr *PR, repo *repos.Repo) (*campaigns.Changeset, error) {
+func (h *GitLabWebhook) getChangesetForPR(ctx context.Context, tx *Store, pr *PR, repo *types.Repo) (*campaigns.Changeset, error) {
 	return tx.GetChangeset(ctx, GetChangesetOpts{
 		RepoID:              repo.ID,
 		ExternalID:          strconv.FormatInt(pr.ID, 10),

@@ -99,7 +99,7 @@ type MonitorActionEventConnectionResolver interface {
 
 type MonitorActionEventResolver interface {
 	ID() graphql.ID
-	Status() string
+	Status() (string, error)
 	Message() *string
 	Timestamp() DateTime
 }

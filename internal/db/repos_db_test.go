@@ -46,13 +46,10 @@ func createRepo(ctx context.Context, t *testing.T, repo *types.Repo) {
 		Name:         repo.Name,
 		Private:      repo.Private,
 		ExternalRepo: repo.ExternalRepo,
-	}
-
-	if repo.RepoFields != nil {
-		op.Description = repo.Description
-		op.Fork = repo.Fork
-		op.Cloned = repo.Cloned
-		op.Archived = repo.Archived
+		Description:  repo.Description,
+		Fork:         repo.Fork,
+		Cloned:       repo.Cloned,
+		Archived:     repo.Archived,
 	}
 
 	if err := Repos.Upsert(ctx, op); err != nil {
@@ -239,22 +236,20 @@ func TestRepos_Get(t *testing.T) {
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com",
 		},
-		Name:    "name",
-		Private: true,
-		RepoFields: &types.RepoFields{
-			URI:         "uri",
-			Description: "description",
-			Fork:        true,
-			Archived:    true,
-			Cloned:      true,
-			CreatedAt:   now,
-			UpdatedAt:   now,
-			Metadata:    new(github.Repository),
-			Sources: map[string]*types.SourceInfo{
-				service.URN(): {
-					ID:       service.URN(),
-					CloneURL: "git@github.com:foo/bar.git",
-				},
+		Name:        "name",
+		Private:     true,
+		URI:         "uri",
+		Description: "description",
+		Fork:        true,
+		Archived:    true,
+		Cloned:      true,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		Metadata:    new(github.Repository),
+		Sources: map[string]*types.SourceInfo{
+			service.URN(): {
+				ID:       service.URN(),
+				CloneURL: "git@github.com:foo/bar.git",
 			},
 		},
 	})
@@ -293,8 +288,6 @@ func TestRepos_GetByIDs(t *testing.T) {
 		t.Fatalf("got %d repos, but want 1", len(repos))
 	}
 
-	// We don't need the RepoFields to identify a repository.
-	want[0].RepoFields = nil
 	if !jsonEqual(t, repos[0], want[0]) {
 		t.Errorf("got %v, want %v", repos[0], want[0])
 	}
@@ -334,22 +327,20 @@ func TestRepos_List(t *testing.T) {
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com",
 		},
-		Name:    "name",
-		Private: true,
-		RepoFields: &types.RepoFields{
-			URI:         "uri",
-			Description: "description",
-			Fork:        true,
-			Archived:    true,
-			Cloned:      true,
-			CreatedAt:   now,
-			UpdatedAt:   now,
-			Metadata:    new(github.Repository),
-			Sources: map[string]*types.SourceInfo{
-				service.URN(): {
-					ID:       service.URN(),
-					CloneURL: "git@github.com:foo/bar.git",
-				},
+		Name:        "name",
+		Private:     true,
+		URI:         "uri",
+		Description: "description",
+		Fork:        true,
+		Archived:    true,
+		Cloned:      true,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		Metadata:    new(github.Repository),
+		Sources: map[string]*types.SourceInfo{
+			service.URN(): {
+				ID:       service.URN(),
+				CloneURL: "git@github.com:foo/bar.git",
 			},
 		},
 	})
@@ -410,22 +401,20 @@ func Test_GetUserAddedRepos(t *testing.T) {
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com",
 		},
-		Name:    "github.com/sourcegraph/sourcegraph",
-		Private: true,
-		RepoFields: &types.RepoFields{
-			URI:         "uri",
-			Description: "description",
-			Fork:        true,
-			Archived:    true,
-			Cloned:      true,
-			CreatedAt:   now,
-			UpdatedAt:   now,
-			Metadata:    new(github.Repository),
-			Sources: map[string]*types.SourceInfo{
-				service.URN(): {
-					ID:       service.URN(),
-					CloneURL: "git@github.com:foo/bar.git",
-				},
+		Name:        "github.com/sourcegraph/sourcegraph",
+		Private:     true,
+		URI:         "uri",
+		Description: "description",
+		Fork:        true,
+		Archived:    true,
+		Cloned:      true,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		Metadata:    new(github.Repository),
+		Sources: map[string]*types.SourceInfo{
+			service.URN(): {
+				ID:       service.URN(),
+				CloneURL: "git@github.com:foo/bar.git",
 			},
 		},
 	}
@@ -456,8 +445,8 @@ func TestRepos_List_fork(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := mustCreate(ctx, t, &types.Repo{Name: "a/r", RepoFields: &types.RepoFields{Fork: false}})
-	yours := mustCreate(ctx, t, &types.Repo{Name: "b/r", RepoFields: &types.RepoFields{Fork: true}})
+	mine := mustCreate(ctx, t, &types.Repo{Name: "a/r", Fork: false})
+	yours := mustCreate(ctx, t, &types.Repo{Name: "b/r", Fork: true})
 
 	{
 		repos, err := Repos.List(ctx, ReposListOptions{OnlyForks: true})
@@ -497,8 +486,8 @@ func TestRepos_List_cloned(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := mustCreate(ctx, t, &types.Repo{Name: "a/r", RepoFields: &types.RepoFields{Cloned: false}})
-	yours := mustCreate(ctx, t, &types.Repo{Name: "b/r", RepoFields: &types.RepoFields{Cloned: true}})
+	mine := mustCreate(ctx, t, &types.Repo{Name: "a/r", Cloned: false})
+	yours := mustCreate(ctx, t, &types.Repo{Name: "b/r", Cloned: true})
 
 	tests := []struct {
 		name string
@@ -998,8 +987,8 @@ func TestRepos_createRepo(t *testing.T) {
 
 	// Add a repo.
 	createRepo(ctx, t, &types.Repo{
-		Name:       "a/b",
-		RepoFields: &types.RepoFields{Description: "test"}})
+		Name:        "a/b",
+		Description: "test"})
 
 	repo, err := Repos.GetByName(ctx, "a/b")
 	if err != nil {
@@ -1157,8 +1146,8 @@ func TestRepos_ListRepoNames_fork(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := repoNamesFromRepos(mustCreate(ctx, t, &types.Repo{Name: "a/r", RepoFields: &types.RepoFields{Fork: false}}))
-	yours := repoNamesFromRepos(mustCreate(ctx, t, &types.Repo{Name: "b/r", RepoFields: &types.RepoFields{Fork: true}}))
+	mine := repoNamesFromRepos(mustCreate(ctx, t, &types.Repo{Name: "a/r", Fork: false}))
+	yours := repoNamesFromRepos(mustCreate(ctx, t, &types.Repo{Name: "b/r", Fork: true}))
 
 	{
 		repos, err := Repos.ListRepoNames(ctx, ReposListOptions{OnlyForks: true})
@@ -1198,8 +1187,8 @@ func TestRepos_ListRepoNames_cloned(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := repoNamesFromRepos(mustCreate(ctx, t, &types.Repo{Name: "a/r", RepoFields: &types.RepoFields{Cloned: false}}))
-	yours := repoNamesFromRepos(mustCreate(ctx, t, &types.Repo{Name: "b/r", RepoFields: &types.RepoFields{Cloned: true}}))
+	mine := repoNamesFromRepos(mustCreate(ctx, t, &types.Repo{Name: "a/r", Cloned: false}))
+	yours := repoNamesFromRepos(mustCreate(ctx, t, &types.Repo{Name: "b/r", Cloned: true}))
 
 	tests := []struct {
 		name string

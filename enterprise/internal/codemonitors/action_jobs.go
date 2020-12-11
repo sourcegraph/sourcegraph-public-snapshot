@@ -8,6 +8,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -55,11 +56,60 @@ var ActionJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_action_jobs.log_contents"),
 }
 
+const readActionEmailEventsFmtStr = `
+SELECT id, email, trigger_event, state, failure_message, started_at, finished_at, process_after, num_resets, num_failures, log_contents
+FROM cm_action_jobs
+WHERE %s
+AND id > %s
+ORDER BY id ASC
+LIMIT %s;
+`
+
+func (s *Store) ReadActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int, args *graphqlbackend.ListEventsArgs) (js []*ActionJob, err error) {
+	var where *sqlf.Query
+	if triggerEventID == nil {
+		where = sqlf.Sprintf("email = %s", emailID)
+	} else {
+		where = sqlf.Sprintf("email = %s AND trigger_event = %s", emailID, *triggerEventID)
+	}
+	var rows *sql.Rows
+	after, err := unmarshalAfter(args.After)
+	if err != nil {
+		return nil, err
+	}
+	rows, err = s.Query(ctx, sqlf.Sprintf(readActionEmailEventsFmtStr, where, after, args.First))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanActionJobs(rows, err)
+}
+
+const totalActionEmailEventsFmtStr = `
+SELECT COUNT(*)
+FROM cm_action_jobs
+WHERE %s
+`
+
+func (s *Store) TotalActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int) (totalCount int32, err error) {
+	var where *sqlf.Query
+	if triggerEventID == nil {
+		where = sqlf.Sprintf("email = %s", emailID)
+	} else {
+		where = sqlf.Sprintf("email = %s AND trigger_event = %s", emailID, *triggerEventID)
+	}
+	err = s.QueryRow(ctx, sqlf.Sprintf(totalActionEmailEventsFmtStr, where)).Scan(&totalCount)
+	if err != nil {
+		return -1, err
+	}
+	return totalCount, nil
+}
+
 const enqueueActionEmailFmtStr = `
 WITH due AS (
 	SELECT e.id, e.monitor, e.enabled, e.priority, e.header, e.created_by, e.created_at, e.changed_by, e.changed_at
 	FROM cm_emails e INNER JOIN cm_queries q ON e.monitor = q.monitor
-	WHERE q.id = %s
+	WHERE q.id = %s AND e.enabled = true
 ),
 busy AS (
     SELECT DISTINCT email as id FROM cm_action_jobs

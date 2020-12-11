@@ -7,6 +7,7 @@ import { catchError, filter, switchMap, map, distinctUntilChanged } from 'rxjs/o
 import { highlightNode } from '../util/dom'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { Repo } from '../util/url'
+import * as GQL from '../graphql/schema'
 
 export interface FetchFileParameters {
     repoName: string
@@ -14,19 +15,22 @@ export interface FetchFileParameters {
     filePath: string
     disableTimeout?: boolean
     isLightTheme: boolean
+    ranges: GQL.IHighlightLineRange[]
 }
 
 interface Props extends Repo {
     commitID: string
     filePath: string
     highlightRanges: HighlightRange[]
-    /** The highest line number among the subset matches. */
-    lastSubsetMatchLineNumber: number
+    /** The 0-based (inclusive) line number that this code excerpt starts at */
+    startLine: number
+    /** The 0-based (exclusive) line number that this code excerpt ends at */
+    endLine: number
     isLightTheme: boolean
     className?: string
-    /** How many extra lines to show in the excerpt before/after the ref.  */
-    context?: number
-    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    /** A function to fetch the range of lines this code excerpt will display. It will be provided
+     * the same start and end lines properties that were provided as component props */
+    fetchHighlightedFileRangeLines: (startLine: number, endLine: number) => Observable<string[]>
 }
 
 interface HighlightRange {
@@ -65,21 +69,17 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
             combineLatest([this.propsChanges, this.visibilityChanges])
                 .pipe(
                     filter(([, isVisible]) => isVisible),
-                    map(([{ repoName, filePath, commitID, isLightTheme }]) => ({
+                    map(([{ repoName, filePath, commitID, isLightTheme, startLine, endLine }]) => ({
                         repoName,
                         filePath,
                         commitID,
                         isLightTheme,
+                        startLine,
+                        endLine,
                     })),
                     distinctUntilChanged((a, b) => isEqual(a, b)),
-                    switchMap(({ repoName, filePath, commitID, isLightTheme }) =>
-                        props.fetchHighlightedFileLines({
-                            repoName,
-                            commitID,
-                            filePath,
-                            isLightTheme,
-                            disableTimeout: false,
-                        })
+                    switchMap(({ repoName, filePath, commitID, isLightTheme, startLine, endLine }) =>
+                        props.fetchHighlightedFileRangeLines(startLine, endLine)
                     ),
                     catchError(error => [asError(error)])
                 )
@@ -100,10 +100,10 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
             const visibleRows = this.tableContainerElement.querySelectorAll('table tr')
             for (const highlight of this.props.highlightRanges) {
                 // Select the HTML row in the excerpt that corresponds to the line to be highlighted.
-                // `highlight.line` is the 1-indexed line number in the code file, and this.getFirstLine() returns the
-                // 1-indexed line number of the first visible line in the excerpt. So, subtract this.getFirstLine()
+                // highlight.line is the 0-indexed line number in the code file, and this.props.startLine is the 0-indexed
+                // line number of the first visible line in the excerpt. So, subtract this.props.startLine
                 // from highlight.line to get the correct 0-based index in visibleRows that holds the HTML row.
-                const tableRow = visibleRows[highlight.line - this.getFirstLine()]
+                const tableRow = visibleRows[highlight.line - this.props.startLine]
                 if (tableRow) {
                     // Take the lastChild of the row to select the code portion of the table row (each table row consists of the line number and code).
                     const code = tableRow.lastChild as HTMLTableDataCellElement
@@ -117,55 +117,11 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    private getFirstLine(): number {
-        const contextLines = this.props.context || this.props.context === 0 ? this.props.context : 1
-        // Of the matches in this excerpt, pick the one with the lowest line number.
-        // Take the maximum between the (lowest line number - the lines of context) and 0,
-        // so we don't try and display a negative line index.
-        return Math.max(0, Math.min(...this.props.highlightRanges.map(range => range.line)) - contextLines)
-    }
-
-    private getLastLine(blobLines: string[] | undefined): number {
-        const contextLines = this.props.context || this.props.context === 0 ? this.props.context : 1
-
-        const highlightRangeLines = this.props.highlightRanges.map(range => range.line)
-        // The highest line number of all highlights in this excerpt.
-        const lastHighlightLineNumber = Math.max(...highlightRangeLines)
-
-        // If the highest highlight line number is greater than the last line number of the subsetMatches,
-        // then we know that there's at least one highlight in the context lines.
-        const contextLineHasHighlight = lastHighlightLineNumber > this.props.lastSubsetMatchLineNumber
-
-        // The gap between the last highlight provided to this excerpt, and the line number of the last highlighted
-        // match that is not a context line. If this value is larger than contextLines, it means that we are
-        // displaying _all_ matches, and therefore, do not need to reduce the number of context lines shown.
-        const remainingContextLinesToShow = lastHighlightLineNumber - this.props.lastSubsetMatchLineNumber
-
-        const numberOfcontextLinesToShow = contextLineHasHighlight
-            ? contextLines - (remainingContextLinesToShow <= contextLines ? remainingContextLinesToShow : 0)
-            : contextLines
-
-        // Of the matches in this excerpt, pick the one with the highest line number + lines of context.
-        // Don't add the context value to calculate the last line if the last highlight match is the highlight range + contextLines
-        const lastLine = contextLineHasHighlight
-            ? Math.max(...highlightRangeLines) + numberOfcontextLinesToShow
-            : Math.max(...highlightRangeLines) + contextLines
-        // If there are lines, take the minimum of lastLine and the number of lines in the file,
-        // so we don't try to display a line index beyond the maximum line number in the file.
-        return blobLines ? Math.min(lastLine, blobLines.length) : lastLine
-    }
-
     private onChangeVisibility = (isVisible: boolean): void => {
         this.visibilityChanges.next(isVisible)
     }
 
     public render(): JSX.Element | null {
-        // If the search.contextLines value is 0, we need to add 1 to the
-        // last line value so that `range(firstLine, lastLine)` is a non-empty array
-        // since range is exclusive of the lastLine value, and this.getFirstLine() and this.getLastLine()
-        // will return the same value.
-        const additionalLine = this.props.context === 0 ? 1 : 0
-
         return (
             <VisibilitySensor
                 onChange={this.onChangeVisibility}
@@ -192,10 +148,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                     {!this.state.blobLinesOrError && (
                         <table>
                             <tbody>
-                                {range(
-                                    this.getFirstLine(),
-                                    this.getLastLine(this.state.blobLinesOrError) + additionalLine
-                                ).map(index => (
+                                {range(this.props.startLine, this.props.endLine).map(index => (
                                     <tr key={index}>
                                         <td className="line">{index + 1}</td>
                                         {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
@@ -215,6 +168,6 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     }
 
     private makeTableHTML(blobLines: string[]): string {
-        return '<table>' + blobLines.slice(this.getFirstLine(), this.getLastLine(blobLines) + 1).join('') + '</table>'
+        return '<table>' + blobLines.join('') + '</table>'
     }
 }

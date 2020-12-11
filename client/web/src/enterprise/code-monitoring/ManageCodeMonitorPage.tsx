@@ -10,7 +10,6 @@ import { asError, isErrorLike } from '../../../../shared/src/util/errors'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
 import { CodeMonitorFields, MonitorEmailPriority } from '../../graphql-operations'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
@@ -19,7 +18,7 @@ export interface ManageCodeMonitorPageProps
     extends RouteComponentProps<{ id: Scalars['ID'] }>,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        Pick<CodeMonitoringProps, 'updateCodeMonitor' | 'fetchCodeMonitor'> {
+        Pick<CodeMonitoringProps, 'updateCodeMonitor' | 'fetchCodeMonitor' | 'deleteCodeMonitor'> {
     authenticatedUser: AuthenticatedUser
     location: H.Location
     history: H.History
@@ -92,9 +91,11 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
     )
 
     return (
-        <div>
+        <div className="container col-8 mt-5">
             <PageTitle title="Manage code monitor" />
-            <PageHeader title="Manage code monitor" />
+            <div className="page-header d-flex flex-wrap align-items-center">
+                <h2 className="flex-grow-1">Manage code monitor</h2>
+            </div>
             Code monitors watch your code for specific triggers and run actions in response.{' '}
             <a href="" target="_blank" rel="noopener">
                 {/* TODO: populate link */}
@@ -108,6 +109,7 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
                         onSubmit={updateMonitorRequest}
                         codeMonitor={codeMonitorState}
                         submitButtonLabel="Save"
+                        showDeleteButton={true}
                     />
                 </>
             )}

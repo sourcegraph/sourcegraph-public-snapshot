@@ -1,5 +1,4 @@
 import * as H from 'history'
-import { flatMap } from 'lodash'
 import * as React from 'react'
 import { Observable } from 'rxjs'
 import { ThemeProps } from '../theme'
@@ -8,20 +7,27 @@ import { SymbolIcon } from '../symbols/SymbolIcon'
 import { toPositionOrRangeHash, appendSubtreeQueryParameter } from '../util/url'
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import { CodeExcerptUnhighlighted } from './CodeExcerptUnhighlighted'
-import { IFileMatch, IMatchItem } from './FileMatch'
-import { mergeContext } from './FileMatchContext'
+import { FileLineMatch, MatchItem } from './FileMatch'
+import { calculateMatchGroups } from './FileMatchContext'
 import { Link } from './Link'
 import { BadgeAttachment } from './BadgeAttachment'
 import { isErrorLike } from '../util/errors'
-import { ISymbol } from '../graphql/schema'
+import { ISymbol, IHighlightLineRange } from '../graphql/schema'
+import { map } from 'rxjs/operators'
 
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
-    items: IMatchItem[]
-    result: IFileMatch
+    items: MatchItem[]
+    result: FileLineMatch
+    /**
+     * Whether or not to show all matches for this file, or only a subset.
+     */
     allMatches: boolean
+    /**
+     * The number of matches to show when the results are collapsed (allMatches===false, user has not clicked "Show N more matches")
+     */
     subsetMatches: number
-    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     /**
      * Called when the file's search result is selected.
      */
@@ -54,64 +60,61 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         }
     }
 
-    const sortedItems = props.items.sort((a, b) => {
-        if (a.line < b.line) {
-            return -1
-        }
-        if (a.line === b.line) {
-            if (a.highlightRanges[0].start < b.highlightRanges[0].start) {
-                return -1
-            }
-            if (a.highlightRanges[0].start === b.highlightRanges[0].start) {
-                return 0
-            }
-            return 1
-        }
-        return 1
-    })
+    const maxMatches = props.allMatches ? 0 : props.subsetMatches
+    const [matches, grouped] = React.useMemo(() => calculateMatchGroups(props.items, maxMatches, context), [
+        props.items,
+        maxMatches,
+        context,
+    ])
 
-    // This checks the highest line number amongst the number of matches
-    // that we want to show in a collapsed result preview.
-    const highestLineNumberWithinSubsetMatches =
-        sortedItems.length > 0
-            ? sortedItems.length > props.subsetMatches
-                ? sortedItems[props.subsetMatches - 1].line
-                : sortedItems[sortedItems.length - 1].line
-            : 0
+    // If optimizeHighlighting is enabled, compile a list of the highlighted file ranges we want to
+    // fetch (instead of the entire file.)
+    const optimizeHighlighting =
+        props.settingsCascade.final &&
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade.final.experimentalFeatures &&
+        props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
 
-    const showItems = sortedItems.filter(
-        (item, index) =>
-            props.allMatches ||
-            index < props.subsetMatches ||
-            item.line <= highestLineNumberWithinSubsetMatches + context
+    const { result, isLightTheme, fetchHighlightedFileLineRanges } = props
+    const fetchHighlightedFileRangeLines = React.useCallback(
+        (startLine, endLine) =>
+            fetchHighlightedFileLineRanges(
+                {
+                    repoName: result.repository.name,
+                    commitID: result.file.commit.oid,
+                    filePath: result.file.path,
+                    disableTimeout: false,
+                    isLightTheme,
+                    ranges: optimizeHighlighting
+                        ? grouped.map(
+                              (group): IHighlightLineRange => ({
+                                  startLine: group.startLine,
+                                  endLine: group.endLine,
+                              })
+                          )
+                        : [{ startLine: 0, endLine: 2147483647 }], // entire file,
+                },
+                false
+            ).pipe(
+                map(lines =>
+                    optimizeHighlighting
+                        ? lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
+                        : lines[0].slice(startLine, endLine)
+                )
+            ),
+        [result, isLightTheme, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting]
     )
 
     if (NO_SEARCH_HIGHLIGHTING) {
         return (
-            <CodeExcerptUnhighlighted
-                urlWithoutPosition={props.result.file.url}
-                items={showItems}
-                onSelect={props.onSelect}
-            />
+            <CodeExcerptUnhighlighted urlWithoutPosition={result.file.url} items={matches} onSelect={props.onSelect} />
         )
     }
-
-    const groupsOfItems = mergeContext(
-        context,
-        flatMap(showItems, item =>
-            item.highlightRanges.map(range => ({
-                line: item.line,
-                character: range.start,
-                highlightLength: range.highlightLength,
-                badge: item.badge,
-            }))
-        )
-    )
 
     return (
         <div className="file-match-children">
             {/* Symbols */}
-            {(props.result.symbols || []).map((symbol: ISymbol) => (
+            {(result.symbols || []).map((symbol: ISymbol) => (
                 <Link
                     to={symbol.url}
                     className="file-match-children__item test-file-match-children-item"
@@ -124,47 +127,43 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     </code>
                 </Link>
             ))}
-            {groupsOfItems.map(items => {
-                const item = items[0]
-                const position = { line: item.line + 1, character: item.character + 1 }
-                return (
-                    <div
-                        key={`linematch:${props.result.file.url}${position.line}:${position.character}`}
-                        className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
+            {grouped.map(group => (
+                <div
+                    key={`linematch:${result.file.url}${group.position.line}:${group.position.character}`}
+                    className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
+                >
+                    <Link
+                        to={appendSubtreeQueryParameter(
+                            `${result.file.url}${toPositionOrRangeHash({ position: group.position })}`
+                        )}
+                        className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
+                        onClick={props.onSelect}
                     >
-                        <Link
-                            to={appendSubtreeQueryParameter(
-                                `${props.result.file.url}${toPositionOrRangeHash({ position })}`
-                            )}
-                            className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
-                            onClick={props.onSelect}
-                        >
-                            <CodeExcerpt
-                                repoName={props.result.repository.name}
-                                commitID={props.result.file.commit.oid}
-                                filePath={props.result.file.path}
-                                lastSubsetMatchLineNumber={highestLineNumberWithinSubsetMatches}
-                                context={context}
-                                highlightRanges={items}
-                                className="file-match-children__item-code-excerpt"
-                                isLightTheme={props.isLightTheme}
-                                fetchHighlightedFileLines={props.fetchHighlightedFileLines}
-                            />
-                        </Link>
+                        <CodeExcerpt
+                            repoName={result.repository.name}
+                            commitID={result.file.commit.oid}
+                            filePath={result.file.path}
+                            startLine={group.startLine}
+                            endLine={group.endLine}
+                            highlightRanges={group.matches}
+                            className="file-match-children__item-code-excerpt"
+                            isLightTheme={isLightTheme}
+                            fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
+                        />
+                    </Link>
 
-                        <div className="file-match-children__item-badge-row test-badge-row">
-                            {item.badge && showBadges && (
-                                // This div is necessary: it has block display, where the badge row
-                                // has flex display and would cause the hover tooltip to be offset
-                                // in a weird way (centered in the code context, not on the icon).
-                                <div>
-                                    <BadgeAttachment attachment={item.badge} isLightTheme={props.isLightTheme} />
-                                </div>
-                            )}
-                        </div>
+                    <div className="file-match-children__item-badge-row test-badge-row">
+                        {group.matches[0].badge && showBadges && (
+                            // This div is necessary: it has block display, where the badge row
+                            // has flex display and would cause the hover tooltip to be offset
+                            // in a weird way (centered in the code context, not on the icon).
+                            <div>
+                                <BadgeAttachment attachment={group.matches[0].badge} isLightTheme={isLightTheme} />
+                            </div>
+                        )}
                     </div>
-                )
-            })}
+                </div>
+            ))}
         </div>
     )
 }

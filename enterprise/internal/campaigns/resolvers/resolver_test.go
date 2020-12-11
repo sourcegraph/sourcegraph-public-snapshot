@@ -16,7 +16,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
@@ -27,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -610,6 +610,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	wantReviewStates := []campaigns.ChangesetReviewState{"APPROVED", "INVALID"}
 	wantCheckStates := []campaigns.ChangesetCheckState{"PENDING", "INVALID"}
 	wantOnlyPublishedByThisCampaign := []bool{true}
+	wantSearches := []ee.ListChangesetsTextSearchExpr{{Term: "foo"}, {Term: "bar", Not: true}}
 	var campaignID int64 = 1
 
 	tcs := []struct {
@@ -720,6 +721,26 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			wantParsed: ee.ListChangesetsOpts{
 				PublicationState:  &wantPublicationStates[0],
 				OwnedByCampaignID: campaignID,
+			},
+		},
+		// Setting a positive search.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				Search: stringPtr("foo"),
+			},
+			wantSafe: false,
+			wantParsed: ee.ListChangesetsOpts{
+				TextSearch: wantSearches[0:1],
+			},
+		},
+		// Setting a negative search.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				Search: stringPtr("-bar"),
+			},
+			wantSafe: false,
+			wantParsed: ee.ListChangesetsOpts{
+				TextSearch: wantSearches[1:],
 			},
 		},
 	}
@@ -857,3 +878,5 @@ mutation($campaignsCredential: ID!) {
   deleteCampaignsCredential(campaignsCredential: $campaignsCredential) { alwaysNil }
 }
 `
+
+func stringPtr(s string) *string { return &s }

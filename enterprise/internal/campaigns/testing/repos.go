@@ -8,15 +8,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestRepo(t *testing.T, store repos.Store, serviceKind string) *repos.Repo {
+func TestRepo(t *testing.T, store repos.Store, serviceKind string) *types.Repo {
 	t.Helper()
 
 	clock := dbtesting.NewFakeClock(time.Now(), 0)
@@ -34,8 +34,8 @@ func TestRepo(t *testing.T, store repos.Store, serviceKind string) *repos.Repo {
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 
-	return &repos.Repo{
-		Name:    fmt.Sprintf("repo-%d", svc.ID),
+	return &types.Repo{
+		Name:    api.RepoName(fmt.Sprintf("repo-%d", svc.ID)),
 		URI:     fmt.Sprintf("repo-%d", svc.ID),
 		Private: true,
 		ExternalRepo: api.ExternalRepoSpec{
@@ -43,7 +43,7 @@ func TestRepo(t *testing.T, store repos.Store, serviceKind string) *repos.Repo {
 			ServiceType: extsvc.KindToType(serviceKind),
 			ServiceID:   fmt.Sprintf("https://%s.com/", strings.ToLower(serviceKind)),
 		},
-		Sources: map[string]*repos.SourceInfo{
+		Sources: map[string]*types.SourceInfo{
 			svc.URN(): {
 				ID:       svc.URN(),
 				CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
@@ -52,7 +52,7 @@ func TestRepo(t *testing.T, store repos.Store, serviceKind string) *repos.Repo {
 	}
 }
 
-func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *types.ExternalService) {
+func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
 	rstore := repos.NewDBStore(db, sql.TxOptions{})
@@ -69,12 +69,12 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 		t.Fatal(err)
 	}
 
-	var rs []*repos.Repo
+	var rs []*types.Repo
 	for i := 0; i < count; i++ {
 		r := TestRepo(t, rstore, extsvc.KindGitHub)
-		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {
+		r.Sources = map[string]*types.SourceInfo{ext.URN(): {
 			ID:       ext.URN(),
-			CloneURL: "https://secrettoken@github.com/" + r.Name,
+			CloneURL: "https://secrettoken@github.com/" + string(r.Name),
 		}}
 
 		rs = append(rs, r)
@@ -88,7 +88,7 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 	return rs, ext
 }
 
-func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *types.ExternalService) {
+func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
 	rstore := repos.NewDBStore(db, sql.TxOptions{})
@@ -105,12 +105,12 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count 
 		t.Fatal(err)
 	}
 
-	var rs []*repos.Repo
+	var rs []*types.Repo
 	for i := 0; i < count; i++ {
 		r := TestRepo(t, rstore, extsvc.KindGitLab)
-		r.Sources = map[string]*repos.SourceInfo{ext.URN(): {
+		r.Sources = map[string]*types.SourceInfo{ext.URN(): {
 			ID:       ext.URN(),
-			CloneURL: "https://git:gitlab-token@gitlab.com/" + r.Name,
+			CloneURL: "https://git:gitlab-token@gitlab.com/" + string(r.Name),
 		}}
 
 		rs = append(rs, r)
@@ -124,7 +124,7 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count 
 	return rs, ext
 }
 
-func CreateBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*repos.Repo, *types.ExternalService) {
+func CreateBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
 	rstore := repos.NewDBStore(db, sql.TxOptions{})
@@ -141,13 +141,13 @@ func CreateBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int
 		t.Fatal(err)
 	}
 
-	var rs []*repos.Repo
+	var rs []*types.Repo
 	for i := 0; i < count; i++ {
 		r := TestRepo(t, rstore, extsvc.KindBitbucketServer)
-		r.Sources = map[string]*repos.SourceInfo{
+		r.Sources = map[string]*types.SourceInfo{
 			ext.URN(): {
 				ID:       ext.URN(),
-				CloneURL: "https://bbs-user:bbs-token@bitbucket.sourcegraph.com/scm/" + r.Name,
+				CloneURL: "https://bbs-user:bbs-token@bitbucket.sourcegraph.com/scm/" + string(r.Name),
 			},
 		}
 

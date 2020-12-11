@@ -56,7 +56,7 @@ export interface StreamingSearchResultsProps
     availableVersionContexts: VersionContext[] | undefined
     previousVersionContext: string | null
 
-    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
 const initialItemsToShow = 15
@@ -170,7 +170,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         showAllMatches={false}
                         isLightTheme={props.isLightTheme}
                         allExpanded={allExpanded}
-                        fetchHighlightedFileLines={props.fetchHighlightedFileLines}
+                        fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                         settingsCascade={props.settingsCascade}
                     />
                 )
@@ -222,7 +222,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 />
 
                 {!results?.progress.done && (
-                    <div className="text-center my-2" data-testid="loading-container">
+                    <div className="text-center my-4" data-testid="loading-container">
                         <LoadingSpinner className="icon-inline" />
                     </div>
                 )}
@@ -236,7 +236,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 )}
 
                 {results?.progress.done && results?.results.length > 0 && (
-                    <small className="d-block mt-2 text-center">Showing {results?.results.length} results</small>
+                    <small className="d-block my-4 text-center">Showing {results?.results.length} results</small>
                 )}
             </div>
         </div>

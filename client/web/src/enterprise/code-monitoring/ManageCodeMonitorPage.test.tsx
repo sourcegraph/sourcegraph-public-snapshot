@@ -5,7 +5,7 @@ import sinon from 'sinon'
 import { mount } from 'enzyme'
 import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
 import { mockCodeMonitor } from './testing/util'
-import { of } from 'rxjs'
+import { NEVER, of } from 'rxjs'
 
 describe('ManageCodeMonitorPage', () => {
     const mockUser = {
@@ -16,6 +16,7 @@ describe('ManageCodeMonitorPage', () => {
     } as AuthenticatedUser
 
     const history = H.createMemoryHistory()
+    history.location.pathname = '/code-monitoring/test-monitor-id'
     const props = {
         history,
         location: history.location,
@@ -33,7 +34,9 @@ describe('ManageCodeMonitorPage', () => {
             url: 'https://sourcegraph.com',
         },
         toggleCodeMonitorEnabled: sinon.spy((id: string, enabled: boolean) => of({ id: 'test', enabled: true })),
+        deleteCodeMonitor: sinon.spy((id: string) => NEVER),
     }
+
     test('Form is pre-loaded with code monitor data', () => {
         const component = mount(<ManageCodeMonitorPage {...props} />)
         expect(props.fetchCodeMonitor.calledOnce)
@@ -110,5 +113,27 @@ describe('ManageCodeMonitorPage', () => {
         cancelButton.simulate('click')
         expect(confirmStub.notCalled)
         confirmStub.restore()
+    })
+
+    test('Cancelling without any changes made does not show confirmation prompt', () => {
+        const component = mount(<ManageCodeMonitorPage {...props} />)
+        const confirmStub = sinon.stub(window, 'confirm')
+        const cancelButton = component.find('.test-cancel-monitor')
+        cancelButton.simulate('click')
+        expect(confirmStub.notCalled)
+        confirmStub.restore()
+    })
+
+    test('Clicking delete code monitor opens deletion confirmation modal', () => {
+        const component = mount(<ManageCodeMonitorPage {...props} />)
+        const deleteButton = component.find('.test-delete-monitor')
+        deleteButton.simulate('click')
+        const deleteModal = component.find('.test-delete-modal')
+        expect(deleteModal.length).toBeGreaterThan(0)
+        const confirmDeleteButton = component.find('.test-confirm-delete-monitor')
+        expect(confirmDeleteButton.length).toBe(1)
+        confirmDeleteButton.simulate('click')
+        expect(props.deleteCodeMonitor.calledOnce)
+        expect(props.history.location.pathname).toEqual('/code-monitoring')
     })
 })

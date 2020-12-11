@@ -395,7 +395,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		limitHit = true
 	}
 
-	var getRepoInputRev func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool)
+	var getRepoInputRev func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool)
 
 	if args.Mode == search.ZoektGlobalSearch {
 		m := map[string]*search.RepositoryRevisions{}
@@ -413,7 +413,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			}
 			m[string(repo.Repo.Name)] = repo
 		}
-		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool) {
+		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
 			repoRev := m[file.Repository]
 			if repoRev == nil {
 				return nil, nil, false
@@ -421,7 +421,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			return repoRev.Repo, repoRev.RevSpecs(), true
 		}
 	} else {
-		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool) {
+		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
 			repo, inputRevs := repos.GetRepoInputRev(file)
 			return repo, inputRevs, true
 		}
@@ -442,7 +442,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		}
 		repoResolver := repoResolvers[repo.Name]
 		if repoResolver == nil {
-			repoResolver = &RepositoryResolver{repo: repo}
+			repoResolver = &RepositoryResolver{repo: repo.ToRepo()}
 			repoResolvers[repo.Name] = repoResolver
 		}
 
@@ -818,7 +818,7 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 }
 
 // GetRepoInputRev returns the repo and inputRev associated with file.
-func (rb *indexedRepoRevs) GetRepoInputRev(file *zoekt.FileMatch) (repo *types.Repo, inputRevs []string) {
+func (rb *indexedRepoRevs) GetRepoInputRev(file *zoekt.FileMatch) (repo *types.RepoName, inputRevs []string) {
 	repoRev := rb.repoRevs[file.Repository]
 
 	inputRevs = make([]string, 0, len(file.Branches))

@@ -102,7 +102,7 @@ const PROPS: HierarchicalLocationsViewProps = {
     locations: of({ isLoading: false, result: LOCATIONS }),
     defaultGroup: 'git://github.com/foo/bar',
     isLightTheme: true,
-    fetchHighlightedFileLines: () => of(['line1\n', 'line2\n', 'line3\n', 'line4']),
+    fetchHighlightedFileLineRanges: () => of([['line1\n', 'line2\n', 'line3\n', 'line4']]),
     versionContext: undefined,
 }
 

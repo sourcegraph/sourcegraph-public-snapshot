@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 

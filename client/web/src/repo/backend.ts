@@ -8,7 +8,6 @@ import {
 } from '../../../shared/src/backend/errors'
 import { FetchFileParameters } from '../../../shared/src/components/CodeExcerpt'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import {
@@ -166,14 +165,12 @@ export const resolveRevision = memoizeObservable(
     makeRepoURI
 )
 
-interface HighlightedFileResult {
-    isDirectory: boolean
-    richHTML: string
-    highlightedFile: GQL.IHighlightedFile
-}
-
-const fetchHighlightedFile = memoizeObservable(
-    (context: FetchFileParameters): Observable<HighlightedFileResult> =>
+/**
+ * Fetches the specified highlighted file line ranges (`FetchFileParameters.ranges`) and returns
+ * them as a list of ranges, each describing a list of lines in the form of HTML table '<tr>...</tr>'.
+ */
+export const fetchHighlightedFileLineRanges = memoizeObservable(
+    (context: FetchFileParameters, force?: boolean): Observable<string[][]> =>
         queryGraphQL(
             gql`
                 query HighlightedFile(
@@ -182,6 +179,7 @@ const fetchHighlightedFile = memoizeObservable(
                     $filePath: String!
                     $disableTimeout: Boolean!
                     $isLightTheme: Boolean!
+                    $ranges: [HighlightLineRange!]!
                 ) {
                     repository(name: $repoName) {
                         commit(rev: $commitID) {
@@ -190,7 +188,7 @@ const fetchHighlightedFile = memoizeObservable(
                                 richHTML
                                 highlight(disableTimeout: $disableTimeout, isLightTheme: $isLightTheme) {
                                     aborted
-                                    html
+                                    lineRanges(ranges: $ranges)
                                 }
                             }
                         }
@@ -204,33 +202,17 @@ const fetchHighlightedFile = memoizeObservable(
                     throw createAggregateError(errors)
                 }
                 const file = data.repository.commit.file
-                return { isDirectory: file.isDirectory, richHTML: file.richHTML, highlightedFile: file.highlight }
+                if (file.isDirectory) {
+                    return []
+                }
+                return file.highlight.lineRanges
             })
         ),
     context =>
         makeRepoURI(context) +
-        `?disableTimeout=${String(context.disableTimeout)}&isLightTheme=${String(context.isLightTheme)}`
-)
-
-/**
- * Produces a list like ['<tr>...</tr>', ...]
- */
-export const fetchHighlightedFileLines = memoizeObservable(
-    (context: FetchFileParameters, force?: boolean): Observable<string[]> =>
-        fetchHighlightedFile(context, force).pipe(
-            map(result => {
-                if (result.isDirectory) {
-                    return []
-                }
-                const parsed = result.highlightedFile.html.slice('<table>'.length, -'</table>'.length)
-                const rows = parsed.split('</tr>')
-                for (let index = 0; index < rows.length; ++index) {
-                    rows[index] += '</tr>'
-                }
-                return rows
-            })
-        ),
-    context => makeRepoURI(context) + `?isLightTheme=${String(context.isLightTheme)}`
+        `?disableTimeout=${String(context.disableTimeout)}&isLightTheme=${String(context.isLightTheme)}&ranges=${String(
+            context.ranges
+        )}`
 )
 
 export const fetchFileExternalLinks = memoizeObservable(

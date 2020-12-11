@@ -18,6 +18,7 @@ export interface CodeMonitoringProps {
         triggerEditInput: MonitorEditTriggerInput,
         actionEditInput: MonitorEditActionInput[]
     ) => Observable<UpdateCodeMonitorResult['updateCodeMonitor']>
+    deleteCodeMonitor: (id: string) => Observable<void>
     toggleCodeMonitorEnabled: (
         id: string,
         enabled: boolean

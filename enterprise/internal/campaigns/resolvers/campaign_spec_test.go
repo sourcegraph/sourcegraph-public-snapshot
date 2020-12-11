@@ -11,7 +11,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
 func TestCampaignSpecResolver(t *testing.T) {
@@ -124,7 +124,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 					Description: apitest.ChangesetSpecDescription{
 						BaseRepository: apitest.Repository{
 							ID:   string(repoID),
-							Name: repo.Name,
+							Name: string(repo.Name),
 						},
 					},
 				},

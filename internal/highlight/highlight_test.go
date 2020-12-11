@@ -177,7 +177,7 @@ func TestSplitHighlightedLines(t *testing.T) {
 		`<div><span style="color:#323232;">
 </span></div>`,
 		`<div></div>`}
-	have, err := splitHighlightedLines(template.HTML(input))
+	have, err := splitHighlightedLines(template.HTML(input), false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -260,6 +260,123 @@ func Test_normalizeFilepath(t *testing.T) {
 		t.Run(tst.name, func(t *testing.T) {
 			got := normalizeFilepath(tst.input)
 			if diff := cmp.Diff(got, tst.want); diff != "" {
+				t.Fatalf("mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestSplitLineRanges(t *testing.T) {
+	html := `<table><tr><td class="line" data-line="1"></td><td class="code"><div><span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> spans on short lines like this are kept
+</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#323232;">
+</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;net/http&#34;
+</span></div></td></tr><tr><td class="line" data-line="4"></td><td class="code"><div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;github.com/sourcegraph/sourcegraph/internal/api/legacyerr&#34;
+</span></div></td></tr><tr><td class="line" data-line="5"></td><td class="code"><div><span style="color:#323232;">)
+</span></div></td></tr><tr><td class="line" data-line="6"></td><td class="code"><div><span style="color:#323232;">
+</span></div></td></tr><tr><td class="line" data-line="7"></td><td class="code"><div><span style="color:#323232;">
+</span></div></td></tr><tr><td class="line" data-line="8"></td><td class="code"><div></div></td></tr></table>`
+
+	tests := []struct {
+		name  string
+		input []LineRange
+		want  [][]string
+	}{
+		{
+			name: "clamped_negative",
+			input: []LineRange{
+				{StartLine: -10, EndLine: 1},
+			},
+			want: [][]string{
+				{
+					"<tr><td class=\"line\" data-line=\"1\"></td><td class=\"code\"><div><span style=\"font-weight:bold;color:#a71d5d;\">package</span><span style=\"color:#323232;\"> spans on short lines like this are kept\n</span></div></td></tr>",
+				},
+			},
+		},
+		{
+			name: "clamped_positive",
+			input: []LineRange{
+				{StartLine: 0, EndLine: 10000},
+			},
+			want: [][]string{
+				{
+					"<tr><td class=\"line\" data-line=\"1\"></td><td class=\"code\"><div><span style=\"font-weight:bold;color:#a71d5d;\">package</span><span style=\"color:#323232;\"> spans on short lines like this are kept\n</span></div></td></tr>",
+					"<tr><td class=\"line\" data-line=\"2\"></td><td class=\"code\"><div><span style=\"color:#323232;\">\n</span></div></td></tr>",
+					"<tr><td class=\"line\" data-line=\"3\"></td><td class=\"code\"><div><span style=\"color:#323232;\">	</span><span style=\"color:#183691;\">&#34;net/http&#34;\n</span></div></td></tr>",
+					"<tr><td class=\"line\" data-line=\"4\"></td><td class=\"code\"><div><span style=\"color:#323232;\">	</span><span style=\"color:#183691;\">&#34;github.com/sourcegraph/sourcegraph/internal/api/legacyerr&#34;\n</span></div></td></tr>",
+					"<tr><td class=\"line\" data-line=\"5\"></td><td class=\"code\"><div><span style=\"color:#323232;\">)\n</span></div></td></tr>",
+					"<tr><td class=\"line\" data-line=\"6\"></td><td class=\"code\"><div><span style=\"color:#323232;\">\n</span></div></td></tr>",
+					"<tr><td class=\"line\" data-line=\"7\"></td><td class=\"code\"><div><span style=\"color:#323232;\">\n</span></div></td></tr>",
+					"<tr><td class=\"line\" data-line=\"8\"></td><td class=\"code\"><div></div></td></tr>",
+				},
+			},
+		},
+		{
+			name: "1_range",
+			input: []LineRange{
+				{StartLine: 3, EndLine: 6},
+			},
+			want: [][]string{
+				{
+					"<tr><td class=\"line\" data-line=\"4\"></td><td class=\"code\"><div><span style=\"color:#323232;\">	</span><span style=\"color:#183691;\">&#34;github.com/sourcegraph/sourcegraph/internal/api/legacyerr&#34;\n</span></div></td></tr>",
+					"<tr><td class=\"line\" data-line=\"5\"></td><td class=\"code\"><div><span style=\"color:#323232;\">)\n</span></div></td></tr>",
+					"<tr><td class=\"line\" data-line=\"6\"></td><td class=\"code\"><div><span style=\"color:#323232;\">\n</span></div></td></tr>",
+				},
+			},
+		},
+		{
+			name: "2_ranges",
+			input: []LineRange{
+				{StartLine: 1, EndLine: 3},
+				{StartLine: 4, EndLine: 6},
+			},
+			want: [][]string{
+				{
+					"<tr><td class=\"line\" data-line=\"2\"></td><td class=\"code\"><div><span style=\"color:#323232;\">\n</span></div></td></tr>",
+					"<tr><td class=\"line\" data-line=\"3\"></td><td class=\"code\"><div><span style=\"color:#323232;\">	</span><span style=\"color:#183691;\">&#34;net/http&#34;\n</span></div></td></tr>",
+				},
+				{
+					"<tr><td class=\"line\" data-line=\"5\"></td><td class=\"code\"><div><span style=\"color:#323232;\">)\n</span></div></td></tr>",
+					"<tr><td class=\"line\" data-line=\"6\"></td><td class=\"code\"><div><span style=\"color:#323232;\">\n</span></div></td></tr>",
+				},
+			},
+		},
+		{
+			name: "3_ranges_unordered",
+			input: []LineRange{
+				{StartLine: 5, EndLine: 6},
+				{StartLine: 7, EndLine: 8},
+				{StartLine: 2, EndLine: 4},
+			},
+			want: [][]string{
+				{
+					"<tr><td class=\"line\" data-line=\"6\"></td><td class=\"code\"><div><span style=\"color:#323232;\">\n</span></div></td></tr>",
+				},
+				{
+					"<tr><td class=\"line\" data-line=\"8\"></td><td class=\"code\"><div></div></td></tr>",
+				},
+				{
+					"<tr><td class=\"line\" data-line=\"3\"></td><td class=\"code\"><div><span style=\"color:#323232;\">	</span><span style=\"color:#183691;\">&#34;net/http&#34;\n</span></div></td></tr>",
+					"<tr><td class=\"line\" data-line=\"4\"></td><td class=\"code\"><div><span style=\"color:#323232;\">	</span><span style=\"color:#183691;\">&#34;github.com/sourcegraph/sourcegraph/internal/api/legacyerr&#34;\n</span></div></td></tr>",
+				},
+			},
+		},
+		{
+			name: "bad_range",
+			input: []LineRange{
+				{StartLine: 6, EndLine: 3},
+			},
+			want: [][]string{
+				{},
+			},
+		},
+	}
+	for _, tst := range tests {
+		t.Run(tst.name, func(t *testing.T) {
+			got, err := SplitLineRanges(template.HTML(html), tst.input)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(tst.want, got); diff != "" {
 				t.Fatalf("mismatch (-want +got):\n%s", diff)
 			}
 		})

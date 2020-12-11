@@ -38,7 +38,7 @@ const defaultProps: SearchResultsListProps = {
     onSaveQueryClick: sinon.spy(),
     didSave: false,
 
-    fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_REQUEST,
+    fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
 
     isLightTheme: true,
     settingsCascade: {

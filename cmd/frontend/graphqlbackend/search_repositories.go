@@ -89,7 +89,7 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 			revs = r.RevSpecs()
 		}
 		for _, rev := range revs {
-			results = append(results, &RepositoryResolver{repo: r.Repo, icon: repoIcon, rev: rev})
+			results = append(results, &RepositoryResolver{repo: r.Repo.ToRepo(), icon: repoIcon, rev: rev})
 		}
 	}
 
@@ -146,7 +146,7 @@ func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions) 
 		offset = next
 	}
 
-	repos := make([]*types.Repo, len(resolved))
+	repos := make([]*types.RepoName, len(resolved))
 	for i := range resolved {
 		repos[i] = resolved[i].Repo
 	}

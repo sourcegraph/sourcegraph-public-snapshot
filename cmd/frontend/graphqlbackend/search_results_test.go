@@ -27,6 +27,8 @@ import (
 var mockCount = func(_ context.Context, options db.ReposListOptions) (int, error) { return 0, nil }
 
 func assertEqual(t *testing.T, got, want interface{}) {
+	t.Helper()
+
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatalf("(-want +got):\n%s", diff)
 	}
@@ -72,32 +74,31 @@ func TestSearchResults(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		var calledReposList bool
-		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-			calledReposList = true
+		var calledReposListRepoNames bool
+		db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+			calledReposListRepoNames = true
 
 			// Validate that the following options are invariant
-			// when calling the DB through Repos.List, no matter how
+			// when calling the DB through Repos.ListRepoNames, no matter how
 			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.OnlyRepoIDs, true)
 			assertEqual(t, op.LimitOffset, limitOffset)
 			assertEqual(t, op.IncludePatterns, []string{"r", "p"})
 
-			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
+			return []*types.RepoName{{ID: 1, Name: "repo"}}, nil
 		}
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		db.Mocks.Repos.MockGet(t, 1)
 		db.Mocks.Repos.Count = mockCount
 
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
-			return nil, &searchResultsCommon{repos: []*types.Repo{{ID: 1, Name: "repo"}}}, nil
+			return nil, &searchResultsCommon{repos: []*types.RepoName{{ID: 1, Name: "repo"}}}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
 		for _, v := range searchVersions {
 			testCallResults(t, `repo:r repo:p`, v, []string{"repo:repo"})
-			if !calledReposList {
-				t.Error("!calledReposList")
+			if !calledReposListRepoNames {
+				t.Error("!calledReposListRepoNames")
 			}
 		}
 
@@ -107,17 +108,16 @@ func TestSearchResults(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		var calledReposList bool
-		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-			calledReposList = true
+		var calledReposListRepoNames bool
+		db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+			calledReposListRepoNames = true
 
 			// Validate that the following options are invariant
 			// when calling the DB through Repos.List, no matter how
 			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.OnlyRepoIDs, true)
 			assertEqual(t, op.LimitOffset, limitOffset)
 
-			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
+			return []*types.RepoName{{ID: 1, Name: "repo"}}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
@@ -148,15 +148,15 @@ func TestSearchResults(t *testing.T) {
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
-			repo := &types.Repo{ID: 1, Name: "repo"}
-			fm := mkFileMatch(repo, "dir/file", 123)
-			return []*FileMatchResolver{fm}, &searchResultsCommon{repos: []*types.Repo{repo}}, nil
+			repo := &types.RepoName{ID: 1, Name: "repo"}
+			fm := mkFileMatch(repo.ToRepo(), "dir/file", 123)
+			return []*FileMatchResolver{fm}, &searchResultsCommon{repos: []*types.RepoName{repo}}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
 		testCallResults(t, `foo\d "bar*"`, "V1", []string{"dir/file:123"})
-		if !calledReposList {
-			t.Error("!calledReposList")
+		if !calledReposListRepoNames {
+			t.Error("!calledReposListRepoNames")
 		}
 		if !calledSearchRepositories {
 			t.Error("!calledSearchRepositories")
@@ -173,17 +173,16 @@ func TestSearchResults(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		var calledReposList bool
-		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-			calledReposList = true
+		var calledReposListRepoNames bool
+		db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+			calledReposListRepoNames = true
 
 			// Validate that the following options are invariant
 			// when calling the DB through Repos.List, no matter how
 			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.OnlyRepoIDs, true)
 			assertEqual(t, op.LimitOffset, limitOffset)
 
-			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
+			return []*types.RepoName{{ID: 1, Name: "repo"}}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
@@ -214,15 +213,15 @@ func TestSearchResults(t *testing.T) {
 			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
-			repo := &types.Repo{ID: 1, Name: "repo"}
-			fm := mkFileMatch(repo, "dir/file", 123)
-			return []*FileMatchResolver{fm}, &searchResultsCommon{repos: []*types.Repo{repo}}, nil
+			repo := &types.RepoName{ID: 1, Name: "repo"}
+			fm := mkFileMatch(repo.ToRepo(), "dir/file", 123)
+			return []*FileMatchResolver{fm}, &searchResultsCommon{repos: []*types.RepoName{repo}}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
 		testCallResults(t, `foo\d "bar*"`, "V2", []string{"dir/file:123"})
-		if !calledReposList {
-			t.Error("!calledReposList")
+		if !calledReposListRepoNames {
+			t.Error("!calledReposListRepoNames")
 		}
 		if !calledSearchRepositories {
 			t.Error("!calledSearchRepositories")
@@ -908,19 +907,17 @@ func TestSearchResultsHydration(t *testing.T) {
 		ID:           repoWithIDs.ID,
 		ExternalRepo: repoWithIDs.ExternalRepo,
 		Name:         repoWithIDs.Name,
-
-		RepoFields: &types.RepoFields{
-			URI:         fmt.Sprintf("github.com/my-org/%s", repoWithIDs.Name),
-			Description: "This is a description of a repository",
-			Fork:        false,
-		}}
+		URI:          fmt.Sprintf("github.com/my-org/%s", repoWithIDs.Name),
+		Description:  "This is a description of a repository",
+		Fork:         false,
+	}
 
 	db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 		return hydratedRepo, nil
 	}
 
-	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-		return []*types.Repo{repoWithIDs}, nil
+	db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+		return []*types.RepoName{{ID: repoWithIDs.ID, Name: repoWithIDs.Name}}, nil
 	}
 	db.Mocks.Repos.Count = mockCount
 
@@ -983,9 +980,9 @@ func TestSearchResultsHydration(t *testing.T) {
 }
 
 func TestDedupSort(t *testing.T) {
-	repos := make(types.Repos, 512)
+	repos := make(types.RepoNames, 512)
 	for i := range repos {
-		repos[i] = &types.Repo{ID: api.RepoID(i % 256)}
+		repos[i] = &types.RepoName{ID: api.RepoID(i % 256)}
 	}
 
 	rand.Shuffle(len(repos), func(i, j int) {
@@ -1079,7 +1076,7 @@ func TestCommitAndDiffSearchLimits(t *testing.T) {
 		repoRevs := make([]*search.RepositoryRevisions, test.numRepoRevs)
 		for i := range repoRevs {
 			repoRevs[i] = &search.RepositoryRevisions{
-				Repo: &types.Repo{ID: api.RepoID(i)},
+				Repo: &types.RepoName{ID: api.RepoID(i)},
 			}
 		}
 
@@ -1429,8 +1426,12 @@ func TestEvaluateAnd(t *testing.T) {
 
 			ctx := context.Background()
 
-			db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-				return minimalRepos, nil
+			db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+				repoNames := make([]*types.RepoName, len(minimalRepos))
+				for i := range minimalRepos {
+					repoNames[i] = &types.RepoName{ID: minimalRepos[i].ID, Name: minimalRepos[i].Name}
+				}
+				return repoNames, nil
 			}
 			db.Mocks.Repos.Count = func(ctx context.Context, opt db.ReposListOptions) (int, error) {
 				return len(minimalRepos), nil

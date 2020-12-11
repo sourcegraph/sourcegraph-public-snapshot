@@ -54,7 +54,7 @@ export interface SearchResultsProps
     history: H.History
     navbarSearchQueryState: QueryState
     telemetryService: Pick<EventLogger, 'log' | 'logViewEvent'>
-    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     searchRequest: (
         query: string,
         version: string,

@@ -214,9 +214,9 @@ func TestResendUserEmailVerification(t *testing.T) {
 					ExpectedResult: "null",
 					ExpectedErrors: []*errors.QueryError{
 						{
-							Message:       "Last email sent too recently",
+							Message:       "Last verification email sent too recently",
 							Path:          []interface{}{"resendVerificationEmail"},
-							ResolverError: fmt.Errorf("Last email sent too recently"),
+							ResolverError: fmt.Errorf("Last verification email sent too recently"),
 						},
 					},
 				},

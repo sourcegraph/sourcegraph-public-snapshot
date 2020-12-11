@@ -1,5 +1,5 @@
 import * as Monaco from 'monaco-editor'
-import { Token, Pattern, PatternKind, CharacterRange } from './token'
+import { Token, Pattern, Literal, PatternKind, CharacterRange } from './token'
 import { RegExpParser, visitRegExpAST } from 'regexpp'
 import {
     Alternative,
@@ -24,7 +24,7 @@ export type DecoratedToken = Token | MetaToken
 /**
  * A MetaToken defines a token that is associated with some language-specific metasyntax.
  */
-export type MetaToken = MetaRegexp | MetaStructural | MetaField
+export type MetaToken = MetaRegexp | MetaStructural | MetaField | MetaRepoRevisionSeparator | MetaRevision
 
 /**
  * Defines common properties for meta tokens.
@@ -81,6 +81,32 @@ export interface MetaField extends BaseMetaToken {
 }
 
 /**
+ * A token that is labeled and interpreted as repository revision syntax.
+ * See https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions.
+ */
+export interface MetaRevision extends BaseMetaToken {
+    type: 'metaRevision'
+    kind: MetaRevisionKind
+}
+
+export enum MetaRevisionKind {
+    Separator = 'Separator', // is a ':'
+    Label = 'Label', // a branch or tag
+    CommitHash = 'CommitHash', // a commit hash
+    PathLike = 'PathLike', // a path-like pattern, e.g., the refs/heads/ part in *refs/heads/*
+    Wildcard = 'Wildcard', // a '*' in glob syntax
+    Negate = 'Negate', // a '!' in glob syntax
+}
+
+/**
+ * A token that denotes a revision separator in the Sourcegraph query language. I.e., the '@' in
+ * "repo:^foo$@revision" syntax.
+ */
+export interface MetaRepoRevisionSeparator extends BaseMetaToken {
+    type: 'metaRepoRevisionSeparator'
+}
+
+/**
  * Coalesces consecutive pattern tokens. Used, for example, when parsing
  * literal characters like 'f', 'o', 'o' in regular expressions, which are
  * coalesced to 'foo' for hovers.
@@ -114,7 +140,7 @@ const coalescePatterns = (tokens: DecoratedToken[]): DecoratedToken[] => {
 }
 
 const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
-    let tokens: DecoratedToken[] = []
+    const tokens: DecoratedToken[] = []
     try {
         const ast = new RegExpParser().parsePattern(pattern.value)
         const offset = pattern.range.start
@@ -276,7 +302,6 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
     } catch {
         tokens.push(pattern)
     }
-    tokens = coalescePatterns(tokens)
     // The AST is not necessarily traversed in increasing range. We need
     // to sort by increasing range because the ordering is significant to Monaco.
     tokens.sort((left, right) => {
@@ -285,7 +310,67 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
         }
         return 0
     })
-    return tokens
+    return coalescePatterns(tokens)
+}
+
+const mapRevisionMeta = (token: Literal): DecoratedToken[] => {
+    const offset = token.range.start
+
+    const decorated: DecoratedToken[] = []
+    let current = ''
+    let start = 0
+    let accumulator: string[] = []
+
+    const nextChar = (): string => {
+        current = token.value[start]
+        start = start + 1
+        return current
+    }
+
+    // Appends a decorated token to the list of tokens, and resets the current accumulator to be empty.
+    const appendDecoratedToken = (endIndex: number): void => {
+        const value = accumulator.join('')
+        let kind
+        switch (value) {
+            case ':':
+                kind = MetaRevisionKind.Separator
+                break
+            case '*':
+                kind = MetaRevisionKind.Wildcard
+                break
+            case '!':
+                kind = MetaRevisionKind.Negate
+                break
+            default:
+                if (value.includes('/')) {
+                    kind = MetaRevisionKind.PathLike
+                } else if (value.match(/^[\dA-Fa-f]+$/) && value.length > 6) {
+                    kind = MetaRevisionKind.CommitHash
+                } else {
+                    kind = MetaRevisionKind.Label
+                }
+        }
+        const range = { start: offset + endIndex - value.length, end: offset + endIndex }
+        decorated.push({ type: 'metaRevision', kind, value, range })
+        accumulator = []
+    }
+
+    while (token.value[start] !== undefined) {
+        current = nextChar()
+        switch (current) {
+            case ':':
+            case '*':
+            case '!':
+                appendDecoratedToken(start - 1) // append up to this special character
+                accumulator.push(current)
+                appendDecoratedToken(start)
+                break
+            default:
+                accumulator.push(current)
+        }
+    }
+    appendDecoratedToken(start)
+    return decorated
 }
 
 const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
@@ -432,6 +517,39 @@ export const hasRegexpValue = (field: string): boolean => {
     }
 }
 
+const specifiesRevision = (value: string): boolean => value.match(/@/) !== null
+
+const decorateRepoRevision = (token: Literal): DecoratedToken[] => {
+    const [repo, revision] = token.value.split('@', 2)
+    const offset = token.range.start
+
+    return [
+        ...decorate({
+            type: 'pattern',
+            kind: PatternKind.Regexp,
+            value: repo,
+            range: { start: offset, end: offset + repo.length },
+        }),
+
+        {
+            type: 'metaRepoRevisionSeparator',
+            value: '@',
+            range: {
+                start: offset + repo.length,
+                end: offset + repo.length + 1,
+            },
+        },
+        ...mapRevisionMeta({
+            type: 'literal',
+            value: revision,
+            range: {
+                start: token.range.start + repo.length + 1,
+                end: token.range.start + repo.length + 1 + revision.length,
+            },
+        }),
+    ]
+}
+
 export const decorate = (token: Token): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     switch (token.type) {
@@ -454,7 +572,26 @@ export const decorate = (token: Token): DecoratedToken[] => {
                 range: token.field.range,
                 value: token.field.value,
             })
-            if (token.value && token.value.type === 'literal' && hasRegexpValue(token.field.value)) {
+            if (
+                token.value &&
+                token.field.value.toLowerCase().match(/^-?(repo|r)$/i) &&
+                token.value.type === 'literal' &&
+                specifiesRevision(token.value.value)
+            ) {
+                decorated.push(...decorateRepoRevision(token.value))
+            } else if (
+                token.value &&
+                token.field.value.toLowerCase().match(/rev|revision/i) &&
+                token.value.type === 'literal'
+            ) {
+                decorated.push(
+                    ...mapRevisionMeta({
+                        type: 'literal',
+                        value: token.value.value,
+                        range: token.value.range,
+                    })
+                )
+            } else if (token.value && token.value.type === 'literal' && hasRegexpValue(token.field.value)) {
                 // Highlight fields with regexp values.
                 decorated.push(
                     ...decorate({
@@ -483,10 +620,12 @@ const decoratedToMonaco = (token: DecoratedToken): Monaco.languages.IToken => {
         case 'comment':
         case 'openingParen':
         case 'closingParen':
+        case 'metaRepoRevisionSeparator':
             return {
                 startIndex: token.range.start,
                 scopes: token.type,
             }
+        case 'metaRevision':
         case 'metaRegexp':
         case 'metaStructural':
             // The scopes value is derived from the token type and its kind.

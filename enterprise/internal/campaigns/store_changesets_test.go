@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -21,6 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
@@ -49,7 +50,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	if err := reposStore.InsertRepos(ctx, repo, otherRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
-	deletedRepo := otherRepo.With(repos.Opt.RepoDeletedAt(clock.now()))
+	deletedRepo := otherRepo.With(types.Opt.RepoDeletedAt(clock.now()))
 	if err := reposStore.DeleteRepos(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -462,22 +463,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 			if len(have) != 0 {
 				t.Fatalf("have %d changesets. want 0", len(changesets))
-			}
-		}
-
-		{
-			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{OnlyWithoutDiffStats: true})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			want := 1
-			if len(have) != want {
-				t.Fatalf("have %d changesets; want %d", len(have), want)
-			}
-
-			if have[0].ID != changesets[cap(changesets)-1].ID {
-				t.Fatalf("unexpected changeset: have %+v; want %+v", have[0], changesets[cap(changesets)-1])
 			}
 		}
 
@@ -1362,4 +1347,304 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		}
 		checkChangesetIDs(t, hs, changesets[1:].IDs())
 	})
+}
+
+func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
+	// This is similar to the setup in testStoreChangesets(), but we need a more
+	// fine grained set of changesets to handle the different scenarios. Namely,
+	// we need to cover:
+	//
+	// 1. Metadata from each code host type to test title search.
+	// 2. Unpublished changesets that don't have metadata to test the title
+	//    search fallback to the spec title.
+	// 3. Repo name search.
+	// 4. Negation of all of the above.
+
+	// Let's define some helpers.
+	createChangesetSpec := func(title string) *cmpgn.ChangesetSpec {
+		spec := &cmpgn.ChangesetSpec{
+			Spec: &cmpgn.ChangesetSpecDescription{
+				Title: title,
+			},
+		}
+		if err := s.CreateChangesetSpec(ctx, spec); err != nil {
+			t.Fatalf("creating changeset spec: %v", err)
+		}
+		return spec
+	}
+
+	createChangeset := func(
+		esType string,
+		repo *types.Repo,
+		externalID string,
+		metadata interface{},
+		spec *cmpgn.ChangesetSpec,
+	) *cmpgn.Changeset {
+		var specID int64
+		if spec != nil {
+			specID = spec.ID
+		}
+
+		cs := &cmpgn.Changeset{
+			RepoID:              repo.ID,
+			CreatedAt:           clock.now(),
+			UpdatedAt:           clock.now(),
+			Metadata:            metadata,
+			ExternalID:          externalID,
+			ExternalServiceType: esType,
+			ExternalBranch:      "refs/heads/campaigns/test",
+			ExternalUpdatedAt:   clock.now(),
+			ExternalState:       cmpgn.ChangesetExternalStateOpen,
+			ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
+			ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
+
+			CurrentSpecID:    specID,
+			PublicationState: cmpgn.ChangesetPublicationStatePublished,
+		}
+
+		if err := s.CreateChangeset(ctx, cs); err != nil {
+			t.Fatalf("creating changeset:\nerr: %+v\nchangeset: %+v", err, cs)
+		}
+		return cs
+	}
+
+	// Set up repositories for each code host type we want to test.
+	var (
+		githubRepo = ct.TestRepo(t, reposStore, extsvc.KindGitHub)
+		bbsRepo    = ct.TestRepo(t, reposStore, extsvc.KindBitbucketServer)
+		gitlabRepo = ct.TestRepo(t, reposStore, extsvc.KindGitLab)
+	)
+	if err := reposStore.InsertRepos(ctx, githubRepo, bbsRepo, gitlabRepo); err != nil {
+		t.Fatal(err)
+	}
+
+	// Now let's create ourselves some changesets to test against.
+	githubActor := github.Actor{
+		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
+		Login:     "mrnugget",
+		URL:       "https://github.com/mrnugget",
+	}
+
+	githubChangeset := createChangeset(
+		extsvc.TypeGitHub,
+		githubRepo,
+		"12345",
+		&github.PullRequest{
+			ID:           "FOOBARID",
+			Title:        "Fix a bunch of bugs on GitHub",
+			Body:         "This fixes a bunch of bugs",
+			URL:          "https://github.com/sourcegraph/sourcegraph/pull/12345",
+			Number:       12345,
+			Author:       githubActor,
+			Participants: []github.Actor{githubActor},
+			CreatedAt:    clock.now(),
+			UpdatedAt:    clock.now(),
+			HeadRefName:  "campaigns/test",
+		},
+		createChangesetSpec("Fix a bunch of bugs"),
+	)
+
+	gitlabChangeset := createChangeset(
+		extsvc.TypeGitLab,
+		gitlabRepo,
+		"12345",
+		&gitlab.MergeRequest{
+			ID:           12345,
+			IID:          12345,
+			ProjectID:    123,
+			Title:        "Fix a bunch of bugs on GitLab",
+			Description:  "This fixes a bunch of bugs",
+			State:        gitlab.MergeRequestStateOpened,
+			WebURL:       "https://gitlab.org/sourcegraph/sourcegraph/pull/12345",
+			SourceBranch: "campaigns/test",
+		},
+		createChangesetSpec("Fix a bunch of bugs"),
+	)
+
+	bbsChangeset := createChangeset(
+		extsvc.TypeBitbucketServer,
+		bbsRepo,
+		"12345",
+		&bitbucketserver.PullRequest{
+			ID:          12345,
+			Version:     1,
+			Title:       "Fix a bunch of bugs on Bitbucket Server",
+			Description: "This fixes a bunch of bugs",
+			State:       "open",
+			Open:        true,
+			Closed:      false,
+			FromRef:     bitbucketserver.Ref{ID: "campaigns/test"},
+		},
+		createChangesetSpec("Fix a bunch of bugs"),
+	)
+
+	unpublishedChangeset := createChangeset(
+		extsvc.TypeGitHub,
+		githubRepo,
+		"",
+		map[string]interface{}{},
+		createChangesetSpec("Eventually fix some bugs, but not a bunch"),
+	)
+
+	importedChangeset := createChangeset(
+		extsvc.TypeGitHub,
+		githubRepo,
+		"123456",
+		&github.PullRequest{
+			ID:           "XYZ",
+			Title:        "Do some stuff",
+			Body:         "This does some stuff",
+			URL:          "https://github.com/sourcegraph/sourcegraph/pull/123456",
+			Number:       123456,
+			Author:       githubActor,
+			Participants: []github.Actor{githubActor},
+			CreatedAt:    clock.now(),
+			UpdatedAt:    clock.now(),
+			HeadRefName:  "campaigns/stuff",
+		},
+		nil,
+	)
+
+	// All right, let's run some searches!
+	for name, tc := range map[string]struct {
+		textSearch []ListChangesetsTextSearchExpr
+		want       cmpgn.Changesets
+	}{
+		"single changeset based on GitHub metadata title": {
+			textSearch: []ListChangesetsTextSearchExpr{
+				{Term: "on GitHub"},
+			},
+			want: cmpgn.Changesets{githubChangeset},
+		},
+		"single changeset based on GitLab metadata title": {
+			textSearch: []ListChangesetsTextSearchExpr{
+				{Term: "on GitLab"},
+			},
+			want: cmpgn.Changesets{gitlabChangeset},
+		},
+		"single changeset based on Bitbucket Server metadata title": {
+			textSearch: []ListChangesetsTextSearchExpr{
+				{Term: "on Bitbucket Server"},
+			},
+			want: cmpgn.Changesets{bbsChangeset},
+		},
+		"all published changesets based on metadata title": {
+			textSearch: []ListChangesetsTextSearchExpr{
+				{Term: "Fix a bunch of bugs"},
+			},
+			want: cmpgn.Changesets{
+				githubChangeset,
+				gitlabChangeset,
+				bbsChangeset,
+			},
+		},
+		"imported changeset based on metadata title": {
+			textSearch: []ListChangesetsTextSearchExpr{
+				{Term: "Do some stuff"},
+			},
+			want: cmpgn.Changesets{importedChangeset},
+		},
+		"unpublished changeset based on spec title": {
+			textSearch: []ListChangesetsTextSearchExpr{
+				{Term: "Eventually"},
+			},
+			want: cmpgn.Changesets{unpublishedChangeset},
+		},
+		"negated metadata title": {
+			textSearch: []ListChangesetsTextSearchExpr{
+				{Term: "bunch of bugs", Not: true},
+			},
+			want: cmpgn.Changesets{
+				unpublishedChangeset,
+				importedChangeset,
+			},
+		},
+		"negated spec title": {
+			textSearch: []ListChangesetsTextSearchExpr{
+				{Term: "Eventually", Not: true},
+			},
+			want: cmpgn.Changesets{
+				githubChangeset,
+				gitlabChangeset,
+				bbsChangeset,
+				importedChangeset,
+			},
+		},
+		"repo name": {
+			textSearch: []ListChangesetsTextSearchExpr{
+				{Term: string(githubRepo.Name)},
+			},
+			want: cmpgn.Changesets{
+				githubChangeset,
+				unpublishedChangeset,
+				importedChangeset,
+			},
+		},
+		"title and repo name together": {
+			textSearch: []ListChangesetsTextSearchExpr{
+				{Term: string(githubRepo.Name)},
+				{Term: "Eventually"},
+			},
+			want: cmpgn.Changesets{
+				unpublishedChangeset,
+			},
+		},
+		"multiple title matches together": {
+			textSearch: []ListChangesetsTextSearchExpr{
+				{Term: "Eventually"},
+				{Term: "fix"},
+			},
+			want: cmpgn.Changesets{
+				unpublishedChangeset,
+			},
+		},
+		"negated repo name": {
+			textSearch: []ListChangesetsTextSearchExpr{
+				{Term: string(githubRepo.Name), Not: true},
+			},
+			want: cmpgn.Changesets{
+				gitlabChangeset,
+				bbsChangeset,
+			},
+		},
+		"combined negated repo names": {
+			textSearch: []ListChangesetsTextSearchExpr{
+				{Term: string(githubRepo.Name), Not: true},
+				{Term: string(gitlabRepo.Name), Not: true},
+			},
+			want: cmpgn.Changesets{bbsChangeset},
+		},
+		"no results due to conflicting requirements": {
+			textSearch: []ListChangesetsTextSearchExpr{
+				{Term: string(githubRepo.Name)},
+				{Term: string(gitlabRepo.Name)},
+			},
+			want: cmpgn.Changesets{},
+		},
+		"no results due to a subset of a word": {
+			textSearch: []ListChangesetsTextSearchExpr{
+				{Term: "unch"},
+			},
+			want: cmpgn.Changesets{},
+		},
+		"no results due to text that doesn't exist in the search scope": {
+			textSearch: []ListChangesetsTextSearchExpr{
+				{Term: "she dreamt she was a bulldozer, she dreamt she was in an empty field"},
+			},
+			want: cmpgn.Changesets{},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
+				TextSearch: tc.textSearch,
+			})
+			if err != nil {
+				t.Errorf("unexpected error: %+v", err)
+			}
+
+			if diff := cmp.Diff(tc.want, have); diff != "" {
+				t.Errorf("unexpected result (-want +have):\n%s", diff)
+			}
+		})
+	}
 }

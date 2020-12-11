@@ -800,11 +800,9 @@ func generateRepos(count int) ([]*types.Repo, []*types.Repo, []*zoekt.RepoListEn
 			ID:           repoWithIDs.ID,
 			Name:         repoWithIDs.Name,
 			ExternalRepo: repoWithIDs.ExternalRepo,
-
-			RepoFields: &types.RepoFields{
-				URI:         fmt.Sprintf("https://github.com/foobar/%s", repoWithIDs.Name),
-				Description: "this repositoriy contains a side project that I haven't maintained in 2 years",
-			}})
+			URI:          fmt.Sprintf("https://github.com/foobar/%s", repoWithIDs.Name),
+			Description:  "this repositoriy contains a side project that I haven't maintained in 2 years",
+		})
 
 		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
 			Repository: zoekt.Repository{
@@ -855,7 +853,7 @@ func zoektRPC(s zoekt.Searcher) (zoekt.Searcher, func()) {
 func TestZoektIndexedRepos_single(t *testing.T) {
 	repoRev := func(revSpec string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
-			Repo: &types.Repo{ID: api.RepoID(0), Name: "test/repo"},
+			Repo: &types.RepoName{ID: api.RepoID(0), Name: "test/repo"},
 			Revs: []search.RevisionSpecifier{
 				{RevSpec: revSpec},
 			},

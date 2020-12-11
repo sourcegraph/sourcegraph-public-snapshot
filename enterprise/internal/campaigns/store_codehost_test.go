@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock clock) {
@@ -22,7 +23,7 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, reposStore r
 	if err := reposStore.InsertRepos(ctx, repo, otherRepo, gitlabRepo, bitbucketRepo, awsRepo); err != nil {
 		t.Fatal(err)
 	}
-	deletedRepo := otherRepo.With(repos.Opt.RepoDeletedAt(clock.now()))
+	deletedRepo := otherRepo.With(types.Opt.RepoDeletedAt(clock.now()))
 	if err := reposStore.DeleteRepos(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +71,7 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, reposStore r
 	})
 
 	t.Run("GetExternalServiceID", func(t *testing.T) {
-		for _, repo := range []*repos.Repo{repo, otherRepo, gitlabRepo, bitbucketRepo} {
+		for _, repo := range []*types.Repo{repo, otherRepo, gitlabRepo, bitbucketRepo} {
 			id, err := s.GetExternalServiceID(ctx, GetExternalServiceIDOpts{
 				ExternalServiceType: repo.ExternalRepo.ServiceType,
 				ExternalServiceID:   repo.ExternalRepo.ServiceID,

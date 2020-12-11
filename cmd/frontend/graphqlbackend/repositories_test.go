@@ -18,10 +18,8 @@ func TestRepositories(t *testing.T) {
 		{Name: "repo1"},
 		{Name: "repo2"},
 		{
-			Name: "repo3",
-			RepoFields: &types.RepoFields{
-				Cloned: true,
-			},
+			Name:   "repo3",
+			Cloned: true,
 		},
 	}
 	db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {

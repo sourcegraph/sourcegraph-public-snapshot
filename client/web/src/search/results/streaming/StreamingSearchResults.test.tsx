@@ -66,7 +66,7 @@ describe('StreamingSearchResults', () => {
 
         streamSearch: () => of(streamingSearchResult),
 
-        fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_REQUEST,
+        fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
         isLightTheme: true,
     }
 

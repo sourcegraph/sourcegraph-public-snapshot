@@ -158,7 +158,7 @@ func (s *RepoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.R
 	}
 	q := sqlf.Sprintf("id IN (%s)", sqlf.Join(items, ","))
 	var repos []*types.Repo
-	err := s.getReposBySQL(ctx, true, nil, q, nil, func(rows *sql.Rows) error {
+	err := s.getReposBySQL(ctx, false, nil, q, nil, func(rows *sql.Rows) error {
 		var repo types.Repo
 
 		if err := scanRepo(rows, &repo); err != nil {
@@ -284,15 +284,13 @@ var getBySQLColumns = []string{
 }
 
 func minimalColumns(columns []string) []string {
-	return columns[:6]
+	return columns[:2]
 }
 
 func (s *RepoStore) getBySQL(ctx context.Context, queryConds, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	var repos []*types.Repo
 	err := s.getReposBySQL(ctx, false, nil, queryConds, querySuffix, func(rows *sql.Rows) error {
-		repo := types.Repo{
-			RepoFields: &types.RepoFields{},
-		}
+		var repo types.Repo
 
 		if err := scanRepo(rows, &repo); err != nil {
 			return err
@@ -355,17 +353,6 @@ func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause,
 }
 
 func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
-	if r.RepoFields == nil {
-		return rows.Scan(
-			&r.ID,
-			&r.Name,
-			&r.Private,
-			&dbutil.NullString{S: &r.ExternalRepo.ID},
-			&dbutil.NullString{S: &r.ExternalRepo.ServiceType},
-			&dbutil.NullString{S: &r.ExternalRepo.ServiceID},
-		)
-	}
-
 	var sources dbutil.NullJSONRawMessage
 	var metadata json.RawMessage
 
@@ -501,9 +488,6 @@ type ReposListOptions struct {
 	// OnlyPrivate excludes non-private repositories from the list.
 	OnlyPrivate bool
 
-	// OnlyRepoIDs skips fetching of RepoFields in each Repo.
-	OnlyRepoIDs bool
-
 	// Index when set will only include repositories which should be indexed
 	// if true. If false it will exclude repositories which should be
 	// indexed. An example use case of this is for indexed search only
@@ -581,11 +565,8 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 	s.ensureStore()
 
 	var repos []*types.Repo
-	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
+	err = s.list(ctx, tr, false, opt, func(rows *sql.Rows) error {
 		var repo types.Repo
-		if !opt.OnlyRepoIDs {
-			repo.RepoFields = &types.RepoFields{}
-		}
 
 		if err := scanRepo(rows, &repo); err != nil {
 			return err
@@ -601,29 +582,23 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 }
 
 // ListRepoNames returns a list of repositories names and ids.
-// It overrides the OnlyRepoIDs options by setting it to true.
 func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (results []*types.RepoName, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListRepoNames", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
+	if Mocks.Repos.ListRepoNames != nil {
+		return Mocks.Repos.ListRepoNames(ctx, opt)
+	}
 	s.ensureStore()
 
-	opt.OnlyRepoIDs = true
-
 	var repos []*types.RepoName
-	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
+	err = s.list(ctx, tr, true, opt, func(rows *sql.Rows) error {
 		var r types.RepoName
 		err := rows.Scan(
 			&r.ID,
 			&r.Name,
-			// TODO(asdine): The following variables are only there to scan requested columns but are never used.
-			// These will be deleted once we rework the getReposBySQL method to only fetch 2 columns instead of 6.
-			new(bool),
-			&dbutil.NullString{S: new(string)},
-			&dbutil.NullString{S: new(string)},
-			&dbutil.NullString{S: new(string)},
 		)
 		if err != nil {
 			return err
@@ -638,7 +613,7 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 	return repos, nil
 }
 
-func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
+func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
 	conds, err := s.listSQL(opt)
 	if err != nil {
 		return err
@@ -666,7 +641,7 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 	tr.LogFields(trace.SQL(queryConds), trace.SQL(querySuffix))
 
-	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fromClause, queryConds, querySuffix, scanRepo)
+	return s.getReposBySQL(ctx, minimal, fromClause, queryConds, querySuffix, scanRepo)
 }
 
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.

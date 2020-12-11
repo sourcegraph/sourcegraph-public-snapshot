@@ -17,7 +17,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -26,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -159,16 +159,16 @@ func newGitHubExternalService(t *testing.T, store repos.Store) *types.ExternalSe
 	return &svc
 }
 
-func newGitHubTestRepo(name string, externalService *types.ExternalService) *repos.Repo {
-	return &repos.Repo{
-		Name:    name,
+func newGitHubTestRepo(name string, externalService *types.ExternalService) *types.Repo {
+	return &types.Repo{
+		Name:    api.RepoName(name),
 		Private: true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", externalService.ID),
 			ServiceType: "github",
 			ServiceID:   "https://github.com/",
 		},
-		Sources: map[string]*repos.SourceInfo{
+		Sources: map[string]*types.SourceInfo{
 			externalService.URN(): {
 				ID:       externalService.URN(),
 				CloneURL: fmt.Sprintf("https://secrettoken@%s", name),

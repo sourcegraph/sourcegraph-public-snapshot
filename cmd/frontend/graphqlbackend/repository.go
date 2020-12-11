@@ -93,7 +93,7 @@ func (r *RepositoryResolver) IsFork(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return r.repo.RepoFields.Fork, nil
+	return r.repo.Fork, nil
 }
 
 func (r *RepositoryResolver) IsArchived(ctx context.Context) (bool, error) {
@@ -101,7 +101,7 @@ func (r *RepositoryResolver) IsArchived(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return r.repo.RepoFields.Archived, nil
+	return r.repo.Archived, nil
 }
 
 func (r *RepositoryResolver) IsPrivate(ctx context.Context) (bool, error) {
@@ -296,7 +296,9 @@ func (r *RepositoryResolver) Type() *types.Repo {
 
 func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	r.hydration.Do(func() {
-		if r.repo.RepoFields != nil {
+		// Repositories with an empty creation date were created using RepoName.ToRepo(),
+		// they only contain ID and name information.
+		if !r.repo.CreatedAt.IsZero() {
 			return
 		}
 
@@ -305,7 +307,7 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 		var repo *types.Repo
 		repo, r.err = db.Repos.Get(ctx, r.repo.ID)
 		if r.err == nil {
-			r.repo.RepoFields = repo.RepoFields
+			r.repo = repo
 		}
 	})
 
