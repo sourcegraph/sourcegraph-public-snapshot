@@ -7,14 +7,13 @@ import * as H from 'history'
 import { Toggle } from '../../../../../branded/src/components/Toggle'
 import { FormActionArea } from './FormActionArea'
 import { FormTriggerArea } from './FormTriggerArea'
-import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
+import { mergeMap, startWith, catchError, tap } from 'rxjs/operators'
 import { Form } from '../../../../../branded/src/components/Form'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
 import { CodeMonitorFields } from '../../../graphql-operations'
 import { isEqual } from 'lodash'
 import { CodeMonitoringProps } from '..'
 import { DeleteMonitorModal } from './DeleteMonitorModal'
-import ConsoleIcon from 'mdi-react/ConsoleIcon'
 
 export interface CodeMonitorFormProps extends Partial<Pick<CodeMonitoringProps, 'deleteCodeMonitor'>> {
     history: H.History
@@ -139,7 +138,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
 
     return (
         <>
-            <Form className="my-4 pb-5" onSubmit={requestOnSubmit}>
+            <Form className="my-4 pb-5 test-monitor-form" onSubmit={requestOnSubmit}>
                 <div className="flex mb-4">
                     Name
                     <div>

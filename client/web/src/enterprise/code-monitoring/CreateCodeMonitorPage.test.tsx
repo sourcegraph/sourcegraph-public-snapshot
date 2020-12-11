@@ -70,9 +70,10 @@ describe('CreateCodeMonitorPage', () => {
 
     test('createCodeMonitor is not called on submit when trigger or action is incomplete', () => {
         let component = mount(<CreateCodeMonitorPage {...props} />)
-        const nameInput = component.find('.test-name-input')
+        const monitorForm = component.find('.test-monitor-form').first()
+        let nameInput = component.find('.test-name-input')
         nameInput.simulate('change', { target: { value: 'Test updated' } })
-        nameInput.simulate('keypress', { key: 'Enter' })
+        monitorForm.simulate('submit')
         // Pressing enter does not call createCodeMonitor because other fields not complete
         sinon.assert.notCalled(props.createCodeMonitor)
 
@@ -89,7 +90,7 @@ describe('CreateCodeMonitorPage', () => {
         const submitTrigger = component.find('.test-submit-trigger')
         submitTrigger.simulate('click')
 
-        nameInput.simulate('keypress', { key: 'Enter' })
+        monitorForm.simulate('submit')
         // Pressing enter still does not call createCodeMonitor
         sinon.assert.notCalled(props.createCodeMonitor)
 
@@ -99,7 +100,7 @@ describe('CreateCodeMonitorPage', () => {
         submitAction.simulate('click')
 
         // Pressing enter calls createCodeMonitor when all sections are complete
-        nameInput.simulate('keypress', { key: 'Enter' })
+        monitorForm.simulate('submit')
         sinon.assert.calledOnce(props.createCodeMonitor)
         props.createCodeMonitor.resetHistory()
         component.unmount()
