@@ -64,8 +64,9 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
     )
 
     const updateMonitorRequest = React.useCallback(
-        (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> =>
-            updateCodeMonitor(
+        (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> => {
+            console.log('hello worldhello worldhello worldhello world')
+            return updateCodeMonitor(
                 {
                     id: match.params.id,
                     update: {
@@ -86,7 +87,8 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
                         },
                     },
                 }))
-            ),
+            )
+        },
         [authenticatedUser.id, match.params.id, updateCodeMonitor]
     )
 

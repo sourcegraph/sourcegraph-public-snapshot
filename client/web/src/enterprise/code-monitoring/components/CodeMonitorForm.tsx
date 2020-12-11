@@ -1,19 +1,20 @@
 import classnames from 'classnames'
 import React, { useCallback, useMemo, useState } from 'react'
-import { Observable } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { AuthenticatedUser } from '../../../auth'
 import * as H from 'history'
 import { Toggle } from '../../../../../branded/src/components/Toggle'
 import { FormActionArea } from './FormActionArea'
 import { FormTriggerArea } from './FormTriggerArea'
-import { mergeMap, startWith, catchError, tap } from 'rxjs/operators'
+import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 import { Form } from '../../../../../branded/src/components/Form'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
 import { CodeMonitorFields } from '../../../graphql-operations'
 import { isEqual } from 'lodash'
 import { CodeMonitoringProps } from '..'
 import { DeleteMonitorModal } from './DeleteMonitorModal'
+import ConsoleIcon from 'mdi-react/ConsoleIcon'
 
 export interface CodeMonitorFormProps extends Partial<Pick<CodeMonitoringProps, 'deleteCodeMonitor'>> {
     history: H.History
@@ -94,19 +95,22 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
             (submit: Observable<React.FormEvent<HTMLFormElement>>) =>
                 submit.pipe(
                     tap(event => event.preventDefault()),
-                    mergeMap(() =>
-                        onSubmit(currentCodeMonitorState).pipe(
-                            startWith(LOADING),
-                            catchError(error => [asError(error)]),
-                            tap(successOrError => {
-                                if (!isErrorLike(successOrError) && successOrError !== LOADING) {
-                                    history.push('/code-monitoring')
-                                }
-                            })
-                        )
-                    )
+                    mergeMap(() => {
+                        if (formCompletion.actionCompleted && formCompletion.triggerCompleted) {
+                            return onSubmit(currentCodeMonitorState).pipe(
+                                startWith(LOADING),
+                                catchError(error => [asError(error)]),
+                                tap(successOrError => {
+                                    if (!isErrorLike(successOrError) && successOrError !== LOADING) {
+                                        history.push('/code-monitoring')
+                                    }
+                                })
+                            )
+                        }
+                        return of(undefined)
+                    })
                 ),
-            [onSubmit, currentCodeMonitorState, history]
+            [onSubmit, currentCodeMonitorState, history, formCompletion]
         )
     )
 
