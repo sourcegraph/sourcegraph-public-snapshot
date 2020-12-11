@@ -21,17 +21,17 @@
             }
 
             .create-monitor-page__trigger--disabled & {
-                margin: 1rem 0;
                 &:hover {
-                    margin: 1rem 0;
+                    // stylelint-disable-next-line declaration-property-unit-whitelist
+                    margin: calc(16px - 1px) -1px;
                     border: 1px solid var(--border-color);
                 }
             }
 
             .create-monitor-page__actions--disabled & {
-                margin: 1rem 0;
                 &:hover {
-                    margin: 1rem 0;
+                    // stylelint-disable-next-line declaration-property-unit-whitelist
+                    margin: calc(16px - 1px) -1px;
                     border: 1px solid var(--border-color);
                 }
             }
