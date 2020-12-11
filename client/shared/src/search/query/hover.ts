@@ -7,8 +7,8 @@ import {
     MetaRegexp,
     MetaRegexpKind,
     MetaRevision,
-    MetaGit,
-    MetaSourcegraph,
+    MetaGitRevision,
+    MetaSourcegraphRevision,
 } from './decoratedToken'
 import { resolveFilter } from './filters'
 
@@ -95,49 +95,25 @@ const toRegexpHover = (token: MetaRegexp): string => {
 }
 
 const toRevisionHover = (token: MetaRevision): string => {
-    let title: string
-    let description: string
     switch (token.kind) {
-        case MetaGit.CommitHash:
-            title = 'commit hash'
-            description = 'Search the repository at this commit.'
-            break
-        case MetaGit.Label:
+        case MetaGitRevision.CommitHash:
+            return '**Revision commit hash**. Search the repository at this commit.'
+        case MetaGitRevision.Label:
             if (token.value.match(/^head$/i)) {
-                title = 'HEAD'
-                description = 'Search the repository at the latest HEAD commit of the default branch.'
-                break
+                return '**Revision HEAD**. Search the repository at the latest HEAD commit of the default branch.'
             }
-            title = 'branch name or tag'
-            description = 'Search the branch name or tag at the head commit.'
-            break
-        case MetaGit.ReferencePath:
-            title = 'using git reference path'
-            description =
-                'Search across git objects, like commits or branches, that match this git reference path. Typically used in conjunction with glob patterns, where a pattern like `*refs/heads/*` searches across all repository branches at the head commit.'
-            break
-        case MetaGit.Wildcard:
-            title = 'wildcard'
-            description =
-                'Glob syntax to match zero or more characters in a revision. Typically used to match multiple branches or tags based on a git reference path. For example, `refs/tags/v3.*` matches all tags that start with `v3.`.'
-            break
-        case MetaSourcegraph.IncludeGlobMarker:
-            title = 'glob pattern to include'
-            description =
-                'A prefixing indicating that a glob pattern follows. Git references matching the glob pattern are included in the search. Typically used where a pattern like `*refs/heads/*` searches across all repository branches at the head commit.'
-            break
-        case MetaSourcegraph.ExcludeGlobMarker:
-            title = 'glob pattern to exclude'
-            description =
-                'A prefix indicating that git references, like a commit or branch name, should be **excluded** from search based on the glob pattern that follows. Used in conjunction with a glob pattern that matches a set of commits or branches, followed by a a pattern to exclude from the set. For example, `*refs/heads/*:*!refs/heads/release*` searches all branches at the head commit, excluding branches matching `release*`.'
-            break
-        case MetaSourcegraph.Separator:
-            title = 'separator'
-            description =
-                'Separates multiple revisions to search across. For example, `1a35d48:feature:3.15` searches the repository for matches at commit `1a35d48`, or a branch named `feature`, or a tag `3.15`.'
-            break
+            return '**Revision branch name or tag**. Search the branch name or tag at the head commit.'
+        case MetaGitRevision.ReferencePath:
+            return '**Revision using git reference path**. Search the branch name or tag at the head commit. Search across git objects, like commits or branches, that match this git reference path. Typically used in conjunction with glob patterns, where a pattern like `*refs/heads/*` searches across all repository branches at the head commit.'
+        case MetaGitRevision.Wildcard:
+            return '**Revision wildcard**. Glob syntax to match zero or more characters in a revision. Typically used to match multiple branches or tags based on a git reference path. For example, `refs/tags/v3.*` matches all tags that start with `v3.`.'
+        case MetaSourcegraphRevision.IncludeGlobMarker:
+            return '**Revision glob pattern to include.** A prefixing indicating that a glob pattern follows. Git references matching the glob pattern are included in the search. Typically used where a pattern like `*refs/heads/*` searches across all repository branches at the head commit.'
+        case MetaSourcegraphRevision.ExcludeGlobMarker:
+            return '**Revision glob pattern to exclude.** A prefix indicating that git references, like a commit or branch name, should be **excluded** from search based on the glob pattern that follows. Used in conjunction with a glob pattern that matches a set of commits or branches, followed by a a pattern to exclude from the set. For example, `*refs/heads/*:*!refs/heads/release*` searches all branches at the head commit, excluding branches matching `release*`.'
+        case MetaSourcegraphRevision.Separator:
+            return '**Revision separator.** Separates multiple revisions to search across. For example, `1a35d48:feature:3.15` searches the repository for matches at commit `1a35d48`, or a branch named `feature`, or a tag `3.15`.'
     }
-    return `**Revision ${title}**. ${description}`
 }
 
 const toHover = (token: DecoratedToken): string => {

@@ -90,12 +90,12 @@ export interface MetaRevision extends BaseMetaToken {
     kind: MetaRevisionKind
 }
 
-export type MetaRevisionKind = MetaGit | MetaSourcegraph
+export type MetaRevisionKind = MetaGitRevision | MetaSourcegraphRevision
 
 /**
  * A custom revision syntax that is only valid in Sourcegraph search queries.
  */
-export enum MetaSourcegraph {
+export enum MetaSourcegraphRevision {
     Separator = 'Separator', // a ':' that separates revision patterns
     IncludeGlobMarker = 'IncludeGlobMarker', // a '*' at the beginning of a revision pattern to mark it as an "include" glob pattern.
     ExcludeGlobMarker = 'ExcludeGlobMarker', // a '*!' at the beginning of a revision pattern to mark it as an "exclude" glob pattern.
@@ -104,7 +104,7 @@ export enum MetaSourcegraph {
 /**
  * Revision syntax that correspond to git glob pattern syntax, git refs (e.g., branches), or git objects (e.g., commits, tags).
  */
-export enum MetaGit {
+export enum MetaGitRevision {
     CommitHash = 'CommitHash', // a commit hash
     Label = 'Label', // a catch-all string that refers to a git object or ref, like a branch name or tag
     ReferencePath = 'ReferencePath', // the part of a revision that refers to a git reference path, like refs/heads/ part in refs/heads/*
@@ -345,11 +345,11 @@ const mapRevisionMeta = (token: Literal): DecoratedToken[] => {
         const value = accumulator.join('')
         if (kind === undefined) {
             if (value.includes('refs/')) {
-                kind = MetaGit.ReferencePath
+                kind = MetaGitRevision.ReferencePath
             } else if (value.match(/^[\dA-Fa-f]+$/) && value.length > 6) {
-                kind = MetaGit.CommitHash
+                kind = MetaGitRevision.CommitHash
             } else {
-                kind = MetaGit.Label
+                kind = MetaGitRevision.Label
             }
         }
         const range = { start: offset + endIndex - value.length, end: offset + endIndex }
@@ -370,22 +370,22 @@ const mapRevisionMeta = (token: Literal): DecoratedToken[] => {
                 if (atRevision(start - 1) && token.value[start] !== '!') {
                     // Demarcates that this is an "include" glob pattern that follows.
                     accumulator.push(current)
-                    appendDecoratedToken(start, MetaSourcegraph.IncludeGlobMarker)
+                    appendDecoratedToken(start, MetaSourcegraphRevision.IncludeGlobMarker)
                 } else if (atRevision(start - 1) && token.value[start] === '!') {
                     // Demarcates that this is an "exclude" glob pattern that follows.
                     current = nextChar() // Consume the '!'
                     accumulator.push('*!')
-                    appendDecoratedToken(start, MetaSourcegraph.ExcludeGlobMarker)
+                    appendDecoratedToken(start, MetaSourcegraphRevision.ExcludeGlobMarker)
                 } else {
                     accumulator.push(current)
-                    appendDecoratedToken(start, MetaGit.Wildcard)
+                    appendDecoratedToken(start, MetaGitRevision.Wildcard)
                 }
                 break
             }
             case ':':
                 appendDecoratedToken(start - 1)
                 accumulator.push(current)
-                appendDecoratedToken(start, MetaSourcegraph.Separator)
+                appendDecoratedToken(start, MetaSourcegraphRevision.Separator)
                 break
             default:
                 accumulator.push(current)
