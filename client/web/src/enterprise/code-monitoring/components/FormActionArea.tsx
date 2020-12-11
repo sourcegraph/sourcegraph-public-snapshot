@@ -105,6 +105,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                             value={`${authenticatedUser.email || ''} (you)`}
                             disabled={true}
                             autoFocus={true}
+                            required={true}
                         />
                         <small className="text-muted">
                             Code monitors are currently limited to sending emails to your primary email address.
