@@ -16,7 +16,7 @@ import Dialog from '@reach/dialog'
 import { CodeMonitoringProps } from '..'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
-export interface CodeMonitorFormProps extends Pick<CodeMonitoringProps, 'deleteCodeMonitor'> {
+export interface CodeMonitorFormProps extends Partial<Pick<CodeMonitoringProps, 'deleteCodeMonitor'>> {
     history: H.History
     location: H.Location
     authenticatedUser: AuthenticatedUser
@@ -251,20 +251,23 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                     )}
                 </div>
             </Form>
-            <DeleteMonitorModal
-                isOpen={showDeleteModal}
-                deleteCodeMonitor={deleteCodeMonitor}
-                history={history}
-                codeMonitor={codeMonitor}
-                toggleDeleteModal={toggleDeleteModal}
-            />
+            {showDeleteButton && deleteCodeMonitor && (
+                <DeleteMonitorModal
+                    isOpen={showDeleteModal}
+                    deleteCodeMonitor={deleteCodeMonitor}
+                    history={history}
+                    codeMonitor={codeMonitor}
+                    toggleDeleteModal={toggleDeleteModal}
+                />
+            )}
         </>
     )
 }
 
-interface DeleteModalProps extends Pick<CodeMonitorFormProps, 'history' | 'deleteCodeMonitor' | 'codeMonitor'> {
+interface DeleteModalProps extends Pick<CodeMonitorFormProps, 'history' | 'codeMonitor'> {
     isOpen: boolean
     toggleDeleteModal: () => void
+    deleteCodeMonitor: (id: string) => Observable<void>
 }
 
 const DeleteMonitorModal: React.FunctionComponent<DeleteModalProps> = ({

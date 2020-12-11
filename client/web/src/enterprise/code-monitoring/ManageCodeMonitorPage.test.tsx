@@ -16,6 +16,7 @@ describe('ManageCodeMonitorPage', () => {
     } as AuthenticatedUser
 
     const history = H.createMemoryHistory()
+    history.location.pathname = '/code-monitoring/test-monitor-id'
     const props = {
         history,
         location: history.location,
@@ -35,6 +36,7 @@ describe('ManageCodeMonitorPage', () => {
         toggleCodeMonitorEnabled: sinon.spy((id: string, enabled: boolean) => of({ id: 'test', enabled: true })),
         deleteCodeMonitor: sinon.spy((id: string) => NEVER),
     }
+
     test('Form is pre-loaded with code monitor data', () => {
         const component = mount(<ManageCodeMonitorPage {...props} />)
         expect(props.fetchCodeMonitor.calledOnce)
@@ -132,5 +134,6 @@ describe('ManageCodeMonitorPage', () => {
         expect(confirmDeleteButton.length).toBe(1)
         confirmDeleteButton.simulate('click')
         expect(props.deleteCodeMonitor.calledOnce)
+        expect(props.history.location.pathname).toEqual('/code-monitoring')
     })
 })

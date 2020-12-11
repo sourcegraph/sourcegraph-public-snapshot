@@ -18,7 +18,6 @@ add(
                     authenticatedUser={
                         { id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser
                     }
-                    deleteCodeMonitor={sinon.spy((id: string) => NEVER)}
                 />
             )}
         </EnterpriseWebStory>
