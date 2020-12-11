@@ -34,7 +34,7 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := cstore.NewStoreWithClock(dbconn.Global, clock)
+	store := cstore.NewWithClock(dbconn.Global, clock)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))

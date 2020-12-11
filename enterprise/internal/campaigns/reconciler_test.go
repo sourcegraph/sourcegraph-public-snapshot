@@ -30,7 +30,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := store.NewStore(dbconn.Global)
+	store := store.New(dbconn.Global)
 
 	admin := createTestUser(t, true)
 

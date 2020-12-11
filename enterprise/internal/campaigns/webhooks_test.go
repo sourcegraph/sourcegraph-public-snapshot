@@ -86,7 +86,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		s := store.NewStoreWithClock(db, clock)
+		s := store.NewWithClock(db, clock)
 
 		spec := &campaigns.CampaignSpec{
 			NamespaceUserID: userID,
@@ -265,7 +265,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		s := store.NewStoreWithClock(db, clock)
+		s := store.NewWithClock(db, clock)
 
 		spec := &campaigns.CampaignSpec{
 			NamespaceUserID: userID,

@@ -12,8 +12,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	cstore "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	cstore "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -38,7 +38,7 @@ func TestPermissionLevels(t *testing.T) {
 
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := cstore.NewStore(dbconn.Global)
+	store := cstore.New(dbconn.Global)
 	sr := &Resolver{store: store}
 	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {
@@ -756,7 +756,7 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := cstore.NewStore(dbconn.Global)
+	store := cstore.New(dbconn.Global)
 	sr := &Resolver{store: store}
 	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {

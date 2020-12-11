@@ -48,7 +48,7 @@ func enterpriseInit(
 
 	codemonitorsBackground.StartBackgroundJobs(ctx, db)
 
-	cStore := campaignsStore.NewStoreWithClock(db, timeutil.Now)
+	cStore := campaignsStore.NewWithClock(db, timeutil.Now)
 
 	syncRegistry := campaigns.NewSyncRegistry(ctx, cStore, repoStore, cf)
 	if server != nil {

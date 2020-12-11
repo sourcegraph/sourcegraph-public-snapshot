@@ -9,8 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	cstore "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	cstore "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -32,7 +32,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 
 	userID := insertTestUser(t, dbconn.Global, "code-host-connection-resolver", false)
 
-	store := cstore.NewStore(dbconn.Global)
+	store := cstore.New(dbconn.Global)
 
 	ghRepos, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 	ghRepo := ghRepos[0]

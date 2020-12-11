@@ -37,7 +37,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := store.NewStoreWithClock(dbconn.Global, clock)
+	store := store.NewWithClock(dbconn.Global, clock)
 	svc := NewService(store, httpcli.NewExternalHTTPClientFactory())
 
 	t.Run("campaignSpec without changesetSpecs", func(t *testing.T) {

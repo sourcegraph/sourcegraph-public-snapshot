@@ -470,7 +470,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			// We can induce an error with a broken database connection.
 			s, rstore, clock := gitLabTestSetup(t, db)
 			h := NewGitLabWebhook(s, rstore, clock.Now)
-			h.Store = store.NewStoreWithClock(&brokenDB{errors.New("foo")}, clock.Now)
+			h.Store = store.NewWithClock(&brokenDB{errors.New("foo")}, clock.Now)
 
 			es, err := h.getExternalServiceFromRawID(ctx, "12345")
 			if es != nil {
@@ -530,7 +530,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				}
 
 				// We can induce an error with a broken database connection.
-				h.Store = store.NewStoreWithClock(&brokenDB{errors.New("foo")}, clock.Now)
+				h.Store = store.NewWithClock(&brokenDB{errors.New("foo")}, clock.Now)
 
 				err := h.handleEvent(ctx, es, event)
 				if err == nil {
@@ -550,7 +550,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				}
 
 				// We can induce an error with a broken database connection.
-				h.Store = store.NewStoreWithClock(&brokenDB{errors.New("foo")}, clock.Now)
+				h.Store = store.NewWithClock(&brokenDB{errors.New("foo")}, clock.Now)
 
 				err := h.handleEvent(ctx, es, event)
 				if err == nil {
@@ -662,7 +662,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			// that will generate a real error that we can use to exercise the
 			// error path.
 			s, rstore, clock := gitLabTestSetup(t, db)
-			s = store.NewStoreWithClock(&noNestingTx{s.DB()}, clock.Now)
+			s = store.NewWithClock(&noNestingTx{s.DB()}, clock.Now)
 			h := NewGitLabWebhook(s, rstore, clock.Now)
 
 			event := &webhooks.MergeRequestCloseEvent{
@@ -688,7 +688,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			// Again, we're going to set up a poisoned store database that will
 			// error if a transaction is started.
 			s, rstore, clock := gitLabTestSetup(t, db)
-			s = store.NewStoreWithClock(&noNestingTx{s.DB()}, clock.Now)
+			s = store.NewWithClock(&noNestingTx{s.DB()}, clock.Now)
 			h := NewGitLabWebhook(s, rstore, clock.Now)
 
 			t.Run("missing merge request", func(t *testing.T) {
@@ -852,7 +852,7 @@ func gitLabTestSetup(t *testing.T, db *sql.DB) (*store.Store, repos.Store, ct.Cl
 
 	// Note that tx is wrapped in nestedTx to effectively neuter further use of
 	// transactions within the test.
-	return store.NewStoreWithClock(&nestedTx{tx}, c.Now), repos.NewDBStore(tx, sql.TxOptions{}), c
+	return store.NewWithClock(&nestedTx{tx}, c.Now), repos.NewDBStore(tx, sql.TxOptions{}), c
 }
 
 // assertBodyIncludes checks for a specific substring within the given response

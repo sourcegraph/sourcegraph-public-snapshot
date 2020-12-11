@@ -20,7 +20,7 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		return err
 	}
 
-	campaignsStore := store.NewStoreWithClock(dbconn.Global, timeutil.Now)
+	campaignsStore := store.NewWithClock(dbconn.Global, timeutil.Now)
 	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	enterpriseServices.CampaignsResolver = resolvers.NewResolver(dbconn.Global)

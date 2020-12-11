@@ -17,8 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
-	cstore "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	cstore "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -32,7 +32,7 @@ import (
 )
 
 func TestNullIDResilience(t *testing.T) {
-	sr := &Resolver{store: cstore.NewStore(dbconn.Global)}
+	sr := &Resolver{store: cstore.New(dbconn.Global)}
 
 	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {
@@ -93,7 +93,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 	username := "create-campaign-spec-username"
 	userID := insertTestUser(t, dbconn.Global, username, true)
 
-	store := cstore.NewStore(dbconn.Global)
+	store := cstore.New(dbconn.Global)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
@@ -207,7 +207,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 
 	userID := insertTestUser(t, dbconn.Global, "create-changeset-spec", true)
 
-	store := cstore.NewStore(dbconn.Global)
+	store := cstore.New(dbconn.Global)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
@@ -281,7 +281,7 @@ func TestApplyCampaign(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := cstore.NewStoreWithClock(dbconn.Global, clock)
+	store := cstore.NewWithClock(dbconn.Global, clock)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
@@ -441,7 +441,7 @@ func TestCreateCampaign(t *testing.T) {
 
 	userID := insertTestUser(t, dbconn.Global, "apply-campaign", true)
 
-	store := cstore.NewStore(dbconn.Global)
+	store := cstore.New(dbconn.Global)
 
 	campaignSpec := &campaigns.CampaignSpec{
 		RawSpec: ct.TestRawCampaignSpec,
@@ -509,7 +509,7 @@ func TestMoveCampaign(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	store := cstore.NewStore(dbconn.Global)
+	store := cstore.New(dbconn.Global)
 
 	campaignSpec := &campaigns.CampaignSpec{
 		RawSpec:         ct.TestRawCampaignSpec,
@@ -781,7 +781,7 @@ func TestCreateCampaignsCredential(t *testing.T) {
 
 	userID := insertTestUser(t, dbconn.Global, "create-credential", false)
 
-	store := cstore.NewStore(dbconn.Global)
+	store := cstore.New(dbconn.Global)
 
 	r := &Resolver{store: store}
 	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
@@ -845,7 +845,7 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	store := cstore.NewStore(dbconn.Global)
+	store := cstore.New(dbconn.Global)
 
 	r := &Resolver{store: store}
 	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)

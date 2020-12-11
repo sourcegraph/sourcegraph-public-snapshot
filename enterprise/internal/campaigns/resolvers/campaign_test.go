@@ -11,8 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	cstore "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -37,7 +37,7 @@ func TestCampaignResolver(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := cstore.NewStoreWithClock(dbconn.Global, clock)
+	store := cstore.NewWithClock(dbconn.Global, clock)
 
 	campaignSpec := &campaigns.CampaignSpec{
 		RawSpec:        ct.TestRawCampaignSpec,

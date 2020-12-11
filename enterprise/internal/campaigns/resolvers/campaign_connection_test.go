@@ -30,7 +30,7 @@ func TestCampaignConnectionResolver(t *testing.T) {
 
 	userID := insertTestUser(t, dbconn.Global, "campaign-connection-resolver", true)
 
-	store := cstore.NewStore(dbconn.Global)
+	store := cstore.New(dbconn.Global)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
@@ -187,7 +187,7 @@ func TestCampaignsListing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	store := cstore.NewStore(dbconn.Global)
+	store := cstore.New(dbconn.Global)
 
 	r := &Resolver{store: store}
 	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)

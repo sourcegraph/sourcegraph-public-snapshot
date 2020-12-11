@@ -35,7 +35,7 @@ func TestServicePermissionLevels(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	s := store.NewStore(dbconn.Global)
+	s := store.New(dbconn.Global)
 	svc := NewService(s, nil)
 
 	admin := createTestUser(t, true)
@@ -173,7 +173,7 @@ func TestService(t *testing.T) {
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 
-	s := store.NewStoreWithClock(dbconn.Global, clock)
+	s := store.NewWithClock(dbconn.Global, clock)
 	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 4)
 
 	fakeSource := &ct.FakeChangesetSource{}

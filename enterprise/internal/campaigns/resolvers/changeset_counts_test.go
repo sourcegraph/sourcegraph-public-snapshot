@@ -115,7 +115,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	})
 	defer mockState.Unmock()
 
-	store := cstore.NewStore(dbconn.Global)
+	store := cstore.New(dbconn.Global)
 
 	spec := &campaigns.CampaignSpec{
 		NamespaceUserID: userID,

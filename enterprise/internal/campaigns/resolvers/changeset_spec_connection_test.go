@@ -29,7 +29,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 
 	userID := insertTestUser(t, dbconn.Global, "changeset-spec-connection-resolver", false)
 
-	store := cstore.NewStore(dbconn.Global)
+	store := cstore.New(dbconn.Global)
 
 	campaignSpec := &campaigns.CampaignSpec{
 		UserID:          userID,

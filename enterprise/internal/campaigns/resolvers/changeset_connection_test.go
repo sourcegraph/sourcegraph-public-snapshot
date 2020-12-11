@@ -30,7 +30,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 
 	userID := insertTestUser(t, dbconn.Global, "changeset-connection-resolver", false)
 
-	store := cstore.NewStore(dbconn.Global)
+	store := cstore.New(dbconn.Global)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))

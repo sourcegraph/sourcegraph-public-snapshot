@@ -31,7 +31,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 
 	userID := insertTestUser(t, dbconn.Global, "changeset-spec-by-id", false)
 
-	store := cstore.NewStore(dbconn.Global)
+	store := cstore.New(dbconn.Global)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	// Creating user with matching email to the changeset spec author.

@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"testing"
 
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 )
 
 type storeTestFunc func(*testing.T, context.Context, *Store, repos.Store, ct.Clock)
@@ -24,7 +24,7 @@ func storeTest(db *sql.DB, f storeTestFunc) func(*testing.T) {
 		// don't need to insert a lot of dependencies into the DB (users,
 		// repos, ...) to setup the tests.
 		tx := dbtest.NewTx(t, db)
-		s := NewStoreWithClock(tx, c.Now)
+		s := NewWithClock(tx, c.Now)
 
 		rs := repos.NewDBStore(db, sql.TxOptions{})
 
