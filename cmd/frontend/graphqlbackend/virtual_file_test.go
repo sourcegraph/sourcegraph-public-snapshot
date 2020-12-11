@@ -86,8 +86,8 @@ func TestVirtualFile(t *testing.T) {
 			if highlightedFile.Aborted() != aborted {
 				t.Fatalf("wrong Aborted. want=%t have=%t", aborted, highlightedFile.Aborted())
 			}
-			if *highlightedFile.HTML() != string(highlightedContent) {
-				t.Fatalf("wrong HTML. want=%q have=%q", highlightedContent, *highlightedFile.HTML())
+			if highlightedFile.HTML() != string(highlightedContent) {
+				t.Fatalf("wrong HTML. want=%q have=%q", highlightedContent, highlightedFile.HTML())
 			}
 		}
 		testHighlight(false)
