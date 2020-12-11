@@ -24,7 +24,7 @@
    },
    {
     "reason": "shard-timeout",
-    "title": "1 timedout",
+    "title": "1 timed out",
     "message": "`timedout-1` could not be searched in time. Try searching again or reducing the scope of your query with `repo:`,  `repogroup:` or other filters.",
     "severity": "warn"
    },
