@@ -849,6 +849,7 @@ describe('Blob viewer', () => {
                                         `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color: gray">&sol;&sol; file path: ${filePath}</span></div></td></tr>\n` +
                                         '<tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: #859900;" class="test-console-token">console</span><span style="color: #657b83;">.</span><span style="color: #859900;" class="test-log-token">log</span><span style="color: #657b83;">(</span><span style="color: #839496;">&quot;</span><span style="color: #2aa198;">Hello world</span><span style="color: #839496;">&quot;</span><span style="color: #657b83;">)</span></div></td></tr>\n' +
                                         '</tbody></table>',
+                                    lineRanges: [],
                                 },
                             },
                         },
@@ -868,6 +869,7 @@ describe('Blob viewer', () => {
                                         `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color: gray">&sol;&sol; file path: ${filePath}</span></div></td></tr>\n` +
                                         '<tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: #859900;" class="test-console-token">console</span><span style="color: #657b83;">.</span><span style="color: #859900;" class="test-log-token">log</span><span style="color: #657b83;">(</span><span style="color: #839496;">&quot;</span><span style="color: #2aa198;">Hello world</span><span style="color: #839496;">&quot;</span><span style="color: #657b83;">)</span></div></td></tr>\n' +
                                         '</tbody></table>',
+                                    lineRanges: [],
                                 },
                             },
                         },

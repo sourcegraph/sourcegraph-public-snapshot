@@ -50,7 +50,7 @@ describe('ResultContainer', () => {
         result: MULTIPLE_MATCH_RESULT,
         allMatches: true,
         subsetMatches: 1,
-        fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
+        fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
         onSelect,
         settingsCascade: NOOP_SETTINGS_CASCADE,
         isLightTheme: true,

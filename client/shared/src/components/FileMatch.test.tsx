@@ -25,7 +25,7 @@ describe('FileMatch', () => {
         expanded: true,
         showAllMatches: true,
         isLightTheme: true,
-        fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_REQUEST,
+        fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
         settingsCascade: NOOP_SETTINGS_CASCADE,
     }
 

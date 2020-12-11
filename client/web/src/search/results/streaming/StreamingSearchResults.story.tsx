@@ -58,7 +58,7 @@ const defaultProps: StreamingSearchResultsProps = {
 
     streamSearch: () => of(streamingSearchResult),
 
-    fetchHighlightedFileLines: () => of(HIGHLIGHTED_FILE_LINES_LONG),
+    fetchHighlightedFileLineRanges: () => of(HIGHLIGHTED_FILE_LINES_LONG),
 }
 
 const { add } = storiesOf('web/search/results/streaming/StreamingSearchResults', module).addParameters({
