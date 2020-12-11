@@ -9,21 +9,20 @@ import (
 	"github.com/sourcegraph/campaignutils/overridable"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
 func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock ct.Clock) {
-	campaignSpecs := make([]*cmpgn.CampaignSpec, 0, 3)
+	campaignSpecs := make([]*campaigns.CampaignSpec, 0, 3)
 
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(campaignSpecs); i++ {
-			c := &cmpgn.CampaignSpec{
+			c := &campaigns.CampaignSpec{
 				RawSpec: `{"name": "Foobar", "description": "My description"}`,
-				Spec: cmpgn.CampaignSpecFields{
+				Spec: campaigns.CampaignSpecFields{
 					Name:        "Foobar",
 					Description: "My description",
-					ChangesetTemplate: cmpgn.ChangesetTemplate{
+					ChangesetTemplate: campaigns.ChangesetTemplate{
 						Title:  "Hello there",
 						Body:   "This is the body",
 						Branch: "my-branch",
@@ -284,8 +283,8 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 	})
 
 	t.Run("DeleteExpiredCampaignSpecs", func(t *testing.T) {
-		underTTL := clock.Now().Add(-cmpgn.CampaignSpecTTL + 1*time.Minute)
-		overTTL := clock.Now().Add(-cmpgn.CampaignSpecTTL - 1*time.Minute)
+		underTTL := clock.Now().Add(-campaigns.CampaignSpecTTL + 1*time.Minute)
+		overTTL := clock.Now().Add(-campaigns.CampaignSpecTTL - 1*time.Minute)
 
 		tests := []struct {
 			createdAt         time.Time
@@ -304,7 +303,7 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 		}
 
 		for _, tc := range tests {
-			campaignSpec := &cmpgn.CampaignSpec{
+			campaignSpec := &campaigns.CampaignSpec{
 				UserID:          1,
 				NamespaceUserID: 1,
 				CreatedAt:       tc.createdAt,
@@ -315,7 +314,7 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 			}
 
 			if tc.hasCampaign {
-				campaign := &cmpgn.Campaign{
+				campaign := &campaigns.Campaign{
 					Name:             "not-blank",
 					InitialApplierID: 1,
 					NamespaceUserID:  1,
@@ -329,7 +328,7 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, _ repos
 			}
 
 			if tc.hasChangesetSpecs {
-				changesetSpec := &cmpgn.ChangesetSpec{
+				changesetSpec := &campaigns.ChangesetSpec{
 					RepoID:         1,
 					CampaignSpecID: campaignSpec.ID,
 				}
