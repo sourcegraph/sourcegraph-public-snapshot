@@ -264,9 +264,17 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 	ids := make([]campaigns.ChangesetSpecID, len(specs))
 
 	if len(specs) > 0 {
+		var label string
+		if len(specs) == 1 {
+			label = "Sending changeset spec"
+		} else {
+			label = fmt.Sprintf("Sending %d changeset specs", len(specs))
+		}
+
 		progress := out.Progress([]output.ProgressBar{
-			{Label: "Sending changeset specs", Max: float64(len(specs))},
+			{Label: label, Max: float64(len(specs))},
 		}, nil)
+
 		for i, spec := range specs {
 			id, err := svc.CreateChangesetSpec(ctx, spec)
 			if err != nil {
@@ -276,7 +284,6 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 			progress.SetValue(0, float64(i+1))
 		}
 		progress.Complete()
-
 	} else {
 		if len(repos) == 0 {
 			out.WriteLine(output.Linef(output.EmojiWarning, output.StyleWarning, `No changeset specs created`))

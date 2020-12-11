@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
 )
@@ -40,7 +42,7 @@ func (e TaskExecutionErr) StatusText() string {
 }
 
 type Executor interface {
-	AddTask(repo *graphql.Repository, steps []Step, template *ChangesetTemplate)
+	AddTask(repo *graphql.Repository, steps []Step, transform *TransformChanges, template *ChangesetTemplate)
 	LogFiles() []string
 	Start(ctx context.Context)
 	Wait() ([]*ChangesetSpec, error)
@@ -55,7 +57,9 @@ type Executor interface {
 type Task struct {
 	Repository *graphql.Repository
 	Steps      []Step
-	Template   *ChangesetTemplate `json:"-"`
+
+	Template         *ChangesetTemplate `json:"-"`
+	TransformChanges *TransformChanges  `json:"-"`
 }
 
 func (t *Task) cacheKey() ExecutionCacheKey {
@@ -75,9 +79,16 @@ type TaskStatus struct {
 	// TODO: add current step and progress fields.
 	CurrentlyExecuting string
 
-	// Result fields.
-	ChangesetSpec *ChangesetSpec
-	Err           error
+	// ChangesetSpecs are the specs produced by executing the Task in a
+	// repository. With the introduction of `transformChanges` to the campaign
+	// spec, one Task can produce multiple ChangesetSpecs.
+	ChangesetSpecs []*ChangesetSpec
+	// Err is set if executing the Task lead to an error.
+	Err error
+
+	fileDiffs     []*diff.FileDiff
+	fileDiffsErr  error
+	fileDiffsOnce sync.Once
 }
 
 func (ts *TaskStatus) Clone() *TaskStatus {
@@ -95,6 +106,34 @@ func (ts *TaskStatus) IsCompleted() bool {
 
 func (ts *TaskStatus) ExecutionTime() time.Duration {
 	return ts.FinishedAt.Sub(ts.StartedAt).Truncate(time.Millisecond)
+}
+
+// FileDiffs returns the file diffs produced by the Task in the given
+// repository.
+// If no file diffs were produced, the task resulted in an error, or the task
+// hasn't finished execution yet, the second return value is false.
+func (ts *TaskStatus) FileDiffs() ([]*diff.FileDiff, bool, error) {
+	if !ts.IsCompleted() || len(ts.ChangesetSpecs) == 0 || ts.Err != nil {
+		return nil, false, nil
+	}
+
+	ts.fileDiffsOnce.Do(func() {
+		var all []*diff.FileDiff
+
+		for _, spec := range ts.ChangesetSpecs {
+			fd, err := diff.ParseMultiFileDiff([]byte(spec.Commits[0].Diff))
+			if err != nil {
+				ts.fileDiffsErr = err
+				return
+			}
+
+			all = append(all, fd...)
+		}
+
+		ts.fileDiffs = all
+	})
+
+	return ts.fileDiffs, len(ts.fileDiffs) != 0, ts.fileDiffsErr
 }
 
 type executor struct {
@@ -135,8 +174,8 @@ func newExecutor(opts ExecutorOpts, client api.Client, features featureFlags) *e
 	}
 }
 
-func (x *executor) AddTask(repo *graphql.Repository, steps []Step, template *ChangesetTemplate) {
-	task := &Task{repo, steps, template}
+func (x *executor) AddTask(repo *graphql.Repository, steps []Step, transform *TransformChanges, template *ChangesetTemplate) {
+	task := &Task{repo, steps, template, transform}
 	x.tasks = append(x.tasks, task)
 
 	x.statusesMu.Lock()
@@ -207,25 +246,17 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 			return
 		}
 	} else {
-		var result *ChangesetSpec
-		if result, err = x.cache.Get(ctx, cacheKey); err != nil {
+		var (
+			diff  string
+			found bool
+		)
+
+		diff, found, err = x.cache.Get(ctx, cacheKey)
+		if err != nil {
 			err = errors.Wrapf(err, "checking cache for %q", task.Repository.Name)
 			return
 		}
-		if result != nil {
-			// Build a new changeset spec. We don't want to use `result` as is,
-			// because the changesetTemplate may have changed. In that case
-			// the diff would still be valid, so we take it from the cache,
-			// but we still build a new ChangesetSpec from the task.
-			var diff string
-
-			if len(result.Commits) > 1 {
-				panic("campaigns currently lack support for multiple commits per changeset")
-			}
-			if len(result.Commits) == 1 {
-				diff = result.Commits[0].Diff
-			}
-
+		if found {
 			// If the cached result resulted in an empty diff, we don't need to
 			// add it to the list of specs that are displayed to the user and
 			// send to the server. Instead, we can just report that the task is
@@ -239,17 +270,21 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 				return
 			}
 
-			spec := createChangesetSpec(task, diff, x.features)
+			var specs []*ChangesetSpec
+			specs, err = createChangesetSpecs(task, diff, x.features)
+			if err != nil {
+				return err
+			}
 
 			x.updateTaskStatus(task, func(status *TaskStatus) {
-				status.ChangesetSpec = spec
+				status.ChangesetSpecs = specs
 				status.Cached = true
 				status.FinishedAt = time.Now()
 			})
 
 			// Add the spec to the executor's list of completed specs.
 			x.specsMu.Lock()
-			x.specs = append(x.specs, spec)
+			x.specs = append(x.specs, specs...)
 			x.specsMu.Unlock()
 
 			return
@@ -293,12 +328,15 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 		return
 	}
 
-	// Build the changeset spec.
-	spec := createChangesetSpec(task, string(diff), x.features)
+	// Build the changeset specs.
+	specs, err := createChangesetSpecs(task, string(diff), x.features)
+	if err != nil {
+		return err
+	}
 
 	// Add to the cache. We don't use runCtx here because we want to write to
 	// the cache even if we've now reached the timeout.
-	if err = x.cache.Set(ctx, cacheKey, spec); err != nil {
+	if err = x.cache.Set(ctx, cacheKey, string(diff)); err != nil {
 		err = errors.Wrapf(err, "caching result for %q", task.Repository.Name)
 	}
 
@@ -309,12 +347,12 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 	}
 
 	x.updateTaskStatus(task, func(status *TaskStatus) {
-		status.ChangesetSpec = spec
+		status.ChangesetSpecs = specs
 	})
 
 	// Add the spec to the executor's list of completed specs.
 	x.specsMu.Lock()
-	x.specs = append(x.specs, spec)
+	x.specs = append(x.specs, specs...)
 	x.specsMu.Unlock()
 	return
 }
@@ -357,7 +395,7 @@ func reachedTimeout(cmdCtx context.Context, err error) bool {
 	return errors.Is(err, context.DeadlineExceeded)
 }
 
-func createChangesetSpec(task *Task, diff string, features featureFlags) *ChangesetSpec {
+func createChangesetSpecs(task *Task, completeDiff string, features featureFlags) ([]*ChangesetSpec, error) {
 	repo := task.Repository.Name
 
 	var authorName string
@@ -374,24 +412,149 @@ func createChangesetSpec(task *Task, diff string, features featureFlags) *Change
 		authorEmail = task.Template.Commit.Author.Email
 	}
 
-	return &ChangesetSpec{
-		BaseRepository: task.Repository.ID,
-		CreatedChangeset: &CreatedChangeset{
-			BaseRef:        task.Repository.BaseRef(),
-			BaseRev:        task.Repository.Rev(),
-			HeadRepository: task.Repository.ID,
-			HeadRef:        "refs/heads/" + task.Template.Branch,
-			Title:          task.Template.Title,
-			Body:           task.Template.Body,
-			Commits: []GitCommitDescription{
-				{
-					Message:     task.Template.Commit.Message,
-					AuthorName:  authorName,
-					AuthorEmail: authorEmail,
-					Diff:        string(diff),
+	newSpec := func(branch, diff string) *ChangesetSpec {
+		return &ChangesetSpec{
+			BaseRepository: task.Repository.ID,
+			CreatedChangeset: &CreatedChangeset{
+				BaseRef:        task.Repository.BaseRef(),
+				BaseRev:        task.Repository.Rev(),
+				HeadRepository: task.Repository.ID,
+				HeadRef:        "refs/heads/" + branch,
+				Title:          task.Template.Title,
+				Body:           task.Template.Body,
+				Commits: []GitCommitDescription{
+					{
+						Message:     task.Template.Commit.Message,
+						AuthorName:  authorName,
+						AuthorEmail: authorEmail,
+						Diff:        diff,
+					},
 				},
+				Published: task.Template.Published.Value(repo),
 			},
-			Published: task.Template.Published.Value(repo),
-		},
+		}
 	}
+
+	var specs []*ChangesetSpec
+
+	groups := groupsForRepository(task.Repository.Name, task.TransformChanges)
+	if len(groups) != 0 {
+		err := validateGroups(task.Repository.Name, task.Template.Branch, groups)
+		if err != nil {
+			return specs, err
+		}
+
+		diffsByBranch, err := groupFileDiffs(completeDiff, task.Template.Branch, groups)
+		if err != nil {
+			return specs, errors.Wrap(err, "grouping diffs failed")
+		}
+
+		for branch, diff := range diffsByBranch {
+			specs = append(specs, newSpec(branch, diff))
+		}
+	} else {
+		specs = append(specs, newSpec(task.Template.Branch, string(completeDiff)))
+	}
+
+	return specs, nil
+}
+
+func groupsForRepository(repo string, transform *TransformChanges) []Group {
+	var groups []Group
+
+	if transform == nil {
+		return groups
+	}
+
+	for _, g := range transform.Group {
+		if g.Repository != "" {
+			if g.Repository == repo {
+				groups = append(groups, g)
+			}
+		} else {
+			groups = append(groups, g)
+		}
+	}
+
+	return groups
+}
+
+func validateGroups(repo, defaultBranch string, groups []Group) error {
+	uniqueBranches := make(map[string]struct{}, len(groups))
+
+	for _, g := range groups {
+		if _, ok := uniqueBranches[g.Branch]; ok {
+			return fmt.Errorf("transformChanges would lead to multiple changesets in repository %s to have the same branch %q", repo, g.Branch)
+		} else {
+			uniqueBranches[g.Branch] = struct{}{}
+		}
+
+		if g.Branch == defaultBranch {
+			return fmt.Errorf("transformChanges group branch for repository %s is the same as branch %q in changesetTemplate", repo, defaultBranch)
+		}
+	}
+
+	return nil
+}
+
+func groupFileDiffs(completeDiff, defaultBranch string, groups []Group) (map[string]string, error) {
+	fileDiffs, err := diff.ParseMultiFileDiff([]byte(completeDiff))
+	if err != nil {
+		return nil, err
+	}
+
+	// Housekeeping: we setup these two datastructures so we can
+	// - access the group.Branch by the directory for which they should be used
+	// - check against the given directories, in order.
+	branchesByDirectory := make(map[string]string, len(groups))
+	dirs := make([]string, len(branchesByDirectory))
+	for _, g := range groups {
+		branchesByDirectory[g.Directory] = g.Branch
+		dirs = append(dirs, g.Directory)
+	}
+
+	byBranch := make(map[string][]*diff.FileDiff, len(groups))
+	byBranch[defaultBranch] = []*diff.FileDiff{}
+
+	// For each file diff...
+	for _, f := range fileDiffs {
+		name := f.NewName
+		if name == "/dev/null" {
+			name = f.OrigName
+		}
+
+		// .. we check whether it matches one of the given directories in the
+		// group transformations, with the last match winning:
+		var matchingDir string
+		for _, d := range dirs {
+			if strings.Contains(name, d) {
+				matchingDir = d
+			}
+		}
+
+		// If the diff didn't match a rule, it goes into the default branch and
+		// the default changeset.
+		if matchingDir == "" {
+			byBranch[defaultBranch] = append(byBranch[defaultBranch], f)
+			continue
+		}
+
+		// If it *did* match a directory, we look up which branch we should use:
+		branch, ok := branchesByDirectory[matchingDir]
+		if !ok {
+			panic("this should not happen: " + matchingDir)
+		}
+
+		byBranch[branch] = append(byBranch[branch], f)
+	}
+
+	finalDiffsByBranch := make(map[string]string, len(byBranch))
+	for branch, diffs := range byBranch {
+		printed, err := diff.PrintMultiFileDiff(diffs)
+		if err != nil {
+			return nil, errors.Wrap(err, "printing multi file diff failed")
+		}
+		finalDiffsByBranch[branch] = string(printed)
+	}
+	return finalDiffsByBranch, nil
 }

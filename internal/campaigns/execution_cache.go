@@ -5,9 +5,11 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -60,8 +62,8 @@ func (key ExecutionCacheKey) Key() (string, error) {
 }
 
 type ExecutionCache interface {
-	Get(ctx context.Context, key ExecutionCacheKey) (result *ChangesetSpec, err error)
-	Set(ctx context.Context, key ExecutionCacheKey, result *ChangesetSpec) error
+	Get(ctx context.Context, key ExecutionCacheKey) (diff string, found bool, err error)
+	Set(ctx context.Context, key ExecutionCacheKey, diff string) error
 	Clear(ctx context.Context, key ExecutionCacheKey) error
 }
 
@@ -75,13 +77,13 @@ func (c ExecutionDiskCache) cacheFilePath(key ExecutionCacheKey) (string, error)
 		return "", errors.Wrap(err, "calculating execution cache key")
 	}
 
-	return filepath.Join(c.Dir, keyString+".json"), nil
+	return filepath.Join(c.Dir, keyString+".diff"), nil
 }
 
-func (c ExecutionDiskCache) Get(ctx context.Context, key ExecutionCacheKey) (*ChangesetSpec, error) {
+func (c ExecutionDiskCache) Get(ctx context.Context, key ExecutionCacheKey) (string, bool, error) {
 	path, err := c.cacheFilePath(key)
 	if err != nil {
-		return nil, err
+		return "", false, err
 	}
 
 	data, err := ioutil.ReadFile(path)
@@ -89,27 +91,34 @@ func (c ExecutionDiskCache) Get(ctx context.Context, key ExecutionCacheKey) (*Ch
 		if os.IsNotExist(err) {
 			err = nil // treat as not-found
 		}
-		return nil, err
+		return "", false, err
 	}
 
-	var result ChangesetSpec
-	if err := json.Unmarshal(data, &result); err != nil {
-		// Delete the invalid data to avoid causing an error for next time.
-		if err := os.Remove(path); err != nil {
-			return nil, errors.Wrap(err, "while deleting cache file with invalid JSON")
+	// We previously cached complete ChangesetSpecs instead of just the diffs.
+	// To be backwards compatible, we keep reading these:
+	if strings.HasSuffix(path, ".json") {
+		var result ChangesetSpec
+		if err := json.Unmarshal(data, &result); err != nil {
+			// Delete the invalid data to avoid causing an error for next time.
+			if err := os.Remove(path); err != nil {
+				return "", false, errors.Wrap(err, "while deleting cache file with invalid JSON")
+			}
+			return "", false, errors.Wrapf(err, "reading cache file %s", path)
 		}
-		return nil, errors.Wrapf(err, "reading cache file %s", path)
+		if len(result.Commits) != 1 {
+			return "", false, errors.New("cached result has no commits")
+		}
+		return result.Commits[0].Diff, true, nil
 	}
 
-	return &result, nil
+	if strings.HasSuffix(path, ".diff") {
+		return string(data), true, nil
+	}
+
+	return "", false, fmt.Errorf("unknown file format for cache file %q", path)
 }
 
-func (c ExecutionDiskCache) Set(ctx context.Context, key ExecutionCacheKey, result *ChangesetSpec) error {
-	data, err := json.Marshal(result)
-	if err != nil {
-		return err
-	}
-
+func (c ExecutionDiskCache) Set(ctx context.Context, key ExecutionCacheKey, diff string) error {
 	path, err := c.cacheFilePath(key)
 	if err != nil {
 		return err
@@ -119,7 +128,7 @@ func (c ExecutionDiskCache) Set(ctx context.Context, key ExecutionCacheKey, resu
 		return err
 	}
 
-	return ioutil.WriteFile(path, data, 0600)
+	return ioutil.WriteFile(path, []byte(diff), 0600)
 }
 
 func (c ExecutionDiskCache) Clear(ctx context.Context, key ExecutionCacheKey) error {
@@ -139,11 +148,11 @@ func (c ExecutionDiskCache) Clear(ctx context.Context, key ExecutionCacheKey) er
 // retrieve cache entries.
 type ExecutionNoOpCache struct{}
 
-func (ExecutionNoOpCache) Get(ctx context.Context, key ExecutionCacheKey) (result *ChangesetSpec, err error) {
-	return nil, nil
+func (ExecutionNoOpCache) Get(ctx context.Context, key ExecutionCacheKey) (diff string, found bool, err error) {
+	return "", false, nil
 }
 
-func (ExecutionNoOpCache) Set(ctx context.Context, key ExecutionCacheKey, result *ChangesetSpec) error {
+func (ExecutionNoOpCache) Set(ctx context.Context, key ExecutionCacheKey, diff string) error {
 	return nil
 }
 

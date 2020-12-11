@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -19,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/campaigns/graphql"
@@ -41,6 +41,7 @@ func TestExecutor_Integration(t *testing.T) {
 		Name:          "github.com/sourcegraph/src-cli",
 		DefaultBranch: &graphql.Branch{Name: "main", Target: graphql.Target{OID: "d34db33f"}},
 	}
+
 	sourcegraphRepo := &graphql.Repository{
 		ID:   "sourcegraph",
 		Name: "github.com/sourcegraph/sourcegraph",
@@ -50,16 +51,22 @@ func TestExecutor_Integration(t *testing.T) {
 		},
 	}
 
+	changesetTemplateBranch := "my-branch"
+
+	type filesByBranch map[string][]string
+	type filesByRepository map[string]filesByBranch
+
 	tests := []struct {
 		name string
 
-		repos    []*graphql.Repository
-		archives []mockRepoArchive
-		steps    []Step
+		repos     []*graphql.Repository
+		archives  []mockRepoArchive
+		steps     []Step
+		transform *TransformChanges
 
 		executorTimeout time.Duration
 
-		wantFilesChanged map[string][]string
+		wantFilesChanged filesByRepository
 		wantErrInclude   string
 	}{
 		{
@@ -78,9 +85,13 @@ func TestExecutor_Integration(t *testing.T) {
 				{Run: `echo -e "foobar\n" >> README.md`, Container: "alpine:13"},
 				{Run: `[[ -f "main.go" ]] && go fmt main.go || exit 0`, Container: "doesntmatter:13"},
 			},
-			wantFilesChanged: map[string][]string{
-				srcCLIRepo.ID:      []string{"README.md", "main.go"},
-				sourcegraphRepo.ID: []string{"README.md"},
+			wantFilesChanged: filesByRepository{
+				srcCLIRepo.ID: filesByBranch{
+					changesetTemplateBranch: []string{"README.md", "main.go"},
+				},
+				sourcegraphRepo.ID: {
+					changesetTemplateBranch: []string{"README.md"},
+				},
 			},
 		},
 		{
@@ -114,8 +125,11 @@ func TestExecutor_Integration(t *testing.T) {
 				{Run: `touch modified-${{ join previous_step.modified_files " " }}.md`, Container: "alpine:13"},
 				{Run: `touch added-${{ join previous_step.added_files " " }}`, Container: "alpine:13"},
 			},
-			wantFilesChanged: map[string][]string{
-				srcCLIRepo.ID: []string{"main.go", "modified-main.go.md", "added-modified-main.go.md"},
+
+			wantFilesChanged: filesByRepository{
+				srcCLIRepo.ID: filesByBranch{
+					changesetTemplateBranch: []string{"main.go", "modified-main.go.md", "added-modified-main.go.md"},
+				},
 			},
 		},
 		{
@@ -131,7 +145,56 @@ func TestExecutor_Integration(t *testing.T) {
 				{Run: `true`, Container: "doesntmatter:13"},
 			},
 			// No changesets should be generated.
-			wantFilesChanged: map[string][]string{},
+			wantFilesChanged: filesByRepository{},
+		},
+		{
+			name:  "transform group",
+			repos: []*graphql.Repository{srcCLIRepo, sourcegraphRepo},
+			archives: []mockRepoArchive{
+				{repo: srcCLIRepo, files: map[string]string{
+					"README.md":  "# Welcome to the README\n",
+					"a/a.go":     "package a",
+					"a/b/b.go":   "package b",
+					"a/b/c/c.go": "package c",
+				}},
+				{repo: sourcegraphRepo, files: map[string]string{
+					"README.md":  "# Welcome to the README\n",
+					"a/a.go":     "package a",
+					"a/b/b.go":   "package b",
+					"a/b/c/c.go": "package c",
+				}},
+			},
+			steps: []Step{
+				{Run: `echo 'var a = 1' >> a/a.go`, Container: "doesntmatter:13"},
+				{Run: `echo 'var b = 2' >> a/b/b.go`, Container: "doesntmatter:13"},
+				{Run: `echo 'var c = 3' >> a/b/c/c.go`, Container: "doesntmatter:13"},
+			},
+			transform: &TransformChanges{
+				Group: []Group{
+					{Directory: "a/b/c", Branch: "in-directory-c"},
+					{Directory: "a/b", Branch: "in-directory-b", Repository: sourcegraphRepo.Name},
+				},
+			},
+			wantFilesChanged: filesByRepository{
+				srcCLIRepo.ID: filesByBranch{
+					changesetTemplateBranch: []string{
+						"a/a.go",
+						"a/b/b.go",
+					},
+					"in-directory-c": []string{
+						"a/b/c/c.go",
+					},
+				},
+				sourcegraphRepo.ID: filesByBranch{
+					changesetTemplateBranch: []string{
+						"a/a.go",
+					},
+					"in-directory-b": []string{
+						"a/b/b.go",
+						"a/b/c/c.go",
+					},
+				},
+			},
 		},
 	}
 
@@ -168,9 +231,10 @@ func TestExecutor_Integration(t *testing.T) {
 			execute := func() {
 				executor := newExecutor(opts, client, featuresAllEnabled())
 
-				template := &ChangesetTemplate{}
+				template := &ChangesetTemplate{Branch: changesetTemplateBranch}
+
 				for _, r := range tc.repos {
-					executor.AddTask(r, tc.steps, template)
+					executor.AddTask(r, tc.steps, tc.transform, template)
 				}
 
 				executor.Start(context.Background())
@@ -185,7 +249,11 @@ func TestExecutor_Integration(t *testing.T) {
 					return
 				}
 
-				if have, want := len(specs), len(tc.wantFilesChanged); have != want {
+				wantSpecs := 0
+				for _, byBranch := range tc.wantFilesChanged {
+					wantSpecs += len(byBranch)
+				}
+				if have, want := len(specs), wantSpecs; have != want {
 					t.Fatalf("wrong number of changeset specs. want=%d, have=%d", want, have)
 				}
 
@@ -194,17 +262,23 @@ func TestExecutor_Integration(t *testing.T) {
 						t.Fatalf("wrong number of commits. want=%d, have=%d", want, have)
 					}
 
-					fileDiffs, err := diff.ParseMultiFileDiff([]byte(spec.Commits[0].Diff))
-					if err != nil {
-						t.Fatalf("failed to parse diff: %s", err)
-					}
-
 					wantFiles, ok := tc.wantFilesChanged[spec.BaseRepository]
 					if !ok {
 						t.Fatalf("unexpected file changes in repo %s", spec.BaseRepository)
 					}
 
-					if have, want := len(fileDiffs), len(wantFiles); have != want {
+					branch := strings.ReplaceAll(spec.HeadRef, "refs/heads/", "")
+					wantFilesInBranch, ok := wantFiles[branch]
+					if !ok {
+						t.Fatalf("spec for repo %q and branch %q but no files expected in that branch", spec.BaseRepository, branch)
+					}
+
+					fileDiffs, err := diff.ParseMultiFileDiff([]byte(spec.Commits[0].Diff))
+					if err != nil {
+						t.Fatalf("failed to parse diff: %s", err)
+					}
+
+					if have, want := len(fileDiffs), len(wantFilesInBranch); have != want {
 						t.Fatalf("repo %s: wrong number of fileDiffs. want=%d, have=%d", spec.BaseRepository, want, have)
 					}
 
@@ -217,7 +291,7 @@ func TestExecutor_Integration(t *testing.T) {
 						}
 					}
 
-					for _, file := range wantFiles {
+					for _, file := range wantFilesInBranch {
 						if _, ok := diffsByName[file]; !ok {
 							t.Errorf("%s was not changed (diffsByName=%#v)", file, diffsByName)
 						}
@@ -255,6 +329,166 @@ func TestExecutor_Integration(t *testing.T) {
 				verifyCache()
 			})
 		})
+	}
+}
+
+func TestValidateGroups(t *testing.T) {
+	repoName := "github.com/sourcegraph/src-cli"
+	defaultBranch := "my-campaign"
+
+	tests := []struct {
+		defaultBranch string
+		groups        []Group
+		wantErr       string
+	}{
+		{
+			groups: []Group{
+				{Directory: "a", Branch: "my-campaign-a"},
+				{Directory: "b", Branch: "my-campaign-b"},
+			},
+			wantErr: "",
+		},
+		{
+			groups: []Group{
+				{Directory: "a", Branch: "my-campaign-SAME"},
+				{Directory: "b", Branch: "my-campaign-SAME"},
+			},
+			wantErr: "transformChanges would lead to multiple changesets in repository github.com/sourcegraph/src-cli to have the same branch \"my-campaign-SAME\"",
+		},
+		{
+			groups: []Group{
+				{Directory: "a", Branch: "my-campaign-SAME"},
+				{Directory: "b", Branch: defaultBranch},
+			},
+			wantErr: "transformChanges group branch for repository github.com/sourcegraph/src-cli is the same as branch \"my-campaign\" in changesetTemplate",
+		},
+	}
+
+	for _, tc := range tests {
+		err := validateGroups(repoName, defaultBranch, tc.groups)
+		var haveErr string
+		if err != nil {
+			haveErr = err.Error()
+		}
+
+		if haveErr != tc.wantErr {
+			t.Fatalf("wrong error:\nwant=%q\nhave=%q", tc.wantErr, haveErr)
+		}
+	}
+}
+
+func TestGroupFileDiffs(t *testing.T) {
+	diff1 := `diff --git 1/1.txt 1/1.txt
+new file mode 100644
+index 0000000..19d6416
+--- /dev/null
++++ 1/1.txt
+@@ -0,0 +1,1 @@
++this is 1
+`
+	diff2 := `diff --git 1/2/2.txt 1/2/2.txt
+new file mode 100644
+index 0000000..c825d65
+--- /dev/null
++++ 1/2/2.txt
+@@ -0,0 +1,1 @@
++this is 2
+`
+	diff3 := `diff --git 1/2/3/3.txt 1/2/3/3.txt
+new file mode 100644
+index 0000000..1bd79fb
+--- /dev/null
++++ 1/2/3/3.txt
+@@ -0,0 +1,1 @@
++this is 3
+`
+
+	defaultBranch := "my-default-branch"
+	allDiffs := diff1 + diff2 + diff3
+
+	tests := []struct {
+		diff          string
+		defaultBranch string
+		groups        []Group
+		want          map[string]string
+	}{
+		{
+			diff: allDiffs,
+			groups: []Group{
+				{Directory: "1/2/3", Branch: "everything-in-3"},
+			},
+			want: map[string]string{
+				"my-default-branch": diff1 + diff2,
+				"everything-in-3":   diff3,
+			},
+		},
+		{
+			diff: allDiffs,
+			groups: []Group{
+				{Directory: "1/2", Branch: "everything-in-2-and-3"},
+			},
+			want: map[string]string{
+				"my-default-branch":     diff1,
+				"everything-in-2-and-3": diff2 + diff3,
+			},
+		},
+		{
+			diff: allDiffs,
+			groups: []Group{
+				{Directory: "1", Branch: "everything-in-1-and-2-and-3"},
+			},
+			want: map[string]string{
+				"my-default-branch":           "",
+				"everything-in-1-and-2-and-3": diff1 + diff2 + diff3,
+			},
+		},
+		{
+			diff: allDiffs,
+			groups: []Group{
+				// Each diff is matched against each directory, last match wins
+				{Directory: "1", Branch: "only-in-1"},
+				{Directory: "1/2", Branch: "only-in-2"},
+				{Directory: "1/2/3", Branch: "only-in-3"},
+			},
+			want: map[string]string{
+				"my-default-branch": "",
+				"only-in-3":         diff3,
+				"only-in-2":         diff2,
+				"only-in-1":         diff1,
+			},
+		},
+		{
+			diff: allDiffs,
+			groups: []Group{
+				// Last one wins here, because it matches every diff
+				{Directory: "1/2/3", Branch: "only-in-3"},
+				{Directory: "1/2", Branch: "only-in-2"},
+				{Directory: "1", Branch: "only-in-1"},
+			},
+			want: map[string]string{
+				"my-default-branch": "",
+				"only-in-1":         diff1 + diff2 + diff3,
+			},
+		},
+		{
+			diff: allDiffs,
+			groups: []Group{
+				{Directory: "", Branch: "everything"},
+			},
+			want: map[string]string{
+				"my-default-branch": diff1 + diff2 + diff3,
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		have, err := groupFileDiffs(tc.diff, defaultBranch, tc.groups)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+		if !cmp.Equal(tc.want, have) {
+			t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, have))
+		}
 	}
 }
 
@@ -310,13 +544,13 @@ func newZipArchivesMux(t *testing.T, callback http.HandlerFunc, archives ...mock
 
 // inMemoryExecutionCache provides an in-memory cache for testing purposes.
 type inMemoryExecutionCache struct {
-	cache map[string][]byte
+	cache map[string]string
 	mu    sync.RWMutex
 }
 
 func newInMemoryExecutionCache() *inMemoryExecutionCache {
 	return &inMemoryExecutionCache{
-		cache: make(map[string][]byte),
+		cache: make(map[string]string),
 	}
 }
 
@@ -327,33 +561,23 @@ func (c *inMemoryExecutionCache) size() int {
 	return len(c.cache)
 }
 
-func (c *inMemoryExecutionCache) Get(ctx context.Context, key ExecutionCacheKey) (*ChangesetSpec, error) {
+func (c *inMemoryExecutionCache) Get(ctx context.Context, key ExecutionCacheKey) (string, bool, error) {
 	k, err := key.Key()
 	if err != nil {
-		return nil, err
+		return "", false, err
 	}
 
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	if raw, ok := c.cache[k]; ok {
-		var spec ChangesetSpec
-		if err := json.Unmarshal(raw, &spec); err != nil {
-			return nil, err
-		}
-
-		return &spec, nil
+	if diff, ok := c.cache[k]; ok {
+		return diff, true, nil
 	}
-	return nil, nil
+	return "", false, nil
 }
 
-func (c *inMemoryExecutionCache) Set(ctx context.Context, key ExecutionCacheKey, spec *ChangesetSpec) error {
+func (c *inMemoryExecutionCache) Set(ctx context.Context, key ExecutionCacheKey, diff string) error {
 	k, err := key.Key()
-	if err != nil {
-		return err
-	}
-
-	v, err := json.Marshal(spec)
 	if err != nil {
 		return err
 	}
@@ -361,7 +585,7 @@ func (c *inMemoryExecutionCache) Set(ctx context.Context, key ExecutionCacheKey,
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.cache[k] = v
+	c.cache[k] = diff
 	return nil
 }
 

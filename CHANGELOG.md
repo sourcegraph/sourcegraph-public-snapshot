@@ -13,6 +13,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- Experimental: [`transformChanges` in campaign specs](https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#transformchanges) is now available as a feature preview to allow users to create multiple changesets in a single repository. [#398](https://github.com/sourcegraph/src-cli/pull/398)
+
 ### Changed
 
 - `src campaign [apply|preview]` now show the current execution progress in numbers next to the progress bar. [#396](https://github.com/sourcegraph/src-cli/pull/396)

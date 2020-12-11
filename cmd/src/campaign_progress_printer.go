@@ -177,21 +177,16 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 	}
 
 	for _, ts := range newlyCompleted {
-		var fileDiffs []*diff.FileDiff
-
-		if ts.ChangesetSpec != nil {
-			var err error
-			fileDiffs, err = diff.ParseMultiFileDiff([]byte(ts.ChangesetSpec.Commits[0].Diff))
-			if err != nil {
-				p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.RepoName, err)
-				continue
-			}
+		fileDiffs, hasDiffs, err := ts.FileDiffs()
+		if err != nil {
+			p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.RepoName, err)
+			continue
 		}
 
 		if p.verbose {
 			p.progress.WriteLine(output.Linef("", output.StylePending, "%s", ts.RepoName))
 
-			if ts.ChangesetSpec == nil {
+			if !hasDiffs {
 				p.progress.Verbosef("  No changes")
 			} else {
 				lines, err := verboseDiffSummary(fileDiffs)
@@ -205,6 +200,9 @@ func (p *campaignProgressPrinter) PrintStatuses(statuses []*campaigns.TaskStatus
 				}
 			}
 
+			if len(ts.ChangesetSpecs) > 1 {
+				p.progress.Verbosef("  %d changeset specs generated", len(ts.ChangesetSpecs))
+			}
 			p.progress.Verbosef("  Execution took %s", ts.ExecutionTime())
 			p.progress.Verbose("")
 		}
@@ -258,7 +256,14 @@ func taskStatusBarText(ts *campaigns.TaskStatus) (string, error) {
 	var statusText string
 
 	if ts.IsCompleted() {
-		if ts.ChangesetSpec == nil {
+		diffs, hasDiffs, err := ts.FileDiffs()
+		if err != nil {
+			return "", err
+		}
+
+		if hasDiffs {
+			statusText = diffStatDescription(diffs) + " " + diffStatDiagram(sumDiffStats(diffs))
+		} else {
 			if ts.Err != nil {
 				if texter, ok := ts.Err.(statusTexter); ok {
 					statusText = texter.StatusText()
@@ -268,13 +273,6 @@ func taskStatusBarText(ts *campaigns.TaskStatus) (string, error) {
 			} else {
 				statusText = "No changes"
 			}
-		} else {
-			fileDiffs, err := diff.ParseMultiFileDiff([]byte(ts.ChangesetSpec.Commits[0].Diff))
-			if err != nil {
-				return "", err
-			}
-
-			statusText = diffStatDescription(fileDiffs) + " " + diffStatDiagram(sumDiffStats(fileDiffs))
 		}
 
 		if ts.Cached {

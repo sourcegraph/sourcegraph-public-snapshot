@@ -218,7 +218,7 @@ func (svc *Service) SetDockerImages(ctx context.Context, spec *CampaignSpec, pro
 
 func (svc *Service) ExecuteCampaignSpec(ctx context.Context, repos []*graphql.Repository, x Executor, spec *CampaignSpec, progress func([]*TaskStatus), skipErrors bool) ([]*ChangesetSpec, error) {
 	for _, repo := range repos {
-		x.AddTask(repo, spec.Steps, spec.ChangesetTemplate)
+		x.AddTask(repo, spec.Steps, spec.TransformChanges, spec.ChangesetTemplate)
 	}
 
 	done := make(chan struct{})

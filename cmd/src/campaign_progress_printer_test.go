@@ -95,22 +95,24 @@ func TestCampaignProgressPrinterIntegration(t *testing.T) {
 		FinishedAt:         now.Add(time.Duration(5) * time.Second),
 		CurrentlyExecuting: "",
 		Err:                nil,
-		ChangesetSpec: &campaigns.ChangesetSpec{
-			BaseRepository: "graphql-id",
-			CreatedChangeset: &campaigns.CreatedChangeset{
-				BaseRef:        "refs/heads/main",
-				BaseRev:        "d34db33f",
-				HeadRepository: "graphql-id",
-				HeadRef:        "refs/heads/my-campaign",
-				Title:          "This is my campaign",
-				Body:           "This is my campaign",
-				Commits: []campaigns.GitCommitDescription{
-					{
-						Message: "This is my campaign",
-						Diff:    progressPrinterDiff,
+		ChangesetSpecs: []*campaigns.ChangesetSpec{
+			{
+				BaseRepository: "graphql-id",
+				CreatedChangeset: &campaigns.CreatedChangeset{
+					BaseRef:        "refs/heads/main",
+					BaseRev:        "d34db33f",
+					HeadRepository: "graphql-id",
+					HeadRef:        "refs/heads/my-campaign",
+					Title:          "This is my campaign",
+					Body:           "This is my campaign",
+					Commits: []campaigns.GitCommitDescription{
+						{
+							Message: "This is my campaign",
+							Diff:    progressPrinterDiff,
+						},
 					},
+					Published: false,
 				},
-				Published: false,
 			},
 		},
 	}

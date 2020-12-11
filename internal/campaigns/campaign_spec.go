@@ -32,6 +32,7 @@ type CampaignSpec struct {
 	Description       string                `json:"description,omitempty" yaml:"description"`
 	On                []OnQueryOrRepository `json:"on,omitempty" yaml:"on"`
 	Steps             []Step                `json:"steps,omitempty" yaml:"steps"`
+	TransformChanges  *TransformChanges     `json:"transformChanges,omitempty" yaml:"transformChanges,omitempty"`
 	ImportChangesets  []ImportChangeset     `json:"importChangesets,omitempty" yaml:"importChangesets"`
 	ChangesetTemplate *ChangesetTemplate    `json:"changesetTemplate,omitempty" yaml:"changesetTemplate"`
 }
@@ -74,26 +75,37 @@ type Step struct {
 	image string
 }
 
+type TransformChanges struct {
+	Group []Group `json:"group,omitempty" yaml:"group"`
+}
+
+type Group struct {
+	Directory  string `json:"directory,omitempty" yaml:"directory"`
+	Branch     string `json:"branch,omitempty" yaml:"branch"`
+	Repository string `json:"repository,omitempty" yaml:"repository"`
+}
+
 func ParseCampaignSpec(data []byte, features featureFlags) (*CampaignSpec, error) {
 	var spec CampaignSpec
 	if err := yaml.UnmarshalValidate(schema.CampaignSpecJSON, data, &spec); err != nil {
 		return nil, err
 	}
 
+	var errs *multierror.Error
+
 	if !features.allowArrayEnvironments {
-		var errs *multierror.Error
 		for i, step := range spec.Steps {
 			if !step.Env.IsStatic() {
 				errs = multierror.Append(errs, errors.Errorf("step %d includes one or more dynamic environment variables, which are unsupported in this Sourcegraph version", i+1))
 			}
 		}
-
-		if err := errs.ErrorOrNil(); err != nil {
-			return nil, err
-		}
 	}
 
-	return &spec, nil
+	if spec.TransformChanges != nil && !features.allowtransformChanges {
+		errs = multierror.Append(errs, errors.New("campaign spec includes transformChanges, which is not supported in this Sourcegraph version"))
+	}
+
+	return &spec, errs.ErrorOrNil()
 }
 
 func (on *OnQueryOrRepository) String() string {
