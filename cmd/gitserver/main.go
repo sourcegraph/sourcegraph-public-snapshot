@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -41,6 +42,11 @@ var (
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
+
+	if err := profiler.Init(); err != nil {
+		log.Fatalf("failed to start profiler: %v", err)
+	}
+
 	logging.Init()
 	tracer.Init()
 	trace.Init(true)
