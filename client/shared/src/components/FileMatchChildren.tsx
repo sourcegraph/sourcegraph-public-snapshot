@@ -102,7 +102,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     optimizeHighlighting
                         ? lines[
                             grouped.findIndex(
-                                group => group.startLine === startLine && group.endLine === group.endLine
+                                group => group.startLine === startLine && group.endLine === endLine
                             )
                         ] : lines[0].slice(startLine, endLine)
                 )
@@ -132,7 +132,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     </code>
                 </Link>
             ))}
-            {grouped.map((group, groupIndex) => (
+            {grouped.map(group => (
                 <div
                     key={`linematch:${result.file.url}${group.position.line}:${group.position.character}`}
                     className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
