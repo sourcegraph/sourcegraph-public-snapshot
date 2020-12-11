@@ -140,7 +140,7 @@ describe('ManageCodeMonitorPage', () => {
         nameInput.simulate('change', { target: { value: 'Test code monitor updated' } })
         const cancelButton = component.find('.test-cancel-monitor')
         cancelButton.simulate('click')
-        expect(confirmStub.calledOnce).toBe(true)
+        sinon.assert.calledOnce(confirmStub)
         confirmStub.restore()
     })
 
@@ -149,16 +149,7 @@ describe('ManageCodeMonitorPage', () => {
         const confirmStub = sinon.stub(window, 'confirm')
         const cancelButton = component.find('.test-cancel-monitor')
         cancelButton.simulate('click')
-        expect(confirmStub.notCalled)
-        confirmStub.restore()
-    })
-
-    test('Cancelling without any changes made does not show confirmation prompt', () => {
-        const component = mount(<ManageCodeMonitorPage {...props} />)
-        const confirmStub = sinon.stub(window, 'confirm')
-        const cancelButton = component.find('.test-cancel-monitor')
-        cancelButton.simulate('click')
-        expect(confirmStub.notCalled)
+        sinon.assert.notCalled(confirmStub)
         confirmStub.restore()
     })
 
@@ -171,7 +162,7 @@ describe('ManageCodeMonitorPage', () => {
         const confirmDeleteButton = component.find('.test-confirm-delete-monitor')
         expect(confirmDeleteButton.length).toBe(1)
         confirmDeleteButton.simulate('click')
-        expect(props.deleteCodeMonitor.calledOnce).toBe(true)
+        sinon.assert.calledOnce(props.deleteCodeMonitor)
         expect(props.history.location.pathname).toEqual('/code-monitoring')
     })
 })
