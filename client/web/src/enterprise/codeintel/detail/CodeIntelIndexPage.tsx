@@ -108,7 +108,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
                         typeName="index"
                         pluralTypeName="indexes"
                         history={history}
-                        className={classNames('mb-3', classNamesByState.get(indexOrError.state))}
+                        className={classNamesByState.get(indexOrError.state)}
                     />
                     <div className="card mb-3">
                         <div className="card-body">
