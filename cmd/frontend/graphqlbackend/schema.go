@@ -5688,8 +5688,8 @@ interface File2 {
         """
         highlightLongLines: Boolean = false
         """
-        If provided, only the specified line ranges will be returned. This is useful if you only
-        need to display specific subsets of the file.
+        If provided, the specified line ranges will be returned via the HighlightedFile.lineRanges field.
+        This is useful if you only need to display specific subsets of the file.
         """
         ranges: [HighlightLineRange!]
     ): HighlightedFile!
@@ -5755,8 +5755,8 @@ type VirtualFile implements File2 {
         """
         highlightLongLines: Boolean = false
         """
-        If provided, only the specified line ranges will be returned. This is useful if you only
-        need to display specific subsets of the file.
+        If provided, the specified line ranges will be returned via the HighlightedFile.lineRanges field.
+        This is useful if you only need to display specific subsets of the file.
         """
         ranges: [HighlightLineRange!]
     ): HighlightedFile!
@@ -5860,8 +5860,8 @@ type GitBlob implements TreeEntry & File2 {
         """
         highlightLongLines: Boolean = false
         """
-        If provided, only the specified line ranges will be returned. This is useful if you only
-        need to display specific subsets of the file.
+        If provided, the specified line ranges will be returned via the HighlightedFile.lineRanges field.
+        This is useful if you only need to display specific subsets of the file.
         """
         ranges: [HighlightLineRange!]
     ): HighlightedFile!
@@ -6030,13 +6030,12 @@ type HighlightedFile {
     """
     aborted: Boolean!
     """
-    The HTML table, only returned if 'ranges' was not specified.
+    The HTML table that can be used to display the highlighted file.
     """
     html: String
     """
-    A list of the desired line ranges. Only returned if 'ranges' was specified.
-    Each list is a list of lines, where each element is an HTML table row
-    '<tr>...</tr>' string.
+    A list of the desired line ranges. Only non-null if 'ranges' was specified in the query.
+    Each list is a list of lines, where each element is an HTML table row '<tr>...</tr>' string.
     """
     lineRanges: [[String!]!]
 }
