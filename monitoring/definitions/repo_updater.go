@@ -367,11 +367,13 @@ func RepoUpdater() *monitoring.Container {
 			},
 			{
 				Title:  "Container monitoring (not available on server)",
-				Hidden: true,
+				Hidden: false,
 				Rows: []monitoring.Row{
 					{
 						sharedContainerCPUUsage("repo-updater", monitoring.ObservableOwnerCloud),
-						sharedContainerMemoryUsage("repo-updater", monitoring.ObservableOwnerCloud),
+						sharedContainerMemoryUsage("repo-updater", monitoring.ObservableOwnerCloud).
+							WithWarning(nil).
+							WithCritical(monitoring.Alert().GreaterOrEqual(90)),
 					},
 					{
 						sharedContainerRestarts("repo-updater", monitoring.ObservableOwnerCloud),
