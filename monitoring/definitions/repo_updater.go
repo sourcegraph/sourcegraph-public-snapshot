@@ -367,7 +367,7 @@ func RepoUpdater() *monitoring.Container {
 			},
 			{
 				Title:  "Container monitoring (not available on server)",
-				Hidden: false,
+				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						sharedContainerCPUUsage("repo-updater", monitoring.ObservableOwnerCloud),
