@@ -160,6 +160,8 @@
 // 1528395762_add_col_num_results_trigger_event.up.sql (327B)
 // 1528395763_remove_old_campaign_tables.down.sql (1.433kB)
 // 1528395763_remove_old_campaign_tables.up.sql (90B)
+// 1528395764_migrate_jobs_tables_to_bigserial.down.sql (293B)
+// 1528395764_migrate_jobs_tables_to_bigserial.up.sql (305B)
 
 package migrations
 
@@ -3428,6 +3430,46 @@ func _1528395763_remove_old_campaign_tablesUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395764_migrate_jobs_tables_to_bigserialDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x8d\x2f\x29\xca\x4c\x4f\x4f\x2d\x8a\xcf\xca\x4f\x2a\xe6\x52\x50\x50\x50\x80\xc8\x3b\xfb\xfb\x84\xfa\xfa\x29\x64\xa6\x28\x04\xbb\x86\x28\xb8\x38\x86\x38\x2a\x84\x44\x06\xb8\x2a\x64\xe6\x95\x58\x43\x8d\x08\x76\x0d\x0c\x75\xf5\x73\xc6\x30\x25\x3e\x33\x25\xbe\x38\xb5\x50\x21\xb1\x18\xa2\x1a\xdd\xc6\xc4\xe4\x92\xcc\xfc\x3c\x12\x2c\xd4\xc1\x54\x06\xb3\x2f\xb5\x2c\x35\xaf\x04\xa1\xa3\xa4\xb2\x20\x15\xa4\xc3\x04\x9b\x1b\x91\xec\xc5\x70\xa2\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\xe6\xc0\x2b\x3f\x25\x01\x00\x00")
+
+func _1528395764_migrate_jobs_tables_to_bigserialDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395764_migrate_jobs_tables_to_bigserialDownSql,
+		"1528395764_migrate_jobs_tables_to_bigserial.down.sql",
+	)
+}
+
+func _1528395764_migrate_jobs_tables_to_bigserialDownSql() (*asset, error) {
+	bytes, err := _1528395764_migrate_jobs_tables_to_bigserialDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395764_migrate_jobs_tables_to_bigserial.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xbd, 0xb2, 0x14, 0x9f, 0xce, 0x8f, 0x8d, 0x91, 0xe9, 0x6, 0x50, 0xfd, 0xbd, 0x3, 0xbc, 0x5f, 0xa7, 0x7c, 0x77, 0xc8, 0xb1, 0x7a, 0x3e, 0xe1, 0xf, 0x51, 0x1b, 0xe0, 0xdb, 0xe8, 0xc3, 0xe1}}
+	return a, nil
+}
+
+var __1528395764_migrate_jobs_tables_to_bigserialUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x8d\x2f\x29\xca\x4c\x4f\x4f\x2d\x8a\xcf\xca\x4f\x2a\xe6\x52\x50\x50\x50\x80\xc8\x3b\xfb\xfb\x84\xfa\xfa\x29\x64\xa6\x28\x04\xbb\x86\x28\xb8\x38\x86\x38\x2a\x84\x44\x06\xb8\x2a\x24\x65\xa6\x67\xe6\x95\x58\x43\x4d\x09\x76\x0d\x0c\x75\xf5\x73\xc6\x30\x28\x3e\x33\x25\xbe\x38\xb5\x50\x21\xb1\x18\xae\x01\xdd\xde\xc4\xe4\x92\xcc\xfc\x3c\xd2\xac\xd5\xc1\x54\x09\xb3\x35\xb5\x2c\x35\xaf\x04\xa1\xa9\xa4\xb2\x20\x55\x21\x33\xaf\xc4\x02\x9b\x4b\x91\xac\xc6\xe6\x50\x67\x7f\x5f\x5f\xcf\x10\x6b\x2e\x40\x00\x00\x00\xff\xff\xbc\x44\x5c\x29\x31\x01\x00\x00")
+
+func _1528395764_migrate_jobs_tables_to_bigserialUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395764_migrate_jobs_tables_to_bigserialUpSql,
+		"1528395764_migrate_jobs_tables_to_bigserial.up.sql",
+	)
+}
+
+func _1528395764_migrate_jobs_tables_to_bigserialUpSql() (*asset, error) {
+	bytes, err := _1528395764_migrate_jobs_tables_to_bigserialUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395764_migrate_jobs_tables_to_bigserial.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xe4, 0xf3, 0x62, 0xf0, 0xe5, 0xc0, 0x0, 0x8c, 0xdd, 0x4c, 0xed, 0x51, 0x62, 0xe5, 0xf2, 0xeb, 0x6d, 0x18, 0x70, 0xc7, 0x1c, 0xcc, 0xf3, 0xf, 0x5f, 0x9c, 0xcb, 0x2a, 0x62, 0x7c, 0x61, 0x62}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3679,6 +3721,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395762_add_col_num_results_trigger_event.up.sql":                                    _1528395762_add_col_num_results_trigger_eventUpSql,
 	"1528395763_remove_old_campaign_tables.down.sql":                                         _1528395763_remove_old_campaign_tablesDownSql,
 	"1528395763_remove_old_campaign_tables.up.sql":                                           _1528395763_remove_old_campaign_tablesUpSql,
+	"1528395764_migrate_jobs_tables_to_bigserial.down.sql":                                   _1528395764_migrate_jobs_tables_to_bigserialDownSql,
+	"1528395764_migrate_jobs_tables_to_bigserial.up.sql":                                     _1528395764_migrate_jobs_tables_to_bigserialUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3885,6 +3929,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395762_add_col_num_results_trigger_event.up.sql":                                    {_1528395762_add_col_num_results_trigger_eventUpSql, map[string]*bintree{}},
 	"1528395763_remove_old_campaign_tables.down.sql":                                         {_1528395763_remove_old_campaign_tablesDownSql, map[string]*bintree{}},
 	"1528395763_remove_old_campaign_tables.up.sql":                                           {_1528395763_remove_old_campaign_tablesUpSql, map[string]*bintree{}},
+	"1528395764_migrate_jobs_tables_to_bigserial.down.sql":                                   {_1528395764_migrate_jobs_tables_to_bigserialDownSql, map[string]*bintree{}},
+	"1528395764_migrate_jobs_tables_to_bigserial.up.sql":                                     {_1528395764_migrate_jobs_tables_to_bigserialUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
