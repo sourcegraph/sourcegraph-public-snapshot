@@ -3,4 +3,7 @@
     .form-inline input:not(.is-valid) {
         padding-right: 2rem;
     }
+    &__dot {
+        color: var(--border-color);
+    }
 }

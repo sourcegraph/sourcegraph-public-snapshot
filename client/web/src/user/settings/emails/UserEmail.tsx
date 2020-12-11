@@ -1,5 +1,4 @@
-import React, { useState, useCallback, FunctionComponent } from 'react'
-import * as H from 'history'
+import React, { useState, FunctionComponent } from 'react'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
@@ -9,34 +8,39 @@ import {
     RemoveUserEmailVariables,
     SetUserEmailVerifiedResult,
     SetUserEmailVerifiedVariables,
+    ResendVerificationEmailResult,
+    ResendVerificationEmailVariables,
 } from '../../../graphql-operations'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
 import { eventLogger } from '../../../tracking/eventLogger'
-
-import { ErrorAlert } from '../../../components/alerts'
 
 interface Props {
     user: string
     email: NonNullable<UserEmailsResult['node']>['emails'][number]
-    history: H.History
+    onError: (error: ErrorLike) => void
 
     onDidRemove?: (email: string) => void
     onEmailVerify?: () => void
+    onEmailResendVerification?: () => void
 }
-
-type Status = undefined | 'loading' | ErrorLike
 
 export const UserEmail: FunctionComponent<Props> = ({
     user,
     email: { email, isPrimary, verified, verificationPending, viewerCanManuallyVerify },
+    onError,
     onDidRemove,
     onEmailVerify,
-    history,
+    onEmailResendVerification,
 }) => {
-    const [statusOrError, setStatusOrError] = useState<Status>()
+    const [isLoading, setIsLoading] = useState(false)
 
-    const removeEmail = useCallback(async (): Promise<void> => {
-        setStatusOrError('loading')
+    const handleError = (error: ErrorLike): void => {
+        onError(asError(error))
+        setIsLoading(false)
+    }
+
+    const removeEmail = async (): Promise<void> => {
+        setIsLoading(true)
 
         try {
             dataOrThrowErrors(
@@ -52,19 +56,19 @@ export const UserEmail: FunctionComponent<Props> = ({
                 ).toPromise()
             )
 
-            setStatusOrError(undefined)
+            setIsLoading(false)
             eventLogger.log('UserEmailAddressDeleted')
 
             if (onDidRemove) {
                 onDidRemove(email)
             }
         } catch (error) {
-            setStatusOrError(asError(error))
+            handleError(error)
         }
-    }, [email, user, onDidRemove])
+    }
 
     const updateEmailVerification = async (verified: boolean): Promise<void> => {
-        setStatusOrError('loading')
+        setIsLoading(true)
 
         try {
             dataOrThrowErrors(
@@ -80,7 +84,7 @@ export const UserEmail: FunctionComponent<Props> = ({
                 ).toPromise()
             )
 
-            setStatusOrError(undefined)
+            setIsLoading(false)
 
             if (verified) {
                 eventLogger.log('UserEmailAddressMarkedVerified')
@@ -92,7 +96,33 @@ export const UserEmail: FunctionComponent<Props> = ({
                 onEmailVerify()
             }
         } catch (error) {
-            setStatusOrError(asError(error))
+            handleError(error)
+        }
+    }
+
+    const resendEmailVerification = async (email: string): Promise<void> => {
+        setIsLoading(true)
+
+        try {
+            dataOrThrowErrors(
+                await requestGraphQL<ResendVerificationEmailResult, ResendVerificationEmailVariables>(
+                    gql`
+                        mutation ResendVerificationEmail($user: ID!, $email: String!) {
+                            resendVerificationEmail(user: $user, email: $email) {
+                                alwaysNil
+                            }
+                        }
+                    `,
+                    { user, email }
+                ).toPromise()
+            )
+
+            setIsLoading(false)
+            eventLogger.log('UserEmailAddressVerificationResent')
+
+            onEmailResendVerification?.()
+        } catch (error) {
+            handleError(error)
         }
     }
 
@@ -101,14 +131,24 @@ export const UserEmail: FunctionComponent<Props> = ({
             <div className="d-flex align-items-center justify-content-between">
                 <div>
                     <span className="mr-2">{email}</span>
-                    {verified ? (
-                        <span className="badge badge-success mr-1">Verified</span>
-                    ) : verificationPending ? (
-                        <span className="badge badge-info mr-1">Verification pending</span>
-                    ) : (
+                    {verified && <span className="badge badge-success mr-1">Verified</span>}
+                    {!verified && !verificationPending && (
                         <span className="badge badge-secondary mr-1">Not verified</span>
                     )}
-                    {isPrimary && <span className="badge badge-primary">Primary</span>}
+                    {isPrimary && <span className="badge badge-primary mr-1">Primary</span>}
+                    {!verified && verificationPending && (
+                        <span>
+                            <span className="user-settings-emails-page__dot">&bull;&nbsp;</span>
+                            <button
+                                type="button"
+                                className="btn btn-link text-primary p-0"
+                                onClick={() => resendEmailVerification(email)}
+                                disabled={isLoading}
+                            >
+                                Resend verification email
+                            </button>
+                        </span>
+                    )}
                 </div>
                 <div>
                     {viewerCanManuallyVerify && (
@@ -116,7 +156,7 @@ export const UserEmail: FunctionComponent<Props> = ({
                             type="button"
                             className="btn btn-link text-primary p-0"
                             onClick={() => updateEmailVerification(!verified)}
-                            disabled={statusOrError === 'loading'}
+                            disabled={isLoading}
                         >
                             {verified ? 'Mark as unverified' : 'Mark as verified'}
                         </button>
@@ -126,14 +166,13 @@ export const UserEmail: FunctionComponent<Props> = ({
                             type="button"
                             className="btn btn-link text-danger p-0"
                             onClick={removeEmail}
-                            disabled={statusOrError === 'loading'}
+                            disabled={isLoading}
                         >
                             Remove
                         </button>
                     )}
                 </div>
             </div>
-            {isErrorLike(statusOrError) && <ErrorAlert className="mt-2" error={statusOrError} history={history} />}
         </>
     )
 }
