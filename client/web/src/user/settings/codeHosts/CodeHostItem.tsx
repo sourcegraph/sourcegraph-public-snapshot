@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react'
-import * as H from 'history'
+// import * as H from 'history'
 
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -16,11 +16,6 @@ interface CodeHostItemProps {
     onDidRemove: () => void
     name: string
     /**
-     * Title to show in the external service "button"
-     */
-    title: string
-
-    /**
      * Icon to show in the external service "button"
      */
     icon: React.ComponentType<{ className?: string }>
@@ -36,14 +31,22 @@ interface CodeHostItemProps {
 const MODAL_HINTS: Record<ExternalServiceKind, React.ReactFragment> = {
     [ExternalServiceKind.GITHUB]: (
         <small>
-            <Link to="">Create a new access token</Link>
+            <Link to="" target="_blank" rel="noopener noreferrer">
+                Create a new access token
+            </Link>
             <span className="text-muted"> on GitHub.com with repo or public_repo scope.</span>
         </small>
     ),
     [ExternalServiceKind.GITLAB]: (
         <small>
-            <Link to="">Create a new access token</Link>
-            <span className="text-muted"> on GitLab.com with repo or TODO scope.</span>
+            <Link
+                to="https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#creating-a-personal-access-token"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Create a new access token
+            </Link>
+            <span className="text-muted"> on GitLab.com with read_user, read_api, and read_repository scope.</span>
         </small>
     ),
 

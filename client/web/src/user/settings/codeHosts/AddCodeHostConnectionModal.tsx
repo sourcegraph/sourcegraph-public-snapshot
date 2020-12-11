@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react'
 import Dialog from '@reach/dialog'
 
+import ShieldCheckIcon from 'mdi-react/ShieldCheckIcon'
 import { Form } from '../../../../../branded/src/components/Form'
 
 export const AddCodeHostConnectionModal: React.FunctionComponent<{
@@ -48,6 +49,10 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                             className="form-control"
                             required={true}
                             minLength={1}
+                        />
+                        <ShieldCheckIcon
+                            className=""
+                            data-tooltip="Data will be encrypted and will not be visible again."
                         />
                         {hintFragment}
                     </div>
