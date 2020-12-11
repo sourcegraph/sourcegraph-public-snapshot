@@ -502,7 +502,8 @@ transformChanges:
     - directory: go/utils/time
       branch: my-campaign-go-time
 
-    # The *last* matching directory is used, not the most specific one
+    # The *last* matching directory is used, not the most specific one,
+    # so only this changeset would be opened.
     - directory: go/utils
       branch: my-campaign-go-date
 ```
