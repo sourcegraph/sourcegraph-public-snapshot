@@ -71,7 +71,7 @@ describe('CreateCodeMonitorPage', () => {
     test('createCodeMonitor is not called on submit when trigger or action is incomplete', () => {
         let component = mount(<CreateCodeMonitorPage {...props} />)
         const monitorForm = component.find('.test-monitor-form').first()
-        let nameInput = component.find('.test-name-input')
+        const nameInput = component.find('.test-name-input')
         nameInput.simulate('change', { target: { value: 'Test updated' } })
         monitorForm.simulate('submit')
         // Pressing enter does not call createCodeMonitor because other fields not complete
