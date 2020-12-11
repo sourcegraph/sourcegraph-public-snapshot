@@ -6,16 +6,23 @@
 </style>
 
 <aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on. We're very much looking for feedback.
-<br />
-It's available in Sourcegraph 3.23 with <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.23.0 and later.
+<p>
+<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+</p>
+<p><b>We're very much looking for input and feedback on this feature.</b></p>
+
+<p>It's available in Sourcegraph 3.23 with <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.23.0 and later.</p>
 </aside>
 
-Campaigns can produce a lot of changes in a single repository and it might make sense to split up the changes into multiple changesets, so that each changeset can be reviewed and merged independently.
+## Overview
 
-By using [`transformChanges`](../references/campaign_spec_yaml_reference.md#transformchanges) in your campaign spec you can group the changes produced in one repository by directory and create a changeset for each group:
+Campaigns can produce a lot of changes in a single repository and in order to make reviewing and merging them easier, it might make sense to split the changes up into multiple changesets.
 
-The following campaign spec uses the `transformChanges` property to create multiple changesets in a single repository by grouping the changes made in different directories:
+That can be done by using [`transformChanges`](../references/campaign_spec_yaml_reference.md#transformchanges) in the campaign spec to group the changes produced in one single repository by directory and create a changeset for each group.
+
+## Using `transformChanges`
+
+The following campaign spec uses the `transformChanges` property to create up to 4 changesets in a single repository by grouping the changes made in different directories:
 
 ```yaml
 name: hello-world
@@ -55,10 +62,17 @@ changesetTemplate:
   published: false # Do not publish any changes to the code hosts yet
 ```
 
-This campaign spec will produce up to 4 changesets in the `github.com/sourcegraph/sourcegraph` repository: one changeset with all the changes in the `client` directory, one changeset for the changes in `docker-images`, one changeset for changes in `monitoring`, and one changeset for the changes in the other directories.
+This campaign spec will produce up to 4 changesets in the `github.com/sourcegraph/sourcegraph` repository:
 
-Since code hosts and git don't allow creating multiple, _different_ changesets on the same branch, we need to specify the `branch` that will be used for the additional changesets. That `branch` will overwrite the default branch specified in `changesetTemplate`.
+1. a changeset with the changes in the `client` directory
+1. a changeset with the changes in `docker-images`
+1. a changeset with the changes in `monitoring`
+1. a changeset with the changes in the other directories.
+
+Since code hosts and git don't allow creating multiple, _different_ changesets on the same branch, it is **required** to specify the `branch` that will be used for the additional changesets. That `branch` will overwrite the default branch specified in `changesetTemplate`.
 
 In case no changes have been made in a `directory` specified in a `group`, no additional changeset will be produced.
 
 If the optional `repository` property is specified only the changes in that repository will be grouped.
+
+See the [campaign spec YAML reference on `transformChanges`](../references/campaign_spec_yaml_reference.md#transformchanges) for more details.
