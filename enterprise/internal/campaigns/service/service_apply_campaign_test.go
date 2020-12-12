@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -39,7 +38,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 	store := store.NewWithClock(dbconn.Global, clock)
-	svc := NewService(store, httpcli.NewExternalHTTPClientFactory())
+	svc := New(store)
 
 	t.Run("campaignSpec without changesetSpecs", func(t *testing.T) {
 		t.Run("new campaign", func(t *testing.T) {

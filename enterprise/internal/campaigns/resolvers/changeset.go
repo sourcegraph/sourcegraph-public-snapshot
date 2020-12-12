@@ -20,13 +20,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type changesetResolver struct {
-	store       *store.Store
-	httpFactory *httpcli.Factory
+	store *store.Store
 
 	changeset *campaigns.Changeset
 
@@ -52,17 +50,16 @@ type changesetResolver struct {
 	specErr  error
 }
 
-func NewChangesetResolverWithNextSync(store *store.Store, httpFactory *httpcli.Factory, changeset *campaigns.Changeset, repo *types.Repo, nextSyncAt *time.Time) *changesetResolver {
-	r := NewChangesetResolver(store, httpFactory, changeset, repo)
+func NewChangesetResolverWithNextSync(store *store.Store, changeset *campaigns.Changeset, repo *types.Repo, nextSyncAt *time.Time) *changesetResolver {
+	r := NewChangesetResolver(store, changeset, repo)
 	r.attemptedPreloadNextSyncAt = true
 	r.preloadedNextSyncAt = nextSyncAt
 	return r
 }
 
-func NewChangesetResolver(store *store.Store, httpFactory *httpcli.Factory, changeset *campaigns.Changeset, repo *types.Repo) *changesetResolver {
+func NewChangesetResolver(store *store.Store, changeset *campaigns.Changeset, repo *types.Repo) *changesetResolver {
 	return &changesetResolver{
 		store:        store,
-		httpFactory:  httpFactory,
 		repo:         repo,
 		repoResolver: graphqlbackend.NewRepositoryResolver(repo),
 		changeset:    changeset,
@@ -200,7 +197,7 @@ func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.
 		}
 	}
 
-	return &campaignsConnectionResolver{store: r.store, httpFactory: r.httpFactory, opts: opts}, nil
+	return &campaignsConnectionResolver{store: r.store, opts: opts}, nil
 }
 
 func (r *changesetResolver) CreatedAt() graphqlbackend.DateTime {
@@ -337,7 +334,7 @@ func (r *changesetResolver) CurrentSpec(ctx context.Context) (graphqlbackend.Vis
 		return nil, err
 	}
 
-	return NewChangesetSpecResolverWithRepo(r.store, r.httpFactory, r.repo, spec), nil
+	return NewChangesetSpecResolverWithRepo(r.store, r.repo, spec), nil
 }
 
 func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {

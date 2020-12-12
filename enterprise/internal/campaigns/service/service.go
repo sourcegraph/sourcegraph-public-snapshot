@@ -21,15 +21,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-// NewService returns a Service.
-func NewService(store *store.Store, cf *httpcli.Factory) *Service {
-	return NewServiceWithClock(store, cf, store.Clock())
+// New returns a Service.
+func New(store *store.Store) *Service {
+	return NewWithClock(store, store.Clock())
 }
 
 // NewServiceWithClock returns a Service the given clock used
 // to generate timestamps.
-func NewServiceWithClock(store *store.Store, cf *httpcli.Factory, clock func() time.Time) *Service {
-	svc := &Service{store: store, sourcer: repos.NewSourcer(cf), clock: clock}
+func NewWithClock(store *store.Store, clock func() time.Time) *Service {
+	svc := &Service{store: store, sourcer: repos.NewSourcer(httpcli.NewExternalHTTPClientFactory()), clock: clock}
 
 	return svc
 }

@@ -36,7 +36,7 @@ func TestServicePermissionLevels(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	s := store.New(dbconn.Global)
-	svc := NewService(s, nil)
+	svc := New(s)
 
 	admin := ct.CreateTestUser(t, true)
 	user := ct.CreateTestUser(t, false)
@@ -179,7 +179,7 @@ func TestService(t *testing.T) {
 	fakeSource := &ct.FakeChangesetSource{}
 	sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
-	svc := NewService(s, nil)
+	svc := New(s)
 	svc.sourcer = sourcer
 
 	t.Run("DeleteCampaign", func(t *testing.T) {
@@ -760,7 +760,7 @@ func TestService(t *testing.T) {
 
 		// Create a fresh service for this test as to not mess with state
 		// possibly used by other tests.
-		testSvc := NewService(s, nil)
+		testSvc := New(s)
 		testSvc.sourcer = sourcer
 
 		rs, _ := ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)

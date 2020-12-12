@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -35,8 +34,7 @@ func unmarshalChangesetSpecID(id graphql.ID) (changesetSpecRandID string, err er
 var _ graphqlbackend.ChangesetSpecResolver = &changesetSpecResolver{}
 
 type changesetSpecResolver struct {
-	store       *store.Store
-	httpFactory *httpcli.Factory
+	store *store.Store
 
 	changesetSpec *campaigns.ChangesetSpec
 
@@ -48,10 +46,9 @@ type changesetSpecResolver struct {
 	planErr  error
 }
 
-func NewChangesetSpecResolver(ctx context.Context, store *store.Store, cf *httpcli.Factory, changesetSpec *campaigns.ChangesetSpec) (*changesetSpecResolver, error) {
+func NewChangesetSpecResolver(ctx context.Context, store *store.Store, changesetSpec *campaigns.ChangesetSpec) (*changesetSpecResolver, error) {
 	resolver := &changesetSpecResolver{
 		store:         store,
-		httpFactory:   cf,
 		changesetSpec: changesetSpec,
 		previewer: &changesetSpecPreviewer{
 			store:          store,
@@ -76,10 +73,9 @@ func NewChangesetSpecResolver(ctx context.Context, store *store.Store, cf *httpc
 	return resolver, nil
 }
 
-func NewChangesetSpecResolverWithRepo(store *store.Store, cf *httpcli.Factory, repo *types.Repo, changesetSpec *campaigns.ChangesetSpec) *changesetSpecResolver {
+func NewChangesetSpecResolverWithRepo(store *store.Store, repo *types.Repo, changesetSpec *campaigns.ChangesetSpec) *changesetSpecResolver {
 	return &changesetSpecResolver{
 		store:         store,
-		httpFactory:   cf,
 		repo:          repo,
 		changesetSpec: changesetSpec,
 		previewer: &changesetSpecPreviewer{
@@ -162,7 +158,7 @@ func (r *changesetSpecResolver) Changeset(ctx context.Context) (graphqlbackend.C
 	if changeset == nil {
 		return nil, nil
 	}
-	return NewChangesetResolver(r.store, r.httpFactory, changeset, r.repo), nil
+	return NewChangesetResolver(r.store, changeset, r.repo), nil
 }
 
 func (r *changesetSpecResolver) repoAccessible() bool {
@@ -401,7 +397,7 @@ func (c *changesetSpecPreviewer) mappingForChangesetSpec(ctx context.Context, id
 
 func (c *changesetSpecPreviewer) computeCampaign(ctx context.Context) (*campaigns.Campaign, error) {
 	c.campaignOnce.Do(func() {
-		svc := service.NewService(c.store, nil)
+		svc := service.New(c.store)
 		campaignSpec, err := c.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: c.campaignSpecID})
 		if err != nil {
 			c.campaignErr = err
