@@ -129,7 +129,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	}
 
 	// And execute the mapping.
-	rewirer := rewirer.NewChangesetRewirer(mappings, campaign, rstore)
+	rewirer := rewirer.New(mappings, campaign, rstore)
 	changesets, err := rewirer.Rewire(ctx)
 	if err != nil {
 		return nil, err

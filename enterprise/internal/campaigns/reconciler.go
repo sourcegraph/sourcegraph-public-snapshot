@@ -10,8 +10,8 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	reconcilerpkg "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/reconciler"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -75,7 +75,7 @@ func (r *Reconciler) process(ctx context.Context, tx *store.Store, ch *campaigns
 		return nil
 	}
 
-	plan, err := reconcilerpkg.DetermineReconcilerPlan(prev, curr, ch)
+	plan, err := reconcilerpkg.DeterminePlan(prev, curr, ch)
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ type executor struct {
 }
 
 // ExecutePlan executes the given reconciler plan.
-func (e *executor) ExecutePlan(ctx context.Context, plan *reconcilerpkg.ReconcilerPlan) (err error) {
+func (e *executor) ExecutePlan(ctx context.Context, plan *reconcilerpkg.Plan) (err error) {
 	if plan.Ops.IsNone() {
 		return nil
 	}

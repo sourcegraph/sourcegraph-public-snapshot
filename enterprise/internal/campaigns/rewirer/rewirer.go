@@ -19,7 +19,7 @@ type ChangesetRewirer struct {
 	rstore   repos.Store
 }
 
-func NewChangesetRewirer(mappings store.RewirerMappings, campaign *campaigns.Campaign, rstore repos.Store) *ChangesetRewirer {
+func New(mappings store.RewirerMappings, campaign *campaigns.Campaign, rstore repos.Store) *ChangesetRewirer {
 	return &ChangesetRewirer{
 		mappings: mappings,
 		campaign: campaign,
@@ -56,7 +56,7 @@ func (r *ChangesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 				continue
 			}
 
-			r.closeChangeset(ctx, changeset)
+			r.closeChangeset(changeset)
 			changesets = append(changesets, changeset)
 
 			continue
@@ -170,7 +170,7 @@ func (r *ChangesetRewirer) attachTrackingChangeset(changeset *campaigns.Changese
 	}
 }
 
-func (r *ChangesetRewirer) closeChangeset(ctx context.Context, changeset *campaigns.Changeset) {
+func (r *ChangesetRewirer) closeChangeset(changeset *campaigns.Changeset) {
 	if changeset.CurrentSpecID != 0 && changeset.OwnedByCampaignID == r.campaign.ID {
 		// If we have a current spec ID and the changeset was created by
 		// _this_ campaign that means we should detach and close it.

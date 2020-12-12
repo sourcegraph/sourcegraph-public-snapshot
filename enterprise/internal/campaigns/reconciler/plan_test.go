@@ -16,7 +16,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		previousSpec   ct.TestSpecOpts
 		currentSpec    ct.TestSpecOpts
 		changeset      ct.TestChangesetOpts
-		wantOperations ReconcilerOperations
+		wantOperations Operations
 	}{
 		{
 			name:        "publish true",
@@ -24,7 +24,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			changeset: ct.TestChangesetOpts{
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
-			wantOperations: ReconcilerOperations{
+			wantOperations: Operations{
 				campaigns.ReconcilerOperationPush,
 				campaigns.ReconcilerOperationPublish,
 			},
@@ -35,7 +35,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			changeset: ct.TestChangesetOpts{
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
-			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublishDraft},
+			wantOperations: Operations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublishDraft},
 		},
 		{
 			name:        "publish false",
@@ -43,7 +43,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			changeset: ct.TestChangesetOpts{
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
-			wantOperations: ReconcilerOperations{},
+			wantOperations: Operations{},
 		},
 		{
 			name:        "draft but unsupported",
@@ -53,7 +53,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 				PublicationState:    campaigns.ChangesetPublicationStateUnpublished,
 			},
 			// should be a noop
-			wantOperations: ReconcilerOperations{},
+			wantOperations: Operations{},
 		},
 		{
 			name:         "draft to publish true",
@@ -62,7 +62,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			changeset: ct.TestChangesetOpts{
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
 			},
-			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationUndraft},
+			wantOperations: Operations{campaigns.ReconcilerOperationUndraft},
 		},
 		{
 			name:         "draft to publish true on unpublished changeset",
@@ -71,7 +71,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			changeset: ct.TestChangesetOpts{
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
-			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish},
+			wantOperations: Operations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish},
 		},
 		{
 			name:         "title changed on published changeset",
@@ -80,7 +80,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			changeset: ct.TestChangesetOpts{
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
 			},
-			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationUpdate},
+			wantOperations: Operations{campaigns.ReconcilerOperationUpdate},
 		},
 		{
 			name:         "commit diff changed on published changeset",
@@ -89,7 +89,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			changeset: ct.TestChangesetOpts{
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
 			},
-			wantOperations: ReconcilerOperations{
+			wantOperations: Operations{
 				campaigns.ReconcilerOperationPush,
 				campaigns.ReconcilerOperationSleep,
 				campaigns.ReconcilerOperationSync,
@@ -102,7 +102,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			changeset: ct.TestChangesetOpts{
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
 			},
-			wantOperations: ReconcilerOperations{
+			wantOperations: Operations{
 				campaigns.ReconcilerOperationPush,
 				campaigns.ReconcilerOperationSleep,
 				campaigns.ReconcilerOperationSync,
@@ -117,7 +117,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 				ExternalState:    campaigns.ChangesetExternalStateMerged,
 			},
 			// should be a noop
-			wantOperations: ReconcilerOperations{},
+			wantOperations: Operations{},
 		},
 		{
 			name:         "changeset closed-and-detached will reopen",
@@ -129,7 +129,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 				OwnedByCampaign:  1234,
 				CampaignIDs:      []int64{1234},
 			},
-			wantOperations: ReconcilerOperations{
+			wantOperations: Operations{
 				campaigns.ReconcilerOperationReopen,
 			},
 		},
@@ -145,7 +145,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 				// Important bit:
 				Closing: true,
 			},
-			wantOperations: ReconcilerOperations{
+			wantOperations: Operations{
 				campaigns.ReconcilerOperationClose,
 			},
 		},
@@ -161,7 +161,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 				// Important bit:
 				Closing: true,
 			},
-			wantOperations: ReconcilerOperations{
+			wantOperations: Operations{
 				// TODO: This should probably be a noop in the future
 				campaigns.ReconcilerOperationClose,
 			},
@@ -178,7 +178,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			currentSpec := ct.BuildChangesetSpec(t, tc.currentSpec)
 			cs := ct.BuildChangeset(tc.changeset)
 
-			plan, err := DetermineReconcilerPlan(previousSpec, currentSpec, cs)
+			plan, err := DeterminePlan(previousSpec, currentSpec, cs)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -559,7 +559,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// Make sure the reconciler wants to update this changeset.
-			plan, err := reconciler.DetermineReconcilerPlan(
+			plan, err := reconciler.DeterminePlan(
 				// changesets[0].PreviousSpecID
 				spec1,
 				// changesets[0].CurrentSpecID
@@ -569,7 +569,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !plan.Ops.Equal(reconciler.ReconcilerOperations{campaigns.ReconcilerOperationUpdate}) {
+			if !plan.Ops.Equal(reconciler.Operations{campaigns.ReconcilerOperationUpdate}) {
 				t.Fatalf("Got invalid reconciler operations: %q", plan.Ops.String())
 			}
 
@@ -597,7 +597,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// Make sure the reconciler would still update this changeset.
-			plan, err = reconciler.DetermineReconcilerPlan(
+			plan, err = reconciler.DeterminePlan(
 				// changesets[0].PreviousSpecID
 				spec1,
 				// changesets[0].CurrentSpecID
@@ -607,7 +607,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !plan.Ops.Equal(reconciler.ReconcilerOperations{campaigns.ReconcilerOperationUpdate}) {
+			if !plan.Ops.Equal(reconciler.Operations{campaigns.ReconcilerOperationUpdate}) {
 				t.Fatalf("Got invalid reconciler operations: %q", plan.Ops.String())
 			}
 
@@ -637,7 +637,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// Make sure the reconciler would still update this changeset.
-			plan, err = reconciler.DetermineReconcilerPlan(
+			plan, err = reconciler.DeterminePlan(
 				// changesets[0].PreviousSpecID
 				spec1,
 				// changesets[0].CurrentSpecID
@@ -647,7 +647,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !plan.Ops.Equal(reconciler.ReconcilerOperations{campaigns.ReconcilerOperationUpdate}) {
+			if !plan.Ops.Equal(reconciler.Operations{campaigns.ReconcilerOperationUpdate}) {
 				t.Fatalf("Got invalid reconciler operations: %q", plan.Ops.String())
 			}
 		})
@@ -753,7 +753,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// Make sure the reconciler would still publish this changeset.
-			plan, err := reconciler.DetermineReconcilerPlan(
+			plan, err := reconciler.DeterminePlan(
 				// c2.previousSpec is 0
 				nil,
 				// c2.currentSpec is newSpec2
@@ -763,7 +763,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !plan.Ops.Equal(reconciler.ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish}) {
+			if !plan.Ops.Equal(reconciler.Operations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish}) {
 				t.Fatalf("Got invalid reconciler operations: %q", plan.Ops.String())
 			}
 		})
