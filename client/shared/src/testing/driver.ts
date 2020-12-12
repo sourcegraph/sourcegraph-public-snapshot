@@ -239,7 +239,6 @@ export class Driver {
         await this.page.waitForSelector('.test-sourcegraph-url')
         await this.replaceText({ selector: '.test-sourcegraph-url', newText: this.sourcegraphBaseUrl })
         await this.page.keyboard.press(Key.Enter)
-        await new Promise<never>(() => {})
         await this.page.waitForSelector('.test-valid-sourcegraph-url-feedback')
     }
 
@@ -729,9 +728,11 @@ interface DriverOptions extends LaunchOptions {
 }
 
 export async function createDriverForTest(options?: Partial<DriverOptions>): Promise<Driver> {
+    const config = getConfig('sourcegraphBaseUrl', 'headless', 'slowMo', 'keepBrowser', 'browser', 'devtools')
+
     // Apply defaults
-    const resolvedOptions = {
-        ...getConfig('sourcegraphBaseUrl', 'headless', 'slowMo', 'keepBrowser', 'browser', 'devtools'),
+    const resolvedOptions: typeof config & typeof options = {
+        ...config,
         ...options,
     }
 

@@ -68,14 +68,14 @@ export function testSingleFilePage({
             })
         })
 
-        it('shows hover tooltips when hovering a token', async () => {
+        // TODO(tj): this doesn't work without a mock code intel extension
+        it.skip('shows hover tooltips when hovering a token', async () => {
             await getDriver().page.goto(url)
             await getDriver().page.waitForSelector('.code-view-toolbar .open-on-sourcegraph')
 
             // Pause to give codeintellify time to register listeners for
             // tokenization (only necessary in CI, not sure why).
             await getDriver().page.waitFor(1000)
-
             // Trigger tokenization of the line.
             const lineNumber = 16
             const line = await getDriver().page.waitForSelector(`${lineSelector}:nth-child(${lineNumber})`, {

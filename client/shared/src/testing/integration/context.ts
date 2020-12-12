@@ -104,7 +104,7 @@ export const createSharedIntegrationTestContext = async <
     }
     const subscriptions = new Subscription()
     const cdpAdapterOptions: CdpAdapterOptions = {
-        brower: driver.browser,
+        browser: driver.browser,
     }
     const polly = new Polly(snakeCase(currentTest.title), {
         adapters: [CdpAdapter.id],
@@ -143,7 +143,11 @@ export const createSharedIntegrationTestContext = async <
     // Let browser handle data: URIs
     server.get('data:*rest').passthrough()
 
-    server.any('chrome-extension://bmfbcejdknlknpncfpeloejonjoledha/*specialrest').passthrough()
+    server.any('chrome-extension://bmfbcejdknlknpncfpeloejonjoledha/*rest').passthrough()
+
+    // Special URL: The browser redirects to chrome-extension://invalid
+    // when requesting an extension resource that does not exist.
+    server.get('chrome-extension://invalid/').passthrough()
 
     // Avoid 404 error logs from missing favicon
     server.get(new URL('/favicon.ico', driver.sourcegraphBaseUrl).href).intercept((request, response) => {
