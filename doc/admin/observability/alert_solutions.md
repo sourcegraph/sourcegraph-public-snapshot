@@ -3371,7 +3371,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions:**
 
-- _repo-updater: 99%+ container memory usage by instance_
+- _repo-updater: 90%+ container memory usage by instance_
 
 **Possible solutions:**
 
@@ -3381,7 +3381,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_container_memory_usage"
+  "critical_repo-updater_container_memory_usage"
 ]
 ```
 
@@ -3569,7 +3569,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions:**
 
-- _repo-updater: less than 90% percentage pods available for 10m0s_
+- _repo-updater: less than 90% percentage pods available for 1m0s_
 
 **Possible solutions:**
 

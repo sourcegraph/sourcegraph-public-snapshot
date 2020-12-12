@@ -218,6 +218,16 @@ type Observable struct {
 	PanelOptions ObservablePanelOptions
 }
 
+func (o Observable) WithWarning(a *ObservableAlertDefinition) Observable {
+	o.Warning = a
+	return o
+}
+
+func (o Observable) WithCritical(a *ObservableAlertDefinition) Observable {
+	o.Critical = a
+	return o
+}
+
 func (o Observable) validate() error {
 	if strings.Contains(o.Name, " ") || strings.ToLower(o.Name) != o.Name {
 		return fmt.Errorf("Observable.Name must be in lower_snake_case; found \"%s\"", o.Name)
