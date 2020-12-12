@@ -15,9 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -143,7 +143,7 @@ func (r *changesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, e
 		}
 		for _, d := range syncData {
 			if d.ChangesetID == r.changeset.ID {
-				r.nextSyncAt = ee.NextSync(r.store.Clock(), d)
+				r.nextSyncAt = syncer.NextSync(r.store.Clock(), d)
 				return
 			}
 		}

@@ -8,8 +8,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -51,7 +51,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 	}
 	scheduledSyncs := make(map[int64]time.Time)
 	for _, d := range syncData {
-		scheduledSyncs[d.ChangesetID] = ee.NextSync(time.Now, d)
+		scheduledSyncs[d.ChangesetID] = syncer.NextSync(time.Now, d)
 	}
 
 	resolvers := make([]graphqlbackend.ChangesetResolver, 0, len(changesetsPage))

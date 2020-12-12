@@ -1,4 +1,4 @@
-package campaigns
+package syncer
 
 import (
 	"context"

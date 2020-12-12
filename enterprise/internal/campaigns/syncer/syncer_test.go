@@ -1,4 +1,4 @@
-package campaigns
+package syncer
 
 import (
 	"container/heap"
@@ -203,7 +203,7 @@ func TestSyncerRun(t *testing.T) {
 			cancel()
 			return nil
 		}
-		syncer := &ChangesetSyncer{
+		syncer := &changesetSyncer{
 			syncStore:        store,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
@@ -238,7 +238,7 @@ func TestSyncerRun(t *testing.T) {
 			syncCalled = true
 			return nil
 		}
-		syncer := &ChangesetSyncer{
+		syncer := &changesetSyncer{
 			syncStore:        store,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
@@ -262,7 +262,7 @@ func TestSyncerRun(t *testing.T) {
 			cancel()
 			return nil
 		}
-		syncer := &ChangesetSyncer{
+		syncer := &changesetSyncer{
 			syncStore:        store,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
@@ -355,7 +355,7 @@ func TestSyncRegistry(t *testing.T) {
 
 	// In order to test that priority items are delivered we'll inject our own syncer
 	// with a custom sync func
-	syncer := &ChangesetSyncer{
+	syncer := &changesetSyncer{
 		syncStore:   syncStore,
 		reposStore:  repoStore,
 		codeHostURL: "https://example.com/",

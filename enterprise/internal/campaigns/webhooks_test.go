@@ -24,6 +24,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	idb "github.com/sourcegraph/sourcegraph/internal/db"
@@ -135,7 +136,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		})
 		defer state.Unmock()
 
-		err = SyncChangeset(ctx, s, githubSrc, githubRepo, changeset)
+		err = syncer.SyncChangeset(ctx, s, githubSrc, githubRepo, changeset)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -322,7 +323,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				t.Fatal(err)
 			}
 
-			err = SyncChangeset(ctx, s, bitbucketSource, bitbucketRepo, ch)
+			err = syncer.SyncChangeset(ctx, s, bitbucketSource, bitbucketRepo, ch)
 			if err != nil {
 				t.Fatal(err)
 			}
