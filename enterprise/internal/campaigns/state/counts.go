@@ -1,4 +1,4 @@
-package campaigns
+package state
 
 import (
 	"fmt"

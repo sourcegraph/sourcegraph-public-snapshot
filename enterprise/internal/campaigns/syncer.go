@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -509,7 +510,7 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source repos.Change
 	}
 
 	events := c.Events()
-	SetDerivedState(ctx, c, events)
+	state.SetDerivedState(ctx, c, events)
 
 	tx, err := syncStore.Transact(ctx)
 	if err != nil {

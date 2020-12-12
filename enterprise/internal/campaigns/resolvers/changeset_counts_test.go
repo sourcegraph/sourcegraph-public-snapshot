@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -30,7 +31,7 @@ import (
 )
 
 func TestChangesetCountsOverTimeResolver(t *testing.T) {
-	counts := &ee.ChangesetCounts{
+	counts := &state.ChangesetCounts{
 		Time:                 time.Now(),
 		Total:                10,
 		Merged:               9,

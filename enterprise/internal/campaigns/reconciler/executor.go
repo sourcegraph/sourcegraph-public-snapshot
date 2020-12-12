@@ -10,6 +10,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -129,8 +130,7 @@ func ExecutePlan(ctx context.Context, gitserverClient GitserverClient, sourcer r
 
 	if upsertChangesetEvents {
 		events := e.ch.Events()
-		// TODO: REENABLE
-		// SetDerivedState(ctx, e.ch, events)
+		state.SetDerivedState(ctx, e.ch, events)
 
 		if err := e.tx.UpsertChangesetEvents(ctx, events...); err != nil {
 			log15.Error("UpsertChangesetEvents", "err", err)
