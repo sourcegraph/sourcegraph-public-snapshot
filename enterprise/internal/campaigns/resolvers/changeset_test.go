@@ -53,17 +53,17 @@ func TestChangesetResolver(t *testing.T) {
 	mockBackendCommits(t, api.CommitID(baseRev))
 	mockRepoComparison(t, baseRev, headRev, testDiff)
 
-	unpublishedSpec := createChangesetSpec(t, ctx, cstore, testSpecOpts{
-		user:          userID,
-		repo:          repo.ID,
-		headRef:       "refs/heads/my-new-branch",
-		published:     false,
-		title:         "ChangesetSpec Title",
-		body:          "ChangesetSpec Body",
-		commitMessage: "The commit message",
-		commitDiff:    testDiff,
-		baseRev:       baseRev,
-		baseRef:       "refs/heads/master",
+	unpublishedSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+		User:          userID,
+		Repo:          repo.ID,
+		HeadRef:       "refs/heads/my-new-branch",
+		Published:     false,
+		Title:         "ChangesetSpec Title",
+		Body:          "ChangesetSpec Body",
+		CommitMessage: "The commit message",
+		CommitDiff:    testDiff,
+		BaseRev:       baseRev,
+		BaseRef:       "refs/heads/master",
 	})
 	unpublishedChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:                repo.ID,
@@ -72,17 +72,17 @@ func TestChangesetResolver(t *testing.T) {
 		PublicationState:    campaigns.ChangesetPublicationStateUnpublished,
 		ReconcilerState:     campaigns.ReconcilerStateCompleted,
 	})
-	erroredSpec := createChangesetSpec(t, ctx, cstore, testSpecOpts{
-		user:          userID,
-		repo:          repo.ID,
-		headRef:       "refs/heads/my-failing-branch",
-		published:     true,
-		title:         "ChangesetSpec Title",
-		body:          "ChangesetSpec Body",
-		commitMessage: "The commit message",
-		commitDiff:    testDiff,
-		baseRev:       baseRev,
-		baseRef:       "refs/heads/master",
+	erroredSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+		User:          userID,
+		Repo:          repo.ID,
+		HeadRef:       "refs/heads/my-failing-branch",
+		Published:     true,
+		Title:         "ChangesetSpec Title",
+		Body:          "ChangesetSpec Body",
+		CommitMessage: "The commit message",
+		CommitDiff:    testDiff,
+		BaseRev:       baseRev,
+		BaseRef:       "refs/heads/master",
 	})
 	erroredChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:                repo.ID,

@@ -408,11 +408,11 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			if tc.hasCurrentSpec {
 				// The attributes of the spec don't really matter, but the
 				// associations do.
-				specOpts := testSpecOpts{}
-				specOpts.user = admin.ID
-				specOpts.repo = rs[0].ID
-				specOpts.campaignSpec = campaignSpec.ID
-				changesetSpec = createChangesetSpec(t, ctx, store, specOpts)
+				specOpts := ct.TestSpecOpts{}
+				specOpts.User = admin.ID
+				specOpts.Repo = rs[0].ID
+				specOpts.CampaignSpec = campaignSpec.ID
+				changesetSpec = ct.CreateChangesetSpec(t, ctx, store, specOpts)
 			}
 
 			// Create the changeset with correct associations.
@@ -564,10 +564,10 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 
 	// Build a changeset that would be pushed on the same HeadRef/ExternalBranch.
-	spec := buildChangesetSpec(t, testSpecOpts{
-		repo:      rs[0].ID,
-		headRef:   commonHeadRef,
-		published: true,
+	spec := ct.BuildChangesetSpec(t, ct.TestSpecOpts{
+		Repo:      rs[0].ID,
+		HeadRef:   commonHeadRef,
+		Published: true,
 	})
 	changeset := ct.BuildChangeset(ct.TestChangesetOpts{Repo: rs[0].ID})
 
@@ -848,10 +848,10 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 					OwnedByCampaignID: campaign.ID,
 					RepoID:            tt.repo.ID,
 				},
-				spec: buildChangesetSpec(t, testSpecOpts{
-					headRef:    "refs/heads/my-branch",
-					published:  true,
-					commitDiff: "testdiff",
+				spec: ct.BuildChangesetSpec(t, ct.TestSpecOpts{
+					HeadRef:    "refs/heads/my-branch",
+					Published:  true,
+					CommitDiff: "testdiff",
 				}),
 				sourcer:         sourcer,
 				gitserverClient: gitClient,
