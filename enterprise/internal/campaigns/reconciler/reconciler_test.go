@@ -32,7 +32,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
-		Name: api.RepoName(rs[0].Name),
+		Name: rs[0].Name,
 		VCS:  protocol.VCSInfo{URL: rs[0].URI},
 	})
 	defer state.Unmock()

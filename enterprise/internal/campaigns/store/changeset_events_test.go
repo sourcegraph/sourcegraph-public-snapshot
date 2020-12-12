@@ -5,11 +5,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
-	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
 func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock ct.Clock) {
@@ -29,16 +29,16 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ rep
 		IncludesCreatedEdit: false,
 	}
 
-	events := make([]*cmpgn.ChangesetEvent, 0, 3)
-	kinds := []cmpgn.ChangesetEventKind{
-		cmpgn.ChangesetEventKindGitHubCommented,
-		cmpgn.ChangesetEventKindGitHubClosed,
-		cmpgn.ChangesetEventKindGitHubAssigned,
+	events := make([]*campaigns.ChangesetEvent, 0, 3)
+	kinds := []campaigns.ChangesetEventKind{
+		campaigns.ChangesetEventKindGitHubCommented,
+		campaigns.ChangesetEventKindGitHubClosed,
+		campaigns.ChangesetEventKindGitHubAssigned,
 	}
 
 	t.Run("Upsert", func(t *testing.T) {
 		for i := 0; i < cap(events); i++ {
-			e := &cmpgn.ChangesetEvent{
+			e := &campaigns.ChangesetEvent{
 				ChangesetID: int64(i + 1),
 				Kind:        kinds[i],
 				Key:         issueComment.Key(),
@@ -188,7 +188,7 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ rep
 
 		t.Run("ByKinds", func(t *testing.T) {
 			for _, k := range kinds {
-				opts := ListChangesetEventsOpts{Kinds: []cmpgn.ChangesetEventKind{k}}
+				opts := ListChangesetEventsOpts{Kinds: []campaigns.ChangesetEventKind{k}}
 
 				ts, next, err := s.ListChangesetEvents(ctx, opts)
 				if err != nil {
@@ -209,7 +209,7 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ rep
 			}
 
 			{
-				opts := ListChangesetEventsOpts{Kinds: []cmpgn.ChangesetEventKind{}}
+				opts := ListChangesetEventsOpts{Kinds: []campaigns.ChangesetEventKind{}}
 
 				for _, e := range events {
 					opts.Kinds = append(opts.Kinds, e.Kind)

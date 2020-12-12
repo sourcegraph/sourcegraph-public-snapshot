@@ -794,7 +794,6 @@ func TestRepositoryPermissions(t *testing.T) {
 		changesetDiffStat := apitest.DiffStat{Added: 0, Changed: 2, Deleted: 0}
 
 		changesets := make([]*campaigns.Changeset, 0, len(repos))
-		changesetIDs := make([]int64, 0, cap(changesets))
 		for _, r := range repos {
 			c := &campaigns.Changeset{
 				RepoID:              r.ID,
@@ -815,7 +814,6 @@ func TestRepositoryPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 			changesets = append(changesets, c)
-			changesetIDs = append(changesetIDs, c.ID)
 		}
 
 		spec := &campaigns.CampaignSpec{

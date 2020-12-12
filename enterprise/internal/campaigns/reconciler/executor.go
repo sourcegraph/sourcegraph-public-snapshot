@@ -497,7 +497,7 @@ func buildCommitOpts(repo *types.Repo, extSvc *types.ExternalService, spec *camp
 	}
 
 	opts = protocol.CreateCommitFromPatchRequest{
-		Repo:       api.RepoName(repo.Name),
+		Repo:       repo.Name,
 		BaseCommit: api.CommitID(desc.BaseRev),
 		// IMPORTANT: We add a trailing newline here, otherwise `git apply`
 		// will fail with "corrupt patch at line <N>" where N is the last line.

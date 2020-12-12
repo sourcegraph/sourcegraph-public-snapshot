@@ -7,8 +7,9 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
-	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -28,11 +29,11 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 		t.Fatal(err)
 	}
 
-	changesetSpecs := make(cmpgn.ChangesetSpecs, 0, 3)
+	changesetSpecs := make(campaigns.ChangesetSpecs, 0, 3)
 	for i := 0; i < cap(changesetSpecs); i++ {
-		c := &cmpgn.ChangesetSpec{
+		c := &campaigns.ChangesetSpec{
 			RawSpec: `{"externalID":"12345"}`,
-			Spec: &cmpgn.ChangesetSpecDescription{
+			Spec: &campaigns.ChangesetSpecDescription{
 				ExternalID: "123456",
 			},
 			UserID:         int32(i + 1234),
@@ -53,16 +54,16 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 	// We create this ChangesetSpec to make sure that it's not returned when
 	// listing or getting ChangesetSpecs, since we don't want to load
 	// ChangesetSpecs whose repository has been (soft-)deleted.
-	changesetSpecDeletedRepo := &cmpgn.ChangesetSpec{
+	changesetSpecDeletedRepo := &campaigns.ChangesetSpec{
 		UserID:         int32(424242),
-		Spec:           &cmpgn.ChangesetSpecDescription{},
+		Spec:           &campaigns.ChangesetSpecDescription{},
 		CampaignSpecID: int64(424242),
 		RawSpec:        `{}`,
 		RepoID:         deletedRepo.ID,
 	}
 
 	t.Run("Create", func(t *testing.T) {
-		toCreate := make(cmpgn.ChangesetSpecs, 0, len(changesetSpecs)+1)
+		toCreate := make(campaigns.ChangesetSpecs, 0, len(changesetSpecs)+1)
 		toCreate = append(toCreate, changesetSpecDeletedRepo)
 		toCreate = append(toCreate, changesetSpecs...)
 
@@ -212,7 +213,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 					t.Fatal(err)
 				}
 
-				want := cmpgn.ChangesetSpecs{c}
+				want := campaigns.ChangesetSpecs{c}
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
@@ -227,7 +228,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 					t.Fatal(err)
 				}
 
-				want := cmpgn.ChangesetSpecs{c}
+				want := campaigns.ChangesetSpecs{c}
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
@@ -258,7 +259,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 					t.Fatal(err)
 				}
 
-				want := cmpgn.ChangesetSpecs{c}
+				want := campaigns.ChangesetSpecs{c}
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
@@ -357,8 +358,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 	})
 
 	t.Run("DeleteExpiredChangesetSpecs", func(t *testing.T) {
-		underTTL := clock.Now().Add(-cmpgn.ChangesetSpecTTL + 24*time.Hour)
-		overTTL := clock.Now().Add(-cmpgn.ChangesetSpecTTL - 24*time.Hour)
+		underTTL := clock.Now().Add(-campaigns.ChangesetSpecTTL + 24*time.Hour)
+		overTTL := clock.Now().Add(-campaigns.ChangesetSpecTTL - 24*time.Hour)
 
 		type testCase struct {
 			createdAt time.Time
@@ -406,7 +407,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 		}
 
 		for _, tc := range tests {
-			campaignSpec := &cmpgn.CampaignSpec{UserID: 4567, NamespaceUserID: 4567}
+			campaignSpec := &campaigns.CampaignSpec{UserID: 4567, NamespaceUserID: 4567}
 
 			if tc.hasCampaignSpec {
 				if err := s.CreateCampaignSpec(ctx, campaignSpec); err != nil {
@@ -414,7 +415,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 				}
 
 				if tc.campaignSpecApplied {
-					campaign := &cmpgn.Campaign{
+					campaign := &campaigns.Campaign{
 						Name:             fmt.Sprintf("campaign for spec %d", campaignSpec.ID),
 						CampaignSpecID:   campaignSpec.ID,
 						InitialApplierID: campaignSpec.UserID,
@@ -428,7 +429,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 				}
 			}
 
-			changesetSpec := &cmpgn.ChangesetSpec{
+			changesetSpec := &campaigns.ChangesetSpec{
 				CampaignSpecID: campaignSpec.ID,
 				// Need to set a RepoID otherwise GetChangesetSpec filters it out.
 				RepoID:    repo.ID,
@@ -440,7 +441,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 			}
 
 			if tc.isCurrentSpec {
-				changeset := &cmpgn.Changeset{
+				changeset := &campaigns.Changeset{
 					ExternalServiceType: "github",
 					RepoID:              1,
 					CurrentSpecID:       changesetSpec.ID,
@@ -451,7 +452,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 			}
 
 			if tc.isPreviousSpec {
-				changeset := &cmpgn.Changeset{
+				changeset := &campaigns.Changeset{
 					ExternalServiceType: "github",
 					RepoID:              1,
 					PreviousSpecID:      changesetSpec.ID,

@@ -101,7 +101,6 @@ func CalcCounts(start, end time.Time, cs []*campaigns.Changeset, es ...*campaign
 			case campaigns.ChangesetExternalStateClosed:
 				c.Closed++
 			}
-
 		}
 	}
 

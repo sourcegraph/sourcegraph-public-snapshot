@@ -276,7 +276,6 @@ func TestSyncerRun(t *testing.T) {
 			t.Fatal("Sync not called")
 		}
 	})
-
 }
 
 func TestSyncRegistry(t *testing.T) {
