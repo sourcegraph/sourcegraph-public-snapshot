@@ -455,6 +455,9 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			executor := &executor{
 				tx: store,
 
+				// Don't actually sleep for the sake of testing.
+				noSleepBeforeSync: true,
+
 				gitserverClient: gitClient,
 				sourcer:         sourcer,
 
