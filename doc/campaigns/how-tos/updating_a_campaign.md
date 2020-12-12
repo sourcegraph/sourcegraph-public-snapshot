@@ -24,7 +24,7 @@ In order to update a campaign after previewing the changes, do the following:
 1. Use the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) to execute and preview the campaign spec.
 
     <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
-1. Open on the URL that's printed to review the changes that will be made by applying the new campaign spec.
+1. Open on the URL that's printed to preview the changes that will be made by applying the new campaign spec.
 1. Click **Apply spec** to update the campaign.
 
 All of the changesets on your code host will be updated to the desired state that was shown in the preview.
