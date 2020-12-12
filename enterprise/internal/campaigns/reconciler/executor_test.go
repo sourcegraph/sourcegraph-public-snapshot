@@ -605,7 +605,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	userCampaign := ct.CreateCampaign(t, ctx, store, "reconciler-test-campaign", user.ID, campaignSpec.ID)
 
 	t.Run("imported changeset uses global token", func(t *testing.T) {
-		a, err := (&Executor{
+		a, err := (&executor{
 			ch: &campaigns.Changeset{
 				OwnedByCampaignID: 0,
 			},
@@ -619,7 +619,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	})
 
 	t.Run("owned by missing campaign", func(t *testing.T) {
-		_, err := (&Executor{
+		_, err := (&executor{
 			ch: &campaigns.Changeset{
 				OwnedByCampaignID: 1234,
 			},
@@ -631,7 +631,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	})
 
 	t.Run("owned by admin user without credential", func(t *testing.T) {
-		a, err := (&Executor{
+		a, err := (&executor{
 			ch: &campaigns.Changeset{
 				OwnedByCampaignID: adminCampaign.ID,
 			},
@@ -647,7 +647,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	})
 
 	t.Run("owned by normal user without credential", func(t *testing.T) {
-		_, err := (&Executor{
+		_, err := (&executor{
 			ch: &campaigns.Changeset{
 				OwnedByCampaignID: userCampaign.ID,
 			},
@@ -670,7 +670,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		a, err := (&Executor{
+		a, err := (&executor{
 			ch: &campaigns.Changeset{
 				OwnedByCampaignID: adminCampaign.ID,
 			},
@@ -696,7 +696,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		a, err := (&Executor{
+		a, err := (&executor{
 			ch: &campaigns.Changeset{
 				OwnedByCampaignID: userCampaign.ID,
 			},

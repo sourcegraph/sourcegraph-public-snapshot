@@ -23,12 +23,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type Executor struct {
+// ExecutePlan executes the given reconciler plan.
+func ExecutePlan(ctx context.Context, gitserverClient GitserverClient, sourcer repos.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
+	e := &executor{
+		gitserverClient:   gitserverClient,
+		sourcer:           sourcer,
+		noSleepBeforeSync: noSleepBeforeSync,
+		tx:                tx,
+		ch:                plan.Changeset,
+		spec:              plan.ChangesetSpec,
+		delta:             plan.Delta,
+	}
+
+	return e.Run(ctx, plan)
+}
+
+type executor struct {
 	gitserverClient   GitserverClient
 	sourcer           repos.Sourcer
 	noSleepBeforeSync bool
-
-	tx *store.Store
+	tx                *store.Store
 
 	ccs repos.ChangesetSource
 
@@ -44,18 +58,7 @@ type Executor struct {
 	delta *ChangesetSpecDelta
 }
 
-// ExecutePlan executes the given reconciler plan.
-func ExecutePlan(ctx context.Context, gitserverClient GitserverClient, sourcer repos.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
-	e := &Executor{
-		gitserverClient:   gitserverClient,
-		sourcer:           sourcer,
-		noSleepBeforeSync: noSleepBeforeSync,
-		tx:                tx,
-		ch:                plan.Changeset,
-		spec:              plan.ChangesetSpec,
-		delta:             plan.Delta,
-	}
-
+func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 	if plan.Ops.IsNone() {
 		return nil
 	}
@@ -141,7 +144,7 @@ func ExecutePlan(ctx context.Context, gitserverClient GitserverClient, sourcer r
 	return e.tx.UpdateChangeset(ctx, e.ch)
 }
 
-func (e *Executor) buildChangesetSource(repo *types.Repo, extSvc *types.ExternalService) (repos.ChangesetSource, error) {
+func (e *executor) buildChangesetSource(repo *types.Repo, extSvc *types.ExternalService) (repos.ChangesetSource, error) {
 	sources, err := e.sourcer(extSvc)
 	if err != nil {
 		return nil, err
@@ -178,7 +181,7 @@ func (e *Executor) buildChangesetSource(repo *types.Repo, extSvc *types.External
 // global configuration should be used (ie the applying user is an admin and
 // doesn't have a credential configured for the code host, or the changeset
 // isn't owned by a campaign).
-func (e *Executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, error) {
+func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, error) {
 	if e.ch.OwnedByCampaignID == 0 {
 		// Unowned changesets are imported, and therefore don't need to use a user
 		// credential, since reconciliation isn't a mutating process.
@@ -218,7 +221,7 @@ func (e *Executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, e
 }
 
 // pushChangesetPatch creates the commits for the changeset on its codehost.
-func (e *Executor) pushChangesetPatch(ctx context.Context) (err error) {
+func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	existingSameBranch, err := e.tx.GetChangeset(ctx, store.GetChangesetOpts{
 		ExternalServiceType: e.ch.ExternalServiceType,
 		RepoID:              e.ch.RepoID,
@@ -242,7 +245,7 @@ func (e *Executor) pushChangesetPatch(ctx context.Context) (err error) {
 }
 
 // publishChangeset creates the given changeset on its code host.
-func (e *Executor) publishChangeset(ctx context.Context, asDraft bool) (err error) {
+func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err error) {
 	cs := &repos.Changeset{
 		Title:     e.spec.Spec.Title,
 		Body:      e.spec.Spec.Body,
@@ -294,7 +297,7 @@ func (e *Executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 	return nil
 }
 
-func (e *Executor) syncChangeset(ctx context.Context) error {
+func (e *executor) syncChangeset(ctx context.Context) error {
 	if err := e.loadChangeset(ctx); err != nil {
 		_, ok := err.(repos.ChangesetNotFoundError)
 		if !ok {
@@ -311,7 +314,7 @@ func (e *Executor) syncChangeset(ctx context.Context) error {
 	return nil
 }
 
-func (e *Executor) importChangeset(ctx context.Context) error {
+func (e *executor) importChangeset(ctx context.Context) error {
 	if err := e.loadChangeset(ctx); err != nil {
 		return err
 	}
@@ -321,14 +324,14 @@ func (e *Executor) importChangeset(ctx context.Context) error {
 	return nil
 }
 
-func (e *Executor) loadChangeset(ctx context.Context) error {
+func (e *executor) loadChangeset(ctx context.Context) error {
 	repoChangeset := &repos.Changeset{Repo: e.repo, Changeset: e.ch}
 	return e.ccs.LoadChangeset(ctx, repoChangeset)
 }
 
 // updateChangeset updates the given changeset's attribute on the code host
 // according to its ChangesetSpec and the delta previously computed.
-func (e *Executor) updateChangeset(ctx context.Context) (err error) {
+func (e *executor) updateChangeset(ctx context.Context) (err error) {
 	cs := repos.Changeset{
 		Title:     e.spec.Spec.Title,
 		Body:      e.spec.Spec.Body,
@@ -352,7 +355,7 @@ func (e *Executor) updateChangeset(ctx context.Context) (err error) {
 }
 
 // reopenChangeset reopens the given changeset attribute on the code host.
-func (e *Executor) reopenChangeset(ctx context.Context) (err error) {
+func (e *executor) reopenChangeset(ctx context.Context) (err error) {
 	cs := repos.Changeset{Repo: e.repo, Changeset: e.ch}
 	if err := e.ccs.ReopenChangeset(ctx, &cs); err != nil {
 		return errors.Wrap(err, "updating changeset")
@@ -361,7 +364,7 @@ func (e *Executor) reopenChangeset(ctx context.Context) (err error) {
 }
 
 // closeChangeset closes the given changeset on its code host if its ExternalState is OPEN or DRAFT.
-func (e *Executor) closeChangeset(ctx context.Context) (err error) {
+func (e *executor) closeChangeset(ctx context.Context) (err error) {
 	e.ch.Closing = false
 
 	if e.ch.ExternalState != campaigns.ChangesetExternalStateDraft && e.ch.ExternalState != campaigns.ChangesetExternalStateOpen {
@@ -377,7 +380,7 @@ func (e *Executor) closeChangeset(ctx context.Context) (err error) {
 }
 
 // undraftChangeset marks the given changeset on its code host as ready for review.
-func (e *Executor) undraftChangeset(ctx context.Context) (err error) {
+func (e *executor) undraftChangeset(ctx context.Context) (err error) {
 	draftCcs, ok := e.ccs.(repos.DraftChangesetSource)
 	if !ok {
 		return errors.New("changeset operation is undraft, but changeset source doesn't implement DraftChangesetSource")
@@ -399,13 +402,13 @@ func (e *Executor) undraftChangeset(ctx context.Context) (err error) {
 }
 
 // sleep sleeps for 3 seconds.
-func (e *Executor) sleep() {
+func (e *executor) sleep() {
 	if !e.noSleepBeforeSync {
 		time.Sleep(3 * time.Second)
 	}
 }
 
-func (e *Executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) error {
+func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) error {
 	_, err := e.gitserverClient.CreateCommitFromPatch(ctx, opts)
 	if err != nil {
 		if diffErr, ok := err.(*protocol.CreateCommitFromPatchError); ok {
