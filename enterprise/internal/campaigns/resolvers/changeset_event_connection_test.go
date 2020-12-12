@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
-	cstore "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -35,7 +35,7 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := cstore.NewWithClock(dbconn.Global, clock)
+	cstore := store.NewWithClock(dbconn.Global, clock)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
@@ -47,7 +47,7 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+	if err := cstore.CreateCampaignSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -59,11 +59,11 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 		LastAppliedAt:    time.Now(),
 		CampaignSpecID:   spec.ID,
 	}
-	if err := store.CreateCampaign(ctx, campaign); err != nil {
+	if err := cstore.CreateCampaign(ctx, campaign); err != nil {
 		t.Fatal(err)
 	}
 
-	changeset := ct.CreateChangeset(t, ctx, store, ct.TestChangesetOpts{
+	changeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		PublicationState:    campaigns.ChangesetPublicationStateUnpublished,
@@ -89,13 +89,13 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 	})
 
 	// Create ChangesetEvents from the timeline items in the metadata.
-	if err := store.UpsertChangesetEvents(ctx, changeset.Events()...); err != nil {
+	if err := cstore.UpsertChangesetEvents(ctx, changeset.Events()...); err != nil {
 		t.Fatal(err)
 	}
 
-	addChangeset(t, ctx, store, changeset, campaign.ID)
+	addChangeset(t, ctx, cstore, changeset, campaign.ID)
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

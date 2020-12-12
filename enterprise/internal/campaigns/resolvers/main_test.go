@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
-	cstore "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -236,7 +236,7 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 	t.Cleanup(func() { git.Mocks.MergeBase = nil })
 }
 
-func addChangeset(t *testing.T, ctx context.Context, s *cstore.Store, c *campaigns.Changeset, campaign int64) {
+func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *campaigns.Changeset, campaign int64) {
 	t.Helper()
 
 	c.CampaignIDs = append(c.CampaignIDs, campaign)
@@ -274,7 +274,7 @@ type testSpecOpts struct {
 func createChangesetSpec(
 	t *testing.T,
 	ctx context.Context,
-	store *cstore.Store,
+	s *store.Store,
 	opts testSpecOpts,
 ) *campaigns.ChangesetSpec {
 	t.Helper()
@@ -314,7 +314,7 @@ func createChangesetSpec(
 		},
 	}
 
-	if err := store.CreateChangesetSpec(ctx, spec); err != nil {
+	if err := s.CreateChangesetSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
