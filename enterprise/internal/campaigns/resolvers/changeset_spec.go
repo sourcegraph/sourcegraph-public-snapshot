@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/reconciler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/rewirer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
@@ -44,7 +44,7 @@ type changesetSpecResolver struct {
 	repo      *types.Repo
 
 	planOnce sync.Once
-	plan     *ee.ReconcilerPlan
+	plan     *reconciler.ReconcilerPlan
 	planErr  error
 }
 
@@ -147,7 +147,7 @@ func (r *changesetSpecResolver) Delta(ctx context.Context) (graphqlbackend.Chang
 	return &changesetSpecDeltaResolver{delta: *plan.Delta}, nil
 }
 
-func (r *changesetSpecResolver) computePlan(ctx context.Context) (*ee.ReconcilerPlan, error) {
+func (r *changesetSpecResolver) computePlan(ctx context.Context) (*reconciler.ReconcilerPlan, error) {
 	r.planOnce.Do(func() {
 		r.plan, r.planErr = r.previewer.PlanForChangesetSpec(ctx, r.changesetSpec)
 	})
@@ -282,7 +282,7 @@ func (r *gitCommitDescriptionResolver) Body() *string {
 func (r *gitCommitDescriptionResolver) Diff() string { return r.diff }
 
 type changesetSpecDeltaResolver struct {
-	delta ee.ChangesetSpecDelta
+	delta reconciler.ChangesetSpecDelta
 }
 
 var _ graphqlbackend.ChangesetSpecDeltaResolver = &changesetSpecDeltaResolver{}
@@ -313,7 +313,7 @@ func (c *changesetSpecDeltaResolver) AuthorEmailChanged() bool {
 }
 
 type ChangesetSpecPreviewer interface {
-	PlanForChangesetSpec(context.Context, *campaigns.ChangesetSpec) (*ee.ReconcilerPlan, error)
+	PlanForChangesetSpec(context.Context, *campaigns.ChangesetSpec) (*reconciler.ReconcilerPlan, error)
 	ChangesetForChangesetSpec(context.Context, int64) (*campaigns.Changeset, error)
 }
 
@@ -334,7 +334,7 @@ type changesetSpecPreviewer struct {
 var _ ChangesetSpecPreviewer = &changesetSpecPreviewer{}
 
 // PlanForChangesetSpec computes the ReconcilerPlan for the given changeset spec, based on the current state of the database.
-func (c *changesetSpecPreviewer) PlanForChangesetSpec(ctx context.Context, changesetSpec *campaigns.ChangesetSpec) (*ee.ReconcilerPlan, error) {
+func (c *changesetSpecPreviewer) PlanForChangesetSpec(ctx context.Context, changesetSpec *campaigns.ChangesetSpec) (*reconciler.ReconcilerPlan, error) {
 	// To get the plan, we first need to determine the changeset_spec => changeset mapping.
 	mapping, err := c.mappingForChangesetSpec(ctx, changesetSpec.ID)
 	if err != nil {
@@ -373,7 +373,7 @@ func (c *changesetSpecPreviewer) PlanForChangesetSpec(ctx context.Context, chang
 		// If the current spec was not unset by the rewirer, it will be this resolvers spec.
 		currentSpec = changesetSpec
 	}
-	return ee.DetermineReconcilerPlan(previousSpec, currentSpec, changeset)
+	return reconciler.DetermineReconcilerPlan(previousSpec, currentSpec, changeset)
 }
 
 // ChangesetForChangesetSpec returns the changeset for the target changeset of the changeset spec. It can return nil, if no changeset

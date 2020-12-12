@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/reconciler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -65,7 +66,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	type testCase struct {
 		changeset      ct.TestChangesetOpts
 		hasCurrentSpec bool
-		plan           *ReconcilerPlan
+		plan           *reconciler.ReconcilerPlan
 
 		sourcerMetadata interface{}
 		sourcerErr      error
@@ -90,7 +91,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		"noop": {
 			hasCurrentSpec: true,
 			changeset:      ct.TestChangesetOpts{},
-			plan:           &ReconcilerPlan{Ops: ReconcilerOperations{}},
+			plan:           &reconciler.ReconcilerPlan{Ops: reconciler.ReconcilerOperations{}},
 
 			wantChangeset: ct.ChangesetAssertions{},
 		},
@@ -100,8 +101,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalID:       githubPR.ID,
 				Unsynced:         true,
 			},
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{campaigns.ReconcilerOperationImport},
+			plan: &reconciler.ReconcilerPlan{
+				Ops: reconciler.ReconcilerOperations{campaigns.ReconcilerOperationImport},
 			},
 
 			wantLoadFromCodeHost: true,
@@ -123,8 +124,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalID:       githubPR.ID,
 				Unsynced:         true,
 			},
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{campaigns.ReconcilerOperationImport},
+			plan: &reconciler.ReconcilerPlan{
+				Ops: reconciler.ReconcilerOperations{campaigns.ReconcilerOperationImport},
 			},
 			sourcerErr: notFoundErr,
 
@@ -137,8 +138,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			changeset: ct.TestChangesetOpts{
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{
+			plan: &reconciler.ReconcilerPlan{
+				Ops: reconciler.ReconcilerOperations{
 					campaigns.ReconcilerOperationPush,
 					campaigns.ReconcilerOperationPublish,
 				},
@@ -168,8 +169,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				// We simulate that here by not setting FailureMessage.
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{
+			plan: &reconciler.ReconcilerPlan{
+				Ops: reconciler.ReconcilerOperations{
 					campaigns.ReconcilerOperationPush,
 					campaigns.ReconcilerOperationPublish,
 				},
@@ -199,8 +200,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalBranch:   "head-ref-on-github",
 			},
 
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{
+			plan: &reconciler.ReconcilerPlan{
+				Ops: reconciler.ReconcilerOperations{
 					campaigns.ReconcilerOperationUpdate,
 				},
 			},
@@ -228,8 +229,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalState:    campaigns.ChangesetExternalStateOpen,
 			},
 
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{
+			plan: &reconciler.ReconcilerPlan{
+				Ops: reconciler.ReconcilerOperations{
 					campaigns.ReconcilerOperationPush,
 					campaigns.ReconcilerOperationSleep,
 					campaigns.ReconcilerOperationSync,
@@ -256,8 +257,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalState:    campaigns.ChangesetExternalStateOpen,
 				Closing:          true,
 			},
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{
+			plan: &reconciler.ReconcilerPlan{
+				Ops: reconciler.ReconcilerOperations{
 					campaigns.ReconcilerOperationClose,
 				},
 			},
@@ -288,8 +289,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalState:    campaigns.ChangesetExternalStateClosed,
 				Closing:          true,
 			},
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{
+			plan: &reconciler.ReconcilerPlan{
+				Ops: reconciler.ReconcilerOperations{
 					campaigns.ReconcilerOperationClose,
 				},
 			},
@@ -318,8 +319,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalBranch:   githubHeadRef,
 				ExternalState:    campaigns.ChangesetExternalStateClosed,
 			},
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{
+			plan: &reconciler.ReconcilerPlan{
+				Ops: reconciler.ReconcilerOperations{
 					campaigns.ReconcilerOperationReopen,
 				},
 			},
@@ -344,8 +345,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
 
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{
+			plan: &reconciler.ReconcilerPlan{
+				Ops: reconciler.ReconcilerOperations{
 					campaigns.ReconcilerOperationPush,
 					campaigns.ReconcilerOperationPublishDraft,
 				},
@@ -375,8 +376,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalState:    campaigns.ChangesetExternalStateDraft,
 			},
 
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{
+			plan: &reconciler.ReconcilerPlan{
+				Ops: reconciler.ReconcilerOperations{
 					campaigns.ReconcilerOperationUndraft,
 				},
 			},
@@ -583,7 +584,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	}
 
 	// Plan only needs a push operation, since that's where we check
-	plan := &ReconcilerPlan{}
+	plan := &reconciler.ReconcilerPlan{}
 	plan.AddOp(campaigns.ReconcilerOperationPush)
 
 	err := executor.ExecutePlan(ctx, plan)
@@ -746,7 +747,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	fakeSource := &ct.FakeChangesetSource{Svc: extSvc}
 	sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
-	plan := &ReconcilerPlan{}
+	plan := &reconciler.ReconcilerPlan{}
 	plan.AddOp(campaigns.ReconcilerOperationPush)
 
 	tests := []struct {
