@@ -196,7 +196,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			changeset: ct.TestChangesetOpts{
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
 				ExternalID:       "12345",
-				ExternalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
+				ExternalBranch:   "head-ref-on-github",
 			},
 
 			plan: &ReconcilerPlan{

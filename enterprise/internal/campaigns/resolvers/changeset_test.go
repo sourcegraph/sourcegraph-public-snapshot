@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	cstore "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -62,12 +63,12 @@ func TestChangesetResolver(t *testing.T) {
 		baseRev:       baseRev,
 		baseRef:       "refs/heads/master",
 	})
-	unpublishedChangeset := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                repo.ID,
-		currentSpec:         unpublishedSpec.ID,
-		externalServiceType: "github",
-		publicationState:    campaigns.ChangesetPublicationStateUnpublished,
-		reconcilerState:     campaigns.ReconcilerStateCompleted,
+	unpublishedChangeset := ct.CreateChangeset(t, ctx, store, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		CurrentSpec:         unpublishedSpec.ID,
+		ExternalServiceType: "github",
+		PublicationState:    campaigns.ChangesetPublicationStateUnpublished,
+		ReconcilerState:     campaigns.ReconcilerStateCompleted,
 	})
 	erroredSpec := createChangesetSpec(t, ctx, store, testSpecOpts{
 		user:          userID,
@@ -81,28 +82,28 @@ func TestChangesetResolver(t *testing.T) {
 		baseRev:       baseRev,
 		baseRef:       "refs/heads/master",
 	})
-	erroredChangeset := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                repo.ID,
-		currentSpec:         erroredSpec.ID,
-		externalServiceType: "github",
-		publicationState:    campaigns.ChangesetPublicationStateUnpublished,
-		reconcilerState:     campaigns.ReconcilerStateErrored,
-		failureMessage:      "very bad error",
+	erroredChangeset := ct.CreateChangeset(t, ctx, store, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		CurrentSpec:         erroredSpec.ID,
+		ExternalServiceType: "github",
+		PublicationState:    campaigns.ChangesetPublicationStateUnpublished,
+		ReconcilerState:     campaigns.ReconcilerStateErrored,
+		FailureMessage:      "very bad error",
 	})
 
 	labelEventDescriptionText := "the best label in town"
 
-	syncedGitHubChangeset := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                repo.ID,
-		externalServiceType: "github",
-		externalID:          "12345",
-		externalBranch:      "open-pr",
-		externalState:       campaigns.ChangesetExternalStateOpen,
-		externalCheckState:  campaigns.ChangesetCheckStatePending,
-		externalReviewState: campaigns.ChangesetReviewStateChangesRequested,
-		publicationState:    campaigns.ChangesetPublicationStatePublished,
-		reconcilerState:     campaigns.ReconcilerStateCompleted,
-		metadata: &github.PullRequest{
+	syncedGitHubChangeset := ct.CreateChangeset(t, ctx, store, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		ExternalServiceType: "github",
+		ExternalID:          "12345",
+		ExternalBranch:      "open-pr",
+		ExternalState:       campaigns.ChangesetExternalStateOpen,
+		ExternalCheckState:  campaigns.ChangesetCheckStatePending,
+		ExternalReviewState: campaigns.ChangesetReviewStateChangesRequested,
+		PublicationState:    campaigns.ChangesetPublicationStatePublished,
+		ReconcilerState:     campaigns.ReconcilerStateCompleted,
+		Metadata: &github.PullRequest{
 			ID:          "12345",
 			Title:       "GitHub PR Title",
 			Body:        "GitHub PR Body",
@@ -145,13 +146,13 @@ func TestChangesetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	unsyncedChangeset := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                repo.ID,
-		externalServiceType: "github",
-		externalID:          "9876",
-		unsynced:            true,
-		publicationState:    campaigns.ChangesetPublicationStatePublished,
-		reconcilerState:     campaigns.ReconcilerStateQueued,
+	unsyncedChangeset := ct.CreateChangeset(t, ctx, store, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		ExternalServiceType: "github",
+		ExternalID:          "9876",
+		Unsynced:            true,
+		PublicationState:    campaigns.ChangesetPublicationStatePublished,
+		ReconcilerState:     campaigns.ReconcilerStateQueued,
 	})
 
 	spec := &campaigns.CampaignSpec{

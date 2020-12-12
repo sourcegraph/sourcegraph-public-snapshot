@@ -76,7 +76,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			changeset: ct.TestChangesetOpts{
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
 				ExternalID:       "12345",
-				ExternalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
+				ExternalBranch:   "head-ref-on-github",
 			},
 
 			wantChangeset: ct.ChangesetAssertions{

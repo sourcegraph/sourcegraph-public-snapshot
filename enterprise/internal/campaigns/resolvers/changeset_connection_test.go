@@ -60,48 +60,48 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changeset1 := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                repo.ID,
-		externalServiceType: "github",
-		publicationState:    campaigns.ChangesetPublicationStateUnpublished,
-		externalReviewState: campaigns.ChangesetReviewStatePending,
-		ownedByCampaign:     campaign.ID,
-		campaign:            campaign.ID,
+	changeset1 := ct.CreateChangeset(t, ctx, store, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		ExternalServiceType: "github",
+		PublicationState:    campaigns.ChangesetPublicationStateUnpublished,
+		ExternalReviewState: campaigns.ChangesetReviewStatePending,
+		OwnedByCampaign:     campaign.ID,
+		Campaign:            campaign.ID,
 	})
 
-	changeset2 := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                repo.ID,
-		externalServiceType: "github",
-		externalID:          "12345",
-		externalBranch:      "open-pr",
-		externalState:       campaigns.ChangesetExternalStateOpen,
-		publicationState:    campaigns.ChangesetPublicationStatePublished,
-		externalReviewState: campaigns.ChangesetReviewStatePending,
-		ownedByCampaign:     campaign.ID,
-		campaign:            campaign.ID,
+	changeset2 := ct.CreateChangeset(t, ctx, store, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		ExternalServiceType: "github",
+		ExternalID:          "12345",
+		ExternalBranch:      "open-pr",
+		ExternalState:       campaigns.ChangesetExternalStateOpen,
+		PublicationState:    campaigns.ChangesetPublicationStatePublished,
+		ExternalReviewState: campaigns.ChangesetReviewStatePending,
+		OwnedByCampaign:     campaign.ID,
+		Campaign:            campaign.ID,
 	})
 
-	changeset3 := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                repo.ID,
-		externalServiceType: "github",
-		externalID:          "56789",
-		externalBranch:      "merged-pr",
-		externalState:       campaigns.ChangesetExternalStateMerged,
-		publicationState:    campaigns.ChangesetPublicationStatePublished,
-		externalReviewState: campaigns.ChangesetReviewStatePending,
-		ownedByCampaign:     campaign.ID,
-		campaign:            campaign.ID,
+	changeset3 := ct.CreateChangeset(t, ctx, store, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		ExternalServiceType: "github",
+		ExternalID:          "56789",
+		ExternalBranch:      "merged-pr",
+		ExternalState:       campaigns.ChangesetExternalStateMerged,
+		PublicationState:    campaigns.ChangesetPublicationStatePublished,
+		ExternalReviewState: campaigns.ChangesetReviewStatePending,
+		OwnedByCampaign:     campaign.ID,
+		Campaign:            campaign.ID,
 	})
-	changeset4 := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                inaccessibleRepo.ID,
-		externalServiceType: "github",
-		externalID:          "987651",
-		externalBranch:      "open-hidden-pr",
-		externalState:       campaigns.ChangesetExternalStateOpen,
-		publicationState:    campaigns.ChangesetPublicationStatePublished,
-		externalReviewState: campaigns.ChangesetReviewStatePending,
-		ownedByCampaign:     campaign.ID,
-		campaign:            campaign.ID,
+	changeset4 := ct.CreateChangeset(t, ctx, store, ct.TestChangesetOpts{
+		Repo:                inaccessibleRepo.ID,
+		ExternalServiceType: "github",
+		ExternalID:          "987651",
+		ExternalBranch:      "open-hidden-pr",
+		ExternalState:       campaigns.ChangesetExternalStateOpen,
+		PublicationState:    campaigns.ChangesetPublicationStatePublished,
+		ExternalReviewState: campaigns.ChangesetReviewStatePending,
+		OwnedByCampaign:     campaign.ID,
+		Campaign:            campaign.ID,
 	})
 
 	addChangeset(t, ctx, store, changeset1, campaign.ID)

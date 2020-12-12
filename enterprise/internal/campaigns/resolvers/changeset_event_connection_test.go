@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	cstore "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -62,14 +63,14 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changeset := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                repo.ID,
-		externalServiceType: "github",
-		publicationState:    campaigns.ChangesetPublicationStateUnpublished,
-		externalReviewState: campaigns.ChangesetReviewStatePending,
-		ownedByCampaign:     campaign.ID,
-		campaign:            campaign.ID,
-		metadata: &github.PullRequest{
+	changeset := ct.CreateChangeset(t, ctx, store, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		ExternalServiceType: "github",
+		PublicationState:    campaigns.ChangesetPublicationStateUnpublished,
+		ExternalReviewState: campaigns.ChangesetReviewStatePending,
+		OwnedByCampaign:     campaign.ID,
+		Campaign:            campaign.ID,
+		Metadata: &github.PullRequest{
 			TimelineItems: []github.TimelineItem{
 				{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
 					Commit: github.Commit{
@@ -86,6 +87,11 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 			},
 		},
 	})
+
+	// Create ChangesetEvents from the timeline items in the metadata.
+	if err := store.UpsertChangesetEvents(ctx, changeset.Events()...); err != nil {
+		t.Fatal(err)
+	}
 
 	addChangeset(t, ctx, store, changeset, campaign.ID)
 

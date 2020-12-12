@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type TestChangesetOpts struct {
@@ -22,6 +23,8 @@ type TestChangesetOpts struct {
 	ExternalID          string
 	ExternalBranch      string
 	ExternalState       campaigns.ChangesetExternalState
+	ExternalReviewState campaigns.ChangesetReviewState
+	ExternalCheckState  campaigns.ChangesetCheckState
 
 	PublicationState campaigns.ChangesetPublicationState
 
@@ -33,6 +36,8 @@ type TestChangesetOpts struct {
 
 	Unsynced bool
 	Closing  bool
+
+	Metadata interface{}
 }
 
 type CreateChangeseter interface {
@@ -69,8 +74,9 @@ func BuildChangeset(opts TestChangesetOpts) *campaigns.Changeset {
 
 		ExternalServiceType: opts.ExternalServiceType,
 		ExternalID:          opts.ExternalID,
-		ExternalBranch:      opts.ExternalBranch,
 		ExternalState:       opts.ExternalState,
+		ExternalReviewState: opts.ExternalReviewState,
+		ExternalCheckState:  opts.ExternalCheckState,
 
 		PublicationState: opts.PublicationState,
 
@@ -81,6 +87,12 @@ func BuildChangeset(opts TestChangesetOpts) *campaigns.Changeset {
 
 		ReconcilerState: opts.ReconcilerState,
 		NumFailures:     opts.NumFailures,
+
+		Metadata: opts.Metadata,
+	}
+
+	if opts.ExternalBranch != "" {
+		changeset.ExternalBranch = git.EnsureRefPrefix(opts.ExternalBranch)
 	}
 
 	if opts.FailureMessage != "" {
