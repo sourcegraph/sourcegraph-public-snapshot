@@ -1,4 +1,4 @@
-package campaigns
+package webhooks
 
 import (
 	"testing"

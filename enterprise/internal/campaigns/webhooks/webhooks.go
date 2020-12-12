@@ -1,4 +1,4 @@
-package campaigns
+package webhooks
 
 import (
 	"context"
@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
