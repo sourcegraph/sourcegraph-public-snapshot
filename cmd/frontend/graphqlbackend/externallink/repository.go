@@ -11,7 +11,6 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -48,11 +47,7 @@ func FileOrDir(ctx context.Context, repo *types.Repo, rev, path string, isDir bo
 	phabRepo, link, serviceType := linksForRepository(ctx, repo)
 	if phabRepo != nil {
 		// We need a branch name to construct the Phabricator URL.
-		cachedRepo, err := backend.CachedGitRepo(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
-		branchName, _, _, err := git.ExecSafe(ctx, *cachedRepo, []string{"symbolic-ref", "--short", "HEAD"})
+		branchName, _, _, err := git.ExecSafe(ctx, repo.Name, []string{"symbolic-ref", "--short", "HEAD"})
 		branchName = bytes.TrimSpace(branchName)
 		if err == nil && string(branchName) != "" {
 			links = append(links, &Resolver{

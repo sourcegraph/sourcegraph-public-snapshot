@@ -119,15 +119,12 @@ func listGoPackagesInRepoImprecise(ctx context.Context, repoName api.RepoName) (
 	if err != nil {
 		return nil, err
 	}
-	gitRepo, err := CachedGitRepo(ctx, repo)
+
+	commitID, err := git.ResolveRevision(ctx, repo.Name, "HEAD", git.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}
-	commitID, err := git.ResolveRevision(ctx, *gitRepo, "HEAD", git.ResolveRevisionOptions{})
-	if err != nil {
-		return nil, err
-	}
-	fis, err := git.ReadDir(ctx, *gitRepo, commitID, "", true)
+	fis, err := git.ReadDir(ctx, repo.Name, commitID, "", true)
 	if err != nil {
 		return nil, err
 	}

@@ -61,7 +61,7 @@ var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
 var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
 
 // getCommit returns the commit with the given id.
-func getCommit(ctx context.Context, repo gitserver.Repo, id api.CommitID, opt ResolveRevisionOptions) (_ *Commit, err error) {
+func getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *Commit, err error) {
 	if Mocks.GetCommit != nil {
 		return Mocks.GetCommit(id)
 	}
@@ -70,7 +70,7 @@ func getCommit(ctx context.Context, repo gitserver.Repo, id api.CommitID, opt Re
 		defer func() {
 			ev := honey.Event("getCommit")
 			ev.SampleRate = 10 // 1 in 10
-			ev.AddField("repo", repo.Name)
+			ev.AddField("repo", repo)
 			ev.AddField("commit", id)
 			ev.AddField("no_ensure_revision", opt.NoEnsureRevision)
 			ev.AddField("actor", actor.FromContext(ctx).UIDString())
@@ -114,7 +114,7 @@ func getCommit(ctx context.Context, repo gitserver.Repo, id api.CommitID, opt Re
 // The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
 // needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 // the repository or if the commit must be fetched from the remote.
-func GetCommit(ctx context.Context, repo gitserver.Repo, id api.CommitID, opt ResolveRevisionOptions) (*Commit, error) {
+func GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (*Commit, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetCommit")
 	span.SetTag("Commit", id)
 	defer span.Finish()
@@ -123,7 +123,7 @@ func GetCommit(ctx context.Context, repo gitserver.Repo, id api.CommitID, opt Re
 }
 
 // Commits returns all commits matching the options.
-func Commits(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]*Commit, error) {
+func Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*Commit, error) {
 	if Mocks.Commits != nil {
 		return Mocks.Commits(repo, opt)
 	}
@@ -141,7 +141,7 @@ func Commits(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]*C
 
 // HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
 // contains a commit past a specified date.
-func HasCommitAfter(ctx context.Context, repo gitserver.Repo, date string, revspec string) (bool, error) {
+func HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string) (bool, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: HasCommitAfter")
 	span.SetTag("Date", date)
 	span.SetTag("RevSpec", revspec)
@@ -175,7 +175,7 @@ func isInvalidRevisionRangeError(output, obj string) bool {
 // commitLog returns a list of commits.
 //
 // The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
-func commitLog(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (commits []*Commit, err error) {
+func commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions) (commits []*Commit, err error) {
 	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt)
 	if err != nil {
 		return nil, err
@@ -197,7 +197,7 @@ var runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOpti
 	if err != nil {
 		data = bytes.TrimSpace(data)
 		if isBadObjectErr(string(stderr), opt.Range) {
-			return nil, &gitserver.RevisionNotFoundError{Repo: cmd.Repo.Name, Spec: opt.Range}
+			return nil, &gitserver.RevisionNotFoundError{Repo: cmd.Repo, Spec: opt.Range}
 		}
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, data))
 	}
@@ -253,7 +253,7 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 }
 
 // CommitCount returns the number of commits that would be returned by Commits.
-func CommitCount(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (uint, error) {
+func CommitCount(ctx context.Context, repo api.RepoName, opt CommitsOptions) (uint, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: CommitCount")
 	span.SetTag("Opt", opt)
 	defer span.Finish()

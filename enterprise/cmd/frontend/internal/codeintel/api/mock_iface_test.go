@@ -4,10 +4,11 @@ package api
 
 import (
 	"context"
+	"sync"
+
 	gitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"sync"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the

@@ -17,7 +17,7 @@ import (
 
 // ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
 // file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
-func ReadFile(ctx context.Context, repo gitserver.Repo, commit api.CommitID, name string, maxBytes int64) ([]byte, error) {
+func ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, maxBytes int64) ([]byte, error) {
 	if Mocks.ReadFile != nil {
 		return Mocks.ReadFile(commit, name)
 	}
@@ -40,7 +40,7 @@ func ReadFile(ctx context.Context, repo gitserver.Repo, commit api.CommitID, nam
 
 // NewFileReader returns an io.ReadCloser reading from the named file at commit.
 // The caller should always close the reader after use
-func NewFileReader(ctx context.Context, repo gitserver.Repo, commit api.CommitID, name string) (io.ReadCloser, error) {
+func NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error) {
 	if Mocks.NewFileReader != nil {
 		return Mocks.NewFileReader(commit, name)
 	}
@@ -57,7 +57,7 @@ func NewFileReader(ctx context.Context, repo gitserver.Repo, commit api.CommitID
 	return br, nil
 }
 
-func readFileBytes(ctx context.Context, repo gitserver.Repo, commit api.CommitID, name string, maxBytes int64) ([]byte, error) {
+func readFileBytes(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, maxBytes int64) ([]byte, error) {
 	br, err := newBlobReader(ctx, repo, commit, name)
 	if err != nil {
 		return nil, err
@@ -79,14 +79,14 @@ func readFileBytes(ctx context.Context, repo gitserver.Repo, commit api.CommitID
 // us to get a ReadCloser to a specific named file at a specific commit
 type blobReader struct {
 	ctx    context.Context
-	repo   gitserver.Repo
+	repo   api.RepoName
 	commit api.CommitID
 	name   string
 	cmd    *gitserver.Cmd
 	rc     io.ReadCloser
 }
 
-func newBlobReader(ctx context.Context, repo gitserver.Repo, commit api.CommitID, name string) (*blobReader, error) {
+func newBlobReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (*blobReader, error) {
 	if err := ensureAbsoluteCommit(commit); err != nil {
 		return nil, err
 	}

@@ -4,8 +4,9 @@ package apiworker
 
 import (
 	"context"
-	command "github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command"
 	"sync"
+
+	command "github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command"
 )
 
 // MockRunner is a mock implementation of the Runner interface (from the

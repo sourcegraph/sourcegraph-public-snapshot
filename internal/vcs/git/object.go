@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -32,7 +33,7 @@ const (
 )
 
 // GetObject looks up a Git object and returns information about it.
-func GetObject(ctx context.Context, repo gitserver.Repo, objectName string) (oid OID, objectType ObjectType, err error) {
+func GetObject(ctx context.Context, repo api.RepoName, objectName string) (oid OID, objectType ObjectType, err error) {
 	if Mocks.GetObject != nil {
 		return Mocks.GetObject(objectName)
 	}

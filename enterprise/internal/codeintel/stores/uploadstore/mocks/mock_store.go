@@ -4,9 +4,10 @@ package mocks
 
 import (
 	"context"
-	uploadstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"io"
 	"sync"
+
+	uploadstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 )
 
 // MockStore is a mock implementation of the Store interface (from the

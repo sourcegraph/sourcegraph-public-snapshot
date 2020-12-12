@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -227,7 +226,7 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 	}
 	t.Cleanup(func() { git.Mocks.ExecReader = nil })
 
-	git.Mocks.MergeBase = func(repo gitserver.Repo, a, b api.CommitID) (api.CommitID, error) {
+	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
 		if string(a) != baseRev && string(b) != headRev {
 			t.Fatalf("git.Mocks.MergeBase received unknown commit ids: %s %s", a, b)
 		}

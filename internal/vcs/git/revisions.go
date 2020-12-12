@@ -54,7 +54,7 @@ type ResolveRevisionOptions struct {
 // * Commit does not exist: RevisionNotFoundError
 // * Empty repository: RevisionNotFoundError
 // * Other unexpected errors.
-func ResolveRevision(ctx context.Context, repo gitserver.Repo, spec string, opt ResolveRevisionOptions) (api.CommitID, error) {
+func ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error) {
 	if Mocks.ResolveRevision != nil {
 		return Mocks.ResolveRevision(spec, opt)
 	}
@@ -111,7 +111,7 @@ func runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.Comm
 			return "", err
 		}
 		if bytes.Contains(stderr, []byte("unknown revision")) {
-			return "", &gitserver.RevisionNotFoundError{Repo: cmd.Name, Spec: spec}
+			return "", &gitserver.RevisionNotFoundError{Repo: cmd.Repo, Spec: spec}
 		}
 		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args, stderr))
 	}
@@ -122,9 +122,9 @@ func runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.Comm
 			// if HEAD doesn't point to anything git just returns `HEAD` as the
 			// output of rev-parse. An example where this occurs is an empty
 			// repository.
-			return "", &gitserver.RevisionNotFoundError{Repo: cmd.Name, Spec: spec}
+			return "", &gitserver.RevisionNotFoundError{Repo: cmd.Repo, Spec: spec}
 		}
-		return "", BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Name}
+		return "", BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo}
 	}
 	return commit, nil
 }
