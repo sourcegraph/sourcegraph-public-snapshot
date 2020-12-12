@@ -4,6 +4,13 @@ import Dialog from '@reach/dialog'
 import ShieldCheckIcon from 'mdi-react/ShieldCheckIcon'
 import { Form } from '../../../../../branded/src/components/Form'
 
+/**
+ * TODO:
+ * 1. Add new service by kind with user's token
+ * 2. input validation
+ * 3. fix lock icon
+ */
+
 export const AddCodeHostConnectionModal: React.FunctionComponent<{
     name: string
     kind: string

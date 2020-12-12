@@ -3,13 +3,32 @@ import Dialog from '@reach/dialog'
 
 import { Form } from '../../../../../branded/src/components/Form'
 
+const getWarningMessage = (codeHostName: string, servicesCount: number): string => {
+    const config = {
+        multiple: {
+            verb: 'are',
+            adjective: 'these',
+            repoNoun: 'repositories',
+        },
+        single: {
+            verb: 'is',
+            adjective: 'it',
+            repoNoun: 'repository',
+        },
+    }
+
+    const { verb, adjective, repoNoun } = servicesCount > 1 ? config.multiple : config.single
+
+    return `There ${verb} ${servicesCount} ${repoNoun} synced to Sourcegraph from ${codeHostName}. If the connection with ${codeHostName} is removed, ${adjective} will no longer be synced with Sourcegraph.`
+}
+
 export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
     name: string
     kind: string
-    repoCount: string
+    servicesCount: number
     onDidRemove: () => void
     onDidCancel: () => void
-}> = ({ onDidRemove, onDidCancel, name, kind, repoCount }) => {
+}> = ({ onDidRemove, onDidCancel, name, kind, servicesCount }) => {
     const onConnectionRemove = useCallback<React.FormEventHandler<HTMLFormElement>>(
         event => {
             event.preventDefault()
@@ -27,10 +46,7 @@ export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
             <div className="web-content">
                 <h3 className="text-danger mb-4">Remove connection with {name}?</h3>
                 <Form onSubmit={onConnectionRemove}>
-                    <div className="form-group mb-4">
-                        There are {repoCount} repositories synced to Sourcegraph from {name}. If the connection with
-                        {name} is removed, these repositories will no longer be synced with Sourcegraph.
-                    </div>
+                    <div className="form-group mb-4">{getWarningMessage(name, servicesCount)}</div>
                     <div className="d-flex justify-content-end">
                         <button
                             type="button"

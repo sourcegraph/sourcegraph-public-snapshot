@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react'
+import { noop } from 'lodash'
 // import * as H from 'history'
 
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
@@ -6,29 +7,22 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CircleOutlineIcon from 'mdi-react/CircleOutlineIcon'
 
 import { Link } from '../../../../../shared/src/components/Link'
-import { ExternalServiceKind } from '../../../graphql-operations'
+import { ExternalServiceKind, ExternalServiceFields } from '../../../graphql-operations'
 import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 
 interface CodeHostItemProps {
+    kind: ExternalServiceKind
+    icon: React.ComponentType<{ className?: string }>
+    name: string
+    serviceIds: ExternalServiceFields['id'][] | undefined
+
     onDidConnect: () => void
     onDidEdit: () => void
     onDidRemove: () => void
-    name: string
-    /**
-     * Icon to show in the external service "button"
-     */
-    icon: React.ComponentType<{ className?: string }>
-
-    /**
-     * A short description that will appear in the external service "button" under the title
-     */
-    shortDescription?: string
-    kind: ExternalServiceKind
-    className?: string
 }
 
-const MODAL_HINTS: Record<ExternalServiceKind, React.ReactFragment> = {
+const MODAL_HINTS: Partial<Record<ExternalServiceKind, React.ReactFragment>> = {
     [ExternalServiceKind.GITHUB]: (
         <small>
             <Link to="" target="_blank" rel="noopener noreferrer">
@@ -50,20 +44,20 @@ const MODAL_HINTS: Record<ExternalServiceKind, React.ReactFragment> = {
         </small>
     ),
 
-    // As of now the following types of user code hosts are not supported - stubs
-    [ExternalServiceKind.BITBUCKETSERVER]: <></>,
-    [ExternalServiceKind.BITBUCKETCLOUD]: <></>,
-    [ExternalServiceKind.GITOLITE]: <></>,
-    [ExternalServiceKind.PHABRICATOR]: <></>,
-    [ExternalServiceKind.AWSCODECOMMIT]: <></>,
-    [ExternalServiceKind.OTHER]: <></>,
+    // // As of now the following types of user code hosts are not supported - stubs
+    // [ExternalServiceKind.BITBUCKETSERVER]: <></>,
+    // [ExternalServiceKind.BITBUCKETCLOUD]: <></>,
+    // [ExternalServiceKind.GITOLITE]: <></>,
+    // [ExternalServiceKind.PHABRICATOR]: <></>,
+    // [ExternalServiceKind.AWSCODECOMMIT]: <></>,
+    // [ExternalServiceKind.OTHER]: <></>,
 }
 
 export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     kind,
     name,
     icon: Icon,
-    shortDescription,
+    serviceIds = [],
 }) => {
     const [showAddConnectionModal, setShowAddConnectionModal] = useState(false)
     const toggleAddConnectionModal = useCallback(() => setShowAddConnectionModal(!showAddConnectionModal), [
@@ -78,8 +72,8 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     const onCodeHostConnect = useCallback((token: string): void => {
         console.log(`Adding token: ${token}`)
     }, [])
-    // const onEdit
-    // const onRemove
+
+    const hasServices = serviceIds.length !== 0
 
     return (
         <div className="p-2 d-flex align-items-start">
@@ -87,55 +81,57 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 <AddCodeHostConnectionModal
                     kind={kind}
                     name={name}
+                    hintFragment={MODAL_HINTS[kind]}
                     onDidAdd={onCodeHostConnect}
                     onDidCancel={toggleAddConnectionModal}
-                    hintFragment={MODAL_HINTS[kind]}
                 />
             )}
             {showRemoveConnectionModal && (
                 <RemoveCodeHostConnectionModal
                     kind={kind}
                     name={name}
-                    repoCount="256"
-                    onDidRemove={() => {}}
+                    servicesCount={serviceIds.length}
+                    onDidRemove={noop}
                     onDidCancel={toggleRemoveConnectionModal}
                 />
             )}
             <div className="align-self-center">
-                <CircleOutlineIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon_off" />
-                <AlertCircleIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon_warn" />
-                <CheckCircleIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon_check" />
+                {hasServices ? (
+                    <CheckCircleIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon_check" />
+                ) : (
+                    <CircleOutlineIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon_off" />
+                )}
+                {/* <AlertCircleIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon_warn" /> */}
                 <Icon className="icon-inline mb-0 mr-2" />
             </div>
             <div className="flex-1">
-                <h3 className={shortDescription ? 'mb-0' : 'mt-1 mb-0'}>{name}</h3>
-                {shortDescription && <p className="mb-0 text-muted">{shortDescription}</p>}
+                <h3 className="mt-1 mb-0">{name}</h3>
             </div>
             <div className="align-self-center">
-                {true && (
+                {!hasServices && (
                     <button type="button" className="btn btn-success" onClick={toggleAddConnectionModal}>
                         Connect
                     </button>
                 )}
-                {true && (
-                    <button
-                        type="button"
-                        className="btn btn-link text-primary p-0 mr-2"
-                        onClick={() => {}}
-                        disabled={false}
-                    >
-                        Edit
-                    </button>
-                )}
-                {true && (
-                    <button
-                        type="button"
-                        className="btn btn-link text-danger p-0"
-                        onClick={toggleRemoveConnectionModal}
-                        disabled={false}
-                    >
-                        Remove
-                    </button>
+                {hasServices && (
+                    <>
+                        <button
+                            type="button"
+                            className="btn btn-link text-primary p-0 mr-2"
+                            onClick={() => {}}
+                            disabled={false}
+                        >
+                            Edit
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-link text-danger p-0"
+                            onClick={toggleRemoveConnectionModal}
+                            disabled={false}
+                        >
+                            Remove
+                        </button>
+                    </>
                 )}
             </div>
         </div>
