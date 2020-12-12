@@ -6,6 +6,8 @@ import {
     CampaignsResult,
     CampaignsByNamespaceResult,
     CampaignsByNamespaceVariables,
+    AreCampaignsLicensedResult,
+    AreCampaignsLicensedVariables,
 } from '../../../graphql-operations'
 import { requestGraphQL } from '../../../backend/graphql'
 
@@ -150,4 +152,22 @@ export const queryCampaignsByNamespace = ({
                 totalCount: data.node.allCampaigns.totalCount,
             }
         })
+    )
+
+export const areCampaignsLicensed = (): Observable<boolean> =>
+    requestGraphQL<AreCampaignsLicensedResult, AreCampaignsLicensedVariables>(
+        gql`
+            query AreCampaignsLicensed {
+                site {
+                    productSubscription {
+                        license {
+                            tags
+                        }
+                    }
+                }
+            }
+        `
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => !!data.site?.productSubscription?.license?.tags.includes('campaigns'))
     )

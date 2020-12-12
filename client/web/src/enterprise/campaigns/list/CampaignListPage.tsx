@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useState, useMemo } from 'react'
-import { queryCampaigns as _queryCampaigns, queryCampaignsByNamespace } from './backend'
+import { areCampaignsLicensed, queryCampaigns as _queryCampaigns, queryCampaignsByNamespace } from './backend'
 import { RouteComponentProps } from 'react-router'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
 import { CampaignNode, CampaignNodeProps } from './CampaignNode'
@@ -21,6 +21,7 @@ import { CampaignListIntro } from './CampaignListIntro'
 import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
 import { Observable, ReplaySubject } from 'rxjs'
 import classNames from 'classnames'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
 
 export interface CampaignListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
     displayNamespace?: boolean
@@ -104,6 +105,7 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
             ),
         [queryCampaigns, isFirstFetch, openTab]
     )
+    const licensed: boolean | undefined = useObservable(useMemo(() => areCampaignsLicensed(), []))
 
     return (
         <>
@@ -116,7 +118,7 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
             <p className="text-muted">
                 Run custom code over hundreds of repositories and manage the resulting changesets
             </p>
-            <CampaignListIntro />
+            <CampaignListIntro licensed={licensed} />
             <CampaignListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
             {selectedTab === 'gettingStarted' && <CampaignsListEmpty />}
             {selectedTab === 'campaigns' && (
