@@ -757,7 +757,6 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 				count++
 				continue
 			}
-
 			// merge line matches with a file match that already exists.
 			rightFileMatch.appendMatches(leftFileMatch)
 			rightFileMatches[leftFileMatch.uri] = rightFileMatch
@@ -770,10 +769,7 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 				// no overlap with existing matches.
 				merged = append(merged, leftMatch)
 				count++
-				continue
 			}
-
-			rightRepoMatches[string(leftRepoMatch.URL())] = rightRepoMatch
 			continue
 		}
 
