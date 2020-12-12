@@ -81,6 +81,12 @@ func (ops Operations) ExecutionOrder() []campaigns.ReconcilerOperation {
 // Plan represents the possible operations the reconciler needs to do
 // to reconcile the current and the desired state of a changeset.
 type Plan struct {
+	// The changeset that is targeted in this plan.
+	Changeset *campaigns.Changeset
+
+	// The changeset spec that is used in this plan.
+	ChangesetSpec *campaigns.ChangesetSpec
+
 	// The operations that need to be done to reconcile the changeset.
 	Ops Operations
 
@@ -98,7 +104,10 @@ func (p *Plan) SetOp(op campaigns.ReconcilerOperation) { p.Ops = Operations{op} 
 // If the current ChangesetSpec is not applied to a campaign, it returns an
 // error.
 func DeterminePlan(previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campaigns.Changeset) (*Plan, error) {
-	pl := &Plan{}
+	pl := &Plan{
+		Changeset:     ch,
+		ChangesetSpec: currentSpec,
+	}
 
 	// If it doesn't have a spec, it's an imported changeset and we can't do
 	// anything.

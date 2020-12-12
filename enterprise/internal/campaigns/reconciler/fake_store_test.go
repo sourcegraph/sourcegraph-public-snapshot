@@ -1,4 +1,4 @@
-package campaigns
+package reconciler
 
 import (
 	"context"

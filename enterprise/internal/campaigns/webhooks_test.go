@@ -49,7 +49,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		rcache.SetupForTest(t)
 
-		truncateTables(t, db, "changeset_events", "changesets")
+		ct.TruncateTables(t, db, "changeset_events", "changesets")
 
 		cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "github-webhooks")
 		defer save()
@@ -151,7 +151,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			_, name := path.Split(fixtureFile)
 			name = strings.TrimSuffix(name, ".json")
 			t.Run(name, func(t *testing.T) {
-				truncateTables(t, db, "changeset_events")
+				ct.TruncateTables(t, db, "changeset_events")
 
 				tc := loadWebhookTestCase(t, fixtureFile)
 
@@ -223,7 +223,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		rcache.SetupForTest(t)
 
-		truncateTables(t, db, "changeset_events", "changesets")
+		ct.TruncateTables(t, db, "changeset_events", "changesets")
 
 		cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "bitbucket-webhooks")
 		defer save()
@@ -339,7 +339,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			_, name := path.Split(fixtureFile)
 			name = strings.TrimSuffix(name, ".json")
 			t.Run(name, func(t *testing.T) {
-				truncateTables(t, db, "changeset_events")
+				ct.TruncateTables(t, db, "changeset_events")
 
 				tc := loadWebhookTestCase(t, fixtureFile)
 

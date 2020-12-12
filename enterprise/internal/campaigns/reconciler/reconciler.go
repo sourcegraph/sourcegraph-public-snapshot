@@ -1,11 +1,10 @@
-package campaigns
+package reconciler
 
 import (
 	"context"
 
 	"github.com/inconshreveable/log15"
 
-	reconcilerpkg "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/reconciler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -63,26 +62,21 @@ func (r *Reconciler) process(ctx context.Context, tx *store.Store, ch *campaigns
 		return nil
 	}
 
-	plan, err := reconcilerpkg.DeterminePlan(prev, curr, ch)
+	plan, err := DeterminePlan(prev, curr, ch)
 	if err != nil {
 		return err
 	}
 
 	log15.Info("Reconciler processing changeset", "changeset", ch.ID, "operations", plan.Ops)
 
-	e := &executor{
-		sourcer:           r.Sourcer,
-		gitserverClient:   r.GitserverClient,
-		noSleepBeforeSync: r.noSleepBeforeSync,
-
-		tx: tx,
-		ch: ch,
-
-		spec:  curr,
-		delta: plan.Delta,
-	}
-
-	return e.ExecutePlan(ctx, plan)
+	return ExecutePlan(
+		ctx,
+		r.GitserverClient,
+		r.Sourcer,
+		r.noSleepBeforeSync,
+		tx,
+		plan,
+	)
 }
 
 func loadChangesetSpecs(ctx context.Context, tx *store.Store, ch *campaigns.Changeset) (prev, curr *campaigns.ChangesetSpec, err error) {
