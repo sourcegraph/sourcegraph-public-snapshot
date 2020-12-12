@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
-	cstore "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -31,7 +31,7 @@ func unmarshalCampaignSpecID(id graphql.ID) (campaignSpecRandID string, err erro
 var _ graphqlbackend.CampaignSpecResolver = &campaignSpecResolver{}
 
 type campaignSpecResolver struct {
-	store       *cstore.Store
+	store       *store.Store
 	httpFactory *httpcli.Factory
 
 	campaignSpec *campaigns.CampaignSpec
@@ -57,7 +57,7 @@ func (r *campaignSpecResolver) ParsedInput() (graphqlbackend.JSONValue, error) {
 }
 
 func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context, args *graphqlbackend.ChangesetSpecsConnectionArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
-	opts := cstore.ListChangesetSpecsOpts{}
+	opts := store.ListChangesetSpecsOpts{}
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, arg
 		}
 	}
 
-	specs, _, err := r.store.ListChangesetSpecs(ctx, cstore.ListChangesetSpecsOpts{CampaignSpecID: r.campaignSpec.ID})
+	specs, _, err := r.store.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{CampaignSpecID: r.campaignSpec.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -277,7 +277,7 @@ func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, arg
 		userID:                actor.UID,
 		onlyWithoutCredential: args.OnlyWithoutCredential,
 		store:                 r.store,
-		opts: cstore.ListCodeHostsOpts{
+		opts: store.ListCodeHostsOpts{
 			RepoIDs: specs.RepoIDs(),
 		},
 		limitOffset: db.LimitOffset{
