@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -40,6 +41,15 @@ func TestMain(m *testing.M) {
 	}
 	os.Exit(m.Run())
 }
+
+var setupGlobalTestDB = (func() func(t *testing.T) {
+	var lock sync.Once
+	return func(t *testing.T) {
+		lock.Do(func() {
+			dbtesting.SetupGlobalTestDB(t)
+		})
+	}
+})()
 
 const testDiff = `diff README.md README.md
 index 671e50a..851b23a 100644
