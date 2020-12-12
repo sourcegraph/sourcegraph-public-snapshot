@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"flag"
 	"fmt"
 	"io"
@@ -13,7 +12,6 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -121,19 +119,6 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 	}
 
 	return timestamp
-}
-
-func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID int32) {
-	t.Helper()
-
-	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)
-
-	err := db.QueryRow(q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return userID
 }
 
 func newGitHubExternalService(t *testing.T, store repos.Store) *types.ExternalService {

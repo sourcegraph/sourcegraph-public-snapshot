@@ -32,7 +32,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 
 	store := store.New(dbconn.Global)
 
-	admin := createTestUser(t, true)
+	admin := ct.CreateTestUser(t, true)
 
 	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 

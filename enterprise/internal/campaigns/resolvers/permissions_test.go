@@ -54,8 +54,8 @@ func TestPermissionLevels(t *testing.T) {
 	ctx := context.Background()
 
 	// Global test data that we reuse in every test
-	adminID := insertTestUser(t, dbconn.Global, "perm-level-admin", true)
-	userID := insertTestUser(t, dbconn.Global, "perm-level-user", false)
+	adminID := ct.CreateTestUser(t, true).ID
+	userID := ct.CreateTestUser(t, false).ID
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	repoStore := db.NewRepoStoreWith(cstore)
@@ -771,7 +771,7 @@ func TestRepositoryPermissions(t *testing.T) {
 	mockBackendCommits(t, testRev)
 
 	// Global test data that we reuse in every test
-	userID := insertTestUser(t, dbconn.Global, "perm-level-user", false)
+	userID := ct.CreateTestUser(t, false).ID
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	repoStore := db.NewRepoStoreWith(cstore)

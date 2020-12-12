@@ -38,7 +38,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	clock := func() time.Time { return now }
 	store := store.NewWithClock(dbconn.Global, clock)
 
-	admin := createTestUser(t, true)
+	admin := ct.CreateTestUser(t, true)
 
 	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
@@ -600,8 +600,8 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 
 	store := store.New(dbconn.Global)
 
-	admin := createTestUser(t, true)
-	user := createTestUser(t, false)
+	admin := ct.CreateTestUser(t, true)
+	user := ct.CreateTestUser(t, false)
 
 	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 	repo := rs[0]
@@ -724,8 +724,8 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 
 	store := store.New(dbconn.Global)
 
-	admin := createTestUser(t, true)
-	user := createTestUser(t, false)
+	admin := ct.CreateTestUser(t, true)
+	user := ct.CreateTestUser(t, false)
 
 	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 	gitHubRepo := rs[0]

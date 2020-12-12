@@ -31,7 +31,7 @@ func TestChangesetResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "campaign-resolver", true)
+	userID := ct.CreateTestUser(t, true).ID
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }

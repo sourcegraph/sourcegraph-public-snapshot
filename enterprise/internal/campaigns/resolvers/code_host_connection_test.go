@@ -30,7 +30,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 
 	pruneUserCredentials(t)
 
-	userID := insertTestUser(t, dbconn.Global, "code-host-connection-resolver", false)
+	userID := ct.CreateTestUser(t, false).ID
 
 	cstore := store.New(dbconn.Global)
 

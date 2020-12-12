@@ -42,10 +42,9 @@ func TestCampaignSpecResolver(t *testing.T) {
 	}
 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
-	username := "campaign-spec-by-id-user-name"
 	orgname := "test-org"
-	userID := insertTestUser(t, dbconn.Global, username, false)
-	adminID := insertTestUser(t, dbconn.Global, "alice", true)
+	userID := ct.CreateTestUser(t, false).ID
+	adminID := ct.CreateTestUser(t, true).ID
 	org, err := db.Orgs.Create(ctx, orgname, nil)
 	if err != nil {
 		t.Fatal(err)

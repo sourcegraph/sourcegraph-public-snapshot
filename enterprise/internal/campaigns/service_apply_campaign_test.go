@@ -27,10 +27,10 @@ func TestServiceApplyCampaign(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	admin := createTestUser(t, true)
+	admin := ct.CreateTestUser(t, true)
 	adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
 
-	user := createTestUser(t, false)
+	user := ct.CreateTestUser(t, false)
 	userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
 	repos, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 4)
@@ -149,7 +149,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			t.Run("apply campaign spec with same name but different namespace", func(t *testing.T) {
-				user2 := createTestUser(t, false)
+				user2 := ct.CreateTestUser(t, false)
 				campaignSpec2 := createCampaignSpec(t, ctx, store, "campaign2", user2.ID)
 
 				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{

@@ -90,8 +90,8 @@ func TestCreateCampaignSpec(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	username := "create-campaign-spec-username"
-	userID := insertTestUser(t, dbconn.Global, username, true)
+	user := ct.CreateTestUser(t, true)
+	userID := user.ID
 
 	cstore := store.New(dbconn.Global)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
@@ -147,7 +147,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 		ExpiresAt:     have.ExpiresAt,
 		OriginalInput: rawSpec,
 		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
-		ApplyURL:      fmt.Sprintf("/users/%s/campaigns/apply/%s", username, have.ID),
+		ApplyURL:      fmt.Sprintf("/users/%s/campaigns/apply/%s", user.Username, have.ID),
 		Namespace:     apitest.UserOrg{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
 		Creator:       &apitest.User{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
 		ChangesetSpecs: apitest.ChangesetSpecConnection{
@@ -206,7 +206,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "create-changeset-spec", true)
+	userID := ct.CreateTestUser(t, true).ID
 
 	cstore := store.New(dbconn.Global)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
@@ -279,7 +279,7 @@ func TestApplyCampaign(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "apply-campaign", true)
+	userID := ct.CreateTestUser(t, true).ID
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -442,7 +442,7 @@ func TestCreateCampaign(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "apply-campaign", true)
+	userID := ct.CreateTestUser(t, true).ID
 
 	cstore := store.New(dbconn.Global)
 
@@ -504,8 +504,8 @@ func TestMoveCampaign(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	username := "move-campaign-username"
-	userID := insertTestUser(t, dbconn.Global, username, true)
+	user := ct.CreateTestUser(t, true)
+	userID := user.ID
 
 	org, err := db.Orgs.Create(ctx, "org", nil)
 	if err != nil {
@@ -558,7 +558,7 @@ func TestMoveCampaign(t *testing.T) {
 		t.Fatalf("unexpected name (-want +got):\n%s", diff)
 	}
 
-	wantURL := fmt.Sprintf("/users/%s/campaigns/%s", username, newCampaignName)
+	wantURL := fmt.Sprintf("/users/%s/campaigns/%s", user.Username, newCampaignName)
 	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
 		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
 	}
@@ -782,7 +782,7 @@ func TestCreateCampaignsCredential(t *testing.T) {
 
 	pruneUserCredentials(t)
 
-	userID := insertTestUser(t, dbconn.Global, "create-credential", false)
+	userID := ct.CreateTestUser(t, false).ID
 
 	cstore := store.New(dbconn.Global)
 
@@ -836,7 +836,7 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 
 	pruneUserCredentials(t)
 
-	userID := insertTestUser(t, dbconn.Global, "delete-credential", true)
+	userID := ct.CreateTestUser(t, true).ID
 
 	cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
 		Domain:              db.UserCredentialDomainCampaigns,

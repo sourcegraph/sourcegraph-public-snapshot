@@ -38,9 +38,9 @@ func TestServicePermissionLevels(t *testing.T) {
 	s := store.New(dbconn.Global)
 	svc := NewService(s, nil)
 
-	admin := createTestUser(t, true)
-	user := createTestUser(t, false)
-	otherUser := createTestUser(t, false)
+	admin := ct.CreateTestUser(t, true)
+	user := ct.CreateTestUser(t, false)
+	otherUser := ct.CreateTestUser(t, false)
 
 	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
@@ -167,8 +167,8 @@ func TestService(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	admin := createTestUser(t, true)
-	user := createTestUser(t, false)
+	admin := ct.CreateTestUser(t, true)
+	user := ct.CreateTestUser(t, false)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -612,7 +612,7 @@ func TestService(t *testing.T) {
 		t.Run("new user namespace", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
 
-			user2 := createTestUser(t, false)
+			user2 := ct.CreateTestUser(t, false)
 
 			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceUserID: user2.ID}
 			moved, err := svc.MoveCampaign(ctx, opts)
@@ -632,7 +632,7 @@ func TestService(t *testing.T) {
 		t.Run("new user namespace but current user is not admin", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
 
-			user2 := createTestUser(t, false)
+			user2 := ct.CreateTestUser(t, false)
 
 			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceUserID: user2.ID}
 
