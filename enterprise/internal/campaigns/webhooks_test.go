@@ -23,6 +23,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -85,13 +86,13 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		store := NewStoreWithClock(db, clock)
+		s := store.NewWithClock(db, clock)
 
 		spec := &campaigns.CampaignSpec{
 			NamespaceUserID: userID,
 			UserID:          userID,
 		}
-		if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
@@ -105,7 +106,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			CampaignSpecID:   spec.ID,
 		}
 
-		err = store.CreateCampaign(ctx, campaign)
+		err = s.CreateCampaign(ctx, campaign)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -118,7 +119,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			CampaignIDs:         []int64{campaign.ID},
 		}
 
-		err = store.CreateChangeset(ctx, changeset)
+		err = s.CreateChangeset(ctx, changeset)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -132,12 +133,12 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		})
 		defer state.Unmock()
 
-		err = SyncChangeset(ctx, repoStore, store, githubSrc, githubRepo, changeset)
+		err = SyncChangeset(ctx, repoStore, s, githubSrc, githubRepo, changeset)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		hook := NewGitHubWebhook(store, repoStore, clock)
+		hook := NewGitHubWebhook(s, repoStore, clock)
 
 		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/github/*.json")
 		if err != nil {
@@ -179,7 +180,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 					}
 				}
 
-				have, _, err := store.ListChangesetEvents(ctx, ListChangesetEventsOpts{})
+				have, _, err := s.ListChangesetEvents(ctx, store.ListChangesetEventsOpts{})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -264,13 +265,13 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		store := NewStoreWithClock(db, clock)
+		s := store.NewWithClock(db, clock)
 
 		spec := &campaigns.CampaignSpec{
 			NamespaceUserID: userID,
 			UserID:          userID,
 		}
-		if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
@@ -284,7 +285,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			CampaignSpecID:   spec.ID,
 		}
 
-		err = store.CreateCampaign(ctx, campaign)
+		err = s.CreateCampaign(ctx, campaign)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -314,17 +315,17 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		defer state.Unmock()
 
 		for _, ch := range changesets {
-			if err := store.CreateChangeset(ctx, ch); err != nil {
+			if err := s.CreateChangeset(ctx, ch); err != nil {
 				t.Fatal(err)
 			}
 
-			err = SyncChangeset(ctx, repoStore, store, bitbucketSource, bitbucketRepo, ch)
+			err = SyncChangeset(ctx, repoStore, s, bitbucketSource, bitbucketRepo, ch)
 			if err != nil {
 				t.Fatal(err)
 			}
 		}
 
-		hook := NewBitbucketServerWebhook(store, repoStore, clock, "testhook")
+		hook := NewBitbucketServerWebhook(s, repoStore, clock, "testhook")
 
 		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/bitbucketserver/*.json")
 		if err != nil {
@@ -361,7 +362,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 					}
 				}
 
-				have, _, err := store.ListChangesetEvents(ctx, ListChangesetEventsOpts{})
+				have, _, err := s.ListChangesetEvents(ctx, store.ListChangesetEventsOpts{})
 				if err != nil {
 					t.Fatal(err)
 				}

@@ -1,4 +1,4 @@
-package campaigns
+package store
 
 import (
 	"context"
@@ -8,10 +8,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
-func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
+func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock ct.Clock) {
 	issueComment := &github.IssueComment{
 		DatabaseID: 443827703,
 		Author: github.Actor{
@@ -23,8 +24,8 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ rep
 		AuthorAssociation:   "MEMBER",
 		Body:                "> Just to be sure: you mean the \"searchFilters\" \"Filters\" should be lowercase, not the \"Search Filters\" from the description, right?\r\n\r\nNo, the prose “Search Filters” should have the F lowercased to fit with our style guide preference for sentence case over title case. (Can’t find this comment on the GitHub mobile interface anymore so quoting the email.)",
 		URL:                 "https://github.com/sourcegraph/sourcegraph/pull/999#issuecomment-443827703",
-		CreatedAt:           clock.now(),
-		UpdatedAt:           clock.now(),
+		CreatedAt:           clock.Now(),
+		UpdatedAt:           clock.Now(),
 		IncludesCreatedEdit: false,
 	}
 
@@ -41,7 +42,7 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ rep
 				ChangesetID: int64(i + 1),
 				Kind:        kinds[i],
 				Key:         issueComment.Key(),
-				CreatedAt:   clock.now(),
+				CreatedAt:   clock.Now(),
 				Metadata:    issueComment,
 			}
 
@@ -64,8 +65,8 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ rep
 			want := have.Clone()
 
 			want.ID = have.ID
-			want.CreatedAt = clock.now()
-			want.UpdatedAt = clock.now()
+			want.CreatedAt = clock.Now()
+			want.UpdatedAt = clock.Now()
 
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)

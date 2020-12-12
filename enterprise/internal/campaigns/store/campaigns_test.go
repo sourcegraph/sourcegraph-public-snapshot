@@ -1,4 +1,4 @@
-package campaigns
+package store
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -15,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
-func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock clock) {
+func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock ct.Clock) {
 	campaigns := make([]*cmpgn.Campaign, 0, 3)
 
 	t.Run("Create", func(t *testing.T) {
@@ -25,11 +26,11 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				Description: "All the Javascripts are belong to us",
 
 				InitialApplierID: int32(i) + 50,
-				LastAppliedAt:    clock.now(),
+				LastAppliedAt:    clock.Now(),
 				LastApplierID:    int32(i) + 99,
 
 				CampaignSpecID: 1742 + int64(i),
-				ClosedAt:       clock.now(),
+				ClosedAt:       clock.Now(),
 			}
 
 			if i == 0 {
@@ -56,8 +57,8 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			}
 
 			want.ID = have.ID
-			want.CreatedAt = clock.now()
-			want.UpdatedAt = clock.now()
+			want.CreatedAt = clock.Now()
+			want.UpdatedAt = clock.Now()
 
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
@@ -77,8 +78,8 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
 
-		changeset := createChangeset(t, ctx, s, testChangesetOpts{
-			campaignIDs: []int64{campaigns[0].ID},
+		changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+			CampaignIDs: []int64{campaigns[0].ID},
 		})
 
 		count, err = s.CountCampaigns(ctx, CountCampaignsOpts{ChangesetID: changeset.ID})
@@ -154,8 +155,8 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 	t.Run("List", func(t *testing.T) {
 		t.Run("By ChangesetID", func(t *testing.T) {
 			for i := 1; i <= len(campaigns); i++ {
-				changeset := createChangeset(t, ctx, s, testChangesetOpts{
-					campaignIDs: []int64{campaigns[i-1].ID},
+				changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+					CampaignIDs: []int64{campaigns[i-1].ID},
 				})
 				opts := ListCampaignsOpts{ChangesetID: changeset.ID}
 
@@ -340,10 +341,10 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				c.NamespaceOrgID++
 			}
 
-			clock.add(1 * time.Second)
+			clock.Add(1 * time.Second)
 
 			want := c
-			want.UpdatedAt = clock.now()
+			want.UpdatedAt = clock.Now()
 
 			have := c.Clone()
 			if err := s.UpdateCampaign(ctx, have); err != nil {
@@ -476,10 +477,10 @@ func TestUserDeleteCascades(t *testing.T) {
 
 	dbtesting.SetupGlobalTestDB(t)
 
-	orgID := insertTestOrg(t, dbconn.Global)
-	user := createTestUser(t, false)
+	orgID := ct.InsertTestOrg(t, dbconn.Global)
+	user := createTestUser(t)
 
-	t.Run("user delete", storeTest(dbconn.Global, func(t *testing.T, ctx context.Context, store *Store, rs repos.Store, clock clock) {
+	t.Run("user delete", storeTest(dbconn.Global, func(t *testing.T, ctx context.Context, store *Store, rs repos.Store, clock ct.Clock) {
 		// Set up two campaigns and specs: one in the user's namespace (which
 		// should be deleted when the user is hard deleted), and one that is
 		// merely created by the user (which should remain).
@@ -504,7 +505,7 @@ func TestUserDeleteCascades(t *testing.T) {
 			NamespaceUserID:  user.ID,
 			InitialApplierID: user.ID,
 			LastApplierID:    user.ID,
-			LastAppliedAt:    clock.now(),
+			LastAppliedAt:    clock.Now(),
 			CampaignSpecID:   ownedSpec.ID,
 		}
 		if err := store.CreateCampaign(ctx, ownedCampaign); err != nil {
@@ -516,7 +517,7 @@ func TestUserDeleteCascades(t *testing.T) {
 			NamespaceOrgID:   orgID,
 			InitialApplierID: user.ID,
 			LastApplierID:    user.ID,
-			LastAppliedAt:    clock.now(),
+			LastAppliedAt:    clock.Now(),
 			CampaignSpecID:   ownedSpec.ID,
 		}
 		if err := store.CreateCampaign(ctx, unownedCampaign); err != nil {

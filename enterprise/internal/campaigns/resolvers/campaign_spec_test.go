@@ -11,8 +11,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -31,12 +31,11 @@ func TestCampaignSpecResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := ee.NewStore(dbconn.Global)
+	cstore := store.New(dbconn.Global)
+	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
-	if err := reposStore.InsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
+	if err := rstore.InsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
@@ -57,7 +56,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 	}
 	spec.UserID = userID
 	spec.NamespaceOrgID = orgID
-	if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+	if err := cstore.CreateCampaignSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -69,7 +68,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 	changesetSpec.UserID = userID
 	changesetSpec.RepoID = repo.ID
 
-	if err := store.CreateChangesetSpec(ctx, changesetSpec); err != nil {
+	if err := cstore.CreateChangesetSpec(ctx, changesetSpec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -81,11 +80,11 @@ func TestCampaignSpecResolver(t *testing.T) {
 		LastAppliedAt:    time.Now(),
 		CampaignSpecID:   spec.ID,
 	}
-	if err := store.CreateCampaign(ctx, matchingCampaign); err != nil {
+	if err := cstore.CreateCampaign(ctx, matchingCampaign); err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,7 +168,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 	}
 	sup.UserID = userID
 	sup.NamespaceOrgID = orgID
-	if err := store.CreateCampaignSpec(ctx, sup); err != nil {
+	if err := cstore.CreateCampaignSpec(ctx, sup); err != nil {
 		t.Fatal(err)
 	}
 
@@ -193,7 +192,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 	// If the superseding campaign spec was created by a different user, then we
 	// shouldn't return it.
 	sup.UserID = adminID
-	if err := store.UpdateCampaignSpec(ctx, sup); err != nil {
+	if err := cstore.UpdateCampaignSpec(ctx, sup); err != nil {
 		t.Fatal(err)
 	}
 

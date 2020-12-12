@@ -1,4 +1,4 @@
-package campaigns
+package store
 
 import (
 	"context"
@@ -30,14 +30,14 @@ type Store struct {
 	now func() time.Time
 }
 
-// NewStore returns a new Store backed by the given db.
-func NewStore(db dbutil.DB) *Store {
-	return NewStoreWithClock(db, timeutil.Now)
+// New returns a new Store backed by the given db.
+func New(db dbutil.DB) *Store {
+	return NewWithClock(db, timeutil.Now)
 }
 
-// NewStoreWithClock returns a new Store backed by the given db and
+// NewWithClock returns a new Store backed by the given db and
 // clock for timestamps.
-func NewStoreWithClock(db dbutil.DB, clock func() time.Time) *Store {
+func NewWithClock(db dbutil.DB, clock func() time.Time) *Store {
 	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock}
 }
 

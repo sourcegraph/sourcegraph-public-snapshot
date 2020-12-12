@@ -1,4 +1,4 @@
-package campaigns
+package store
 
 import (
 	"context"

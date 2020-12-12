@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -35,7 +36,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := NewStoreWithClock(dbconn.Global, clock)
+	store := store.NewWithClock(dbconn.Global, clock)
 
 	admin := createTestUser(t, true)
 
@@ -62,7 +63,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	}
 
 	type testCase struct {
-		changeset      testChangesetOpts
+		changeset      ct.TestChangesetOpts
 		hasCurrentSpec bool
 		plan           *ReconcilerPlan
 
@@ -81,23 +82,23 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 		wantGitserverCommit bool
 
-		wantChangeset       changesetAssertions
+		wantChangeset       ct.ChangesetAssertions
 		wantNonRetryableErr bool
 	}
 
 	tests := map[string]testCase{
 		"noop": {
 			hasCurrentSpec: true,
-			changeset:      testChangesetOpts{},
+			changeset:      ct.TestChangesetOpts{},
 			plan:           &ReconcilerPlan{Ops: ReconcilerOperations{}},
 
-			wantChangeset: changesetAssertions{},
+			wantChangeset: ct.ChangesetAssertions{},
 		},
 		"import": {
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
-				unsynced:         true,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalID:       githubPR.ID,
+				Unsynced:         true,
 			},
 			plan: &ReconcilerPlan{
 				Ops: ReconcilerOperations{campaigns.ReconcilerOperationImport},
@@ -105,22 +106,22 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 			wantLoadFromCodeHost: true,
 
-			wantChangeset: changesetAssertions{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
-				externalBranch:   githubHeadRef,
-				externalState:    campaigns.ChangesetExternalStateOpen,
-				unsynced:         false,
-				title:            githubPR.Title,
-				body:             githubPR.Body,
-				diffStat:         state.DiffStat,
+			wantChangeset: ct.ChangesetAssertions{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalID:       githubPR.ID,
+				ExternalBranch:   githubHeadRef,
+				ExternalState:    campaigns.ChangesetExternalStateOpen,
+				Unsynced:         false,
+				Title:            githubPR.Title,
+				Body:             githubPR.Body,
+				DiffStat:         state.DiffStat,
 			},
 		},
 		"import and not-found error": {
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
-				unsynced:         true,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalID:       githubPR.ID,
+				Unsynced:         true,
 			},
 			plan: &ReconcilerPlan{
 				Ops: ReconcilerOperations{campaigns.ReconcilerOperationImport},
@@ -133,8 +134,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		},
 		"push and publish": {
 			hasCurrentSpec: true,
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
 			plan: &ReconcilerPlan{
 				Ops: ReconcilerOperations{
@@ -146,14 +147,14 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			wantCreateOnCodeHost: true,
 			wantGitserverCommit:  true,
 
-			wantChangeset: changesetAssertions{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
-				externalBranch:   githubHeadRef,
-				externalState:    campaigns.ChangesetExternalStateOpen,
-				title:            githubPR.Title,
-				body:             githubPR.Body,
-				diffStat:         state.DiffStat,
+			wantChangeset: ct.ChangesetAssertions{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalID:       githubPR.ID,
+				ExternalBranch:   githubHeadRef,
+				ExternalState:    campaigns.ChangesetExternalStateOpen,
+				Title:            githubPR.Title,
+				Body:             githubPR.Body,
+				DiffStat:         state.DiffStat,
 			},
 		},
 		"retry push and publish": {
@@ -161,11 +162,11 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			// that the changeset already exists.
 			alreadyExists:  true,
 			hasCurrentSpec: true,
-			changeset: testChangesetOpts{
+			changeset: ct.TestChangesetOpts{
 				// The reconciler resets the failure message before passing the
 				// changeset to the executor.
 				// We simulate that here by not setting FailureMessage.
-				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
 			plan: &ReconcilerPlan{
 				Ops: ReconcilerOperations{
@@ -180,22 +181,22 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			wantUpdateOnCodeHost: true,
 			wantGitserverCommit:  true,
 
-			wantChangeset: changesetAssertions{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
-				externalBranch:   githubHeadRef,
-				externalState:    campaigns.ChangesetExternalStateOpen,
-				title:            githubPR.Title,
-				body:             githubPR.Body,
-				diffStat:         state.DiffStat,
+			wantChangeset: ct.ChangesetAssertions{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalID:       githubPR.ID,
+				ExternalBranch:   githubHeadRef,
+				ExternalState:    campaigns.ChangesetExternalStateOpen,
+				Title:            githubPR.Title,
+				Body:             githubPR.Body,
+				DiffStat:         state.DiffStat,
 			},
 		},
 		"update": {
 			hasCurrentSpec: true,
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       "12345",
-				externalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalID:       "12345",
+				ExternalBranch:   "head-ref-on-github",
 			},
 
 			plan: &ReconcilerPlan{
@@ -207,24 +208,24 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			// We don't want a new commit, only an update on the code host.
 			wantUpdateOnCodeHost: true,
 
-			wantChangeset: changesetAssertions{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
-				externalBranch:   githubHeadRef,
-				externalState:    campaigns.ChangesetExternalStateOpen,
-				diffStat:         state.DiffStat,
+			wantChangeset: ct.ChangesetAssertions{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalID:       githubPR.ID,
+				ExternalBranch:   githubHeadRef,
+				ExternalState:    campaigns.ChangesetExternalStateOpen,
+				DiffStat:         state.DiffStat,
 				// We update the title/body but want the title/body returned by the code host.
-				title: githubPR.Title,
-				body:  githubPR.Body,
+				Title: githubPR.Title,
+				Body:  githubPR.Body,
 			},
 		},
 		"push sleep sync": {
 			hasCurrentSpec: true,
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       "12345",
-				externalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
-				externalState:    campaigns.ChangesetExternalStateOpen,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalID:       "12345",
+				ExternalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
+				ExternalState:    campaigns.ChangesetExternalStateOpen,
 			},
 
 			plan: &ReconcilerPlan{
@@ -238,22 +239,22 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			wantGitserverCommit:  true,
 			wantLoadFromCodeHost: true,
 
-			wantChangeset: changesetAssertions{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalState:    campaigns.ChangesetExternalStateOpen,
-				externalID:       githubPR.ID,
-				externalBranch:   githubHeadRef,
-				diffStat:         state.DiffStat,
+			wantChangeset: ct.ChangesetAssertions{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalState:    campaigns.ChangesetExternalStateOpen,
+				ExternalID:       githubPR.ID,
+				ExternalBranch:   githubHeadRef,
+				DiffStat:         state.DiffStat,
 			},
 		},
 		"close open changeset": {
 			hasCurrentSpec: true,
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
-				externalBranch:   githubHeadRef,
-				externalState:    campaigns.ChangesetExternalStateOpen,
-				closing:          true,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalID:       githubPR.ID,
+				ExternalBranch:   githubHeadRef,
+				ExternalState:    campaigns.ChangesetExternalStateOpen,
+				Closing:          true,
 			},
 			plan: &ReconcilerPlan{
 				Ops: ReconcilerOperations{
@@ -265,27 +266,27 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 			wantCloseOnCodeHost: true,
 
-			wantChangeset: changesetAssertions{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				closing:          false,
+			wantChangeset: ct.ChangesetAssertions{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				Closing:          false,
 
-				externalID:     closedGitHubPR.ID,
-				externalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
-				externalState:  campaigns.ChangesetExternalStateClosed,
+				ExternalID:     closedGitHubPR.ID,
+				ExternalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
+				ExternalState:  campaigns.ChangesetExternalStateClosed,
 
-				title:    closedGitHubPR.Title,
-				body:     closedGitHubPR.Body,
-				diffStat: state.DiffStat,
+				Title:    closedGitHubPR.Title,
+				Body:     closedGitHubPR.Body,
+				DiffStat: state.DiffStat,
 			},
 		},
 		"close closed changeset": {
 			hasCurrentSpec: true,
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
-				externalBranch:   githubHeadRef,
-				externalState:    campaigns.ChangesetExternalStateClosed,
-				closing:          true,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalID:       githubPR.ID,
+				ExternalBranch:   githubHeadRef,
+				ExternalState:    campaigns.ChangesetExternalStateClosed,
+				Closing:          true,
 			},
 			plan: &ReconcilerPlan{
 				Ops: ReconcilerOperations{
@@ -300,22 +301,22 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			// Should be a noop
 			wantCloseOnCodeHost: false,
 
-			wantChangeset: changesetAssertions{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				closing:          false,
+			wantChangeset: ct.ChangesetAssertions{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				Closing:          false,
 
-				externalID:     closedGitHubPR.ID,
-				externalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
-				externalState:  campaigns.ChangesetExternalStateClosed,
+				ExternalID:     closedGitHubPR.ID,
+				ExternalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
+				ExternalState:  campaigns.ChangesetExternalStateClosed,
 			},
 		},
 		"reopening closed changeset without updates": {
 			hasCurrentSpec: true,
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
-				externalBranch:   githubHeadRef,
-				externalState:    campaigns.ChangesetExternalStateClosed,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalID:       githubPR.ID,
+				ExternalBranch:   githubHeadRef,
+				ExternalState:    campaigns.ChangesetExternalStateClosed,
 			},
 			plan: &ReconcilerPlan{
 				Ops: ReconcilerOperations{
@@ -325,22 +326,22 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 			wantReopenOnCodeHost: true,
 
-			wantChangeset: changesetAssertions{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
+			wantChangeset: ct.ChangesetAssertions{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
 
-				externalID:     githubPR.ID,
-				externalBranch: githubHeadRef,
-				externalState:  campaigns.ChangesetExternalStateOpen,
+				ExternalID:     githubPR.ID,
+				ExternalBranch: githubHeadRef,
+				ExternalState:  campaigns.ChangesetExternalStateOpen,
 
-				title:    githubPR.Title,
-				body:     githubPR.Body,
-				diffStat: state.DiffStat,
+				Title:    githubPR.Title,
+				Body:     githubPR.Body,
+				DiffStat: state.DiffStat,
 			},
 		},
 		"push and publishdraft": {
 			hasCurrentSpec: true,
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
 
 			plan: &ReconcilerPlan{
@@ -355,23 +356,23 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			wantCreateDraftOnCodeHost: true,
 			wantGitserverCommit:       true,
 
-			wantChangeset: changesetAssertions{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
+			wantChangeset: ct.ChangesetAssertions{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
 
-				externalID:     draftGithubPR.ID,
-				externalBranch: git.EnsureRefPrefix(draftGithubPR.HeadRefName),
-				externalState:  campaigns.ChangesetExternalStateDraft,
+				ExternalID:     draftGithubPR.ID,
+				ExternalBranch: git.EnsureRefPrefix(draftGithubPR.HeadRefName),
+				ExternalState:  campaigns.ChangesetExternalStateDraft,
 
-				title:    draftGithubPR.Title,
-				body:     draftGithubPR.Body,
-				diffStat: state.DiffStat,
+				Title:    draftGithubPR.Title,
+				Body:     draftGithubPR.Body,
+				DiffStat: state.DiffStat,
 			},
 		},
 		"undraft": {
 			hasCurrentSpec: true,
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalState:    campaigns.ChangesetExternalStateDraft,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalState:    campaigns.ChangesetExternalStateDraft,
 			},
 
 			plan: &ReconcilerPlan{
@@ -382,16 +383,16 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 			wantUndraftOnCodeHost: true,
 
-			wantChangeset: changesetAssertions{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
+			wantChangeset: ct.ChangesetAssertions{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
 
-				externalID:     githubPR.ID,
-				externalBranch: githubHeadRef,
-				externalState:  campaigns.ChangesetExternalStateOpen,
+				ExternalID:     githubPR.ID,
+				ExternalBranch: githubHeadRef,
+				ExternalState:  campaigns.ChangesetExternalStateOpen,
 
-				title:    githubPR.Title,
-				body:     githubPR.Body,
-				diffStat: state.DiffStat,
+				Title:    githubPR.Title,
+				Body:     githubPR.Body,
+				DiffStat: state.DiffStat,
 			},
 		},
 	}
@@ -416,13 +417,13 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 			// Create the changeset with correct associations.
 			changesetOpts := tc.changeset
-			changesetOpts.repo = rs[0].ID
-			changesetOpts.campaignIDs = []int64{campaign.ID}
-			changesetOpts.ownedByCampaign = campaign.ID
+			changesetOpts.Repo = rs[0].ID
+			changesetOpts.CampaignIDs = []int64{campaign.ID}
+			changesetOpts.OwnedByCampaign = campaign.ID
 			if changesetSpec != nil {
-				changesetOpts.currentSpec = changesetSpec.ID
+				changesetOpts.CurrentSpec = changesetSpec.ID
 			}
-			changeset := createChangeset(t, ctx, store, changesetOpts)
+			changeset := ct.CreateChangeset(t, ctx, store, changesetOpts)
 
 			// Setup gitserver dependency.
 			gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
@@ -510,12 +511,12 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 			// Assert that the changeset in the database looks like we want
 			assertions := tc.wantChangeset
-			assertions.repo = rs[0].ID
-			assertions.ownedByCampaign = changesetOpts.ownedByCampaign
+			assertions.Repo = rs[0].ID
+			assertions.OwnedByCampaign = changesetOpts.OwnedByCampaign
 			if changesetSpec != nil {
-				assertions.currentSpec = changesetSpec.ID
+				assertions.CurrentSpec = changesetSpec.ID
 			}
-			reloadAndAssertChangeset(t, ctx, store, changeset, assertions)
+			ct.ReloadAndAssertChangeset(t, ctx, store, changeset, assertions)
 
 			// Assert that the body included a backlink if needed. We'll do
 			// more detailed unit tests of decorateChangesetBody elsewhere;
@@ -548,18 +549,18 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := NewStore(dbconn.Global)
+	store := store.New(dbconn.Global)
 
 	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
 	commonHeadRef := "refs/heads/collision"
 
 	// Create a published changeset.
-	createChangeset(t, ctx, store, testChangesetOpts{
-		repo:             rs[0].ID,
-		publicationState: campaigns.ChangesetPublicationStatePublished,
-		externalBranch:   commonHeadRef,
-		externalID:       "123",
+	ct.CreateChangeset(t, ctx, store, ct.TestChangesetOpts{
+		Repo:             rs[0].ID,
+		PublicationState: campaigns.ChangesetPublicationStatePublished,
+		ExternalBranch:   commonHeadRef,
+		ExternalID:       "123",
 	})
 
 	// Build a changeset that would be pushed on the same HeadRef/ExternalBranch.
@@ -568,7 +569,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 		headRef:   commonHeadRef,
 		published: true,
 	})
-	changeset := buildChangeset(testChangesetOpts{repo: rs[0].ID})
+	changeset := ct.BuildChangeset(ct.TestChangesetOpts{Repo: rs[0].ID})
 
 	executor := &executor{
 		tx:      store,
@@ -597,7 +598,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := NewStore(dbconn.Global)
+	store := store.New(dbconn.Global)
 
 	admin := createTestUser(t, true)
 	user := createTestUser(t, false)
@@ -721,7 +722,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := NewStore(dbconn.Global)
+	store := store.New(dbconn.Global)
 
 	admin := createTestUser(t, true)
 	user := createTestUser(t, false)

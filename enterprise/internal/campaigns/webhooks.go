@@ -16,6 +16,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -42,7 +43,7 @@ var (
 )
 
 type Webhook struct {
-	Store *Store
+	Store *store.Store
 	Repos repos.Store
 	Now   func() time.Time
 
@@ -58,7 +59,7 @@ type PR struct {
 
 func (h Webhook) getRepoForPR(
 	ctx context.Context,
-	tx *Store,
+	tx *store.Store,
 	pr PR,
 	externalServiceID string,
 ) (*types.Repo, error) {
@@ -120,7 +121,7 @@ func (h Webhook) upsertChangesetEvent(
 	pr PR,
 	ev keyer,
 ) (err error) {
-	var tx *Store
+	var tx *store.Store
 	if tx, err = h.Store.Transact(ctx); err != nil {
 		return err
 	}
@@ -132,13 +133,13 @@ func (h Webhook) upsertChangesetEvent(
 		return nil
 	}
 
-	cs, err := tx.GetChangeset(ctx, GetChangesetOpts{
+	cs, err := tx.GetChangeset(ctx, store.GetChangesetOpts{
 		RepoID:              r.ID,
 		ExternalID:          strconv.FormatInt(pr.ID, 10),
 		ExternalServiceType: h.ServiceType,
 	})
 	if err != nil {
-		if err == ErrNoResults {
+		if err == store.ErrNoResults {
 			err = nil // Nothing to do
 		}
 		return err
@@ -154,13 +155,13 @@ func (h Webhook) upsertChangesetEvent(
 		Metadata:    ev,
 	}
 
-	existing, err := tx.GetChangesetEvent(ctx, GetChangesetEventOpts{
+	existing, err := tx.GetChangesetEvent(ctx, store.GetChangesetEventOpts{
 		ChangesetID: cs.ID,
 		Kind:        event.Kind,
 		Key:         event.Key,
 	})
 
-	if err != nil && err != ErrNoResults {
+	if err != nil && err != store.ErrNoResults {
 		return err
 	}
 
@@ -184,7 +185,7 @@ func (h Webhook) upsertChangesetEvent(
 	// The webhook may have caused the external state of the changeset to change
 	// so we need to update it. We need all events as we may have received more than just the
 	// event we are currently handling
-	events, _, err := tx.ListChangesetEvents(ctx, ListChangesetEventsOpts{
+	events, _, err := tx.ListChangesetEvents(ctx, store.ListChangesetEventsOpts{
 		ChangesetIDs: []int64{cs.ID},
 	})
 	SetDerivedState(ctx, cs, events)
@@ -211,7 +212,7 @@ type BitbucketServerWebhook struct {
 	configCache map[int64]*schema.BitbucketServerConnection
 }
 
-func NewGitHubWebhook(store *Store, repos repos.Store, now func() time.Time) *GitHubWebhook {
+func NewGitHubWebhook(store *store.Store, repos repos.Store, now func() time.Time) *GitHubWebhook {
 	return &GitHubWebhook{&Webhook{store, repos, now, extsvc.TypeGitHub}}
 }
 
@@ -767,7 +768,7 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 	}
 }
 
-func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time, name string) *BitbucketServerWebhook {
+func NewBitbucketServerWebhook(store *store.Store, repos repos.Store, now func() time.Time, name string) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
 		Webhook:     &Webhook{store, repos, now, extsvc.TypeBitbucketServer},
 		Name:        name,

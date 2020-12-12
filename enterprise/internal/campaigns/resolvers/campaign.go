@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -18,7 +19,7 @@ import (
 var _ graphqlbackend.CampaignResolver = &campaignResolver{}
 
 type campaignResolver struct {
-	store       *ee.Store
+	store       *store.Store
 	httpFactory *httpcli.Factory
 	*campaigns.Campaign
 
@@ -75,7 +76,7 @@ func (r *campaignResolver) LastAppliedAt() graphqlbackend.DateTime {
 }
 
 func (r *campaignResolver) SpecCreator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	spec, err := r.store.GetCampaignSpec(ctx, ee.GetCampaignSpecOpts{
+	spec, err := r.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{
 		ID: r.Campaign.CampaignSpecID,
 	})
 	if err != nil {
@@ -142,7 +143,7 @@ func (r *campaignResolver) ClosedAt() *graphqlbackend.DateTime {
 }
 
 func (r *campaignResolver) ChangesetsStats(ctx context.Context) (graphqlbackend.ChangesetsStatsResolver, error) {
-	stats, err := r.store.GetChangesetsStats(ctx, ee.GetChangesetsStatsOpts{
+	stats, err := r.store.GetChangesetsStats(ctx, store.GetChangesetsStatsOpts{
 		CampaignID: r.Campaign.ID,
 	})
 	if err != nil {
@@ -174,7 +175,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	resolvers := []graphqlbackend.ChangesetCountsResolver{}
 
 	publishedState := campaigns.ChangesetPublicationStatePublished
-	opts := ee.ListChangesetsOpts{
+	opts := store.ListChangesetsOpts{
 		CampaignID:       r.Campaign.ID,
 		PublicationState: &publishedState,
 		// Only load fully-synced changesets, so that the data we use for computing the changeset counts is complete.
@@ -201,7 +202,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		end = args.To.Time.UTC()
 	}
 
-	eventsOpts := ee.ListChangesetEventsOpts{ChangesetIDs: cs.IDs(), Kinds: ee.RequiredEventTypesForHistory}
+	eventsOpts := store.ListChangesetEventsOpts{ChangesetIDs: cs.IDs(), Kinds: ee.RequiredEventTypesForHistory}
 	es, _, err := r.store.ListChangesetEvents(ctx, eventsOpts)
 	if err != nil {
 		return resolvers, err
@@ -222,7 +223,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
 	changesetsConnection := &changesetsConnectionResolver{
 		store: r.store,
-		opts: ee.ListChangesetsOpts{
+		opts: store.ListChangesetsOpts{
 			CampaignID: r.Campaign.ID,
 		},
 		optsSafe: true,
@@ -252,7 +253,7 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 }
 
 func (r *campaignResolver) CurrentSpec(ctx context.Context) (graphqlbackend.CampaignSpecResolver, error) {
-	campaignSpec, err := r.store.GetCampaignSpec(ctx, ee.GetCampaignSpecOpts{ID: r.Campaign.CampaignSpecID})
+	campaignSpec, err := r.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: r.Campaign.CampaignSpecID})
 	if err != nil {
 		// This spec should always exist, so fail hard on not found errors as well.
 		return nil, err

@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -18,10 +18,10 @@ import (
 var _ graphqlbackend.ChangesetSpecConnectionResolver = &changesetSpecConnectionResolver{}
 
 type changesetSpecConnectionResolver struct {
-	store       *ee.Store
+	store       *store.Store
 	httpFactory *httpcli.Factory
 
-	opts           ee.ListChangesetSpecsOpts
+	opts           store.ListChangesetSpecsOpts
 	campaignSpecID int64
 
 	// Cache results because they are used by multiple fields
@@ -33,7 +33,7 @@ type changesetSpecConnectionResolver struct {
 }
 
 func (r *changesetSpecConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := r.store.CountChangesetSpecs(ctx, ee.CountChangesetSpecsOpts{
+	count, err := r.store.CountChangesetSpecs(ctx, store.CountChangesetSpecsOpts{
 		CampaignSpecID: r.campaignSpecID,
 	})
 	if err != nil {

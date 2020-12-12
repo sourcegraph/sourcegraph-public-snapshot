@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -29,7 +30,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := NewStore(dbconn.Global)
+	store := store.New(dbconn.Global)
 
 	admin := createTestUser(t, true)
 
@@ -48,11 +49,11 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	githubHeadRef := git.EnsureRefPrefix(githubPR.HeadRefName)
 
 	type testCase struct {
-		changeset    testChangesetOpts
+		changeset    ct.TestChangesetOpts
 		currentSpec  *testSpecOpts
 		previousSpec *testSpecOpts
 
-		wantChangeset changesetAssertions
+		wantChangeset ct.ChangesetAssertions
 	}
 
 	tests := map[string]testCase{
@@ -72,21 +73,21 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 				commitMessage: "old message",
 			},
 
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       "12345",
-				externalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalID:       "12345",
+				ExternalBranch:   "head-ref-on-github",
 			},
 
-			wantChangeset: changesetAssertions{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalID:       githubPR.ID,
-				externalBranch:   githubHeadRef,
-				externalState:    campaigns.ChangesetExternalStateOpen,
-				diffStat:         state.DiffStat,
+			wantChangeset: ct.ChangesetAssertions{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalID:       githubPR.ID,
+				ExternalBranch:   githubHeadRef,
+				ExternalState:    campaigns.ChangesetExternalStateOpen,
+				DiffStat:         state.DiffStat,
 				// We update the title/body but want the title/body returned by the code host.
-				title: githubPR.Title,
-				body:  githubPR.Body,
+				Title: githubPR.Title,
+				Body:  githubPR.Body,
 			},
 		},
 	}
@@ -113,16 +114,16 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 
 			// Create the changeset with correct associations.
 			changesetOpts := tc.changeset
-			changesetOpts.repo = rs[0].ID
-			changesetOpts.campaignIDs = []int64{campaign.ID}
-			changesetOpts.ownedByCampaign = campaign.ID
+			changesetOpts.Repo = rs[0].ID
+			changesetOpts.CampaignIDs = []int64{campaign.ID}
+			changesetOpts.OwnedByCampaign = campaign.ID
 			if changesetSpec != nil {
-				changesetOpts.currentSpec = changesetSpec.ID
+				changesetOpts.CurrentSpec = changesetSpec.ID
 			}
 			if previousSpec != nil {
-				changesetOpts.previousSpec = previousSpec.ID
+				changesetOpts.PreviousSpec = previousSpec.ID
 			}
-			changeset := createChangeset(t, ctx, store, changesetOpts)
+			changeset := ct.CreateChangeset(t, ctx, store, changesetOpts)
 
 			// Setup gitserver dependency.
 			gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
@@ -154,11 +155,11 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 
 			// Assert that the changeset in the database looks like we want
 			assertions := tc.wantChangeset
-			assertions.repo = rs[0].ID
-			assertions.ownedByCampaign = changesetOpts.ownedByCampaign
-			assertions.currentSpec = changesetSpec.ID
-			assertions.previousSpec = previousSpec.ID
-			reloadAndAssertChangeset(t, ctx, store, changeset, assertions)
+			assertions.Repo = rs[0].ID
+			assertions.OwnedByCampaign = changesetOpts.OwnedByCampaign
+			assertions.CurrentSpec = changesetSpec.ID
+			assertions.PreviousSpec = previousSpec.ID
+			ct.ReloadAndAssertChangeset(t, ctx, store, changeset, assertions)
 		})
 
 		// Clean up database.
@@ -173,14 +174,14 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		name           string
 		previousSpec   testSpecOpts
 		currentSpec    testSpecOpts
-		changeset      testChangesetOpts
+		changeset      ct.TestChangesetOpts
 		wantOperations ReconcilerOperations
 	}{
 		{
 			name:        "publish true",
 			currentSpec: testSpecOpts{published: true},
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
 			wantOperations: ReconcilerOperations{
 				campaigns.ReconcilerOperationPush,
@@ -190,25 +191,25 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		{
 			name:        "publish as draft",
 			currentSpec: testSpecOpts{published: "draft"},
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
 			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublishDraft},
 		},
 		{
 			name:        "publish false",
 			currentSpec: testSpecOpts{published: false},
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
 			wantOperations: ReconcilerOperations{},
 		},
 		{
 			name:        "draft but unsupported",
 			currentSpec: testSpecOpts{published: "draft"},
-			changeset: testChangesetOpts{
-				externalServiceType: extsvc.TypeBitbucketServer,
-				publicationState:    campaigns.ChangesetPublicationStateUnpublished,
+			changeset: ct.TestChangesetOpts{
+				ExternalServiceType: extsvc.TypeBitbucketServer,
+				PublicationState:    campaigns.ChangesetPublicationStateUnpublished,
 			},
 			// should be a noop
 			wantOperations: ReconcilerOperations{},
@@ -217,8 +218,8 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			name:         "draft to publish true",
 			previousSpec: testSpecOpts{published: "draft"},
 			currentSpec:  testSpecOpts{published: true},
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
 			},
 			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationUndraft},
 		},
@@ -226,8 +227,8 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			name:         "draft to publish true on unpublished changeset",
 			previousSpec: testSpecOpts{published: "draft"},
 			currentSpec:  testSpecOpts{published: true},
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStateUnpublished,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
 			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublish},
 		},
@@ -235,8 +236,8 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			name:         "title changed on published changeset",
 			previousSpec: testSpecOpts{published: true, title: "Before"},
 			currentSpec:  testSpecOpts{published: true, title: "After"},
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
 			},
 			wantOperations: ReconcilerOperations{campaigns.ReconcilerOperationUpdate},
 		},
@@ -244,8 +245,8 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			name:         "commit diff changed on published changeset",
 			previousSpec: testSpecOpts{published: true, commitDiff: "testDiff"},
 			currentSpec:  testSpecOpts{published: true, commitDiff: "newTestDiff"},
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
 			},
 			wantOperations: ReconcilerOperations{
 				campaigns.ReconcilerOperationPush,
@@ -257,8 +258,8 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			name:         "commit message changed on published changeset",
 			previousSpec: testSpecOpts{published: true, commitMessage: "old message"},
 			currentSpec:  testSpecOpts{published: true, commitMessage: "new message"},
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
 			},
 			wantOperations: ReconcilerOperations{
 				campaigns.ReconcilerOperationPush,
@@ -270,9 +271,9 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			name:         "commit diff changed on merge changeset",
 			previousSpec: testSpecOpts{published: true, commitDiff: "testDiff"},
 			currentSpec:  testSpecOpts{published: true, commitDiff: "newTestDiff"},
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalState:    campaigns.ChangesetExternalStateMerged,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalState:    campaigns.ChangesetExternalStateMerged,
 			},
 			// should be a noop
 			wantOperations: ReconcilerOperations{},
@@ -281,11 +282,11 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			name:         "changeset closed-and-detached will reopen",
 			previousSpec: testSpecOpts{published: true},
 			currentSpec:  testSpecOpts{published: true},
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalState:    campaigns.ChangesetExternalStateClosed,
-				ownedByCampaign:  1234,
-				campaignIDs:      []int64{1234},
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalState:    campaigns.ChangesetExternalStateClosed,
+				OwnedByCampaign:  1234,
+				CampaignIDs:      []int64{1234},
 			},
 			wantOperations: ReconcilerOperations{
 				campaigns.ReconcilerOperationReopen,
@@ -295,13 +296,13 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			name:         "closing",
 			previousSpec: testSpecOpts{published: true},
 			currentSpec:  testSpecOpts{published: true},
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalState:    campaigns.ChangesetExternalStateOpen,
-				ownedByCampaign:  1234,
-				campaignIDs:      []int64{1234},
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalState:    campaigns.ChangesetExternalStateOpen,
+				OwnedByCampaign:  1234,
+				CampaignIDs:      []int64{1234},
 				// Important bit:
-				closing: true,
+				Closing: true,
 			},
 			wantOperations: ReconcilerOperations{
 				campaigns.ReconcilerOperationClose,
@@ -311,13 +312,13 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			name:         "closing already-closed changeset",
 			previousSpec: testSpecOpts{published: true},
 			currentSpec:  testSpecOpts{published: true},
-			changeset: testChangesetOpts{
-				publicationState: campaigns.ChangesetPublicationStatePublished,
-				externalState:    campaigns.ChangesetExternalStateClosed,
-				ownedByCampaign:  1234,
-				campaignIDs:      []int64{1234},
+			changeset: ct.TestChangesetOpts{
+				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				ExternalState:    campaigns.ChangesetExternalStateClosed,
+				OwnedByCampaign:  1234,
+				CampaignIDs:      []int64{1234},
 				// Important bit:
-				closing: true,
+				Closing: true,
 			},
 			wantOperations: ReconcilerOperations{
 				// TODO: This should probably be a noop in the future
@@ -334,7 +335,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			}
 
 			currentSpec := buildChangesetSpec(t, tc.currentSpec)
-			cs := buildChangeset(tc.changeset)
+			cs := ct.BuildChangeset(tc.changeset)
 
 			plan, err := DetermineReconcilerPlan(previousSpec, currentSpec, cs)
 			if err != nil {
@@ -398,12 +399,12 @@ func TestDecorateChangesetBody(t *testing.T) {
 	defer func() { internalClient = api.InternalClient }()
 
 	fs := &FakeStore{
-		GetCampaignMock: func(ctx context.Context, opts GetCampaignOpts) (*campaigns.Campaign, error) {
+		GetCampaignMock: func(ctx context.Context, opts store.GetCampaignOpts) (*campaigns.Campaign, error) {
 			return &campaigns.Campaign{ID: 1234, Name: "reconciler-test-campaign"}, nil
 		},
 	}
 
-	cs := buildChangeset(testChangesetOpts{ownedByCampaign: 1234})
+	cs := ct.BuildChangeset(ct.TestChangesetOpts{OwnedByCampaign: 1234})
 
 	body := "body"
 	rcs := &repos.Changeset{Body: body, Changeset: cs}

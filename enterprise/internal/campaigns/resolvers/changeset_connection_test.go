@@ -10,8 +10,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -30,7 +30,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 
 	userID := insertTestUser(t, dbconn.Global, "changeset-connection-resolver", false)
 
-	store := ee.NewStore(dbconn.Global)
+	cstore := store.New(dbconn.Global)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
@@ -44,7 +44,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+	if err := cstore.CreateCampaignSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -56,60 +56,60 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		LastAppliedAt:    time.Now(),
 		CampaignSpecID:   spec.ID,
 	}
-	if err := store.CreateCampaign(ctx, campaign); err != nil {
+	if err := cstore.CreateCampaign(ctx, campaign); err != nil {
 		t.Fatal(err)
 	}
 
-	changeset1 := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                repo.ID,
-		externalServiceType: "github",
-		publicationState:    campaigns.ChangesetPublicationStateUnpublished,
-		externalReviewState: campaigns.ChangesetReviewStatePending,
-		ownedByCampaign:     campaign.ID,
-		campaign:            campaign.ID,
+	changeset1 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		ExternalServiceType: "github",
+		PublicationState:    campaigns.ChangesetPublicationStateUnpublished,
+		ExternalReviewState: campaigns.ChangesetReviewStatePending,
+		OwnedByCampaign:     campaign.ID,
+		Campaign:            campaign.ID,
 	})
 
-	changeset2 := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                repo.ID,
-		externalServiceType: "github",
-		externalID:          "12345",
-		externalBranch:      "open-pr",
-		externalState:       campaigns.ChangesetExternalStateOpen,
-		publicationState:    campaigns.ChangesetPublicationStatePublished,
-		externalReviewState: campaigns.ChangesetReviewStatePending,
-		ownedByCampaign:     campaign.ID,
-		campaign:            campaign.ID,
+	changeset2 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		ExternalServiceType: "github",
+		ExternalID:          "12345",
+		ExternalBranch:      "open-pr",
+		ExternalState:       campaigns.ChangesetExternalStateOpen,
+		PublicationState:    campaigns.ChangesetPublicationStatePublished,
+		ExternalReviewState: campaigns.ChangesetReviewStatePending,
+		OwnedByCampaign:     campaign.ID,
+		Campaign:            campaign.ID,
 	})
 
-	changeset3 := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                repo.ID,
-		externalServiceType: "github",
-		externalID:          "56789",
-		externalBranch:      "merged-pr",
-		externalState:       campaigns.ChangesetExternalStateMerged,
-		publicationState:    campaigns.ChangesetPublicationStatePublished,
-		externalReviewState: campaigns.ChangesetReviewStatePending,
-		ownedByCampaign:     campaign.ID,
-		campaign:            campaign.ID,
+	changeset3 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		ExternalServiceType: "github",
+		ExternalID:          "56789",
+		ExternalBranch:      "merged-pr",
+		ExternalState:       campaigns.ChangesetExternalStateMerged,
+		PublicationState:    campaigns.ChangesetPublicationStatePublished,
+		ExternalReviewState: campaigns.ChangesetReviewStatePending,
+		OwnedByCampaign:     campaign.ID,
+		Campaign:            campaign.ID,
 	})
-	changeset4 := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                inaccessibleRepo.ID,
-		externalServiceType: "github",
-		externalID:          "987651",
-		externalBranch:      "open-hidden-pr",
-		externalState:       campaigns.ChangesetExternalStateOpen,
-		publicationState:    campaigns.ChangesetPublicationStatePublished,
-		externalReviewState: campaigns.ChangesetReviewStatePending,
-		ownedByCampaign:     campaign.ID,
-		campaign:            campaign.ID,
+	changeset4 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:                inaccessibleRepo.ID,
+		ExternalServiceType: "github",
+		ExternalID:          "987651",
+		ExternalBranch:      "open-hidden-pr",
+		ExternalState:       campaigns.ChangesetExternalStateOpen,
+		PublicationState:    campaigns.ChangesetPublicationStatePublished,
+		ExternalReviewState: campaigns.ChangesetReviewStatePending,
+		OwnedByCampaign:     campaign.ID,
+		Campaign:            campaign.ID,
 	})
 
-	addChangeset(t, ctx, store, changeset1, campaign.ID)
-	addChangeset(t, ctx, store, changeset2, campaign.ID)
-	addChangeset(t, ctx, store, changeset3, campaign.ID)
-	addChangeset(t, ctx, store, changeset4, campaign.ID)
+	addChangeset(t, ctx, cstore, changeset1, campaign.ID)
+	addChangeset(t, ctx, cstore, changeset2, campaign.ID)
+	addChangeset(t, ctx, cstore, changeset3, campaign.ID)
+	addChangeset(t, ctx, cstore, changeset4, campaign.ID)
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

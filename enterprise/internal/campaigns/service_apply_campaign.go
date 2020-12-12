@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -47,7 +48,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		tr.Finish()
 	}()
 
-	campaignSpec, err := s.store.GetCampaignSpec(ctx, GetCampaignSpecOpts{
+	campaignSpec, err := s.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{
 		RandID: opts.CampaignSpecRandID,
 	})
 	if err != nil {
@@ -115,7 +116,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	// them.
 
 	// Load the mapping between ChangesetSpecs and existing Changesets in the target campaign.
-	mappings, err := tx.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
+	mappings, err := tx.GetRewirerMappings(ctx, store.GetRewirerMappingsOpts{
 		CampaignSpecID: campaign.CampaignSpecID,
 		CampaignID:     campaign.ID,
 	})
