@@ -968,11 +968,11 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 9,
-                "scopes": "metaRevisionWildcard"
+                "scopes": "metaRevisionIncludeGlobMarker"
               },
               {
                 "startIndex": 10,
-                "scopes": "metaRevisionPathLike"
+                "scopes": "metaRevisionReferencePath"
               },
               {
                 "startIndex": 21,
@@ -992,19 +992,11 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 23,
-                "scopes": "metaRevisionWildcard"
-              },
-              {
-                "startIndex": 24,
-                "scopes": "metaRevisionLabel"
-              },
-              {
-                "startIndex": 24,
-                "scopes": "metaRevisionNegate"
+                "scopes": "metaRevisionExcludeGlobMarker"
               },
               {
                 "startIndex": 25,
-                "scopes": "metaRevisionPathLike"
+                "scopes": "metaRevisionReferencePath"
               },
               {
                 "startIndex": 43,

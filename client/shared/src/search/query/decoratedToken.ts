@@ -81,7 +81,8 @@ export interface MetaField extends BaseMetaToken {
 }
 
 /**
- * A token that is labeled and interpreted as repository revision syntax.
+ * A token that is labeled and interpreted as repository revision syntax in Sourcegraph. Note: there
+ * are syntactic differences from pure Git ref syntax.
  * See https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions.
  */
 export interface MetaRevision extends BaseMetaToken {
@@ -89,13 +90,25 @@ export interface MetaRevision extends BaseMetaToken {
     kind: MetaRevisionKind
 }
 
-export enum MetaRevisionKind {
-    Separator = 'Separator', // is a ':'
-    Label = 'Label', // a branch or tag
+export type MetaRevisionKind = MetaGitRevision | MetaSourcegraphRevision
+
+/**
+ * A custom revision syntax that is only valid in Sourcegraph search queries.
+ */
+export enum MetaSourcegraphRevision {
+    Separator = 'Separator', // a ':' that separates revision patterns
+    IncludeGlobMarker = 'IncludeGlobMarker', // a '*' at the beginning of a revision pattern to mark it as an "include" glob pattern.
+    ExcludeGlobMarker = 'ExcludeGlobMarker', // a '*!' at the beginning of a revision pattern to mark it as an "exclude" glob pattern.
+}
+
+/**
+ * Revision syntax that correspond to git glob pattern syntax, git refs (e.g., branches), or git objects (e.g., commits, tags).
+ */
+export enum MetaGitRevision {
     CommitHash = 'CommitHash', // a commit hash
-    PathLike = 'PathLike', // a path-like pattern, e.g., the refs/heads/ part in *refs/heads/*
+    Label = 'Label', // a catch-all string that refers to a git object or ref, like a branch name or tag
+    ReferencePath = 'ReferencePath', // the part of a revision that refers to a git reference path, like refs/heads/ part in refs/heads/*
     Wildcard = 'Wildcard', // a '*' in glob syntax
-    Negate = 'Negate', // a '!' in glob syntax
 }
 
 /**
@@ -328,42 +341,51 @@ const mapRevisionMeta = (token: Literal): DecoratedToken[] => {
     }
 
     // Appends a decorated token to the list of tokens, and resets the current accumulator to be empty.
-    const appendDecoratedToken = (endIndex: number): void => {
+    const appendDecoratedToken = (endIndex: number, kind?: MetaRevisionKind): void => {
         const value = accumulator.join('')
-        let kind
-        switch (value) {
-            case ':':
-                kind = MetaRevisionKind.Separator
-                break
-            case '*':
-                kind = MetaRevisionKind.Wildcard
-                break
-            case '!':
-                kind = MetaRevisionKind.Negate
-                break
-            default:
-                if (value.includes('/')) {
-                    kind = MetaRevisionKind.PathLike
-                } else if (value.match(/^[\dA-Fa-f]+$/) && value.length > 6) {
-                    kind = MetaRevisionKind.CommitHash
-                } else {
-                    kind = MetaRevisionKind.Label
-                }
+        if (kind === undefined) {
+            if (value.includes('refs/')) {
+                kind = MetaGitRevision.ReferencePath
+            } else if (value.match(/^[\dA-Fa-f]+$/) && value.length > 6) {
+                kind = MetaGitRevision.CommitHash
+            } else {
+                kind = MetaGitRevision.Label
+            }
         }
         const range = { start: offset + endIndex - value.length, end: offset + endIndex }
         decorated.push({ type: 'metaRevision', kind, value, range })
         accumulator = []
     }
 
+    // Return true when we're at the beginning of a revision: at the beginning of the string,
+    // or when the preceding character is a ':' revision separator.
+    const atRevision = (index: number): boolean =>
+        index === 0 || (token.value[index - 1] !== null && token.value[index - 1] === ':')
+
     while (token.value[start] !== undefined) {
         current = nextChar()
         switch (current) {
+            case '*': {
+                appendDecoratedToken(start - 1) // Push the running revision string up to this special syntax.
+                if (atRevision(start - 1) && token.value[start] !== '!') {
+                    // Demarcates that this is an "include" glob pattern that follows.
+                    accumulator.push(current)
+                    appendDecoratedToken(start, MetaSourcegraphRevision.IncludeGlobMarker)
+                } else if (atRevision(start - 1) && token.value[start] === '!') {
+                    // Demarcates that this is an "exclude" glob pattern that follows.
+                    current = nextChar() // Consume the '!'
+                    accumulator.push('*!')
+                    appendDecoratedToken(start, MetaSourcegraphRevision.ExcludeGlobMarker)
+                } else {
+                    accumulator.push(current)
+                    appendDecoratedToken(start, MetaGitRevision.Wildcard)
+                }
+                break
+            }
             case ':':
-            case '*':
-            case '!':
-                appendDecoratedToken(start - 1) // append up to this special character
+                appendDecoratedToken(start - 1)
                 accumulator.push(current)
-                appendDecoratedToken(start)
+                appendDecoratedToken(start, MetaSourcegraphRevision.Separator)
                 break
             default:
                 accumulator.push(current)
