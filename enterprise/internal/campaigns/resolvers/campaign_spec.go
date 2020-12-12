@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -193,7 +193,7 @@ func (r *campaignSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.Di
 }
 
 func (r *campaignSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlbackend.CampaignResolver, error) {
-	svc := ee.NewService(r.store, r.httpFactory)
+	svc := service.NewService(r.store, r.httpFactory)
 	campaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, r.campaignSpec)
 	if err != nil {
 		return nil, err
@@ -215,7 +215,7 @@ func (r *campaignSpecResolver) SupersedingCampaignSpec(ctx context.Context) (gra
 		return nil, err
 	}
 
-	svc := ee.NewService(r.store, r.httpFactory)
+	svc := service.NewService(r.store, r.httpFactory)
 	newest, err := svc.GetNewestCampaignSpec(ctx, r.store, r.campaignSpec, actor.FromContext(ctx).UID)
 	if err != nil {
 		return nil, err

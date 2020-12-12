@@ -400,8 +400,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			// Create necessary associations.
-			campaignSpec := createCampaignSpec(t, ctx, store, "executor-test-campaign", admin.ID)
-			campaign := createCampaign(t, ctx, store, "executor-test-campaign", admin.ID, campaignSpec.ID)
+			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "executor-test-campaign", admin.ID)
+			campaign := ct.CreateCampaign(t, ctx, store, "executor-test-campaign", admin.ID, campaignSpec.ID)
 
 			// Create the changesetSpec with associations wired up correctly.
 			var changesetSpec *campaigns.ChangesetSpec
@@ -609,9 +609,9 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 	repo := rs[0]
 
-	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
-	adminCampaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
-	userCampaign := createCampaign(t, ctx, store, "reconciler-test-campaign", user.ID, campaignSpec.ID)
+	campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
+	adminCampaign := ct.CreateCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
+	userCampaign := ct.CreateCampaign(t, ctx, store, "reconciler-test-campaign", user.ID, campaignSpec.ID)
 
 	t.Run("imported changeset uses global token", func(t *testing.T) {
 		a, err := (&executor{
@@ -843,8 +843,8 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				defer func() { db.UserCredentials.Delete(ctx, cred.ID) }()
 			}
 
-			campaignSpec := createCampaignSpec(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
-			campaign := createCampaign(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, campaignSpec.ID)
+			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
+			campaign := ct.CreateCampaign(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, campaignSpec.ID)
 
 			ex := &executor{
 				ch: &campaigns.Changeset{

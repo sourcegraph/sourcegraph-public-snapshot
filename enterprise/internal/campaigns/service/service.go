@@ -1,4 +1,4 @@
-package campaigns
+package service
 
 import (
 	"context"
@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // NewService returns a Service.
@@ -438,20 +437,6 @@ func checkNamespaceAccess(ctx context.Context, namespaceUserID, namespaceOrgID i
 
 // ErrNoNamespace is returned by checkNamespaceAccess if no valid namespace ID is given.
 var ErrNoNamespace = errors.New("no namespace given")
-
-// checkRepoSupported checks whether the given repository is supported by campaigns
-// and if not it returns an error.
-func checkRepoSupported(repo *types.Repo) error {
-	if campaigns.IsRepoSupported(&repo.ExternalRepo) {
-		return nil
-	}
-
-	return errors.Errorf(
-		"External service type %s of repository %q is currently not supported for use with campaigns",
-		repo.ExternalRepo.ServiceType,
-		repo.Name,
-	)
-}
 
 // FetchUsernameForBitbucketServerToken fetches the username associated with a
 // Bitbucket server token.

@@ -1,4 +1,4 @@
-package campaigns
+package service
 
 import (
 	"context"
@@ -685,7 +685,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("GetCampaignMatchingCampaignSpec", func(t *testing.T) {
-		campaignSpec := createCampaignSpec(t, ctx, s, "matching-campaign-spec", admin.ID)
+		campaignSpec := ct.CreateCampaignSpec(t, ctx, s, "matching-campaign-spec", admin.ID)
 
 		haveCampaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, campaignSpec)
 		if err != nil {
@@ -723,8 +723,8 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("GetNewestCampaignSpec", func(t *testing.T) {
-		older := createCampaignSpec(t, ctx, s, "superseding", user.ID)
-		newer := createCampaignSpec(t, ctx, s, "superseding", user.ID)
+		older := ct.CreateCampaignSpec(t, ctx, s, "superseding", user.ID)
+		newer := ct.CreateCampaignSpec(t, ctx, s, "superseding", user.ID)
 
 		for name, in := range map[string]*campaigns.CampaignSpec{
 			"older": older,

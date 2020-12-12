@@ -12,6 +12,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/rewirer"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -343,7 +345,7 @@ func (c *changesetSpecPreviewer) PlanForChangesetSpec(ctx context.Context, chang
 		return nil, err
 	}
 	// And then dry-run the rewirer to simulate how the changeset would look like after an _apply_ operation.
-	rewirer := ee.NewChangesetRewirer(store.RewirerMappings{mapping}, campaign, repos.NewDBStore(c.store.DB(), sql.TxOptions{}))
+	rewirer := rewirer.NewChangesetRewirer(store.RewirerMappings{mapping}, campaign, repos.NewDBStore(c.store.DB(), sql.TxOptions{}))
 	changesets, err := rewirer.Rewire(ctx)
 	if err != nil {
 		return nil, err
@@ -399,7 +401,7 @@ func (c *changesetSpecPreviewer) mappingForChangesetSpec(ctx context.Context, id
 
 func (c *changesetSpecPreviewer) computeCampaign(ctx context.Context) (*campaigns.Campaign, error) {
 	c.campaignOnce.Do(func() {
-		svc := ee.NewService(c.store, nil)
+		svc := service.NewService(c.store, nil)
 		campaignSpec, err := c.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: c.campaignSpecID})
 		if err != nil {
 			c.campaignErr = err

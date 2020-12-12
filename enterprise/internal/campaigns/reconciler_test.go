@@ -95,9 +95,9 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			// Create necessary associations.
-			previousCampaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
-			campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
-			campaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
+			previousCampaignSpec := ct.CreateCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
+			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
+			campaign := ct.CreateCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
 
 			// Create the specs.
 			specOpts := *tc.currentSpec
