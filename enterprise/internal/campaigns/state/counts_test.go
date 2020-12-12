@@ -1471,20 +1471,6 @@ func setExternalDeletedAt(c *campaigns.Changeset, t time.Time) *campaigns.Change
 	return c
 }
 
-func setDraft(c *campaigns.Changeset) *campaigns.Changeset {
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
-		m.IsDraft = true
-	case *gitlab.MergeRequest:
-		m.WorkInProgress = true
-	}
-	return c
-}
-
-func timeToUnixMilli(t time.Time) int {
-	return int(t.UnixNano()) / int(time.Millisecond)
-}
-
 func event(t *testing.T, ti time.Time, kind campaigns.ChangesetEventKind, id int64) *campaigns.ChangesetEvent {
 	ch := &campaigns.ChangesetEvent{ChangesetID: id, Kind: kind}
 
