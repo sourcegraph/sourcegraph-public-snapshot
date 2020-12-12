@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -30,7 +29,7 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	setupGlobalTestDB(t)
 
 	userID := ct.CreateTestUser(t, true).ID
 
@@ -40,7 +39,7 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	repoStore := db.NewRepoStoreWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
+	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-event-connection-test", newGitHubExternalService(t, rstore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +90,8 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 	})
 
 	// Create ChangesetEvents from the timeline items in the metadata.
-	if err := cstore.UpsertChangesetEvents(ctx, changeset.Events()...); err != nil {
+	events := changeset.Events()
+	if err := cstore.UpsertChangesetEvents(ctx, events...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -105,12 +105,12 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 	changesetAPIID := string(marshalChangesetID(changeset.ID))
 	nodes := []apitest.ChangesetEvent{
 		{
-			ID:        string(marshalChangesetEventID(1)),
+			ID:        string(marshalChangesetEventID(events[0].ID)),
 			Changeset: struct{ ID string }{ID: changesetAPIID},
 			CreatedAt: marshalDateTime(t, now),
 		},
 		{
-			ID:        string(marshalChangesetEventID(2)),
+			ID:        string(marshalChangesetEventID(events[1].ID)),
 			Changeset: struct{ ID string }{ID: changesetAPIID},
 			CreatedAt: marshalDateTime(t, now),
 		},

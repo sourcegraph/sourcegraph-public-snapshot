@@ -2,6 +2,7 @@ package testing
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
@@ -10,6 +11,7 @@ import (
 )
 
 var CreateTestUser = func() func(*testing.T, bool) *types.User {
+	var mu sync.Mutex
 	count := 0
 
 	// This function replicates the minium amount of work required by
@@ -18,8 +20,13 @@ var CreateTestUser = func() func(*testing.T, bool) *types.User {
 	return func(t *testing.T, siteAdmin bool) *types.User {
 		t.Helper()
 
+		mu.Lock()
+		num := count
+		count++
+		mu.Unlock()
+
 		user := &types.User{
-			Username:    fmt.Sprintf("testuser-%d", count),
+			Username:    fmt.Sprintf("testuser-%d", num),
 			DisplayName: "testuser",
 		}
 
@@ -37,8 +44,6 @@ var CreateTestUser = func() func(*testing.T, bool) *types.User {
 		if err != nil {
 			t.Fatalf("failed to create name: %s", err)
 		}
-
-		count++
 
 		return user
 	}

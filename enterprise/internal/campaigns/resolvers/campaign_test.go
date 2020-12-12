@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -26,10 +25,10 @@ func TestCampaignResolver(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	setupGlobalTestDB(t)
 
 	userID := ct.CreateTestUser(t, true).ID
-	org, err := db.Orgs.Create(ctx, "test-org", nil)
+	org, err := db.Orgs.Create(ctx, "test-campaign-resolver-org", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

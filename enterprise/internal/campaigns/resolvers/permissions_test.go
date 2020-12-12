@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -36,9 +35,10 @@ func TestPermissionLevels(t *testing.T) {
 		t.Skip()
 	}
 
-	dbtesting.SetupGlobalTestDB(t)
+	setupGlobalTestDB(t)
 
 	cstore := store.New(dbconn.Global)
+	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	sr := &Resolver{store: cstore}
 	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {
@@ -57,10 +57,8 @@ func TestPermissionLevels(t *testing.T) {
 	adminID := ct.CreateTestUser(t, true).ID
 	userID := ct.CreateTestUser(t, false).ID
 
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	repoStore := db.NewRepoStoreWith(cstore)
-
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
+	repo := newGitHubTestRepo("github.com/sourcegraph/permission-levels-test", newGitHubExternalService(t, rstore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -756,7 +754,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		t.Skip()
 	}
 
-	dbtesting.SetupGlobalTestDB(t)
+	setupGlobalTestDB(t)
 
 	cstore := store.New(dbconn.Global)
 	sr := &Resolver{store: cstore}
@@ -779,7 +777,7 @@ func TestRepositoryPermissions(t *testing.T) {
 	// Create 2 repositories
 	repos := make([]*types.Repo, 0, 2)
 	for i := 0; i < cap(repos); i++ {
-		name := fmt.Sprintf("github.com/sourcegraph/repo-%d", i)
+		name := fmt.Sprintf("github.com/sourcegraph/test-repository-permissions-repo-%d", i)
 		r := newGitHubTestRepo(name, newGitHubExternalService(t, reposStore))
 		if err := repoStore.Create(ctx, r); err != nil {
 			t.Fatal(err)

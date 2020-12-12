@@ -11,7 +11,6 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
@@ -470,7 +469,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 }
 
 func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock ct.Clock) {
-	orgID := ct.InsertTestOrg(t, dbconn.Global)
+	orgID := ct.InsertTestOrg(t, "user-delete-cascades")
 	user := ct.CreateTestUser(t, false)
 
 	t.Run("User delete", func(t *testing.T) {
