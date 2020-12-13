@@ -65,6 +65,7 @@ export enum MetaRegexpKind {
  */
 export interface MetaStructural extends BaseMetaToken {
     type: 'metaStructural'
+    groupRange?: CharacterRange
     kind: MetaStructuralKind
 }
 
@@ -441,6 +442,7 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                         type: 'metaStructural',
                         kind: MetaStructuralKind.RegexpHole,
                         range: { start: range.start, end: variableStart },
+                        groupRange: range,
                         value: ':[',
                     },
                     {
@@ -465,6 +467,7 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                         type: 'metaStructural',
                         kind: MetaStructuralKind.RegexpHole,
                         range: { start: patternRange.end, end: patternRange.end + 1 },
+                        groupRange: range,
                         value: ']',
                     },
                 ] as DecoratedToken[])
@@ -488,7 +491,8 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                     }
                     start = start + 2
                     // Append the value of '...' after advancing.
-                    appendDecoratedToken(start - 3, MetaStructuralKind.Hole)
+                    token.push('...')
+                    appendDecoratedToken(start, MetaStructuralKind.Hole)
                     continue
                 }
                 token.push('.')
