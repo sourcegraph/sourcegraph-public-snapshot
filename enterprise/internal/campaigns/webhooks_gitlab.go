@@ -124,11 +124,6 @@ func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw str
 	return es[0], nil
 }
 
-type stateMergeRequestEvent interface {
-	keyer
-	webhooks.MergeRequestEventContainer
-}
-
 // handleEvent is essentially a router: it dispatches based on the event type
 // to perform whatever changeset action is appropriate for that event.
 func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *types.ExternalService, event interface{}) *httpError {
@@ -174,7 +169,7 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *types.ExternalS
 	case *webhooks.MergeRequestApprovedEvent,
 		*webhooks.MergeRequestUnapprovedEvent,
 		*webhooks.MergeRequestUpdateEvent:
-		if err := h.enqueueChangesetSyncFromEvent(ctx, esID, e.(webhooks.MergeRequestEventContainer).ToEvent()); err != nil {
+		if err := h.enqueueChangesetSyncFromEvent(ctx, esID, e.(webhooks.MergeRequestEventCommonContainer).ToEventCommon()); err != nil {
 			return &httpError{
 				code: http.StatusInternalServerError,
 				err:  err,
@@ -182,12 +177,14 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *types.ExternalS
 		}
 		return nil
 
-	// All other merge request events are state events.
-	case stateMergeRequestEvent:
-		if err := h.handleMergeRequestStateEvent(ctx, esID, e); err != nil {
+	case webhooks.UpsertableWebhookEvent:
+		eventCommon := e.ToEventCommon()
+		event := e.ToEvent()
+		pr := gitlabToPR(&eventCommon.Project, eventCommon.MergeRequest)
+		if err := h.upsertChangesetEvent(ctx, esID, pr, event); err != nil {
 			return &httpError{
 				code: http.StatusInternalServerError,
-				err:  err,
+				err:  errors.Wrap(err, "upserting changeset event"),
 			}
 		}
 		return nil
@@ -227,15 +224,6 @@ func (h *GitLabWebhook) enqueueChangesetSyncFromEvent(ctx context.Context, esID 
 		return errors.Wrap(err, "enqueuing changeset sync")
 	}
 
-	return nil
-}
-
-func (h *GitLabWebhook) handleMergeRequestStateEvent(ctx context.Context, esID string, event stateMergeRequestEvent) error {
-	e := event.ToEvent()
-	pr := gitlabToPR(&e.Project, e.MergeRequest)
-	if err := h.upsertChangesetEvent(ctx, esID, pr, event); err != nil {
-		return errors.Wrap(err, "upserting changeset event")
-	}
 	return nil
 }
 

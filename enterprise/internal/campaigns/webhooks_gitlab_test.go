@@ -650,35 +650,6 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			})
 		})
 
-		t.Run("handleMergeRequestStateEvent changeset upsert error", func(t *testing.T) {
-			// The success path is well tested in the ServeHTTP tests above, so
-			// here we're just going to exercise the upsert error path.
-			//
-			// It's actually fairly difficult to induce
-			// Webhook.upsertChangesetEvent to return an error: if it can't
-			// find the repo or changeset, it returns nil and swallows the
-			// error so that the code host doesn't see an error. However, we
-			// can return an error when it attempts to begin a transaction and
-			// that will generate a real error that we can use to exercise the
-			// error path.
-			s, rstore, clock := gitLabTestSetup(t, db)
-			s = store.NewWithClock(&noNestingTx{s.DB()}, clock.Now)
-			h := NewGitLabWebhook(s, rstore, clock.Now)
-
-			event := &webhooks.MergeRequestCloseEvent{
-				MergeRequestEventCommon: webhooks.MergeRequestEventCommon{
-					EventCommon: webhooks.EventCommon{
-						Project: gitlab.ProjectCommon{ID: 12345},
-					},
-					MergeRequest: &gitlab.MergeRequest{IID: gitlab.ID(12345)},
-				},
-			}
-
-			if err := h.handleMergeRequestStateEvent(ctx, "ignored", event); err == nil {
-				t.Error("unexpected nil error")
-			}
-		})
-
 		t.Run("handlePipelineEvent", func(t *testing.T) {
 			// As with the handleMergeRequestStateEvent test above, we don't
 			// really need to test the success path here. However, there's one

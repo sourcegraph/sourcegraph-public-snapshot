@@ -164,6 +164,8 @@
 // 1528395764_pg_stat_statement_ext.up.sql (68B)
 // 1528395765_changeset_rewirer_views.down.sql (138B)
 // 1528395765_changeset_rewirer_views.up.sql (1.43kB)
+// 1528395766_drop_old_gitlab_events.down.sql (40B)
+// 1528395766_drop_old_gitlab_events.up.sql (413B)
 
 package migrations
 
@@ -3512,6 +3514,46 @@ func _1528395765_changeset_rewirer_viewsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395766_drop_old_gitlab_eventsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\xd2\xd5\x55\xf0\xcb\x2f\xc9\xc8\xcc\x4b\x57\x28\xc9\x57\x48\xc9\x57\xc8\x48\x2d\x4a\xd5\xe3\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x12\x1b\xf8\x91\x28\x00\x00\x00")
+
+func _1528395766_drop_old_gitlab_eventsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395766_drop_old_gitlab_eventsDownSql,
+		"1528395766_drop_old_gitlab_events.down.sql",
+	)
+}
+
+func _1528395766_drop_old_gitlab_eventsDownSql() (*asset, error) {
+	bytes, err := _1528395766_drop_old_gitlab_eventsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395766_drop_old_gitlab_events.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x90, 0xb8, 0x74, 0xdb, 0xbb, 0x8e, 0x2c, 0xb5, 0x1f, 0x88, 0x9a, 0x6d, 0xf7, 0xfd, 0x22, 0x9c, 0x9e, 0x21, 0xae, 0xeb, 0x14, 0x4f, 0x70, 0x10, 0x71, 0xb2, 0x6f, 0xd, 0xc2, 0xac, 0xa, 0xdf}}
+	return a, nil
+}
+
+var __1528395766_drop_old_gitlab_eventsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x4c\x50\x4d\x8f\xda\x40\x0c\xbd\xe7\x57\xbc\x4b\x95\x4b\xe1\x5c\x81\x38\xb4\x65\xda\xa2\x42\xa9\xd8\xa0\x3d\x46\x26\x31\xc9\x88\x61\x26\x6b\x3b\xec\xe6\xdf\xaf\xb2\x80\x96\xa3\xed\xe7\xf7\xf5\xc3\xfd\x5e\xfd\x9b\x67\xd9\xd2\xad\x5d\xe1\xf0\x6b\xb7\xdd\xa0\x6a\x29\x36\xac\x6c\x25\x5f\x38\x9a\xe2\xf9\x8f\xdb\x39\x9c\x7c\xac\xb1\x5e\xfd\x75\xc8\x1b\x6f\x81\x0e\xb3\x2f\xf9\x3c\xcb\x26\x13\xec\xbb\x9a\x8c\x41\x21\xe0\x7a\xf9\xa4\x50\x58\x02\x75\x1d\x93\x80\x14\x07\xf6\xb1\x81\x0e\xb1\xe2\x1a\x64\x08\x4c\x6a\xf8\x86\x36\xf5\xa2\xa0\x26\x4d\x47\xbe\xa2\x25\xc3\xab\x0f\x01\x3e\x56\xc2\xa4\x0c\x6b\xd9\x0b\x3a\xf1\x49\xbc\x0d\xf0\x71\xdc\x5c\x89\x04\x14\x6b\x9c\xe9\xc4\xd0\x5e\x46\x68\x52\x06\x09\xa3\xff\xf0\x55\xe3\x9c\x84\xf1\xd2\xfb\xea\x14\x86\xaf\xa3\x80\xa6\xeb\xbb\x8d\xb6\x43\x52\xc3\x81\x8f\x23\xc8\x2b\x84\xd5\x92\x70\x0d\x21\x6b\x59\x70\x24\xb5\x69\xb6\xff\xbf\xfc\x5e\xb8\xc7\x5c\x4f\xae\xb8\x0b\x94\x64\x58\x3c\x0e\x13\xe4\xb7\x4c\xf9\x6c\xe6\xa3\xb1\x5c\x28\xdc\x6a\xe4\x37\x63\x89\x14\x4a\x65\xb9\xf8\x8a\x4b\x1b\x3a\xc6\xe2\x5e\xea\x58\xe9\xcf\xed\x66\xb3\x2a\xe6\xd9\x7b\x00\x00\x00\xff\xff\x07\xe6\xf2\xb4\x9d\x01\x00\x00")
+
+func _1528395766_drop_old_gitlab_eventsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395766_drop_old_gitlab_eventsUpSql,
+		"1528395766_drop_old_gitlab_events.up.sql",
+	)
+}
+
+func _1528395766_drop_old_gitlab_eventsUpSql() (*asset, error) {
+	bytes, err := _1528395766_drop_old_gitlab_eventsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395766_drop_old_gitlab_events.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x39, 0x5f, 0xd0, 0x13, 0xe3, 0x4d, 0xd1, 0xed, 0x4f, 0xf6, 0xd6, 0x82, 0xae, 0xec, 0x75, 0xc, 0x27, 0xd1, 0xd5, 0x55, 0x67, 0x3e, 0x24, 0xf4, 0xba, 0xa9, 0x43, 0x7a, 0x25, 0x84, 0xca, 0xdf}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3767,6 +3809,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395764_pg_stat_statement_ext.up.sql":                                                _1528395764_pg_stat_statement_extUpSql,
 	"1528395765_changeset_rewirer_views.down.sql":                                            _1528395765_changeset_rewirer_viewsDownSql,
 	"1528395765_changeset_rewirer_views.up.sql":                                              _1528395765_changeset_rewirer_viewsUpSql,
+	"1528395766_drop_old_gitlab_events.down.sql":                                             _1528395766_drop_old_gitlab_eventsDownSql,
+	"1528395766_drop_old_gitlab_events.up.sql":                                               _1528395766_drop_old_gitlab_eventsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3977,6 +4021,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395764_pg_stat_statement_ext.up.sql":                                                {_1528395764_pg_stat_statement_extUpSql, map[string]*bintree{}},
 	"1528395765_changeset_rewirer_views.down.sql":                                            {_1528395765_changeset_rewirer_viewsDownSql, map[string]*bintree{}},
 	"1528395765_changeset_rewirer_views.up.sql":                                              {_1528395765_changeset_rewirer_viewsUpSql, map[string]*bintree{}},
+	"1528395766_drop_old_gitlab_events.down.sql":                                             {_1528395766_drop_old_gitlab_eventsDownSql, map[string]*bintree{}},
+	"1528395766_drop_old_gitlab_events.up.sql":                                               {_1528395766_drop_old_gitlab_eventsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
