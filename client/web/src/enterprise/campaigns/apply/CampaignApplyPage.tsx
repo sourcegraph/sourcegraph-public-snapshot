@@ -4,10 +4,14 @@ import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 import { isEqual } from 'lodash'
 import { PageTitle } from '../../../components/PageTitle'
-import { fetchCampaignSpecById as _fetchCampaignSpecById } from './backend'
+import {
+    fetchCampaignSpecById as _fetchCampaignSpecById,
+    queryChangesetSpecs,
+    queryChangesetSpecFileDiffs,
+} from './backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CampaignHeader } from '../detail/CampaignHeader'
-import { ChangesetSpecList } from './list/ChangesetSpecList'
+import { ChangesetSpecList } from './ChangesetSpecList'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -18,7 +22,6 @@ import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetrySer
 import { AuthenticatedUser } from '../../../auth'
 import { CampaignSpecMissingCredentialsAlert } from './CampaignSpecMissingCredentialsAlert'
 import { SupersedingCampaignSpecAlert } from '../detail/SupersedingCampaignSpecAlert'
-import { queryChangesetApplyPreviews, queryChangesetSpecFileDiffs } from './list/backend'
 
 export interface CampaignApplyPageProps extends ThemeProps, TelemetryProps {
     specID: string
@@ -29,7 +32,7 @@ export interface CampaignApplyPageProps extends ThemeProps, TelemetryProps {
     /** Used for testing. */
     fetchCampaignSpecById?: typeof _fetchCampaignSpecById
     /** Used for testing. */
-    queryChangesetApplyPreviews?: typeof queryChangesetApplyPreviews
+    queryChangesetSpecs?: typeof queryChangesetSpecs
     /** Used for testing. */
     queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
     /** Expand changeset descriptions, for testing only. */
@@ -44,7 +47,7 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
     isLightTheme,
     telemetryService,
     fetchCampaignSpecById = _fetchCampaignSpecById,
-    queryChangesetApplyPreviews,
+    queryChangesetSpecs,
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
 }) => {
