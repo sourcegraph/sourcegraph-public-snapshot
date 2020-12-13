@@ -1239,82 +1239,162 @@ type ChangesetSpecConnection {
     nodes: [ChangesetSpec!]!
 }
 
+"""
+An entry in the preview for actions to be taken when applyCampaign would have
+been called at the point of time this preview was created at.
+"""
 union ChangesetApplyPreview = VisibleChangesetApplyPreview | HiddenChangesetApplyPreview
 
+"""
+A preview entry to a repository to which the user has access.
+"""
 union VisibleApplyPreviewTargets =
       VisibleApplyPreviewTargetsAttach
     | VisibleApplyPreviewTargetsUpdate
     | VisibleApplyPreviewTargetsDetach
 
+"""
+A preview entry where no changeset existed before matching the changeset spec.
+"""
 type VisibleApplyPreviewTargetsAttach {
+    """
+    The changeset spec from this entry.
+    """
     changesetSpec: VisibleChangesetSpec!
 }
+
+"""
+A preview entry where a changeset matches the changeset spec.
+"""
 type VisibleApplyPreviewTargetsUpdate {
+    """
+    The changeset spec from this entry.
+    """
     changesetSpec: VisibleChangesetSpec!
-    changeset: ExternalChangeset!
-}
-type VisibleApplyPreviewTargetsDetach {
+    """
+    The changeset from this entry.
+    """
     changeset: ExternalChangeset!
 }
 
+"""
+A preview entry where no changeset spec exists for the changeset currently in
+the target campaign.
+"""
+type VisibleApplyPreviewTargetsDetach {
+    """
+    The changeset from this entry.
+    """
+    changeset: ExternalChangeset!
+}
+
+"""
+A preview entry to a repository to which the user has no access.
+"""
 union HiddenApplyPreviewTargets =
       HiddenApplyPreviewTargetsAttach
     | HiddenApplyPreviewTargetsUpdate
     | HiddenApplyPreviewTargetsDetach
 
+"""
+A preview entry where no changeset existed before matching the changeset spec.
+"""
 type HiddenApplyPreviewTargetsAttach {
+    """
+    The changeset spec from this entry.
+    """
     changesetSpec: HiddenChangesetSpec!
 }
+
+"""
+A preview entry where a changeset matches the changeset spec.
+"""
 type HiddenApplyPreviewTargetsUpdate {
+    """
+    The changeset spec from this entry.
+    """
     changesetSpec: HiddenChangesetSpec!
-    changeset: HiddenExternalChangeset!
-}
-type HiddenApplyPreviewTargetsDetach {
+    """
+    The changeset from this entry.
+    """
     changeset: HiddenExternalChangeset!
 }
 
+"""
+A preview entry where no changeset spec exists for the changeset currently in
+the target campaign.
+"""
+type HiddenApplyPreviewTargetsDetach {
+    """
+    The changeset from this entry.
+    """
+    changeset: HiddenExternalChangeset!
+}
+
+"""
+One preview entry in the list of all previews against a campaign spec. Each mapping
+between changeset specs and current changesets yields one of these. It describes
+which operations are taken against which changeset spec and changeset to ensure the
+desired state is met.
+"""
 type HiddenChangesetApplyPreview {
     """
-    The operations to take to achieve the desired state of this changeset spec.
+    The operations to take to achieve the desired state.
     """
     operations: [ChangesetSpecOperation!]!
 
     """
-    The delta between the current changeset state and what the new changeset spec envisions the changeset to look like.
+    The delta between the current changeset state and what the new changeset spec
+    envisions the changeset to look like.
     """
     delta: ChangesetSpecDelta!
 
+    """
+    The target entities in this preview entry.
+    """
     targets: HiddenApplyPreviewTargets!
 }
 
+"""
+One preview entry in the list of all previews against a campaign spec. Each mapping
+between changeset specs and current changesets yields one of these. It describes
+which operations are taken against which changeset spec and changeset to ensure the
+desired state is met.
+"""
 type VisibleChangesetApplyPreview {
     """
-    The operations to take to achieve the desired state of this changeset spec.
+    The operations to take to achieve the desired state.
     """
     operations: [ChangesetSpecOperation!]!
 
     """
-    The delta between the current changeset state and what the new changeset spec envisions the changeset to look like.
+    The delta between the current changeset state and what the new changeset spec
+    envisions the changeset to look like.
     """
     delta: ChangesetSpecDelta!
 
+    """
+    The target entities in this preview entry.
+    """
     targets: VisibleApplyPreviewTargets!
 }
 
 """
-TODO
+A list of preview entries.
 """
 type ChangesetApplyPreviewConnection {
     """
-    The total number of WHATEVERS in the connection.
+    The total number of entries in the connection.
     """
     totalCount: Int!
+
     """
     Pagination information.
     """
     pageInfo: PageInfo!
+
     """
-    A list of WHATEVERS.
+    A list of preview entries.
     """
     nodes: [ChangesetApplyPreview!]!
 }
@@ -1366,9 +1446,21 @@ type CampaignSpec implements Node {
     description: CampaignDescription!
 
     """
-    TODO.
+    Generates a preview what operations would be performed between new changeset specs and the
+    current campaign state. This preview is not guaranteed to actually be performed, because at
+    the time applyCampaign is run the state of changesets might already have changed and different
+    operations might be performed.
     """
-    applyPreview(first: Int = 50, after: String): ChangesetApplyPreviewConnection!
+    applyPreview(
+        """
+        Returns the first n entries from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): ChangesetApplyPreviewConnection!
 
     """
     The specs for changesets associated with this campaign.
