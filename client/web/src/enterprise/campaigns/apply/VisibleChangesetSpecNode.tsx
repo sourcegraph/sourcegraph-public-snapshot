@@ -31,7 +31,7 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
     history,
     location,
     queryChangesetSpecFileDiffs,
-    expandChangesetDescriptions,
+    expandChangesetDescriptions = false,
 }) => {
     const [isExpanded, setIsExpanded] = useState(expandChangesetDescriptions)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
@@ -92,6 +92,7 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
                             isLightTheme={isLightTheme}
                             location={location}
                             queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
+                            expandChangesetDescriptions={expandChangesetDescriptions}
                         />
                     </div>
                 </>
@@ -111,7 +112,7 @@ const ExpandedSection: React.FunctionComponent<
         /** Expand changeset descriptions, for testing only. **/
         expandChangesetDescriptions?: boolean
     } & ThemeProps
-> = ({ node, history, isLightTheme, location, queryChangesetSpecFileDiffs, expandChangesetDescriptions = false }) => {
+> = ({ node, history, isLightTheme, location, queryChangesetSpecFileDiffs, expandChangesetDescriptions }) => {
     if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         return (
             <div className="alert alert-info mb-0">
