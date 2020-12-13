@@ -231,12 +231,6 @@ type ChangesetSpec struct {
 	Typename string `json:"__typename"`
 	ID       string
 
-	Operations []campaigns.ReconcilerOperation
-	Delta      ChangesetSpecDelta
-	Changeset  struct {
-		ID string
-	}
-
 	Description ChangesetSpecDescription
 
 	ExpiresAt *graphqlbackend.DateTime

@@ -78,9 +78,8 @@ func TestChangesetSpecResolver(t *testing.T) {
 			rawSpec: ct.NewRawChangesetSpecGitBranch(repoID, string(testRev)),
 			want: func(spec *campaigns.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
-					Typename:   "VisibleChangesetSpec",
-					ID:         string(marshalChangesetSpecRandID(spec.RandID)),
-					Operations: []campaigns.ReconcilerOperation{},
+					Typename: "VisibleChangesetSpec",
+					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
 					Description: apitest.ChangesetSpecDescription{
 						Typename: "GitBranchChangesetDescription",
 						BaseRepository: apitest.Repository{
@@ -134,9 +133,8 @@ func TestChangesetSpecResolver(t *testing.T) {
 			rawSpec: ct.NewPublishedRawChangesetSpecGitBranch(repoID, string(testRev), campaigns.PublishedValue{Val: "draft"}),
 			want: func(spec *campaigns.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
-					Typename:   "VisibleChangesetSpec",
-					ID:         string(marshalChangesetSpecRandID(spec.RandID)),
-					Operations: []campaigns.ReconcilerOperation{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublishDraft},
+					Typename: "VisibleChangesetSpec",
+					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
 					Description: apitest.ChangesetSpecDescription{
 						Typename: "GitBranchChangesetDescription",
 						BaseRepository: apitest.Repository{
@@ -190,9 +188,8 @@ func TestChangesetSpecResolver(t *testing.T) {
 			rawSpec: ct.NewRawChangesetSpecExisting(repoID, "9999"),
 			want: func(spec *campaigns.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
-					Typename:   "VisibleChangesetSpec",
-					ID:         string(marshalChangesetSpecRandID(spec.RandID)),
-					Operations: []campaigns.ReconcilerOperation{campaigns.ReconcilerOperationImport},
+					Typename: "VisibleChangesetSpec",
+					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
 					Description: apitest.ChangesetSpecDescription{
 						Typename: "ExistingChangesetReference",
 						BaseRepository: apitest.Repository{
@@ -239,20 +236,6 @@ query($id: ID!) {
 
     ... on VisibleChangesetSpec {
       id
-
-      operations
-      changeset { id }
-      delta {
-          titleChanged
-          bodyChanged
-          undraft
-          baseRefChanged
-          diffChanged
-          commitMessageChanged
-          authorNameChanged
-          authorEmailChanged
-      }
-
       description {
         __typename
 
