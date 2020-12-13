@@ -285,7 +285,7 @@ func makeVisibleUploadCandidatesQuery(repositoryID int, commits ...string) *sqlf
 			nu.repository_id,
 			upload_id::integer,
 			nu.commit_bytea,
-			u_distance::integer as distance
+			u_distance::text::integer as distance
 		FROM lsif_nearest_uploads nu
 		CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
 		WHERE nu.repository_id = %s AND nu.commit_bytea IN (%s)
@@ -294,7 +294,7 @@ func makeVisibleUploadCandidatesQuery(repositoryID int, commits ...string) *sqlf
 				nu.repository_id,
 				upload_id::integer,
 				ul.commit_bytea,
-				u_distance::integer + ul.distance as distance
+				u_distance::text::integer + ul.distance as distance
 			FROM lsif_nearest_uploads_links ul
 			JOIN lsif_nearest_uploads nu ON nu.repository_id = ul.repository_id AND nu.commit_bytea = ul.ancestor_commit_bytea
 			CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
