@@ -1,6 +1,6 @@
 import * as H from 'history'
 import React, { useCallback, useState } from 'react'
-import { VisibleChangesetApplyPreviewFields } from '../../../graphql-operations'
+import { VisibleChangesetApplyPreviewFields, VisibleChangesetSpecFields } from '../../../graphql-operations'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
 import { Link } from '../../../../../shared/src/components/Link'
@@ -8,6 +8,11 @@ import { DiffStat } from '../../../components/diff/DiffStat'
 import { ChangesetSpecAction } from './ChangesetSpecAction'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import { FileDiffConnection } from '../../../components/diff/FileDiffConnection'
+import { FileDiffNode } from '../../../components/diff/FileDiffNode'
+import { FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
+import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
+import { map } from 'rxjs/operators'
 
 export interface VisibleChangesetSpecNodeProps extends ThemeProps {
     node: VisibleChangesetApplyPreviewFields
@@ -22,11 +27,11 @@ export interface VisibleChangesetSpecNodeProps extends ThemeProps {
 
 export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetSpecNodeProps> = ({
     node,
-    // isLightTheme,
-    // history,
-    // location,
-    // queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs,
-    expandChangesetDescriptions = false,
+    isLightTheme,
+    history,
+    location,
+    queryChangesetSpecFileDiffs,
+    expandChangesetDescriptions,
 }) => {
     const [isExpanded, setIsExpanded] = useState(expandChangesetDescriptions)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
@@ -36,18 +41,6 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
         },
         [isExpanded]
     )
-
-    /** Fetches the file diffs for the changeset */
-    // const queryFileDiffs = useCallback(
-    //     (args: FilteredConnectionQueryArguments) =>
-    //         queryChangesetSpecFileDiffs({
-    //             after: args.after ?? null,
-    //             first: args.first ?? null,
-    //             changesetSpec: node.id,
-    //             isLightTheme,
-    //         }).pipe(map(diff => diff.fileDiffs)),
-    //     [node.id, isLightTheme, queryChangesetSpecFileDiffs]
-    // )
 
     return (
         <>
@@ -93,47 +86,110 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
                 <>
                     <div />
                     <div className="visible-changeset-spec-node__expanded-section p-2">
-                        {/* {node.description.__typename === 'GitBranchChangesetDescription' && (
-                            <>
-                                <h4>Commits</h4>
-                                <GitBranchChangesetDescriptionInfo
-                                    description={node.description}
-                                    isExpandedInitially={expandChangesetDescriptions}
-                                />
-                                <h4>Diff</h4>
-                                <FileDiffConnection
-                                    listClassName="list-group list-group-flush"
-                                    noun="changed file"
-                                    pluralNoun="changed files"
-                                    queryConnection={queryFileDiffs}
-                                    nodeComponent={FileDiffNode}
-                                    nodeComponentProps={{
-                                        history,
-                                        location,
-                                        isLightTheme,
-                                        persistLines: true,
-                                        lineNumbers: true,
-                                    }}
-                                    defaultFirst={15}
-                                    hideSearch={true}
-                                    noSummaryIfAllNodesVisible={true}
-                                    history={history}
-                                    location={location}
-                                    useURLQuery={false}
-                                    cursorPaging={true}
-                                />
-                            </>
-                        )}
-                        {node.description.__typename === 'ExistingChangesetReference' && (
-                            <div className="alert alert-info mb-0">
-                                When run, the changeset with ID {node.description.externalID} will be imported from{' '}
-                                {node.description.baseRepository.name}.
-                            </div>
-                        )} */}
+                        <ExpandedSection
+                            node={node}
+                            history={history}
+                            isLightTheme={isLightTheme}
+                            location={location}
+                            queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
+                        />
                     </div>
                 </>
             )}
         </>
+    )
+}
+
+const ExpandedSection: React.FunctionComponent<
+    {
+        node: VisibleChangesetApplyPreviewFields
+        history: H.History
+        location: H.Location
+
+        /** Used for testing. **/
+        queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
+        /** Expand changeset descriptions, for testing only. **/
+        expandChangesetDescriptions?: boolean
+    } & ThemeProps
+> = ({ node, history, isLightTheme, location, queryChangesetSpecFileDiffs, expandChangesetDescriptions = false }) => {
+    if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
+        return (
+            <div className="alert alert-info mb-0">
+                When run, the changeset <strong>{node.targets.changeset.title}</strong> in repo{' '}
+                <strong>{node.targets.changeset.repository.name}</strong> will be removed from this campaign.
+            </div>
+        )
+    }
+    if (node.targets.changesetSpec.description.__typename === 'ExistingChangesetReference') {
+        return (
+            <div className="alert alert-info mb-0">
+                When run, the changeset with ID {node.targets.changesetSpec.description.externalID} will be imported
+                from {node.targets.changesetSpec.description.baseRepository.name}.
+            </div>
+        )
+    }
+    return (
+        <>
+            <h4>Commits</h4>
+            <GitBranchChangesetDescriptionInfo
+                description={node.targets.changesetSpec.description}
+                isExpandedInitially={expandChangesetDescriptions}
+            />
+            <h4>Diff</h4>
+            <ChangesetSpecFileDiffConnection
+                history={history}
+                isLightTheme={isLightTheme}
+                location={location}
+                spec={node.targets.changesetSpec}
+                queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
+            />
+        </>
+    )
+}
+
+const ChangesetSpecFileDiffConnection: React.FunctionComponent<
+    {
+        spec: VisibleChangesetSpecFields
+        history: H.History
+        location: H.Location
+
+        /** Used for testing. **/
+        queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
+    } & ThemeProps
+> = ({ spec, history, location, isLightTheme, queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs }) => {
+    /** Fetches the file diffs for the changeset */
+    const queryFileDiffs = useCallback(
+        (args: FilteredConnectionQueryArguments) =>
+            queryChangesetSpecFileDiffs({
+                after: args.after ?? null,
+                first: args.first ?? null,
+                changesetSpec: spec.id,
+                isLightTheme,
+            }).pipe(map(diff => diff.fileDiffs)),
+        [spec.id, isLightTheme, queryChangesetSpecFileDiffs]
+    )
+    return (
+        <FileDiffConnection
+            listClassName="list-group list-group-flush"
+            noun="changed file"
+            pluralNoun="changed files"
+            queryConnection={queryFileDiffs}
+            nodeComponent={FileDiffNode}
+            nodeComponentProps={{
+                history,
+                location,
+                isLightTheme,
+                persistLines: true,
+                lineNumbers: true,
+            }}
+            defaultFirst={15}
+            hideSearch={true}
+            noSummaryIfAllNodesVisible={true}
+            history={history}
+            location={location}
+            useURLQuery={false}
+            cursorPaging={true}
+        />
     )
 }
 
