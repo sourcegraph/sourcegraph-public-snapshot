@@ -74,14 +74,53 @@ func (r *hiddenChangesetApplyPreviewResolver) Delta(ctx context.Context) (graphq
 	return &changesetSpecDeltaResolver{}, nil
 }
 
-func (r *hiddenChangesetApplyPreviewResolver) ChangesetSpec(ctx context.Context) (graphqlbackend.HiddenChangesetSpecResolver, error) {
+func (r *hiddenChangesetApplyPreviewResolver) Targets() graphqlbackend.HiddenApplyPreviewTargetsResolver {
+	return &hiddenApplyPreviewTargetsResolver{
+		store:             r.store,
+		mapping:           r.mapping,
+		preloadedNextSync: r.preloadedNextSync,
+	}
+}
+
+type hiddenApplyPreviewTargetsResolver struct {
+	store *store.Store
+
+	mapping           *store.RewirerMapping
+	preloadedNextSync time.Time
+}
+
+var _ graphqlbackend.HiddenApplyPreviewTargetsResolver = &hiddenApplyPreviewTargetsResolver{}
+var _ graphqlbackend.HiddenApplyPreviewTargetsAttachResolver = &hiddenApplyPreviewTargetsResolver{}
+var _ graphqlbackend.HiddenApplyPreviewTargetsUpdateResolver = &hiddenApplyPreviewTargetsResolver{}
+var _ graphqlbackend.HiddenApplyPreviewTargetsDetachResolver = &hiddenApplyPreviewTargetsResolver{}
+
+func (r *hiddenApplyPreviewTargetsResolver) ToHiddenApplyPreviewTargetsAttach() (graphqlbackend.HiddenApplyPreviewTargetsAttachResolver, bool) {
+	if r.mapping.Changeset == nil {
+		return r, true
+	}
+	return nil, false
+}
+func (r *hiddenApplyPreviewTargetsResolver) ToHiddenApplyPreviewTargetsUpdate() (graphqlbackend.HiddenApplyPreviewTargetsUpdateResolver, bool) {
+	if r.mapping.Changeset != nil && r.mapping.ChangesetSpec != nil {
+		return r, true
+	}
+	return nil, false
+}
+func (r *hiddenApplyPreviewTargetsResolver) ToHiddenApplyPreviewTargetsDetach() (graphqlbackend.HiddenApplyPreviewTargetsDetachResolver, bool) {
+	if r.mapping.ChangesetSpec == nil {
+		return r, true
+	}
+	return nil, false
+}
+
+func (r *hiddenApplyPreviewTargetsResolver) ChangesetSpec(ctx context.Context) (graphqlbackend.HiddenChangesetSpecResolver, error) {
 	if r.mapping.ChangesetSpec == nil {
 		return nil, nil
 	}
 	return NewChangesetSpecResolverWithRepo(r.store, nil, r.mapping.ChangesetSpec), nil
 }
 
-func (r *hiddenChangesetApplyPreviewResolver) Changeset(ctx context.Context) (graphqlbackend.HiddenExternalChangesetResolver, error) {
+func (r *hiddenApplyPreviewTargetsResolver) Changeset(ctx context.Context) (graphqlbackend.HiddenExternalChangesetResolver, error) {
 	if r.mapping.Changeset == nil {
 		return nil, nil
 	}
@@ -125,6 +164,14 @@ func (r *visibleChangesetApplyPreviewResolver) Delta(ctx context.Context) (graph
 		return &changesetSpecDeltaResolver{}, nil
 	}
 	return &changesetSpecDeltaResolver{delta: *plan.Delta}, nil
+}
+
+func (r *visibleChangesetApplyPreviewResolver) Targets() graphqlbackend.VisibleApplyPreviewTargetsResolver {
+	return &visibleApplyPreviewTargetsResolver{
+		store:             r.store,
+		mapping:           r.mapping,
+		preloadedNextSync: r.preloadedNextSync,
+	}
 }
 
 func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) (*reconciler.Plan, error) {
@@ -191,14 +238,45 @@ func (r *visibleChangesetApplyPreviewResolver) computeCampaign(ctx context.Conte
 	return r.campaign, r.campaignErr
 }
 
-func (r *visibleChangesetApplyPreviewResolver) ChangesetSpec(ctx context.Context) (graphqlbackend.VisibleChangesetSpecResolver, error) {
+type visibleApplyPreviewTargetsResolver struct {
+	store *store.Store
+
+	mapping           *store.RewirerMapping
+	preloadedNextSync time.Time
+}
+
+var _ graphqlbackend.VisibleApplyPreviewTargetsResolver = &visibleApplyPreviewTargetsResolver{}
+var _ graphqlbackend.VisibleApplyPreviewTargetsAttachResolver = &visibleApplyPreviewTargetsResolver{}
+var _ graphqlbackend.VisibleApplyPreviewTargetsUpdateResolver = &visibleApplyPreviewTargetsResolver{}
+var _ graphqlbackend.VisibleApplyPreviewTargetsDetachResolver = &visibleApplyPreviewTargetsResolver{}
+
+func (r *visibleApplyPreviewTargetsResolver) ToVisibleApplyPreviewTargetsAttach() (graphqlbackend.VisibleApplyPreviewTargetsAttachResolver, bool) {
+	if r.mapping.Changeset == nil {
+		return r, true
+	}
+	return nil, false
+}
+func (r *visibleApplyPreviewTargetsResolver) ToVisibleApplyPreviewTargetsUpdate() (graphqlbackend.VisibleApplyPreviewTargetsUpdateResolver, bool) {
+	if r.mapping.Changeset != nil && r.mapping.ChangesetSpec != nil {
+		return r, true
+	}
+	return nil, false
+}
+func (r *visibleApplyPreviewTargetsResolver) ToVisibleApplyPreviewTargetsDetach() (graphqlbackend.VisibleApplyPreviewTargetsDetachResolver, bool) {
+	if r.mapping.ChangesetSpec == nil {
+		return r, true
+	}
+	return nil, false
+}
+
+func (r *visibleApplyPreviewTargetsResolver) ChangesetSpec(ctx context.Context) (graphqlbackend.VisibleChangesetSpecResolver, error) {
 	if r.mapping.ChangesetSpec == nil {
 		return nil, nil
 	}
 	return NewChangesetSpecResolverWithRepo(r.store, r.mapping.Repo, r.mapping.ChangesetSpec), nil
 }
 
-func (r *visibleChangesetApplyPreviewResolver) Changeset(ctx context.Context) (graphqlbackend.ExternalChangesetResolver, error) {
+func (r *visibleApplyPreviewTargetsResolver) Changeset(ctx context.Context) (graphqlbackend.ExternalChangesetResolver, error) {
 	if r.mapping.Changeset == nil {
 		return nil, nil
 	}

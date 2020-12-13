@@ -1248,6 +1248,38 @@ type ChangesetSpecConnection {
 
 union ChangesetApplyPreview = VisibleChangesetApplyPreview | HiddenChangesetApplyPreview
 
+union VisibleApplyPreviewTargets =
+      VisibleApplyPreviewTargetsAttach
+    | VisibleApplyPreviewTargetsUpdate
+    | VisibleApplyPreviewTargetsDetach
+
+type VisibleApplyPreviewTargetsAttach {
+    changesetSpec: VisibleChangesetSpec!
+}
+type VisibleApplyPreviewTargetsUpdate {
+    changesetSpec: VisibleChangesetSpec!
+    changeset: ExternalChangeset!
+}
+type VisibleApplyPreviewTargetsDetach {
+    changeset: ExternalChangeset!
+}
+
+union HiddenApplyPreviewTargets =
+      HiddenApplyPreviewTargetsAttach
+    | HiddenApplyPreviewTargetsUpdate
+    | HiddenApplyPreviewTargetsDetach
+
+type HiddenApplyPreviewTargetsAttach {
+    changesetSpec: HiddenChangesetSpec!
+}
+type HiddenApplyPreviewTargetsUpdate {
+    changesetSpec: HiddenChangesetSpec!
+    changeset: HiddenExternalChangeset!
+}
+type HiddenApplyPreviewTargetsDetach {
+    changeset: HiddenExternalChangeset!
+}
+
 type HiddenChangesetApplyPreview {
     """
     The operations to take to achieve the desired state of this changeset spec.
@@ -1259,8 +1291,7 @@ type HiddenChangesetApplyPreview {
     """
     delta: ChangesetSpecDelta!
 
-    changesetSpec: HiddenChangesetSpec
-    changeset: HiddenExternalChangeset
+    targets: HiddenApplyPreviewTargets!
 }
 
 type VisibleChangesetApplyPreview {
@@ -1274,8 +1305,7 @@ type VisibleChangesetApplyPreview {
     """
     delta: ChangesetSpecDelta!
 
-    changesetSpec: VisibleChangesetSpec
-    changeset: ExternalChangeset
+    targets: VisibleApplyPreviewTargets!
 }
 
 """

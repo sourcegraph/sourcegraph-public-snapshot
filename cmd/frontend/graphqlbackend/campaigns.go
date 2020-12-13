@@ -169,14 +169,46 @@ type ChangesetApplyPreviewResolver interface {
 type VisibleChangesetApplyPreviewResolver interface {
 	Operations(ctx context.Context) ([]campaigns.ReconcilerOperation, error)
 	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
-	ChangesetSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
-	Changeset(ctx context.Context) (ExternalChangesetResolver, error)
+	Targets() VisibleApplyPreviewTargetsResolver
 }
 
 type HiddenChangesetApplyPreviewResolver interface {
 	Operations(ctx context.Context) ([]campaigns.ReconcilerOperation, error)
 	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
+	Targets() HiddenApplyPreviewTargetsResolver
+}
+
+type VisibleApplyPreviewTargetsResolver interface {
+	ToVisibleApplyPreviewTargetsAttach() (VisibleApplyPreviewTargetsAttachResolver, bool)
+	ToVisibleApplyPreviewTargetsUpdate() (VisibleApplyPreviewTargetsUpdateResolver, bool)
+	ToVisibleApplyPreviewTargetsDetach() (VisibleApplyPreviewTargetsDetachResolver, bool)
+}
+
+type VisibleApplyPreviewTargetsAttachResolver interface {
+	ChangesetSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
+}
+type VisibleApplyPreviewTargetsUpdateResolver interface {
+	ChangesetSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
+	Changeset(ctx context.Context) (ExternalChangesetResolver, error)
+}
+type VisibleApplyPreviewTargetsDetachResolver interface {
+	Changeset(ctx context.Context) (ExternalChangesetResolver, error)
+}
+
+type HiddenApplyPreviewTargetsResolver interface {
+	ToHiddenApplyPreviewTargetsAttach() (HiddenApplyPreviewTargetsAttachResolver, bool)
+	ToHiddenApplyPreviewTargetsUpdate() (HiddenApplyPreviewTargetsUpdateResolver, bool)
+	ToHiddenApplyPreviewTargetsDetach() (HiddenApplyPreviewTargetsDetachResolver, bool)
+}
+
+type HiddenApplyPreviewTargetsAttachResolver interface {
 	ChangesetSpec(ctx context.Context) (HiddenChangesetSpecResolver, error)
+}
+type HiddenApplyPreviewTargetsUpdateResolver interface {
+	ChangesetSpec(ctx context.Context) (HiddenChangesetSpecResolver, error)
+	Changeset(ctx context.Context) (HiddenExternalChangesetResolver, error)
+}
+type HiddenApplyPreviewTargetsDetachResolver interface {
 	Changeset(ctx context.Context) (HiddenExternalChangesetResolver, error)
 }
 
