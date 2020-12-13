@@ -19,10 +19,10 @@ add('Overview', () => {
         <EnterpriseWebStory>
             {props => (
                 <>
-                    {nodes.map(node => (
+                    {nodes.map((node, index) => (
                         <ChangesetSpecNode
                             {...props}
-                            key={node.id}
+                            key={index}
                             node={node}
                             queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                         />

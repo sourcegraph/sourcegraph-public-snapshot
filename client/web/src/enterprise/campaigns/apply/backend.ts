@@ -105,30 +105,9 @@ export const fetchCampaignSpecById = (campaignSpec: Scalars['ID']): Observable<C
     )
 
 export const changesetSpecFieldsFragment = gql`
-    fragment ChangesetSpecFields on ChangesetSpec {
-        __typename
-        ... on HiddenChangesetSpec {
-            ...HiddenChangesetSpecFields
-        }
-        ... on VisibleChangesetSpec {
-            ...VisibleChangesetSpecFields
-        }
-    }
-
     fragment CommonChangesetSpecFields on ChangesetSpec {
         expiresAt
         type
-        operations
-        delta {
-            titleChanged
-        }
-        changeset {
-            __typename
-            id
-            ... on ExternalChangeset {
-                title
-            }
-        }
     }
 
     fragment HiddenChangesetSpecFields on HiddenChangesetSpec {
@@ -193,7 +172,7 @@ export const queryChangesetSpecs = ({
     first,
     after,
 }: CampaignSpecChangesetSpecsVariables): Observable<
-    (CampaignSpecChangesetSpecsResult['node'] & { __typename: 'CampaignSpec' })['changesetSpecs']
+    (CampaignSpecChangesetSpecsResult['node'] & { __typename: 'CampaignSpec' })['applyPreview']
 > =>
     requestGraphQL<CampaignSpecChangesetSpecsResult, CampaignSpecChangesetSpecsVariables>(
         gql`
@@ -201,14 +180,93 @@ export const queryChangesetSpecs = ({
                 node(id: $campaignSpec) {
                     __typename
                     ... on CampaignSpec {
-                        changesetSpecs(first: $first, after: $after) {
+                        applyPreview(first: $first, after: $after) {
                             totalCount
                             pageInfo {
                                 endCursor
                                 hasNextPage
                             }
                             nodes {
-                                ...ChangesetSpecFields
+                                ...ChangesetApplyPreviewFields
+                            }
+                        }
+                    }
+                }
+            }
+
+            fragment ChangesetApplyPreviewFields on ChangesetApplyPreview {
+                __typename
+                ... on HiddenChangesetApplyPreview {
+                    ...HiddenChangesetApplyPreviewFields
+                }
+                ... on VisibleChangesetApplyPreview {
+                    ...VisibleChangesetApplyPreviewFields
+                }
+            }
+
+            fragment HiddenChangesetApplyPreviewFields on HiddenChangesetApplyPreview {
+                __typename
+                # operations
+                # delta {
+                #     titleChanged
+                # }
+                targets {
+                    __typename
+                    ... on HiddenApplyPreviewTargetsAttach {
+                        changesetSpec {
+                            ...HiddenChangesetSpecFields
+                        }
+                    }
+                    ... on HiddenApplyPreviewTargetsUpdate {
+                        changesetSpec {
+                            ...HiddenChangesetSpecFields
+                        }
+                        changeset {
+                            id
+                        }
+                    }
+                    ... on HiddenApplyPreviewTargetsDetach {
+                        changeset {
+                            id
+                        }
+                    }
+                }
+            }
+
+            fragment VisibleChangesetApplyPreviewFields on VisibleChangesetApplyPreview {
+                __typename
+                operations
+                delta {
+                    titleChanged
+                }
+                targets {
+                    __typename
+                    ... on VisibleApplyPreviewTargetsAttach {
+                        changesetSpec {
+                            ...VisibleChangesetSpecFields
+                        }
+                    }
+                    ... on VisibleApplyPreviewTargetsUpdate {
+                        changesetSpec {
+                            ...VisibleChangesetSpecFields
+                        }
+                        changeset {
+                            id
+                            title
+                        }
+                    }
+                    ... on VisibleApplyPreviewTargetsDetach {
+                        changeset {
+                            id
+                            title
+                            repository {
+                                url
+                                name
+                            }
+                            diffStat {
+                                added
+                                changed
+                                deleted
                             }
                         }
                     }
@@ -227,7 +285,7 @@ export const queryChangesetSpecs = ({
             if (node.__typename !== 'CampaignSpec') {
                 throw new Error(`The given ID is a ${node.__typename}, not a CampaignSpec`)
             }
-            return node.changesetSpecs
+            return node.applyPreview
         })
     )
 

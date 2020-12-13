@@ -2,7 +2,7 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { ChangesetSpecList } from './ChangesetSpecList'
 import { of, Observable } from 'rxjs'
-import { CampaignSpecChangesetSpecsResult, ChangesetSpecFields } from '../../../graphql-operations'
+import { CampaignSpecChangesetSpecsResult, ChangesetApplyPreviewFields } from '../../../graphql-operations'
 import { visibleChangesetSpecStories } from './VisibleChangesetSpecNode.story'
 import { hiddenChangesetSpecStories } from './HiddenChangesetSpecNode.story'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
@@ -15,13 +15,13 @@ const { add } = storiesOf('web/campaigns/apply/ChangesetSpecList', module)
         },
     })
 
-const nodes: ChangesetSpecFields[] = [
+const nodes: ChangesetApplyPreviewFields[] = [
     ...Object.values(visibleChangesetSpecStories),
     ...Object.values(hiddenChangesetSpecStories),
 ]
 
 const queryChangesetSpecs = (): Observable<
-    (CampaignSpecChangesetSpecsResult['node'] & { __typename: 'CampaignSpec' })['changesetSpecs']
+    (CampaignSpecChangesetSpecsResult['node'] & { __typename: 'CampaignSpec' })['applyPreview']
 > =>
     of({
         pageInfo: {

@@ -212,8 +212,16 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 			}
 		}
 		if changeset.CurrentSpecID != 0 {
-			// If the current spec was not unset by the rewirer, it will be this resolvers spec.
-			currentSpec = r.mapping.ChangesetSpec
+			if r.mapping.ChangesetSpec != nil {
+				// If the current spec was not unset by the rewirer, it will be this resolvers spec.
+				currentSpec = r.mapping.ChangesetSpec
+			} else {
+				currentSpec, err = r.store.GetChangesetSpecByID(ctx, changeset.CurrentSpecID)
+				if err != nil {
+					r.planErr = err
+					return
+				}
+			}
 		}
 		r.plan, r.planErr = reconciler.DeterminePlan(previousSpec, currentSpec, changeset)
 	})

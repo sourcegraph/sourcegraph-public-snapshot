@@ -1,8 +1,9 @@
 import React from 'react'
-import { ChangesetSpecFields, ChangesetSpecOperation } from '../../../graphql-operations'
+import { ChangesetApplyPreviewFields, ChangesetSpecOperation } from '../../../graphql-operations'
 import BlankCircleIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import ImportIcon from 'mdi-react/ImportIcon'
 import UploadIcon from 'mdi-react/UploadIcon'
+import TrashIcon from 'mdi-react/TrashIcon'
 import SourceBranchRefreshIcon from 'mdi-react/SourceBranchRefreshIcon'
 import SourceBranchSyncIcon from 'mdi-react/SourceBranchSyncIcon'
 import SourceBranchCheckIcon from 'mdi-react/SourceBranchCheckIcon'
@@ -11,48 +12,50 @@ import classNames from 'classnames'
 import CloseCircleOutlineIcon from 'mdi-react/CloseCircleOutlineIcon'
 
 export interface ChangesetSpecActionProps {
-    spec: ChangesetSpecFields
+    node: ChangesetApplyPreviewFields
     className?: string
 }
 
-export const ChangesetSpecAction: React.FunctionComponent<ChangesetSpecActionProps> = ({ spec, className }) => {
-    if (spec.operations.length === 0) {
+export const ChangesetSpecAction: React.FunctionComponent<ChangesetSpecActionProps> = ({ node, className }) => {
+    if (node.__typename === 'HiddenChangesetApplyPreview') {
         return (
             <ChangesetSpecActionNoAction
-                reason={
-                    spec.__typename === 'HiddenChangesetSpec'
-                        ? NoActionReasonStrings[NoActionReason.NO_ACCESS]
-                        : undefined
-                }
+                reason={NoActionReasonStrings[NoActionReason.NO_ACCESS]}
                 className={className}
             />
         )
     }
-    if (spec.operations.includes(ChangesetSpecOperation.IMPORT)) {
+    if (node.operations.length === 0) {
+        if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
+            return <ChangesetSpecActionDetach className={className} />
+        }
+        return <ChangesetSpecActionNoAction className={className} />
+    }
+    if (node.operations.includes(ChangesetSpecOperation.IMPORT)) {
         return <ChangesetSpecActionImport className={className} />
     }
-    if (spec.operations.includes(ChangesetSpecOperation.PUBLISH)) {
+    if (node.operations.includes(ChangesetSpecOperation.PUBLISH)) {
         return <ChangesetSpecActionPublish className={className} />
     }
-    if (spec.operations.includes(ChangesetSpecOperation.PUBLISH_DRAFT)) {
+    if (node.operations.includes(ChangesetSpecOperation.PUBLISH_DRAFT)) {
         return <ChangesetSpecActionPublishDraft className={className} />
     }
-    if (spec.operations.includes(ChangesetSpecOperation.CLOSE)) {
+    if (node.operations.includes(ChangesetSpecOperation.CLOSE)) {
         return <ChangesetSpecActionClose className={className} />
     }
-    if (spec.operations.includes(ChangesetSpecOperation.REOPEN)) {
+    if (node.operations.includes(ChangesetSpecOperation.REOPEN)) {
         return <ChangesetSpecActionReopen className={className} />
     }
-    if (spec.operations.includes(ChangesetSpecOperation.UNDRAFT)) {
+    if (node.operations.includes(ChangesetSpecOperation.UNDRAFT)) {
         return <ChangesetSpecActionUndraft className={className} />
     }
     if (
-        spec.operations.includes(ChangesetSpecOperation.UPDATE) ||
-        spec.operations.includes(ChangesetSpecOperation.PUSH)
+        node.operations.includes(ChangesetSpecOperation.UPDATE) ||
+        node.operations.includes(ChangesetSpecOperation.PUSH)
     ) {
         return <ChangesetSpecActionUpdate className={className} />
     }
-    return <ChangesetSpecActionUnknown operations={spec.operations.join(' => ')} className={className} />
+    return <ChangesetSpecActionUnknown operations={node.operations.join(' => ')} className={className} />
 }
 
 const iconClassNames = 'm-0 text-nowrap d-block d-sm-flex flex-column align-items-center justify-content-center'
@@ -75,10 +78,17 @@ export const ChangesetSpecActionImport: React.FunctionComponent<{ className?: st
         <span>Import</span>
     </div>
 )
+// TODO: This is currently correct, but as soon as we have a detach reconciler operation, that should be taken into account.
 export const ChangesetSpecActionClose: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <CloseCircleOutlineIcon data-tooltip="This changeset will be closed on the codehost" />
-        <span>Close</span>
+        <CloseCircleOutlineIcon className="text-danger" data-tooltip="This changeset will be closed on the codehost" />
+        <span>Close &amp; Detach</span>
+    </div>
+)
+export const ChangesetSpecActionDetach: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+    <div className={classNames(className, iconClassNames)}>
+        <TrashIcon className="text-danger" data-tooltip="This changeset will be removed from the campaign" />
+        <span>Detach</span>
     </div>
 )
 export const ChangesetSpecActionReopen: React.FunctionComponent<{ className?: string }> = ({ className }) => (

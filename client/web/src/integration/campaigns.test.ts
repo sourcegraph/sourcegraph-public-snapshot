@@ -555,51 +555,56 @@ describe('Campaigns', () => {
                     CampaignSpecChangesetSpecs: () => ({
                         node: {
                             __typename: 'CampaignSpec',
-                            changesetSpecs: {
+                            applyPreview: {
                                 nodes: [
                                     {
-                                        __typename: 'VisibleChangesetSpec',
-                                        description: {
-                                            __typename: 'GitBranchChangesetDescription',
-                                            baseRef: 'main',
-                                            headRef: 'head-ref',
-                                            baseRepository: {
-                                                name: 'github.com/sourcegraph/repo',
-                                                url: 'http://test.test/repo',
-                                            },
-                                            published: true,
-                                            body: 'Body',
-                                            commits: [
-                                                {
-                                                    subject: 'Commit message',
-                                                    body: 'And the more explanatory body.',
-                                                    author: {
-                                                        avatarURL: null,
-                                                        displayName: 'john',
-                                                        email: 'john@test.not',
-                                                        user: {
-                                                            displayName: 'lejohn',
-                                                            url: '/users/lejohn',
-                                                            username: 'john',
-                                                        },
-                                                    },
-                                                },
-                                            ],
-                                            diffStat: {
-                                                added: 10,
-                                                changed: 2,
-                                                deleted: 9,
-                                            },
-                                            title: 'Changeset title',
-                                        },
-                                        expiresAt: addDays(new Date(), 3).toISOString(),
-                                        id: 'changesetspec123',
-                                        type: ChangesetSpecType.BRANCH,
+                                        __typename: 'VisibleChangesetApplyPreview',
                                         operations: [ChangesetSpecOperation.PUSH, ChangesetSpecOperation.PUBLISH],
                                         delta: {
                                             titleChanged: false,
                                         },
-                                        changeset: null,
+                                        targets: {
+                                            __typename: 'VisibleApplyPreviewTargetsAttach',
+                                            changesetSpec: {
+                                                __typename: 'VisibleChangesetSpec',
+                                                description: {
+                                                    __typename: 'GitBranchChangesetDescription',
+                                                    baseRef: 'main',
+                                                    headRef: 'head-ref',
+                                                    baseRepository: {
+                                                        name: 'github.com/sourcegraph/repo',
+                                                        url: 'http://test.test/repo',
+                                                    },
+                                                    published: true,
+                                                    body: 'Body',
+                                                    commits: [
+                                                        {
+                                                            subject: 'Commit message',
+                                                            body: 'And the more explanatory body.',
+                                                            author: {
+                                                                avatarURL: null,
+                                                                displayName: 'john',
+                                                                email: 'john@test.not',
+                                                                user: {
+                                                                    displayName: 'lejohn',
+                                                                    url: '/users/lejohn',
+                                                                    username: 'john',
+                                                                },
+                                                            },
+                                                        },
+                                                    ],
+                                                    diffStat: {
+                                                        added: 10,
+                                                        changed: 2,
+                                                        deleted: 9,
+                                                    },
+                                                    title: 'Changeset title',
+                                                },
+                                                expiresAt: addDays(new Date(), 3).toISOString(),
+                                                id: 'changesetspec123',
+                                                type: ChangesetSpecType.BRANCH,
+                                            },
+                                        },
                                     },
                                 ],
                                 pageInfo: {

@@ -2,7 +2,12 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { VisibleChangesetSpecNode } from './VisibleChangesetSpecNode'
 import { addDays } from 'date-fns'
-import { VisibleChangesetSpecFields, ChangesetSpecType, Scalars } from '../../../graphql-operations'
+import {
+    VisibleChangesetSpecFields,
+    ChangesetSpecType,
+    Scalars,
+    VisibleChangesetApplyPreviewFields,
+} from '../../../graphql-operations'
 import { of } from 'rxjs'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { ChangesetSpecOperation } from '../../../../../shared/src/graphql-operations'
@@ -11,7 +16,9 @@ const { add } = storiesOf('web/campaigns/apply/VisibleChangesetSpecNode', module
     <div className="p-3 container web-content changeset-spec-list__grid">{story()}</div>
 ))
 
-function baseChangeset(
+const testRepo = { name: 'github.com/sourcegraph/testrepo', url: 'https://test.test/repo' }
+
+function baseChangesetSpec(
     published: Scalars['PublishedValue'],
     overrides: Partial<VisibleChangesetSpecFields> = {}
 ): VisibleChangesetSpecFields {
@@ -20,14 +27,9 @@ function baseChangeset(
         id: 'someidv2' + String(published) + JSON.stringify(overrides),
         expiresAt: addDays(new Date(), 7).toISOString(),
         type: ChangesetSpecType.EXISTING,
-        operations: [],
-        delta: {
-            titleChanged: false,
-        },
-        changeset: null,
         description: {
             __typename: 'GitBranchChangesetDescription',
-            baseRepository: { name: 'github.com/sourcegraph/testrepo', url: 'https://test.test/repo' },
+            baseRepository: testRepo,
             baseRef: 'master',
             headRef: 'cool-branch',
             body: 'Body text',
@@ -59,82 +61,126 @@ And the more explanatory body. And the more explanatory body. And the more expla
     }
 }
 
-export const visibleChangesetSpecStories: Record<string, VisibleChangesetSpecFields> = {
+export const visibleChangesetSpecStories: Record<string, VisibleChangesetApplyPreviewFields> = {
     'Import changeset': {
-        __typename: 'VisibleChangesetSpec',
-        id: 'someidv1',
-        expiresAt: addDays(new Date(), 7).toISOString(),
-        type: ChangesetSpecType.EXISTING,
+        __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.IMPORT],
         delta: {
             titleChanged: false,
         },
-        changeset: null,
-        description: {
-            __typename: 'ExistingChangesetReference',
-            baseRepository: { name: 'github.com/sourcegraph/testrepo', url: 'https://test.test/repo' },
-            externalID: '123',
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsAttach',
+            changesetSpec: {
+                __typename: 'VisibleChangesetSpec',
+                id: 'someidv1',
+                expiresAt: addDays(new Date(), 7).toISOString(),
+                type: ChangesetSpecType.EXISTING,
+                description: {
+                    __typename: 'ExistingChangesetReference',
+                    baseRepository: { name: 'github.com/sourcegraph/testrepo', url: 'https://test.test/repo' },
+                    externalID: '123',
+                },
+            },
         },
     },
-    'Create changeset published': baseChangeset(true, {
+    'Create changeset published': {
+        __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.PUSH, ChangesetSpecOperation.PUBLISH],
         delta: {
             titleChanged: false,
         },
-        changeset: null,
-    }),
-    'Create changeset draft': baseChangeset('draft', {
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsAttach',
+            changesetSpec: baseChangesetSpec(true),
+        },
+    },
+    'Create changeset draft': {
+        __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.PUSH, ChangesetSpecOperation.PUBLISH_DRAFT],
         delta: {
             titleChanged: false,
         },
-        changeset: null,
-    }),
-    'Create changeset not published': baseChangeset(false),
-    'Update changeset title': baseChangeset(true, {
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsAttach',
+            changesetSpec: baseChangesetSpec('draft'),
+        },
+    },
+    'Create changeset not published': {
+        __typename: 'VisibleChangesetApplyPreview',
+        operations: [],
+        delta: {
+            titleChanged: false,
+        },
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsAttach',
+            changesetSpec: baseChangesetSpec(false),
+        },
+    },
+    'Update changeset title': {
+        __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.UPDATE],
         delta: {
             titleChanged: true,
         },
-        changeset: {
-            __typename: 'ExternalChangeset',
-            id: '123123',
-            title: 'the old title',
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsUpdate',
+            changesetSpec: baseChangesetSpec(true),
+            changeset: {
+                id: '123123',
+                title: 'the old title',
+            },
         },
-    }),
-    'Undraft changeset': baseChangeset(true, {
+    },
+    'Undraft changeset': {
+        __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.UNDRAFT],
         delta: {
             titleChanged: false,
         },
-        changeset: {
-            __typename: 'ExternalChangeset',
-            id: '123123',
-            title: 'Le draft changeset',
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsUpdate',
+            changesetSpec: baseChangesetSpec(true),
+            changeset: {
+                id: '123123',
+                title: 'Le draft changeset',
+            },
         },
-    }),
-    'Reopen changeset': baseChangeset(true, {
+    },
+    'Reopen changeset': {
+        __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.REOPEN],
         delta: {
             titleChanged: false,
         },
-        changeset: {
-            __typename: 'ExternalChangeset',
-            id: '123123',
-            title: 'Le closed changeset',
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsUpdate',
+            changesetSpec: baseChangesetSpec(true),
+            changeset: {
+                id: '123123',
+                title: 'Le closed changeset',
+            },
         },
-    }),
-    'Close changeset': baseChangeset(true, {
+    },
+    'Close changeset': {
+        __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.CLOSE],
         delta: {
             titleChanged: false,
         },
-        changeset: {
-            __typename: 'ExternalChangeset',
-            id: '123123',
-            title: 'Le open changeset',
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsDetach',
+            changeset: {
+                id: '123123',
+                title: 'Le open changeset',
+                repository: testRepo,
+                diffStat: {
+                    added: 2,
+                    changed: 8,
+                    deleted: 10,
+                },
+            },
         },
-    }),
+    },
 }
 
 const queryEmptyFileDiffs = () =>

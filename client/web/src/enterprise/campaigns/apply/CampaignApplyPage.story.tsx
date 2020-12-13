@@ -5,8 +5,8 @@ import { CampaignApplyPage } from './CampaignApplyPage'
 import { of, Observable } from 'rxjs'
 import {
     CampaignSpecChangesetSpecsResult,
-    ChangesetSpecFields,
     CampaignSpecFields,
+    ChangesetApplyPreviewFields,
     ExternalServiceKind,
 } from '../../../graphql-operations'
 import { visibleChangesetSpecStories } from './VisibleChangesetSpecNode.story'
@@ -23,7 +23,7 @@ const { add } = storiesOf('web/campaigns/apply/CampaignApplyPage', module)
         },
     })
 
-const nodes: ChangesetSpecFields[] = [
+const nodes: ChangesetApplyPreviewFields[] = [
     ...Object.values(visibleChangesetSpecStories),
     ...Object.values(hiddenChangesetSpecStories),
 ]
@@ -94,7 +94,7 @@ const fetchCampaignSpecUpdate: typeof fetchCampaignSpecById = () =>
     })
 
 const queryChangesetSpecs = (): Observable<
-    (CampaignSpecChangesetSpecsResult['node'] & { __typename: 'CampaignSpec' })['changesetSpecs']
+    (CampaignSpecChangesetSpecsResult['node'] & { __typename: 'CampaignSpec' })['applyPreview']
 > =>
     of({
         pageInfo: {
@@ -106,7 +106,7 @@ const queryChangesetSpecs = (): Observable<
     })
 
 const queryEmptyChangesetSpecs = (): Observable<
-    (CampaignSpecChangesetSpecsResult['node'] & { __typename: 'CampaignSpec' })['changesetSpecs']
+    (CampaignSpecChangesetSpecsResult['node'] & { __typename: 'CampaignSpec' })['applyPreview']
 > =>
     of({
         pageInfo: {
