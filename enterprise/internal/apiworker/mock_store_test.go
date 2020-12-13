@@ -4,9 +4,8 @@ package apiworker
 
 import (
 	"context"
-	"sync"
-
 	workerutil "github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"sync"
 )
 
 // MockStore is a mock implementation of the Store interface (from the

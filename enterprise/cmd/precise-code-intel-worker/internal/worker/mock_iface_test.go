@@ -4,11 +4,10 @@ package worker
 
 import (
 	"context"
-	"sync"
-	"time"
-
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	basestore "github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"sync"
+	"time"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the

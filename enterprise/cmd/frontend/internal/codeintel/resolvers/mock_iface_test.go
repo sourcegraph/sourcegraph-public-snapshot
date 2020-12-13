@@ -4,12 +4,11 @@ package resolvers
 
 import (
 	"context"
-	"sync"
-
 	api "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
 	gitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"sync"
 )
 
 // MockCodeIntelAPI is a mock implementation of the CodeIntelAPI interface

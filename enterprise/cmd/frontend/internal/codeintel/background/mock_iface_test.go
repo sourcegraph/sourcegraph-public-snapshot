@@ -4,13 +4,12 @@ package background
 
 import (
 	"context"
-	"regexp"
-	"sync"
-	"time"
-
 	gitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	basestore "github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"regexp"
+	"sync"
+	"time"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
