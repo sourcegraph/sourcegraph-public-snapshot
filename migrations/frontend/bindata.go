@@ -162,6 +162,8 @@
 // 1528395763_remove_old_campaign_tables.up.sql (90B)
 // 1528395764_pg_stat_statement_ext.down.sql (62B)
 // 1528395764_pg_stat_statement_ext.up.sql (68B)
+// 1528395765_changeset_rewirer_views.down.sql (138B)
+// 1528395765_changeset_rewirer_views.up.sql (1.43kB)
 
 package migrations
 
@@ -3470,6 +3472,46 @@ func _1528395764_pg_stat_statement_extUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395765_changeset_rewirer_viewsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\xf3\x74\x0d\x57\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x29\x4a\x4c\xce\xce\xcc\x4b\x8f\x4f\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x89\x2f\x2e\x48\x4d\x2e\x8e\x4f\xcc\x4b\x41\x88\x15\xe3\xd0\x9d\x54\x94\x98\x97\x9c\x41\x58\xaf\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\x11\x72\xee\x7d\x8a\x00\x00\x00")
+
+func _1528395765_changeset_rewirer_viewsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395765_changeset_rewirer_viewsDownSql,
+		"1528395765_changeset_rewirer_views.down.sql",
+	)
+}
+
+func _1528395765_changeset_rewirer_viewsDownSql() (*asset, error) {
+	bytes, err := _1528395765_changeset_rewirer_viewsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395765_changeset_rewirer_views.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x5d, 0xa3, 0xbd, 0x34, 0xdf, 0xe9, 0xb4, 0xc, 0x1a, 0xb6, 0x2a, 0xb0, 0xf3, 0xbe, 0xe0, 0x85, 0xf9, 0xaa, 0xe1, 0xc1, 0xe7, 0xc5, 0x83, 0xd1, 0xe3, 0xde, 0x5b, 0x5c, 0xb0, 0x92, 0x97, 0x32}}
+	return a, nil
+}
+
+var __1528395765_changeset_rewirer_viewsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xe4\x53\xcb\x6e\xc2\x30\x10\xbc\xe7\x2b\xf6\x06\x48\x34\xea\x1d\x81\x44\x83\x69\x5d\x19\x5b\x4a\x42\x39\x5a\x26\xde\x42\x54\x6a\x90\x93\xaa\xed\xdf\x57\x76\x78\xa6\x09\x52\x4f\x1c\xca\x01\x59\x9b\x99\x9d\xf1\x7a\xf6\x81\x3c\x52\x3e\x08\x82\x28\x26\xe3\x94\xc0\x0b\x25\x0b\x28\xad\xca\xde\x72\xb3\x92\xd9\x5a\x99\x15\x16\x58\xca\x62\x87\x59\x21\x95\xd1\xa7\x5a\x01\xe3\x04\xba\x01\x00\x40\x42\x18\x89\x52\x7f\x74\xbf\x1a\x2d\xcc\xb5\x83\x5e\x56\x65\xae\xfb\x47\x42\x24\xc6\x8c\x24\x11\xe9\x9e\x9a\x87\xb9\xee\xc3\x7d\xef\x92\x78\xce\xa9\x8b\x58\xdc\x6d\x65\xa5\xb4\x3f\xb6\x63\x33\xf5\xbe\x53\xf9\xca\x1c\x9c\x78\x95\x5a\xcd\x93\xa7\xb1\x98\xd5\xd9\xfe\x03\x23\xd3\x14\x9e\x05\xe5\x70\x36\x0f\xc1\x7f\x2b\x9e\x8c\x0d\xdb\x2d\xf3\x49\x13\x11\xbf\x4a\xb4\x46\x6d\x9a\xc9\xee\xff\x6e\x34\xea\x1c\x50\x74\xd2\xf1\x4d\x28\xe7\x24\xae\xac\xb9\xfe\x20\x78\xab\xee\xd0\x23\xc2\xfd\x5d\x17\x4f\x24\x26\xad\x23\x6b\x90\x03\x9a\x00\x17\x29\xf0\x39\x63\x17\x77\xf0\x5d\x35\x6e\xb0\x44\x2d\x55\xe9\x71\x73\xc6\x82\x5e\x2d\x67\x4b\xab\x4c\xb6\xfe\xd7\x29\x6b\x60\x17\xe1\xf6\xd3\xa0\x96\xcb\x6f\x79\x44\x57\x64\x57\xb7\xe7\xc5\xdb\x67\x34\xfb\xb0\x16\xcd\x71\xd8\xad\x91\xe8\x56\x8f\x07\x0e\xd7\xe8\xb8\x8a\x5f\xd3\xa3\x0e\xaf\xe8\xf5\x5c\x24\xd7\xa8\x74\x8c\xaf\x9d\x2b\x4b\x72\x80\xdc\x62\x43\xfe\xb4\x1d\x62\x36\xa3\xe9\x20\xf8\x09\x00\x00\xff\xff\xdd\x69\x43\x85\x96\x05\x00\x00")
+
+func _1528395765_changeset_rewirer_viewsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395765_changeset_rewirer_viewsUpSql,
+		"1528395765_changeset_rewirer_views.up.sql",
+	)
+}
+
+func _1528395765_changeset_rewirer_viewsUpSql() (*asset, error) {
+	bytes, err := _1528395765_changeset_rewirer_viewsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395765_changeset_rewirer_views.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x65, 0xb8, 0xba, 0x96, 0xa0, 0x70, 0x78, 0x25, 0x48, 0xa8, 0xae, 0x59, 0x53, 0x19, 0x4a, 0x80, 0xbb, 0x1c, 0xb1, 0xb9, 0xf3, 0xa3, 0x4a, 0xec, 0x38, 0x74, 0x88, 0x3b, 0x7a, 0x16, 0x88, 0xe3}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3723,6 +3765,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395763_remove_old_campaign_tables.up.sql":                                           _1528395763_remove_old_campaign_tablesUpSql,
 	"1528395764_pg_stat_statement_ext.down.sql":                                              _1528395764_pg_stat_statement_extDownSql,
 	"1528395764_pg_stat_statement_ext.up.sql":                                                _1528395764_pg_stat_statement_extUpSql,
+	"1528395765_changeset_rewirer_views.down.sql":                                            _1528395765_changeset_rewirer_viewsDownSql,
+	"1528395765_changeset_rewirer_views.up.sql":                                              _1528395765_changeset_rewirer_viewsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3931,6 +3975,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395763_remove_old_campaign_tables.up.sql":                                           {_1528395763_remove_old_campaign_tablesUpSql, map[string]*bintree{}},
 	"1528395764_pg_stat_statement_ext.down.sql":                                              {_1528395764_pg_stat_statement_extDownSql, map[string]*bintree{}},
 	"1528395764_pg_stat_statement_ext.up.sql":                                                {_1528395764_pg_stat_statement_extUpSql, map[string]*bintree{}},
+	"1528395765_changeset_rewirer_views.down.sql":                                            {_1528395765_changeset_rewirer_viewsDownSql, map[string]*bintree{}},
+	"1528395765_changeset_rewirer_views.up.sql":                                              {_1528395765_changeset_rewirer_viewsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
