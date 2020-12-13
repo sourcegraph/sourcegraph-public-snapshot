@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -87,7 +88,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	setupGlobalTestDB(t)
+	dbtesting.SetupGlobalTestDBWithoutReset(t)
 
 	user := ct.CreateTestUser(t, true)
 	userID := user.ID
@@ -203,7 +204,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	setupGlobalTestDB(t)
+	dbtesting.SetupGlobalTestDBWithoutReset(t)
 
 	userID := ct.CreateTestUser(t, true).ID
 
@@ -276,7 +277,7 @@ func TestApplyCampaign(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	setupGlobalTestDB(t)
+	dbtesting.SetupGlobalTestDBWithoutReset(t)
 
 	userID := ct.CreateTestUser(t, true).ID
 
@@ -439,7 +440,7 @@ func TestCreateCampaign(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	setupGlobalTestDB(t)
+	dbtesting.SetupGlobalTestDBWithoutReset(t)
 
 	userID := ct.CreateTestUser(t, true).ID
 
@@ -501,7 +502,7 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	setupGlobalTestDB(t)
+	dbtesting.SetupGlobalTestDBWithoutReset(t)
 
 	user := ct.CreateTestUser(t, true)
 	userID := user.ID
@@ -775,7 +776,7 @@ func TestCreateCampaignsCredential(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	setupGlobalTestDB(t)
+	dbtesting.SetupGlobalTestDBWithoutReset(t)
 
 	pruneUserCredentials(t)
 
@@ -829,7 +830,7 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	setupGlobalTestDB(t)
+	dbtesting.SetupGlobalTestDBWithoutReset(t)
 
 	pruneUserCredentials(t)
 
