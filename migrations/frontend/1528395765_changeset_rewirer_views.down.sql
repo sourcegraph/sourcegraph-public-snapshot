@@ -1,7 +1,7 @@
 BEGIN;
 
-DROP VIEW IF EXISTS changeset_spec_tracked_mappings;
+DROP VIEW IF EXISTS tracking_changeset_specs_and_changesets;
 
-DROP VIEW IF EXISTS changeset_spec_branch_mappings;
+DROP VIEW IF EXISTS branch_changeset_specs_and_changesets;
 
 COMMIT;

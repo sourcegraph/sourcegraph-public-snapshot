@@ -1,6 +1,6 @@
 BEGIN;
 
-CREATE VIEW changeset_spec_tracked_mappings AS (
+CREATE VIEW tracking_changeset_specs_and_changesets AS (
     SELECT
         changeset_specs.id AS changeset_spec_id,
         COALESCE(changesets.id, 0) AS changeset_id,
@@ -16,7 +16,7 @@ CREATE VIEW changeset_spec_tracked_mappings AS (
         repo.deleted_at IS NULL
 );
 
-CREATE VIEW changeset_spec_branch_mappings AS (
+CREATE VIEW branch_changeset_specs_and_changesets AS (
     SELECT
         changeset_specs.id AS changeset_spec_id,
         COALESCE(changesets.id, 0) AS changeset_id,

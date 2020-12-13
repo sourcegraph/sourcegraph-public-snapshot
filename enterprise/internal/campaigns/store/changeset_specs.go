@@ -572,7 +572,7 @@ var getRewirerMappingsQueryFmtstr = `
 SELECT
 	changeset_spec_id, changeset_id, repo_id
 FROM
-	changeset_spec_tracked_mappings
+	tracking_changeset_specs_and_changesets
 WHERE
 	campaign_spec_id = %s
 
@@ -583,7 +583,7 @@ UNION ALL
 SELECT
 	changeset_spec_id, MAX(CASE WHEN owner_campaign_id = %s THEN changeset_id ELSE 0 END), repo_id
 FROM
-	changeset_spec_branch_mappings
+	branch_changeset_specs_and_changesets
 WHERE
 	campaign_spec_id = %s
 GROUP BY changeset_spec_id, repo_id
@@ -600,14 +600,14 @@ WHERE
 			SELECT
 				changeset_id
 			FROM
-				changeset_spec_tracked_mappings
+				tracking_changeset_specs_and_changesets
 			WHERE
 				campaign_spec_id = %s
 		UNION
 			SELECT
 				MAX(CASE WHEN owner_campaign_id = %s THEN changeset_id ELSE 0 END)
 			FROM
-				changeset_spec_branch_mappings
+				branch_changeset_specs_and_changesets
 			WHERE
 				campaign_spec_id = %s
 			GROUP BY changeset_spec_id, repo_id
