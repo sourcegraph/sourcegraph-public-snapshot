@@ -177,13 +177,9 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *types.ExternalS
 		}
 		return nil
 
-	case *webhooks.MergeRequestCloseEvent,
-		*webhooks.MergeRequestMergeEvent,
-		*webhooks.MergeRequestReopenEvent,
-		*webhooks.MergeRequestDraftEvent,
-		*webhooks.MergeRequestUndraftEvent:
-		eventCommon := e.(webhooks.MergeRequestEventCommonContainer).ToEventCommon()
-		event := e.(webhooks.MergeRequestEventToEvent).ToEvent()
+	case webhooks.UpsertableWebhookEvent:
+		eventCommon := e.ToEventCommon()
+		event := e.ToEvent()
 		pr := gitlabToPR(&eventCommon.Project, eventCommon.MergeRequest)
 		if err := h.upsertChangesetEvent(ctx, esID, pr, event); err != nil {
 			return &httpError{

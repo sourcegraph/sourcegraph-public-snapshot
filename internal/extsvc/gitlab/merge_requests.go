@@ -48,9 +48,9 @@ type MergeRequest struct {
 	// Merge Request. Once our minimum version is GitLab 12.0, we can use the
 	// GraphQL API to retrieve all of this data at once, but until then, we have
 	// to do it the old fashioned way with lots of REST requests.
-	Notes     []*Note
-	Pipelines []*Pipeline
-	Events    []*ResourceStateEvent
+	Notes               []*Note
+	Pipelines           []*Pipeline
+	ResourceStateEvents []*ResourceStateEvent
 }
 
 // IsWIP returns true if the given title would result in GitLab rendering the MR as 'work in progress'.

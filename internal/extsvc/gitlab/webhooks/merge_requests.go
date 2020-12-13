@@ -55,21 +55,26 @@ type keyer interface {
 	Key() string
 }
 
-// MergeRequestEventCommonContainer is a common interface for types that embed
-// MergeRequestEvent to provide a method that can return the embedded
-// MergeRequestEvent.
-type MergeRequestEventToEvent interface {
+// UpsertableWebhookEvent is a common interface for types that embed
+// ToEvent to provide a method that can return a changeset event
+// derived from the webhook payload.
+type UpsertableWebhookEvent interface {
+	MergeRequestEventCommonContainer
 	ToEvent() keyer
 }
+
+// Type guards:
+var _ UpsertableWebhookEvent = (*MergeRequestCloseEvent)(nil)
+var _ UpsertableWebhookEvent = (*MergeRequestMergeEvent)(nil)
+var _ UpsertableWebhookEvent = (*MergeRequestReopenEvent)(nil)
+var _ UpsertableWebhookEvent = (*MergeRequestDraftEvent)(nil)
+var _ UpsertableWebhookEvent = (*MergeRequestUndraftEvent)(nil)
 
 type MergeRequestApprovedEvent struct{ MergeRequestEventCommon }
 type MergeRequestUnapprovedEvent struct{ MergeRequestEventCommon }
 type MergeRequestUpdateEvent struct{ MergeRequestEventCommon }
 
 type MergeRequestCloseEvent struct{ MergeRequestEventCommon }
-
-var _ MergeRequestEventToEvent = (*MergeRequestCloseEvent)(nil)
-
 type MergeRequestMergeEvent struct{ MergeRequestEventCommon }
 type MergeRequestReopenEvent struct{ MergeRequestEventCommon }
 type MergeRequestUndraftEvent struct{ MergeRequestEventCommon }

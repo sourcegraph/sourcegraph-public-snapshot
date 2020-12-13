@@ -451,7 +451,7 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 		}
 
 	case *gitlab.MergeRequest:
-		events = make([]*ChangesetEvent, 0, len(m.Notes)+len(m.Events)+len(m.Pipelines))
+		events = make([]*ChangesetEvent, 0, len(m.Notes)+len(m.ResourceStateEvents)+len(m.Pipelines))
 
 		for _, note := range m.Notes {
 			if event := note.ToEvent(); event != nil {
@@ -464,7 +464,7 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 			}
 		}
 
-		for _, e := range m.Events {
+		for _, e := range m.ResourceStateEvents {
 			if event := e.ToEvent(); event != nil {
 				appendEvent(&ChangesetEvent{
 					ChangesetID: c.ID,

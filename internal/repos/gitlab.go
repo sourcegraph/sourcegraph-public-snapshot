@@ -498,7 +498,7 @@ func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gi
 
 	mr.Notes = notes
 	mr.Pipelines = pipelines
-	mr.Events = events
+	mr.ResourceStateEvents = events
 	return nil
 }
 

@@ -356,7 +356,6 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.changeset.Changeset.Metadata = mr
 			p.mockUpdateMergeRequest(mr, want, gitlab.UpdateMergeRequestStateEventClose, nil)
 			p.mockGetMergeRequestNotes(mr.IID, nil, 20, nil)
-			// TODO add event
 			p.mockGetMergeRequestResourceStateEvents(mr.IID, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(mr.IID, nil, 20, nil)
 
@@ -616,7 +615,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
-			if diff := cmp.Diff(mr.Events, events); diff != "" {
+			if diff := cmp.Diff(mr.ResourceStateEvents, events); diff != "" {
 				t.Errorf("unexpected events: %s", diff)
 			}
 
@@ -627,7 +626,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
-			if diff := cmp.Diff(mr.Events, events); diff != "" {
+			if diff := cmp.Diff(mr.ResourceStateEvents, events); diff != "" {
 				t.Errorf("unexpected events: %s", diff)
 			}
 		})
