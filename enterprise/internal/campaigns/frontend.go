@@ -14,24 +14,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
+// InitFrontend initializes the given enterpriseServices to include the required resolvers for campaigns
+// and sets up webhook handlers for changeset events.
+func InitFrontend(ctx context.Context, enterpriseServices *enterprise.Services) error {
 	globalState, err := globalstatedb.Get(ctx)
 	if err != nil {
 		return err
 	}
 
-	campaignsStore := store.NewWithClock(dbconn.Global, timeutil.Now)
-	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	cstore := store.NewWithClock(dbconn.Global, timeutil.Now)
+	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
-	enterpriseServices.CampaignsResolver = resolvers.NewResolver(dbconn.Global)
-	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(campaignsStore, repositories, timeutil.Now)
+	enterpriseServices.CampaignsResolver = resolvers.New(dbconn.Global)
+	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(cstore, rstore, timeutil.Now)
 	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(
-		campaignsStore,
-		repositories,
+		cstore,
+		rstore,
 		timeutil.Now,
 		"sourcegraph-"+globalState.SiteID,
 	)
-	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(campaignsStore, repositories, timeutil.Now)
+	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(cstore, rstore, timeutil.Now)
 
 	return nil
 }

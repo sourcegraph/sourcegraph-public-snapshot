@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
-func StartBackgroundJobs(ctx context.Context, db *sql.DB, campaignsStore *store.Store, repoStore repos.Store, cf *httpcli.Factory) {
+func Routines(ctx context.Context, db *sql.DB, campaignsStore *store.Store, repoStore repos.Store, cf *httpcli.Factory) []goroutine.BackgroundRoutine {
 	sourcer := repos.NewSourcer(cf)
 
 	metrics := newMetrics()
@@ -21,6 +21,5 @@ func StartBackgroundJobs(ctx context.Context, db *sql.DB, campaignsStore *store.
 		newWorkerResetter(campaignsStore, metrics),
 		newSpecExpireWorker(ctx, campaignsStore),
 	}
-
-	go goroutine.MonitorBackgroundRoutines(ctx, routines...)
+	return routines
 }
