@@ -137,7 +137,7 @@ interface Props extends PlatformContextProps, ExtensionsControllerProps, Telemet
     repo:
         | GQL.IRepository
         | {
-              /** The repository's Scalars['ID'], if it has one.
+              /** The repository's ID, if it has one.
                */
               id?: Scalars['ID']
 
