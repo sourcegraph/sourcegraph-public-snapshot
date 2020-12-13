@@ -22,6 +22,79 @@ type changesetApplyPreviewResolver struct {
 	preloadedNextSync time.Time
 	preloadedCampaign *campaigns.Campaign
 	campaignSpecID    int64
+}
+
+var _ graphqlbackend.ChangesetApplyPreviewResolver = &changesetApplyPreviewResolver{}
+
+func (r *changesetApplyPreviewResolver) repoAccessible() bool {
+	// The repo is accessible when it was returned by the db when the mapping was hydrated.
+	return r.mapping.Repo != nil
+}
+
+func (r *changesetApplyPreviewResolver) ToVisibleChangesetApplyPreview() (graphqlbackend.VisibleChangesetApplyPreviewResolver, bool) {
+	if r.repoAccessible() {
+		return &visibleChangesetApplyPreviewResolver{
+			store:             r.store,
+			mapping:           r.mapping,
+			preloadedNextSync: r.preloadedNextSync,
+			preloadedCampaign: r.preloadedCampaign,
+			campaignSpecID:    r.campaignSpecID,
+		}, true
+	}
+	return nil, false
+}
+
+func (r *changesetApplyPreviewResolver) ToHiddenChangesetApplyPreview() (graphqlbackend.HiddenChangesetApplyPreviewResolver, bool) {
+	if !r.repoAccessible() {
+		return &hiddenChangesetApplyPreviewResolver{
+			store:             r.store,
+			mapping:           r.mapping,
+			preloadedNextSync: r.preloadedNextSync,
+		}, false
+	}
+	return nil, false
+}
+
+type hiddenChangesetApplyPreviewResolver struct {
+	store *store.Store
+
+	mapping           *store.RewirerMapping
+	preloadedNextSync time.Time
+}
+
+var _ graphqlbackend.HiddenChangesetApplyPreviewResolver = &hiddenChangesetApplyPreviewResolver{}
+
+func (r *hiddenChangesetApplyPreviewResolver) Operations(ctx context.Context) ([]campaigns.ReconcilerOperation, error) {
+	// If the repo is inaccessible, no operations would be taken, since the changeset is not created/updated.
+	return []campaigns.ReconcilerOperation{}, nil
+}
+
+func (r *hiddenChangesetApplyPreviewResolver) Delta(ctx context.Context) (graphqlbackend.ChangesetSpecDeltaResolver, error) {
+	// If the repo is inaccessible, no comparison is made, since the changeset is not created/updated.
+	return &changesetSpecDeltaResolver{}, nil
+}
+
+func (r *hiddenChangesetApplyPreviewResolver) ChangesetSpec(ctx context.Context) (graphqlbackend.HiddenChangesetSpecResolver, error) {
+	if r.mapping.ChangesetSpec == nil {
+		return nil, nil
+	}
+	return NewChangesetSpecResolverWithRepo(r.store, nil, r.mapping.ChangesetSpec), nil
+}
+
+func (r *hiddenChangesetApplyPreviewResolver) Changeset(ctx context.Context) (graphqlbackend.HiddenExternalChangesetResolver, error) {
+	if r.mapping.Changeset == nil {
+		return nil, nil
+	}
+	return NewChangesetResolverWithNextSync(r.store, r.mapping.Changeset, nil, r.preloadedNextSync), nil
+}
+
+type visibleChangesetApplyPreviewResolver struct {
+	store *store.Store
+
+	mapping           *store.RewirerMapping
+	preloadedNextSync time.Time
+	preloadedCampaign *campaigns.Campaign
+	campaignSpecID    int64
 
 	planOnce sync.Once
 	plan     *reconciler.Plan
@@ -32,19 +105,9 @@ type changesetApplyPreviewResolver struct {
 	campaignErr  error
 }
 
-var _ graphqlbackend.ChangesetApplyPreviewResolver = &changesetApplyPreviewResolver{}
+var _ graphqlbackend.VisibleChangesetApplyPreviewResolver = &visibleChangesetApplyPreviewResolver{}
 
-func (r *changesetApplyPreviewResolver) repoAccessible() bool {
-	// The repo is accessible when it was returned by the db when the mapping was hydrated.
-	return r.mapping.Repo != nil
-}
-
-func (r *changesetApplyPreviewResolver) Operations(ctx context.Context) ([]campaigns.ReconcilerOperation, error) {
-	if !r.repoAccessible() {
-		// If the repo is inaccessible, no operations would be taken, since the changeset is not created/updated.
-		return []campaigns.ReconcilerOperation{}, nil
-	}
-
+func (r *visibleChangesetApplyPreviewResolver) Operations(ctx context.Context) ([]campaigns.ReconcilerOperation, error) {
 	plan, err := r.computePlan(ctx)
 	if err != nil {
 		return nil, err
@@ -53,12 +116,7 @@ func (r *changesetApplyPreviewResolver) Operations(ctx context.Context) ([]campa
 	return ops, nil
 }
 
-func (r *changesetApplyPreviewResolver) Delta(ctx context.Context) (graphqlbackend.ChangesetSpecDeltaResolver, error) {
-	if !r.repoAccessible() {
-		// If the repo is inaccessible, no comparison is made, since the changeset is not created/updated.
-		return &changesetSpecDeltaResolver{}, nil
-	}
-
+func (r *visibleChangesetApplyPreviewResolver) Delta(ctx context.Context) (graphqlbackend.ChangesetSpecDeltaResolver, error) {
 	plan, err := r.computePlan(ctx)
 	if err != nil {
 		return nil, err
@@ -69,7 +127,7 @@ func (r *changesetApplyPreviewResolver) Delta(ctx context.Context) (graphqlbacke
 	return &changesetSpecDeltaResolver{delta: *plan.Delta}, nil
 }
 
-func (r *changesetApplyPreviewResolver) computePlan(ctx context.Context) (*reconciler.Plan, error) {
+func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) (*reconciler.Plan, error) {
 	r.planOnce.Do(func() {
 		campaign, err := r.computeCampaign(ctx)
 		if err != nil {
@@ -115,7 +173,7 @@ func (r *changesetApplyPreviewResolver) computePlan(ctx context.Context) (*recon
 	return r.plan, r.planErr
 }
 
-func (r *changesetApplyPreviewResolver) computeCampaign(ctx context.Context) (*campaigns.Campaign, error) {
+func (r *visibleChangesetApplyPreviewResolver) computeCampaign(ctx context.Context) (*campaigns.Campaign, error) {
 	r.campaignOnce.Do(func() {
 		if r.preloadedCampaign != nil {
 			r.campaign = r.preloadedCampaign
@@ -133,14 +191,14 @@ func (r *changesetApplyPreviewResolver) computeCampaign(ctx context.Context) (*c
 	return r.campaign, r.campaignErr
 }
 
-func (r *changesetApplyPreviewResolver) ChangesetSpec(ctx context.Context) (graphqlbackend.ChangesetSpecResolver, error) {
+func (r *visibleChangesetApplyPreviewResolver) ChangesetSpec(ctx context.Context) (graphqlbackend.VisibleChangesetSpecResolver, error) {
 	if r.mapping.ChangesetSpec == nil {
 		return nil, nil
 	}
 	return NewChangesetSpecResolverWithRepo(r.store, r.mapping.Repo, r.mapping.ChangesetSpec), nil
 }
 
-func (r *changesetApplyPreviewResolver) Changeset(ctx context.Context) (graphqlbackend.ChangesetResolver, error) {
+func (r *visibleChangesetApplyPreviewResolver) Changeset(ctx context.Context) (graphqlbackend.ExternalChangesetResolver, error) {
 	if r.mapping.Changeset == nil {
 		return nil, nil
 	}

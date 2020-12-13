@@ -1239,7 +1239,9 @@ type ChangesetSpecConnection {
     nodes: [ChangesetSpec!]!
 }
 
-type ChangesetApplyPreview {
+union ChangesetApplyPreview = VisibleChangesetApplyPreview | HiddenChangesetApplyPreview
+
+type HiddenChangesetApplyPreview {
     """
     The operations to take to achieve the desired state of this changeset spec.
     """
@@ -1250,8 +1252,23 @@ type ChangesetApplyPreview {
     """
     delta: ChangesetSpecDelta!
 
-    changesetSpec: ChangesetSpec
-    changeset: Changeset
+    changesetSpec: HiddenChangesetSpec
+    changeset: HiddenExternalChangeset
+}
+
+type VisibleChangesetApplyPreview {
+    """
+    The operations to take to achieve the desired state of this changeset spec.
+    """
+    operations: [ChangesetSpecOperation!]!
+
+    """
+    The delta between the current changeset state and what the new changeset spec envisions the changeset to look like.
+    """
+    delta: ChangesetSpecDelta!
+
+    changesetSpec: VisibleChangesetSpec
+    changeset: ExternalChangeset
 }
 
 """

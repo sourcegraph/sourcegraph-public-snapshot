@@ -162,10 +162,22 @@ type CampaignDescriptionResolver interface {
 }
 
 type ChangesetApplyPreviewResolver interface {
+	ToVisibleChangesetApplyPreview() (VisibleChangesetApplyPreviewResolver, bool)
+	ToHiddenChangesetApplyPreview() (HiddenChangesetApplyPreviewResolver, bool)
+}
+
+type VisibleChangesetApplyPreviewResolver interface {
 	Operations(ctx context.Context) ([]campaigns.ReconcilerOperation, error)
 	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
-	ChangesetSpec(ctx context.Context) (ChangesetSpecResolver, error)
-	Changeset(ctx context.Context) (ChangesetResolver, error)
+	ChangesetSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
+	Changeset(ctx context.Context) (ExternalChangesetResolver, error)
+}
+
+type HiddenChangesetApplyPreviewResolver interface {
+	Operations(ctx context.Context) ([]campaigns.ReconcilerOperation, error)
+	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
+	ChangesetSpec(ctx context.Context) (HiddenChangesetSpecResolver, error)
+	Changeset(ctx context.Context) (HiddenExternalChangesetResolver, error)
 }
 
 type ChangesetApplyPreviewConnectionResolver interface {
