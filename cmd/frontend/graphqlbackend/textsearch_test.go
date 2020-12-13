@@ -29,7 +29,7 @@ import (
 )
 
 func TestSearchFilesInRepos(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.RepoName, gitserverRepo gitserver.Repo, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -116,7 +116,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 }
 
 func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.RepoName, gitserverRepo gitserver.Repo, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo":
@@ -223,17 +223,17 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 			// treat empty list as preferring master
 			revs = []search.RevisionSpecifier{{RevSpec: ""}}
 		}
-		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{Name: api.RepoName(repoName)}, Revs: revs}
+		r[i] = &search.RepositoryRevisions{Repo: &types.RepoName{Name: api.RepoName(repoName)}, Revs: revs}
 	}
 	return r
 }
 
-func mkRepos(names ...string) []*types.Repo {
-	var repos []*types.Repo
+func mkRepos(names ...string) []*types.RepoName {
+	var repos []*types.RepoName
 	for _, name := range names {
 		sum := md5.Sum([]byte(name))
 		id := api.RepoID(binary.BigEndian.Uint64(sum[:]))
-		repos = append(repos, &types.Repo{ID: id, Name: api.RepoName(name)})
+		repos = append(repos, &types.RepoName{ID: id, Name: api.RepoName(name)})
 	}
 	return repos
 }
@@ -269,7 +269,7 @@ func TestLimitSearcherRepos(t *testing.T) {
 		limit       int
 		input       []*search.RepositoryRevisions
 		want        []*search.RepositoryRevisions
-		wantLimited []*types.Repo
+		wantLimited []*types.RepoName
 	}{
 		{
 			name:        "non_limited",

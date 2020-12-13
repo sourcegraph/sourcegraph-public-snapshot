@@ -12,7 +12,7 @@ import (
 var updateGolden = flag.Bool("update", false, "Update testdata goldens")
 
 func TestSearchProgress(t *testing.T) {
-	var timedout100 []*types.Repo
+	var timedout100 []*types.RepoName
 	for i := 0; i < 100; i++ {
 		timedout100 = append(timedout100, mkRepos(fmt.Sprintf("timedout-%d", i))...)
 	}

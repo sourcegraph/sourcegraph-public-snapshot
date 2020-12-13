@@ -853,7 +853,7 @@ func zoektRPC(s zoekt.Searcher) (zoekt.Searcher, func()) {
 func TestZoektIndexedRepos_single(t *testing.T) {
 	repoRev := func(revSpec string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
-			Repo: &types.Repo{ID: api.RepoID(0), Name: "test/repo"},
+			Repo: &types.RepoName{ID: api.RepoID(0), Name: "test/repo"},
 			Revs: []search.RevisionSpecifier{
 				{RevSpec: revSpec},
 			},
