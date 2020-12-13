@@ -447,7 +447,7 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *FileMat
 		return time.Time{}, nil
 	}
 	lm := fm.LineMatches()[0]
-	hunks, err := git.BlameFile(ctx, gitserver.Repo{Name: fm.Repo.repo.Name}, fm.path(), &git.BlameOptions{
+	hunks, err := git.BlameFile(ctx, gitserver.Repo{Name: fm.Repo.innerRepo.Name}, fm.path(), &git.BlameOptions{
 		NewestCommit: fm.CommitID,
 		StartLine:    int(lm.LineNumber()),
 		EndLine:      int(lm.LineNumber()),

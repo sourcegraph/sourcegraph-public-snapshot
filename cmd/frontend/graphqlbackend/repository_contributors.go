@@ -51,7 +51,13 @@ func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) (
 			opt.After = *r.args.After
 		}
 
-		cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
+		repo, err := r.repo.repo(ctx)
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		cachedRepo, err := backend.CachedGitRepo(ctx, repo)
 		if err != nil {
 			r.err = err
 			return

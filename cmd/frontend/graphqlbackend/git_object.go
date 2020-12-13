@@ -77,7 +77,13 @@ type gitObjectResolver struct {
 
 func (o *gitObjectResolver) resolve(ctx context.Context) (GitObjectID, gitObjectType, error) {
 	o.once.Do(func() {
-		cachedRepo, err := backend.CachedGitRepo(ctx, o.repo.repo)
+		repo, err := o.repo.repo(ctx)
+		if err != nil {
+			o.err = err
+			return
+		}
+
+		cachedRepo, err := backend.CachedGitRepo(ctx, repo)
 		if err != nil {
 			o.err = err
 			return

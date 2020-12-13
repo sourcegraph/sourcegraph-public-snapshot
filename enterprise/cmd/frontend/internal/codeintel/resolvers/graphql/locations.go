@@ -215,7 +215,11 @@ func (r *CachedLocationResolver) resolveRepository(ctx context.Context, id api.R
 // return a nil resolver if the commit is not known by gitserver. This method must be called only when
 // constructing a resolver to populate the cache.
 func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryResolver *gql.RepositoryResolver, commit string) (*gql.GitCommitResolver, error) {
-	gitserverRepo, err := backend.CachedGitRepo(ctx, repositoryResolver.Type())
+	repo, err := repositoryResolver.Type(ctx)
+	if err != nil {
+		return nil, err
+	}
+	gitserverRepo, err := backend.CachedGitRepo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}

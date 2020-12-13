@@ -90,7 +90,11 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 		return toGitCommitResolver(r, commitID, nil), nil
 	}
 
-	grepo, err := backend.CachedGitRepo(ctx, r.repo)
+	repo, err := r.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+	grepo, err := backend.CachedGitRepo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -219,8 +223,13 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 				base = string(cmp.base.OID())
 			}
 
+			repo, err := cmp.repo.repo(ctx)
+			if err != nil {
+				return
+			}
+
 			var cachedRepo *gitserver.Repo
-			cachedRepo, err = backend.CachedGitRepo(ctx, cmp.repo.repo)
+			cachedRepo, err = backend.CachedGitRepo(ctx, repo)
 			if err != nil {
 				return
 			}

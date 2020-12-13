@@ -79,9 +79,16 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 
-		cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repoResolver.repo)
+		repo, err := r.commit.repoResolver.repo(ctx)
 		if err != nil {
 			r.contentErr = err
+			return
+		}
+
+		cachedRepo, err := backend.CachedGitRepo(ctx, repo)
+		if err != nil {
+			r.contentErr = err
+			// Bug?: Should we return here?
 		}
 
 		r.content, r.contentErr = git.ReadFile(ctx, *cachedRepo, api.CommitID(r.commit.OID()), r.Path(), 0)
@@ -112,7 +119,7 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 		return nil, err
 	}
 	return highlightContent(ctx, args, content, r.Path(), highlight.Metadata{
-		RepoName: string(r.commit.repoResolver.repo.Name),
+		RepoName: string(r.commit.repoResolver.Name()),
 		Revision: string(r.commit.oid),
 	})
 }
@@ -169,7 +176,11 @@ func (r *GitTreeEntryResolver) urlPath(prefix string) (string, error) {
 func (r *GitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
 
 func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	return externallink.FileOrDir(ctx, r.commit.repoResolver.repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
+	repo, err := r.commit.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return externallink.FileOrDir(ctx, repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
 }
 
 func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
@@ -307,7 +318,11 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if r.isSingleChild != nil {
 		return *r.isSingleChild, nil
 	}
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repoResolver.repo)
+	repo, err := r.commit.repoResolver.repo(ctx)
+	if err != nil {
+		return false, err
+	}
+	cachedRepo, err := backend.CachedGitRepo(ctx, repo)
 	if err != nil {
 		return false, err
 	}
@@ -326,8 +341,13 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 		toolName = *args.ToolName
 	}
 
+	repo, err := r.commit.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return EnterpriseResolvers.codeIntelResolver.GitBlobLSIFData(ctx, &GitBlobLSIFDataArgs{
-		Repo:      r.Repository().Type(),
+		Repo:      repo,
 		Commit:    api.CommitID(r.Commit().OID()),
 		Path:      r.Path(),
 		ExactPath: !r.stat.IsDir(),
