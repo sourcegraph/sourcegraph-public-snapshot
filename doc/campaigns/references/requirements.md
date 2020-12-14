@@ -1,6 +1,7 @@
 # Requirements
 
-Campaigns has requirements for the Sourcegraph server version, it's connected code hosts and developer environments. 
+Campaigns has requirements for the Sourcegraph server version, its connected code hosts and developer environments. 
+
 
 ## Code hosts
 
