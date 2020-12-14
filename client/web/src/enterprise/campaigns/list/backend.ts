@@ -169,5 +169,5 @@ export const areCampaignsLicensed = (): Observable<boolean> =>
         `
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => !!data.site?.productSubscription?.license?.tags.includes('campaigns'))
+        map(data => !!data.site.productSubscription.license?.tags.includes('campaigns'))
     )
