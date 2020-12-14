@@ -26,7 +26,7 @@ func New(store *store.Store) *Service {
 	return NewWithClock(store, store.Clock())
 }
 
-// NewServiceWithClock returns a Service the given clock used
+// NewWithClock returns a Service the given clock used
 // to generate timestamps.
 func NewWithClock(store *store.Store, clock func() time.Time) *Service {
 	svc := &Service{store: store, sourcer: repos.NewSourcer(httpcli.NewExternalHTTPClientFactory()), clock: clock}
