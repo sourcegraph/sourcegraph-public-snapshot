@@ -5,7 +5,8 @@ Campaigns has requirements for the Sourcegraph server version, its connected cod
 
 ## Code hosts
 
-Sourcegraph is compatible with the following code hosts and versions:
+Campaigns is compatible with the following code hosts and versions:
+
 
   - Github.com
   - Github Enterprise: version: 2.20 and later
