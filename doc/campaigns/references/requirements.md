@@ -25,8 +25,8 @@ We **highly recommend** enabling webhooks to increase performance with large cam
 While the latest version of Sourcegraph server is always recommended, version 3.22 or greater is the minimum version required to run campaigns. 
 
 ## Requirements for developers creating and running campaigns
-  - Latest version of [src-cli](https://github.com/sourcegraph/src-cli/releases)
-      - Src-cli is supported on Linux or MacOS 
-        - Windows support is experimental
-  - Docker
-  - Git
+
+- Latest version of the [Sourcegraph CLI `src`](../../cli/index.md)
+  - `src` is supported on Linux or macOS , Windows support is experimental
+- Docker
+- Git
