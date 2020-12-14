@@ -1419,7 +1419,8 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		bbsRepo    = ct.TestRepo(t, reposStore, extsvc.KindBitbucketServer)
 		gitlabRepo = ct.TestRepo(t, reposStore, extsvc.KindGitLab)
 	)
-	if err := reposStore.InsertRepos(ctx, githubRepo, bbsRepo, gitlabRepo); err != nil {
+	rs := db.NewRepoStoreWith(reposStore.(*repos.DBStore))
+	if err := rs.Create(ctx, githubRepo, bbsRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
 
