@@ -20,7 +20,7 @@ For more information, see [Code host interactions in campaigns](../explanations/
 
 In order to update a campaign after previewing the changes, do the following:
 
-1. Edit the [campaign spec](../references/campaign_spec_yaml_reference.md) with which you created the campaign to include the changes you want to make to the campaign. For example, change [the commit message in the `changesetTemplate`](../references/campaign_spec_yaml_reference.md#changesettemplate-commit-message), add a new changeset id [to the importedChangesets](https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#importchangesets), or [modify the repositoriesMatchingQuery](https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#on-repositoriesmatchingquery) to return different search results.
+1. Edit the [campaign spec](../references/campaign_spec_yaml_reference.md) with which you created the campaign to include the changes you want to make to the campaign. For example, change [the commit message in the `changesetTemplate`](../references/campaign_spec_yaml_reference.md#changesettemplate-commit-message), or add a new changeset id [to the importedChangesets](https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#importchangesets), or [modify the repositoriesMatchingQuery](https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#on-repositoriesmatchingquery) to return different search results.
 1. Use the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) to execute and preview the campaign spec.
 
     <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
