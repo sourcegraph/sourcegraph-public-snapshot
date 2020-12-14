@@ -514,9 +514,13 @@ A list of groups to define which file diffs to group together to create an addit
 
 The **order of the list matters**, since each file diff's filepath is matched against the `directory` of a group and the **last match** is used.
 
+If no changes have been produced in a `directory` then no changeset will be created.
+
 ## [`transformChanges.group.directory`](#transformchanges-group-directory)
 
 The name of the directory in which file diffs should be grouped together.
+
+The name is relative to the root of the repository.
 
 ## [`transformChanges.group.branch`](#transformchanges-group-branch)
 
@@ -526,4 +530,4 @@ The branch that should be used for this additional changeset. This **overwrites 
 
 ## [`transformChanges.group.repository`](#transformchanges-repository)
 
-Optional: the file diffs matching the given directory will only be grouped in a repository with that name configured on your Sourcegraph instance.
+Optional: the file diffs matching the given directory will only be grouped in a repository with that name, as configured on your Sourcegraph instance.
