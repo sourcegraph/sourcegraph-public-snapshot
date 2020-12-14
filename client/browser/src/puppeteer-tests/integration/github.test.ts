@@ -83,6 +83,10 @@ describe('GitHub', () => {
             response.sendStatus(200)
         })
 
+        testContext.server.get('http://localhost:8890/*').intercept((request, response) => {
+            response.sendStatus(200)
+        })
+
         testContext.overrideGraphQL(commonBlobGraphQlResults)
 
         await delay(3000) // TODO(tj): Why?
