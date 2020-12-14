@@ -145,7 +145,13 @@ const queryChangesets: typeof _queryChangesets = () =>
                 reconcilerState: ChangesetReconcilerState.COMPLETED,
                 publicationState: ChangesetPublicationState.PUBLISHED,
                 error: null,
-                currentSpec: { id: 'spec-rand-id-1' },
+                currentSpec: {
+                    id: 'spec-rand-id-1',
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        headRef: 'my-branch',
+                    },
+                },
             },
             {
                 __typename: 'ExternalChangeset',
@@ -174,7 +180,13 @@ const queryChangesets: typeof _queryChangesets = () =>
                 reconcilerState: ChangesetReconcilerState.ERRORED,
                 publicationState: ChangesetPublicationState.UNPUBLISHED,
                 error: 'Cannot create PR, insufficient token scope.',
-                currentSpec: { id: 'spec-rand-id-2' },
+                currentSpec: {
+                    id: 'spec-rand-id-2',
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        headRef: 'my-branch',
+                    },
+                },
             },
         ],
     })
