@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -35,7 +36,7 @@ func TestPermissionLevels(t *testing.T) {
 		t.Skip()
 	}
 
-	setupGlobalTestDB(t)
+	dbtesting.SetupGlobalTestDB(t)
 
 	cstore := store.New(dbconn.Global)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
@@ -754,7 +755,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		t.Skip()
 	}
 
-	setupGlobalTestDB(t)
+	dbtesting.SetupGlobalTestDB(t)
 
 	cstore := store.New(dbconn.Global)
 	sr := &Resolver{store: cstore}
