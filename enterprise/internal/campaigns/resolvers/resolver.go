@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/search"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -242,7 +242,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		return nil, err
 	}
 
-	opts := ee.ApplyCampaignOpts{
+	opts := service.ApplyCampaignOpts{
 		// This is what differentiates CreateCampaign from ApplyCampaign
 		FailIfCampaignExists: true,
 	}
@@ -256,14 +256,14 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		return nil, ErrIDIsZero{}
 	}
 
-	svc := ee.NewService(r.store, r.httpFactory)
+	svc := service.NewService(r.store, r.httpFactory)
 	campaign, err := svc.ApplyCampaign(ctx, opts)
 	if err != nil {
-		if err == ee.ErrEnsureCampaignFailed {
+		if err == service.ErrEnsureCampaignFailed {
 			return nil, ErrEnsureCampaignFailed{}
-		} else if err == ee.ErrApplyClosedCampaign {
+		} else if err == service.ErrApplyClosedCampaign {
 			return nil, ErrApplyClosedCampaign{}
-		} else if err == ee.ErrMatchingCampaignExists {
+		} else if err == service.ErrMatchingCampaignExists {
 			return nil, ErrMatchingCampaignExists{}
 		}
 		return nil, err
@@ -284,7 +284,7 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		return nil, err
 	}
 
-	opts := ee.ApplyCampaignOpts{}
+	opts := service.ApplyCampaignOpts{}
 
 	opts.CampaignSpecRandID, err = unmarshalCampaignSpecID(args.CampaignSpec)
 	if err != nil {
@@ -302,16 +302,16 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		}
 	}
 
-	svc := ee.NewService(r.store, r.httpFactory)
+	svc := service.NewService(r.store, r.httpFactory)
 	// 🚨 SECURITY: ApplyCampaign checks whether the user has permission to
 	// apply the campaign spec
 	campaign, err := svc.ApplyCampaign(ctx, opts)
 	if err != nil {
-		if err == ee.ErrEnsureCampaignFailed {
+		if err == service.ErrEnsureCampaignFailed {
 			return nil, ErrEnsureCampaignFailed{}
-		} else if err == ee.ErrApplyClosedCampaign {
+		} else if err == service.ErrApplyClosedCampaign {
 			return nil, ErrApplyClosedCampaign{}
-		} else if err == ee.ErrMatchingCampaignExists {
+		} else if err == service.ErrMatchingCampaignExists {
 			return nil, ErrMatchingCampaignExists{}
 		}
 		return nil, err
@@ -336,7 +336,7 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 		return nil, err
 	}
 
-	opts := ee.CreateCampaignSpecOpts{RawSpec: args.CampaignSpec}
+	opts := service.CreateCampaignSpecOpts{RawSpec: args.CampaignSpec}
 
 	err = graphqlbackend.UnmarshalNamespaceID(args.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
 	if err != nil {
@@ -351,7 +351,7 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 		opts.ChangesetSpecRandIDs = append(opts.ChangesetSpecRandIDs, randID)
 	}
 
-	svc := ee.NewService(r.store, r.httpFactory)
+	svc := service.NewService(r.store, r.httpFactory)
 	campaignSpec, err := svc.CreateCampaignSpec(ctx, opts)
 	if err != nil {
 		return nil, err
@@ -370,7 +370,7 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 	return specResolver, nil
 }
 
-func logCampaignSpecCreated(ctx context.Context, opts *ee.CreateCampaignSpecOpts) error {
+func logCampaignSpecCreated(ctx context.Context, opts *service.CreateCampaignSpecOpts) error {
 	// Log an analytics event when a CampaignSpec has been created.
 	// See internal/usagestats/campaigns.go.
 	actor := actor.FromContext(ctx)
@@ -412,7 +412,7 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 		return nil, backend.ErrNotAuthenticated
 	}
 
-	svc := ee.NewService(r.store, r.httpFactory)
+	svc := service.NewService(r.store, r.httpFactory)
 	spec, err := svc.CreateChangesetSpec(ctx, args.ChangesetSpec, act.UID)
 	if err != nil {
 		return nil, err
@@ -442,7 +442,7 @@ func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCa
 		return nil, ErrIDIsZero{}
 	}
 
-	opts := ee.MoveCampaignOpts{
+	opts := service.MoveCampaignOpts{
 		CampaignID: campaignID,
 	}
 
@@ -457,7 +457,7 @@ func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCa
 		}
 	}
 
-	svc := ee.NewService(r.store, r.httpFactory)
+	svc := service.NewService(r.store, r.httpFactory)
 	// 🚨 SECURITY: MoveCampaign checks whether the current user is authorized.
 	campaign, err := svc.MoveCampaign(ctx, opts)
 	if err != nil {
@@ -486,7 +486,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, ErrIDIsZero{}
 	}
 
-	svc := ee.NewService(r.store, r.httpFactory)
+	svc := service.NewService(r.store, r.httpFactory)
 	// 🚨 SECURITY: DeleteCampaign checks whether current user is authorized.
 	err = svc.DeleteCampaign(ctx, campaignID)
 	return &graphqlbackend.EmptyResponse{}, err
@@ -683,7 +683,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		return nil, ErrIDIsZero{}
 	}
 
-	svc := ee.NewService(r.store, r.httpFactory)
+	svc := service.NewService(r.store, r.httpFactory)
 	// 🚨 SECURITY: CloseCampaign checks whether current user is authorized.
 	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets)
 	if err != nil {
@@ -713,7 +713,7 @@ func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncC
 	}
 
 	// 🚨 SECURITY: EnqueueChangesetSync checks whether current user is authorized.
-	svc := ee.NewService(r.store, r.httpFactory)
+	svc := service.NewService(r.store, r.httpFactory)
 	if err = svc.EnqueueChangesetSync(ctx, changesetID); err != nil {
 		return nil, err
 	}
@@ -775,7 +775,7 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 
 	var a auth.Authenticator
 	if kind == extsvc.KindBitbucketServer {
-		svc := ee.NewService(r.store, r.httpFactory)
+		svc := service.NewService(r.store, r.httpFactory)
 		username, err := svc.FetchUsernameForBitbucketServerToken(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential)
 		if err != nil {
 			return nil, err

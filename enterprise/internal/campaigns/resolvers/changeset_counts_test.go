@@ -12,9 +12,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -31,7 +32,7 @@ import (
 )
 
 func TestChangesetCountsOverTimeResolver(t *testing.T) {
-	counts := &ee.ChangesetCounts{
+	counts := &state.ChangesetCounts{
 		Time:                 time.Now(),
 		Total:                10,
 		Merged:               9,
@@ -165,7 +166,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := ee.SyncChangeset(ctx, cstore, githubSrc, githubRepo, c); err != nil {
+		if err := syncer.SyncChangeset(ctx, cstore, githubSrc, githubRepo, c); err != nil {
 			t.Fatal(err)
 		}
 	}

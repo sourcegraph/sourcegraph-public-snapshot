@@ -11,7 +11,9 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/reconciler"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/rewirer"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -42,7 +44,7 @@ type changesetSpecResolver struct {
 	repo      *types.Repo
 
 	planOnce sync.Once
-	plan     *ee.ReconcilerPlan
+	plan     *reconciler.Plan
 	planErr  error
 }
 
@@ -145,7 +147,7 @@ func (r *changesetSpecResolver) Delta(ctx context.Context) (graphqlbackend.Chang
 	return &changesetSpecDeltaResolver{delta: *plan.Delta}, nil
 }
 
-func (r *changesetSpecResolver) computePlan(ctx context.Context) (*ee.ReconcilerPlan, error) {
+func (r *changesetSpecResolver) computePlan(ctx context.Context) (*reconciler.Plan, error) {
 	r.planOnce.Do(func() {
 		r.plan, r.planErr = r.previewer.PlanForChangesetSpec(ctx, r.changesetSpec)
 	})
@@ -280,7 +282,7 @@ func (r *gitCommitDescriptionResolver) Body() *string {
 func (r *gitCommitDescriptionResolver) Diff() string { return r.diff }
 
 type changesetSpecDeltaResolver struct {
-	delta ee.ChangesetSpecDelta
+	delta reconciler.ChangesetSpecDelta
 }
 
 var _ graphqlbackend.ChangesetSpecDeltaResolver = &changesetSpecDeltaResolver{}
@@ -311,7 +313,7 @@ func (c *changesetSpecDeltaResolver) AuthorEmailChanged() bool {
 }
 
 type ChangesetSpecPreviewer interface {
-	PlanForChangesetSpec(context.Context, *campaigns.ChangesetSpec) (*ee.ReconcilerPlan, error)
+	PlanForChangesetSpec(context.Context, *campaigns.ChangesetSpec) (*reconciler.Plan, error)
 	ChangesetForChangesetSpec(context.Context, int64) (*campaigns.Changeset, error)
 }
 
@@ -332,7 +334,7 @@ type changesetSpecPreviewer struct {
 var _ ChangesetSpecPreviewer = &changesetSpecPreviewer{}
 
 // PlanForChangesetSpec computes the ReconcilerPlan for the given changeset spec, based on the current state of the database.
-func (c *changesetSpecPreviewer) PlanForChangesetSpec(ctx context.Context, changesetSpec *campaigns.ChangesetSpec) (*ee.ReconcilerPlan, error) {
+func (c *changesetSpecPreviewer) PlanForChangesetSpec(ctx context.Context, changesetSpec *campaigns.ChangesetSpec) (*reconciler.Plan, error) {
 	// To get the plan, we first need to determine the changeset_spec => changeset mapping.
 	mapping, err := c.mappingForChangesetSpec(ctx, changesetSpec.ID)
 	if err != nil {
@@ -343,7 +345,7 @@ func (c *changesetSpecPreviewer) PlanForChangesetSpec(ctx context.Context, chang
 		return nil, err
 	}
 	// And then dry-run the rewirer to simulate how the changeset would look like after an _apply_ operation.
-	rewirer := ee.NewChangesetRewirer(store.RewirerMappings{mapping}, campaign, repos.NewDBStore(c.store.DB(), sql.TxOptions{}))
+	rewirer := rewirer.New(store.RewirerMappings{mapping}, campaign, repos.NewDBStore(c.store.DB(), sql.TxOptions{}))
 	changesets, err := rewirer.Rewire(ctx)
 	if err != nil {
 		return nil, err
@@ -371,7 +373,7 @@ func (c *changesetSpecPreviewer) PlanForChangesetSpec(ctx context.Context, chang
 		// If the current spec was not unset by the rewirer, it will be this resolvers spec.
 		currentSpec = changesetSpec
 	}
-	return ee.DetermineReconcilerPlan(previousSpec, currentSpec, changeset)
+	return reconciler.DeterminePlan(previousSpec, currentSpec, changeset)
 }
 
 // ChangesetForChangesetSpec returns the changeset for the target changeset of the changeset spec. It can return nil, if no changeset
@@ -399,7 +401,7 @@ func (c *changesetSpecPreviewer) mappingForChangesetSpec(ctx context.Context, id
 
 func (c *changesetSpecPreviewer) computeCampaign(ctx context.Context) (*campaigns.Campaign, error) {
 	c.campaignOnce.Do(func() {
-		svc := ee.NewService(c.store, nil)
+		svc := service.NewService(c.store, nil)
 		campaignSpec, err := c.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: c.campaignSpecID})
 		if err != nil {
 			c.campaignErr = err

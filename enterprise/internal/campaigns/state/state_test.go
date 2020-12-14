@@ -1,4 +1,4 @@
-package campaigns
+package state
 
 import (
 	"testing"
@@ -8,7 +8,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -20,14 +19,14 @@ func TestComputeGithubCheckState(t *testing.T) {
 	t.Parallel()
 
 	now := timeutil.Now()
-	commitEvent := func(minutesSinceSync int, context, state string) *cmpgn.ChangesetEvent {
+	commitEvent := func(minutesSinceSync int, context, state string) *campaigns.ChangesetEvent {
 		commit := &github.CommitStatus{
 			Context:    context,
 			State:      state,
 			ReceivedAt: now.Add(time.Duration(minutesSinceSync) * time.Minute),
 		}
-		event := &cmpgn.ChangesetEvent{
-			Kind:     cmpgn.ChangesetEventKindCommitStatus,
+		event := &campaigns.ChangesetEvent{
+			Kind:     campaigns.ChangesetEventKindCommitStatus,
 			Metadata: commit,
 		}
 		return event
@@ -39,7 +38,7 @@ func TestComputeGithubCheckState(t *testing.T) {
 			Conclusion: conclusion,
 		}
 	}
-	checkSuiteEvent := func(minutesSinceSync int, id, status, conclusion string, runs ...github.CheckRun) *cmpgn.ChangesetEvent {
+	checkSuiteEvent := func(minutesSinceSync int, id, status, conclusion string, runs ...github.CheckRun) *campaigns.ChangesetEvent {
 		suite := &github.CheckSuite{
 			ID:         id,
 			Status:     status,
@@ -47,8 +46,8 @@ func TestComputeGithubCheckState(t *testing.T) {
 			ReceivedAt: now.Add(time.Duration(minutesSinceSync) * time.Minute),
 		}
 		suite.CheckRuns.Nodes = runs
-		event := &cmpgn.ChangesetEvent{
-			Kind:     cmpgn.ChangesetEventKindCheckSuite,
+		event := &campaigns.ChangesetEvent{
+			Kind:     campaigns.ChangesetEventKindCheckSuite,
 			Metadata: suite,
 		}
 		return event
@@ -59,98 +58,98 @@ func TestComputeGithubCheckState(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		events []*cmpgn.ChangesetEvent
-		want   cmpgn.ChangesetCheckState
+		events []*campaigns.ChangesetEvent
+		want   campaigns.ChangesetCheckState
 	}{
 		{
 			name:   "empty slice",
 			events: nil,
-			want:   cmpgn.ChangesetCheckStateUnknown,
+			want:   campaigns.ChangesetCheckStateUnknown,
 		},
 		{
 			name: "single success",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				commitEvent(1, "ctx1", "SUCCESS"),
 			},
-			want: cmpgn.ChangesetCheckStatePassed,
+			want: campaigns.ChangesetCheckStatePassed,
 		},
 		{
 			name: "success status and suite",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				commitEvent(1, "ctx1", "SUCCESS"),
 				checkSuiteEvent(1, "cs1", "COMPLETED", "SUCCESS", checkRun("cr1", "COMPLETED", "SUCCESS")),
 			},
-			want: cmpgn.ChangesetCheckStatePassed,
+			want: campaigns.ChangesetCheckStatePassed,
 		},
 		{
 			name: "single pending",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				commitEvent(1, "ctx1", "PENDING"),
 			},
-			want: cmpgn.ChangesetCheckStatePending,
+			want: campaigns.ChangesetCheckStatePending,
 		},
 		{
 			name: "single error",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				commitEvent(1, "ctx1", "ERROR"),
 			},
-			want: cmpgn.ChangesetCheckStateFailed,
+			want: campaigns.ChangesetCheckStateFailed,
 		},
 		{
 			name: "pending + error",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				commitEvent(1, "ctx1", "PENDING"),
 				commitEvent(1, "ctx2", "ERROR"),
 			},
-			want: cmpgn.ChangesetCheckStatePending,
+			want: campaigns.ChangesetCheckStatePending,
 		},
 		{
 			name: "pending + success",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				commitEvent(1, "ctx1", "PENDING"),
 				commitEvent(1, "ctx2", "SUCCESS"),
 			},
-			want: cmpgn.ChangesetCheckStatePending,
+			want: campaigns.ChangesetCheckStatePending,
 		},
 		{
 			name: "success + error",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				commitEvent(1, "ctx1", "SUCCESS"),
 				commitEvent(1, "ctx2", "ERROR"),
 			},
-			want: cmpgn.ChangesetCheckStateFailed,
+			want: campaigns.ChangesetCheckStateFailed,
 		},
 		{
 			name: "success x2",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				commitEvent(1, "ctx1", "SUCCESS"),
 				commitEvent(1, "ctx2", "SUCCESS"),
 			},
-			want: cmpgn.ChangesetCheckStatePassed,
+			want: campaigns.ChangesetCheckStatePassed,
 		},
 		{
 			name: "later events have precedence",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				commitEvent(1, "ctx1", "PENDING"),
 				commitEvent(1, "ctx1", "SUCCESS"),
 			},
-			want: cmpgn.ChangesetCheckStatePassed,
+			want: campaigns.ChangesetCheckStatePassed,
 		},
 		{
 			name: "queued suites with zero runs should be ignored",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				commitEvent(1, "ctx1", "SUCCESS"),
 				checkSuiteEvent(1, "cs1", "QUEUED", ""),
 			},
-			want: cmpgn.ChangesetCheckStatePassed,
+			want: campaigns.ChangesetCheckStatePassed,
 		},
 		{
 			name: "completed suites with zero runs should be ignored",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				commitEvent(1, "ctx1", "ERROR"),
 				checkSuiteEvent(1, "cs1", "COMPLETED", ""),
 			},
-			want: cmpgn.ChangesetCheckStateFailed,
+			want: campaigns.ChangesetCheckStateFailed,
 		},
 	}
 
@@ -169,7 +168,7 @@ func TestComputeBitbucketBuildStatus(t *testing.T) {
 
 	now := timeutil.Now()
 	sha := "abcdef"
-	statusEvent := func(minutesSinceSync int, key, state string) *cmpgn.ChangesetEvent {
+	statusEvent := func(minutesSinceSync int, key, state string) *campaigns.ChangesetEvent {
 		commit := &bitbucketserver.CommitStatus{
 			Commit: sha,
 			Status: bitbucketserver.BuildStatus{
@@ -178,8 +177,8 @@ func TestComputeBitbucketBuildStatus(t *testing.T) {
 				DateAdded: now.Add(1*time.Second).Unix() * 1000,
 			},
 		}
-		event := &cmpgn.ChangesetEvent{
-			Kind:     cmpgn.ChangesetEventKindBitbucketServerCommitStatus,
+		event := &campaigns.ChangesetEvent{
+			Kind:     campaigns.ChangesetEventKindBitbucketServerCommitStatus,
 			Metadata: commit,
 		}
 		return event
@@ -196,74 +195,74 @@ func TestComputeBitbucketBuildStatus(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		events []*cmpgn.ChangesetEvent
-		want   cmpgn.ChangesetCheckState
+		events []*campaigns.ChangesetEvent
+		want   campaigns.ChangesetCheckState
 	}{
 		{
 			name:   "empty slice",
 			events: nil,
-			want:   cmpgn.ChangesetCheckStateUnknown,
+			want:   campaigns.ChangesetCheckStateUnknown,
 		},
 		{
 			name: "single success",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				statusEvent(1, "ctx1", "SUCCESSFUL"),
 			},
-			want: cmpgn.ChangesetCheckStatePassed,
+			want: campaigns.ChangesetCheckStatePassed,
 		},
 		{
 			name: "single pending",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				statusEvent(1, "ctx1", "INPROGRESS"),
 			},
-			want: cmpgn.ChangesetCheckStatePending,
+			want: campaigns.ChangesetCheckStatePending,
 		},
 		{
 			name: "single error",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				statusEvent(1, "ctx1", "FAILED"),
 			},
-			want: cmpgn.ChangesetCheckStateFailed,
+			want: campaigns.ChangesetCheckStateFailed,
 		},
 		{
 			name: "pending + error",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				statusEvent(1, "ctx1", "INPROGRESS"),
 				statusEvent(1, "ctx2", "FAILED"),
 			},
-			want: cmpgn.ChangesetCheckStatePending,
+			want: campaigns.ChangesetCheckStatePending,
 		},
 		{
 			name: "pending + success",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				statusEvent(1, "ctx1", "INPROGRESS"),
 				statusEvent(1, "ctx2", "SUCCESSFUL"),
 			},
-			want: cmpgn.ChangesetCheckStatePending,
+			want: campaigns.ChangesetCheckStatePending,
 		},
 		{
 			name: "success + error",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				statusEvent(1, "ctx1", "SUCCESSFUL"),
 				statusEvent(1, "ctx2", "FAILED"),
 			},
-			want: cmpgn.ChangesetCheckStateFailed,
+			want: campaigns.ChangesetCheckStateFailed,
 		},
 		{
 			name: "success x2",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				statusEvent(1, "ctx1", "SUCCESSFUL"),
 				statusEvent(1, "ctx2", "SUCCESSFUL"),
 			},
-			want: cmpgn.ChangesetCheckStatePassed,
+			want: campaigns.ChangesetCheckStatePassed,
 		},
 		{
 			name: "later events have precedence",
-			events: []*cmpgn.ChangesetEvent{
+			events: []*campaigns.ChangesetEvent{
 				statusEvent(1, "ctx1", "INPROGRESS"),
 				statusEvent(1, "ctx1", "SUCCESSFUL"),
 			},
-			want: cmpgn.ChangesetCheckStatePassed,
+			want: campaigns.ChangesetCheckStatePassed,
 		},
 	}
 
@@ -283,11 +282,11 @@ func TestComputeGitLabCheckState(t *testing.T) {
 	t.Run("no events", func(t *testing.T) {
 		for name, tc := range map[string]struct {
 			mr   *gitlab.MergeRequest
-			want cmpgn.ChangesetCheckState
+			want campaigns.ChangesetCheckState
 		}{
 			"no pipelines at all": {
 				mr:   &gitlab.MergeRequest{},
-				want: cmpgn.ChangesetCheckStateUnknown,
+				want: campaigns.ChangesetCheckStateUnknown,
 			},
 			"only a head pipeline": {
 				mr: &gitlab.MergeRequest{
@@ -295,7 +294,7 @@ func TestComputeGitLabCheckState(t *testing.T) {
 						Status: gitlab.PipelineStatusPending,
 					},
 				},
-				want: cmpgn.ChangesetCheckStatePending,
+				want: campaigns.ChangesetCheckStatePending,
 			},
 			"one pipeline only": {
 				mr: &gitlab.MergeRequest{
@@ -309,7 +308,7 @@ func TestComputeGitLabCheckState(t *testing.T) {
 						},
 					},
 				},
-				want: cmpgn.ChangesetCheckStateFailed,
+				want: campaigns.ChangesetCheckStateFailed,
 			},
 			"two pipelines in the expected order": {
 				mr: &gitlab.MergeRequest{
@@ -327,7 +326,7 @@ func TestComputeGitLabCheckState(t *testing.T) {
 						},
 					},
 				},
-				want: cmpgn.ChangesetCheckStateFailed,
+				want: campaigns.ChangesetCheckStateFailed,
 			},
 			"two pipelines in an unexpected order": {
 				mr: &gitlab.MergeRequest{
@@ -345,7 +344,7 @@ func TestComputeGitLabCheckState(t *testing.T) {
 						},
 					},
 				},
-				want: cmpgn.ChangesetCheckStatePassed,
+				want: campaigns.ChangesetCheckStatePassed,
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
@@ -364,16 +363,16 @@ func TestComputeGitLabCheckState(t *testing.T) {
 			},
 		}
 
-		events := []*cmpgn.ChangesetEvent{
+		events := []*campaigns.ChangesetEvent{
 			{
-				Kind: cmpgn.ChangesetEventKindGitLabPipeline,
+				Kind: campaigns.ChangesetEventKindGitLabPipeline,
 				Metadata: &gitlab.Pipeline{
 					CreatedAt: gitlab.Time{Time: time.Unix(5, 0)},
 					Status:    gitlab.PipelineStatusSuccess,
 				},
 			},
 			{
-				Kind: cmpgn.ChangesetEventKindGitLabPipeline,
+				Kind: campaigns.ChangesetEventKindGitLabPipeline,
 				Metadata: &gitlab.Pipeline{
 					CreatedAt: gitlab.Time{Time: time.Unix(4, 0)},
 					Status:    gitlab.PipelineStatusFailed,
@@ -382,19 +381,19 @@ func TestComputeGitLabCheckState(t *testing.T) {
 		}
 
 		for name, tc := range map[string]struct {
-			events     []*cmpgn.ChangesetEvent
+			events     []*campaigns.ChangesetEvent
 			lastSynced time.Time
-			want       cmpgn.ChangesetCheckState
+			want       campaigns.ChangesetCheckState
 		}{
 			"older events only": {
 				events:     events,
 				lastSynced: time.Unix(10, 0),
-				want:       cmpgn.ChangesetCheckStatePending,
+				want:       campaigns.ChangesetCheckStatePending,
 			},
 			"newer events only": {
 				events:     events,
 				lastSynced: time.Unix(3, 0),
-				want:       cmpgn.ChangesetCheckStatePassed,
+				want:       campaigns.ChangesetCheckStatePassed,
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
@@ -417,13 +416,13 @@ func TestComputeReviewState(t *testing.T) {
 		name      string
 		changeset *campaigns.Changeset
 		history   []changesetStatesAtTime
-		want      cmpgn.ChangesetReviewState
+		want      campaigns.ChangesetReviewState
 	}{
 		{
 			name:      "github - no events",
 			changeset: githubChangeset(daysAgo(10), "OPEN"),
 			history:   []changesetStatesAtTime{},
-			want:      cmpgn.ChangesetReviewStatePending,
+			want:      campaigns.ChangesetReviewStatePending,
 		},
 		{
 			name:      "github - changeset older than events",
@@ -431,7 +430,7 @@ func TestComputeReviewState(t *testing.T) {
 			history: []changesetStatesAtTime{
 				{t: daysAgo(0), reviewState: campaigns.ChangesetReviewStateApproved},
 			},
-			want: cmpgn.ChangesetReviewStateApproved,
+			want: campaigns.ChangesetReviewStateApproved,
 		},
 		{
 			name:      "github - changeset newer than events",
@@ -439,13 +438,13 @@ func TestComputeReviewState(t *testing.T) {
 			history: []changesetStatesAtTime{
 				{t: daysAgo(10), reviewState: campaigns.ChangesetReviewStateApproved},
 			},
-			want: cmpgn.ChangesetReviewStateApproved,
+			want: campaigns.ChangesetReviewStateApproved,
 		},
 		{
 			name:      "bitbucketserver - no events",
 			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
 			history:   []changesetStatesAtTime{},
-			want:      cmpgn.ChangesetReviewStateChangesRequested,
+			want:      campaigns.ChangesetReviewStateChangesRequested,
 		},
 
 		{
@@ -454,7 +453,7 @@ func TestComputeReviewState(t *testing.T) {
 			history: []changesetStatesAtTime{
 				{t: daysAgo(0), reviewState: campaigns.ChangesetReviewStateApproved},
 			},
-			want: cmpgn.ChangesetReviewStateApproved,
+			want: campaigns.ChangesetReviewStateApproved,
 		},
 
 		{
@@ -463,13 +462,13 @@ func TestComputeReviewState(t *testing.T) {
 			history: []changesetStatesAtTime{
 				{t: daysAgo(10), reviewState: campaigns.ChangesetReviewStateApproved},
 			},
-			want: cmpgn.ChangesetReviewStateChangesRequested,
+			want: campaigns.ChangesetReviewStateChangesRequested,
 		},
 		{
 			name:      "gitlab - no events, no approvals",
 			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, []*gitlab.Note{}),
 			history:   []changesetStatesAtTime{},
-			want:      cmpgn.ChangesetReviewStatePending,
+			want:      campaigns.ChangesetReviewStatePending,
 		},
 		{
 			name: "gitlab - no events, one approval",
@@ -480,7 +479,7 @@ func TestComputeReviewState(t *testing.T) {
 				},
 			}),
 			history: []changesetStatesAtTime{},
-			want:    cmpgn.ChangesetReviewStateApproved,
+			want:    campaigns.ChangesetReviewStateApproved,
 		},
 		{
 			name: "gitlab - no events, one unapproval",
@@ -491,7 +490,7 @@ func TestComputeReviewState(t *testing.T) {
 				},
 			}),
 			history: []changesetStatesAtTime{},
-			want:    cmpgn.ChangesetReviewStateChangesRequested,
+			want:    campaigns.ChangesetReviewStateChangesRequested,
 		},
 		{
 			name: "gitlab - no events, several notes",
@@ -508,7 +507,7 @@ func TestComputeReviewState(t *testing.T) {
 				},
 			}),
 			history: []changesetStatesAtTime{},
-			want:    cmpgn.ChangesetReviewStateChangesRequested,
+			want:    campaigns.ChangesetReviewStateChangesRequested,
 		},
 		{
 			name: "gitlab - changeset older than events",
@@ -521,7 +520,7 @@ func TestComputeReviewState(t *testing.T) {
 			history: []changesetStatesAtTime{
 				{t: daysAgo(0), reviewState: campaigns.ChangesetReviewStateApproved},
 			},
-			want: cmpgn.ChangesetReviewStateApproved,
+			want: campaigns.ChangesetReviewStateApproved,
 		},
 		{
 			name: "gitlab - changeset newer than events",
@@ -534,7 +533,7 @@ func TestComputeReviewState(t *testing.T) {
 			history: []changesetStatesAtTime{
 				{t: daysAgo(10), reviewState: campaigns.ChangesetReviewStateApproved},
 			},
-			want: cmpgn.ChangesetReviewStateChangesRequested,
+			want: campaigns.ChangesetReviewStateChangesRequested,
 		},
 	}
 
@@ -564,13 +563,13 @@ func TestComputeExternalState(t *testing.T) {
 		name      string
 		changeset *campaigns.Changeset
 		history   []changesetStatesAtTime
-		want      cmpgn.ChangesetExternalState
+		want      campaigns.ChangesetExternalState
 	}{
 		{
 			name:      "github - no events",
 			changeset: githubChangeset(daysAgo(10), "OPEN"),
 			history:   []changesetStatesAtTime{},
-			want:      cmpgn.ChangesetExternalStateOpen,
+			want:      campaigns.ChangesetExternalStateOpen,
 		},
 		{
 			name:      "github - changeset older than events",
@@ -578,7 +577,7 @@ func TestComputeExternalState(t *testing.T) {
 			history: []changesetStatesAtTime{
 				{t: daysAgo(0), externalState: campaigns.ChangesetExternalStateClosed},
 			},
-			want: cmpgn.ChangesetExternalStateClosed,
+			want: campaigns.ChangesetExternalStateClosed,
 		},
 		{
 			name:      "github - changeset newer than events",
@@ -586,7 +585,7 @@ func TestComputeExternalState(t *testing.T) {
 			history: []changesetStatesAtTime{
 				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
 			},
-			want: cmpgn.ChangesetExternalStateOpen,
+			want: campaigns.ChangesetExternalStateOpen,
 		},
 		{
 			name:      "github - changeset newer and deleted",
@@ -594,13 +593,13 @@ func TestComputeExternalState(t *testing.T) {
 			history: []changesetStatesAtTime{
 				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
 			},
-			want: cmpgn.ChangesetExternalStateDeleted,
+			want: campaigns.ChangesetExternalStateDeleted,
 		},
 		{
 			name:      "github draft - no events",
 			changeset: setDraft(githubChangeset(daysAgo(10), "OPEN")),
 			history:   []changesetStatesAtTime{},
-			want:      cmpgn.ChangesetExternalStateDraft,
+			want:      campaigns.ChangesetExternalStateDraft,
 		},
 		{
 			name:      "github draft - changeset older than events",
@@ -608,7 +607,7 @@ func TestComputeExternalState(t *testing.T) {
 			history: []changesetStatesAtTime{
 				{t: daysAgo(0), externalState: campaigns.ChangesetExternalStateDraft},
 			},
-			want: cmpgn.ChangesetExternalStateDraft,
+			want: campaigns.ChangesetExternalStateDraft,
 		},
 		{
 			name:      "github draft - changeset newer than events",
@@ -616,19 +615,19 @@ func TestComputeExternalState(t *testing.T) {
 			history: []changesetStatesAtTime{
 				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
 			},
-			want: cmpgn.ChangesetExternalStateDraft,
+			want: campaigns.ChangesetExternalStateDraft,
 		},
 		{
 			name:      "github draft closed",
 			changeset: setDraft(githubChangeset(daysAgo(1), "CLOSED")),
 			history:   []changesetStatesAtTime{{t: daysAgo(2), externalState: campaigns.ChangesetExternalStateClosed}},
-			want:      cmpgn.ChangesetExternalStateClosed,
+			want:      campaigns.ChangesetExternalStateClosed,
 		},
 		{
 			name:      "bitbucketserver - no events",
 			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
 			history:   []changesetStatesAtTime{},
-			want:      cmpgn.ChangesetExternalStateOpen,
+			want:      campaigns.ChangesetExternalStateOpen,
 		},
 		{
 			name:      "bitbucketserver - changeset older than events",
@@ -636,7 +635,7 @@ func TestComputeExternalState(t *testing.T) {
 			history: []changesetStatesAtTime{
 				{t: daysAgo(0), externalState: campaigns.ChangesetExternalStateClosed},
 			},
-			want: cmpgn.ChangesetExternalStateClosed,
+			want: campaigns.ChangesetExternalStateClosed,
 		},
 		{
 			name:      "bitbucketserver - changeset newer than events",
@@ -644,7 +643,7 @@ func TestComputeExternalState(t *testing.T) {
 			history: []changesetStatesAtTime{
 				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
 			},
-			want: cmpgn.ChangesetExternalStateOpen,
+			want: campaigns.ChangesetExternalStateOpen,
 		},
 		{
 			name:      "bitbucketserver - changeset newer and deleted",
@@ -652,31 +651,31 @@ func TestComputeExternalState(t *testing.T) {
 			history: []changesetStatesAtTime{
 				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
 			},
-			want: cmpgn.ChangesetExternalStateDeleted,
+			want: campaigns.ChangesetExternalStateDeleted,
 		},
 		{
 			name:      "gitlab - no events, opened",
 			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, nil),
 			history:   []changesetStatesAtTime{},
-			want:      cmpgn.ChangesetExternalStateOpen,
+			want:      campaigns.ChangesetExternalStateOpen,
 		},
 		{
 			name:      "gitlab - no events, closed",
 			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateClosed, nil),
 			history:   []changesetStatesAtTime{},
-			want:      cmpgn.ChangesetExternalStateClosed,
+			want:      campaigns.ChangesetExternalStateClosed,
 		},
 		{
 			name:      "gitlab - no events, locked",
 			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateLocked, nil),
 			history:   []changesetStatesAtTime{},
-			want:      cmpgn.ChangesetExternalStateClosed,
+			want:      campaigns.ChangesetExternalStateClosed,
 		},
 		{
 			name:      "gitlab - no events, merged",
 			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateMerged, nil),
 			history:   []changesetStatesAtTime{},
-			want:      cmpgn.ChangesetExternalStateMerged,
+			want:      campaigns.ChangesetExternalStateMerged,
 		},
 		{
 			name:      "gitlab - changeset older than events",
@@ -684,7 +683,7 @@ func TestComputeExternalState(t *testing.T) {
 			history: []changesetStatesAtTime{
 				{t: daysAgo(0), externalState: campaigns.ChangesetExternalStateClosed},
 			},
-			want: cmpgn.ChangesetExternalStateClosed,
+			want: campaigns.ChangesetExternalStateClosed,
 		},
 		{
 			name:      "gitlab - changeset newer than events",
@@ -692,13 +691,13 @@ func TestComputeExternalState(t *testing.T) {
 			history: []changesetStatesAtTime{
 				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
 			},
-			want: cmpgn.ChangesetExternalStateMerged,
+			want: campaigns.ChangesetExternalStateMerged,
 		},
 		{
 			name:      "gitlab draft - no events",
 			changeset: setDraft(gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, nil)),
 			history:   []changesetStatesAtTime{},
-			want:      cmpgn.ChangesetExternalStateDraft,
+			want:      campaigns.ChangesetExternalStateDraft,
 		},
 		{
 			name:      "gitlab draft - changeset older than events",
@@ -706,7 +705,7 @@ func TestComputeExternalState(t *testing.T) {
 			history: []changesetStatesAtTime{
 				{t: daysAgo(0), externalState: campaigns.ChangesetExternalStateDraft},
 			},
-			want: cmpgn.ChangesetExternalStateDraft,
+			want: campaigns.ChangesetExternalStateDraft,
 		},
 		{
 			name:      "gitlab draft - changeset newer than events",
@@ -714,7 +713,7 @@ func TestComputeExternalState(t *testing.T) {
 			history: []changesetStatesAtTime{
 				{t: daysAgo(10), externalState: campaigns.ChangesetExternalStateClosed},
 			},
-			want: cmpgn.ChangesetExternalStateDraft,
+			want: campaigns.ChangesetExternalStateDraft,
 		},
 	}
 
@@ -738,9 +737,9 @@ func TestComputeLabels(t *testing.T) {
 	t.Parallel()
 
 	now := time.Now()
-	labelEvent := func(name string, kind cmpgn.ChangesetEventKind, when time.Time) *cmpgn.ChangesetEvent {
-		removed := kind == cmpgn.ChangesetEventKindGitHubUnlabeled
-		return &cmpgn.ChangesetEvent{
+	labelEvent := func(name string, kind campaigns.ChangesetEventKind, when time.Time) *campaigns.ChangesetEvent {
+		removed := kind == campaigns.ChangesetEventKindGitHubUnlabeled
+		return &campaigns.ChangesetEvent{
 			Kind:      kind,
 			UpdatedAt: when,
 			Metadata: &github.LabelEvent{
@@ -753,31 +752,31 @@ func TestComputeLabels(t *testing.T) {
 			},
 		}
 	}
-	changeset := func(names []string, updated time.Time) *cmpgn.Changeset {
+	changeset := func(names []string, updated time.Time) *campaigns.Changeset {
 		meta := &github.PullRequest{}
 		for _, name := range names {
 			meta.Labels.Nodes = append(meta.Labels.Nodes, github.Label{
 				Name: name,
 			})
 		}
-		return &cmpgn.Changeset{
+		return &campaigns.Changeset{
 			UpdatedAt: updated,
 			Metadata:  meta,
 		}
 	}
-	labels := func(names ...string) []cmpgn.ChangesetLabel {
-		var ls []cmpgn.ChangesetLabel
+	labels := func(names ...string) []campaigns.ChangesetLabel {
+		var ls []campaigns.ChangesetLabel
 		for _, name := range names {
-			ls = append(ls, cmpgn.ChangesetLabel{Name: name})
+			ls = append(ls, campaigns.ChangesetLabel{Name: name})
 		}
 		return ls
 	}
 
 	tests := []struct {
 		name      string
-		changeset *cmpgn.Changeset
+		changeset *campaigns.Changeset
 		events    ChangesetEvents
-		want      []cmpgn.ChangesetLabel
+		want      []campaigns.ChangesetLabel
 	}{
 		{
 			name: "zero values",
@@ -792,15 +791,15 @@ func TestComputeLabels(t *testing.T) {
 			name:      "remove event",
 			changeset: changeset([]string{"label1"}, time.Time{}),
 			events: ChangesetEvents{
-				labelEvent("label1", cmpgn.ChangesetEventKindGitHubUnlabeled, now),
+				labelEvent("label1", campaigns.ChangesetEventKindGitHubUnlabeled, now),
 			},
-			want: []cmpgn.ChangesetLabel{},
+			want: []campaigns.ChangesetLabel{},
 		},
 		{
 			name:      "add event",
 			changeset: changeset([]string{"label1"}, time.Time{}),
 			events: ChangesetEvents{
-				labelEvent("label2", cmpgn.ChangesetEventKindGitHubLabeled, now),
+				labelEvent("label2", campaigns.ChangesetEventKindGitHubLabeled, now),
 			},
 			want: labels("label1", "label2"),
 		},
@@ -808,7 +807,7 @@ func TestComputeLabels(t *testing.T) {
 			name:      "old add event",
 			changeset: changeset([]string{"label1"}, now.Add(5*time.Minute)),
 			events: ChangesetEvents{
-				labelEvent("label2", cmpgn.ChangesetEventKindGitHubLabeled, now),
+				labelEvent("label2", campaigns.ChangesetEventKindGitHubLabeled, now),
 			},
 			want: labels("label1"),
 		},
@@ -816,8 +815,8 @@ func TestComputeLabels(t *testing.T) {
 			name:      "sorting",
 			changeset: changeset([]string{"label4", "label3"}, time.Time{}),
 			events: ChangesetEvents{
-				labelEvent("label2", cmpgn.ChangesetEventKindGitHubLabeled, now),
-				labelEvent("label1", cmpgn.ChangesetEventKindGitHubLabeled, now.Add(5*time.Minute)),
+				labelEvent("label2", campaigns.ChangesetEventKindGitHubLabeled, now),
+				labelEvent("label1", campaigns.ChangesetEventKindGitHubLabeled, now.Add(5*time.Minute)),
 			},
 			want: labels("label1", "label2", "label3", "label4"),
 		},

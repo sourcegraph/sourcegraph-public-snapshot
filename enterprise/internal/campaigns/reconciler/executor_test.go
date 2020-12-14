@@ -1,4 +1,4 @@
-package campaigns
+package reconciler
 
 import (
 	"context"
@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
@@ -43,7 +45,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
-		Name: api.RepoName(rs[0].Name),
+		Name: rs[0].Name,
 		VCS:  protocol.VCSInfo{URL: rs[0].URI},
 	})
 	defer state.Unmock()
@@ -65,7 +67,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	type testCase struct {
 		changeset      ct.TestChangesetOpts
 		hasCurrentSpec bool
-		plan           *ReconcilerPlan
+		plan           *Plan
 
 		sourcerMetadata interface{}
 		sourcerErr      error
@@ -90,7 +92,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		"noop": {
 			hasCurrentSpec: true,
 			changeset:      ct.TestChangesetOpts{},
-			plan:           &ReconcilerPlan{Ops: ReconcilerOperations{}},
+			plan:           &Plan{Ops: Operations{}},
 
 			wantChangeset: ct.ChangesetAssertions{},
 		},
@@ -100,8 +102,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalID:       githubPR.ID,
 				Unsynced:         true,
 			},
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{campaigns.ReconcilerOperationImport},
+			plan: &Plan{
+				Ops: Operations{campaigns.ReconcilerOperationImport},
 			},
 
 			wantLoadFromCodeHost: true,
@@ -123,8 +125,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalID:       githubPR.ID,
 				Unsynced:         true,
 			},
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{campaigns.ReconcilerOperationImport},
+			plan: &Plan{
+				Ops: Operations{campaigns.ReconcilerOperationImport},
 			},
 			sourcerErr: notFoundErr,
 
@@ -137,8 +139,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			changeset: ct.TestChangesetOpts{
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{
+			plan: &Plan{
+				Ops: Operations{
 					campaigns.ReconcilerOperationPush,
 					campaigns.ReconcilerOperationPublish,
 				},
@@ -168,8 +170,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				// We simulate that here by not setting FailureMessage.
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{
+			plan: &Plan{
+				Ops: Operations{
 					campaigns.ReconcilerOperationPush,
 					campaigns.ReconcilerOperationPublish,
 				},
@@ -199,8 +201,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalBranch:   "head-ref-on-github",
 			},
 
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{
+			plan: &Plan{
+				Ops: Operations{
 					campaigns.ReconcilerOperationUpdate,
 				},
 			},
@@ -228,8 +230,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalState:    campaigns.ChangesetExternalStateOpen,
 			},
 
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{
+			plan: &Plan{
+				Ops: Operations{
 					campaigns.ReconcilerOperationPush,
 					campaigns.ReconcilerOperationSleep,
 					campaigns.ReconcilerOperationSync,
@@ -256,8 +258,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalState:    campaigns.ChangesetExternalStateOpen,
 				Closing:          true,
 			},
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{
+			plan: &Plan{
+				Ops: Operations{
 					campaigns.ReconcilerOperationClose,
 				},
 			},
@@ -288,8 +290,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalState:    campaigns.ChangesetExternalStateClosed,
 				Closing:          true,
 			},
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{
+			plan: &Plan{
+				Ops: Operations{
 					campaigns.ReconcilerOperationClose,
 				},
 			},
@@ -318,8 +320,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalBranch:   githubHeadRef,
 				ExternalState:    campaigns.ChangesetExternalStateClosed,
 			},
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{
+			plan: &Plan{
+				Ops: Operations{
 					campaigns.ReconcilerOperationReopen,
 				},
 			},
@@ -344,8 +346,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			},
 
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{
+			plan: &Plan{
+				Ops: Operations{
 					campaigns.ReconcilerOperationPush,
 					campaigns.ReconcilerOperationPublishDraft,
 				},
@@ -375,8 +377,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalState:    campaigns.ChangesetExternalStateDraft,
 			},
 
-			plan: &ReconcilerPlan{
-				Ops: ReconcilerOperations{
+			plan: &Plan{
+				Ops: Operations{
 					campaigns.ReconcilerOperationUndraft,
 				},
 			},
@@ -400,8 +402,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			// Create necessary associations.
-			campaignSpec := createCampaignSpec(t, ctx, store, "executor-test-campaign", admin.ID)
-			campaign := createCampaign(t, ctx, store, "executor-test-campaign", admin.ID, campaignSpec.ID)
+			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "executor-test-campaign", admin.ID)
+			campaign := ct.CreateCampaign(t, ctx, store, "executor-test-campaign", admin.ID, campaignSpec.ID)
 
 			// Create the changesetSpec with associations wired up correctly.
 			var changesetSpec *campaigns.ChangesetSpec
@@ -451,22 +453,19 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 			sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
-			// Run the reconciler
-			executor := &executor{
-				tx: store,
-
-				// Don't actually sleep for the sake of testing.
-				noSleepBeforeSync: true,
-
-				gitserverClient: gitClient,
-				sourcer:         sourcer,
-
-				ch:   changeset,
-				spec: changesetSpec,
-			}
+			tc.plan.Changeset = changeset
+			tc.plan.ChangesetSpec = changesetSpec
 
 			// Execute the plan
-			err := executor.ExecutePlan(ctx, tc.plan)
+			err := ExecutePlan(
+				ctx,
+				gitClient,
+				sourcer,
+				// Don't actually sleep for the sake of testing.
+				true,
+				store,
+				tc.plan,
+			)
 			if err != nil {
 				if tc.wantNonRetryableErr && errcode.IsNonRetryable(err) {
 					// all good
@@ -540,7 +539,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		})
 
 		// After each test: clean up database.
-		truncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+		ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 	}
 }
 
@@ -566,27 +565,19 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 		ExternalID:       "123",
 	})
 
+	// Plan only needs a push operation, since that's where we check
+	plan := &Plan{}
+	plan.AddOp(campaigns.ReconcilerOperationPush)
+
 	// Build a changeset that would be pushed on the same HeadRef/ExternalBranch.
-	spec := ct.BuildChangesetSpec(t, ct.TestSpecOpts{
+	plan.ChangesetSpec = ct.BuildChangesetSpec(t, ct.TestSpecOpts{
 		Repo:      rs[0].ID,
 		HeadRef:   commonHeadRef,
 		Published: true,
 	})
-	changeset := ct.BuildChangeset(ct.TestChangesetOpts{Repo: rs[0].ID})
+	plan.Changeset = ct.BuildChangeset(ct.TestChangesetOpts{Repo: rs[0].ID})
 
-	executor := &executor{
-		tx:      store,
-		sourcer: repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{}),
-
-		ch:   changeset,
-		spec: spec,
-	}
-
-	// Plan only needs a push operation, since that's where we check
-	plan := &ReconcilerPlan{}
-	plan.AddOp(campaigns.ReconcilerOperationPush)
-
-	err := executor.ExecutePlan(ctx, plan)
+	err := ExecutePlan(ctx, nil, repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{}), true, store, plan)
 	if err == nil {
 		t.Fatal("reconciler did not return error")
 	}
@@ -609,9 +600,9 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 	repo := rs[0]
 
-	campaignSpec := createCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
-	adminCampaign := createCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
-	userCampaign := createCampaign(t, ctx, store, "reconciler-test-campaign", user.ID, campaignSpec.ID)
+	campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
+	adminCampaign := ct.CreateCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
+	userCampaign := ct.CreateCampaign(t, ctx, store, "reconciler-test-campaign", user.ID, campaignSpec.ID)
 
 	t.Run("imported changeset uses global token", func(t *testing.T) {
 		a, err := (&executor{
@@ -746,7 +737,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	fakeSource := &ct.FakeChangesetSource{Svc: extSvc}
 	sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
-	plan := &ReconcilerPlan{}
+	plan := &Plan{}
 	plan.AddOp(campaigns.ReconcilerOperationPush)
 
 	tests := []struct {
@@ -843,25 +834,28 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				defer func() { db.UserCredentials.Delete(ctx, cred.ID) }()
 			}
 
-			campaignSpec := createCampaignSpec(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
-			campaign := createCampaign(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, campaignSpec.ID)
+			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
+			campaign := ct.CreateCampaign(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, campaignSpec.ID)
 
-			ex := &executor{
-				ch: &campaigns.Changeset{
-					OwnedByCampaignID: campaign.ID,
-					RepoID:            tt.repo.ID,
-				},
-				spec: ct.BuildChangesetSpec(t, ct.TestSpecOpts{
-					HeadRef:    "refs/heads/my-branch",
-					Published:  true,
-					CommitDiff: "testdiff",
-				}),
-				sourcer:         sourcer,
-				gitserverClient: gitClient,
-				tx:              store,
+			plan.Changeset = &campaigns.Changeset{
+				OwnedByCampaignID: campaign.ID,
+				RepoID:            tt.repo.ID,
 			}
+			plan.ChangesetSpec = ct.BuildChangesetSpec(t, ct.TestSpecOpts{
+				HeadRef:    "refs/heads/my-branch",
+				Published:  true,
+				CommitDiff: "testdiff",
+			})
 
-			err := ex.ExecutePlan(context.Background(), plan)
+			err := ExecutePlan(
+				context.Background(),
+				gitClient,
+				sourcer,
+				true,
+				store,
+				plan,
+			)
+
 			if !tt.wantErr && err != nil {
 				t.Fatalf("executing plan failed: %s", err)
 			}
@@ -878,4 +872,105 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDecorateChangesetBody(t *testing.T) {
+	db.Mocks.Namespaces.GetByID = func(ctx context.Context, org, user int32) (*db.Namespace, error) {
+		return &db.Namespace{Name: "my-user", User: user}, nil
+	}
+	defer func() { db.Mocks.Namespaces.GetByID = nil }()
+
+	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
+	defer func() { internalClient = api.InternalClient }()
+
+	fs := &FakeStore{
+		GetCampaignMock: func(ctx context.Context, opts store.GetCampaignOpts) (*campaigns.Campaign, error) {
+			return &campaigns.Campaign{ID: 1234, Name: "reconciler-test-campaign"}, nil
+		},
+	}
+
+	cs := ct.BuildChangeset(ct.TestChangesetOpts{OwnedByCampaign: 1234})
+
+	body := "body"
+	rcs := &repos.Changeset{Body: body, Changeset: cs}
+	if err := decorateChangesetBody(context.Background(), fs, rcs); err != nil {
+		t.Errorf("unexpected non-nil error: %v", err)
+	}
+	if want := body + "\n\n[_Created by Sourcegraph campaign `my-user/reconciler-test-campaign`._](https://sourcegraph.test/users/my-user/campaigns/reconciler-test-campaign)"; rcs.Body != want {
+		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
+	}
+}
+
+func TestCampaignURL(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("errors", func(t *testing.T) {
+		for name, tc := range map[string]*mockInternalClient{
+			"ExternalURL error": {err: errors.New("foo")},
+			"invalid URL":       {externalURL: "foo://:bar"},
+		} {
+			t.Run(name, func(t *testing.T) {
+				internalClient = tc
+				defer func() { internalClient = api.InternalClient }()
+
+				if _, err := campaignURL(ctx, nil, nil); err == nil {
+					t.Error("unexpected nil error")
+				}
+			})
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
+		defer func() { internalClient = api.InternalClient }()
+
+		url, err := campaignURL(
+			ctx,
+			&db.Namespace{Name: "foo", Organization: 123},
+			&campaigns.Campaign{Name: "bar"},
+		)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if want := "https://sourcegraph.test/organizations/foo/campaigns/bar"; url != want {
+			t.Errorf("unexpected URL: have=%q want=%q", url, want)
+		}
+	})
+}
+
+func TestNamespaceURL(t *testing.T) {
+	t.Parallel()
+
+	for name, tc := range map[string]struct {
+		ns   *db.Namespace
+		want string
+	}{
+		"user": {
+			ns:   &db.Namespace{User: 123, Name: "user"},
+			want: "/users/user",
+		},
+		"org": {
+			ns:   &db.Namespace{Organization: 123, Name: "org"},
+			want: "/organizations/org",
+		},
+		"neither": {
+			ns:   &db.Namespace{Name: "user"},
+			want: "/users/user",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if have := namespaceURL(tc.ns); have != tc.want {
+				t.Errorf("unexpected URL: have=%q want=%q", have, tc.want)
+			}
+		})
+	}
+}
+
+type mockInternalClient struct {
+	externalURL string
+	err         error
+}
+
+func (c *mockInternalClient) ExternalURL(ctx context.Context) (string, error) {
+	return c.externalURL, c.err
 }

@@ -1,11 +1,11 @@
-package campaigns
+package state
 
 import (
-	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
 // ChangesetEvents is a collection of changeset events
-type ChangesetEvents []*cmpgn.ChangesetEvent
+type ChangesetEvents []*campaigns.ChangesetEvent
 
 func (ce ChangesetEvents) Len() int      { return len(ce) }
 func (ce ChangesetEvents) Swap(i, j int) { ce[i], ce[j] = ce[j], ce[i] }

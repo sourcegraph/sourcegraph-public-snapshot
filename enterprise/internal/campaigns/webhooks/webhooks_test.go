@@ -1,4 +1,4 @@
-package campaigns
+package webhooks
 
 import (
 	"bytes"
@@ -24,6 +24,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	idb "github.com/sourcegraph/sourcegraph/internal/db"
@@ -49,7 +50,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		rcache.SetupForTest(t)
 
-		truncateTables(t, db, "changeset_events", "changesets")
+		ct.TruncateTables(t, db, "changeset_events", "changesets")
 
 		cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "github-webhooks")
 		defer save()
@@ -135,7 +136,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		})
 		defer state.Unmock()
 
-		err = SyncChangeset(ctx, s, githubSrc, githubRepo, changeset)
+		err = syncer.SyncChangeset(ctx, s, githubSrc, githubRepo, changeset)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -151,7 +152,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			_, name := path.Split(fixtureFile)
 			name = strings.TrimSuffix(name, ".json")
 			t.Run(name, func(t *testing.T) {
-				truncateTables(t, db, "changeset_events")
+				ct.TruncateTables(t, db, "changeset_events")
 
 				tc := loadWebhookTestCase(t, fixtureFile)
 
@@ -223,7 +224,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		rcache.SetupForTest(t)
 
-		truncateTables(t, db, "changeset_events", "changesets")
+		ct.TruncateTables(t, db, "changeset_events", "changesets")
 
 		cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "bitbucket-webhooks")
 		defer save()
@@ -322,7 +323,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				t.Fatal(err)
 			}
 
-			err = SyncChangeset(ctx, s, bitbucketSource, bitbucketRepo, ch)
+			err = syncer.SyncChangeset(ctx, s, bitbucketSource, bitbucketRepo, ch)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -339,7 +340,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			_, name := path.Split(fixtureFile)
 			name = strings.TrimSuffix(name, ".json")
 			t.Run(name, func(t *testing.T) {
-				truncateTables(t, db, "changeset_events")
+				ct.TruncateTables(t, db, "changeset_events")
 
 				tc := loadWebhookTestCase(t, fixtureFile)
 

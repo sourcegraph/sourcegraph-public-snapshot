@@ -1,4 +1,4 @@
-package campaigns
+package service
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/rewirer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -128,7 +129,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	}
 
 	// And execute the mapping.
-	rewirer := NewChangesetRewirer(mappings, campaign, rstore)
+	rewirer := rewirer.New(mappings, campaign, rstore)
 	changesets, err := rewirer.Rewire(ctx)
 	if err != nil {
 		return nil, err

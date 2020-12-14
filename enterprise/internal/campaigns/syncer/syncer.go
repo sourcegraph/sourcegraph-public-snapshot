@@ -1,7 +1,6 @@
-package campaigns
+package syncer
 
 import (
-	"container/heap"
 	"context"
 	"fmt"
 	"strconv"
@@ -12,6 +11,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -35,7 +36,7 @@ type SyncRegistry struct {
 
 	mu sync.Mutex
 	// key is normalised code host url, also called external_service_id on the repo table
-	syncers map[string]*ChangesetSyncer
+	syncers map[string]*changesetSyncer
 }
 
 type RepoStore interface {
@@ -56,7 +57,7 @@ func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, 
 		ExternalServiceStore: esStore,
 		HTTPFactory:          cf,
 		priorityNotify:       make(chan []int64, 500),
-		syncers:              make(map[string]*ChangesetSyncer),
+		syncers:              make(map[string]*changesetSyncer),
 	}
 
 	services, err := esStore.List(ctx, db.ExternalServicesListOptions{})
@@ -99,7 +100,7 @@ func (s *SyncRegistry) Add(extSvc *types.ExternalService) {
 	// We need to be able to cancel the syncer if the service is removed
 	ctx, cancel := context.WithCancel(s.Ctx)
 
-	syncer := &ChangesetSyncer{
+	syncer := &changesetSyncer{
 		syncStore:            s.SyncStore,
 		httpFactory:          s.HTTPFactory,
 		reposStore:           s.RepoStore,
@@ -205,9 +206,9 @@ func externalServiceSyncerKey(kind, config string) (string, error) {
 	return baseURL.String(), nil
 }
 
-// A ChangesetSyncer periodically syncs metadata of changesets
+// A changesetSyncer periodically syncs metadata of changesets
 // saved in the database.
-type ChangesetSyncer struct {
+type changesetSyncer struct {
 	syncStore            SyncStore
 	httpFactory          *httpcli.Factory
 	reposStore           RepoStore
@@ -279,7 +280,7 @@ type SyncStore interface {
 
 // Run will start the process of changeset syncing. It is long running
 // and is expected to be launched once at startup.
-func (s *ChangesetSyncer) Run(ctx context.Context) {
+func (s *changesetSyncer) Run(ctx context.Context) {
 	scheduleInterval := s.scheduleInterval
 	if scheduleInterval == 0 {
 		scheduleInterval = 2 * time.Minute
@@ -388,66 +389,7 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 	}
 }
 
-var (
-	minSyncDelay = 2 * time.Minute
-	maxSyncDelay = 8 * time.Hour
-)
-
-// NextSync computes the time we want the next sync to happen.
-func NextSync(clock func() time.Time, h *campaigns.ChangesetSyncData) time.Time {
-	lastSync := h.UpdatedAt
-
-	if lastSync.IsZero() {
-		// Edge case where we've never synced
-		return clock()
-	}
-
-	var lastChange time.Time
-	// When we perform a sync, event timestamps are all updated even if nothing has changed.
-	// We should fall back to h.ExternalUpdated if the diff is small
-	// TODO: This is a workaround while we try to implement syncing without always updating events. See: https://github.com/sourcegraph/sourcegraph/pull/8771
-	// Once the above issue is fixed we can simply use maxTime(h.ExternalUpdatedAt, h.LatestEvent)
-	if diff := h.LatestEvent.Sub(lastSync); !h.LatestEvent.IsZero() && absDuration(diff) < minSyncDelay {
-		lastChange = h.ExternalUpdatedAt
-	} else {
-		lastChange = maxTime(h.ExternalUpdatedAt, h.LatestEvent)
-	}
-
-	// Simple linear backoff for now
-	diff := lastSync.Sub(lastChange)
-
-	// If the last change has happened AFTER our last sync this indicates a webhook
-	// has arrived. In this case, we should check again in minSyncDelay after
-	// the hook arrived. If multiple webhooks arrive in close succession this will
-	// cause us to wait for a quiet period of at least minSyncDelay
-	if diff < 0 {
-		return lastChange.Add(minSyncDelay)
-	}
-
-	if diff > maxSyncDelay {
-		diff = maxSyncDelay
-	}
-	if diff < minSyncDelay {
-		diff = minSyncDelay
-	}
-	return lastSync.Add(diff)
-}
-
-func maxTime(a, b time.Time) time.Time {
-	if a.After(b) {
-		return a
-	}
-	return b
-}
-
-func absDuration(d time.Duration) time.Duration {
-	if d >= 0 {
-		return d
-	}
-	return -1 * d
-}
-
-func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync, error) {
+func (s *changesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync, error) {
 	syncData, err := s.syncStore.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ExternalServiceID: s.codeHostURL})
 	if err != nil {
 		return nil, errors.Wrap(err, "listing changeset sync data")
@@ -467,7 +409,7 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 }
 
 // SyncChangeset will sync a single changeset given its id.
-func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
+func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	log15.Debug("SyncChangeset", "id", id)
 	cs, err := s.syncStore.GetChangeset(ctx, store.GetChangesetOpts{
 		ID: id,
@@ -509,7 +451,7 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source repos.Change
 	}
 
 	events := c.Events()
-	SetDerivedState(ctx, c, events)
+	state.SetDerivedState(ctx, c, events)
 
 	tx, err := syncStore.Transact(ctx)
 	if err != nil {
@@ -542,124 +484,3 @@ func buildChangesetSource(
 
 	return source, nil
 }
-
-type scheduledSync struct {
-	changesetID int64
-	nextSync    time.Time
-	priority    priority
-}
-
-// changesetPriorityQueue is a min heap that sorts syncs by priority
-// and time of next sync. It is not safe for concurrent use.
-type changesetPriorityQueue struct {
-	items []scheduledSync
-	index map[int64]int // changesetID -> index
-}
-
-// newChangesetPriorityQueue creates a new queue for holding changeset sync instructions in chronological order.
-// items with a high priority will always appear at the front of the queue.
-func newChangesetPriorityQueue() *changesetPriorityQueue {
-	q := &changesetPriorityQueue{
-		items: make([]scheduledSync, 0),
-		index: make(map[int64]int),
-	}
-	heap.Init(q)
-	return q
-}
-
-// The following methods implement heap.Interface based on the priority queue example:
-// https://golang.org/pkg/container/heap/#example__priorityQueue
-
-func (pq *changesetPriorityQueue) Len() int { return len(pq.items) }
-
-func (pq *changesetPriorityQueue) Less(i, j int) bool {
-	// We want items ordered by priority, then NextSync
-	// Order by priority and then NextSync
-	a := pq.items[i]
-	b := pq.items[j]
-
-	if a.priority != b.priority {
-		// Greater than here since we want high priority items to be ranked before low priority
-		return a.priority > b.priority
-	}
-	if !a.nextSync.Equal(b.nextSync) {
-		return a.nextSync.Before(b.nextSync)
-	}
-	return a.changesetID < b.changesetID
-}
-
-func (pq *changesetPriorityQueue) Swap(i, j int) {
-	pq.items[i], pq.items[j] = pq.items[j], pq.items[i]
-	pq.index[pq.items[i].changesetID] = i
-	pq.index[pq.items[j].changesetID] = j
-}
-
-// Push is here to implement the Heap interface, please use Upsert
-func (pq *changesetPriorityQueue) Push(x interface{}) {
-	n := len(pq.items)
-	item := x.(scheduledSync)
-	pq.index[item.changesetID] = n
-	pq.items = append(pq.items, item)
-}
-
-// Pop is not to be used directly, use heap.Pop(pq)
-func (pq *changesetPriorityQueue) Pop() interface{} {
-	item := pq.items[len(pq.items)-1]
-	delete(pq.index, item.changesetID)
-	pq.items = pq.items[:len(pq.items)-1]
-	return item
-}
-
-// End of heap methods
-
-// Peek fetches the highest priority item without removing it.
-func (pq *changesetPriorityQueue) Peek() (scheduledSync, bool) {
-	if len(pq.items) == 0 {
-		return scheduledSync{}, false
-	}
-	return pq.items[0], true
-}
-
-// Upsert modifies at item if it exists or adds a new item if not.
-// NOTE: If an existing item is high priority, it will not be changed back
-// to normal. This allows high priority items to stay that way through reschedules.
-func (pq *changesetPriorityQueue) Upsert(ss ...scheduledSync) {
-	for _, s := range ss {
-		i, ok := pq.index[s.changesetID]
-		if !ok {
-			heap.Push(pq, s)
-			continue
-		}
-		oldPriority := pq.items[i].priority
-		pq.items[i] = s
-		if oldPriority == priorityHigh {
-			pq.items[i].priority = priorityHigh
-		}
-		heap.Fix(pq, i)
-	}
-}
-
-// Get fetches the item with the supplied id without removing it.
-func (pq *changesetPriorityQueue) Get(id int64) (scheduledSync, bool) {
-	i, ok := pq.index[id]
-	if !ok {
-		return scheduledSync{}, false
-	}
-	item := pq.items[i]
-	return item, true
-}
-
-func (pq *changesetPriorityQueue) Remove(id int64) {
-	i, ok := pq.index[id]
-	if !ok {
-		return
-	}
-	heap.Remove(pq, i)
-}
-
-type priority int
-
-const (
-	priorityNormal priority = iota
-	priorityHigh
-)

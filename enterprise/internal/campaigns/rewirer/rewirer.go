@@ -1,7 +1,9 @@
-package campaigns
+package rewirer
 
 import (
 	"context"
+
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -11,14 +13,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type changesetRewirer struct {
+type ChangesetRewirer struct {
 	mappings store.RewirerMappings
 	campaign *campaigns.Campaign
 	rstore   repos.Store
 }
 
-func NewChangesetRewirer(mappings store.RewirerMappings, campaign *campaigns.Campaign, rstore repos.Store) *changesetRewirer {
-	return &changesetRewirer{
+func New(mappings store.RewirerMappings, campaign *campaigns.Campaign, rstore repos.Store) *ChangesetRewirer {
+	return &ChangesetRewirer{
 		mappings: mappings,
 		campaign: campaign,
 		rstore:   rstore,
@@ -29,7 +31,7 @@ func NewChangesetRewirer(mappings store.RewirerMappings, campaign *campaigns.Cam
 // for consumption by the background reconciler.
 //
 // It also updates the ChangesetIDs on the campaign.
-func (r *changesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.Changeset, err error) {
+func (r *ChangesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.Changeset, err error) {
 	// First we need to load the associations.
 	associations, err := r.loadAssociations(ctx)
 	if err != nil {
@@ -54,7 +56,7 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 				continue
 			}
 
-			r.closeChangeset(ctx, changeset)
+			r.closeChangeset(changeset)
 			changesets = append(changesets, changeset)
 
 			continue
@@ -97,7 +99,7 @@ func (r *changesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 	return changesets, nil
 }
 
-func (r *changesetRewirer) createChangesetForSpec(repo *types.Repo, spec *campaigns.ChangesetSpec) *campaigns.Changeset {
+func (r *ChangesetRewirer) createChangesetForSpec(repo *types.Repo, spec *campaigns.ChangesetSpec) *campaigns.Changeset {
 	newChangeset := &campaigns.Changeset{
 		RepoID:              spec.RepoID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
@@ -117,7 +119,7 @@ func (r *changesetRewirer) createChangesetForSpec(repo *types.Repo, spec *campai
 	return newChangeset
 }
 
-func (r *changesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec *campaigns.ChangesetSpec) {
+func (r *ChangesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec *campaigns.ChangesetSpec) {
 	if c.ReconcilerState == campaigns.ReconcilerStateCompleted {
 		c.PreviousSpecID = c.CurrentSpecID
 	}
@@ -136,7 +138,7 @@ func (r *changesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec
 	c.ResetQueued()
 }
 
-func (r *changesetRewirer) createTrackingChangeset(repo *types.Repo, externalID string) *campaigns.Changeset {
+func (r *ChangesetRewirer) createTrackingChangeset(repo *types.Repo, externalID string) *campaigns.Changeset {
 	newChangeset := &campaigns.Changeset{
 		RepoID:              repo.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
@@ -156,7 +158,7 @@ func (r *changesetRewirer) createTrackingChangeset(repo *types.Repo, externalID 
 	return newChangeset
 }
 
-func (r *changesetRewirer) attachTrackingChangeset(changeset *campaigns.Changeset) {
+func (r *ChangesetRewirer) attachTrackingChangeset(changeset *campaigns.Changeset) {
 	// We already have a changeset with the given repoID and
 	// externalID, so we can track it.
 	changeset.AddedToCampaign = true
@@ -168,7 +170,7 @@ func (r *changesetRewirer) attachTrackingChangeset(changeset *campaigns.Changese
 	}
 }
 
-func (r *changesetRewirer) closeChangeset(ctx context.Context, changeset *campaigns.Changeset) {
+func (r *ChangesetRewirer) closeChangeset(changeset *campaigns.Changeset) {
 	if changeset.CurrentSpecID != 0 && changeset.OwnedByCampaignID == r.campaign.ID {
 		// If we have a current spec ID and the changeset was created by
 		// _this_ campaign that means we should detach and close it.
@@ -211,7 +213,7 @@ type rewirerAssociations struct {
 }
 
 // loadAssociations retrieves all entities required to rewire the changesets in a campaign.
-func (r *changesetRewirer) loadAssociations(ctx context.Context) (associations *rewirerAssociations, err error) {
+func (r *ChangesetRewirer) loadAssociations(ctx context.Context) (associations *rewirerAssociations, err error) {
 	associations = &rewirerAssociations{}
 	// Fetch all repos involved. We use them later to enforce repo permissions.
 	//
@@ -223,4 +225,18 @@ func (r *changesetRewirer) loadAssociations(ctx context.Context) (associations *
 	}
 
 	return associations, nil
+}
+
+// checkRepoSupported checks whether the given repository is supported by campaigns
+// and if not it returns an error.
+func checkRepoSupported(repo *types.Repo) error {
+	if campaigns.IsRepoSupported(&repo.ExternalRepo) {
+		return nil
+	}
+
+	return errors.Errorf(
+		"External service type %s of repository %q is currently not supported for use with campaigns",
+		repo.ExternalRepo.ServiceType,
+		repo.Name,
+	)
 }

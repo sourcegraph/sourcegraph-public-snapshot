@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/reconciler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -28,11 +28,11 @@ const reconcilerMaxNumResets = 60
 func newWorker(
 	ctx context.Context,
 	s *store.Store,
-	gitClient campaigns.GitserverClient,
+	gitClient reconciler.GitserverClient,
 	sourcer repos.Sourcer,
 	metrics campaignsMetrics,
 ) *workerutil.Worker {
-	r := &campaigns.Reconciler{GitserverClient: gitClient, Sourcer: sourcer, Store: s}
+	r := &reconciler.Reconciler{GitserverClient: gitClient, Sourcer: sourcer, Store: s}
 
 	options := workerutil.WorkerOptions{
 		NumHandlers: 5,

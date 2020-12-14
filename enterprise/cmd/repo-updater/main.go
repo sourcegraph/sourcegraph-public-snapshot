@@ -13,9 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/authz"
 	frontendAuthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	campaignsBackground "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/background"
 	campaignsStore "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	campaignsSyncer "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	codemonitorsBackground "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
@@ -49,10 +49,9 @@ func enterpriseInit(
 	codemonitorsBackground.StartBackgroundJobs(ctx, db)
 
 	cStore := campaignsStore.NewWithClock(db, timeutil.Now)
-
 	rStore := ossDB.NewRepoStoreWith(cStore)
 	esStore := ossDB.NewExternalServicesStoreWith(cStore)
-	syncRegistry := campaigns.NewSyncRegistry(ctx, cStore, rStore, esStore, cf)
+	syncRegistry := campaignsSyncer.NewSyncRegistry(ctx, cStore, rStore, esStore, cf)
 	if server != nil {
 		server.ChangesetSyncRegistry = syncRegistry
 	}

@@ -1,4 +1,4 @@
-package campaigns
+package webhooks
 
 import (
 	"context"
@@ -14,7 +14,9 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -188,7 +190,7 @@ func (h Webhook) upsertChangesetEvent(
 	events, _, err := tx.ListChangesetEvents(ctx, store.ListChangesetEventsOpts{
 		ChangesetIDs: []int64{cs.ID},
 	})
-	SetDerivedState(ctx, cs, events)
+	state.SetDerivedState(ctx, cs, events)
 	if err := tx.UpdateChangeset(ctx, cs); err != nil {
 		return err
 	}
