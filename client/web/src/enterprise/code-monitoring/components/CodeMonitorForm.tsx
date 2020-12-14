@@ -94,20 +94,17 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
             (submit: Observable<React.FormEvent<HTMLFormElement>>) =>
                 submit.pipe(
                     tap(event => event.preventDefault()),
-                    mergeMap(() => {
-                        if (formCompletion.actionCompleted && formCompletion.triggerCompleted) {
-                            return onSubmit(currentCodeMonitorState).pipe(
-                                startWith(LOADING),
-                                catchError(error => [asError(error)]),
-                                tap(successOrError => {
-                                    if (!isErrorLike(successOrError) && successOrError !== LOADING) {
-                                        history.push('/code-monitoring')
-                                    }
-                                })
-                            )
-                        }
-                        return of(undefined)
-                    })
+                    filter(() => formCompletion.actionCompleted && formCompletion.triggerCompleted),
+                    mergeMap(() => onSubmit(currentCodeMonitorState).pipe(
+                            startWith(LOADING),
+                            catchError(error => [asError(error)]),
+                            tap(successOrError => {
+                                if (!isErrorLike(successOrError) && successOrError !== LOADING) {
+                                    history.push('/code-monitoring')
+                                }
+                            })
+                        )
+                 )
                 ),
             [onSubmit, currentCodeMonitorState, history, formCompletion]
         )
