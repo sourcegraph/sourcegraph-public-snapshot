@@ -8,13 +8,17 @@ Campaigns has requirements for the Sourcegraph server version, its connected cod
 Campaigns is compatible with the following code hosts and versions:
 
 
-  - Github.com
-  - Github Enterprise: version: 2.20 and later
-  - GitLab: 12.7 and later
-    - 13.2 and later includes burndown chart support
-  - Bitbucket server: 5.7+
-  - Notes: 
-      - Webhook support should be enabled to increase performance at scale
+- Github.com
+- Github Enterprise 2.20 and later
+- GitLab 12.7 and later (burndown charts are only supported with 13.2 and later)
+- Bitbucket server 5.7 and later
+
+We **highly recommend** enabling webhooks to increase performance with large campaigns:
+
+- [GitHub](../../admin/external_service/github.md#webhooks)
+- [Bitbucket Server](../../admin/external_service/bitbucket_server.md#webhooks)
+- [GitLab](../../admin/external_service/gitlab.md#webhooks)
+
 
 ## Sourcegraph server
 
