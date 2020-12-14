@@ -3,6 +3,8 @@ import {
     ExternalChangesetFields,
     ChangesetExternalState,
     ChangesetPublicationState,
+    ChangesetSpecFields,
+    GitBranchChangesetDescriptionFields,
 } from '../../../../graphql-operations'
 import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
@@ -70,7 +72,7 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                 <Link to={node.repository.url} target="_blank" rel="noopener noreferrer">
                     {node.repository.name}
                 </Link>{' '}
-                {!isImporting(node) && (
+                {hasHeadReference(node) && (
                     <div className="d-block d-sm-inline-block">
                         <span className="badge badge-secondary text-monospace">{headReference(node)}</span>
                     </div>
@@ -91,10 +93,18 @@ function isImporting(node: ExternalChangesetFields): boolean {
 }
 
 function headReference(node: ExternalChangesetFields): string | undefined {
-    if (!isImporting(node) && node.currentSpec?.description.__typename === 'GitBranchChangesetDescription') {
+    if (hasHeadReference(node)) {
         return node.currentSpec?.description.headRef
     }
     return undefined
+}
+
+function hasHeadReference(
+    node: ExternalChangesetFields
+): node is ExternalChangesetFields & {
+    currentSpec: ChangesetSpecFields & { description: GitBranchChangesetDescriptionFields }
+} {
+    return node.currentSpec?.description.__typename === 'GitBranchChangesetDescription'
 }
 
 function importingFailed(node: ExternalChangesetFields): boolean {
