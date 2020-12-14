@@ -46,7 +46,9 @@ func TestChangesetSpecResolver(t *testing.T) {
 	}
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
-	if err := reposStore.InsertRepos(ctx, repo); err != nil {
+	repoStore := db.NewRepoStoreWith(cstore)
+
+	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)

@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -18,7 +19,9 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 	repo := ct.TestRepo(t, rs, extsvc.KindGitHub)
 	deletedRepo := ct.TestRepo(t, rs, extsvc.KindGitHub).With(types.Opt.RepoDeletedAt(clock.Now()))
 
-	if err := rs.InsertRepos(ctx, repo); err != nil {
+	repoStore := db.NewRepoStoreWith(s.Store)
+
+	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 	if err := rs.DeleteRepos(ctx, deletedRepo.ID); err != nil {

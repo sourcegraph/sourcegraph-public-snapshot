@@ -8,6 +8,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -20,7 +21,9 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, reposStore r
 	bitbucketRepo := ct.TestRepo(t, reposStore, extsvc.KindBitbucketServer)
 	awsRepo := ct.TestRepo(t, reposStore, extsvc.KindAWSCodeCommit)
 
-	if err := reposStore.InsertRepos(ctx, repo, otherRepo, gitlabRepo, bitbucketRepo, awsRepo); err != nil {
+	rs := db.NewRepoStoreWith(s.Store)
+
+	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo, bitbucketRepo, awsRepo); err != nil {
 		t.Fatal(err)
 	}
 	deletedRepo := otherRepo.With(types.Opt.RepoDeletedAt(clock.Now()))

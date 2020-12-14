@@ -17,6 +17,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -77,7 +78,9 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 
 	userID := insertTestUser(t, dbconn.Global, "changeset-counts-over-time", false)
 
-	repoStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	repoStore := db.NewRepoStoreWithDB(dbconn.Global)
+
 	githubExtSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
@@ -88,7 +91,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}),
 	}
 
-	err := repoStore.UpsertExternalServices(ctx, githubExtSvc)
+	err := rstore.UpsertExternalServices(ctx, githubExtSvc)
 	if err != nil {
 		t.Fatal(t)
 	}
@@ -103,7 +106,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = repoStore.InsertRepos(ctx, githubRepo)
+	err = repoStore.Create(ctx, githubRepo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,7 +164,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := ee.SyncChangeset(ctx, repoStore, cstore, githubSrc, githubRepo, c); err != nil {
+		if err := ee.SyncChangeset(ctx, rstore, cstore, githubSrc, githubRepo, c); err != nil {
 			t.Fatal(err)
 		}
 	}
