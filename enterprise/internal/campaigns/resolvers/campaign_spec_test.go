@@ -30,7 +30,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDBWithoutReset(t)
+	dbtesting.SetupGlobalTestDB(t)
 
 	cstore := store.New(dbconn.Global)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})

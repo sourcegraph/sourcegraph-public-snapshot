@@ -26,7 +26,7 @@ func TestCampaignResolver(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDBWithoutReset(t)
+	dbtesting.SetupGlobalTestDB(t)
 
 	userID := ct.CreateTestUser(t, true).ID
 	org, err := db.Orgs.Create(ctx, "test-campaign-resolver-org", nil)

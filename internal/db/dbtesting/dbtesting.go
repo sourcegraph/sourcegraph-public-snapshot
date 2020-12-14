@@ -60,20 +60,6 @@ var (
 // test packages that call SetupGlobalTestDB, so that each package's
 // tests run in separate DBs and do not conflict.
 func SetupGlobalTestDB(t testing.TB) {
-	SetupGlobalTestDBWithoutReset(t)
-
-	emptyDBPreserveSchema(t, dbconn.Global)
-}
-
-// SetupGlobalTestDBWithoutReset creates a temporary test DB handle, sets
-// `dbconn.Global` to it and setups other test configuration. It does NOT empty
-// the DB if it already exists.
-//
-// Callers (other than github.com/sourcegraph/sourcegraph/internal/db) must
-// set a name in this package's DBNameSuffix var that is unique among all other
-// test packages that call SetupGlobalTestDBWithoutReset, so that each package's
-// tests run in separate DBs and do not conflict.
-func SetupGlobalTestDBWithoutReset(t testing.TB) {
 	useFastPasswordMocks()
 
 	if testing.Short() {
@@ -94,6 +80,8 @@ func SetupGlobalTestDBWithoutReset(t testing.TB) {
 	for _, f := range BeforeTest {
 		f()
 	}
+
+	emptyDBPreserveSchema(t, dbconn.Global)
 }
 
 func emptyDBPreserveSchema(t testing.TB, d *sql.DB) {

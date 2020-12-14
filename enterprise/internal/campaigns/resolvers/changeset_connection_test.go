@@ -27,7 +27,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDBWithoutReset(t)
+	dbtesting.SetupGlobalTestDB(t)
 
 	userID := ct.CreateTestUser(t, false).ID
 
