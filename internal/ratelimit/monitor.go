@@ -29,7 +29,7 @@ type MonitorRegistry struct {
 // GetOrSet fetches the rate limit monitor associated with the given code host /
 // token tuple and an optional resource key. If none has been configured yet, the
 // provided monitor will be set.
-func (r *MonitorRegistry) GetOrSet(baseURL, authHash string, resource string, monitor *Monitor) *Monitor {
+func (r *MonitorRegistry) GetOrSet(baseURL, authHash, resource string, monitor *Monitor) *Monitor {
 	baseURL = normaliseURL(baseURL)
 	key := baseURL + ":" + authHash
 	if len(resource) > 0 {

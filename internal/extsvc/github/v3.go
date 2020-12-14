@@ -60,8 +60,8 @@ func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Cli
 	return newV3Client(apiURL, a, "rest", cli)
 }
 
-// NewV3SearchClient creates a new GitHub API client intended for use with the search API with an optional default
-// authenticator.
+// NewV3SearchClient creates a new GitHub API client intended for use with the
+// search API with an optional default authenticator.
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V3Client.apiURL.
