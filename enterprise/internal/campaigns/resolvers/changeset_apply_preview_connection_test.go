@@ -155,20 +155,3 @@ query($campaignSpec: ID!, $first: Int!, $after: String) {
   }
 }
 `
-
-// ... on VisibleChangesetApplyPreview {
-// 	operations
-// 	targets {
-// 	  ... on VisibleApplyPreviewTargetsAttach { changesetSpec { id } }
-// 	  ... on VisibleApplyPreviewTargetsUpdate { changesetSpec { id } changeset { id } }
-// 	  ... on VisibleApplyPreviewTargetsDetach { changeset { id } }
-// 	}
-// }
-// ... on HiddenChangesetApplyPreview {
-// 	operations
-// 	targets {
-// 	  ... on HiddenApplyPreviewTargetsAttach { changesetSpec { id } }
-// 	  ... on HiddenApplyPreviewTargetsUpdate { changesetSpec { id } changeset { id } }
-// 	  ... on HiddenApplyPreviewTargetsDetach { changeset { id } }
-// 	}
-// }
