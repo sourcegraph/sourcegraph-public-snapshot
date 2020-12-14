@@ -63,16 +63,20 @@ export function fetchLsifUploads({
                             first: $first
                             after: $after
                         ) {
-                            nodes {
-                                ...LsifUploadFields
-                            }
-                            totalCount
-                            pageInfo {
-                                endCursor
-                                hasNextPage
-                            }
+                            ...LsifUploadConnectionFields
                         }
                     }
+                }
+            }
+
+            fragment LsifUploadConnectionFields on LSIFUploadConnection {
+                nodes {
+                    ...LsifUploadFields
+                }
+                totalCount
+                pageInfo {
+                    endCursor
+                    hasNextPage
                 }
             }
 
