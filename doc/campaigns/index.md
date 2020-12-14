@@ -42,7 +42,7 @@ Create a campaign by specifying a search query to get a list of repositories and
 <div class="cta-group">
 <a class="btn btn-primary" href="quickstart">★ Quickstart</a>
 <a class="btn" href="explanations/introduction_to_campaigns">Introduction to campaigns</a>
-<a class="btn" href="references/requirements.md">
+<a class="btn" href="references/requirements">
 Requirements
 </a>
 </div>
