@@ -36,7 +36,7 @@ func TestPermissionLevels(t *testing.T) {
 		t.Skip()
 	}
 
-	dbtesting.SetupGlobalTestDBWithoutReset(t)
+	dbtesting.SetupGlobalTestDB(t)
 
 	cstore := store.New(dbconn.Global)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
@@ -755,7 +755,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		t.Skip()
 	}
 
-	dbtesting.SetupGlobalTestDBWithoutReset(t)
+	dbtesting.SetupGlobalTestDB(t)
 
 	cstore := store.New(dbconn.Global)
 	sr := &Resolver{store: cstore}

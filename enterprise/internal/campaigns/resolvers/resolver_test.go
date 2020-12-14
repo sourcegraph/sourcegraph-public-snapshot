@@ -88,7 +88,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDBWithoutReset(t)
+	dbtesting.SetupGlobalTestDB(t)
 
 	user := ct.CreateTestUser(t, true)
 	userID := user.ID
@@ -204,7 +204,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDBWithoutReset(t)
+	dbtesting.SetupGlobalTestDB(t)
 
 	userID := ct.CreateTestUser(t, true).ID
 
@@ -277,7 +277,7 @@ func TestApplyCampaign(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDBWithoutReset(t)
+	dbtesting.SetupGlobalTestDB(t)
 
 	userID := ct.CreateTestUser(t, true).ID
 
@@ -440,7 +440,7 @@ func TestCreateCampaign(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDBWithoutReset(t)
+	dbtesting.SetupGlobalTestDB(t)
 
 	userID := ct.CreateTestUser(t, true).ID
 
@@ -502,7 +502,7 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDBWithoutReset(t)
+	dbtesting.SetupGlobalTestDB(t)
 
 	user := ct.CreateTestUser(t, true)
 	userID := user.ID
@@ -776,7 +776,7 @@ func TestCreateCampaignsCredential(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDBWithoutReset(t)
+	dbtesting.SetupGlobalTestDB(t)
 
 	pruneUserCredentials(t)
 
@@ -830,7 +830,7 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDBWithoutReset(t)
+	dbtesting.SetupGlobalTestDB(t)
 
 	pruneUserCredentials(t)
 
