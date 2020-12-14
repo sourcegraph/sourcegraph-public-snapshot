@@ -39,7 +39,7 @@ To learn more about the generator\, see the top\-level program: https://github.c
 - [type UnitType](<#type-unittype>)
 
 
-## func [Generate](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/generator.go#L36>)
+## func [Generate](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/generator.go#L37>)
 
 ```go
 func Generate(opts GenerateOptions, containers ...*Container)
@@ -70,7 +70,9 @@ type Container struct {
 }
 ```
 
-## type [GenerateOptions](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/generator.go#L21-L33>)
+## type [GenerateOptions](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/generator.go#L22-L34>)
+
+GenerateOptions declares options for the monitoring generator\.
 
 ```go
 type GenerateOptions struct {

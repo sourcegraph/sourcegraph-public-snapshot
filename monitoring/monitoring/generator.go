@@ -18,6 +18,7 @@ const alertSuffix = "_alert_rules.yml"
 
 const alertSolutionsFile = "alert_solutions.md"
 
+// GenerateOptions declares options for the monitoring generator.
 type GenerateOptions struct {
 	// Toggles pruning of dangling generated assets through simple heuristic, should be disabled during builds
 	DisablePrune bool
