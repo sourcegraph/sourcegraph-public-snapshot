@@ -17,18 +17,18 @@ import (
 )
 
 type command struct {
-	Key      string
-	Commands []string
-	Dir      string
-	Env      []string
+	Key     string
+	Command []string
+	Dir     string
+	Env     []string
 }
 
 // runCommand invokes the given command on the host machine. The standard output and
 // standard error streams of the invoked command are written to the given logger.
 func runCommand(ctx context.Context, logger *Logger, command command) error {
-	log15.Info(fmt.Sprintf("Running command: %s", strings.Join(command.Commands, " ")))
+	log15.Info(fmt.Sprintf("Running command: %s", strings.Join(command.Command, " ")))
 
-	if err := validateCommand(command.Commands); err != nil {
+	if err := validateCommand(command.Command); err != nil {
 		return err
 	}
 
@@ -44,7 +44,7 @@ func runCommand(ctx context.Context, logger *Logger, command command) error {
 
 	logger.Log(workerutil.ExecutionLogEntry{
 		Key:        command.Key,
-		Command:    command.Commands,
+		Command:    command.Command,
 		StartTime:  startTime,
 		ExitCode:   exitCode,
 		Out:        pipeContents.String(),
@@ -60,7 +60,7 @@ func runCommand(ctx context.Context, logger *Logger, command command) error {
 	return nil
 }
 
-var allowedCommands = []string{
+var allowedBinaries = []string{
 	"docker",
 	"git",
 	"ignite",
@@ -69,13 +69,13 @@ var allowedCommands = []string{
 
 var ErrIllegalCommand = errors.New("illegal command")
 
-func validateCommand(commands []string) error {
-	if len(commands) == 0 {
+func validateCommand(command []string) error {
+	if len(command) == 0 {
 		return ErrIllegalCommand
 	}
 
-	for _, candidate := range allowedCommands {
-		if commands[0] == candidate {
+	for _, candidate := range allowedBinaries {
+		if command[0] == candidate {
 			return nil
 		}
 	}
@@ -84,7 +84,7 @@ func validateCommand(commands []string) error {
 }
 
 func prepCommand(ctx context.Context, command command) (cmd *exec.Cmd, stdout io.Reader, stderr io.Reader, err error) {
-	cmd = exec.CommandContext(ctx, command.Commands[0], command.Commands[1:]...)
+	cmd = exec.CommandContext(ctx, command.Command[0], command.Command[1:]...)
 	cmd.Dir = command.Dir
 	cmd.Env = command.Env
 

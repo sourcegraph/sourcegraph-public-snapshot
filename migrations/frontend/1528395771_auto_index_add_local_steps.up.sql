@@ -4,6 +4,8 @@ ALTER TABLE lsif_indexes ADD COLUMN local_steps json;
 
 UPDATE lsif_indexes SET local_steps = '{}';
 
+ALTER TABLE lsif_indexes ALTER COLUMN local_steps SET NOT NULL;
+
 DROP VIEW lsif_indexes_with_repository_name;
 
 CREATE VIEW lsif_indexes_with_repository_name AS

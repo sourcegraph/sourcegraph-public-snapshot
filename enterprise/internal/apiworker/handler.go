@@ -90,19 +90,43 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 		ResourceOptions:    h.options.ResourceOptions,
 	})
 
+	// Dedup images we need to load in. Sorted for ease of testing
 	imageMap := map[string]struct{}{}
 	for _, dockerStep := range job.DockerSteps {
 		imageMap[dockerStep.Image] = struct{}{}
 	}
 
-	images := make([]string, 0, len(imageMap))
+	imageNames := make([]string, 0, len(imageMap))
 	for image := range imageMap {
-		images = append(images, image)
+		imageNames = append(imageNames, image)
 	}
-	sort.Strings(images)
+	sort.Strings(imageNames)
+
+	// Create temp directory to store scripts in before they get copied into firecracker.
+	// Script content is passed in from the job
+	scriptsDir, err := makeTempDir()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			_ = os.RemoveAll(scriptsDir)
+		}
+	}()
+
+	scriptPaths := make([]string, 0, len(job.DockerSteps))
+	for i, dockerStep := range job.DockerSteps {
+		scriptPath := filepath.Join(scriptsDir, fmt.Sprintf("%d.%d_%s@%s.sh", job.ID, i, job.RepositoryName, job.Commit))
+
+		if err := ioutil.WriteFile(scriptPath, []byte(buildScript(dockerStep)), os.ModePerm); err != nil {
+			return err
+		}
+
+		scriptPaths = append(scriptPaths, scriptPath)
+	}
 
 	// Setup Firecracker VM (if enabled)
-	if err := runner.Setup(ctx, images); err != nil {
+	if err := runner.Setup(ctx, imageNames, scriptPaths); err != nil {
 		return err
 	}
 	defer func() {
@@ -114,11 +138,11 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	// Invoke each docker step sequentially
 	for i, dockerStep := range job.DockerSteps {
 		dockerStepCommand := command.CommandSpec{
-			Key:      fmt.Sprintf("step.docker.%d", i),
-			Image:    dockerStep.Image,
-			Commands: dockerStep.Commands,
-			Dir:      dockerStep.Dir,
-			Env:      dockerStep.Env,
+			Key:        fmt.Sprintf("step.docker.%d", i),
+			Image:      dockerStep.Image,
+			ScriptPath: scriptPaths[i],
+			Dir:        dockerStep.Dir,
+			Env:        dockerStep.Env,
 		}
 
 		if err := runner.Run(ctx, dockerStepCommand); err != nil {
@@ -129,10 +153,10 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	// Invoke each src-cli step sequentially
 	for i, cliStep := range job.CliSteps {
 		cliStepCommand := command.CommandSpec{
-			Key:      fmt.Sprintf("step.src.%d", i),
-			Commands: append([]string{"src"}, cliStep.Commands...),
-			Dir:      cliStep.Dir,
-			Env:      cliStep.Env,
+			Key:     fmt.Sprintf("step.src.%d", i),
+			Command: append([]string{"src"}, cliStep.Commands...),
+			Dir:     cliStep.Dir,
+			Env:     cliStep.Env,
 		}
 
 		if err := runner.Run(ctx, cliStepCommand); err != nil {
@@ -141,6 +165,10 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	}
 
 	return nil
+}
+
+func buildScript(dockerStep apiclient.DockerStep) []byte {
+	return []byte(strings.Join(dockerStep.Commands, "\n"))
 }
 
 func union(a, b map[string]string) map[string]string {

@@ -170,7 +170,7 @@ func insertIndexes(t testing.TB, db *sql.DB, indexes ...Index) {
 			pq.Array(index.IndexerArgs),
 			index.Outfile,
 			pq.Array(dbworkerstore.ExecutionLogEntries(index.ExecutionLogs)),
-			index.LocalSteps,
+			pq.Array(index.LocalSteps),
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {

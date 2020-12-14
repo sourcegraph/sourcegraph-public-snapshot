@@ -7,7 +7,7 @@ import (
 )
 
 type LocalStep struct {
-	ShellBlob string `json:"shellblob"`
+	Commands []string `json:"commands"`
 }
 
 func (s *LocalStep) Scan(value interface{}) error {

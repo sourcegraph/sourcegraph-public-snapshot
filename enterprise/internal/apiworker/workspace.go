@@ -17,16 +17,7 @@ import (
 // removed after the job has finished processing. If a repository name is supplied, then
 // that repository will be cloned (through the frontend API) into the workspace.
 func (h *handler) prepareWorkspace(ctx context.Context, commandRunner command.Runner, repositoryName, commit string) (_ string, err error) {
-	// TMPDIR is set in the dev Procfile to avoid requiring developers to explicitly
-	// allow bind mounts of the host's /tmp. If this directory doesn't exist,
-	// ioutil.TempDir below will fail.
-	if tmpdir := os.Getenv("TMPDIR"); tmpdir != "" {
-		if err := os.MkdirAll(tmpdir, os.ModePerm); err != nil {
-			return "", err
-		}
-	}
-
-	tempDir, err := ioutil.TempDir("", "")
+	tempDir, err := makeTempDir()
 	if err != nil {
 		return "", err
 	}
@@ -52,9 +43,9 @@ func (h *handler) prepareWorkspace(ctx context.Context, commandRunner command.Ru
 	}
 
 	gitCommands := []command.CommandSpec{
-		{Key: "setup.git.init", Commands: []string{"git", "-C", tempDir, "init"}},
-		{Key: "setup.git.fetch", Commands: []string{"git", "-C", tempDir, "-c", "protocol.version=2", "fetch", cloneURL.String(), commit}},
-		{Key: "setup.git.checkout", Commands: []string{"git", "-C", tempDir, "checkout", commit}},
+		{Key: "setup.git.init", Command: []string{"git", "-C", tempDir, "init"}},
+		{Key: "setup.git.fetch", Command: []string{"git", "-C", tempDir, "-c", "protocol.version=2", "fetch", cloneURL.String(), commit}},
+		{Key: "setup.git.checkout", Command: []string{"git", "-C", tempDir, "checkout", commit}},
 	}
 	for _, spec := range gitCommands {
 		if err := commandRunner.Run(ctx, spec); err != nil {
@@ -82,4 +73,20 @@ func makeRelativeURL(base string, path ...string) (*url.URL, error) {
 	}
 
 	return baseURL.ResolveReference(&url.URL{Path: filepath.Join(path...)}), nil
+}
+
+var makeTempDir = makeTemporaryDirectory
+
+func makeTemporaryDirectory() (string, error) {
+	// TMPDIR is set in the dev Procfile to avoid requiring developers to explicitly
+	// allow bind mounts of the host's /tmp. If this directory doesn't exist,
+	// ioutil.TempDir below will fail.
+	if tmpdir := os.Getenv("TMPDIR"); tmpdir != "" {
+		if err := os.MkdirAll(tmpdir, os.ModePerm); err != nil {
+			return "", err
+		}
+		return tmpdir, nil
+	}
+
+	return ioutil.TempDir("", "")
 }

@@ -29,12 +29,12 @@ type Index struct {
 	NumResets      int                            `json:"numResets"`
 	NumFailures    int                            `json:"numFailures"`
 	RepositoryID   int                            `json:"repositoryId"`
-	LocalSteps     LocalStep                      `json:"local_steps"`
+	LocalSteps     []string                       `json:"local_steps"`
 	RepositoryName string                         `json:"repositoryName"`
 	DockerSteps    []DockerStep                   `json:"docker_steps"`
 	Root           string                         `json:"root"`
 	Indexer        string                         `json:"indexer"`
-	IndexerArgs    []string                       `json:"indexer_args"`
+	IndexerArgs    []string                       `json:"indexer_args"` // TODO - convert this to `IndexCommand string`
 	Outfile        string                         `json:"outfile"`
 	ExecutionLogs  []workerutil.ExecutionLogEntry `json:"execution_logs"`
 	Rank           *int                           `json:"placeInQueue"`
@@ -76,7 +76,7 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 			&index.Outfile,
 			pq.Array(&executionLogs),
 			&index.Rank,
-			&index.LocalSteps,
+			pq.Array(index.LocalSteps),
 		); err != nil {
 			return nil, err
 		}
@@ -313,7 +313,7 @@ func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error)
 			index.Commit,
 			index.RepositoryID,
 			pq.Array(index.DockerSteps),
-			index.LocalSteps,
+			pq.Array(index.LocalSteps),
 			index.Root,
 			index.Indexer,
 			pq.Array(index.IndexerArgs),

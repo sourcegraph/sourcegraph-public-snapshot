@@ -14,15 +14,11 @@ type jsonIndexConfiguration struct {
 
 type jsonIndexJob struct {
 	Steps       []jsonDockerStep `json:"steps"`
-	LocalSteps  jsonLocalSteps   `json:"local_steps"`
+	LocalSteps  []string         `json:"local_steps"`
 	Root        string           `json:"root"`
 	Indexer     string           `json:"indexer"`
 	IndexerArgs []string         `json:"indexer_args"`
 	Outfile     string           `json:"outfile"`
-}
-
-type jsonLocalSteps struct {
-	ShellBlob string `json:"shellblob"`
 }
 
 type jsonDockerStep struct {
@@ -45,10 +41,8 @@ func UnmarshalJSON(data []byte) (IndexConfiguration, error) {
 	var indexJobs []IndexJob
 	for _, value := range configuration.IndexJobs {
 		indexJobs = append(indexJobs, IndexJob{
-			Steps: convertJSONDockerSteps(value.Steps),
-			LocalSteps: LocalSteps{
-				ShellBlob: value.LocalSteps.ShellBlob,
-			},
+			Steps:       convertJSONDockerSteps(value.Steps),
+			LocalSteps:  value.LocalSteps,
 			Root:        value.Root,
 			Indexer:     value.Indexer,
 			IndexerArgs: value.IndexerArgs,

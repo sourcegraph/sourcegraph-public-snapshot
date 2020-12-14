@@ -54,15 +54,11 @@
             "additionalItems": false
           },
           "local_steps": {
-            "type": "object",
-            "properties": {
-              "shellblob": {
-                "type": "string",
-                "description": "A shell script to run in the docker container to perform setup with effects outside the repository root."
-              }
-            },
-            "additionalItems": false,
-            "required": ["shellblob"]
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "A command to run in the docker container to perform setup with effects outside the repository root."
+            }
           },
           "root": {
             "description": "The path relative to the repository root where the indexer runs.",
@@ -87,12 +83,11 @@
           }
         },
         "additionalProperties": false,
-        "required": ["steps", "root", "indexer", "indexer_args", "outfile"]
+        "required": ["steps", "local_steps", "root", "indexer", "indexer_args", "outfile"]
       },
       "additionalItems": false
     }
   },
   "additionalProperties": false,
-  "required": ["shared_steps", "index_jobs"
-  ]
+  "required": ["shared_steps", "index_jobs"]
 }
