@@ -72,7 +72,7 @@ describe('Organizations', () => {
                     createOrganization: {
                         id: 'TestOrg',
                         name,
-                        settingsURL: '/organizations/test-org/settings',
+                        settingsURL: '/organizations/test-org-1/settings',
                     },
                 }),
             }
