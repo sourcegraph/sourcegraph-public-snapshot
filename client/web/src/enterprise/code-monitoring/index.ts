@@ -1,5 +1,7 @@
 import { Observable } from 'rxjs'
 import {
+    CreateCodeMonitorResult,
+    CreateCodeMonitorVariables,
     FetchCodeMonitorResult,
     ListCodeMonitors,
     ListUserCodeMonitorsVariables,
@@ -11,6 +13,9 @@ import {
 } from '../../graphql-operations'
 
 export interface CodeMonitoringProps {
+    createCodeMonitor: (
+        monitorInput: CreateCodeMonitorVariables
+    ) => Observable<CreateCodeMonitorResult['createCodeMonitor']>
     fetchUserCodeMonitors: ({ id, first, after }: ListUserCodeMonitorsVariables) => Observable<ListCodeMonitors>
     fetchCodeMonitor: (id: string) => Observable<FetchCodeMonitorResult>
     updateCodeMonitor: (
