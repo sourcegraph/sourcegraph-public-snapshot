@@ -11,7 +11,7 @@ export const CampaignListIntro: React.FunctionComponent<CampaignListIntroProps> 
         return (
             <div className="row">
                 <div className="col-12 mb-2">
-                    <CampaignChangelog />
+                    <CampaignChangelogAlert />
                 </div>
             </div>
         )
@@ -20,32 +20,16 @@ export const CampaignListIntro: React.FunctionComponent<CampaignListIntroProps> 
     return (
         <div className="row">
             <div className="col-12 col-md-6 mb-2">
-                <DismissibleAlert className="campaign-list-intro__alert" partialStorageKey="campaign-list-intro-trial">
-                    <div className="campaign-list-intro__card card p-2 h-100">
-                        <div className="card-body d-flex align-items-start">
-                            {/* d-none d-sm-block ensure that we hide the icon on XS displays. */}
-                            <SourcegraphIcon className="mr-3 col-2 mt-2 d-none d-sm-block" />
-                            <div>
-                                <h4>Campaigns trial</h4>
-                                <p className="text-muted mb-0">
-                                    Campaigns will be a paid feature in a future release. In the meantime, we invite you
-                                    to trial the ability to make large scale changes across many repositories and code
-                                    hosts. If you’d like to discuss use cases and features,{' '}
-                                    <a href="https://about.sourcegraph.com/contact/sales/">please get in touch</a>!
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </DismissibleAlert>
+                <CampaignUnlicensedAlert />
             </div>
             <div className="col-12 col-md-6 mb-2">
-                <CampaignChangelog />
+                <CampaignChangelogAlert />
             </div>
         </div>
     )
 }
 
-const CampaignChangelog: React.FunctionComponent = () => (
+const CampaignChangelogAlert: React.FunctionComponent = () => (
     <DismissibleAlert className="campaign-list-intro__alert" partialStorageKey="campaign-list-intro-changelog-3.23">
         <div className="campaign-list-intro__card card h-100 p-2">
             <div className="card-body">
@@ -80,6 +64,26 @@ const CampaignChangelog: React.FunctionComponent = () => (
                         of only showing the desired state
                     </li>
                 </ul>
+            </div>
+        </div>
+    </DismissibleAlert>
+)
+
+const CampaignUnlicensedAlert: React.FunctionComponent = () => (
+    <DismissibleAlert className="campaign-list-intro__alert" partialStorageKey="campaign-list-intro-trial">
+        <div className="campaign-list-intro__card card p-2 h-100">
+            <div className="card-body d-flex align-items-start">
+                {/* d-none d-sm-block ensure that we hide the icon on XS displays. */}
+                <SourcegraphIcon className="mr-3 col-2 mt-2 d-none d-sm-block" />
+                <div>
+                    <h4>Campaigns trial</h4>
+                    <p className="text-muted mb-0">
+                        Campaigns will be a paid feature in a future release. In the meantime, we invite you to trial
+                        the ability to make large scale changes across many repositories and code hosts. If you’d like
+                        to discuss use cases and features,{' '}
+                        <a href="https://about.sourcegraph.com/contact/sales/">please get in touch</a>!
+                    </p>
+                </div>
             </div>
         </div>
     </DismissibleAlert>
