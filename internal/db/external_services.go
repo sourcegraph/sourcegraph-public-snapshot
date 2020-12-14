@@ -51,6 +51,11 @@ func NewExternalServicesStoreWithDB(db dbutil.DB) *ExternalServiceStore {
 	return &ExternalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
+// NewExternalServicesStoreWithDB instantiates and returns a new ExternalServicesStore with prepared statements.
+func NewExternalServicesStoreWith(other basestore.ShareableStore) *ExternalServiceStore {
+	return &ExternalServiceStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
 func (e *ExternalServiceStore) With(other basestore.ShareableStore) *ExternalServiceStore {
 	return &ExternalServiceStore{Store: e.Store.With(other)}
 }

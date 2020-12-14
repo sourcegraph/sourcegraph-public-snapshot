@@ -2,7 +2,6 @@ package campaigns
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"net/url"
 	"sort"
@@ -137,14 +136,16 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *ReconcilerPlan) (err e
 		return nil
 	}
 
-	reposStore := repos.NewDBStore(e.tx.Handle().DB(), sql.TxOptions{})
+	reposStore := db.NewRepoStoreWith(e.tx)
 
 	e.repo, err = loadRepo(ctx, reposStore, e.ch.RepoID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load repository")
 	}
 
-	e.extSvc, err = loadExternalService(ctx, reposStore, e.repo)
+	esStore := db.NewExternalServicesStoreWith(e.tx)
+
+	e.extSvc, err = loadExternalService(ctx, esStore, e.repo)
 	if err != nil {
 		return errors.Wrap(err, "failed to load external service")
 	}
@@ -819,21 +820,22 @@ func reopenAfterDetach(ch *campaigns.Changeset) bool {
 }
 
 func loadRepo(ctx context.Context, tx RepoStore, id api.RepoID) (*types.Repo, error) {
-	rs, err := tx.ListRepos(ctx, repos.StoreListReposArgs{IDs: []api.RepoID{id}})
+	r, err := tx.Get(ctx, id)
 	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, errors.Errorf("repo not found: %d", id)
+		}
 		return nil, err
 	}
-	if len(rs) != 1 {
-		return nil, errors.Errorf("repo not found: %d", id)
-	}
-	return rs[0], nil
+
+	return r, nil
 }
 
-func loadExternalService(ctx context.Context, reposStore RepoStore, repo *types.Repo) (*types.ExternalService, error) {
+func loadExternalService(ctx context.Context, esStore ExternalServiceStore, repo *types.Repo) (*types.ExternalService, error) {
 	var externalService *types.ExternalService
-	args := repos.StoreListExternalServicesArgs{IDs: repo.ExternalServiceIDs()}
+	args := db.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()}
 
-	es, err := reposStore.ListExternalServices(ctx, args)
+	es, err := esStore.List(ctx, args)
 	if err != nil {
 		return nil, err
 	}

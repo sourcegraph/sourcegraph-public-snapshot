@@ -164,7 +164,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := ee.SyncChangeset(ctx, rstore, cstore, githubSrc, githubRepo, c); err != nil {
+		if err := ee.SyncChangeset(ctx, cstore, githubSrc, githubRepo, c); err != nil {
 			t.Fatal(err)
 		}
 	}

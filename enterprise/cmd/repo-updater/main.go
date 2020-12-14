@@ -50,7 +50,9 @@ func enterpriseInit(
 
 	cStore := campaignsStore.NewWithClock(db, timeutil.Now)
 
-	syncRegistry := campaigns.NewSyncRegistry(ctx, cStore, repoStore, cf)
+	rStore := ossDB.NewRepoStoreWith(cStore)
+	esStore := ossDB.NewExternalServicesStoreWith(cStore)
+	syncRegistry := campaigns.NewSyncRegistry(ctx, cStore, rStore, esStore, cf)
 	if server != nil {
 		server.ChangesetSyncRegistry = syncRegistry
 	}

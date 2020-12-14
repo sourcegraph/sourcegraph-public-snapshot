@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -23,10 +24,11 @@ import (
 
 // SyncRegistry manages a ChangesetSyncer per code host
 type SyncRegistry struct {
-	Ctx         context.Context
-	SyncStore   SyncStore
-	RepoStore   RepoStore
-	HTTPFactory *httpcli.Factory
+	Ctx                  context.Context
+	SyncStore            SyncStore
+	RepoStore            RepoStore
+	ExternalServiceStore ExternalServiceStore
+	HTTPFactory          *httpcli.Factory
 
 	// Used to receive high priority sync requests
 	priorityNotify chan []int64
@@ -37,23 +39,27 @@ type SyncRegistry struct {
 }
 
 type RepoStore interface {
-	ListExternalServices(context.Context, repos.StoreListExternalServicesArgs) ([]*types.ExternalService, error)
-	ListRepos(context.Context, repos.StoreListReposArgs) ([]*types.Repo, error)
+	Get(ctx context.Context, id api.RepoID) (*types.Repo, error)
+}
+
+type ExternalServiceStore interface {
+	List(context.Context, db.ExternalServicesListOptions) ([]*types.ExternalService, error)
 }
 
 // NewSyncRegistry creates a new sync registry which starts a syncer for each code host and will update them
 // when external services are changed, added or removed.
-func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, cf *httpcli.Factory) *SyncRegistry {
+func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, esStore ExternalServiceStore, cf *httpcli.Factory) *SyncRegistry {
 	r := &SyncRegistry{
-		Ctx:            ctx,
-		SyncStore:      store,
-		RepoStore:      repoStore,
-		HTTPFactory:    cf,
-		priorityNotify: make(chan []int64, 500),
-		syncers:        make(map[string]*ChangesetSyncer),
+		Ctx:                  ctx,
+		SyncStore:            store,
+		RepoStore:            repoStore,
+		ExternalServiceStore: esStore,
+		HTTPFactory:          cf,
+		priorityNotify:       make(chan []int64, 500),
+		syncers:              make(map[string]*ChangesetSyncer),
 	}
 
-	services, err := repoStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
+	services, err := esStore.List(ctx, db.ExternalServicesListOptions{})
 	if err != nil {
 		log15.Error("Fetching initial external services", "err", err)
 	}
@@ -94,12 +100,13 @@ func (s *SyncRegistry) Add(extSvc *types.ExternalService) {
 	ctx, cancel := context.WithCancel(s.Ctx)
 
 	syncer := &ChangesetSyncer{
-		syncStore:      s.SyncStore,
-		httpFactory:    s.HTTPFactory,
-		reposStore:     s.RepoStore,
-		codeHostURL:    normalised,
-		cancel:         cancel,
-		priorityNotify: make(chan []int64, 500),
+		syncStore:            s.SyncStore,
+		httpFactory:          s.HTTPFactory,
+		reposStore:           s.RepoStore,
+		externalServiceStore: s.ExternalServiceStore,
+		codeHostURL:          normalised,
+		cancel:               cancel,
+		priorityNotify:       make(chan []int64, 500),
 	}
 
 	s.syncers[normalised] = syncer
@@ -201,9 +208,10 @@ func externalServiceSyncerKey(kind, config string) (string, error) {
 // A ChangesetSyncer periodically syncs metadata of changesets
 // saved in the database.
 type ChangesetSyncer struct {
-	syncStore   SyncStore
-	httpFactory *httpcli.Factory
-	reposStore  RepoStore
+	syncStore            SyncStore
+	httpFactory          *httpcli.Factory
+	reposStore           RepoStore
+	externalServiceStore ExternalServiceStore
 
 	codeHostURL string
 
@@ -472,7 +480,7 @@ func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 		return err
 	}
 
-	externalService, err := loadExternalService(ctx, s.reposStore, repo)
+	externalService, err := loadExternalService(ctx, s.externalServiceStore, repo)
 	if err != nil {
 		return err
 	}
@@ -482,12 +490,12 @@ func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	if err != nil {
 		return err
 	}
-	return SyncChangeset(ctx, s.reposStore, s.syncStore, source, repo, cs)
+	return SyncChangeset(ctx, s.syncStore, source, repo, cs)
 }
 
 // SyncChangeset refreshes the metadata of the given changeset and
 // updates them in the database.
-func SyncChangeset(ctx context.Context, repoStore RepoStore, syncStore SyncStore, source repos.ChangesetSource, repo *types.Repo, c *campaigns.Changeset) (err error) {
+func SyncChangeset(ctx context.Context, syncStore SyncStore, source repos.ChangesetSource, repo *types.Repo, c *campaigns.Changeset) (err error) {
 	repoChangeset := &repos.Changeset{Repo: repo, Changeset: c}
 	if err := source.LoadChangeset(ctx, repoChangeset); err != nil {
 		_, ok := err.(repos.ChangesetNotFoundError)
