@@ -130,7 +130,7 @@ utilize our `internal/workerutil` framework to [run as background jobs on
 2. Check out the [interfaces and stub
    resolvers](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/frontend/graphqlbackend/code_monitors.go)
    and understand how they relate to the [GraphQL
-   schema]((https://github.com/sourcegraph/sourcegraph/blob/main/cmd/frontend/graphqlbackend/code_monitors.go).
+   schema](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/frontend/graphqlbackend/code_monitors.go).
 3. Do the same for the [enterprise
    resolvers](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/frontend/graphqlbackend/code_monitors.go).
 4. Take a look at the [background
