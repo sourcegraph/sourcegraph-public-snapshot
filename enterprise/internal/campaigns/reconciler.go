@@ -822,7 +822,7 @@ func reopenAfterDetach(ch *campaigns.Changeset) bool {
 func loadRepo(ctx context.Context, tx RepoStore, id api.RepoID) (*types.Repo, error) {
 	r, err := tx.Get(ctx, id)
 	if err != nil {
-		if _, isNotFoundError := err.(*db.RepoNotFoundErr); isNotFoundError {
+		if errcode.IsNotFound(err) {
 			return nil, errors.Errorf("repo not found: %d", id)
 		}
 		return nil, err
