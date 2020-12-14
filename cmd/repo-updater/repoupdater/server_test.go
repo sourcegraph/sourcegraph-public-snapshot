@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -424,37 +423,16 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 				ServiceID:   "http://github.com",
 			},
 			Metadata: new(github.Repository),
-			Sources: map[string]*types.SourceInfo{
-				svc.URN(): {
-					ID:       svc.URN(),
-					CloneURL: "https://secret-token@github.com/foo/bar",
-				},
-			},
 		}
 
-		repoWithMissingCloneURL := types.Repo{
-			Name: "github.com/foo/baz",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "missingURL",
-				ServiceType: extsvc.TypeGitHub,
-				ServiceID:   "http://github.com",
-			},
-			Metadata: new(github.Repository),
-			Sources: map[string]*types.SourceInfo{
-				svc.URN(): {
-					ID: svc.URN(),
-				},
-			},
-		}
-
-		if err := store.InsertRepos(ctx, &repo, &repoWithMissingCloneURL); err != nil {
+		if err := store.InsertRepos(ctx, &repo); err != nil {
 			t.Fatal(err)
 		}
 
 		type testCase struct {
 			name  string
 			store repos.Store
-			repo  gitserver.Repo
+			repo  api.RepoName
 			res   *protocol.RepoUpdateResponse
 			err   string
 		}
@@ -475,46 +453,18 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 			testCase{
 				name:  "missing repo",
 				store: store, // empty store
-				repo:  gitserver.Repo{Name: "foo"},
+				repo:  "foo",
 				err:   `repo "foo" not found in store`,
 			},
 			func() testCase {
-				repo := repoWithMissingCloneURL.Clone()
-
-				return testCase{
-					name:  "missing clone URL",
-					store: store,
-					repo:  gitserver.Repo{Name: api.RepoName(repo.Name)},
-					res: &protocol.RepoUpdateResponse{
-						ID:   repo.ID,
-						Name: string(repo.Name),
-					},
-				}
-			}(),
-			func() testCase {
-				repo := repo.Clone()
-				cloneURL := "https://user:password@github.com/foo/bar"
-				return testCase{
-					name:  "given clone URL is preferred",
-					store: store,
-					repo:  gitserver.Repo{Name: api.RepoName(repo.Name), URL: cloneURL},
-					res: &protocol.RepoUpdateResponse{
-						ID:   repo.ID,
-						Name: string(repo.Name),
-						URL:  cloneURL,
-					},
-				}
-			}(),
-			func() testCase {
 				repo := repo.Clone()
 				return testCase{
-					name:  "if missing, clone URL is set when stored",
+					name:  "existing repo",
 					store: store,
-					repo:  gitserver.Repo{Name: api.RepoName(repo.Name)},
+					repo:  repo.Name,
 					res: &protocol.RepoUpdateResponse{
 						ID:   repo.ID,
 						Name: string(repo.Name),
-						URL:  repo.CloneURLs()[0],
 					},
 				}
 			}(),
@@ -1348,7 +1298,7 @@ func (s *fakeRepoSource) GetRepo(context.Context, string) (*types.Repo, error) {
 
 type fakeScheduler struct{}
 
-func (s *fakeScheduler) UpdateOnce(_ api.RepoID, _ api.RepoName, _ string) {}
+func (s *fakeScheduler) UpdateOnce(_ api.RepoID, _ api.RepoName) {}
 func (s *fakeScheduler) ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult {
 	return &protocol.RepoUpdateSchedulerInfoResult{}
 }

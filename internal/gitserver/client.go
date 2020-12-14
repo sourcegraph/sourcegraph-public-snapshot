@@ -144,9 +144,9 @@ func (a *archiveReader) Close() error {
 
 // ArchiveURL returns a URL from which an archive of the given Git repository can
 // be downloaded from.
-func (c *Client) ArchiveURL(ctx context.Context, repo Repo, opt ArchiveOptions) *url.URL {
+func (c *Client) ArchiveURL(ctx context.Context, repo api.RepoName, opt ArchiveOptions) *url.URL {
 	q := url.Values{
-		"repo":    {string(repo.Name)},
+		"repo":    {string(repo)},
 		"treeish": {opt.Treeish},
 		"format":  {opt.Format},
 	}
@@ -157,16 +157,16 @@ func (c *Client) ArchiveURL(ctx context.Context, repo Repo, opt ArchiveOptions) 
 
 	return &url.URL{
 		Scheme:   "http",
-		Host:     c.AddrForRepo(ctx, repo.Name),
+		Host:     c.AddrForRepo(ctx, repo),
 		Path:     "/archive",
 		RawQuery: q.Encode(),
 	}
 }
 
 // Archive produces an archive from a Git repository.
-func (c *Client) Archive(ctx context.Context, repo Repo, opt ArchiveOptions) (_ io.ReadCloser, err error) {
+func (c *Client) Archive(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Archive")
-	span.SetTag("Repo", repo.Name)
+	span.SetTag("Repo", repo)
 	span.SetTag("Treeish", opt.Treeish)
 	defer func() {
 		if err != nil {
@@ -183,7 +183,7 @@ func (c *Client) Archive(ctx context.Context, repo Repo, opt ArchiveOptions) (_ 
 	}
 
 	u := c.ArchiveURL(ctx, repo, opt)
-	resp, err := c.do(ctx, repo.Name, "GET", u.String(), nil)
+	resp, err := c.do(ctx, repo, "GET", u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func (c *Client) Archive(ctx context.Context, repo Repo, opt ArchiveOptions) (_ 
 				rc:      resp.Body,
 				trailer: resp.Trailer,
 			},
-			repo: repo.Name,
+			repo: repo,
 			spec: opt.Treeish,
 		}, nil
 	case http.StatusNotFound:
@@ -207,7 +207,7 @@ func (c *Client) Archive(ctx context.Context, repo Repo, opt ArchiveOptions) (_ 
 		resp.Body.Close()
 		return nil, &badRequestError{
 			error: &vcs.RepoNotExistError{
-				Repo:            repo.Name,
+				Repo:            repo,
 				CloneInProgress: payload.CloneInProgress,
 				CloneProgress:   payload.CloneProgress,
 			},
@@ -223,7 +223,7 @@ type badRequestError struct{ error }
 func (e badRequestError) BadRequest() bool { return true }
 
 func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
-	repoName := protocol.NormalizeRepo(c.Repo.Name)
+	repoName := protocol.NormalizeRepo(c.Repo)
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec")
 	defer func() {
@@ -234,8 +234,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 		span.Finish()
 	}()
 	span.SetTag("request", "Exec")
-	span.SetTag("repo", c.Repo.Name)
-	span.SetTag("remoteURL", c.Repo.URL)
+	span.SetTag("repo", c.Repo)
 	span.SetTag("args", c.Args[1:])
 
 	// Check that ctx is not expired.
@@ -246,7 +245,6 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 
 	req := &protocol.ExecRequest{
 		Repo:           repoName,
-		URL:            c.Repo.URL,
 		EnsureRevision: c.EnsureRevision,
 		Args:           c.Args[1:],
 	}
@@ -288,20 +286,9 @@ type Cmd struct {
 	client *Client
 
 	Args           []string
-	Repo           // the repository to execute the command in
+	Repo           api.RepoName // the repository to execute the command in
 	EnsureRevision string
 	ExitStatus     int
-}
-
-// Repo represents a repository on gitserver. It contains the information necessary to identify and
-// create/clone it.
-type Repo struct {
-	Name api.RepoName // the repository's name
-
-	// URL is the repository's Git remote URL. If the gitserver already has cloned the repository,
-	// this field is optional (it will use the last-used Git remote URL). If the repository is not
-	// cloned on the gitserver, the request will fail.
-	URL string
 }
 
 // Command creates a new Cmd. Command name must be 'git',
@@ -560,13 +547,12 @@ func (c *Client) doListOne(ctx context.Context, urlSuffix, addr string) ([]strin
 // Repo updates are not guaranteed to occur. If a repo has been updated
 // recently (within the Since duration specified in the request), the
 // update won't happen.
-func (c *Client) RequestRepoUpdate(ctx context.Context, repo Repo, since time.Duration) (*protocol.RepoUpdateResponse, error) {
+func (c *Client) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since time.Duration) (*protocol.RepoUpdateResponse, error) {
 	req := &protocol.RepoUpdateRequest{
-		Repo:  repo.Name,
-		URL:   repo.URL,
+		Repo:  repo,
 		Since: since,
 	}
-	resp, err := c.httpPost(ctx, repo.Name, "repo-update", req)
+	resp, err := c.httpPost(ctx, repo, "repo-update", req)
 	if err != nil {
 		return nil, err
 	}
@@ -582,19 +568,18 @@ func (c *Client) RequestRepoUpdate(ctx context.Context, repo Repo, since time.Du
 }
 
 // MockIsRepoCloneable mocks (*Client).IsRepoCloneable for tests.
-var MockIsRepoCloneable func(Repo) error
+var MockIsRepoCloneable func(api.RepoName) error
 
 // IsRepoCloneable returns nil if the repository is cloneable.
-func (c *Client) IsRepoCloneable(ctx context.Context, repo Repo) error {
+func (c *Client) IsRepoCloneable(ctx context.Context, repo api.RepoName) error {
 	if MockIsRepoCloneable != nil {
 		return MockIsRepoCloneable(repo)
 	}
 
 	req := &protocol.IsRepoCloneableRequest{
-		Repo: repo.Name,
-		URL:  repo.URL,
+		Repo: repo,
 	}
-	r, err := c.httpPost(ctx, repo.Name, "is-repo-cloneable", req)
+	r, err := c.httpPost(ctx, repo, "is-repo-cloneable", req)
 	if err != nil {
 		return err
 	}
@@ -625,7 +610,7 @@ func (c *Client) IsRepoCloneable(ctx context.Context, repo Repo) error {
 
 // RepoNotCloneableErr is the error that happens when a repository can not be cloned.
 type RepoNotCloneableErr struct {
-	repo     Repo
+	repo     api.RepoName
 	reason   string
 	notFound bool
 }
@@ -638,7 +623,7 @@ func (e *RepoNotCloneableErr) NotFound() bool {
 }
 
 func (e *RepoNotCloneableErr) Error() string {
-	return fmt.Sprintf("repo not found (name=%s url=%s notfound=%v) because %s", e.repo.Name, e.repo.URL, e.notFound, e.reason)
+	return fmt.Sprintf("repo not found (name=%s notfound=%v) because %s", e.repo, e.notFound, e.reason)
 }
 
 func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoName) (bool, error) {

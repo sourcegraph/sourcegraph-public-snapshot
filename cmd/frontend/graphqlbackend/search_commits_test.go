@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+
 	// "github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"

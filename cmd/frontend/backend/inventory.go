@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -26,7 +25,7 @@ var inventoryCache = rcache.New(fmt.Sprintf("inv:v2:enhanced_%v", useEnhancedLan
 
 // InventoryContext returns the inventory context for computing the inventory for the repository at
 // the given commit.
-func InventoryContext(repo gitserver.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (inventory.Context, error) {
+func InventoryContext(repo api.RepoName, commitID api.CommitID, forceEnhancedLanguageDetection bool) (inventory.Context, error) {
 	if !git.IsAbsoluteRevision(string(commitID)) {
 		return inventory.Context{}, errors.Errorf("refusing to compute inventory for non-absolute commit ID %q", commitID)
 	}
@@ -55,7 +54,7 @@ func InventoryContext(repo gitserver.Repo, commitID api.CommitID, forceEnhancedL
 			if b, ok := inventoryCache.Get(cacheKey); ok {
 				var inv inventory.Inventory
 				if err := json.Unmarshal(b, &inv); err != nil {
-					log15.Warn("Failed to unmarshal cached JSON inventory.", "repo", repo.Name, "commitID", commitID, "path", e.Name(), "err", err)
+					log15.Warn("Failed to unmarshal cached JSON inventory.", "repo", repo, "commitID", commitID, "path", e.Name(), "err", err)
 					return inventory.Inventory{}, false
 				}
 				return inv, true
@@ -69,7 +68,7 @@ func InventoryContext(repo gitserver.Repo, commitID api.CommitID, forceEnhancedL
 			}
 			b, err := json.Marshal(&inv)
 			if err != nil {
-				log15.Warn("Failed to marshal JSON inventory for cache.", "repo", repo.Name, "commitID", commitID, "path", e.Name(), "err", err)
+				log15.Warn("Failed to marshal JSON inventory for cache.", "repo", repo, "commitID", commitID, "path", e.Name(), "err", err)
 				return
 			}
 			inventoryCache.Set(cacheKey, b)

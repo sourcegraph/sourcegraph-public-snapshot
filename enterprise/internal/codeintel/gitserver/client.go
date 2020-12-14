@@ -312,12 +312,12 @@ func (c *Client) execGitCommand(ctx context.Context, repositoryID int, args ...s
 	return string(bytes.TrimSpace(out)), errors.Wrap(err, "gitserver.Command")
 }
 
-// repositoryIDToRepo creates a gitserver.Repo from a repository identifier.
-func (c *Client) repositoryIDToRepo(ctx context.Context, repositoryID int) (gitserver.Repo, error) {
+// repositoryIDToRepo creates a api.RepoName from a repository identifier.
+func (c *Client) repositoryIDToRepo(ctx context.Context, repositoryID int) (api.RepoName, error) {
 	repoName, err := c.dbStore.RepoName(ctx, repositoryID)
 	if err != nil {
-		return gitserver.Repo{}, errors.Wrap(err, "store.RepoName")
+		return "", errors.Wrap(err, "store.RepoName")
 	}
 
-	return gitserver.Repo{Name: api.RepoName(repoName)}, nil
+	return api.RepoName(repoName), nil
 }
