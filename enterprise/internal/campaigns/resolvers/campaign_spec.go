@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/service"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 func marshalCampaignSpecRandID(id string) graphql.ID {
@@ -31,8 +31,7 @@ func unmarshalCampaignSpecID(id graphql.ID) (campaignSpecRandID string, err erro
 var _ graphqlbackend.CampaignSpecResolver = &campaignSpecResolver{}
 
 type campaignSpecResolver struct {
-	store       *store.Store
-	httpFactory *httpcli.Factory
+	store *store.Store
 
 	campaignSpec       *campaigns.CampaignSpec
 	preloadedNamespace *graphqlbackend.NamespaceResolver
@@ -73,7 +72,6 @@ func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context, args *graphql
 
 	return &changesetSpecConnectionResolver{
 		store:          r.store,
-		httpFactory:    r.httpFactory,
 		opts:           opts,
 		campaignSpecID: r.campaignSpec.ID,
 	}, nil
@@ -162,7 +160,6 @@ func (r *campaignDescriptionResolver) Description() string {
 func (r *campaignSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
 	specsConnection := &changesetSpecConnectionResolver{
 		store:          r.store,
-		httpFactory:    r.httpFactory,
 		campaignSpecID: r.campaignSpec.ID,
 	}
 
@@ -193,7 +190,7 @@ func (r *campaignSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.Di
 }
 
 func (r *campaignSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlbackend.CampaignResolver, error) {
-	svc := service.NewService(r.store, r.httpFactory)
+	svc := service.New(r.store)
 	campaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, r.campaignSpec)
 	if err != nil {
 		return nil, err
@@ -203,9 +200,8 @@ func (r *campaignSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlba
 	}
 
 	return &campaignResolver{
-		store:       r.store,
-		httpFactory: r.httpFactory,
-		Campaign:    campaign,
+		store:    r.store,
+		Campaign: campaign,
 	}, nil
 }
 
@@ -215,7 +211,7 @@ func (r *campaignSpecResolver) SupersedingCampaignSpec(ctx context.Context) (gra
 		return nil, err
 	}
 
-	svc := service.NewService(r.store, r.httpFactory)
+	svc := service.New(r.store)
 	newest, err := svc.GetNewestCampaignSpec(ctx, r.store, r.campaignSpec, actor.FromContext(ctx).UID)
 	if err != nil {
 		return nil, err
@@ -235,7 +231,6 @@ func (r *campaignSpecResolver) SupersedingCampaignSpec(ctx context.Context) (gra
 	// Create our new resolver, reusing as many fields as we can from this one.
 	resolver := &campaignSpecResolver{
 		store:              r.store,
-		httpFactory:        r.httpFactory,
 		campaignSpec:       newest,
 		preloadedNamespace: namespace,
 	}

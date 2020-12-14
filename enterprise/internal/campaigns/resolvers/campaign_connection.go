@@ -9,15 +9,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 var _ graphqlbackend.CampaignsConnectionResolver = &campaignsConnectionResolver{}
 
 type campaignsConnectionResolver struct {
-	store       *store.Store
-	httpFactory *httpcli.Factory
-	opts        store.ListCampaignsOpts
+	store *store.Store
+	opts  store.ListCampaignsOpts
 
 	// cache results because they are used by multiple fields
 	once      sync.Once
@@ -33,7 +31,7 @@ func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 	}
 	resolvers := make([]graphqlbackend.CampaignResolver, 0, len(nodes))
 	for _, c := range nodes {
-		resolvers = append(resolvers, &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: c})
+		resolvers = append(resolvers, &campaignResolver{store: r.store, Campaign: c})
 	}
 	return resolvers, nil
 }

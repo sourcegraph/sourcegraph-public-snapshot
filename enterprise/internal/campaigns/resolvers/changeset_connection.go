@@ -13,13 +13,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type changesetsConnectionResolver struct {
-	store       *store.Store
-	httpFactory *httpcli.Factory
+	store *store.Store
 
 	opts store.ListChangesetsOpts
 	// 🚨 SECURITY: If the given opts do not reveal hidden information about a
@@ -62,7 +60,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 			preloadedNextSyncAt = &nextSyncAt
 		}
 
-		resolvers = append(resolvers, NewChangesetResolverWithNextSync(r.store, r.httpFactory, c, reposByID[c.RepoID], preloadedNextSyncAt))
+		resolvers = append(resolvers, NewChangesetResolverWithNextSync(r.store, c, reposByID[c.RepoID], preloadedNextSyncAt))
 	}
 
 	return resolvers, nil

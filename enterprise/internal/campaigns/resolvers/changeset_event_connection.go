@@ -9,12 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 type changesetEventsConnectionResolver struct {
 	store             *store.Store
-	httpFactory       *httpcli.Factory
 	changesetResolver *changesetResolver
 	first             int
 	cursor            int64
@@ -35,7 +33,6 @@ func (r *changesetEventsConnectionResolver) Nodes(ctx context.Context) ([]graphq
 	for _, c := range changesetEvents {
 		resolvers = append(resolvers, &changesetEventResolver{
 			store:             r.store,
-			httpFactory:       r.httpFactory,
 			changesetResolver: r.changesetResolver,
 			ChangesetEvent:    c,
 		})
