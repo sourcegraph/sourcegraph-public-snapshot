@@ -32,8 +32,8 @@ type Resolver struct {
 	store *store.Store
 }
 
-// NewResolver returns a new Resolver whose store uses the given db
-func NewResolver(db *sql.DB) graphqlbackend.CampaignsResolver {
+// New returns a new Resolver whose store uses the given db
+func New(db *sql.DB) graphqlbackend.CampaignsResolver {
 	return &Resolver{store: store.New(db)}
 }
 

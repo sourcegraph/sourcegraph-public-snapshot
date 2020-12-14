@@ -12,15 +12,14 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executor"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
@@ -36,7 +35,7 @@ var initFunctions = map[string]func(ctx context.Context, enterpriseServices *ent
 	"licensing":    licensing.Init,
 	"executor":     executor.Init,
 	"codeintel":    codeintel.Init,
-	"campaigns":    campaigns.Init,
+	"campaigns":    campaigns.InitFrontend,
 	"codemonitors": codemonitors.Init,
 }
 
