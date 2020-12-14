@@ -17,9 +17,6 @@ interface Props
 
 export const UserSettingsTokensArea: React.FunctionComponent<Props> = outerProps => {
     const [newToken, setNewToken] = useState<CreateAccessTokenResult['createAccessToken'] | undefined>()
-    const onDidCreateAccessToken = useCallback((token: CreateAccessTokenResult['createAccessToken']) => {
-        setNewToken(token)
-    }, [])
     const onDidPresentNewToken = useCallback(() => {
         setNewToken(undefined)
     }, [])
@@ -33,7 +30,7 @@ export const UserSettingsTokensArea: React.FunctionComponent<Props> = outerProps
                     <UserSettingsCreateAccessTokenPage
                         {...outerProps}
                         {...props}
-                        onDidCreateAccessToken={onDidCreateAccessToken}
+                        onDidCreateAccessToken={setNewToken}
                     />
                 )}
             />

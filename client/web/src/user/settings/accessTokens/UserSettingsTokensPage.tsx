@@ -48,7 +48,7 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
     newToken,
     onDidPresentNewToken,
 }) => {
-    useMemo(() => {
+    useEffect(() => {
         telemetryService.logViewEvent('UserSettingsTokens')
     }, [telemetryService])
 

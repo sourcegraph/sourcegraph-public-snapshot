@@ -2,7 +2,7 @@ import AddIcon from 'mdi-react/AddIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import UserIcon from 'mdi-react/UserIcon'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject } from 'rxjs'
@@ -106,7 +106,7 @@ export const SiteAdminOrgsPage: React.FunctionComponent<Props> = ({ telemetrySer
     const orgUpdates = useMemo(() => new Subject<void>(), [])
     const onDidUpdateOrg = useCallback((): void => orgUpdates.next(), [orgUpdates])
 
-    useMemo(() => {
+    useEffect(() => {
         telemetryService.logViewEvent('SiteAdminOrgs')
     }, [telemetryService])
 
