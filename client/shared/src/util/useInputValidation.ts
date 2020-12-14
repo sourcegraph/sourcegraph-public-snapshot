@@ -1,5 +1,5 @@
-import { compact, head } from 'lodash'
-import { useMemo, useState, useRef } from 'react'
+import { compact, head, noop } from 'lodash'
+import { useMemo, useState, useRef, useCallback } from 'react'
 import { concat, EMPTY, Observable, of, zip } from 'rxjs'
 import { catchError, map, switchMap, tap, debounceTime } from 'rxjs/operators'
 import { useEventObservable } from './useObservable'
@@ -37,21 +37,31 @@ export type InputValidationState = { value: string } & (
 )
 
 /**
+ * Options for overriding input state programmatically. If `overrideState` is called without
+ * these options, the input will be cleared and not validated.
+ */
+interface OverrideOptions {
+    /** The value to set input state to */
+    value: string
+
+    /** Whether to validate the new value */
+    validate?: boolean
+}
+
+/**
  * React hook to manage validation of a single form input field.
- * `useInputValidation` helps with coodinating the constraint validation API
+ * `useInputValidation` helps with coordinating the constraint validation API
  * and custom synchronous and asynchronous validators.
  *
  * @param options Config object that declares sync + async validators
- * @param initialValue
- *
- * @returns
  */
 export function useInputValidation(
     options: ValidationOptions
 ): [
     InputValidationState,
     (change: React.ChangeEvent<HTMLInputElement>) => void,
-    React.MutableRefObject<HTMLInputElement | null>
+    React.MutableRefObject<HTMLInputElement | null>,
+    (overrideOptions: OverrideOptions) => void
 ] {
     const inputReference = useRef<HTMLInputElement>(null)
 
@@ -66,7 +76,29 @@ export function useInputValidation(
 
     const [nextInputChangeEvent] = useEventObservable(validationPipeline)
 
-    return [inputState, nextInputChangeEvent, inputReference]
+    // TODO(tj): Move control of state to consumer
+    const overrideState = useCallback(
+        (overrideOptions: OverrideOptions) => {
+            // clear custom validity
+            inputReference.current?.setCustomValidity('')
+
+            // clear React state
+            setInputState({
+                kind: overrideOptions?.validate ? 'LOADING' : 'NOT_VALIDATED',
+                value: overrideOptions?.value ?? '',
+            })
+
+            if (overrideOptions?.validate) {
+                nextInputChangeEvent({
+                    preventDefault: noop,
+                    target: { value: overrideOptions.value },
+                })
+            }
+        },
+        [nextInputChangeEvent]
+    )
+
+    return [inputState, nextInputChangeEvent, inputReference, overrideState]
 }
 
 /**

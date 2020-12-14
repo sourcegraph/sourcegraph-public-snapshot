@@ -13,7 +13,6 @@ import (
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -165,17 +165,15 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 			ExternalRepo: r.ExternalRepo,
 			Name:         api.RepoName(r.Name),
 			Private:      r.Private,
-			RepoFields: &types.RepoFields{
-				URI:         r.URI,
-				Description: r.Description,
-				Fork:        r.Fork,
-				Archived:    r.Archived,
-				Cloned:      r.Cloned,
-				CreatedAt:   r.CreatedAt,
-				UpdatedAt:   r.UpdatedAt,
-				DeletedAt:   r.DeletedAt,
-				Metadata:    r.Metadata,
-			},
+			URI:          r.URI,
+			Description:  r.Description,
+			Fork:         r.Fork,
+			Archived:     r.Archived,
+			Cloned:       r.Cloned,
+			CreatedAt:    r.CreatedAt,
+			UpdatedAt:    r.UpdatedAt,
+			DeletedAt:    r.DeletedAt,
+			Metadata:     r.Metadata,
 		}
 	}
 
@@ -462,16 +460,27 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		repo = list[0]
 	}
 
-	// If we are sourcegraph.com we don't run a global Sync since there are
-	// too many repos. Instead we use an incremental approach where we check
+	// If we are sourcegraph.com we don't sync our site level code hosts in the background
+	// since there are too many repos. Instead we use an incremental approach where we check
 	// for changes everytime a user browses a repo. RepoLookup is the signal
 	// we rely on to check metadata.
+
 	codehost := extsvc.CodeHostOf(args.Repo, extsvc.PublicCodeHosts...)
 	if s.SourcegraphDotComMode && codehost != nil {
+		if repo == nil {
+			// Try and find this repo on the remote host. Block on the remote
+			// request.
+			return s.remoteRepoSync(ctx, codehost, string(args.Repo))
+		}
+
 		// TODO a queue with single flighting to speak to remote for args.Repo?
-		if repo != nil {
-			// We have (potentially stale) data we can return to the user right
-			// now. Do that rather than blocking.
+
+		// We have (potentially stale) data we can return to the user right now. Do that
+		// rather than blocking. This should only happen for public repos, private repos
+		// are ignored since if they do exist in our DB they would have been added by a
+		// user owned code host connection in which case they'll be kept up to date by
+		// our background syncer.
+		if !repo.Private {
 			go func() {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 				defer cancel()
@@ -481,9 +490,9 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 					return
 				}
 
-				// Since we don't support private repositories on Cloud,
-				// we can safely assume that when a repository stored in the database is not accessible anymore,
-				// no other external service should have access to it, we can then remove it.
+				// Since we are only dealing with public repos here we can safely assume that
+				// when a repository stored in the database is not accessible anymore, no other
+				// external service should have access to it, we can then remove it.
 				if repoResult.ErrorNotFound || repoResult.ErrorUnauthorized {
 					err = s.Store.UpsertRepos(ctx, repo.With(func(r *types.Repo) {
 						r.DeletedAt = s.Now()
@@ -493,10 +502,6 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 					}
 				}
 			}()
-		} else {
-			// Try and find this repo on the remote host. Block on the remote
-			// request.
-			return s.remoteRepoSync(ctx, codehost, string(args.Repo))
 		}
 	}
 
@@ -531,14 +536,16 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 					ErrorNotFound: true,
 				}, nil
 			}
-			if isUnauthorized(err) {
-				return &protocol.RepoLookupResult{
-					ErrorUnauthorized: true,
-				}, nil
-			}
+			// This check needs to come before isUnauthorized since GitHub returns 403 when
+			// rate limit has been exceeded.
 			if isTemporarilyUnavailable(err) {
 				return &protocol.RepoLookupResult{
 					ErrorTemporarilyUnavailable: true,
+				}, nil
+			}
+			if isUnauthorized(err) {
+				return &protocol.RepoLookupResult{
+					ErrorUnauthorized: true,
 				}, nil
 			}
 			return nil, err

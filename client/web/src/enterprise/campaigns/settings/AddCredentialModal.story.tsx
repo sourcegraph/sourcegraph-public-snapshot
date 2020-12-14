@@ -19,6 +19,7 @@ add('GitHub', () => (
         {props => (
             <AddCredentialModal
                 {...props}
+                userID="user-id-1"
                 externalServiceKind={ExternalServiceKind.GITHUB}
                 externalServiceURL="https://github.com/"
                 afterCreate={noop}
@@ -33,6 +34,7 @@ add('GitLab', () => (
         {props => (
             <AddCredentialModal
                 {...props}
+                userID="user-id-1"
                 externalServiceKind={ExternalServiceKind.GITLAB}
                 externalServiceURL="https://gitlab.com/"
                 afterCreate={noop}
@@ -47,6 +49,7 @@ add('Bitbucket Server', () => (
         {props => (
             <AddCredentialModal
                 {...props}
+                userID="user-id-1"
                 externalServiceKind={ExternalServiceKind.BITBUCKETSERVER}
                 externalServiceURL="https://bitbucket.sgdev.org/"
                 afterCreate={noop}

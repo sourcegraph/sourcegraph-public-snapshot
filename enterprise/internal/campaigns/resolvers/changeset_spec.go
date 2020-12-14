@@ -2,16 +2,21 @@ package resolvers
 
 import (
 	"context"
+	"database/sql"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -28,19 +33,28 @@ func unmarshalChangesetSpecID(id graphql.ID) (changesetSpecRandID string, err er
 var _ graphqlbackend.ChangesetSpecResolver = &changesetSpecResolver{}
 
 type changesetSpecResolver struct {
-	store       *ee.Store
+	store       *store.Store
 	httpFactory *httpcli.Factory
 
 	changesetSpec *campaigns.ChangesetSpec
 
-	repo *types.Repo
+	previewer ChangesetSpecPreviewer
+	repo      *types.Repo
+
+	planOnce sync.Once
+	plan     *ee.ReconcilerPlan
+	planErr  error
 }
 
-func NewChangesetSpecResolver(ctx context.Context, store *ee.Store, cf *httpcli.Factory, changesetSpec *campaigns.ChangesetSpec) (*changesetSpecResolver, error) {
+func NewChangesetSpecResolver(ctx context.Context, store *store.Store, cf *httpcli.Factory, changesetSpec *campaigns.ChangesetSpec) (*changesetSpecResolver, error) {
 	resolver := &changesetSpecResolver{
 		store:         store,
 		httpFactory:   cf,
 		changesetSpec: changesetSpec,
+		previewer: &changesetSpecPreviewer{
+			store:          store,
+			campaignSpecID: changesetSpec.CampaignSpecID,
+		},
 	}
 
 	// 🚨 SECURITY: db.Repos.GetByIDs uses the authzFilter under the hood and
@@ -60,13 +74,22 @@ func NewChangesetSpecResolver(ctx context.Context, store *ee.Store, cf *httpcli.
 	return resolver, nil
 }
 
-func NewChangesetSpecResolverWithRepo(store *ee.Store, cf *httpcli.Factory, repo *types.Repo, changesetSpec *campaigns.ChangesetSpec) *changesetSpecResolver {
+func NewChangesetSpecResolverWithRepo(store *store.Store, cf *httpcli.Factory, repo *types.Repo, changesetSpec *campaigns.ChangesetSpec) *changesetSpecResolver {
 	return &changesetSpecResolver{
 		store:         store,
 		httpFactory:   cf,
 		repo:          repo,
 		changesetSpec: changesetSpec,
+		previewer: &changesetSpecPreviewer{
+			store:          store,
+			campaignSpecID: changesetSpec.CampaignSpecID,
+		},
 	}
+}
+
+func (r *changesetSpecResolver) WithPreviewer(previewer ChangesetSpecPreviewer) *changesetSpecResolver {
+	r.previewer = previewer
+	return r
 }
 
 func (r *changesetSpecResolver) ID() graphql.ID {
@@ -94,27 +117,50 @@ func (r *changesetSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.changesetSpec.ExpiresAt()}
 }
 
-func (r *changesetSpecResolver) Operations() ([]campaigns.ReconcilerOperation, error) {
-	return []campaigns.ReconcilerOperation{
-		campaigns.ReconcilerOperationPush,
-		campaigns.ReconcilerOperationUpdate,
-		campaigns.ReconcilerOperationUndraft,
-		campaigns.ReconcilerOperationPublish,
-		campaigns.ReconcilerOperationPublishDraft,
-		campaigns.ReconcilerOperationSync,
-		campaigns.ReconcilerOperationImport,
-		campaigns.ReconcilerOperationClose,
-		campaigns.ReconcilerOperationReopen,
-		campaigns.ReconcilerOperationSleep,
-	}, nil
+func (r *changesetSpecResolver) Operations(ctx context.Context) ([]campaigns.ReconcilerOperation, error) {
+	if !r.repoAccessible() {
+		// If the repo is inaccessible, no operations would be taken, since the changeset is not created/updated.
+		return []campaigns.ReconcilerOperation{}, nil
+	}
+	plan, err := r.computePlan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ops := plan.Ops.ExecutionOrder()
+	return ops, nil
 }
 
-func (r *changesetSpecResolver) Delta() (graphqlbackend.ChangesetSpecDeltaResolver, error) {
-	return &changesetSpecDeltaResolver{}, nil
+func (r *changesetSpecResolver) Delta(ctx context.Context) (graphqlbackend.ChangesetSpecDeltaResolver, error) {
+	if !r.repoAccessible() {
+		// If the repo is inaccessible, no comparison is made, since the changeset is not created/updated.
+		return &changesetSpecDeltaResolver{}, nil
+	}
+	plan, err := r.computePlan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if plan.Delta == nil {
+		return &changesetSpecDeltaResolver{}, nil
+	}
+	return &changesetSpecDeltaResolver{delta: *plan.Delta}, nil
 }
 
-func (r *changesetSpecResolver) Changeset() (graphqlbackend.ChangesetResolver, error) {
-	return nil, nil
+func (r *changesetSpecResolver) computePlan(ctx context.Context) (*ee.ReconcilerPlan, error) {
+	r.planOnce.Do(func() {
+		r.plan, r.planErr = r.previewer.PlanForChangesetSpec(ctx, r.changesetSpec)
+	})
+	return r.plan, r.planErr
+}
+
+func (r *changesetSpecResolver) Changeset(ctx context.Context) (graphqlbackend.ChangesetResolver, error) {
+	changeset, err := r.previewer.ChangesetForChangesetSpec(ctx, r.changesetSpec.ID)
+	if err != nil {
+		return nil, err
+	}
+	if changeset == nil {
+		return nil, nil
+	}
+	return NewChangesetResolver(r.store, r.httpFactory, changeset, r.repo), nil
 }
 
 func (r *changesetSpecResolver) repoAccessible() bool {
@@ -261,5 +307,136 @@ func (c *changesetSpecDeltaResolver) AuthorNameChanged() bool {
 	return c.delta.AuthorNameChanged
 }
 func (c *changesetSpecDeltaResolver) AuthorEmailChanged() bool {
-	return c.delta.TitleChanged
+	return c.delta.AuthorEmailChanged
+}
+
+type ChangesetSpecPreviewer interface {
+	PlanForChangesetSpec(context.Context, *campaigns.ChangesetSpec) (*ee.ReconcilerPlan, error)
+	ChangesetForChangesetSpec(context.Context, int64) (*campaigns.Changeset, error)
+}
+
+type changesetSpecPreviewer struct {
+	store          *store.Store
+	campaignSpecID int64
+
+	mappingOnce sync.Once
+	mappingByID map[int64]*store.RewirerMapping
+	mappingErr  error
+
+	campaignOnce sync.Once
+	campaign     *campaigns.Campaign
+	campaignErr  error
+}
+
+// Type guard.
+var _ ChangesetSpecPreviewer = &changesetSpecPreviewer{}
+
+// PlanForChangesetSpec computes the ReconcilerPlan for the given changeset spec, based on the current state of the database.
+func (c *changesetSpecPreviewer) PlanForChangesetSpec(ctx context.Context, changesetSpec *campaigns.ChangesetSpec) (*ee.ReconcilerPlan, error) {
+	// To get the plan, we first need to determine the changeset_spec => changeset mapping.
+	mapping, err := c.mappingForChangesetSpec(ctx, changesetSpec.ID)
+	if err != nil {
+		return nil, err
+	}
+	campaign, err := c.computeCampaign(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// And then dry-run the rewirer to simulate how the changeset would look like after an _apply_ operation.
+	rewirer := ee.NewChangesetRewirer(store.RewirerMappings{mapping}, campaign, repos.NewDBStore(c.store.DB(), sql.TxOptions{}))
+	changesets, err := rewirer.Rewire(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(changesets) != 1 {
+		return nil, errors.New("rewirer did not return changeset")
+	}
+	changeset := changesets[0]
+
+	// Detached changesets would still appear here, but since they'll never match one of the new specs, they don't actually appear here.
+	// Once we have a way to have changeset specs for detached changesets, this would be the place to do a "will be detached" check.
+	// TBD: How we represent that in the API.
+
+	// The rewirer takes previous and current spec into account to determine actions to take,
+	// so we need to find out which specs we need to pass to the planner.
+	var previousSpec, currentSpec *campaigns.ChangesetSpec
+	if changeset.PreviousSpecID != 0 {
+		previousSpec, err = c.store.GetChangesetSpecByID(ctx, changeset.PreviousSpecID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if changeset.CurrentSpecID != 0 {
+		// If the current spec was not unset by the rewirer, it will be this resolvers spec.
+		currentSpec = changesetSpec
+	}
+	return ee.DetermineReconcilerPlan(previousSpec, currentSpec, changeset)
+}
+
+// ChangesetForChangesetSpec returns the changeset for the target changeset of the changeset spec. It can return nil, if no changeset
+// exists yet.
+func (c *changesetSpecPreviewer) ChangesetForChangesetSpec(ctx context.Context, changesetSpecID int64) (*campaigns.Changeset, error) {
+	mapping, err := c.mappingForChangesetSpec(ctx, changesetSpecID)
+	if err != nil {
+		return nil, err
+	}
+	return mapping.Changeset, nil
+}
+
+func (c *changesetSpecPreviewer) mappingForChangesetSpec(ctx context.Context, id int64) (*store.RewirerMapping, error) {
+	mappingByID, err := c.computeMappings(ctx)
+	if err != nil {
+		return nil, err
+	}
+	mapping, ok := mappingByID[id]
+	if !ok {
+		return nil, errors.New("couldn't find mapping for changeset")
+	}
+
+	return mapping, nil
+}
+
+func (c *changesetSpecPreviewer) computeCampaign(ctx context.Context) (*campaigns.Campaign, error) {
+	c.campaignOnce.Do(func() {
+		svc := ee.NewService(c.store, nil)
+		campaignSpec, err := c.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: c.campaignSpecID})
+		if err != nil {
+			c.campaignErr = err
+			return
+		}
+		c.campaign, _, c.campaignErr = svc.ReconcileCampaign(ctx, campaignSpec)
+	})
+	return c.campaign, c.campaignErr
+}
+
+func (c *changesetSpecPreviewer) computeMappings(ctx context.Context) (map[int64]*store.RewirerMapping, error) {
+	c.mappingOnce.Do(func() {
+		campaign, err := c.computeCampaign(ctx)
+		if err != nil {
+			c.mappingErr = err
+			return
+		}
+		mappings, err := c.store.GetRewirerMappings(ctx, store.GetRewirerMappingsOpts{
+			CampaignSpecID: c.campaignSpecID,
+			CampaignID:     campaign.ID,
+		})
+		if err != nil {
+			c.mappingErr = err
+			return
+		}
+		if err := mappings.Hydrate(ctx, c.store); err != nil {
+			c.mappingErr = err
+			return
+		}
+
+		c.mappingByID = make(map[int64]*store.RewirerMapping)
+		for _, m := range mappings {
+			if m.ChangesetSpecID == 0 {
+				continue
+			}
+			c.mappingByID[m.ChangesetSpecID] = m
+		}
+	})
+	return c.mappingByID, c.mappingErr
 }

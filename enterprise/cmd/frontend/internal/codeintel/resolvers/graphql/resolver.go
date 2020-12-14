@@ -123,6 +123,38 @@ func (r *Resolver) DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*gql.Emp
 	return &gql.EmptyResponse{}, nil
 }
 
+func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (gql.IndexConfigurationResolver, error) {
+	repositoryID, err := gql.UnmarshalRepositoryID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	configuration, err := r.resolver.IndexConfiguration(ctx, int(repositoryID))
+	if err != nil {
+		return nil, err
+	}
+
+	return NewIndexConfigurationResolver(configuration), nil
+}
+
+func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *gql.UpdateRepositoryIndexConfigurationArgs) (*gql.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins may configure indexing jobs for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	repositoryID, err := unmarshalLSIFIndexGQLID(args.Repository)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.resolver.UpdateIndexConfigurationByRepositoryID(ctx, int(repositoryID), args.Configuration); err != nil {
+		return nil, err
+	}
+
+	return &gql.EmptyResponse{}, nil
+}
+
 func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (gql.GitBlobLSIFDataResolver, error) {
 	resolver, err := r.resolver.QueryResolver(ctx, args)
 	if err != nil || resolver == nil {

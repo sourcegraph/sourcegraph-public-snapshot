@@ -22,7 +22,7 @@ Up migrations happen automatically on server start-up after running the generate
 - run `./dev/db/migrate.sh <db_name> up` to move forward to the latest migration
 - run `./dev/db/migrate.sh <db_name> down 1` to rollback the previous migration
 
-If a migration fails and you need to revert to a previous state `./dev/db/migrate.sh <db_name> force` may be helpful. Alternatively use the `dropdb` and `createdb` commands to wipe your local database and start from a clean state.
+If a migration fails, and you need to revert to a previous state `./dev/db/migrate.sh <db_name> force` may be helpful. Alternatively use the `dropdb` and `createdb` commands to wipe your local database and start from a clean state.
 
 **Note:** if you find that you need to run a down migration, that almost certainly means the migration was not backward-compatible, and you should fix this before merging the migration into `main`.
 
@@ -93,7 +93,7 @@ Running down migrations in a rollback **should NOT** be necessary if all migrati
     update <schema_version_table_name> set version=$VERSION;
     ```
     where `$VERSION` is the numerical prefix of the migration script corresponding to the first migration you _didn't_ just apply. In other words, it is the numerical prefix of the last migration script as of the rolled-back-to commit.
-  - Restart frontend frontend pods. On restart, they should spin up successfully.
+  - Restart frontend pods. On restart, they should spin up successfully.
 
 ## Troubleshooting
 

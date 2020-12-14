@@ -9,6 +9,7 @@
 
 .streaming-progress {
     &__count {
+        padding: 0.375rem 0.75rem; // Match padding for .btn (but this is not a button)
         color: var(--link-color);
 
         &--in-progress {
@@ -24,15 +25,15 @@
     }
 
     &__skipped {
-        border: none;
-        &.btn.btn-secondary {
-            color: var(--link-color);
-            background-color: transparent;
-            box-shadow: none;
+        margin-left: 0.25rem;
+
+        &--warning {
+            color: var(--infobar-warning-color);
         }
 
         &-popover {
-            max-width: 350px;
+            width: 20rem;
+            padding: 0.5rem;
         }
     }
 }

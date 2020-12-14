@@ -12,12 +12,12 @@ type repositoryStatsResolver struct {
 	indexedLinesCount uint64
 }
 
-func (r *repositoryStatsResolver) GitDirBytes() int32 {
-	return int32(r.gitDirBytes)
+func (r *repositoryStatsResolver) GitDirBytes() BigInt {
+	return BigInt{Int: int64(r.gitDirBytes)}
 }
 
-func (r *repositoryStatsResolver) IndexedLinesCount() int32 {
-	return int32(r.indexedLinesCount)
+func (r *repositoryStatsResolver) IndexedLinesCount() BigInt {
+	return BigInt{Int: int64(r.indexedLinesCount)}
 }
 
 func (r *schemaResolver) RepositoryStats(ctx context.Context) (*repositoryStatsResolver, error) {

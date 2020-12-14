@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "code_intel_auto_index.schema.json#",
+  "title": "CodeIntelAutoIndex",
+  "description": "Configuration settings for repository code intel auto indexing.",
+  "allowComments": true,
+  "definitions": {
+    "docker_step": {
+      "type": "object",
+      "properties": {
+        "root": {
+          "description": "The working directly within the docker container.",
+          "type": "string"
+        },
+        "image": {
+          "description": "The docker image to run.",
+          "type": "string"
+        },
+        "commands": {
+          "description": "A list of arguments to pass to docker run.",
+          "type": "array",
+          "items": {
+            "description": "An argument to docker run.",
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": ["root", "image", "commands"]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "shared_steps": {
+      "description": "A set of pre-index steps that are performed before each index job.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/docker_step"
+      },
+      "additionalItems": false
+    },
+    "index_jobs": {
+      "description": "The set of index steps to be performed over a repository.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "steps": {
+            "description": "A set of steps performed before this index job.",
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/docker_step"
+            },
+            "additionalItems": false
+          },
+          "root": {
+            "description": "The path relative to the repository root where the indexer runs.",
+            "type": "string"
+          },
+          "indexer": {
+            "description": "The name of the docker image containing the indexer.",
+            "type": "string"
+          },
+          "indexer_args": {
+            "description": "A list of arguments to pass to docker run.",
+            "type": "array",
+            "items": {
+              "description": "An argument to docker run.",
+              "type": "string"
+            },
+            "additionalItems": false
+          },
+          "outfile": {
+            "description": "The path to the LSIF index relative to the index root.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": ["steps", "root", "indexer", "indexer_args", "outfile"]
+      },
+      "additionalItems": false
+    }
+  },
+  "additionalProperties": false,
+  "required": ["shared_steps", "index_jobs"]
+}

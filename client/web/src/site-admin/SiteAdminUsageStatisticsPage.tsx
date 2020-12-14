@@ -158,28 +158,35 @@ class UserUsageStatisticsNode extends React.PureComponent<UserUsageStatisticsNod
 class FilteredUserConnection extends FilteredConnection<GQL.IUser, {}> {}
 export const USER_ACTIVITY_FILTERS: FilteredConnectionFilter[] = [
     {
-        label: 'All users',
-        id: 'all',
-        tooltip: 'Show all users',
-        args: { activePeriod: UserActivePeriod.ALL_TIME },
-    },
-    {
-        label: 'Active today',
-        id: 'today',
-        tooltip: 'Show users active since this morning at 00:00 UTC',
-        args: { activePeriod: UserActivePeriod.TODAY },
-    },
-    {
-        label: 'Active this week',
-        id: 'week',
-        tooltip: 'Show users active since Monday at 00:00 UTC',
-        args: { activePeriod: UserActivePeriod.THIS_WEEK },
-    },
-    {
-        label: 'Active this month',
-        id: 'month',
-        tooltip: 'Show users active since the first day of the month at 00:00 UTC',
-        args: { activePeriod: UserActivePeriod.THIS_MONTH },
+        label: '',
+        type: 'radio',
+        id: 'user-activity-filters',
+        values: [
+            {
+                label: 'All users',
+                value: 'all',
+                tooltip: 'Show all users',
+                args: { activePeriod: UserActivePeriod.ALL_TIME },
+            },
+            {
+                label: 'Active today',
+                value: 'today',
+                tooltip: 'Show users active since this morning at 00:00 UTC',
+                args: { activePeriod: UserActivePeriod.TODAY },
+            },
+            {
+                label: 'Active this week',
+                value: 'week',
+                tooltip: 'Show users active since Monday at 00:00 UTC',
+                args: { activePeriod: UserActivePeriod.THIS_WEEK },
+            },
+            {
+                label: 'Active this month',
+                value: 'month',
+                tooltip: 'Show users active since the first day of the month at 00:00 UTC',
+                args: { activePeriod: UserActivePeriod.THIS_MONTH },
+            },
+        ],
     },
 ]
 

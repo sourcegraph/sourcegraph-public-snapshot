@@ -934,8 +934,8 @@ declare module 'sourcegraph' {
         /** The CSS color property value for the text contet */
         color?: string
 
-        /** Overwrite style for when the file is selected */
-        selectedColor?: string
+        /** Overwrite style for when the file is active */
+        activeColor?: string
     }
 
     /** A decoration attachment adds content after a {@link FileDecoration}. */

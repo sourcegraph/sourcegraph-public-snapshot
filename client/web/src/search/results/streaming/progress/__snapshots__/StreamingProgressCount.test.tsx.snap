@@ -12,10 +12,10 @@ exports[`StreamingProgressCount should render correctly for 0 items in progress 
   }
 >
   <div
-    className="streaming-progress__count p-2 d-flex align-items-center streaming-progress__count--in-progress"
+    className="streaming-progress__count d-flex align-items-center streaming-progress__count--in-progress"
   >
     <Memo(CalculatorIcon)
-      className="mr-2"
+      className="mr-2 icon-inline"
     />
     0
      
@@ -40,10 +40,10 @@ exports[`StreamingProgressCount should render correctly for 1 item complete 1`] 
   }
 >
   <div
-    className="streaming-progress__count p-2 d-flex align-items-center"
+    className="streaming-progress__count d-flex align-items-center"
   >
     <Memo(CalculatorIcon)
-      className="mr-2"
+      className="mr-2 icon-inline"
     />
     1
      
@@ -73,10 +73,10 @@ exports[`StreamingProgressCount should render correctly for 123 items complete 1
   }
 >
   <div
-    className="streaming-progress__count p-2 d-flex align-items-center"
+    className="streaming-progress__count d-flex align-items-center"
   >
     <Memo(CalculatorIcon)
-      className="mr-2"
+      className="mr-2 icon-inline"
     />
     123
      

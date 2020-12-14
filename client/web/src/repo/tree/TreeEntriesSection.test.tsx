@@ -35,8 +35,15 @@ describe('TreeEntriesSection', () => {
                         },
                     ]}
                     fileDecorationsByPath={{
-                        src: [{ uri: 'git://test/src', after: { contentText: 'src decoration' } }],
-                        testdata: [{ uri: 'git://test/testdata', after: { contentText: 'testdata decoration' } }],
+                        src: [
+                            { uri: 'git://github.com/test/test?branch#src', after: { contentText: 'src decoration' } },
+                        ],
+                        testdata: [
+                            {
+                                uri: 'git://github.com/test/test?branch#testdata',
+                                after: { contentText: 'testdata decoration' },
+                            },
+                        ],
                     }}
                     isLightTheme={true}
                 />
@@ -76,14 +83,20 @@ describe('TreeEntriesSection', () => {
                     ]}
                     fileDecorationsByPath={{
                         'src/testutils': [
-                            { uri: 'git://test/src/testutils', after: { contentText: 'testutils decoration' } },
+                            {
+                                uri: 'git://github.com/test/test?branch#src/testutils',
+                                after: { contentText: 'testutils decoration' },
+                            },
                         ],
                         'src/typings': [
-                            { uri: 'git://test/src/typings', after: { contentText: 'typings decoration' } },
+                            {
+                                uri: 'git://github.com/test/test?branch#src/typings',
+                                after: { contentText: 'typings decoration' },
+                            },
                         ],
                         'src/errors.ts': [
                             {
-                                uri: 'git://test/src/errors.ts',
+                                uri: 'git://github.com/test/test?branch#src/errors.ts',
                                 where: 'sidebar',
                                 after: { contentText: 'errors decoration' },
                             }, // This shouldn't be rendered
@@ -132,8 +145,18 @@ describe('TreeEntriesSection', () => {
                         },
                     ]}
                     fileDecorationsByPath={{
-                        'x/ref': [{ uri: 'git://test/x/ref', after: { contentText: 'ref decoration' } }],
-                        'x/ref/cmd': [{ uri: 'git://test/x/ref/cmd', after: { contentText: 'cmd decoration' } }],
+                        'x/ref': [
+                            {
+                                uri: 'git://github.com/test/test?branch#x/ref',
+                                after: { contentText: 'ref decoration' },
+                            },
+                        ],
+                        'x/ref/cmd': [
+                            {
+                                uri: 'git://github.com/test/test?branch#x/ref/cmd',
+                                after: { contentText: 'cmd decoration' },
+                            },
+                        ],
                     }}
                     isLightTheme={true}
                 />

@@ -14,6 +14,7 @@ import { generateFiltersQuery } from '../../../../../shared/src/util/url'
 import { CopyQueryButton } from './CopyQueryButton'
 import { VersionContextProps } from '../../../../../shared/src/search/util'
 import { SearchPatternType } from '../../../graphql-operations'
+import { findFilter, FilterKind } from '../../../../../shared/src/search/query/validate'
 
 export interface TogglesProps
     extends PatternTypeProps,
@@ -78,13 +79,10 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
     )
 
     const toggleCaseSensitivity = useCallback((): void => {
-        if (patternType === SearchPatternType.structural) {
-            return
-        }
         const newCaseSensitivity = !caseSensitive
         setCaseSensitivity(newCaseSensitivity)
         submitOnToggle({ newCaseSensitivity })
-    }, [caseSensitive, patternType, setCaseSensitivity, submitOnToggle])
+    }, [caseSensitive, setCaseSensitivity, submitOnToggle])
 
     const toggleRegexp = useCallback((): void => {
         const newPatternType =
@@ -98,11 +96,11 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         const cascadePatternTypeValue =
             settingsCascade.final &&
             !isErrorLike(settingsCascade.final) &&
-            settingsCascade.final['search.defaultPatternType']
+            (settingsCascade.final['search.defaultPatternType'] as SearchPatternType)
 
-        const defaultPatternType = cascadePatternTypeValue || 'literal'
+        const defaultPatternType = cascadePatternTypeValue || SearchPatternType.literal
 
-        const newPatternType =
+        const newPatternType: SearchPatternType =
             patternType !== SearchPatternType.structural ? SearchPatternType.structural : defaultPatternType
 
         setPatternType(newPatternType)
@@ -134,8 +132,21 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                 icon={FormatLetterCaseIcon}
                 className="test-case-sensitivity-toggle"
                 activeClassName="test-case-sensitivity-toggle--active"
-                disabledCondition={patternType === SearchPatternType.structural}
-                disabledMessage="Structural search is always case sensitive"
+                disableOn={[
+                    {
+                        condition: findFilter(navbarSearchQuery, 'case', FilterKind.Subexpression) !== undefined,
+                        reason: 'Query already contains one or more case subexpressions',
+                    },
+                    {
+                        condition: findFilter(navbarSearchQuery, 'patterntype', FilterKind.Subexpression) !== undefined,
+                        reason:
+                            'Query contains one or more patterntype subexpressions, cannot apply global case-sensitivity',
+                    },
+                    {
+                        condition: patternType === SearchPatternType.structural,
+                        reason: 'Structural search is always case sensitive',
+                    },
+                ]}
             />
             <QueryInputToggle
                 {...props}
@@ -145,6 +156,12 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                 icon={RegexIcon}
                 className="test-regexp-toggle"
                 activeClassName="test-regexp-toggle--active"
+                disableOn={[
+                    {
+                        condition: findFilter(navbarSearchQuery, 'patterntype', FilterKind.Subexpression) !== undefined,
+                        reason: 'Query already contains one or more patterntype subexpressions',
+                    },
+                ]}
             />
             {!structuralSearchDisabled && (
                 <QueryInputToggle
@@ -155,6 +172,13 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                     isActive={patternType === SearchPatternType.structural}
                     onToggle={toggleStructuralSearch}
                     icon={CodeBracketsIcon}
+                    disableOn={[
+                        {
+                            condition:
+                                findFilter(navbarSearchQuery, 'patterntype', FilterKind.Subexpression) !== undefined,
+                            reason: 'Query already contains one or more patterntype subexpressions',
+                        },
+                    ]}
                 />
             )}
         </div>

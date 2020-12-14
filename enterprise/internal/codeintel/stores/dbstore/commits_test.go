@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
@@ -62,8 +65,8 @@ func TestHasCommit(t *testing.T) {
 		{51, makeCommit(1), false},
 	}
 
-	insertNearestUploads(t, dbconn.Global, 50, map[string][]UploadMeta{makeCommit(1): {{UploadID: 42, Distance: 1}}})
-	insertNearestUploads(t, dbconn.Global, 51, map[string][]UploadMeta{makeCommit(2): {{UploadID: 43, Distance: 2}}})
+	insertNearestUploads(t, dbconn.Global, 50, map[string][]commitgraph.UploadMeta{makeCommit(1): {{UploadID: 42, Flags: 1}}})
+	insertNearestUploads(t, dbconn.Global, 51, map[string][]commitgraph.UploadMeta{makeCommit(2): {{UploadID: 43, Flags: 2}}})
 
 	for _, testCase := range testCases {
 		name := fmt.Sprintf("repositoryID=%d commit=%s", testCase.repositoryID, testCase.commit)
@@ -129,30 +132,30 @@ func TestCalculateVisibleUploads(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(1)},
-		makeCommit(4): {makeCommit(3)},
-		makeCommit(5): {makeCommit(2), makeCommit(4)},
-		makeCommit(6): {makeCommit(5)},
-		makeCommit(7): {makeCommit(6)},
-		makeCommit(8): {makeCommit(6)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(8), makeCommit(6)}, " "),
+		strings.Join([]string{makeCommit(7), makeCommit(6)}, " "),
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(2), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(8), 0); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}},
-		makeCommit(2): {{UploadID: 1, Distance: 1}},
-		makeCommit(3): {{UploadID: 2, Distance: 0}},
-		makeCommit(4): {{UploadID: 2, Distance: 1}},
-		makeCommit(5): {{UploadID: 1, Distance: 2}},
-		makeCommit(6): {{UploadID: 3, Distance: 1}},
-		makeCommit(7): {{UploadID: 3, Distance: 0}},
-		makeCommit(8): {{UploadID: 1, Distance: 4}},
+	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
+		makeCommit(1): {{UploadID: 1, Flags: 0}},
+		makeCommit(2): {{UploadID: 1, Flags: 1}},
+		makeCommit(3): {{UploadID: 2, Flags: 0}},
+		makeCommit(4): {{UploadID: 2, Flags: 1}},
+		makeCommit(5): {{UploadID: 1, Flags: 2}},
+		makeCommit(6): {{UploadID: 3, Flags: 1}},
+		makeCommit(7): {{UploadID: 3, Flags: 0}},
+		makeCommit(8): {{UploadID: 1, Flags: 4}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50), UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
@@ -183,25 +186,25 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(2)},
-		makeCommit(4): {makeCommit(1)},
-		makeCommit(5): {makeCommit(4)},
-		makeCommit(6): {makeCommit(5)},
-		makeCommit(7): {makeCommit(4)},
-		makeCommit(8): {makeCommit(7)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(8), makeCommit(7)}, " "),
+		strings.Join([]string{makeCommit(7), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 0); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 1}},
-		makeCommit(2): {{UploadID: 1, Distance: 0}},
-		makeCommit(3): {{UploadID: 1, Distance: 1}},
+	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
+		makeCommit(1): {{UploadID: 1, Flags: 1}},
+		makeCommit(2): {{UploadID: 1, Flags: 0}},
+		makeCommit(3): {{UploadID: 1, Flags: 1}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50), UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
@@ -229,18 +232,18 @@ func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(2), 0); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 1}, {UploadID: 2, Distance: 1}},
-		makeCommit(2): {{UploadID: 1, Distance: 0}, {UploadID: 2, Distance: 0}},
+	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
+		makeCommit(1): {{UploadID: 1, Flags: 1}, {UploadID: 2, Flags: 1}},
+		makeCommit(2): {{UploadID: 1, Flags: 0}, {UploadID: 2, Flags: 0}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50), UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
@@ -291,26 +294,26 @@ func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(2)},
-		makeCommit(4): {makeCommit(2)},
-		makeCommit(5): {makeCommit(3), makeCommit(4)},
-		makeCommit(6): {makeCommit(5)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(3), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(6), 0); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}, {UploadID: 2, Distance: 0}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 1}, {UploadID: 5, Distance: 1}},
-		makeCommit(2): {{UploadID: 1, Distance: 1}, {UploadID: 2, Distance: 1}, {UploadID: 3, Distance: 0}, {UploadID: 4, Distance: 0}, {UploadID: 5, Distance: 0}},
-		makeCommit(3): {{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 2}, {UploadID: 4, Distance: 1}, {UploadID: 5, Distance: 1}, {UploadID: 6, Distance: 0}},
-		makeCommit(4): {{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 2}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 1}, {UploadID: 7, Distance: 0}},
-		makeCommit(5): {{UploadID: 1, Distance: 3}, {UploadID: 2, Distance: 3}, {UploadID: 6, Distance: 1}, {UploadID: 7, Distance: 1}, {UploadID: 8, Distance: 0}},
-		makeCommit(6): {{UploadID: 1, Distance: 4}, {UploadID: 2, Distance: 4}, {UploadID: 7, Distance: 2}, {UploadID: 8, Distance: 1}, {UploadID: 9, Distance: 0}},
+	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
+		makeCommit(1): {{UploadID: 1, Flags: 0}, {UploadID: 2, Flags: 0}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 1}, {UploadID: 5, Flags: 1}},
+		makeCommit(2): {{UploadID: 1, Flags: 1}, {UploadID: 2, Flags: 1}, {UploadID: 3, Flags: 0}, {UploadID: 4, Flags: 0}, {UploadID: 5, Flags: 0}},
+		makeCommit(3): {{UploadID: 1, Flags: 2}, {UploadID: 2, Flags: 2}, {UploadID: 4, Flags: 1}, {UploadID: 5, Flags: 1}, {UploadID: 6, Flags: 0}},
+		makeCommit(4): {{UploadID: 1, Flags: 2}, {UploadID: 2, Flags: 2}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 1}, {UploadID: 7, Flags: 0}},
+		makeCommit(5): {{UploadID: 1, Flags: 3}, {UploadID: 2, Flags: 3}, {UploadID: 6, Flags: 1}, {UploadID: 7, Flags: 1}, {UploadID: 8, Flags: 0}},
+		makeCommit(6): {{UploadID: 1, Flags: 4}, {UploadID: 2, Flags: 4}, {UploadID: 7, Flags: 2}, {UploadID: 8, Flags: 1}, {UploadID: 9, Flags: 0}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50), UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
@@ -344,38 +347,38 @@ func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(2)},
-		makeCommit(4): {makeCommit(3)},
-		makeCommit(5): {makeCommit(4)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(5), 0); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]UploadMeta{
+	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
 		makeCommit(1): {
-			{UploadID: 1, Distance: 0}, {UploadID: 2, Distance: 1}, {UploadID: 3, Distance: 2}, {UploadID: 4, Distance: 3},
-			{UploadID: 5, Distance: 0}, {UploadID: 6, Distance: 1}, {UploadID: 7, Distance: 2}, {UploadID: 8, Distance: 3},
+			{UploadID: 1, Flags: 0}, {UploadID: 2, Flags: 1}, {UploadID: 3, Flags: 2}, {UploadID: 4, Flags: 3},
+			{UploadID: 5, Flags: 0}, {UploadID: 6, Flags: 1}, {UploadID: 7, Flags: 2}, {UploadID: 8, Flags: 3},
 		},
 		makeCommit(2): {
-			{UploadID: 1, Distance: 1}, {UploadID: 2, Distance: 0}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 2},
-			{UploadID: 5, Distance: 1}, {UploadID: 6, Distance: 0}, {UploadID: 7, Distance: 1}, {UploadID: 8, Distance: 2},
+			{UploadID: 1, Flags: 1}, {UploadID: 2, Flags: 0}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 2},
+			{UploadID: 5, Flags: 1}, {UploadID: 6, Flags: 0}, {UploadID: 7, Flags: 1}, {UploadID: 8, Flags: 2},
 		},
 		makeCommit(3): {
-			{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 1}, {UploadID: 3, Distance: 0}, {UploadID: 4, Distance: 1},
-			{UploadID: 5, Distance: 2}, {UploadID: 6, Distance: 1}, {UploadID: 7, Distance: 0}, {UploadID: 8, Distance: 1},
+			{UploadID: 1, Flags: 2}, {UploadID: 2, Flags: 1}, {UploadID: 3, Flags: 0}, {UploadID: 4, Flags: 1},
+			{UploadID: 5, Flags: 2}, {UploadID: 6, Flags: 1}, {UploadID: 7, Flags: 0}, {UploadID: 8, Flags: 1},
 		},
 		makeCommit(4): {
-			{UploadID: 1, Distance: 3}, {UploadID: 2, Distance: 2}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 0},
-			{UploadID: 5, Distance: 3}, {UploadID: 6, Distance: 2}, {UploadID: 7, Distance: 1}, {UploadID: 8, Distance: 0},
+			{UploadID: 1, Flags: 3}, {UploadID: 2, Flags: 2}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 0},
+			{UploadID: 5, Flags: 3}, {UploadID: 6, Flags: 2}, {UploadID: 7, Flags: 1}, {UploadID: 8, Flags: 0},
 		},
 		makeCommit(5): {
-			{UploadID: 1, Distance: 4}, {UploadID: 2, Distance: 3}, {UploadID: 3, Distance: 2}, {UploadID: 4, Distance: 1},
-			{UploadID: 5, Distance: 4}, {UploadID: 6, Distance: 3}, {UploadID: 7, Distance: 2}, {UploadID: 8, Distance: 1},
+			{UploadID: 1, Flags: 4}, {UploadID: 2, Flags: 3}, {UploadID: 3, Flags: 2}, {UploadID: 4, Flags: 1},
+			{UploadID: 5, Flags: 4}, {UploadID: 6, Flags: 3}, {UploadID: 7, Flags: 2}, {UploadID: 8, Flags: 1},
 		},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50), UploadMetaComparer); diff != "" {
@@ -401,11 +404,11 @@ func TestCalculateVisibleUploadsResetsDirtyFlag(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(2)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
 	for i := 0; i < 3; i++ {
 		// Set dirty token to 3

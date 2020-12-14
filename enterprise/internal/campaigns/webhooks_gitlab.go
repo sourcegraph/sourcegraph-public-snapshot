@@ -10,11 +10,12 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -22,7 +23,7 @@ import (
 
 type GitLabWebhook struct{ *Webhook }
 
-func NewGitLabWebhook(store *Store, repos repos.Store, now func() time.Time) *GitLabWebhook {
+func NewGitLabWebhook(store *store.Store, repos repos.Store, now func() time.Time) *GitLabWebhook {
 	return &GitLabWebhook{&Webhook{store, repos, now, extsvc.TypeGitLab}}
 }
 
@@ -123,11 +124,6 @@ func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw str
 	return es[0], nil
 }
 
-type stateMergeRequestEvent interface {
-	keyer
-	webhooks.MergeRequestEventContainer
-}
-
 // handleEvent is essentially a router: it dispatches based on the event type
 // to perform whatever changeset action is appropriate for that event.
 func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *types.ExternalService, event interface{}) *httpError {
@@ -173,7 +169,7 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *types.ExternalS
 	case *webhooks.MergeRequestApprovedEvent,
 		*webhooks.MergeRequestUnapprovedEvent,
 		*webhooks.MergeRequestUpdateEvent:
-		if err := h.enqueueChangesetSyncFromEvent(ctx, esID, e.(webhooks.MergeRequestEventContainer).ToEvent()); err != nil {
+		if err := h.enqueueChangesetSyncFromEvent(ctx, esID, e.(webhooks.MergeRequestEventCommonContainer).ToEventCommon()); err != nil {
 			return &httpError{
 				code: http.StatusInternalServerError,
 				err:  err,
@@ -181,12 +177,14 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *types.ExternalS
 		}
 		return nil
 
-	// All other merge request events are state events.
-	case stateMergeRequestEvent:
-		if err := h.handleMergeRequestStateEvent(ctx, esID, e); err != nil {
+	case webhooks.UpsertableWebhookEvent:
+		eventCommon := e.ToEventCommon()
+		event := e.ToEvent()
+		pr := gitlabToPR(&eventCommon.Project, eventCommon.MergeRequest)
+		if err := h.upsertChangesetEvent(ctx, esID, pr, event); err != nil {
 			return &httpError{
 				code: http.StatusInternalServerError,
-				err:  err,
+				err:  errors.Wrap(err, "upserting changeset event"),
 			}
 		}
 		return nil
@@ -229,15 +227,6 @@ func (h *GitLabWebhook) enqueueChangesetSyncFromEvent(ctx context.Context, esID 
 	return nil
 }
 
-func (h *GitLabWebhook) handleMergeRequestStateEvent(ctx context.Context, esID string, event stateMergeRequestEvent) error {
-	e := event.ToEvent()
-	pr := gitlabToPR(&e.Project, e.MergeRequest)
-	if err := h.upsertChangesetEvent(ctx, esID, pr, event); err != nil {
-		return errors.Wrap(err, "upserting changeset event")
-	}
-	return nil
-}
-
 func (h *GitLabWebhook) handlePipelineEvent(ctx context.Context, esID string, event *webhooks.PipelineEvent) error {
 	// Pipeline webhook payloads don't include the merge request very reliably:
 	// for example, re-running a pipeline from the GitLab UI will result in no
@@ -257,8 +246,8 @@ func (h *GitLabWebhook) handlePipelineEvent(ctx context.Context, esID string, ev
 	return nil
 }
 
-func (h *GitLabWebhook) getChangesetForPR(ctx context.Context, tx *Store, pr *PR, repo *types.Repo) (*campaigns.Changeset, error) {
-	return tx.GetChangeset(ctx, GetChangesetOpts{
+func (h *GitLabWebhook) getChangesetForPR(ctx context.Context, tx *store.Store, pr *PR, repo *types.Repo) (*campaigns.Changeset, error) {
+	return tx.GetChangeset(ctx, store.GetChangesetOpts{
 		RepoID:              repo.ID,
 		ExternalID:          strconv.FormatInt(pr.ID, 10),
 		ExternalServiceType: h.ServiceType,

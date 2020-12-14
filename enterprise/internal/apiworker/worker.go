@@ -23,10 +23,11 @@ type Options struct {
 	// This path should contain the endpoints info/refs and git-upload-pack.
 	GitServicePath string
 
-	// RedactedValues is a list of values to scrub from the command output before sending
-	// it to the underlying job store. This should contain all environment variables which
-	// may be sensitive to being visible (e.g. shared frontend API passwords).
-	RedactedValues []string
+	// RedactedValues is a map from strings to replace to their replacement in the command
+	// output before sending it to the underlying job store. This should contain all worker
+	// environment variables, as well as secret values passed along with the dequeued job
+	// payload, which may be sensitive (e.g. shared API tokens, URLs with credentials).
+	RedactedValues map[string]string
 
 	// WorkerOptions configures the worker behavior.
 	WorkerOptions workerutil.WorkerOptions

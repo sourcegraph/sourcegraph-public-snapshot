@@ -11,7 +11,7 @@ interface FileProps extends TreeLayerProps {
     handleTreeClick: () => void
     noopRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
     linkRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
-    isSelected: boolean
+    isActive: boolean
 }
 
 export const File: React.FunctionComponent<FileProps> = props => {
@@ -20,7 +20,7 @@ export const File: React.FunctionComponent<FileProps> = props => {
             // If component is not specified, or it is 'sidebar', render it.
             fileDecorations={props.fileDecorations?.filter(decoration => decoration?.where !== 'page')}
             isLightTheme={props.isLightTheme}
-            isSelected={props.isSelected}
+            isActive={props.isActive}
         />
     )
 

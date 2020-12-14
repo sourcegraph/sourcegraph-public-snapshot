@@ -21,8 +21,8 @@ export function numberWithCommas(number: string | number): string {
     return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
-export function pluralize(string: string, count: number, plural = string + 's'): string {
-    return count === 1 ? string : plural
+export function pluralize(string: string, count: number | bigint, plural = string + 's'): string {
+    return count === 1 || count === 1n ? string : plural
 }
 
 /**

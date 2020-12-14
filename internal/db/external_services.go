@@ -3,13 +3,13 @@ package db
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
@@ -150,35 +150,15 @@ type ValidateExternalServiceConfigOptions struct {
 	HasNamespace bool
 }
 
-// ValidateConfig validates the given external service configuration.
-// A non zero id indicates we are updating an existing service, 0 indicates we are adding a new one.
-func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateExternalServiceConfigOptions) error {
-	// For user-added external services, we need to prevent them from using disallowed fields.
-	if opt.HasNamespace {
-		// We do not allow users to add external service other than GitHub.com and GitLab.com
-		result := gjson.Get(opt.Config, "url")
-		baseURL, err := url.Parse(result.String())
-		if err != nil {
-			return errors.Wrap(err, "parse base URL")
-		}
-		normalizedURL := extsvc.NormalizeBaseURL(baseURL).String()
-		if normalizedURL != "https://github.com/" &&
-			normalizedURL != "https://gitlab.com/" {
-			return errors.New("users are only allowed to add external service for https://github.com/ and https://gitlab.com/")
-		}
+var errAuthorizationRequired = errors.New("authorization required")
 
-		disallowedFields := []string{"repositoryPathPattern", "nameTransformations", "rateLimit"}
-		results := gjson.GetMany(opt.Config, disallowedFields...)
-		for i, r := range results {
-			if r.Exists() {
-				return errors.Errorf("field %q is not allowed in a user-added external service", disallowedFields[i])
-			}
-		}
-	}
-
+// ValidateConfig validates the given external service configuration, and returns a normalized
+// version of the configuration (i.e. valid JSON without comments).
+// A positive opt.ID indicates we are updating an existing service, adding a new one otherwise.
+func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error) {
 	ext, ok := ExternalServiceKinds[opt.Kind]
 	if !ok {
-		return fmt.Errorf("invalid external service kind: %s", opt.Kind)
+		return nil, fmt.Errorf("invalid external service kind: %s", opt.Kind)
 	}
 
 	// All configs must be valid JSON.
@@ -188,17 +168,40 @@ func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 	sl := gojsonschema.NewSchemaLoader()
 	sc, err := sl.Compile(gojsonschema.NewStringLoader(ext.JSONSchema))
 	if err != nil {
-		return errors.Wrapf(err, "unable to compile schema for external service of kind %q", opt.Kind)
+		return nil, errors.Wrapf(err, "unable to compile schema for external service of kind %q", opt.Kind)
 	}
 
-	normalized, err := jsonc.Parse(opt.Config)
+	normalized, err = jsonc.Parse(opt.Config)
 	if err != nil {
-		return errors.Wrapf(err, "unable to normalize JSON")
+		return nil, errors.Wrapf(err, "unable to normalize JSON")
+	}
+
+	// For user-added external services, we need to prevent them from using disallowed fields.
+	if opt.HasNamespace {
+		// We do not allow users to add external service other than GitHub.com and GitLab.com
+		result := gjson.GetBytes(normalized, "url")
+		baseURL, err := url.Parse(result.String())
+		if err != nil {
+			return nil, errors.Wrap(err, "parse base URL")
+		}
+		normalizedURL := extsvc.NormalizeBaseURL(baseURL).String()
+		if normalizedURL != "https://github.com/" &&
+			normalizedURL != "https://gitlab.com/" {
+			return nil, errors.New("users are only allowed to add external service for https://github.com/ and https://gitlab.com/")
+		}
+
+		disallowedFields := []string{"repositoryPathPattern", "nameTransformations", "rateLimit"}
+		results := gjson.GetManyBytes(normalized, disallowedFields...)
+		for i, r := range results {
+			if r.Exists() {
+				return nil, errors.Errorf("field %q is not allowed in a user-added external service", disallowedFields[i])
+			}
+		}
 	}
 
 	res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
 	if err != nil {
-		return errors.Wrap(err, "unable to validate config against schema")
+		return nil, errors.Wrap(err, "unable to validate config against schema")
 	}
 
 	var errs *multierror.Error
@@ -214,41 +217,41 @@ func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 	switch opt.Kind {
 	case extsvc.KindGitHub:
 		var c schema.GitHubConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
-			return err
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+			return nil, err
 		}
 		err = e.validateGitHubConnection(ctx, opt.ID, &c)
 
 	case extsvc.KindGitLab:
 		var c schema.GitLabConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
-			return err
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+			return nil, err
 		}
 		err = e.validateGitLabConnection(ctx, opt.ID, &c, opt.AuthProviders)
 
 	case extsvc.KindBitbucketServer:
 		var c schema.BitbucketServerConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
-			return err
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+			return nil, err
 		}
 		err = e.validateBitbucketServerConnection(ctx, opt.ID, &c)
 
 	case extsvc.KindBitbucketCloud:
 		var c schema.BitbucketCloudConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
-			return err
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+			return nil, err
 		}
 		err = e.validateBitbucketCloudConnection(ctx, opt.ID, &c)
 
 	case extsvc.KindOther:
 		var c schema.OtherExternalServiceConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
-			return err
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+			return nil, err
 		}
 		err = validateOtherExternalServiceConnection(&c)
 	}
 
-	return multierror.Append(errs, err).ErrorOrNil()
+	return normalized, multierror.Append(errs, err).ErrorOrNil()
 }
 
 // Neither our JSON schema library nor the Monaco editor we use supports
@@ -449,14 +452,61 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	}
 	e.ensureStore()
 
-	ps := confGet().AuthProviders
-	if err := e.ValidateConfig(ctx, ValidateExternalServiceConfigOptions{
+	normalized, err := e.ValidateConfig(ctx, ValidateExternalServiceConfigOptions{
 		Kind:          es.Kind,
 		Config:        es.Config,
-		AuthProviders: ps,
+		AuthProviders: confGet().AuthProviders,
 		HasNamespace:  es.NamespaceUserID != 0,
-	}); err != nil {
+	})
+	if err != nil {
 		return err
+	}
+
+	// NOTE: For GitHub and GitLab user code host connections on Sourcegraph Cloud,
+	//  we always want to enforce repository permissions using OAuth to prevent
+	//  unexpected resource leaking.
+	if envvar.SourcegraphDotComMode() && es.NamespaceUserID != 0 {
+		switch es.Kind {
+		case extsvc.KindGitHub:
+			var c schema.GitHubConnection
+			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+				return err
+			}
+
+			if c.Authorization == nil {
+				c.Authorization = &schema.GitHubAuthorization{}
+
+				normalized, err = jsoniter.Marshal(c)
+				if err != nil {
+					return err
+				}
+			}
+
+		case extsvc.KindGitLab:
+			var c schema.GitLabConnection
+			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+				return err
+			}
+
+			if c.Authorization == nil {
+				c.Authorization = &schema.GitLabAuthorization{
+					IdentityProvider: schema.IdentityProvider{
+						Oauth: &schema.OAuthIdentity{
+							Type: "oauth",
+						},
+					},
+				}
+
+				normalized, err = jsoniter.Marshal(c)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		// We expect users to edit code host connections via our UI so no JSON with
+		// comments should appear, thus OK to set config as normalized.
+		es.Config = string(normalized)
 	}
 
 	es.CreatedAt = timeutil.Now()
@@ -469,7 +519,7 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		}
 	}
 
-	es.Unrestricted = !gjson.Get(es.Config, "authorization").Exists()
+	es.Unrestricted = !gjson.GetBytes(normalized, "authorization").Exists()
 
 	return e.Store.Handle().DB().QueryRowContext(
 		ctx,
@@ -554,7 +604,7 @@ const upsertExternalServicesQueryValueFmtstr = `
 `
 
 const upsertExternalServicesQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.UpsertExternalServices
+-- source: internal/repos/store.go:DBStore.UpsertExternalServices
 INSERT INTO external_services (
   id,
   kind,
@@ -600,6 +650,7 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	}
 	e.ensureStore()
 
+	var normalized []byte
 	if update.Config != nil {
 		// Query to get the kind (which is immutable) so we can validate the new config.
 		externalService, err := e.GetByID(ctx, id)
@@ -607,13 +658,14 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			return err
 		}
 
-		if err := e.ValidateConfig(ctx, ValidateExternalServiceConfigOptions{
+		normalized, err = e.ValidateConfig(ctx, ValidateExternalServiceConfigOptions{
 			ID:            id,
 			Kind:          externalService.Kind,
 			Config:        *update.Config,
 			AuthProviders: ps,
 			HasNamespace:  externalService.NamespaceUserID != 0,
-		}); err != nil {
+		})
+		if err != nil {
 			return err
 		}
 	}
@@ -646,7 +698,7 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	}
 
 	if update.Config != nil {
-		unrestricted := !gjson.Get(*update.Config, "authorization").Exists()
+		unrestricted := !gjson.GetBytes(normalized, "authorization").Exists()
 		q := sqlf.Sprintf(`config = %s, next_sync_at = NOW(), unrestricted = %s`, update.Config, unrestricted)
 		if err := execUpdate(ctx, tx.DB(), q); err != nil {
 			return err

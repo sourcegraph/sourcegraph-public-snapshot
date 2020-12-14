@@ -12,7 +12,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -31,21 +32,13 @@ type GitserverClient interface {
 	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error)
 }
 
-// ReconcilerMaxNumRetries is the maximum number of attempts the reconciler
-// makes to process a changeset when it fails.
-const ReconcilerMaxNumRetries = 60
-
-// ReconcilerMaxNumResets is the maximum number of attempts the reconciler
-// makes to process a changeset when it stalls (process crashes, etc.).
-const ReconcilerMaxNumResets = 60
-
 // Reconciler processes changesets and reconciles their current state — in
 // Sourcegraph or on the code host — with that described in the current
 // ChangesetSpec associated with the changeset.
 type Reconciler struct {
 	GitserverClient GitserverClient
 	Sourcer         repos.Sourcer
-	Store           *Store
+	Store           *store.Store
 
 	// This is used to disable a time.Sleep for operationSleep so that the
 	// tests don't run slower.
@@ -74,7 +67,7 @@ func (r *Reconciler) HandlerFunc() dbworker.HandlerFunc {
 // If an error is returned, the workerutil.Worker that called this function
 // (through the HandlerFunc) will set the changeset's ReconcilerState to
 // errored and set its FailureMessage to the error.
-func (r *Reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Changeset) error {
+func (r *Reconciler) process(ctx context.Context, tx *store.Store, ch *campaigns.Changeset) error {
 	// Reset the error message.
 	ch.FailureMessage = nil
 
@@ -83,12 +76,12 @@ func (r *Reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 		return nil
 	}
 
-	plan, err := determinePlan(prev, curr, ch)
+	plan, err := DetermineReconcilerPlan(prev, curr, ch)
 	if err != nil {
 		return err
 	}
 
-	log15.Info("Reconciler processing changeset", "changeset", ch.ID, "operations", plan.ops)
+	log15.Info("Reconciler processing changeset", "changeset", ch.ID, "operations", plan.Ops)
 
 	e := &executor{
 		sourcer:           r.Sourcer,
@@ -99,7 +92,7 @@ func (r *Reconciler) process(ctx context.Context, tx *Store, ch *campaigns.Chang
 		ch: ch,
 
 		spec:  curr,
-		delta: plan.delta,
+		delta: plan.Delta,
 	}
 
 	return e.ExecutePlan(ctx, plan)
@@ -123,7 +116,7 @@ type executor struct {
 	sourcer           repos.Sourcer
 	noSleepBeforeSync bool
 
-	tx  *Store
+	tx  *store.Store
 	ccs repos.ChangesetSource
 
 	repo   *types.Repo
@@ -139,8 +132,8 @@ type executor struct {
 }
 
 // ExecutePlan executes the given reconciler plan.
-func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
-	if plan.ops.IsNone() {
+func (e *executor) ExecutePlan(ctx context.Context, plan *ReconcilerPlan) (err error) {
+	if plan.Ops.IsNone() {
 		return nil
 	}
 
@@ -169,7 +162,7 @@ func (e *executor) ExecutePlan(ctx context.Context, plan *plan) (err error) {
 	}
 
 	upsertChangesetEvents := true
-	for _, op := range plan.ops.ExecutionOrder() {
+	for _, op := range plan.Ops.ExecutionOrder() {
 		switch op {
 		case campaigns.ReconcilerOperationSync:
 			err = e.syncChangeset(ctx)
@@ -313,12 +306,13 @@ func (e ErrMissingCredentials) NonRetryable() bool { return true }
 
 // pushChangesetPatch creates the commits for the changeset on its codehost.
 func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
-	existingSameBranch, err := e.tx.GetChangeset(ctx, GetChangesetOpts{
+	existingSameBranch, err := e.tx.GetChangeset(ctx, store.GetChangesetOpts{
 		ExternalServiceType: e.ch.ExternalServiceType,
 		RepoID:              e.ch.RepoID,
 		ExternalBranch:      e.spec.Spec.HeadRef,
+		// TODO: Do we need to check whether it's published or not?
 	})
-	if err != nil && err != ErrNoResults {
+	if err != nil && err != store.ErrNoResults {
 		return err
 	}
 
@@ -643,13 +637,13 @@ var operationPrecedence = map[campaigns.ReconcilerOperation]int{
 	campaigns.ReconcilerOperationSync:         6,
 }
 
-type operations []campaigns.ReconcilerOperation
+type ReconcilerOperations []campaigns.ReconcilerOperation
 
-func (ops operations) IsNone() bool {
+func (ops ReconcilerOperations) IsNone() bool {
 	return len(ops) == 0
 }
 
-func (ops operations) Equal(b operations) bool {
+func (ops ReconcilerOperations) Equal(b ReconcilerOperations) bool {
 	if len(ops) != len(b) {
 		return false
 	}
@@ -667,7 +661,7 @@ func (ops operations) Equal(b operations) bool {
 	return true
 }
 
-func (ops operations) String() string {
+func (ops ReconcilerOperations) String() string {
 	if ops.IsNone() {
 		return "No operations required"
 	}
@@ -679,7 +673,7 @@ func (ops operations) String() string {
 	return strings.Join(ss, " => ")
 }
 
-func (ops operations) ExecutionOrder() []campaigns.ReconcilerOperation {
+func (ops ReconcilerOperations) ExecutionOrder() []campaigns.ReconcilerOperation {
 	uniqueOps := []campaigns.ReconcilerOperation{}
 
 	// Make sure ops are unique.
@@ -700,27 +694,27 @@ func (ops operations) ExecutionOrder() []campaigns.ReconcilerOperation {
 	return uniqueOps
 }
 
-// plan represents the possible operations the reconciler needs to do
+// ReconcilerPlan represents the possible operations the reconciler needs to do
 // to reconcile the current and the desired state of a changeset.
-type plan struct {
+type ReconcilerPlan struct {
 	// The operations that need to be done to reconcile the changeset.
-	ops operations
+	Ops ReconcilerOperations
 
-	// The delta between a possible previous ChangesetSpec and the current
+	// The Delta between a possible previous ChangesetSpec and the current
 	// ChangesetSpec.
-	delta *ChangesetSpecDelta
+	Delta *ChangesetSpecDelta
 }
 
-func (p *plan) AddOp(op campaigns.ReconcilerOperation) { p.ops = append(p.ops, op) }
-func (p *plan) SetOp(op campaigns.ReconcilerOperation) { p.ops = operations{op} }
+func (p *ReconcilerPlan) AddOp(op campaigns.ReconcilerOperation) { p.Ops = append(p.Ops, op) }
+func (p *ReconcilerPlan) SetOp(op campaigns.ReconcilerOperation) { p.Ops = ReconcilerOperations{op} }
 
-// determinePlan looks at the given changeset to determine what action the
+// DetermineReconcilerPlan looks at the given changeset to determine what action the
 // reconciler should take.
 // It loads the current ChangesetSpec and if it exists also the previous one.
 // If the current ChangesetSpec is not applied to a campaign, it returns an
 // error.
-func determinePlan(previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campaigns.Changeset) (*plan, error) {
-	pl := &plan{}
+func DetermineReconcilerPlan(previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campaigns.Changeset) (*ReconcilerPlan, error) {
+	pl := &ReconcilerPlan{}
 
 	// If it doesn't have a spec, it's an imported changeset and we can't do
 	// anything.
@@ -741,7 +735,7 @@ func determinePlan(previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campa
 	if err != nil {
 		return pl, nil
 	}
-	pl.delta = delta
+	pl.Delta = delta
 
 	switch ch.PublicationState {
 	case campaigns.ChangesetPublicationStateUnpublished:
@@ -876,13 +870,17 @@ func loadExternalService(ctx context.Context, reposStore RepoStore, repo *types.
 	return externalService, nil
 }
 
-func loadCampaign(ctx context.Context, tx *Store, id int64) (*campaigns.Campaign, error) {
+type getCampaigner interface {
+	GetCampaign(ctx context.Context, opts store.GetCampaignOpts) (*campaigns.Campaign, error)
+}
+
+func loadCampaign(ctx context.Context, tx getCampaigner, id int64) (*campaigns.Campaign, error) {
 	if id == 0 {
 		return nil, errors.New("changeset has no owning campaign")
 	}
 
-	campaign, err := tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
-	if err != nil && err != ErrNoResults {
+	campaign, err := tx.GetCampaign(ctx, store.GetCampaignOpts{ID: id})
+	if err != nil && err != store.ErrNoResults {
 		return nil, errors.Wrapf(err, "retrieving owning campaign: %d", id)
 	} else if campaign == nil {
 		return nil, errors.Errorf("campaign not found: %d", id)
@@ -891,7 +889,7 @@ func loadCampaign(ctx context.Context, tx *Store, id int64) (*campaigns.Campaign
 	return campaign, nil
 }
 
-func loadChangesetSpecs(ctx context.Context, tx *Store, ch *campaigns.Changeset) (prev, curr *campaigns.ChangesetSpec, err error) {
+func loadChangesetSpecs(ctx context.Context, tx *store.Store, ch *campaigns.Changeset) (prev, curr *campaigns.ChangesetSpec, err error) {
 	if ch.CurrentSpecID != 0 {
 		curr, err = tx.GetChangesetSpecByID(ctx, ch.CurrentSpecID)
 		if err != nil {
@@ -920,7 +918,7 @@ func loadUserCredential(ctx context.Context, userID int32, repo *types.Repo) (*d
 	})
 }
 
-func decorateChangesetBody(ctx context.Context, tx *Store, cs *repos.Changeset) error {
+func decorateChangesetBody(ctx context.Context, tx getCampaigner, cs *repos.Changeset) error {
 	campaign, err := loadCampaign(ctx, tx, cs.OwnedByCampaignID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load campaign")

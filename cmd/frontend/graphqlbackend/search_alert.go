@@ -113,19 +113,6 @@ func alertForStalePermissions() *searchAlert {
 	}
 }
 
-func alertForQuotesInQueryInLiteralMode(p syntax.ParseTree) *searchAlert {
-	return &searchAlert{
-		prometheusType: "no_results__suggest_quotes",
-		title:          "No results. Did you mean to use quotes?",
-		description:    "Your search is interpreted literally and contains quotes. Did you mean to search for quotes?",
-		proposedQueries: []*searchQueryDescription{{
-			description: "Remove quotes",
-			query:       omitQuotes(p),
-			patternType: query.SearchTypeLiteral,
-		}},
-	}
-}
-
 // reposExist returns true if one or more repos resolve. If the attempt
 // returns 0 repos or fails, it returns false. It is a helper function for
 // raising NoResolvedRepos alerts with suggestions when we know the original
@@ -540,8 +527,8 @@ func alertForStructuralSearch(multiErr *multierror.Error) (newMultiErr *multierr
 				}
 				alert = &searchAlert{
 					prometheusType: "structural_search_on_zero_indexed_repos",
-					title:          "Unindexed repositories with structural search",
-					description:    fmt.Sprintf("Structural search currently only works on indexed repositories. Some of the repositories to search are not indexed, so we can't return results for them. %s", msg),
+					title:          "Unindexed repositories or repository revisions with structural search",
+					description:    fmt.Sprintf("Structural search currently only works on indexed repositories or revisions. Some of the repositories or revisions to search are not indexed, so we can't return results for them. %s", msg),
 				}
 			} else {
 				newMultiErr = multierror.Append(newMultiErr, err)
@@ -594,18 +581,6 @@ func omitQueryField(p syntax.ParseTree, field string) string {
 		return &e
 	}
 	return syntax.Map(p, omitField).String()
-}
-
-func omitQuotes(p syntax.ParseTree) string {
-	omitQuotes := func(e syntax.Expr) *syntax.Expr {
-
-		if e.Field == "" && strings.HasPrefix(e.Value, `"\"`) && strings.HasSuffix(e.Value, `\""`) {
-			e.Value = strings.TrimSuffix(strings.TrimPrefix(e.Value, `"\"`), `\""`)
-			return &e
-		}
-		return &e
-	}
-	return syntax.Map(p, omitQuotes).String()
 }
 
 // pathParentsByFrequency returns the most common path parents of the given paths.

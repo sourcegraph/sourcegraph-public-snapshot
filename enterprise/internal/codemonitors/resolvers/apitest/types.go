@@ -13,6 +13,10 @@ type User struct {
 	Monitors MonitorConnection
 }
 
+type Node struct {
+	Node Monitor
+}
+
 type MonitorConnection struct {
 	Nodes      []Monitor
 	TotalCount int
@@ -55,6 +59,7 @@ type ActionEmail struct {
 	Priority   string
 	Recipients RecipientsConnection
 	Header     string
+	Events     ActionEventConnection
 }
 
 type RecipientsConnection struct {
@@ -76,6 +81,19 @@ type TriggerEventConnection struct {
 }
 
 type TriggerEvent struct {
+	Id        string
+	Status    string
+	Timestamp string
+	Message   *string
+}
+
+type ActionEventConnection struct {
+	Nodes      []ActionEvent
+	TotalCount int
+	PageInfo   PageInfo
+}
+
+type ActionEvent struct {
 	Id        string
 	Status    string
 	Timestamp string

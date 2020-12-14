@@ -29,6 +29,13 @@ export const viewerCampaignsCodeHostsFragment = gql`
     }
 `
 
+const supersedingCampaignSpecFragment = gql`
+    fragment SupersedingCampaignSpecFields on CampaignSpec {
+        createdAt
+        applyURL
+    }
+`
+
 export const campaignSpecFragment = gql`
     fragment CampaignSpecFields on CampaignSpec {
         id
@@ -55,6 +62,9 @@ export const campaignSpecFragment = gql`
         diffStat {
             ...DiffStatFields
         }
+        supersedingCampaignSpec {
+            ...SupersedingCampaignSpecFields
+        }
         viewerCampaignsCodeHosts(onlyWithoutCredential: true) {
             ...ViewerCampaignsCodeHostsFields
         }
@@ -63,6 +73,8 @@ export const campaignSpecFragment = gql`
     ${viewerCampaignsCodeHostsFragment}
 
     ${diffStatFields}
+
+    ${supersedingCampaignSpecFragment}
 `
 
 export const fetchCampaignSpecById = (campaignSpec: Scalars['ID']): Observable<CampaignSpecFields | null> =>
@@ -103,18 +115,32 @@ export const changesetSpecFieldsFragment = gql`
         }
     }
 
+    fragment CommonChangesetSpecFields on ChangesetSpec {
+        expiresAt
+        type
+        operations
+        delta {
+            titleChanged
+        }
+        changeset {
+            __typename
+            id
+            ... on ExternalChangeset {
+                title
+            }
+        }
+    }
+
     fragment HiddenChangesetSpecFields on HiddenChangesetSpec {
         __typename
         id
-        expiresAt
-        type
+        ...CommonChangesetSpecFields
     }
 
     fragment VisibleChangesetSpecFields on VisibleChangesetSpec {
         __typename
         id
-        expiresAt
-        type
+        ...CommonChangesetSpecFields
         description {
             __typename
             ...ExistingChangesetReferenceFields

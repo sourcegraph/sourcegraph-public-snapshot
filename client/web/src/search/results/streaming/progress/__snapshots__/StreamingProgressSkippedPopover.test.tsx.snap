@@ -45,8 +45,8 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
 >
   <Alert
     closeAriaLabel="Close"
-    color="primary"
-    fade={true}
+    color="info"
+    fade={false}
     isOpen={true}
     key="excluded-fork"
     tag="div"
@@ -73,9 +73,9 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
   >
     <Fade
       appear={true}
-      baseClass="fade"
+      baseClass=""
       baseClassActive="show"
-      className="alert alert-primary"
+      className="alert alert-info"
       enter={true}
       exit={true}
       in={true}
@@ -88,7 +88,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       onExiting={[Function]}
       role="alert"
       tag="div"
-      timeout={150}
+      timeout={0}
       unmountOnExit={true}
     >
       <Transition
@@ -103,11 +103,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         onExit={[Function]}
         onExited={[Function]}
         onExiting={[Function]}
-        timeout={150}
+        timeout={0}
         unmountOnExit={true}
       >
         <div
-          className="alert alert-primary fade"
+          className="alert alert-info"
           role="alert"
         >
           <h4
@@ -131,8 +131,8 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
   </Alert>
   <Alert
     closeAriaLabel="Close"
-    color="primary"
-    fade={true}
+    color="info"
+    fade={false}
     isOpen={true}
     key="excluded-archive"
     tag="div"
@@ -159,9 +159,9 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
   >
     <Fade
       appear={true}
-      baseClass="fade"
+      baseClass=""
       baseClassActive="show"
-      className="alert alert-primary"
+      className="alert alert-info"
       enter={true}
       exit={true}
       in={true}
@@ -174,7 +174,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       onExiting={[Function]}
       role="alert"
       tag="div"
-      timeout={150}
+      timeout={0}
       unmountOnExit={true}
     >
       <Transition
@@ -189,11 +189,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         onExit={[Function]}
         onExited={[Function]}
         onExiting={[Function]}
-        timeout={150}
+        timeout={0}
         unmountOnExit={true}
       >
         <div
-          className="alert alert-primary fade"
+          className="alert alert-info"
           role="alert"
         >
           <h4
@@ -218,7 +218,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
   <Alert
     closeAriaLabel="Close"
     color="danger"
-    fade={true}
+    fade={false}
     isOpen={true}
     key="shard-timedout"
     tag="div"
@@ -245,7 +245,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
   >
     <Fade
       appear={true}
-      baseClass="fade"
+      baseClass=""
       baseClassActive="show"
       className="alert alert-danger"
       enter={true}
@@ -260,7 +260,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       onExiting={[Function]}
       role="alert"
       tag="div"
-      timeout={150}
+      timeout={0}
       unmountOnExit={true}
     >
       <Transition
@@ -275,11 +275,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         onExit={[Function]}
         onExited={[Function]}
         onExiting={[Function]}
-        timeout={150}
+        timeout={0}
         unmountOnExit={true}
       >
         <div
-          className="alert alert-danger fade"
+          className="alert alert-danger"
           role="alert"
         >
           <h4

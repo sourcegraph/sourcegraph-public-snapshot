@@ -1,5 +1,6 @@
 .search-results-list {
     overflow-y: auto;
+    flex-grow: 1;
 
     &__more {
         width: 100%;
@@ -16,8 +17,7 @@
     }
 
     &__tabs {
-        // Large value so that infobar doesn't grow when side by side with tabs but does grow when wrapped
-        flex-grow: 9999;
+        flex-grow: 1;
     }
 
     // In narrow windows, make the results flush with the left/right sides,

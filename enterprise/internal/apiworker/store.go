@@ -15,7 +15,8 @@ type storeShim struct {
 
 type QueueStore interface {
 	Dequeue(ctx context.Context, queueName string, payload *apiclient.Job) (bool, error)
-	SetLogContents(ctx context.Context, queueName string, jobID int, contents string) error
+
+	AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry workerutil.ExecutionLogEntry) error
 	MarkComplete(ctx context.Context, queueName string, jobID int) error
 	MarkErrored(ctx context.Context, queueName string, jobID int, errorMessage string) error
 	MarkFailed(ctx context.Context, queueName string, jobID int, errorMessage string) error
@@ -37,8 +38,8 @@ func (s *storeShim) Dequeue(ctx context.Context, extraArguments interface{}) (wo
 	return job, s, dequeued, nil
 }
 
-func (s *storeShim) SetLogContents(ctx context.Context, id int, payload string) error {
-	return s.queueStore.SetLogContents(ctx, s.queueName, id, payload)
+func (s *storeShim) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) error {
+	return s.queueStore.AddExecutionLogEntry(ctx, s.queueName, id, entry)
 }
 
 func (s *storeShim) MarkComplete(ctx context.Context, id int) (bool, error) {

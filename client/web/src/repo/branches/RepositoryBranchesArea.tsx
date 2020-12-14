@@ -1,13 +1,13 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../components/HeroPage'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepositoryBranchesAllPage } from './RepositoryBranchesAllPage'
 import { RepositoryBranchesNavbar } from './RepositoryBranchesNavbar'
 import { RepositoryBranchesOverviewPage } from './RepositoryBranchesOverviewPage'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import { RepositoryFields } from '../../graphql-operations'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -18,7 +18,7 @@ const NotFoundPage: React.FunctionComponent = () => (
 )
 
 interface Props extends RouteComponentProps<{}>, BreadcrumbSetters {
-    repo: GQL.IRepository
+    repo: RepositoryFields
 }
 
 /**
@@ -28,14 +28,14 @@ export interface RepositoryBranchesAreaPageProps {
     /**
      * The active repository.
      */
-    repo: GQL.IRepository
+    repo: RepositoryFields
 }
 
 /**
  * Renders pages related to repository branches.
  */
 export const RepositoryBranchesArea: React.FunctionComponent<Props> = ({ useBreadcrumb, repo, match }) => {
-    const transferProps: { repo: GQL.IRepository } = {
+    const transferProps: { repo: RepositoryFields } = {
         repo,
     }
 

@@ -1,5 +1,5 @@
 import React, { Fragment, useMemo } from 'react'
-import { scanSearchQuery } from '../../../shared/src/search/parser/scanner'
+import { scanSearchQuery } from '../../../shared/src/search/query/scanner'
 
 // A read-only syntax highlighted search query
 export const SyntaxHighlightedSearchQuery: React.FunctionComponent<{ query: string }> = ({ query }) => {

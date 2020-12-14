@@ -14,7 +14,6 @@ export const UserAddExternalServicesPage: React.FunctionComponent<UserAddExterna
         codeHostExternalServices={{
             github: codeHostExternalServices.github,
             gitlabcom: codeHostExternalServices.gitlabcom,
-            bitbucket: codeHostExternalServices.bitbucket,
         }}
         nonCodeHostExternalServices={{}}
     />

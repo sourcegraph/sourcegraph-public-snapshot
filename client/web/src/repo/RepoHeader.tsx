@@ -1,5 +1,4 @@
 import * as H from 'history'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import React, { useState, useMemo, useEffect } from 'react'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
 import { ButtonLink } from '../../../shared/src/components/LinkOrButton'
@@ -246,14 +245,6 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                         {a.element}
                     </li>
                 ))}
-                {repo.viewerCanAdminister && (
-                    <li className="nav-item repo-header__action-list-item">
-                        <ButtonLink to={`${repo.url}/-/settings`} data-tooltip="Repository settings">
-                            <SettingsIcon className="icon-inline" />{' '}
-                            <span className="d-none d-lg-inline">Settings</span>
-                        </ButtonLink>
-                    </li>
-                )}
             </ul>
         </nav>
     )

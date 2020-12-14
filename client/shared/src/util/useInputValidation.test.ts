@@ -1,8 +1,11 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
+import { renderHook, act } from '@testing-library/react-hooks'
 import { min, noop } from 'lodash'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { delay } from 'rxjs/operators'
 import * as sinon from 'sinon'
 import {
+    useInputValidation,
     createValidationPipeline,
     InputValidationState,
     ValidationOptions,
@@ -310,5 +313,41 @@ describe('useInputValidation()', () => {
         ]
 
         expect(executeUserInputScript(inputs)).toStrictEqual(expectedStates)
+    })
+
+    it('works with the state override', () => {
+        const { result } = renderHook(() =>
+            useInputValidation({
+                synchronousValidators: [isDotCo],
+            })
+        )
+
+        act(() => {
+            const [, nextEmailFieldChange, emailInputReference] = result.current
+            const inputElement = createEmailInputElement()
+            emailInputReference.current = (inputElement as unknown) as HTMLInputElement
+
+            inputElement.changeValue('test-string')
+            nextEmailFieldChange({
+                target: emailInputReference.current,
+                preventDefault: noop,
+            } as React.ChangeEvent<HTMLInputElement>)
+        })
+
+        expect(result.current[0]).toStrictEqual({ value: 'test-string', kind: 'LOADING' })
+
+        act(() => {
+            const overrideEmailState = result.current[3]
+            overrideEmailState({ value: 'test@sg.co', validate: false })
+        })
+
+        expect(result.current[0]).toStrictEqual({ value: 'test@sg.co', kind: 'NOT_VALIDATED' })
+
+        act(() => {
+            const overrideEmailState = result.current[3]
+            overrideEmailState({ value: '' })
+        })
+
+        expect(result.current[0]).toStrictEqual({ value: '', kind: 'NOT_VALIDATED' })
     })
 })

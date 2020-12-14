@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -51,7 +52,13 @@ func TestFindClosestDumpsInfersClosestUploads(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 
-	graph := map[string][]string{
+	graph := gitserver.ParseCommitGraph([]string{
+		"d",
+		"c",
+		"b d",
+		"a b c",
+	})
+	expectedGraph := map[string][]string{
 		"a": {"b", "c"},
 		"b": {"d"},
 		"c": {},
@@ -61,7 +68,7 @@ func TestFindClosestDumpsInfersClosestUploads(t *testing.T) {
 	setMockDBStoreHasRepository(t, mockDBStore, 42, true)
 	setMockDBStoreHasCommit(t, mockDBStore, 42, testCommit, false)
 	setMockGitserverCommitGraph(t, mockGitserverClient, 42, graph)
-	setMockDBStoreFindClosestDumpsFromGraphFragment(t, mockDBStore, 42, testCommit, "s1/main.go", true, "idx", graph, []store.Dump{
+	setMockDBStoreFindClosestDumpsFromGraphFragment(t, mockDBStore, 42, testCommit, "s1/main.go", true, "idx", expectedGraph, []store.Dump{
 		{ID: 50, Root: "s1/"},
 		{ID: 51, Root: "s1/"},
 		{ID: 52, Root: "s1/"},
