@@ -131,7 +131,7 @@ require (
 	github.com/prometheus/common v0.10.0
 	github.com/prometheus/procfs v0.1.3 // indirect
 	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be
-	github.com/russellhaering/gosaml2 v0.4.0
+	github.com/russellhaering/gosaml2 v0.6.0
 	github.com/russellhaering/goxmldsig v0.0.0-20200902171629-2e1fbc2c5593
 	github.com/russross/blackfriday v2.0.0+incompatible // indirect
 	github.com/schollz/progressbar/v3 v3.5.0
