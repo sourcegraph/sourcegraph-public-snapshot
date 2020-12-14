@@ -1247,8 +1247,7 @@ type ChangesetSpecConnection {
 }
 
 """
-An entry in the preview for actions to be taken when applyCampaign would have
-been called at the point of time this preview was created at.
+A preview for which actions applyCampaign would result in when called at the point of time this preview was created at.
 """
 union ChangesetApplyPreview = VisibleChangesetApplyPreview | HiddenChangesetApplyPreview
 
@@ -1453,10 +1452,9 @@ type CampaignSpec implements Node {
     description: CampaignDescription!
 
     """
-    Generates a preview what operations would be performed between new changeset specs and the
-    current campaign state. This preview is not guaranteed to actually be performed, because at
-    the time applyCampaign is run the state of changesets might already have changed and different
-    operations might be performed.
+    Generates a preview what operations would be performed if the campaign spec would be applied.
+    This preview is not a guarantee, since the state of the changesets can change between the time
+    the preview is generated and when the campaign spec is applied.
     """
     applyPreview(
         """

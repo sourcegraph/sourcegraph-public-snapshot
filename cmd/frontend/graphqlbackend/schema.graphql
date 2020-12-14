@@ -1444,7 +1444,11 @@ type CampaignSpec implements Node {
     """
     description: CampaignDescription!
 
-    Generates a preview what operations would be performed if the campaign spec would be applied. This preview is not a guarantee, since the state of the changesets can change between the time the preview is generated and when the campaign spec is applied.
+    """
+    Generates a preview what operations would be performed if the campaign spec would be applied.
+    This preview is not a guarantee, since the state of the changesets can change between the time
+    the preview is generated and when the campaign spec is applied.
+    """
     applyPreview(
         """
         Returns the first n entries from the list.
