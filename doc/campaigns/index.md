@@ -99,6 +99,7 @@ Requirements
 - [Search and replace specific terms](tutorials/search_and_replace_specific_terms.md)
 
 ## References
+
 - [Requirements](references/requirements.md)
 - [Campaign spec YAML reference](references/campaign_spec_yaml_reference.md)
 - <span class="badge badge-experimental">Experimental</span> [Campaign spec templating](references/campaign_spec_templating.md)
