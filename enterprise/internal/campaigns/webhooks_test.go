@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -54,7 +55,8 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		defer save()
 
 		secret := "secret"
-		repoStore := repos.NewDBStore(db, sql.TxOptions{})
+		rstore := repos.NewDBStore(db, sql.TxOptions{})
+		repoStore := idb.NewRepoStoreWithDB(db)
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub",
@@ -66,7 +68,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			}),
 		}
 
-		err := repoStore.UpsertExternalServices(ctx, extSvc)
+		err := rstore.UpsertExternalServices(ctx, extSvc)
 		if err != nil {
 			t.Fatal(t)
 		}
@@ -81,7 +83,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		err = repoStore.InsertRepos(ctx, githubRepo)
+		err = repoStore.Create(ctx, githubRepo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -133,12 +135,12 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		})
 		defer state.Unmock()
 
-		err = SyncChangeset(ctx, repoStore, s, githubSrc, githubRepo, changeset)
+		err = SyncChangeset(ctx, rstore, s, githubSrc, githubRepo, changeset)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		hook := NewGitHubWebhook(s, repoStore, clock)
+		hook := NewGitHubWebhook(s, rstore, clock)
 
 		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/github/*.json")
 		if err != nil {
@@ -157,7 +159,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
 						handler := webhooks.GitHubWebhook{
-							Repos: repoStore,
+							Repos: rstore,
 						}
 						hook.Register(&handler)
 
@@ -227,7 +229,8 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		defer save()
 
 		secret := "secret"
-		repoStore := repos.NewDBStore(db, sql.TxOptions{})
+		rstore := repos.NewDBStore(db, sql.TxOptions{})
+		repoStore := idb.NewRepoStoreWithDB(db)
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket",
@@ -241,7 +244,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			}),
 		}
 
-		err := repoStore.UpsertExternalServices(ctx, extSvc)
+		err := rstore.UpsertExternalServices(ctx, extSvc)
 		if err != nil {
 			t.Fatal(t)
 		}
@@ -260,7 +263,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal("repo not found")
 		}
 
-		err = repoStore.InsertRepos(ctx, bitbucketRepo)
+		err = repoStore.Create(ctx, bitbucketRepo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -319,13 +322,13 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				t.Fatal(err)
 			}
 
-			err = SyncChangeset(ctx, repoStore, s, bitbucketSource, bitbucketRepo, ch)
+			err = SyncChangeset(ctx, rstore, s, bitbucketSource, bitbucketRepo, ch)
 			if err != nil {
 				t.Fatal(err)
 			}
 		}
 
-		hook := NewBitbucketServerWebhook(s, repoStore, clock, "testhook")
+		hook := NewBitbucketServerWebhook(s, rstore, clock, "testhook")
 
 		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/bitbucketserver/*.json")
 		if err != nil {

@@ -38,7 +38,7 @@ type Server struct {
 		GetRepo(ctx context.Context, projectWithNamespace string) (*types.Repo, error)
 	}
 	Scheduler interface {
-		UpdateOnce(id api.RepoID, name api.RepoName, url string)
+		UpdateOnce(id api.RepoID, name api.RepoName)
 		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
 	}
 	GitserverClient interface {
@@ -321,17 +321,12 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 	}
 
 	repo := rs[0]
-	if req.URL == "" {
-		if urls := repo.CloneURLs(); len(urls) > 0 {
-			req.URL = urls[0]
-		}
-	}
-	s.Scheduler.UpdateOnce(repo.ID, req.Repo, req.URL)
+
+	s.Scheduler.UpdateOnce(repo.ID, repo.Name)
 
 	return &protocol.RepoUpdateResponse{
 		ID:   repo.ID,
 		Name: string(repo.Name),
-		URL:  req.URL,
 	}, http.StatusOK, nil
 }
 

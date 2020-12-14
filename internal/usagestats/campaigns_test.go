@@ -24,6 +24,7 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 
 	// Create stub repo.
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	repoStore := db.NewRepoStoreWithDB(dbconn.Global)
 	now := time.Now()
 	svc := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
@@ -49,7 +50,7 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 			},
 		},
 	}
-	if err := rstore.InsertRepos(ctx, repo); err != nil {
+	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 

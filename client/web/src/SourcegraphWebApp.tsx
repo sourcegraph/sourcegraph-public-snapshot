@@ -70,6 +70,7 @@ import {
 import { SearchPatternType } from '../../shared/src/graphql-operations'
 import { HTTPStatusError } from '../../shared/src/backend/fetch'
 import {
+    createCodeMonitor,
     deleteCodeMonitor,
     fetchCodeMonitor,
     fetchUserCodeMonitors,
@@ -466,6 +467,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     fetchSavedSearches={fetchSavedSearches}
                                     fetchRecentSearches={fetchRecentSearches}
                                     fetchRecentFileViews={fetchRecentFileViews}
+                                    createCodeMonitor={createCodeMonitor}
                                     fetchUserCodeMonitors={fetchUserCodeMonitors}
                                     fetchCodeMonitor={fetchCodeMonitor}
                                     updateCodeMonitor={updateCodeMonitor}

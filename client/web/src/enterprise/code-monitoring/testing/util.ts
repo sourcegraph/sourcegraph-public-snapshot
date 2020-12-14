@@ -8,7 +8,7 @@ export const mockCodeMonitor = {
             id: 'test-0',
             enabled: true,
             nodes: [
-                { id: 'test-action-0 ', enabled: true, recipients: { nodes: [{ id: 'baz-0', url: '/user/test' }] } },
+                { id: 'test-action-0', enabled: true, recipients: { nodes: [{ id: 'baz-0', url: '/user/test' }] } },
             ],
         },
         trigger: { id: 'test-0', query: 'test' },

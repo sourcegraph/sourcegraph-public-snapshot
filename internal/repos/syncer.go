@@ -267,18 +267,20 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	// Now fetch any possible name conflicts.
 	// Repo names must be globally unique, if there's conflict we need to deterministically choose one.
 	var conflicting types.Repos
-	if conflicting, err = tx.ListRepos(ctx, StoreListReposArgs{Names: sourced.Names()}); err != nil {
-		return errors.Wrap(err, "syncer.sync.store.list-repos")
-	}
-	conflicting = conflicting.Filter(func(r *types.Repo) bool {
-		for _, id := range r.ExternalServiceIDs() {
-			if id == externalServiceID {
-				return false
-			}
+	if len(sourced) > 0 {
+		if conflicting, err = tx.ListRepos(ctx, StoreListReposArgs{Names: sourced.Names()}); err != nil {
+			return errors.Wrap(err, "syncer.sync.store.list-repos")
 		}
+		conflicting = conflicting.Filter(func(r *types.Repo) bool {
+			for _, id := range r.ExternalServiceIDs() {
+				if id == externalServiceID {
+					return false
+				}
+			}
 
-		return true
-	})
+			return true
+		})
+	}
 
 	// Add the conflicts to the list of repos fetched from the db.
 	// NewDiff modifies the storedServiceRepos slice so we clone it before passing it

@@ -15,6 +15,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -32,10 +33,11 @@ func TestChangesetConnectionResolver(t *testing.T) {
 
 	cstore := store.New(dbconn.Global)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	repoStore := db.NewRepoStoreWith(cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
 	inaccessibleRepo := newGitHubTestRepo("github.com/sourcegraph/private", newGitHubExternalService(t, rstore))
-	if err := rstore.InsertRepos(ctx, repo, inaccessibleRepo); err != nil {
+	if err := repoStore.Create(ctx, repo, inaccessibleRepo); err != nil {
 		t.Fatal(err)
 	}
 	ct.MockRepoPermissions(t, userID, repo.ID)

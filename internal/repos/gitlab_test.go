@@ -280,6 +280,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 				TargetBranch: p.mr.TargetBranch,
 			}, nil, gitlab.ErrMergeRequestAlreadyExists)
 			p.mockGetMergeRequestNotes(p.mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStateEvents(p.mr.IID, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(p.mr.IID, nil, 20, nil)
 			p.mockGetOpenMergeRequestByRefs(p.mr, nil)
 
@@ -303,6 +304,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 				TargetBranch: p.mr.TargetBranch,
 			}, p.mr, nil)
 			p.mockGetMergeRequestNotes(p.mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStateEvents(p.mr.IID, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(p.mr.IID, nil, 20, nil)
 
 			exists, err := p.source.CreateChangeset(p.ctx, p.changeset)
@@ -354,6 +356,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.changeset.Changeset.Metadata = mr
 			p.mockUpdateMergeRequest(mr, want, gitlab.UpdateMergeRequestStateEventClose, nil)
 			p.mockGetMergeRequestNotes(mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStateEvents(mr.IID, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(mr.IID, nil, 20, nil)
 
 			if err := p.source.CloseChangeset(p.ctx, p.changeset); err != nil {
@@ -397,6 +400,8 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.changeset.Changeset.Metadata = mr
 			p.mockUpdateMergeRequest(mr, want, gitlab.UpdateMergeRequestStateEventReopen, nil)
 			p.mockGetMergeRequestNotes(mr.IID, nil, 20, nil)
+			// TODO: add event
+			p.mockGetMergeRequestResourceStateEvents(mr.IID, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(mr.IID, nil, 20, nil)
 
 			if err := p.source.ReopenChangeset(p.ctx, p.changeset); err != nil {
@@ -455,6 +460,28 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.changeset.Changeset.Metadata = p.mr
 			p.mockGetMergeRequest(42, mr, nil)
 			p.mockGetMergeRequestNotes(43, nil, 20, inner)
+			p.mockGetMergeRequestResourceStateEvents(43, nil, 20, nil)
+			p.mockGetMergeRequestPipelines(43, nil, 20, nil)
+
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); !errors.Is(err, inner) {
+				t.Errorf("unexpected error: %+v", err)
+			}
+			if p.changeset.Changeset.Metadata != p.mr {
+				t.Errorf("metadata unexpectedly changed to %+v", p.changeset.Changeset.Metadata)
+			}
+		})
+
+		t.Run("error from GetMergeRequestResourceStateEvents", func(t *testing.T) {
+			// A new merge request with a new IID.
+			mr := &gitlab.MergeRequest{IID: 43}
+			inner := errors.New("foo")
+
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.changeset.Changeset.ExternalID = "42"
+			p.changeset.Changeset.Metadata = p.mr
+			p.mockGetMergeRequest(42, mr, nil)
+			p.mockGetMergeRequestNotes(43, nil, 20, nil)
+			p.mockGetMergeRequestResourceStateEvents(43, nil, 20, inner)
 			p.mockGetMergeRequestPipelines(43, nil, 20, nil)
 
 			if err := p.source.LoadChangeset(p.ctx, p.changeset); !errors.Is(err, inner) {
@@ -475,6 +502,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.changeset.Changeset.Metadata = p.mr
 			p.mockGetMergeRequest(42, mr, nil)
 			p.mockGetMergeRequestNotes(43, nil, 20, nil)
+			p.mockGetMergeRequestResourceStateEvents(43, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(43, nil, 20, inner)
 
 			if err := p.source.LoadChangeset(p.ctx, p.changeset); !errors.Is(err, inner) {
@@ -494,6 +522,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.changeset.Changeset.Metadata = p.mr
 			p.mockGetMergeRequest(42, mr, nil)
 			p.mockGetMergeRequestNotes(43, nil, 20, nil)
+			p.mockGetMergeRequestResourceStateEvents(43, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(43, nil, 20, nil)
 
 			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
@@ -535,6 +564,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.changeset.Changeset.Metadata = p.mr
 			p.mockGetMergeRequest(42, mr, nil)
 			p.mockGetMergeRequestNotes(43, notes, 20, nil)
+			p.mockGetMergeRequestResourceStateEvents(43, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(43, nil, 20, nil)
 
 			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
@@ -556,6 +586,51 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			}
 		})
 
+		t.Run("resource state events", func(t *testing.T) {
+			// A new merge request with a new IID.
+			mr := &gitlab.MergeRequest{IID: 43}
+			events := []*gitlab.ResourceStateEvent{
+				{
+					ID:    1,
+					State: gitlab.ResourceStateEventStateClosed,
+				},
+				{
+					ID:    2,
+					State: gitlab.ResourceStateEventStateMerged,
+				},
+				{
+					ID:    3,
+					State: gitlab.ResourceStateEventStateReopened,
+				},
+			}
+
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.changeset.Changeset.ExternalID = "42"
+			p.changeset.Changeset.Metadata = p.mr
+			p.mockGetMergeRequest(42, mr, nil)
+			p.mockGetMergeRequestNotes(43, nil, 20, nil)
+			p.mockGetMergeRequestResourceStateEvents(43, events, 20, nil)
+			p.mockGetMergeRequestPipelines(43, nil, 20, nil)
+
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
+				t.Errorf("unexpected error: %+v", err)
+			}
+			if diff := cmp.Diff(mr.ResourceStateEvents, events); diff != "" {
+				t.Errorf("unexpected events: %s", diff)
+			}
+
+			// A subsequent load should result in the same events. Since we
+			// changed the IID in the merge request, we do need to change the
+			// getMergeRequest mock.
+			p.mockGetMergeRequest(43, mr, nil)
+			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
+				t.Errorf("unexpected error: %+v", err)
+			}
+			if diff := cmp.Diff(mr.ResourceStateEvents, events); diff != "" {
+				t.Errorf("unexpected events: %s", diff)
+			}
+		})
+
 		t.Run("pipelines", func(t *testing.T) {
 			// A new merge request with a new IID.
 			mr := &gitlab.MergeRequest{IID: 43}
@@ -570,6 +645,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.changeset.Changeset.Metadata = p.mr
 			p.mockGetMergeRequest(42, mr, nil)
 			p.mockGetMergeRequestNotes(43, nil, 20, nil)
+			p.mockGetMergeRequestResourceStateEvents(43, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(43, pipelines, 20, nil)
 
 			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
@@ -629,6 +705,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p.changeset.Changeset.Metadata = in
 			p.mockUpdateMergeRequest(in, out, "", nil)
 			p.mockGetMergeRequestNotes(in.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStateEvents(in.IID, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(in.IID, nil, 20, nil)
 
 			if err := p.source.UpdateChangeset(p.ctx, p.changeset); err != nil {
@@ -885,6 +962,20 @@ func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestNotes(expectedIID
 	}
 }
 
+func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestResourceStateEvents(expectedIID gitlab.ID, events []*gitlab.ResourceStateEvent, pageSize int, err error) {
+	gitlab.MockGetMergeRequestResourceStateEvents = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.ResourceStateEvent, error) {
+		p.testCommonParams(ctx, client, project)
+		if expectedIID != iid {
+			p.t.Errorf("unexpected IID: have %d; want %d", iid, expectedIID)
+		}
+
+		if err != nil {
+			return func() ([]*gitlab.ResourceStateEvent, error) { return nil, err }
+		}
+		return paginatedResourceStateEventIterator(events, pageSize)
+	}
+}
+
 func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestPipelines(expectedIID gitlab.ID, pipelines []*gitlab.Pipeline, pageSize int, err error) {
 	gitlab.MockGetMergeRequestPipelines = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.Pipeline, error) {
 		p.testCommonParams(ctx, client, project)
@@ -924,6 +1015,7 @@ func (p *gitLabChangesetSourceTestProvider) unmock() {
 	gitlab.MockCreateMergeRequest = nil
 	gitlab.MockGetMergeRequest = nil
 	gitlab.MockGetMergeRequestNotes = nil
+	gitlab.MockGetMergeRequestResourceStateEvents = nil
 	gitlab.MockGetMergeRequestPipelines = nil
 	gitlab.MockGetOpenMergeRequestByRefs = nil
 	gitlab.MockUpdateMergeRequest = nil
@@ -946,6 +1038,26 @@ func paginatedNoteIterator(notes []*gitlab.Note, pageSize int) func() ([]*gitlab
 			return notes[low:], nil
 		}
 		return notes[low:high], nil
+	}
+}
+
+// paginatedResourceStateEventIterator essentially fakes the pagination behaviour implemented
+// by gitlab.GetMergeRequestResourceStateEvents with a canned resource state events list.
+func paginatedResourceStateEventIterator(events []*gitlab.ResourceStateEvent, pageSize int) func() ([]*gitlab.ResourceStateEvent, error) {
+	page := 0
+
+	return func() ([]*gitlab.ResourceStateEvent, error) {
+		low := pageSize * page
+		high := pageSize * (page + 1)
+		page++
+
+		if low >= len(events) {
+			return []*gitlab.ResourceStateEvent{}, nil
+		}
+		if high > len(events) {
+			return events[low:], nil
+		}
+		return events[low:high], nil
 	}
 }
 
