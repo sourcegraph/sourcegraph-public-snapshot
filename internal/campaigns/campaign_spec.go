@@ -101,6 +101,10 @@ func ParseCampaignSpec(data []byte, features featureFlags) (*CampaignSpec, error
 		}
 	}
 
+	if len(spec.Steps) != 0 && spec.ChangesetTemplate == nil {
+		errs = multierror.Append(errs, errors.New("campaign spec includes steps but no changesetTemplate"))
+	}
+
 	if spec.TransformChanges != nil && !features.allowtransformChanges {
 		errs = multierror.Append(errs, errors.New("campaign spec includes transformChanges, which is not supported in this Sourcegraph version"))
 	}

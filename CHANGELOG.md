@@ -23,6 +23,7 @@ All notable changes to `src-cli` are documented in this file.
 
 - Two race conditions in the terminal UI of `src campaign [apply|preview]` have been fixed. [#399](https://github.com/sourcegraph/src-cli/pull/399)
 - A regression caused repositories on unsupported code host to not be skipped by `src campaign [apply|preview]`, regardless of whether `-allow-unsupported` was set or not. [#403](https://github.com/sourcegraph/src-cli/pull/403)
+- Previously `src campaign [apply|preview]` would crash when executing a campaign spec that contained `steps` but no `changesetTemplate`. [#406](https://github.com/sourcegraph/src-cli/issues/406)
 
 ### Removed
 
