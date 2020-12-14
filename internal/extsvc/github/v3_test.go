@@ -130,7 +130,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			client, save := newV3Client(t, "ListAffiliatedRepositories_"+test.name)
+			client, save := newV3TestClient(t, "ListAffiliatedRepositories_"+test.name)
 			defer save()
 
 			repos, _, _, err := client.ListAffiliatedRepositories(context.Background(), test.visibility, 1)
@@ -146,7 +146,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 }
 
 func TestGetAuthenticatedUserOrgs(t *testing.T) {
-	cli, save := newV3Client(t, "GetAuthenticatedUserOrgs")
+	cli, save := newV3TestClient(t, "GetAuthenticatedUserOrgs")
 	defer save()
 
 	ctx := context.Background()
@@ -184,7 +184,7 @@ func TestV3Client_WithAuthenticator(t *testing.T) {
 	}
 }
 
-func newV3Client(t testing.TB, name string) (*V3Client, func()) {
+func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 	t.Helper()
 
 	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)

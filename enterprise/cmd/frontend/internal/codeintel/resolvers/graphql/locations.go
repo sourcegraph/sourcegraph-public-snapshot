@@ -219,12 +219,8 @@ func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryRe
 	if err != nil {
 		return nil, err
 	}
-	gitserverRepo, err := backend.CachedGitRepo(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
 
-	commitID, err := git.ResolveRevision(ctx, *gitserverRepo, commit, git.ResolveRevisionOptions{NoEnsureRevision: true})
+	commitID, err := git.ResolveRevision(ctx, repo.Name, commit, git.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		if gitserver.IsRevisionNotFound(err) {
 			return nil, nil

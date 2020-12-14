@@ -19,6 +19,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -237,9 +238,10 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 			t.Run("error from handleEvent", func(t *testing.T) {
 				store, rstore, clock := gitLabTestSetup(t, db)
+				repoStore := idb.NewRepoStoreWith(store)
 				h := NewGitLabWebhook(store, rstore, clock.Now)
 				es := createGitLabExternalService(t, ctx, rstore)
-				repo := createGitLabRepo(t, ctx, rstore, es)
+				repo := createGitLabRepo(t, ctx, repoStore, es)
 				changeset := createGitLabChangeset(t, ctx, store, repo)
 				body := createMergeRequestPayload(t, repo, changeset, "close")
 
@@ -283,9 +285,10 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				for _, action := range []string{"approved", "unapproved"} {
 					t.Run(action, func(t *testing.T) {
 						store, rstore, clock := gitLabTestSetup(t, db)
+						repoStore := idb.NewRepoStoreWith(store)
 						h := NewGitLabWebhook(store, rstore, clock.Now)
 						es := createGitLabExternalService(t, ctx, rstore)
-						repo := createGitLabRepo(t, ctx, rstore, es)
+						repo := createGitLabRepo(t, ctx, repoStore, es)
 						changeset := createGitLabChangeset(t, ctx, store, repo)
 						body := createMergeRequestPayload(t, repo, changeset, "approved")
 
@@ -328,9 +331,10 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				} {
 					t.Run(action, func(t *testing.T) {
 						store, rstore, clock := gitLabTestSetup(t, db)
+						repoStore := idb.NewRepoStoreWith(store)
 						h := NewGitLabWebhook(store, rstore, clock.Now)
 						es := createGitLabExternalService(t, ctx, rstore)
-						repo := createGitLabRepo(t, ctx, rstore, es)
+						repo := createGitLabRepo(t, ctx, repoStore, es)
 						changeset := createGitLabChangeset(t, ctx, store, repo)
 						body := createMergeRequestPayload(t, repo, changeset, action)
 
@@ -357,9 +361,10 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 			t.Run("valid pipeline events", func(t *testing.T) {
 				store, rstore, clock := gitLabTestSetup(t, db)
+				repoStore := idb.NewRepoStoreWith(store)
 				h := NewGitLabWebhook(store, rstore, clock.Now)
 				es := createGitLabExternalService(t, ctx, rstore)
-				repo := createGitLabRepo(t, ctx, rstore, es)
+				repo := createGitLabRepo(t, ctx, repoStore, es)
 				changeset := createGitLabChangeset(t, ctx, store, repo)
 				body := createPipelinePayload(t, repo, changeset, gitlab.Pipeline{
 					ID:     123,
@@ -565,9 +570,10 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			// Since these tests don't write to the database, we can just share
 			// the same database setup.
 			store, rstore, clock := gitLabTestSetup(t, db)
+			repoStore := idb.NewRepoStoreWith(store)
 			h := NewGitLabWebhook(store, rstore, clock.Now)
 			es := createGitLabExternalService(t, ctx, rstore)
-			repo := createGitLabRepo(t, ctx, rstore, es)
+			repo := createGitLabRepo(t, ctx, repoStore, es)
 			changeset := createGitLabChangeset(t, ctx, store, repo)
 
 			// Extract IDs we'll need to build events.
@@ -889,7 +895,7 @@ func createGitLabExternalService(t *testing.T, ctx context.Context, rstore repos
 
 // createGitLabRepo creates a mock GitLab repo attached to the given external
 // service.
-func createGitLabRepo(t *testing.T, ctx context.Context, rstore repos.Store, es *types.ExternalService) *types.Repo {
+func createGitLabRepo(t *testing.T, ctx context.Context, rstore *idb.RepoStore, es *types.ExternalService) *types.Repo {
 	repo := (&types.Repo{
 		Name: "gitlab.com/sourcegraph/test",
 		URI:  "gitlab.com/sourcegraph/test",
@@ -899,7 +905,7 @@ func createGitLabRepo(t *testing.T, ctx context.Context, rstore repos.Store, es 
 			ServiceID:   "https://gitlab.com/",
 		},
 	}).With(types.Opt.RepoSources(es.URN()))
-	if err := rstore.InsertRepos(ctx, repo); err != nil {
+	if err := rstore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 

@@ -51,6 +51,10 @@ $danger: $red;
 $secondary-light: darken($gray-01, 5%);
 $merged: $purple;
 
+// Color for the <mark> element and highlighted/hovered tokens
+$mark-bg-dark: rgba(217, 72, 15, 0.5);
+$mark-bg-light: rgba(255, 192, 120, 0.5);
+
 // Added to bg- and text- utilities because it is commonly needed in our app.
 $theme-colors: (
     'merged': $merged,
@@ -85,6 +89,7 @@ $text-muted: var(--text-muted);
     --color-bg-3: #{$gray-04};
     --color-bg-4: #{$gray-02};
     --color-bg-5: #{$gray-13};
+    --mark-bg: #{$mark-bg-light};
     --text-muted: #6d727c;
     --line-number-color: #{$gray-05};
     --header-icon-color: #{$gray-13};
@@ -112,6 +117,7 @@ $text-muted: var(--text-muted);
     --color-bg-3: #{$gray-19};
     --color-bg-4: #{$gray-22};
     --color-bg-5: #{$gray-17};
+    --mark-bg: #{$mark-bg-dark};
     --text-muted: #{$gray-07};
     --line-number-color: #{$gray-18};
     --header-icon-color: #{$gray-11};

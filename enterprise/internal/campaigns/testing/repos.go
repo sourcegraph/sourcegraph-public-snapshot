@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -56,6 +57,7 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 	t.Helper()
 
 	rstore := repos.NewDBStore(db, sql.TxOptions{})
+	repoStore := idb.NewRepoStoreWithDB(db)
 
 	ext := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
@@ -80,7 +82,7 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 		rs = append(rs, r)
 	}
 
-	err := rstore.InsertRepos(ctx, rs...)
+	err := repoStore.Create(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,6 +94,7 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count 
 	t.Helper()
 
 	rstore := repos.NewDBStore(db, sql.TxOptions{})
+	repoStore := idb.NewRepoStoreWithDB(db)
 
 	ext := &types.ExternalService{
 		Kind:        extsvc.KindGitLab,
@@ -116,7 +119,7 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count 
 		rs = append(rs, r)
 	}
 
-	err := rstore.InsertRepos(ctx, rs...)
+	err := repoStore.Create(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,6 +131,7 @@ func CreateBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int
 	t.Helper()
 
 	rstore := repos.NewDBStore(db, sql.TxOptions{})
+	repoStore := idb.NewRepoStoreWithDB(db)
 
 	ext := &types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
@@ -154,7 +158,7 @@ func CreateBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int
 		rs = append(rs, r)
 	}
 
-	err := rstore.InsertRepos(ctx, rs...)
+	err := repoStore.Create(ctx, rs...)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -126,7 +126,7 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 		githubDotCom:     githubDotCom,
 		v3Client:         github.NewV3Client(apiURL, token, cli),
 		v4Client:         github.NewV4Client(apiURL, token, cli),
-		searchClient:     github.NewV3Client(apiURL, token, cli).WithSeparateRateLimitMonitor(),
+		searchClient:     github.NewV3SearchClient(apiURL, token, cli),
 		originalHostname: originalHostname,
 	}, nil
 }

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 func TestRepository_BlameFile(t *testing.T) {
@@ -32,7 +32,7 @@ func TestRepository_BlameFile(t *testing.T) {
 		},
 	}
 	tests := map[string]struct {
-		repo gitserver.Repo
+		repo api.RepoName
 		path string
 		opt  *BlameOptions
 

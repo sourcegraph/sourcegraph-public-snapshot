@@ -297,15 +297,7 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 
 	// Trigger update when enabling.
 	if args.Enabled {
-		rp, err := repo.repo(ctx)
-		if err != nil {
-			return nil, err
-		}
-		gitserverRepo, err := backend.GitRepo(ctx, rp)
-		if err != nil {
-			return nil, err
-		}
-		if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
+		if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repo.innerRepo.Name); err != nil {
 			return nil, err
 		}
 	}

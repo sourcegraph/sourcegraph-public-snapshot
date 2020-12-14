@@ -6,9 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -35,15 +34,8 @@ func (r *RepositoryResolver) Tags(ctx context.Context, args *refsArgs) (*gitRefC
 func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitRefConnectionResolver, error) {
 	var branches []*git.Branch
 	if args.Type == nil || *args.Type == gitRefTypeBranch {
-		repo, err := r.repo(ctx)
-		if err != nil {
-			return nil, err
-		}
-		cachedRepo, err := backend.CachedGitRepo(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
-		branches, err = git.ListBranches(ctx, *cachedRepo, git.BranchesOptions{
+		var err error
+		branches, err = git.ListBranches(ctx, r.innerRepo.Name, git.BranchesOptions{
 			// We intentionally do not ask for commits here since it requires
 			// a separate git call per branch. We only need the git commits to
 			// sort by author/commit date and there are few enough branches to
@@ -71,7 +63,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 		if args.OrderBy != nil && *args.OrderBy == gitRefOrderAuthoredOrCommittedAt {
 			// Sort branches by most recently committed.
 
-			ok, err := hydrateBranchCommits(ctx, *cachedRepo, args.Interactive, branches)
+			ok, err := hydrateBranchCommits(ctx, r.innerRepo.Name, args.Interactive, branches)
 			if err != nil {
 				return nil, err
 			}
@@ -109,15 +101,8 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 
 	var tags []*git.Tag
 	if args.Type == nil || *args.Type == gitRefTypeTag {
-		repo, err := r.repo(ctx)
-		if err != nil {
-			return nil, err
-		}
-		cachedRepo, err := backend.CachedGitRepo(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
-		tags, err = git.ListTags(ctx, *cachedRepo)
+		var err error
+		tags, err = git.ListTags(ctx, r.innerRepo.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -160,7 +145,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	}, nil
 }
 
-func hydrateBranchCommits(ctx context.Context, repo gitserver.Repo, interactive bool, branches []*git.Branch) (ok bool, err error) {
+func hydrateBranchCommits(ctx context.Context, repo api.RepoName, interactive bool, branches []*git.Branch) (ok bool, err error) {
 	parentCtx := ctx
 	if interactive {
 		if len(branches) > 1000 {

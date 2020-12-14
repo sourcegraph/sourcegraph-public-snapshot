@@ -50,7 +50,7 @@ func TestListRepositoryCollaborators(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			client, save := newV3Client(t, "ListRepositoryCollaborators_"+test.name)
+			client, save := newV3TestClient(t, "ListRepositoryCollaborators_"+test.name)
 			defer save()
 
 			users, _, err := client.ListRepositoryCollaborators(context.Background(), test.owner, test.repo, 1)

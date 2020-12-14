@@ -34,8 +34,10 @@ func TestCampaignSpecResolver(t *testing.T) {
 	cstore := store.New(dbconn.Global)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
+	repoStore := db.NewRepoStoreWith(cstore)
+
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
-	if err := rstore.InsertRepos(ctx, repo); err != nil {
+	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)

@@ -61,6 +61,11 @@ func NewRepoStoreWithDB(db dbutil.DB) *RepoStore {
 	return &RepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
+// NewRepoStoreWithDB instantiates and returns a new RepoStore using the other store handle.
+func NewRepoStoreWith(other basestore.ShareableStore) *RepoStore {
+	return &RepoStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
 func (s *RepoStore) With(other basestore.ShareableStore) *RepoStore {
 	return &RepoStore{Store: s.Store.With(other)}
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -50,19 +49,7 @@ func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) (
 		if r.args.After != nil {
 			opt.After = *r.args.After
 		}
-
-		repo, err := r.repo.repo(ctx)
-		if err != nil {
-			r.err = err
-			return
-		}
-
-		cachedRepo, err := backend.CachedGitRepo(ctx, repo)
-		if err != nil {
-			r.err = err
-			return
-		}
-		r.results, r.err = git.ShortLog(ctx, *cachedRepo, opt)
+		r.results, r.err = git.ShortLog(ctx, r.repo.innerRepo.Name, opt)
 	})
 	return r.results, r.err
 }

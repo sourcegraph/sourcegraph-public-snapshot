@@ -2,8 +2,9 @@ package enterprise
 
 import (
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"net/http"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
