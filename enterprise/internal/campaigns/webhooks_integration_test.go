@@ -3,6 +3,7 @@ package campaigns
 import (
 	"testing"
 
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
@@ -16,7 +17,7 @@ func TestWebhooksIntegration(t *testing.T) {
 
 	dbtesting.SetupGlobalTestDB(t)
 
-	user := createTestUser(t, false)
+	user := ct.CreateTestUser(t, false)
 
 	t.Run("GitHubWebhook", testGitHubWebhook(dbconn.Global, user.ID))
 	t.Run("BitbucketWebhook", testBitbucketWebhook(dbconn.Global, user.ID))

@@ -39,6 +39,7 @@ func TestPermissionLevels(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	cstore := store.New(dbconn.Global)
+	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	sr := &Resolver{store: cstore}
 	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {
@@ -54,13 +55,11 @@ func TestPermissionLevels(t *testing.T) {
 	ctx := context.Background()
 
 	// Global test data that we reuse in every test
-	adminID := insertTestUser(t, dbconn.Global, "perm-level-admin", true)
-	userID := insertTestUser(t, dbconn.Global, "perm-level-user", false)
+	adminID := ct.CreateTestUser(t, true).ID
+	userID := ct.CreateTestUser(t, false).ID
 
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	repoStore := db.NewRepoStoreWith(cstore)
-
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
+	repo := newGitHubTestRepo("github.com/sourcegraph/permission-levels-test", newGitHubExternalService(t, rstore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -771,7 +770,7 @@ func TestRepositoryPermissions(t *testing.T) {
 	mockBackendCommits(t, testRev)
 
 	// Global test data that we reuse in every test
-	userID := insertTestUser(t, dbconn.Global, "perm-level-user", false)
+	userID := ct.CreateTestUser(t, false).ID
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	repoStore := db.NewRepoStoreWith(cstore)
@@ -779,7 +778,7 @@ func TestRepositoryPermissions(t *testing.T) {
 	// Create 2 repositories
 	repos := make([]*types.Repo, 0, 2)
 	for i := 0; i < cap(repos); i++ {
-		name := fmt.Sprintf("github.com/sourcegraph/repo-%d", i)
+		name := fmt.Sprintf("github.com/sourcegraph/test-repository-permissions-repo-%d", i)
 		r := newGitHubTestRepo(name, newGitHubExternalService(t, reposStore))
 		if err := repoStore.Create(ctx, r); err != nil {
 			t.Fatal(err)

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
@@ -76,7 +77,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "test-changeset-counts-over-time")
 	defer save()
 
-	userID := insertTestUser(t, dbconn.Global, "changeset-counts-over-time", false)
+	userID := ct.CreateTestUser(t, false).ID
 
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	repoStore := db.NewRepoStoreWithDB(dbconn.Global)

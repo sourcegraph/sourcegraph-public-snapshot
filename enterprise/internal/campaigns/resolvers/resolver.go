@@ -404,13 +404,16 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 		return nil, err
 	}
 
-	user, err := db.Users.GetByCurrentAuthUser(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
+	act := actor.FromContext(ctx)
+	// Actor MUST be logged in at this stage, because campaignsCreateAccess checks that already.
+	// To be extra safe, we'll just do the cheap check again here so if anyone ever modifies
+	// campaignsCreateAccess, we still enforce it here.
+	if !act.IsAuthenticated() {
+		return nil, backend.ErrNotAuthenticated
 	}
 
 	svc := ee.NewService(r.store, r.httpFactory)
-	spec, err := svc.CreateChangesetSpec(ctx, args.ChangesetSpec, user.ID)
+	spec, err := svc.CreateChangesetSpec(ctx, args.ChangesetSpec, act.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -439,7 +442,9 @@ func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCa
 		return nil, ErrIDIsZero{}
 	}
 
-	var opts ee.MoveCampaignOpts
+	opts := ee.MoveCampaignOpts{
+		CampaignID: campaignID,
+	}
 
 	if args.NewName != nil {
 		opts.NewName = *args.NewName

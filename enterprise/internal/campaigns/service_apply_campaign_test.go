@@ -27,10 +27,10 @@ func TestServiceApplyCampaign(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	admin := createTestUser(t, true)
+	admin := ct.CreateTestUser(t, true)
 	adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
 
-	user := createTestUser(t, false)
+	user := ct.CreateTestUser(t, false)
 	userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
 	repos, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 4)
@@ -149,7 +149,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			t.Run("apply campaign spec with same name but different namespace", func(t *testing.T) {
-				user2 := createTestUser(t, false)
+				user2 := ct.CreateTestUser(t, false)
 				campaignSpec2 := createCampaignSpec(t, ctx, store, "campaign2", user2.ID)
 
 				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
@@ -204,18 +204,18 @@ func TestServiceApplyCampaign(t *testing.T) {
 		t.Run("new campaign", func(t *testing.T) {
 			campaignSpec := createCampaignSpec(t, ctx, store, "campaign3", admin.ID)
 
-			spec1 := createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[0].ID,
-				campaignSpec: campaignSpec.ID,
-				externalID:   "1234",
+			spec1 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         repos[0].ID,
+				CampaignSpec: campaignSpec.ID,
+				ExternalID:   "1234",
 			})
 
-			spec2 := createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[1].ID,
-				campaignSpec: campaignSpec.ID,
-				headRef:      "refs/heads/my-branch",
+			spec2 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         repos[1].ID,
+				CampaignSpec: campaignSpec.ID,
+				HeadRef:      "refs/heads/my-branch",
 			})
 
 			campaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec.RandID, 2)
@@ -240,7 +240,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				OwnedByCampaign:  campaign.ID,
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
-				DiffStat:         testChangsetSpecDiffStat,
+				DiffStat:         ct.TestChangsetSpecDiffStat,
 			})
 		})
 
@@ -250,32 +250,32 @@ func TestServiceApplyCampaign(t *testing.T) {
 			// correctly.
 			campaignSpec1 := createCampaignSpec(t, ctx, store, "campaign4", admin.ID)
 
-			createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[0].ID,
-				campaignSpec: campaignSpec1.ID,
-				externalID:   "1234",
+			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         repos[0].ID,
+				CampaignSpec: campaignSpec1.ID,
+				ExternalID:   "1234",
 			})
 
-			createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[0].ID,
-				campaignSpec: campaignSpec1.ID,
-				externalID:   "5678",
+			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         repos[0].ID,
+				CampaignSpec: campaignSpec1.ID,
+				ExternalID:   "5678",
 			})
 
-			oldSpec3 := createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[1].ID,
-				campaignSpec: campaignSpec1.ID,
-				headRef:      "refs/heads/repo-1-branch-1",
+			oldSpec3 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         repos[1].ID,
+				CampaignSpec: campaignSpec1.ID,
+				HeadRef:      "refs/heads/repo-1-branch-1",
 			})
 
-			oldSpec4 := createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[2].ID,
-				campaignSpec: campaignSpec1.ID,
-				headRef:      "refs/heads/repo-2-branch-1",
+			oldSpec4 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         repos[2].ID,
+				CampaignSpec: campaignSpec1.ID,
+				HeadRef:      "refs/heads/repo-2-branch-1",
 			})
 
 			// Apply and expect 4 changesets
@@ -286,43 +286,43 @@ func TestServiceApplyCampaign(t *testing.T) {
 			campaignSpec2 := createCampaignSpec(t, ctx, store, "campaign4", admin.ID)
 
 			// Same
-			spec1 := createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[0].ID,
-				campaignSpec: campaignSpec2.ID,
-				externalID:   "1234",
+			spec1 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         repos[0].ID,
+				CampaignSpec: campaignSpec2.ID,
+				ExternalID:   "1234",
 			})
 
 			// DIFFERENT: Track #9999 in repo[0]
-			spec2 := createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[0].ID,
-				campaignSpec: campaignSpec2.ID,
-				externalID:   "5678",
+			spec2 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         repos[0].ID,
+				CampaignSpec: campaignSpec2.ID,
+				ExternalID:   "5678",
 			})
 
 			// Same
-			spec3 := createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[1].ID,
-				campaignSpec: campaignSpec2.ID,
-				headRef:      "refs/heads/repo-1-branch-1",
+			spec3 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         repos[1].ID,
+				CampaignSpec: campaignSpec2.ID,
+				HeadRef:      "refs/heads/repo-1-branch-1",
 			})
 
 			// DIFFERENT: branch changed in repo[2]
-			spec4 := createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[2].ID,
-				campaignSpec: campaignSpec2.ID,
-				headRef:      "refs/heads/repo-2-branch-2",
+			spec4 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         repos[2].ID,
+				CampaignSpec: campaignSpec2.ID,
+				HeadRef:      "refs/heads/repo-2-branch-2",
 			})
 
 			// NEW: repo[3]
-			spec5 := createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[3].ID,
-				campaignSpec: campaignSpec2.ID,
-				headRef:      "refs/heads/repo-3-branch-1",
+			spec5 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         repos[3].ID,
+				CampaignSpec: campaignSpec2.ID,
+				HeadRef:      "refs/heads/repo-3-branch-1",
 			})
 
 			// Before we apply the new campaign spec, we make the changeset we
@@ -349,7 +349,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				OwnedByCampaign:  campaign.ID,
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
-				DiffStat:         testChangsetSpecDiffStat,
+				DiffStat:         ct.TestChangsetSpecDiffStat,
 				Closing:          true,
 			})
 
@@ -387,7 +387,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				OwnedByCampaign:  campaign.ID,
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
-				DiffStat:         testChangsetSpecDiffStat,
+				DiffStat:         ct.TestChangsetSpecDiffStat,
 			})
 
 			c4 := cs.Find(campaigns.WithCurrentSpecID(spec4.ID))
@@ -397,7 +397,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				OwnedByCampaign:  campaign.ID,
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
-				DiffStat:         testChangsetSpecDiffStat,
+				DiffStat:         ct.TestChangsetSpecDiffStat,
 			})
 
 			c5 := cs.Find(campaigns.WithCurrentSpecID(spec5.ID))
@@ -407,18 +407,18 @@ func TestServiceApplyCampaign(t *testing.T) {
 				OwnedByCampaign:  campaign.ID,
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
-				DiffStat:         testChangsetSpecDiffStat,
+				DiffStat:         ct.TestChangsetSpecDiffStat,
 			})
 		})
 
 		t.Run("campaign tracking changesets owned by another campaign", func(t *testing.T) {
 			campaignSpec1 := createCampaignSpec(t, ctx, store, "owner-campaign", admin.ID)
 
-			oldSpec1 := createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[0].ID,
-				campaignSpec: campaignSpec1.ID,
-				headRef:      "refs/heads/repo-0-branch-0",
+			oldSpec1 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         repos[0].ID,
+				CampaignSpec: campaignSpec1.ID,
+				HeadRef:      "refs/heads/repo-0-branch-0",
 			})
 
 			ownerCampaign, ownerChangesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 1)
@@ -430,11 +430,11 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 			// This other campaign tracks the changeset created by the first one
 			campaignSpec2 := createCampaignSpec(t, ctx, store, "tracking-campaign", admin.ID)
-			createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
-				repo:         c.RepoID,
-				campaignSpec: campaignSpec2.ID,
-				externalID:   c.ExternalID,
+			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         c.RepoID,
+				CampaignSpec: campaignSpec2.ID,
+				ExternalID:   c.ExternalID,
 			})
 
 			_, trackedChangesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
@@ -449,18 +449,18 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ExternalState:    campaigns.ChangesetExternalStateOpen,
 				ReconcilerState:  campaigns.ReconcilerStateCompleted,
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
-				DiffStat:         testChangsetSpecDiffStat,
+				DiffStat:         ct.TestChangsetSpecDiffStat,
 			}
 			ct.AssertChangeset(t, c2, trackedChangesetAssertions)
 
 			// Now try to apply a new spec that wants to modify the formerly tracked changeset.
 			campaignSpec3 := createCampaignSpec(t, ctx, store, "tracking-campaign", admin.ID)
 
-			spec3 := createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[0].ID,
-				campaignSpec: campaignSpec3.ID,
-				headRef:      "refs/heads/repo-0-branch-0",
+			spec3 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         repos[0].ID,
+				CampaignSpec: campaignSpec3.ID,
+				HeadRef:      "refs/heads/repo-0-branch-0",
 			})
 			// Apply again. This should have detached the tracked changeset but it should not be closed, since the campaign is
 			// not the owner.
@@ -476,18 +476,18 @@ func TestServiceApplyCampaign(t *testing.T) {
 				OwnedByCampaign:  trackingCampaign.ID,
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
-				DiffStat:         testChangsetSpecDiffStat,
+				DiffStat:         ct.TestChangsetSpecDiffStat,
 			})
 		})
 
 		t.Run("campaign with changeset that is unpublished", func(t *testing.T) {
 			campaignSpec1 := createCampaignSpec(t, ctx, store, "unpublished-changesets", admin.ID)
 
-			createChangesetSpec(t, ctx, store, testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[3].ID,
-				campaignSpec: campaignSpec1.ID,
-				headRef:      "refs/heads/never-published",
+			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         repos[3].ID,
+				CampaignSpec: campaignSpec1.ID,
+				HeadRef:      "refs/heads/never-published",
 			})
 
 			// We apply the spec and expect 1 changeset
@@ -505,15 +505,15 @@ func TestServiceApplyCampaign(t *testing.T) {
 		t.Run("campaign with changeset that wasn't processed before reapply", func(t *testing.T) {
 			campaignSpec1 := createCampaignSpec(t, ctx, store, "queued-changesets", admin.ID)
 
-			specOpts := testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[3].ID,
-				campaignSpec: campaignSpec1.ID,
-				title:        "Spec1",
-				headRef:      "refs/heads/queued",
-				published:    true,
+			specOpts := ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         repos[3].ID,
+				CampaignSpec: campaignSpec1.ID,
+				Title:        "Spec1",
+				HeadRef:      "refs/heads/queued",
+				Published:    true,
 			}
-			spec1 := createChangesetSpec(t, ctx, store, specOpts)
+			spec1 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 			// We apply the spec and expect 1 changeset
 			campaign, changesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 1)
@@ -530,15 +530,15 @@ func TestServiceApplyCampaign(t *testing.T) {
 				Repo:             repos[3].ID,
 				CurrentSpec:      spec1.ID,
 				OwnedByCampaign:  campaign.ID,
-				DiffStat:         testChangsetSpecDiffStat,
+				DiffStat:         ct.TestChangsetSpecDiffStat,
 			})
 
 			// Apply again so that an update to the changeset is pending.
 			campaignSpec2 := createCampaignSpec(t, ctx, store, "queued-changesets", admin.ID)
 
-			specOpts.campaignSpec = campaignSpec2.ID
-			specOpts.title = "Spec2"
-			spec2 := createChangesetSpec(t, ctx, store, specOpts)
+			specOpts.CampaignSpec = campaignSpec2.ID
+			specOpts.Title = "Spec2"
+			spec2 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 			// That should still want to publish the changeset
 			_, changesets = applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
@@ -554,7 +554,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// Track the previous spec.
 				PreviousSpec:    spec1.ID,
 				OwnedByCampaign: campaign.ID,
-				DiffStat:        testChangsetSpecDiffStat,
+				DiffStat:        ct.TestChangsetSpecDiffStat,
 			})
 
 			// Make sure the reconciler wants to update this changeset.
@@ -576,8 +576,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 			campaignSpec3 := createCampaignSpec(t, ctx, store, "queued-changesets", admin.ID)
 
 			// No change this time, just reapplying.
-			specOpts.campaignSpec = campaignSpec3.ID
-			spec3 := createChangesetSpec(t, ctx, store, specOpts)
+			specOpts.CampaignSpec = campaignSpec3.ID
+			spec3 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 			_, changesets = applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 1)
 
@@ -592,7 +592,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// Still be pointing at the first spec, since the second was never applied.
 				PreviousSpec:    spec1.ID,
 				OwnedByCampaign: campaign.ID,
-				DiffStat:        testChangsetSpecDiffStat,
+				DiffStat:        ct.TestChangsetSpecDiffStat,
 			})
 
 			// Make sure the reconciler would still update this changeset.
@@ -616,8 +616,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 			campaignSpec4 := createCampaignSpec(t, ctx, store, "queued-changesets", admin.ID)
 
 			// No change this time, just reapplying.
-			specOpts.campaignSpec = campaignSpec4.ID
-			spec4 := createChangesetSpec(t, ctx, store, specOpts)
+			specOpts.CampaignSpec = campaignSpec4.ID
+			spec4 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 			_, changesets = applyAndListChangesets(adminCtx, t, svc, campaignSpec4.RandID, 1)
 
@@ -632,7 +632,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// Still be pointing at the first spec, since the second and third were never applied.
 				PreviousSpec:    spec1.ID,
 				OwnedByCampaign: campaign.ID,
-				DiffStat:        testChangsetSpecDiffStat,
+				DiffStat:        ct.TestChangsetSpecDiffStat,
 			})
 
 			// Make sure the reconciler would still update this changeset.
@@ -657,18 +657,18 @@ func TestServiceApplyCampaign(t *testing.T) {
 			// NOTE: We cannot use a context that has authz bypassed.
 			campaignSpec := createCampaignSpec(t, userCtx, store, "missing-permissions", user.ID)
 
-			createChangesetSpec(t, userCtx, store, testSpecOpts{
-				user:         user.ID,
-				repo:         repos[0].ID,
-				campaignSpec: campaignSpec.ID,
-				externalID:   "1234",
+			ct.CreateChangesetSpec(t, userCtx, store, ct.TestSpecOpts{
+				User:         user.ID,
+				Repo:         repos[0].ID,
+				CampaignSpec: campaignSpec.ID,
+				ExternalID:   "1234",
 			})
 
-			createChangesetSpec(t, userCtx, store, testSpecOpts{
-				user:         user.ID,
-				repo:         repos[1].ID, // Not authorized to access this repository
-				campaignSpec: campaignSpec.ID,
-				headRef:      "refs/heads/my-branch",
+			ct.CreateChangesetSpec(t, userCtx, store, ct.TestSpecOpts{
+				User:         user.ID,
+				Repo:         repos[1].ID, // Not authorized to access this repository
+				CampaignSpec: campaignSpec.ID,
+				HeadRef:      "refs/heads/my-branch",
 			})
 
 			_, err := svc.ApplyCampaign(userCtx, ApplyCampaignOpts{
@@ -689,23 +689,23 @@ func TestServiceApplyCampaign(t *testing.T) {
 		t.Run("campaign with errored changeset", func(t *testing.T) {
 			campaignSpec1 := createCampaignSpec(t, ctx, store, "errored-changeset-campaign", admin.ID)
 
-			spec1Opts := testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[0].ID,
-				campaignSpec: campaignSpec1.ID,
-				externalID:   "1234",
-				published:    true,
+			spec1Opts := ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         repos[0].ID,
+				CampaignSpec: campaignSpec1.ID,
+				ExternalID:   "1234",
+				Published:    true,
 			}
-			createChangesetSpec(t, ctx, store, spec1Opts)
+			ct.CreateChangesetSpec(t, ctx, store, spec1Opts)
 
-			spec2Opts := testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[1].ID,
-				campaignSpec: campaignSpec1.ID,
-				headRef:      "refs/heads/repo-1-branch-1",
-				published:    true,
+			spec2Opts := ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         repos[1].ID,
+				CampaignSpec: campaignSpec1.ID,
+				HeadRef:      "refs/heads/repo-1-branch-1",
+				Published:    true,
 			}
-			createChangesetSpec(t, ctx, store, spec2Opts)
+			ct.CreateChangesetSpec(t, ctx, store, spec2Opts)
 
 			_, oldChangesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 2)
 
@@ -717,16 +717,16 @@ func TestServiceApplyCampaign(t *testing.T) {
 			// Now we create another campaign spec with the same campaign name
 			// and namespace.
 			campaignSpec2 := createCampaignSpec(t, ctx, store, "errored-changeset-campaign", admin.ID)
-			spec1Opts.campaignSpec = campaignSpec2.ID
-			newSpec1 := createChangesetSpec(t, ctx, store, spec1Opts)
-			spec2Opts.campaignSpec = campaignSpec2.ID
-			newSpec2 := createChangesetSpec(t, ctx, store, spec2Opts)
+			spec1Opts.CampaignSpec = campaignSpec2.ID
+			newSpec1 := ct.CreateChangesetSpec(t, ctx, store, spec1Opts)
+			spec2Opts.CampaignSpec = campaignSpec2.ID
+			newSpec2 := ct.CreateChangesetSpec(t, ctx, store, spec2Opts)
 
 			campaign, cs := applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 2)
 
 			c1 := cs.Find(campaigns.WithExternalID(newSpec1.Spec.ExternalID))
 			ct.ReloadAndAssertChangeset(t, ctx, store, c1, ct.ChangesetAssertions{
-				Repo:             spec1Opts.repo,
+				Repo:             spec1Opts.Repo,
 				ExternalID:       "1234",
 				Unsynced:         true,
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
@@ -744,7 +744,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				PreviousSpec:     0,
 				OwnedByCampaign:  campaign.ID,
 				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
-				DiffStat:         testChangsetSpecDiffStat,
+				DiffStat:         ct.TestChangsetSpecDiffStat,
 
 				ReconcilerState: campaigns.ReconcilerStateQueued,
 				FailureMessage:  nil,
@@ -770,13 +770,13 @@ func TestServiceApplyCampaign(t *testing.T) {
 		t.Run("closed and detached changeset not re-enqueued for close", func(t *testing.T) {
 			campaignSpec1 := createCampaignSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
 
-			specOpts := testSpecOpts{
-				user:         admin.ID,
-				repo:         repos[0].ID,
-				campaignSpec: campaignSpec1.ID,
-				headRef:      "refs/heads/detached-closed",
+			specOpts := ct.TestSpecOpts{
+				User:         admin.ID,
+				Repo:         repos[0].ID,
+				CampaignSpec: campaignSpec1.ID,
+				HeadRef:      "refs/heads/detached-closed",
 			}
-			spec1 := createChangesetSpec(t, ctx, store, specOpts)
+			spec1 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 			// STEP 1: We apply the spec and expect 1 changeset.
 			campaign, changesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 1)
@@ -784,7 +784,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			// Now we update the changeset so it looks like it's been published
 			// on the code host.
 			c := changesets[0]
-			ct.SetChangesetPublished(t, ctx, store, c, "995544", specOpts.headRef)
+			ct.SetChangesetPublished(t, ctx, store, c, "995544", specOpts.HeadRef)
 
 			assertions := ct.ChangesetAssertions{
 				Repo:             c.RepoID,
@@ -795,7 +795,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				OwnedByCampaign:  campaign.ID,
 				ReconcilerState:  campaigns.ReconcilerStateCompleted,
 				PublicationState: campaigns.ChangesetPublicationStatePublished,
-				DiffStat:         testChangsetSpecDiffStat,
+				DiffStat:         ct.TestChangsetSpecDiffStat,
 			}
 			c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
@@ -830,13 +830,13 @@ func TestServiceApplyCampaign(t *testing.T) {
 			t.Run("changeset has been closed before re-attaching", func(t *testing.T) {
 				campaignSpec1 := createCampaignSpec(t, ctx, store, "detach-reattach-changeset", admin.ID)
 
-				specOpts := testSpecOpts{
-					user:         admin.ID,
-					repo:         repos[0].ID,
-					campaignSpec: campaignSpec1.ID,
-					headRef:      "refs/heads/detached-reattached",
+				specOpts := ct.TestSpecOpts{
+					User:         admin.ID,
+					Repo:         repos[0].ID,
+					CampaignSpec: campaignSpec1.ID,
+					HeadRef:      "refs/heads/detached-reattached",
 				}
-				spec1 := createChangesetSpec(t, ctx, store, specOpts)
+				spec1 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 				// STEP 1: We apply the spec and expect 1 changeset.
 				campaign, changesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 1)
@@ -844,7 +844,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// Now we update the changeset so it looks like it's been published
 				// on the code host.
 				c := changesets[0]
-				ct.SetChangesetPublished(t, ctx, store, c, "995533", specOpts.headRef)
+				ct.SetChangesetPublished(t, ctx, store, c, "995533", specOpts.HeadRef)
 
 				assertions := ct.ChangesetAssertions{
 					Repo:             c.RepoID,
@@ -855,7 +855,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 					OwnedByCampaign:  campaign.ID,
 					ReconcilerState:  campaigns.ReconcilerStateCompleted,
 					PublicationState: campaigns.ChangesetPublicationStatePublished,
-					DiffStat:         testChangsetSpecDiffStat,
+					DiffStat:         ct.TestChangsetSpecDiffStat,
 				}
 				ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
@@ -882,8 +882,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// re-attached.
 				campaignSpec3 := createCampaignSpec(t, ctx, store, "detach-reattach-changeset", admin.ID)
 
-				specOpts.campaignSpec = campaignSpec3.ID
-				spec2 := createChangesetSpec(t, ctx, store, specOpts)
+				specOpts.CampaignSpec = campaignSpec3.ID
+				spec2 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 				campaign, changesets = applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 1)
 
@@ -903,13 +903,13 @@ func TestServiceApplyCampaign(t *testing.T) {
 			t.Run("changeset has failed closing before re-attaching", func(t *testing.T) {
 				campaignSpec1 := createCampaignSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID)
 
-				specOpts := testSpecOpts{
-					user:         admin.ID,
-					repo:         repos[0].ID,
-					campaignSpec: campaignSpec1.ID,
-					headRef:      "refs/heads/detached-reattach-failed",
+				specOpts := ct.TestSpecOpts{
+					User:         admin.ID,
+					Repo:         repos[0].ID,
+					CampaignSpec: campaignSpec1.ID,
+					HeadRef:      "refs/heads/detached-reattach-failed",
 				}
-				spec1 := createChangesetSpec(t, ctx, store, specOpts)
+				spec1 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 				// STEP 1: We apply the spec and expect 1 changeset.
 				campaign, changesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 1)
@@ -917,7 +917,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// Now we update the changeset so it looks like it's been published
 				// on the code host.
 				c := changesets[0]
-				ct.SetChangesetPublished(t, ctx, store, c, "80022", specOpts.headRef)
+				ct.SetChangesetPublished(t, ctx, store, c, "80022", specOpts.HeadRef)
 
 				assertions := ct.ChangesetAssertions{
 					Repo:             c.RepoID,
@@ -928,7 +928,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 					OwnedByCampaign:  campaign.ID,
 					ReconcilerState:  campaigns.ReconcilerStateCompleted,
 					PublicationState: campaigns.ChangesetPublicationStatePublished,
-					DiffStat:         testChangsetSpecDiffStat,
+					DiffStat:         ct.TestChangsetSpecDiffStat,
 				}
 				ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
@@ -963,8 +963,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// re-attached.
 				campaignSpec3 := createCampaignSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID)
 
-				specOpts.campaignSpec = campaignSpec3.ID
-				spec2 := createChangesetSpec(t, ctx, store, specOpts)
+				specOpts.CampaignSpec = campaignSpec3.ID
+				spec2 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 				_, changesets = applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 1)
 
@@ -990,19 +990,19 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 				campaignSpec1 := createCampaignSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID)
 
-				specOpts := testSpecOpts{
-					user:         admin.ID,
-					repo:         repos[0].ID,
-					campaignSpec: campaignSpec1.ID,
-					headRef:      "refs/heads/detached-reattached-2",
+				specOpts := ct.TestSpecOpts{
+					User:         admin.ID,
+					Repo:         repos[0].ID,
+					CampaignSpec: campaignSpec1.ID,
+					HeadRef:      "refs/heads/detached-reattached-2",
 				}
-				spec1 := createChangesetSpec(t, ctx, store, specOpts)
+				spec1 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 				// STEP 1: We apply the spec and expect 1 changeset.
 				campaign, changesets := applyAndListChangesets(adminCtx, t, svc, campaignSpec1.RandID, 1)
 
 				c := changesets[0]
-				ct.SetChangesetPublished(t, ctx, store, c, "449955", specOpts.headRef)
+				ct.SetChangesetPublished(t, ctx, store, c, "449955", specOpts.HeadRef)
 
 				assertions := ct.ChangesetAssertions{
 					Repo:             c.RepoID,
@@ -1013,7 +1013,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 					OwnedByCampaign:  campaign.ID,
 					ReconcilerState:  campaigns.ReconcilerStateCompleted,
 					PublicationState: campaigns.ChangesetPublicationStatePublished,
-					DiffStat:         testChangsetSpecDiffStat,
+					DiffStat:         ct.TestChangsetSpecDiffStat,
 				}
 				ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
@@ -1033,8 +1033,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// re-attached.
 				campaignSpec3 := createCampaignSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID)
 
-				specOpts.campaignSpec = campaignSpec3.ID
-				spec2 := createChangesetSpec(t, ctx, store, specOpts)
+				specOpts.CampaignSpec = campaignSpec3.ID
+				spec2 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 				campaign, changesets = applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 1)
 

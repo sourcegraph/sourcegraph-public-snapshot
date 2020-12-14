@@ -1,14 +1,17 @@
 package testing
 
 import (
-	"database/sql"
 	"testing"
+
+	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
-func InsertTestOrg(t *testing.T, db *sql.DB) (orgID int32) {
+func InsertTestOrg(t *testing.T, name string) (orgID int32) {
 	t.Helper()
 
-	err := db.QueryRow("INSERT INTO orgs (name) VALUES ('bbs-org') RETURNING id").Scan(&orgID)
+	q := sqlf.Sprintf("INSERT INTO orgs (name) VALUES (%s) RETURNING id", name)
+	err := dbconn.Global.QueryRow(q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&orgID)
 	if err != nil {
 		t.Fatal(err)
 	}

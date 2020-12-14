@@ -11,8 +11,6 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
@@ -470,17 +468,11 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 	})
 }
 
-func TestUserDeleteCascades(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock ct.Clock) {
+	orgID := ct.InsertTestOrg(t, "user-delete-cascades")
+	user := ct.CreateTestUser(t, false)
 
-	dbtesting.SetupGlobalTestDB(t)
-
-	orgID := ct.InsertTestOrg(t, dbconn.Global)
-	user := createTestUser(t)
-
-	t.Run("user delete", storeTest(dbconn.Global, func(t *testing.T, ctx context.Context, store *Store, rs repos.Store, clock ct.Clock) {
+	t.Run("User delete", func(t *testing.T) {
 		// Set up two campaigns and specs: one in the user's namespace (which
 		// should be deleted when the user is hard deleted), and one that is
 		// merely created by the user (which should remain).
@@ -488,7 +480,7 @@ func TestUserDeleteCascades(t *testing.T) {
 			NamespaceUserID: user.ID,
 			UserID:          user.ID,
 		}
-		if err := store.CreateCampaignSpec(ctx, ownedSpec); err != nil {
+		if err := s.CreateCampaignSpec(ctx, ownedSpec); err != nil {
 			t.Fatal(err)
 		}
 
@@ -496,7 +488,7 @@ func TestUserDeleteCascades(t *testing.T) {
 			NamespaceOrgID: orgID,
 			UserID:         user.ID,
 		}
-		if err := store.CreateCampaignSpec(ctx, unownedSpec); err != nil {
+		if err := s.CreateCampaignSpec(ctx, unownedSpec); err != nil {
 			t.Fatal(err)
 		}
 
@@ -508,7 +500,7 @@ func TestUserDeleteCascades(t *testing.T) {
 			LastAppliedAt:    clock.Now(),
 			CampaignSpecID:   ownedSpec.ID,
 		}
-		if err := store.CreateCampaign(ctx, ownedCampaign); err != nil {
+		if err := s.CreateCampaign(ctx, ownedCampaign); err != nil {
 			t.Fatal(err)
 		}
 
@@ -520,12 +512,12 @@ func TestUserDeleteCascades(t *testing.T) {
 			LastAppliedAt:    clock.Now(),
 			CampaignSpecID:   ownedSpec.ID,
 		}
-		if err := store.CreateCampaign(ctx, unownedCampaign); err != nil {
+		if err := s.CreateCampaign(ctx, unownedCampaign); err != nil {
 			t.Fatal(err)
 		}
 
 		// Now we'll try actually deleting the user.
-		if err := store.Store.Exec(ctx, sqlf.Sprintf(
+		if err := s.Exec(ctx, sqlf.Sprintf(
 			"DELETE FROM users WHERE id = %s",
 			user.ID,
 		)); err != nil {
@@ -534,7 +526,7 @@ func TestUserDeleteCascades(t *testing.T) {
 
 		// We should now have the unowned campaign still be valid, but the
 		// owned campaign should have gone away.
-		cs, _, err := store.ListCampaigns(ctx, ListCampaignsOpts{})
+		cs, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -547,12 +539,12 @@ func TestUserDeleteCascades(t *testing.T) {
 
 		// Both campaign specs should still be in place, at least until we add
 		// a foreign key constraint to campaign_specs.namespace_user_id.
-		specs, _, err := store.ListCampaignSpecs(ctx, ListCampaignSpecsOpts{})
+		specs, _, err := s.ListCampaignSpecs(ctx, ListCampaignSpecsOpts{})
 		if err != nil {
 			t.Fatal(err)
 		}
 		if len(specs) != 2 {
 			t.Errorf("unexpected number of campaign specs: have %d; want %d", len(specs), 2)
 		}
-	}))
+	})
 }
