@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
@@ -71,6 +74,57 @@ func TestGetDumpByID(t *testing.T) {
 	}
 }
 
+func TestOldestDumpForRepository(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
+
+	// No dumps exist initially
+	if _, exists, err := store.OldestDumpForRepository(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting dump: %s", err)
+	} else if exists {
+		t.Fatal("unexpected record")
+	}
+
+	n := 20
+	baseTime := time.Unix(1587396557, 0).UTC()
+
+	var uploads []Upload
+	for i := 0; i < n; i++ {
+		uploads = append(uploads, Upload{
+			ID:             i,
+			Commit:         makeCommit(i),
+			RepositoryID:   50,
+			UploadedAt:     baseTime.Add(time.Minute * -time.Duration(i)),
+			State:          "completed",
+			RepositoryName: "n-50",
+			Indexer:        "lsif-go",
+		})
+	}
+	insertUploads(t, dbconn.Global, uploads...)
+
+	if dump, exists, err := store.OldestDumpForRepository(context.Background(), 50); err != nil {
+		t.Fatalf("unexpected error getting dump: %s", err)
+	} else if !exists {
+		t.Fatal("expected record to exist")
+	} else {
+		expectedDump := Dump{
+			ID:             n - 1,
+			Commit:         makeCommit(n - 1),
+			RepositoryID:   50,
+			UploadedAt:     baseTime.Add(time.Minute * -time.Duration(n-1)),
+			State:          "completed",
+			RepositoryName: "n-50",
+			Indexer:        "lsif-go",
+		}
+		if diff := cmp.Diff(expectedDump, dump); diff != "" {
+			t.Errorf("unexpected dump (-want +got):\n%s", diff)
+		}
+	}
+}
+
 func TestFindClosestDumps(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -91,32 +145,32 @@ func TestFindClosestDumps(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(1)},
-		makeCommit(4): {makeCommit(3)},
-		makeCommit(5): {makeCommit(2), makeCommit(4)},
-		makeCommit(6): {makeCommit(5)},
-		makeCommit(7): {makeCommit(6)},
-		makeCommit(8): {makeCommit(6)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(8), makeCommit(6)}, " "),
+		strings.Join([]string{makeCommit(7), makeCommit(6)}, " "),
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(2), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
-	visibleUploads, err := calculateVisibleUploads(graph, toUploadMeta(uploads))
-	if err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	visibleUploads := map[string][]commitgraph.UploadMeta{}
+	for v := range commitgraph.CalculateVisibleUploads(graph, toCommitGraphView(uploads)) {
+		visibleUploads[v.Commit] = v.Uploads
 	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
-	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}},
-		makeCommit(2): {{UploadID: 1, Distance: 1}},
-		makeCommit(3): {{UploadID: 2, Distance: 0}},
-		makeCommit(4): {{UploadID: 2, Distance: 1}},
-		makeCommit(5): {{UploadID: 1, Distance: 2}},
-		makeCommit(6): {{UploadID: 3, Distance: 1}},
-		makeCommit(7): {{UploadID: 3, Distance: 0}},
-		makeCommit(8): {{UploadID: 1, Distance: 4}},
+	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
+		makeCommit(1): {{UploadID: 1, Flags: 0}},
+		makeCommit(2): {{UploadID: 1, Flags: 1}},
+		makeCommit(3): {{UploadID: 2, Flags: 0}},
+		makeCommit(4): {{UploadID: 2, Flags: 1}},
+		makeCommit(5): {{UploadID: 1, Flags: 2}},
+		makeCommit(6): {{UploadID: 3, Flags: 1}},
+		makeCommit(7): {{UploadID: 3, Flags: 0}},
+		makeCommit(8): {{UploadID: 1, Flags: 4}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads), UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
@@ -154,27 +208,27 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(2)},
-		makeCommit(4): {makeCommit(1)},
-		makeCommit(5): {makeCommit(4)},
-		makeCommit(6): {makeCommit(5)},
-		makeCommit(7): {makeCommit(4)},
-		makeCommit(8): {makeCommit(7)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(8), makeCommit(7)}, " "),
+		strings.Join([]string{makeCommit(7), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
-	visibleUploads, err := calculateVisibleUploads(graph, toUploadMeta(uploads))
-	if err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	visibleUploads := map[string][]commitgraph.UploadMeta{}
+	for v := range commitgraph.CalculateVisibleUploads(graph, toCommitGraphView(uploads)) {
+		visibleUploads[v.Commit] = v.Uploads
 	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
-	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 1}},
-		makeCommit(2): {{UploadID: 1, Distance: 0}},
-		makeCommit(3): {{UploadID: 1, Distance: 1}},
+	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
+		makeCommit(1): {{UploadID: 1, Flags: 1}},
+		makeCommit(2): {{UploadID: 1, Flags: 0}},
+		makeCommit(3): {{UploadID: 1, Flags: 1}},
 		makeCommit(4): nil,
 		makeCommit(5): nil,
 		makeCommit(6): nil,
@@ -215,20 +269,20 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
-	visibleUploads, err := calculateVisibleUploads(graph, toUploadMeta(uploads))
-	if err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	visibleUploads := map[string][]commitgraph.UploadMeta{}
+	for v := range commitgraph.CalculateVisibleUploads(graph, toCommitGraphView(uploads)) {
+		visibleUploads[v.Commit] = v.Uploads
 	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
-	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 1}, {UploadID: 2, Distance: 1}},
-		makeCommit(2): {{UploadID: 1, Distance: 0}, {UploadID: 2, Distance: 0}},
+	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
+		makeCommit(1): {{UploadID: 1, Flags: 1}, {UploadID: 2, Flags: 1}},
+		makeCommit(2): {{UploadID: 1, Flags: 0}, {UploadID: 2, Flags: 0}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads), UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
@@ -283,28 +337,28 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(2)},
-		makeCommit(4): {makeCommit(2)},
-		makeCommit(5): {makeCommit(3), makeCommit(4)},
-		makeCommit(6): {makeCommit(5)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(3), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
-	visibleUploads, err := calculateVisibleUploads(graph, toUploadMeta(uploads))
-	if err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	visibleUploads := map[string][]commitgraph.UploadMeta{}
+	for v := range commitgraph.CalculateVisibleUploads(graph, toCommitGraphView(uploads)) {
+		visibleUploads[v.Commit] = v.Uploads
 	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
-	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}, {UploadID: 2, Distance: 0}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 1}, {UploadID: 5, Distance: 1}},
-		makeCommit(2): {{UploadID: 1, Distance: 1}, {UploadID: 2, Distance: 1}, {UploadID: 3, Distance: 0}, {UploadID: 4, Distance: 0}, {UploadID: 5, Distance: 0}},
-		makeCommit(3): {{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 2}, {UploadID: 4, Distance: 1}, {UploadID: 5, Distance: 1}, {UploadID: 6, Distance: 0}},
-		makeCommit(4): {{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 2}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 1}, {UploadID: 7, Distance: 0}},
-		makeCommit(5): {{UploadID: 1, Distance: 3}, {UploadID: 2, Distance: 3}, {UploadID: 6, Distance: 1}, {UploadID: 7, Distance: 1}, {UploadID: 8, Distance: 0}},
-		makeCommit(6): {{UploadID: 1, Distance: 4}, {UploadID: 2, Distance: 4}, {UploadID: 7, Distance: 2}, {UploadID: 8, Distance: 1}, {UploadID: 9, Distance: 0}},
+	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
+		makeCommit(1): {{UploadID: 1, Flags: 0}, {UploadID: 2, Flags: 0}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 1}, {UploadID: 5, Flags: 1}},
+		makeCommit(2): {{UploadID: 1, Flags: 1}, {UploadID: 2, Flags: 1}, {UploadID: 3, Flags: 0}, {UploadID: 4, Flags: 0}, {UploadID: 5, Flags: 0}},
+		makeCommit(3): {{UploadID: 1, Flags: 2}, {UploadID: 2, Flags: 2}, {UploadID: 4, Flags: 1}, {UploadID: 5, Flags: 1}, {UploadID: 6, Flags: 0}},
+		makeCommit(4): {{UploadID: 1, Flags: 2}, {UploadID: 2, Flags: 2}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 1}, {UploadID: 7, Flags: 0}},
+		makeCommit(5): {{UploadID: 1, Flags: 3}, {UploadID: 2, Flags: 3}, {UploadID: 6, Flags: 1}, {UploadID: 7, Flags: 1}, {UploadID: 8, Flags: 0}},
+		makeCommit(6): {{UploadID: 1, Flags: 4}, {UploadID: 2, Flags: 4}, {UploadID: 7, Flags: 2}, {UploadID: 8, Flags: 1}, {UploadID: 9, Flags: 0}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads), UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
@@ -342,40 +396,40 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(2)},
-		makeCommit(4): {makeCommit(3)},
-		makeCommit(5): {makeCommit(4)},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
-	visibleUploads, err := calculateVisibleUploads(graph, toUploadMeta(uploads))
-	if err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	visibleUploads := map[string][]commitgraph.UploadMeta{}
+	for v := range commitgraph.CalculateVisibleUploads(graph, toCommitGraphView(uploads)) {
+		visibleUploads[v.Commit] = v.Uploads
 	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
-	expectedVisibleUploads := map[string][]UploadMeta{
+	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
 		makeCommit(1): {
-			{UploadID: 1, Distance: 0}, {UploadID: 2, Distance: 1}, {UploadID: 3, Distance: 2}, {UploadID: 4, Distance: 3},
-			{UploadID: 5, Distance: 0}, {UploadID: 6, Distance: 1}, {UploadID: 7, Distance: 2}, {UploadID: 8, Distance: 3},
+			{UploadID: 1, Flags: 0}, {UploadID: 2, Flags: 1}, {UploadID: 3, Flags: 2}, {UploadID: 4, Flags: 3},
+			{UploadID: 5, Flags: 0}, {UploadID: 6, Flags: 1}, {UploadID: 7, Flags: 2}, {UploadID: 8, Flags: 3},
 		},
 		makeCommit(2): {
-			{UploadID: 1, Distance: 1}, {UploadID: 2, Distance: 0}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 2},
-			{UploadID: 5, Distance: 1}, {UploadID: 6, Distance: 0}, {UploadID: 7, Distance: 1}, {UploadID: 8, Distance: 2},
+			{UploadID: 1, Flags: 1}, {UploadID: 2, Flags: 0}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 2},
+			{UploadID: 5, Flags: 1}, {UploadID: 6, Flags: 0}, {UploadID: 7, Flags: 1}, {UploadID: 8, Flags: 2},
 		},
 		makeCommit(3): {
-			{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 1}, {UploadID: 3, Distance: 0}, {UploadID: 4, Distance: 1},
-			{UploadID: 5, Distance: 2}, {UploadID: 6, Distance: 1}, {UploadID: 7, Distance: 0}, {UploadID: 8, Distance: 1},
+			{UploadID: 1, Flags: 2}, {UploadID: 2, Flags: 1}, {UploadID: 3, Flags: 0}, {UploadID: 4, Flags: 1},
+			{UploadID: 5, Flags: 2}, {UploadID: 6, Flags: 1}, {UploadID: 7, Flags: 0}, {UploadID: 8, Flags: 1},
 		},
 		makeCommit(4): {
-			{UploadID: 1, Distance: 3}, {UploadID: 2, Distance: 2}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 0},
-			{UploadID: 5, Distance: 3}, {UploadID: 6, Distance: 2}, {UploadID: 7, Distance: 1}, {UploadID: 8, Distance: 0},
+			{UploadID: 1, Flags: 3}, {UploadID: 2, Flags: 2}, {UploadID: 3, Flags: 1}, {UploadID: 4, Flags: 0},
+			{UploadID: 5, Flags: 3}, {UploadID: 6, Flags: 2}, {UploadID: 7, Flags: 1}, {UploadID: 8, Flags: 0},
 		},
 		makeCommit(5): {
-			{UploadID: 1, Distance: 4}, {UploadID: 2, Distance: 3}, {UploadID: 3, Distance: 2}, {UploadID: 4, Distance: 1},
-			{UploadID: 5, Distance: 4}, {UploadID: 6, Distance: 3}, {UploadID: 7, Distance: 2}, {UploadID: 8, Distance: 1},
+			{UploadID: 1, Flags: 4}, {UploadID: 2, Flags: 3}, {UploadID: 3, Flags: 2}, {UploadID: 4, Flags: 1},
+			{UploadID: 5, Flags: 4}, {UploadID: 6, Flags: 3}, {UploadID: 7, Flags: 2}, {UploadID: 8, Flags: 1},
 		},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads), UploadMetaComparer); diff != "" {
@@ -410,18 +464,18 @@ func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	graph := map[string][]string{
-		makeCommit(1): {},
-	}
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
-	visibleUploads, err := calculateVisibleUploads(graph, toUploadMeta(uploads))
-	if err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	visibleUploads := map[string][]commitgraph.UploadMeta{}
+	for v := range commitgraph.CalculateVisibleUploads(graph, toCommitGraphView(uploads)) {
+		visibleUploads[v.Commit] = v.Uploads
 	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
-	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}},
+	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
+		makeCommit(1): {{UploadID: 1}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads), UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
@@ -455,37 +509,37 @@ func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 	}
 	insertUploads(t, dbconn.Global, uploads...)
 
-	currentGraph := map[string][]string{
-		makeCommit(1): {},
-		makeCommit(2): {makeCommit(1)},
-		makeCommit(3): {makeCommit(2)},
-		makeCommit(5): {makeCommit(1)},
-		makeCommit(6): {makeCommit(5)},
-	}
+	currentGraph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
 
-	visibleUploads, err := calculateVisibleUploads(currentGraph, toUploadMeta(uploads))
-	if err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	visibleUploads := map[string][]commitgraph.UploadMeta{}
+	for v := range commitgraph.CalculateVisibleUploads(currentGraph, toCommitGraphView(uploads)) {
+		visibleUploads[v.Commit] = v.Uploads
 	}
 	insertNearestUploads(t, dbconn.Global, 50, visibleUploads)
 
-	expectedVisibleUploads := map[string][]UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}},
-		makeCommit(2): {{UploadID: 1, Distance: 1}},
-		makeCommit(3): {{UploadID: 1, Distance: 2}},
-		makeCommit(5): {{UploadID: 2, Distance: 0}},
-		makeCommit(6): {{UploadID: 2, Distance: 1}},
+	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
+		makeCommit(1): {{UploadID: 1, Flags: 0}},
+		makeCommit(2): {{UploadID: 1, Flags: 1}},
+		makeCommit(3): {{UploadID: 1, Flags: 2}},
+		makeCommit(5): {{UploadID: 2, Flags: 0}},
+		makeCommit(6): {{UploadID: 2, Flags: 1}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads), UploadMetaComparer); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
-	graphFragment := map[string][]string{
-		makeCommit(3): {},
-		makeCommit(6): {},
-		makeCommit(4): {makeCommit(3)},
-		makeCommit(7): {makeCommit(4), makeCommit(6)},
-	}
+	graphFragment := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(7), makeCommit(4), makeCommit(6)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
+		strings.Join([]string{makeCommit(6)}, " "),
+		strings.Join([]string{makeCommit(3)}, " "),
+	})
 
 	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
 		// Note: Can't query anything outside of the graph fragment
@@ -564,7 +618,7 @@ type FindClosestDumpsTestCase struct {
 	file                string
 	rootMustEnclosePath bool
 	indexer             string
-	graph               map[string][]string
+	graph               *gitserver.CommitGraph
 	graphFragmentOnly   bool
 	anyOfIDs            []int
 	allOfIDs            []int

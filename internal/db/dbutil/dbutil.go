@@ -104,7 +104,9 @@ func NewDB(dsn, app string) (*sql.DB, error) {
 		return nil, errors.Wrap(err, "failed to connect to database")
 	}
 
-	if err := db.Ping(); err != nil {
+	// On sourcegraph.com we can sometimes startup faster than the
+	// cloud-sql-proxy.
+	if err := pingDbWithRetry(db, 10); err != nil {
 		return nil, errors.Wrap(err, "failed to ping database")
 	}
 
@@ -113,6 +115,22 @@ func NewDB(dsn, app string) (*sql.DB, error) {
 	db.SetConnMaxLifetime(time.Minute)
 
 	return db, nil
+}
+
+func pingDbWithRetry(db *sql.DB, attempts int) error {
+	const maxWait = time.Second
+	wait := 50 * time.Millisecond
+	for i := 0; i < attempts-1; i++ {
+		if err := db.Ping(); err == nil {
+			return nil
+		}
+		time.Sleep(wait)
+		wait *= 2
+		if wait > maxWait {
+			wait = maxWait
+		}
+	}
+	return db.Ping()
 }
 
 // databases configures the migrations we want based on a database name. This

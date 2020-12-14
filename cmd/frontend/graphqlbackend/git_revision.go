@@ -21,7 +21,7 @@ func (r *gitRevSpecExpr) Object(ctx context.Context) (*gitObject, error) {
 	if err != nil {
 		return nil, err
 	}
-	oid, err := git.ResolveRevision(ctx, *cachedRepo, nil, r.expr, git.ResolveRevisionOptions{})
+	oid, err := git.ResolveRevision(ctx, *cachedRepo, r.expr, git.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}

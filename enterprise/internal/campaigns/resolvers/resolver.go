@@ -13,6 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/search"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -27,13 +29,13 @@ import (
 
 // Resolver is the GraphQL resolver of all things related to Campaigns.
 type Resolver struct {
-	store       *ee.Store
+	store       *store.Store
 	httpFactory *httpcli.Factory
 }
 
 // NewResolver returns a new Resolver whose store uses the given db
 func NewResolver(db *sql.DB) graphqlbackend.CampaignsResolver {
-	return &Resolver{store: ee.NewStore(db)}
+	return &Resolver{store: store.New(db)}
 }
 
 func campaignsEnabled(ctx context.Context) error {
@@ -81,9 +83,9 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, nil
 	}
 
-	changeset, err := r.store.GetChangeset(ctx, ee.GetChangesetOpts{ID: changesetID})
+	changeset, err := r.store.GetChangeset(ctx, store.GetChangesetOpts{ID: changesetID})
 	if err != nil {
-		if err == ee.ErrNoResults {
+		if err == store.ErrNoResults {
 			return nil, nil
 		}
 		return nil, err
@@ -113,9 +115,9 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 		return nil, nil
 	}
 
-	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
+	campaign, err := r.store.GetCampaign(ctx, store.GetCampaignOpts{ID: campaignID})
 	if err != nil {
-		if err == ee.ErrNoResults {
+		if err == store.ErrNoResults {
 			return nil, nil
 		}
 		return nil, err
@@ -129,7 +131,7 @@ func (r *Resolver) Campaign(ctx context.Context, args *graphqlbackend.CampaignAr
 		return nil, err
 	}
 
-	opts := ee.GetCampaignOpts{Name: args.Name}
+	opts := store.GetCampaignOpts{Name: args.Name}
 
 	err := graphqlbackend.UnmarshalNamespaceID(graphql.ID(args.Namespace), &opts.NamespaceUserID, &opts.NamespaceOrgID)
 	if err != nil {
@@ -138,7 +140,7 @@ func (r *Resolver) Campaign(ctx context.Context, args *graphqlbackend.CampaignAr
 
 	campaign, err := r.store.GetCampaign(ctx, opts)
 	if err != nil {
-		if err == ee.ErrNoResults {
+		if err == store.ErrNoResults {
 			return nil, nil
 		}
 		return nil, err
@@ -161,10 +163,10 @@ func (r *Resolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (graphql
 		return nil, nil
 	}
 
-	opts := ee.GetCampaignSpecOpts{RandID: campaignSpecRandID}
+	opts := store.GetCampaignSpecOpts{RandID: campaignSpecRandID}
 	campaignSpec, err := r.store.GetCampaignSpec(ctx, opts)
 	if err != nil {
-		if err == ee.ErrNoResults {
+		if err == store.ErrNoResults {
 			return nil, nil
 		}
 		return nil, err
@@ -187,10 +189,10 @@ func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 		return nil, nil
 	}
 
-	opts := ee.GetChangesetSpecOpts{RandID: changesetSpecRandID}
+	opts := store.GetChangesetSpecOpts{RandID: changesetSpecRandID}
 	changesetSpec, err := r.store.GetChangesetSpec(ctx, opts)
 	if err != nil {
-		if err == ee.ErrNoResults {
+		if err == store.ErrNoResults {
 			return nil, nil
 		}
 		return nil, err
@@ -490,7 +492,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		return nil, err
 	}
 
-	opts := ee.ListCampaignsOpts{}
+	opts := store.ListCampaignsOpts{}
 
 	state, err := parseCampaignState(args.State)
 	if err != nil {
@@ -567,7 +569,7 @@ func (r *Resolver) CampaignsCodeHosts(ctx context.Context, args *graphqlbackend.
 // If the args do not include a filter that would reveal sensitive information
 // about a changeset the user doesn't have access to, the second return value
 // is false.
-func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaignID int64) (opts ee.ListChangesetsOpts, optsSafe bool, err error) {
+func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaignID int64) (opts store.ListChangesetsOpts, optsSafe bool, err error) {
 	if args == nil {
 		return opts, true, nil
 	}
@@ -641,6 +643,17 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaign
 		opts.OwnedByCampaignID = campaignID
 		opts.PublicationState = &published
 	}
+	if args.Search != nil {
+		ts, err := search.ParseChangesetSearch(*args.Search)
+		if err != nil {
+			return opts, false, errors.Wrap(err, "parsing search")
+		}
+		opts.TextSearch = ts.TextSearch
+		// Since we search for the repository name in text searches, the
+		// presence or absence of results may leak information about hidden
+		// repositories.
+		safe = false
+	}
 
 	return opts, safe, nil
 }
@@ -713,10 +726,18 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 		return nil, err
 	}
 
-	// Check user is authenticated.
-	user := actor.FromContext(ctx)
-	if !user.IsAuthenticated() {
-		return nil, backend.ErrNotAuthenticated
+	userID, err := graphqlbackend.UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	if userID == 0 {
+		return nil, ErrIDIsZero{}
+	}
+
+	// 🚨 SECURITY: Check that the requesting user can create the credential.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+		return nil, err
 	}
 
 	// Need to validate externalServiceKind, otherwise this'll panic.
@@ -735,7 +756,7 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 		Domain:              db.UserCredentialDomainCampaigns,
 		ExternalServiceID:   args.ExternalServiceURL,
 		ExternalServiceType: extsvc.KindToType(kind),
-		UserID:              user.UID,
+		UserID:              userID,
 	}
 
 	// Throw error documented in schema.graphql.

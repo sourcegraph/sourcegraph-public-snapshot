@@ -97,14 +97,14 @@ async function webpackDevelopmentServer() {
 /**
  * Builds everything.
  */
-const build = gulp.series(gulp.parallel(schema, graphQlOperations, graphQlSchema), gulp.parallel(webpack))
+const build = gulp.series(gulp.parallel(schema, graphQlOperations, graphQlSchema), webpack)
 
 /**
  * Starts a development server, watches everything and rebuilds on file changes.
  */
 const development = gulp.series(
   // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
-  gulp.parallel(schema, graphQlSchema),
+  gulp.parallel(schema, graphQlOperations, graphQlSchema),
   gulp.parallel(watchSchema, watchGraphQlSchema, watchGraphQlOperations, webpackDevelopmentServer)
 )
 
@@ -114,7 +114,7 @@ const development = gulp.series(
  */
 const watch = gulp.series(
   // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
-  gulp.parallel(schema, graphQlSchema),
+  gulp.parallel(schema, graphQlOperations, graphQlSchema),
   gulp.parallel(watchSchema, watchGraphQlSchema, watchGraphQlOperations, watchWebpack)
 )
 

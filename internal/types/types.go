@@ -14,6 +14,8 @@ import (
 	"github.com/goware/urlx"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/xeipuuv/gojsonschema"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -23,43 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/xeipuuv/gojsonschema"
 )
-
-// RepoFields are lazy loaded data fields on a Repo (from the DB).
-type RepoFields struct {
-	// URI is the full name for this repository (e.g.,
-	// "github.com/user/repo"). See the documentation for the Name field.
-	URI string
-
-	// Description is a brief description of the repository.
-	Description string
-
-	// Fork is whether this repository is a fork of another repository.
-	Fork bool
-
-	// Archived is whether this repository has been archived.
-	Archived bool
-
-	// Cloned is whether this repository is cloned.
-	Cloned bool
-
-	// CreatedAt indicates when the repository record was created.
-	CreatedAt time.Time
-
-	// UpdatedAt is when this repository's metadata was last updated on Sourcegraph.
-	UpdatedAt time.Time
-
-	// DeletedAt is when this repository was soft-deleted from Sourcegraph.
-	DeletedAt time.Time
-
-	// Metadata contains the raw source code host JSON metadata.
-	Metadata interface{}
-
-	// Sources identifies all the repo sources this Repo belongs to.
-	// The key is a URN created by extsvc.URN
-	Sources map[string]*SourceInfo
-}
 
 // A SourceInfo represents a source a Repo belongs to (such as an external service).
 type SourceInfo struct {
@@ -87,22 +53,45 @@ func (i SourceInfo) ExternalServiceID() int64 {
 type Repo struct {
 	// ID is the unique numeric ID for this repository.
 	ID api.RepoID
-	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
-	// service itself).
-	ExternalRepo api.ExternalRepoSpec
 	// Name is the name for this repository (e.g., "github.com/user/repo"). It
 	// is the same as URI, unless the user configures a non-default
 	// repositoryPathPattern.
 	//
 	// Previously, this was called RepoURI.
 	Name api.RepoName
-
-	// Private is whether the repository is private on the code host.
+	// URI is the full name for this repository (e.g.,
+	// "github.com/user/repo"). See the documentation for the Name field.
+	URI string
+	// Description is a brief description of the repository.
+	Description string
+	// Fork is whether this repository is a fork of another repository.
+	Fork bool
+	// Archived is whether the repository has been archived.
+	Archived bool
+	// Private is whether the repository is private.
 	Private bool
+	// Cloned is whether the repository is cloned.
+	Cloned bool
+	// CreatedAt is when this repository was created on Sourcegraph.
+	CreatedAt time.Time
+	// UpdatedAt is when this repository's metadata was last updated on Sourcegraph.
+	UpdatedAt time.Time
+	// DeletedAt is when this repository was soft-deleted from Sourcegraph.
+	DeletedAt time.Time
+	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
+	// service itself).
+	ExternalRepo api.ExternalRepoSpec
+	// Sources identifies all the repo sources this Repo belongs to.
+	// The key is a URN created by extsvc.URN
+	Sources map[string]*SourceInfo
+	// Metadata contains the raw source code host JSON metadata.
+	Metadata interface{}
+}
 
-	// RepoFields contains fields that are loaded from the DB only when necessary.
-	// This is to reduce memory usage when loading thousands of repos.
-	*RepoFields
+// RepoName represents a source code repository name and its ID.
+type RepoName struct {
+	ID   api.RepoID
+	Name api.RepoName
 }
 
 // CloneURLs returns all the clone URLs this repo is clonable from.
@@ -117,7 +106,7 @@ func (r *Repo) CloneURLs() []string {
 }
 
 // IsDeleted returns true if the repo is deleted.
-func (r *Repo) IsDeleted() bool { return r.RepoFields != nil && !r.DeletedAt.IsZero() }
+func (r *Repo) IsDeleted() bool { return !r.DeletedAt.IsZero() }
 
 // ExternalServiceIDs returns the IDs of the external services this
 // repo belongs to.
@@ -136,50 +125,17 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 		r.Name, modified = n.Name, true
 	}
 
-	if n.ExternalRepo != (api.ExternalRepoSpec{}) &&
-		!r.ExternalRepo.Equal(&n.ExternalRepo) {
-		r.ExternalRepo, modified = n.ExternalRepo, true
-	}
-
-	if r.Private != n.Private {
-		r.Private, modified = n.Private, true
-	}
-
-	copyMetadata := func() {
-		// As a special case, we clear out the value of ViewerPermission for GitHub repos as
-		// the value is dependent on the token used to fetch it. We don't want to store this in the DB as it will
-		// flip flop as we fetch the same repo from different external services.
-		switch x := n.Metadata.(type) {
-		case *github.Repository:
-			cp := *x
-			cp.ViewerPermission = ""
-			n = n.With(func(clone *Repo) {
-				// Repo.Clone does not currently clone metadata for any types as they could contain hard to clone
-				// items such as maps. However, we know that copying github.Repository is safe as it only contains values.
-				clone.Metadata = &cp
-			})
-		}
-	}
-
-	if r.RepoFields == nil {
-		if n.RepoFields == nil {
-			return modified
-		}
-		copyMetadata()
-		c := n.Clone()
-		r.RepoFields, modified = c.RepoFields, true
-		return
-	} else if n.RepoFields == nil {
-		r.RepoFields, modified = nil, true
-		return
-	}
-
 	if r.URI != n.URI {
 		r.URI, modified = n.URI, true
 	}
 
 	if r.Description != n.Description {
 		r.Description, modified = n.Description, true
+	}
+
+	if n.ExternalRepo != (api.ExternalRepoSpec{}) &&
+		!r.ExternalRepo.Equal(&n.ExternalRepo) {
+		r.ExternalRepo, modified = n.ExternalRepo, true
 	}
 
 	if r.Archived != n.Archived {
@@ -190,11 +146,27 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 		r.Fork, modified = n.Fork, true
 	}
 
+	if r.Private != n.Private {
+		r.Private, modified = n.Private, true
+	}
+
 	if !reflect.DeepEqual(r.Sources, n.Sources) {
 		r.Sources, modified = n.Sources, true
 	}
 
-	copyMetadata()
+	// As a special case, we clear out the value of ViewerPermission for GitHub repos as
+	// the value is dependent on the token used to fetch it. We don't want to store this in the DB as it will
+	// flip flop as we fetch the same repo from different external services.
+	switch x := n.Metadata.(type) {
+	case *github.Repository:
+		cp := *x
+		cp.ViewerPermission = ""
+		n = n.With(func(clone *Repo) {
+			// Repo.Clone does not currently clone metadata for any types as they could contain hard to clone
+			// items such as maps. However, we know that copying github.Repository is safe as it only contains values.
+			clone.Metadata = &cp
+		})
+	}
 
 	if !reflect.DeepEqual(r.Metadata, n.Metadata) {
 		r.Metadata, modified = n.Metadata, true
@@ -209,14 +181,10 @@ func (r *Repo) Clone() *Repo {
 		return nil
 	}
 	clone := *r
-	if r.RepoFields != nil {
-		repoFields := *r.RepoFields
-		clone.RepoFields = &repoFields
-		if r.Sources != nil {
-			clone.Sources = make(map[string]*SourceInfo, len(r.Sources))
-			for k, v := range r.Sources {
-				clone.Sources[k] = v
-			}
+	if r.Sources != nil {
+		clone.Sources = make(map[string]*SourceInfo, len(r.Sources))
+		for k, v := range r.Sources {
+			clone.Sources[k] = v
 		}
 	}
 	return &clone
@@ -265,14 +233,6 @@ func (r *Repo) Less(s *Repo) bool {
 		return cmp == -1
 	}
 
-	if r.RepoFields == nil {
-		return s.RepoFields != nil && len(s.RepoFields.Sources) > 0
-	}
-
-	if s.RepoFields == nil {
-		return len(r.RepoFields.Sources) > 0
-	}
-
 	return sortedSliceLess(sourcesKeys(r.Sources), sourcesKeys(s.Sources))
 }
 
@@ -309,17 +269,9 @@ func sortedSliceLess(a, b []string) bool {
 // Repos is an utility type with convenience methods for operating on lists of Repos.
 type Repos []*Repo
 
-func (rs Repos) Len() int {
-	return len(rs)
-}
-
-func (rs Repos) Swap(i, j int) {
-	rs[i], rs[j] = rs[j], rs[i]
-}
-
-func (rs Repos) Less(i, j int) bool {
-	return rs[i].Less(rs[j])
-}
+func (rs Repos) Len() int           { return len(rs) }
+func (rs Repos) Less(i, j int) bool { return rs[i].Less(rs[j]) }
+func (rs Repos) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
 
 // IDs returns the list of ids from all Repos.
 func (rs Repos) IDs() []api.RepoID {
@@ -420,6 +372,12 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 		}
 	}
 	return fs
+}
+
+type CodeHostRepository struct {
+	Name       string
+	CodeHostID int64
+	Private    bool
 }
 
 // ExternalService is a connection to an external service.
@@ -593,9 +551,6 @@ func (e *ExternalService) excludeGitLabRepos(rs ...*Repo) error {
 		}
 
 		for _, r := range rs {
-			if r.RepoFields == nil {
-				continue
-			}
 			p, ok := r.Metadata.(*gitlab.Project)
 			if !ok {
 				continue
@@ -645,9 +600,6 @@ func (e *ExternalService) excludeBitbucketServerRepos(rs ...*Repo) error {
 		}
 
 		for _, r := range rs {
-			if r.RepoFields == nil {
-				continue
-			}
 			repo, ok := r.Metadata.(*bitbucketserver.Repo)
 			if !ok {
 				continue
@@ -699,9 +651,6 @@ func (e *ExternalService) excludeGitoliteRepos(rs ...*Repo) error {
 		}
 
 		for _, r := range rs {
-			if r.RepoFields == nil {
-				continue
-			}
 			repo, ok := r.Metadata.(*gitolite.Repo)
 			if ok && repo.Name != "" && !set[repo.Name] {
 				c.Exclude = append(c.Exclude, &schema.ExcludedGitoliteRepo{Name: repo.Name})
@@ -734,9 +683,6 @@ func (e *ExternalService) excludeGithubRepos(rs ...*Repo) error {
 		}
 
 		for _, r := range rs {
-			if r.RepoFields == nil {
-				continue
-			}
 			repo, ok := r.Metadata.(*github.Repository)
 			if !ok {
 				continue
@@ -786,9 +732,6 @@ func (e *ExternalService) excludeAWSCodeCommitRepos(rs ...*Repo) error {
 		}
 
 		for _, r := range rs {
-			if r.RepoFields == nil {
-				continue
-			}
 			repo, ok := r.Metadata.(*awscodecommit.Repository)
 			if !ok {
 				continue

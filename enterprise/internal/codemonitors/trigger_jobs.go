@@ -8,17 +8,22 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
+
+func (r *TriggerJobs) RecordID() int {
+	return r.Id
+}
 
 const enqueueTriggerQueryFmtStr = `
 WITH due AS (
     SELECT cm_queries.id as id
     FROM cm_queries INNER JOIN cm_monitors ON cm_queries.monitor = cm_monitors.id
     WHERE (cm_queries.next_run <= clock_timestamp() OR cm_queries.next_run IS NULL)
-	AND cm_monitors.enabled = true
+    AND cm_monitors.enabled = true
 ),
 busy AS (
     SELECT DISTINCT query as id FROM cm_trigger_jobs
@@ -26,7 +31,7 @@ busy AS (
     OR state = 'processing'
 )
 INSERT INTO cm_trigger_jobs (query)
-SELECT id from due EXCEPT SELECT id from busy
+SELECT id from due EXCEPT SELECT id from busy ORDER BY id
 `
 
 func (s *Store) EnqueueTriggerQueries(ctx context.Context) (err error) {
@@ -36,12 +41,13 @@ func (s *Store) EnqueueTriggerQueries(ctx context.Context) (err error) {
 const logSearchFmtStr = `
 UPDATE cm_trigger_jobs
 SET query_string = %s,
-	results = %s
+    results = %s,
+    num_results = %s
 WHERE id = %s
 `
 
-func (s *Store) LogSearch(ctx context.Context, queryString string, results bool, recordID int) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, results, recordID))
+func (s *Store) LogSearch(ctx context.Context, queryString string, numResults int, recordID int) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, numResults > 0, numResults, recordID))
 }
 
 const deleteObsoleteJobLogsFmtStr = `
@@ -56,8 +62,19 @@ func (s *Store) DeleteObsoleteJobLogs(ctx context.Context) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(deleteObsoleteJobLogsFmtStr))
 }
 
+const deleteOldJobLogsFmtStr = `
+DELETE FROM cm_trigger_jobs
+WHERE finished_at < (NOW() - (%s * '1 day'::interval));
+`
+
+// DeleteOldJobLogs deletes trigger jobs which have finished and are older than
+// 'retention' days. Due to cascading, action jobs will be deleted as well.
+func (s *Store) DeleteOldJobLogs(ctx context.Context, retentionInDays int) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(deleteOldJobLogsFmtStr, retentionInDays))
+}
+
 const getEventsForQueryIDInt64FmtStr = `
-SELECT id, query, query_string, results, state, failure_message, started_at, finished_at, process_after, num_resets, num_failures, log_contents
+SELECT id, query, query_string, results, num_results, state, failure_message, started_at, finished_at, process_after, num_resets, num_failures, log_contents
 FROM cm_trigger_jobs
 WHERE ((state = 'completed' AND results IS TRUE) OR (state != 'completed'))
 AND query = %s
@@ -82,15 +99,35 @@ func (s *Store) GetEventsForQueryIDInt64(ctx context.Context, queryID int64, arg
 	return scanTriggerJobs(rows, err)
 }
 
+const totalCountEventsForQueryIDInt64FmtStr = `
+SELECT COUNT(*)
+FROM cm_trigger_jobs
+WHERE ((state = 'completed' AND results IS TRUE) OR (state != 'completed'))
+AND query = %s
+`
+
+func (s *Store) TotalCountEventsForQueryIDInt64(ctx context.Context, queryID int64) (totalCount int32, err error) {
+	q := sqlf.Sprintf(
+		totalCountEventsForQueryIDInt64FmtStr,
+		queryID,
+	)
+	err = s.Store.QueryRow(ctx, q).Scan(&totalCount)
+	if err != nil {
+		return -1, err
+	}
+	return totalCount, nil
+}
+
 type TriggerJobs struct {
-	Id    int32
+	Id    int
 	Query int64
 
 	// The query we ran including after: filter.
 	QueryString *string
 
 	// Whether we got any results.
-	Results *bool
+	Results    *bool
+	NumResults *int
 
 	// Fields demanded for any dbworker.
 	State          string
@@ -101,10 +138,6 @@ type TriggerJobs struct {
 	NumResets      int32
 	NumFailures    int32
 	LogContents    *string
-}
-
-func (r *TriggerJobs) RecordID() int {
-	return int(r.Id)
 }
 
 func ScanTriggerJobs(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
@@ -128,6 +161,7 @@ func scanTriggerJobs(rows *sql.Rows, err error) ([]*TriggerJobs, error) {
 			&m.Query,
 			&m.QueryString,
 			&m.Results,
+			&m.NumResults,
 			&m.State,
 			&m.FailureMessage,
 			&m.StartedAt,
@@ -156,6 +190,7 @@ var TriggerJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_trigger_jobs.query"),
 	sqlf.Sprintf("cm_trigger_jobs.query_string"),
 	sqlf.Sprintf("cm_trigger_jobs.results"),
+	sqlf.Sprintf("cm_trigger_jobs.num_results"),
 	sqlf.Sprintf("cm_trigger_jobs.state"),
 	sqlf.Sprintf("cm_trigger_jobs.failure_message"),
 	sqlf.Sprintf("cm_trigger_jobs.started_at"),

@@ -75,7 +75,12 @@ func main() {
 		host = "127.0.0.1"
 	}
 	addr := net.JoinHostPort(host, port)
-	server := &http.Server{Addr: addr, Handler: handler}
+	server := &http.Server{
+		ReadTimeout:  75 * time.Second,
+		WriteTimeout: 10 * time.Minute,
+		Addr:         addr,
+		Handler:      handler,
+	}
 	go shutdownOnSIGINT(server)
 
 	log15.Info("symbols: listening", "addr", addr)

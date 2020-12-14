@@ -12,9 +12,9 @@ interface FileDecoratorProps {
 
     /**
      * File decorations may be styled differently depending on whether or not
-     * the decorated file is selected
+     * the decorated file is active
      */
-    isSelected?: boolean
+    isActive?: boolean
 
     className?: string
 }
@@ -26,7 +26,7 @@ export const FileDecorator: React.FunctionComponent<FileDecoratorProps> = ({
     fileDecorations,
     isLightTheme,
     className,
-    isSelected,
+    isActive,
 }) => {
     // Only need to check for number of decorations, other validation (like whether the decoration specifies at
     // least one of `text` or `percentage`) is done in the extension host
@@ -55,12 +55,15 @@ export const FileDecorator: React.FunctionComponent<FileDecoratorProps> = ({
                                         color: fileDecorationColorForTheme(
                                             fileDecoration.after,
                                             isLightTheme,
-                                            isSelected
+                                            isActive
                                         ),
                                     }}
                                     data-tooltip={fileDecoration.after.hoverMessage}
                                     data-placement="bottom"
-                                    className="file-decoration__after text-monospace text-muted font-weight-normal test-file-decoration-text"
+                                    className={classNames(
+                                        'file-decoration__after text-monospace font-weight-normal test-file-decoration-text',
+                                        isActive && 'file-decoration__after--active'
+                                    )}
                                 >
                                     {fileDecoration.after.contentText}
                                 </small>

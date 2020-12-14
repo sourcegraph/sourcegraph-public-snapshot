@@ -117,6 +117,16 @@ type Server struct {
 	// DiskSizer tells how much disk is free and how large the disk is.
 	DiskSizer DiskSizer
 
+	// GetRemoteURLFunc is a function which returns the remote URL for a
+	// repository. This is used when cloning or fetching a repository. In
+	// production this will speak to the database to look up the clone URL. In
+	// tests this is usually set to clone a local repository or intentionally
+	// error.
+	//
+	// Note: internal uses should call getRemoteURL which will handle
+	// GetRemoteURLFunc being nil.
+	GetRemoteURLFunc func(context.Context, api.RepoName) (string, error)
+
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
 
@@ -291,6 +301,13 @@ func (s *Server) serverContext() (context.Context, context.CancelFunc) {
 	}
 }
 
+func (s *Server) getRemoteURL(ctx context.Context, name api.RepoName) (string, error) {
+	if s.GetRemoteURLFunc == nil {
+		return "", errors.New("gitserver GetRemoteURLFunc is unset")
+	}
+	return s.GetRemoteURLFunc(ctx, name)
+}
+
 // acquireCloneLimiter() acquires a cancellable context associated with the
 // clone limiter.
 func (s *Server) acquireCloneLimiter(ctx context.Context) (context.Context, context.CancelFunc, error) {
@@ -335,6 +352,9 @@ func (s *Server) ignorePath(path string) bool {
 }
 
 func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
+	// TODO(keegancsmith,tsenart) gitserver should never receive URL, just
+	// api.RepoName. Update call sites.
+
 	var req protocol.IsRepoCloneableRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -348,9 +368,8 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// BACKCOMPAT: Determine URL from the existing repo on disk if the client didn't send it.
-		dir := s.dir(req.Repo)
 		var err error
-		req.URL, err = repoRemoteURL(r.Context(), dir)
+		req.URL, err = s.getRemoteURL(r.Context(), req.Repo)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -411,7 +430,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		// optimistically, we assume that our cloning attempt might
 		// succeed.
 		resp.CloneInProgress = true
-		_, err := s.cloneRepo(ctx, req.Repo, req.URL, &cloneOptions{Block: true})
+		_, err := s.cloneRepo(ctx, req.Repo, &cloneOptions{Block: true})
 		if err != nil {
 			log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
 			resp.Error = err.Error()
@@ -421,7 +440,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		var statusErr, updateErr error
 
 		if debounce(req.Repo, req.Since) {
-			updateErr = s.doRepoUpdate(ctx, req.Repo, req.URL)
+			updateErr = s.doRepoUpdate(ctx, req.Repo)
 		}
 
 		// attempts to acquire these values are not contingent on the success of
@@ -550,7 +569,6 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		tr, ctx = trace.New(ctx, "exec."+cmd, string(req.Repo))
 		tr.LogFields(
 			otlog.Object("args", args),
-			otlog.String("remote_url", req.URL),
 			otlog.String("ensure_revision", req.EnsureRevision),
 		)
 
@@ -582,7 +600,6 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				ev := honey.Event("gitserver-exec")
 				ev.SampleRate = honeySampleRate(cmd)
 				ev.AddField("repo", req.Repo)
-				ev.AddField("remote_url", req.URL)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
 				ev.AddField("actor", r.Header.Get("X-Sourcegraph-Actor"))
@@ -639,13 +656,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			return
 		}
 
-		if req.URL == "" {
-			status = "repo-not-found"
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
-			return
-		}
-		cloneProgress, err := s.cloneRepo(ctx, req.Repo, req.URL, nil)
+		cloneProgress, err := s.cloneRepo(ctx, req.Repo, nil)
 		if err != nil {
 			log15.Debug("error cloning repo", "repo", req.Repo, "err", err)
 			status = "repo-not-found"
@@ -662,7 +673,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		return
 	}
 
-	didUpdate := s.ensureRevision(ctx, req.Repo, req.URL, req.EnsureRevision, dir)
+	didUpdate := s.ensureRevision(ctx, req.Repo, req.EnsureRevision, dir)
 	if didUpdate {
 		ensureRevisionStatus = "fetched"
 	} else {
@@ -764,11 +775,10 @@ type cloneOptions struct {
 
 // cloneRepo issues a git clone command for the given repo. It is
 // non-blocking by default.
-func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, opts *cloneOptions) (string, error) {
+func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOptions) (string, error) {
 	if strings.ToLower(string(repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
 		return "This will never finish cloning", nil
 	}
-	redactor := newURLRedactor(url)
 
 	dir := s.dir(repo)
 
@@ -777,6 +787,13 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 	if progress, cloneInProgress := s.locker.Status(dir); cloneInProgress {
 		return progress, nil
 	}
+
+	url, err := s.getRemoteURL(ctx, repo)
+	if err != nil {
+		return "", err
+	}
+
+	redactor := newURLRedactor(url)
 
 	// isCloneable causes a network request, so we limit the number that can
 	// run at one time. We use a separate semaphore to cloning since these
@@ -1107,10 +1124,9 @@ func honeySampleRate(cmd string) uint {
 
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
-func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, url string) error {
+func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 	span, ctx := ot.StartSpanFromContext(ctx, "Server.doRepoUpdate")
 	span.SetTag("repo", repo)
-	span.SetTag("url", url)
 	defer span.Finish()
 
 	s.repoUpdateLocksMu.Lock()
@@ -1141,7 +1157,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, url string
 			l.once = new(sync.Once) // Make new requests wait for next update.
 			s.repoUpdateLocksMu.Unlock()
 
-			err = s.doRepoUpdate2(repo, url)
+			err = s.doRepoUpdate2(repo)
 		})
 	}()
 
@@ -1324,7 +1340,7 @@ func computeRefHash(dir GitDir) ([]byte, error) {
 	return hash, nil
 }
 
-func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
+func (s *Server) doRepoUpdate2(repo api.RepoName) error {
 	// background context.
 	ctx, cancel1 := s.serverContext()
 	defer cancel1()
@@ -1338,38 +1354,9 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	repo = protocol.NormalizeRepo(repo)
 	dir := s.dir(repo)
 
-	// If URL is not set, we can also use the last known working URL (set as the remote origin).
-	var urlIsGitRemote bool
-	if url == "" {
-		// log15.Warn("Deprecated: use of saved Git remote for repo updating (API client should set URL)", "repo", repo)
-		var err error
-		url, err = repoRemoteURL(ctx, dir)
-		if err != nil || url == "" {
-			log15.Error("Failed to determine Git remote URL", "repo", repo, "error", err)
-			return errors.Wrap(err, "failed to determine Git remote URL")
-		}
-		urlIsGitRemote = true
-	}
-
-	// url is now guaranteed to != "". Store the URL as the remote origin. If
-	// a future call does not set the URL, we can fallback to this one. This
-	// is best-effort, so we do not fail the repoUpdate if updating the remote
-	// fails.
-	if !urlIsGitRemote {
-		// Note: We do not use CommandContext since it is a fast operation.
-		var cmd *exec.Cmd
-		if current, _ := repoRemoteURL(ctx, dir); current == "" {
-			cmd = exec.Command("git", "remote", "add", "origin", url)
-		} else if current != url {
-			log15.Debug("repository remote URL changed", "repo", repo)
-			cmd = exec.Command("git", "remote", "set-url", "origin", "--", url)
-		}
-		if cmd != nil {
-			dir.Set(cmd)
-			if _, err := runCommand(ctx, cmd); err != nil {
-				log15.Error("Failed to update repository's Git remote URL.", "repo", repo, "error", err)
-			}
-		}
+	url, err := s.getRemoteURL(ctx, repo)
+	if err != nil {
+		return errors.Wrap(err, "failed to determine Git remote URL")
 	}
 
 	configRemoteOpts := true
@@ -1461,7 +1448,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	return nil
 }
 
-func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev string, repoDir GitDir) (didUpdate bool) {
+func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev string, repoDir GitDir) (didUpdate bool) {
 	if rev == "" || rev == "HEAD" {
 		return false
 	}
@@ -1476,7 +1463,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev
 		return false
 	}
 	// Revision not found, update before returning.
-	_ = s.doRepoUpdate(ctx, repo, url)
+	_ = s.doRepoUpdate(ctx, repo)
 	return true
 }
 

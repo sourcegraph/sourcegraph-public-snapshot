@@ -9,12 +9,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -43,12 +43,10 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
-		RepoFields: &types.RepoFields{
-			Sources: map[string]*types.SourceInfo{
-				svc.URN(): {
-					ID:       svc.URN(),
-					CloneURL: "https://secrettoken@test/repo",
-				},
+		Sources: map[string]*types.SourceInfo{
+			svc.URN(): {
+				ID:       svc.URN(),
+				CloneURL: "https://secrettoken@test/repo",
 			},
 		},
 	}

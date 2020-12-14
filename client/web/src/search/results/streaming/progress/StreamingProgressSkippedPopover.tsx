@@ -35,7 +35,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<StreamingP
     return (
         <>
             {progress.skipped.map(skipped => (
-                <Alert key={skipped.reason} color={skipped.severity === 'warn' ? 'danger' : 'primary'}>
+                <Alert key={skipped.reason} color={skipped.severity === 'warn' ? 'danger' : 'info'} fade={false}>
                     <h4 className="d-flex align-items-center mb-0">
                         {skipped.severity === 'warn' ? (
                             <AlertCircleIcon className="icon-inline mr-2" />

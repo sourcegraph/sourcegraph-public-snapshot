@@ -94,6 +94,12 @@ const SettingsSchemaJSON = `{
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
+        },
+        "enableFastResultLoading": {
+          "description": "Enables optimized search result loading (syntax highlighting / file contents fetching)",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
         }
       },
       "group": "Experimental"

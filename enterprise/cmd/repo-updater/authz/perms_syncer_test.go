@@ -10,7 +10,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -261,10 +261,8 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 						ExternalRepo: api.ExternalRepoSpec{
 							ServiceID: "https://gitlab.com/",
 						},
-						RepoFields: &types.RepoFields{
-							Sources: map[string]*types.SourceInfo{
-								extsvc.URN(extsvc.TypeGitLab, 0): {},
-							},
+						Sources: map[string]*types.SourceInfo{
+							extsvc.URN(extsvc.TypeGitLab, 0): {},
 						},
 					},
 				}, nil
@@ -338,10 +336,8 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 						ExternalRepo: api.ExternalRepoSpec{
 							ServiceID: p1.ServiceID(),
 						},
-						RepoFields: &types.RepoFields{
-							Sources: map[string]*types.SourceInfo{
-								p1.URN(): {},
-							},
+						Sources: map[string]*types.SourceInfo{
+							p1.URN(): {},
 						},
 					},
 				}, nil
@@ -403,10 +399,8 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 					ExternalRepo: api.ExternalRepoSpec{
 						ServiceID: p.ServiceID(),
 					},
-					RepoFields: &types.RepoFields{
-						Sources: map[string]*types.SourceInfo{
-							p.URN(): {},
-						},
+					Sources: map[string]*types.SourceInfo{
+						p.URN(): {},
 					},
 				},
 			}, nil

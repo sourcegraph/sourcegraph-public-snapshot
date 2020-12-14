@@ -11,9 +11,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
 func TestCampaignSpecResolver(t *testing.T) {
@@ -31,10 +31,10 @@ func TestCampaignSpecResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := ee.NewStore(dbconn.Global)
-
+	cstore := store.New(dbconn.Global)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	repoStore := db.NewRepoStoreWith(store)
+
+	repoStore := db.NewRepoStoreWith(cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -58,7 +58,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 	}
 	spec.UserID = userID
 	spec.NamespaceOrgID = orgID
-	if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+	if err := cstore.CreateCampaignSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -70,7 +70,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 	changesetSpec.UserID = userID
 	changesetSpec.RepoID = repo.ID
 
-	if err := store.CreateChangesetSpec(ctx, changesetSpec); err != nil {
+	if err := cstore.CreateChangesetSpec(ctx, changesetSpec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -82,11 +82,11 @@ func TestCampaignSpecResolver(t *testing.T) {
 		LastAppliedAt:    time.Now(),
 		CampaignSpecID:   spec.ID,
 	}
-	if err := store.CreateCampaign(ctx, matchingCampaign); err != nil {
+	if err := cstore.CreateCampaign(ctx, matchingCampaign); err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,6 +162,58 @@ func TestCampaignSpecResolver(t *testing.T) {
 		}
 	}
 
+	// Now create an updated changeset spec and check that we get a superseding
+	// campaign spec.
+	sup, err := campaigns.NewCampaignSpecFromRaw(ct.TestRawCampaignSpec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sup.UserID = userID
+	sup.NamespaceOrgID = orgID
+	if err := cstore.CreateCampaignSpec(ctx, sup); err != nil {
+		t.Fatal(err)
+	}
+
+	{
+		var response struct{ Node apitest.CampaignSpec }
+
+		// Note that we have to execute as the actual user, since a superseding
+		// spec isn't returned for an admin.
+		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryCampaignSpecNode)
+
+		// Expect an ID on the superseding campaign spec.
+		want.SupersedingCampaignSpec = &apitest.CampaignSpec{
+			ID: string(marshalCampaignSpecRandID(sup.RandID)),
+		}
+
+		if diff := cmp.Diff(want, response.Node); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+	}
+
+	// If the superseding campaign spec was created by a different user, then we
+	// shouldn't return it.
+	sup.UserID = adminID
+	if err := cstore.UpdateCampaignSpec(ctx, sup); err != nil {
+		t.Fatal(err)
+	}
+
+	{
+		var response struct{ Node apitest.CampaignSpec }
+
+		// Note that we have to execute as the actual user, since a superseding
+		// spec isn't returned for an admin.
+		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryCampaignSpecNode)
+
+		// Expect no superseding campaign spec, since this request is run as a
+		// different user.
+		want.SupersedingCampaignSpec = nil
+
+		if diff := cmp.Diff(want, response.Node); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+	}
+
 	// Now soft-delete the creator and check that the campaign spec is still retrievable.
 	err = db.Users.Delete(ctx, userID)
 	if err != nil {
@@ -177,6 +229,9 @@ func TestCampaignSpecResolver(t *testing.T) {
 		want.OnlyWithoutCredential = apitest.CampaignsCodeHostsConnection{
 			Nodes: []apitest.CampaignsCodeHost{},
 		}
+		// Expect no superseding campaign spec, since this request is run as a
+		// different user.
+		want.SupersedingCampaignSpec = nil
 
 		if diff := cmp.Diff(want, response.Node); diff != "" {
 			t.Fatalf("unexpected response (-want +got):\n%s", diff)
@@ -233,6 +288,8 @@ query($campaignSpec: ID!) {
       diffStat { added, deleted, changed }
 
 	  appliesToCampaign { id }
+
+	  supersedingCampaignSpec { id }
 
 	  allCodeHosts: viewerCampaignsCodeHosts {
 		totalCount

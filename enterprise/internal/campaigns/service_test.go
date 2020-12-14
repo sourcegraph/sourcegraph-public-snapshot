@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -22,14 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-func init() {
-	dbtesting.DBNameSuffix = "campaignsenterpriserdb"
-}
 
 func TestServicePermissionLevels(t *testing.T) {
 	if testing.Short() {
@@ -39,27 +35,16 @@ func TestServicePermissionLevels(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := NewStore(dbconn.Global)
-	svc := NewService(store, nil)
+	s := store.New(dbconn.Global)
+	svc := NewService(s, nil)
 
-	admin := createTestUser(ctx, t)
-	if !admin.SiteAdmin {
-		t.Fatalf("admin is not site admin")
-	}
-
-	user := createTestUser(ctx, t)
-	if user.SiteAdmin {
-		t.Fatalf("user cannot be site admin")
-	}
-
-	otherUser := createTestUser(ctx, t)
-	if otherUser.SiteAdmin {
-		t.Fatalf("user cannot be site admin")
-	}
+	admin := createTestUser(t, true)
+	user := createTestUser(t, false)
+	otherUser := createTestUser(t, false)
 
 	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 
-	createTestData := func(t *testing.T, s *Store, svc *Service, author int32) (*campaigns.Campaign, *campaigns.Changeset, *campaigns.CampaignSpec) {
+	createTestData := func(t *testing.T, s *store.Store, svc *Service, author int32) (*campaigns.Campaign, *campaigns.Changeset, *campaigns.CampaignSpec) {
 		spec := testCampaignSpec(author)
 		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
 			t.Fatal(err)
@@ -72,11 +57,6 @@ func TestServicePermissionLevels(t *testing.T) {
 
 		changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
 		if err := s.CreateChangeset(ctx, changeset); err != nil {
-			t.Fatal(err)
-		}
-
-		campaign.ChangesetIDs = append(campaign.ChangesetIDs, changeset.ID)
-		if err := s.UpdateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 
@@ -134,7 +114,7 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			campaign, changeset, campaignSpec := createTestData(t, store, svc, tc.campaignAuthor)
+			campaign, changeset, campaignSpec := createTestData(t, s, svc, tc.campaignAuthor)
 			// Fresh context.Background() because the previous one is wrapped in AuthzBypas
 			currentUserCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
 
@@ -187,44 +167,37 @@ func TestService(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	admin := createTestUser(ctx, t)
-	if !admin.SiteAdmin {
-		t.Fatal("admin is not a site-admin")
-	}
-
-	user := createTestUser(ctx, t)
-	if user.SiteAdmin {
-		t.Fatal("user is admin, want non-admin")
-	}
+	admin := createTestUser(t, true)
+	user := createTestUser(t, false)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 
-	store := NewStoreWithClock(dbconn.Global, clock)
+	s := store.NewWithClock(dbconn.Global, clock)
 	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 4)
 
 	fakeSource := &ct.FakeChangesetSource{}
 	sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
-	svc := NewService(store, nil)
+	svc := NewService(s, nil)
 	svc.sourcer = sourcer
 
 	t.Run("DeleteCampaign", func(t *testing.T) {
 		spec := testCampaignSpec(admin.ID)
-		if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
 		campaign := testCampaign(admin.ID, spec)
-		if err := store.CreateCampaign(ctx, campaign); err != nil {
+		if err := s.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 		if err := svc.DeleteCampaign(ctx, campaign.ID); err != nil {
 			t.Fatalf("campaign not deleted: %s", err)
 		}
 
-		_, err := store.GetCampaign(ctx, GetCampaignOpts{ID: campaign.ID})
-		if err != nil && err != ErrNoResults {
+		_, err := s.GetCampaign(ctx, store.GetCampaignOpts{ID: campaign.ID})
+		if err != nil && err != store.ErrNoResults {
 			t.Fatalf("want campaign to be deleted, but was not: %e", err)
 		}
 	})
@@ -234,12 +207,12 @@ func TestService(t *testing.T) {
 			t.Helper()
 
 			spec := testCampaignSpec(admin.ID)
-			if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+			if err := s.CreateCampaignSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
 
 			campaign := testCampaign(admin.ID, spec)
-			if err := store.CreateCampaign(ctx, campaign); err != nil {
+			if err := s.CreateCampaign(ctx, campaign); err != nil {
 				t.Fatal(err)
 			}
 			return campaign
@@ -262,7 +235,7 @@ func TestService(t *testing.T) {
 				return
 			}
 
-			cs, _, err := store.ListChangesets(ctx, ListChangesetsOpts{
+			cs, _, err := s.ListChangesets(ctx, store.ListChangesetsOpts{
 				OwnedByCampaignID: c.ID,
 			})
 			if err != nil {
@@ -289,13 +262,13 @@ func TestService(t *testing.T) {
 
 			changeset1 := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
 			changeset1.ReconcilerState = campaigns.ReconcilerStateCompleted
-			if err := store.CreateChangeset(ctx, changeset1); err != nil {
+			if err := s.CreateChangeset(ctx, changeset1); err != nil {
 				t.Fatal(err)
 			}
 
 			changeset2 := testChangeset(rs[1].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
 			changeset2.ReconcilerState = campaigns.ReconcilerStateCompleted
-			if err := store.CreateChangeset(ctx, changeset2); err != nil {
+			if err := s.CreateChangeset(ctx, changeset2); err != nil {
 				t.Fatal(err)
 			}
 
@@ -305,22 +278,17 @@ func TestService(t *testing.T) {
 
 	t.Run("EnqueueChangesetSync", func(t *testing.T) {
 		spec := testCampaignSpec(admin.ID)
-		if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
 		campaign := testCampaign(admin.ID, spec)
-		if err := store.CreateCampaign(ctx, campaign); err != nil {
+		if err := s.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 
 		changeset := testChangeset(rs[0].ID, campaign.ID, campaigns.ChangesetExternalStateOpen)
-		if err := store.CreateChangeset(ctx, changeset); err != nil {
-			t.Fatal(err)
-		}
-
-		campaign.ChangesetIDs = []int64{changeset.ID}
-		if err := store.UpdateCampaign(ctx, campaign); err != nil {
+		if err := s.CreateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
 
@@ -356,7 +324,7 @@ func TestService(t *testing.T) {
 		changesetSpecRandIDs := make([]string, 0, len(rs))
 		for _, r := range rs {
 			cs := &campaigns.ChangesetSpec{RepoID: r.ID, UserID: admin.ID}
-			if err := store.CreateChangesetSpec(ctx, cs); err != nil {
+			if err := s.CreateChangesetSpec(ctx, cs); err != nil {
 				t.Fatal(err)
 			}
 			changesetSpecs = append(changesetSpecs, cs)
@@ -396,7 +364,7 @@ func TestService(t *testing.T) {
 			}
 
 			for _, cs := range changesetSpecs {
-				cs2, err := store.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: cs.ID})
+				cs2, err := s.GetChangesetSpec(ctx, store.GetChangesetSpecOpts{ID: cs.ID})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -528,8 +496,8 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			countOpts := CountChangesetSpecsOpts{CampaignSpecID: spec.ID}
-			count, err := store.CountChangesetSpecs(adminCtx, countOpts)
+			countOpts := store.CountChangesetSpecsOpts{CampaignSpecID: spec.ID}
+			count, err := s.CountChangesetSpecs(adminCtx, countOpts)
 			if err != nil {
 				return
 			}
@@ -606,7 +574,7 @@ func TestService(t *testing.T) {
 				NamespaceOrgID:  orgID,
 			}
 
-			if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+			if err := s.CreateCampaignSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
 
@@ -620,7 +588,7 @@ func TestService(t *testing.T) {
 				CampaignSpecID:   spec.ID,
 			}
 
-			if err := store.CreateCampaign(ctx, c); err != nil {
+			if err := s.CreateCampaign(ctx, c); err != nil {
 				t.Fatal(err)
 			}
 
@@ -644,7 +612,7 @@ func TestService(t *testing.T) {
 		t.Run("new user namespace", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
 
-			user2 := createTestUser(ctx, t)
+			user2 := createTestUser(t, false)
 
 			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceUserID: user2.ID}
 			moved, err := svc.MoveCampaign(ctx, opts)
@@ -664,7 +632,7 @@ func TestService(t *testing.T) {
 		t.Run("new user namespace but current user is not admin", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
 
-			user2 := createTestUser(ctx, t)
+			user2 := createTestUser(t, false)
 
 			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceUserID: user2.ID}
 
@@ -717,7 +685,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("GetCampaignMatchingCampaignSpec", func(t *testing.T) {
-		campaignSpec := createCampaignSpec(t, ctx, store, "matching-campaign-spec", admin.ID)
+		campaignSpec := createCampaignSpec(t, ctx, s, "matching-campaign-spec", admin.ID)
 
 		haveCampaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, campaignSpec)
 		if err != nil {
@@ -737,7 +705,7 @@ func TestService(t *testing.T) {
 			LastApplierID:    admin.ID,
 			LastAppliedAt:    time.Now(),
 		}
-		if err := store.CreateCampaign(ctx, matchingCampaign); err != nil {
+		if err := s.CreateCampaign(ctx, matchingCampaign); err != nil {
 			t.Fatalf("failed to create campaign: %s\n", err)
 		}
 
@@ -754,13 +722,45 @@ func TestService(t *testing.T) {
 		}
 	})
 
+	t.Run("GetNewestCampaignSpec", func(t *testing.T) {
+		older := createCampaignSpec(t, ctx, s, "superseding", user.ID)
+		newer := createCampaignSpec(t, ctx, s, "superseding", user.ID)
+
+		for name, in := range map[string]*campaigns.CampaignSpec{
+			"older": older,
+			"newer": newer,
+		} {
+			t.Run(name, func(t *testing.T) {
+				have, err := svc.GetNewestCampaignSpec(ctx, s, in, user.ID)
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+
+				if diff := cmp.Diff(newer, have); diff != "" {
+					t.Errorf("unexpected newer campaign spec (-want +have):\n%s", diff)
+				}
+			})
+		}
+
+		t.Run("different user", func(t *testing.T) {
+			have, err := svc.GetNewestCampaignSpec(ctx, s, older, admin.ID)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+
+			if have != nil {
+				t.Errorf("unexpected non-nil campaign spec: %+v", have)
+			}
+		})
+	})
+
 	t.Run("FetchUsernameForBitbucketServerToken", func(t *testing.T) {
 		fakeSource := &ct.FakeChangesetSource{Username: "my-bbs-username"}
 		sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
 		// Create a fresh service for this test as to not mess with state
 		// possibly used by other tests.
-		testSvc := NewService(store, nil)
+		testSvc := NewService(s, nil)
 		testSvc.sourcer = sourcer
 
 		rs, _ := ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
@@ -783,34 +783,6 @@ func TestService(t *testing.T) {
 		}
 	})
 }
-
-var testUser = db.NewUser{
-	Email:                 "thorsten@sourcegraph.com",
-	Username:              "thorsten",
-	DisplayName:           "thorsten",
-	Password:              "1234",
-	EmailVerificationCode: "foobar",
-}
-
-var createTestUser = func() func(context.Context, *testing.T) *types.User {
-	count := 0
-
-	return func(ctx context.Context, t *testing.T) *types.User {
-		t.Helper()
-
-		u := testUser
-		u.Username = fmt.Sprintf("%s-%d", u.Username, count)
-
-		user, err := db.Users.Create(ctx, u)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		count += 1
-
-		return user
-	}
-}()
 
 func testCampaign(user int32, spec *campaigns.CampaignSpec) *campaigns.Campaign {
 	c := &campaigns.Campaign{

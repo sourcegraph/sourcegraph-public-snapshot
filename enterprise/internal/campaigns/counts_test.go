@@ -11,11 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func TestCalcCounts(t *testing.T) {
+	t.Parallel()
+
 	now := timeutil.Now()
 	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
 
@@ -1578,7 +1579,7 @@ func glUnmarkWorkInProgress(id int64, t time.Time, login string) *campaigns.Chan
 		Metadata: &gitlab.UnmarkWorkInProgressEvent{
 			Note: &gitlab.Note{
 				System:    true,
-				Body:      gitlab.SystemNoteBodyReviewUnmarkedWorkInProgress,
+				Body:      gitlab.SystemNoteBodyUnmarkedWorkInProgress,
 				CreatedAt: gitlab.Time{Time: t},
 				Author: gitlab.User{
 					Username: login,
@@ -1595,7 +1596,7 @@ func glMarkWorkInProgress(id int64, t time.Time, login string) *campaigns.Change
 		Metadata: &gitlab.MarkWorkInProgressEvent{
 			Note: &gitlab.Note{
 				System:    true,
-				Body:      gitlab.SystemNoteBodyReviewMarkedWorkInProgress,
+				Body:      gitlab.SystemNoteBodyMarkedWorkInProgress,
 				CreatedAt: gitlab.Time{Time: t},
 				Author: gitlab.User{
 					Username: login,
@@ -1609,9 +1610,11 @@ func glClosed(id int64, t time.Time, login string) *campaigns.ChangesetEvent {
 	return &campaigns.ChangesetEvent{
 		ChangesetID: id,
 		Kind:        campaigns.ChangesetEventKindGitLabClosed,
-		Metadata: &gitlabwebhooks.MergeRequestCloseEvent{
-			MergeRequestEventCommon: gitlabwebhooks.MergeRequestEventCommon{
-				User: &gitlab.User{Username: login},
+		Metadata: &gitlab.MergeRequestClosedEvent{
+			ResourceStateEvent: &gitlab.ResourceStateEvent{
+				CreatedAt: gitlab.Time{Time: t},
+				User:      gitlab.User{Username: login},
+				State:     gitlab.ResourceStateEventStateClosed,
 			},
 		},
 		CreatedAt: t,
@@ -1622,9 +1625,11 @@ func glReopen(id int64, t time.Time, login string) *campaigns.ChangesetEvent {
 	return &campaigns.ChangesetEvent{
 		ChangesetID: id,
 		Kind:        campaigns.ChangesetEventKindGitLabReopened,
-		Metadata: &gitlabwebhooks.MergeRequestReopenEvent{
-			MergeRequestEventCommon: gitlabwebhooks.MergeRequestEventCommon{
-				User: &gitlab.User{Username: login},
+		Metadata: &gitlab.MergeRequestReopenedEvent{
+			ResourceStateEvent: &gitlab.ResourceStateEvent{
+				CreatedAt: gitlab.Time{Time: t},
+				User:      gitlab.User{Username: login},
+				State:     gitlab.ResourceStateEventStateReopened,
 			},
 		},
 		CreatedAt: t,

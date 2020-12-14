@@ -10,6 +10,7 @@ import {
     toAbsoluteBlobURL,
     appendSubtreeQueryParameter,
     RepoFile,
+    encodeURIPathComponent,
 } from './url'
 import { SearchPatternType } from '../graphql-operations'
 
@@ -35,6 +36,13 @@ describe('parseRepoURI', () => {
         const parsed = parseRepoURI('git://sourcegraph.visualstudio.com/Test%20Repo')
         assertDeepStrictEqual(parsed, {
             repoName: 'sourcegraph.visualstudio.com/Test Repo',
+        })
+    })
+
+    test('should parse repo with plus sign', () => {
+        const parsed = parseRepoURI('git://git.launchpad.net/ubuntu/+source/qemu')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'git.launchpad.net/ubuntu/+source/qemu',
         })
     })
 
@@ -126,13 +134,21 @@ describe('parseRepoURI', () => {
         })
     })
 
-    test('should parse a file with special characters', () => {
+    test('should parse a file with spaces', () => {
         const parsed = parseRepoURI('git://github.com/gorilla/mux?branch#space%20here.go')
         assertDeepStrictEqual(parsed, {
             repoName: 'github.com/gorilla/mux',
             revision: 'branch',
             filePath: 'space here.go',
         })
+    })
+})
+
+describe('encodeURIPathComponent', () => {
+    it('encodes all special characters except slashes and the plus sign', () => {
+        expect(encodeURIPathComponent('hello world+/+some_special_characters_:_#_?_%_@')).toBe(
+            'hello%20world+/+some_special_characters_%3A_%23_%3F_%25_%40'
+        )
     })
 })
 

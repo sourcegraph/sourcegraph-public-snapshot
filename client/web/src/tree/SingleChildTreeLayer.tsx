@@ -113,12 +113,12 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
     }
 
     public render(): JSX.Element | null {
-        const isSelectedNode = this.node === this.props.selectedNode
+        const isActive = this.node === this.props.activeNode
         const className = classNames(
             'tree__row',
             this.props.isExpanded && 'tree__row--expanded',
             this.node === this.props.activeNode && 'tree__row--active',
-            isSelectedNode && 'tree__row--selected'
+            this.node === this.props.selectedNode && 'tree__row--selected'
         )
 
         return (
@@ -137,7 +137,7 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
                             noopRowClick={this.noopRowClick}
                             linkRowClick={this.linkRowClick}
                             fileDecorations={this.props.fileDecorations}
-                            isSelected={isSelectedNode}
+                            isActive={isActive}
                         />
                         {this.props.isExpanded && (
                             <tr>

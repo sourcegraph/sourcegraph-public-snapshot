@@ -2,6 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/binary"
 	"reflect"
 	"sort"
 	"strings"
@@ -226,15 +228,17 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	return r
 }
 
-func TestLimitSearcherRepos(t *testing.T) {
-	repos := func(names ...string) []*types.Repo {
-		var repos []*types.Repo
-		for _, name := range names {
-			repos = append(repos, &types.Repo{Name: api.RepoName(name)})
-		}
-		return repos
+func mkRepos(names ...string) []*types.Repo {
+	var repos []*types.Repo
+	for _, name := range names {
+		sum := md5.Sum([]byte(name))
+		id := api.RepoID(binary.BigEndian.Uint64(sum[:]))
+		repos = append(repos, &types.Repo{ID: id, Name: api.RepoName(name)})
 	}
+	return repos
+}
 
+func TestLimitSearcherRepos(t *testing.T) {
 	repoRevs := func(repoRevs ...string) []*search.RepositoryRevisions {
 		var result []*search.RepositoryRevisions
 		for _, repoRev := range repoRevs {
@@ -253,7 +257,7 @@ func TestLimitSearcherRepos(t *testing.T) {
 				continue
 			}
 			result = append(result, &search.RepositoryRevisions{
-				Repo: &types.Repo{Name: api.RepoName(repo)},
+				Repo: mkRepos(repo)[0],
 				Revs: []search.RevisionSpecifier{{RevSpec: rev}},
 			})
 		}
@@ -279,21 +283,21 @@ func TestLimitSearcherRepos(t *testing.T) {
 			limit:       5,
 			input:       repoRevs("a@1", "b@1", "c@1", "d@1", "e@1", "f@1", "g@1"),
 			want:        repoRevs("a@1", "b@1", "c@1", "d@1", "e@1"),
-			wantLimited: repos("f", "g"),
+			wantLimited: mkRepos("f", "g"),
 		},
 		{
 			name:        "rev_limited",
 			limit:       6,
 			input:       repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1", "f@1", "g@1"),
 			want:        repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1"),
-			wantLimited: repos("f", "g"),
+			wantLimited: mkRepos("f", "g"),
 		},
 		{
 			name:        "rev_limited_duplication",
 			limit:       6,
 			input:       repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1", "f@1", "f@2", "g@1"),
 			want:        repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1"),
-			wantLimited: repos("f", "g"),
+			wantLimited: mkRepos("f", "g"),
 		},
 	}
 	for _, tst := range tests {

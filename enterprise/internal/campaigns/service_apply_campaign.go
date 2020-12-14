@@ -8,9 +8,10 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -47,7 +48,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		tr.Finish()
 	}()
 
-	campaignSpec, err := s.store.GetCampaignSpec(ctx, GetCampaignSpecOpts{
+	campaignSpec, err := s.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{
 		RandID: opts.CampaignSpecRandID,
 	})
 	if err != nil {
@@ -99,8 +100,11 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	defer func() { err = tx.Done(err) }()
 
 	if campaign.ID == 0 {
-		err := tx.CreateCampaign(ctx, campaign)
-		if err != nil {
+		if err := tx.CreateCampaign(ctx, campaign); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := tx.UpdateCampaign(ctx, campaign); err != nil {
 			return nil, err
 		}
 	}
@@ -112,32 +116,29 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	// them.
 
 	// Load the mapping between ChangesetSpecs and existing Changesets in the target campaign.
-	mappings, err := tx.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
+	mappings, err := tx.GetRewirerMappings(ctx, store.GetRewirerMappingsOpts{
 		CampaignSpecID: campaign.CampaignSpecID,
 		CampaignID:     campaign.ID,
 	})
 	if err != nil {
 		return nil, err
 	}
+	if err := mappings.Hydrate(ctx, tx); err != nil {
+		return nil, err
+	}
 
 	// And execute the mapping.
-	rewirer := NewChangesetRewirer(mappings, campaign, tx, rstore)
+	rewirer := NewChangesetRewirer(mappings, campaign, rstore)
 	changesets, err := rewirer.Rewire(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Reset the attached changesets.
-	campaign.ChangesetIDs = []int64{}
+	// Upsert all changesets.
 	for _, changeset := range changesets {
 		if err := tx.UpsertChangeset(ctx, changeset); err != nil {
 			return nil, err
 		}
-		campaign.ChangesetIDs = append(campaign.ChangesetIDs, changeset.ID)
-	}
-
-	if err := tx.UpdateCampaign(ctx, campaign); err != nil {
-		return nil, err
 	}
 
 	return campaign, nil

@@ -93,7 +93,7 @@ func (r *RepositoryResolver) IsFork(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return r.repo.RepoFields.Fork, nil
+	return r.repo.Fork, nil
 }
 
 func (r *RepositoryResolver) IsArchived(ctx context.Context) (bool, error) {
@@ -101,7 +101,7 @@ func (r *RepositoryResolver) IsArchived(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return r.repo.RepoFields.Archived, nil
+	return r.repo.Archived, nil
 }
 
 func (r *RepositoryResolver) IsPrivate(ctx context.Context) (bool, error) {
@@ -183,7 +183,7 @@ func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver
 
 		if err == nil && exitCode == 0 {
 			// Check that our repo is not empty
-			_, err = git.ResolveRevision(ctx, *cachedRepo, nil, "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
+			_, err = git.ResolveRevision(ctx, *cachedRepo, "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
 		}
 
 		// If we fail to get the default branch due to cloning or being empty, we return nothing.
@@ -296,7 +296,9 @@ func (r *RepositoryResolver) Type() *types.Repo {
 
 func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	r.hydration.Do(func() {
-		if r.repo.RepoFields != nil {
+		// Repositories with an empty creation date were created using RepoName.ToRepo(),
+		// they only contain ID and name information.
+		if !r.repo.CreatedAt.IsZero() {
 			return
 		}
 
@@ -305,7 +307,7 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 		var repo *types.Repo
 		repo, r.err = db.Repos.Get(ctx, r.repo.ID)
 		if r.err == nil {
-			r.repo.RepoFields = repo.RepoFields
+			r.repo = repo
 		}
 	})
 
@@ -324,6 +326,10 @@ func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *LSIFIndexesQ
 		LSIFIndexesQueryArgs: args,
 		RepositoryID:         r.ID(),
 	})
+}
+
+func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (IndexConfigurationResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.IndexConfiguration(ctx, r.ID())
 }
 
 type AuthorizedUserArgs struct {
@@ -391,7 +397,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 		if err != nil {
 			return nil, err
 		}
-		_, err = git.ResolveRevision(ctx, *cachedRepo, nil, targetRef, git.ResolveRevisionOptions{
+		_, err = git.ResolveRevision(ctx, *cachedRepo, targetRef, git.ResolveRevisionOptions{
 			NoEnsureRevision: true,
 		})
 		if err != nil {

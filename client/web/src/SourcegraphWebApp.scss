@@ -122,6 +122,7 @@ body,
 @import '../../branded/src/components/tooltip/Tooltip';
 @import './components/CtaBanner.scss';
 @import './user/settings/UserSettingsArea';
+@import './user/settings/emails/UserSettingsEmailsPage.scss';
 @import './site-admin/SiteAdminAlert';
 @import './site/DockerForMacAlert';
 @import './user/UserAvatar';
@@ -142,7 +143,6 @@ body,
 @import '../../branded/src/components/panel/views/FileLocations';
 @import '../../branded/src/components/panel/views/HierarchicalLocationsView';
 @import '../../branded/src/components/LoaderInput';
-@import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 @import '../../shared/src/index';
 

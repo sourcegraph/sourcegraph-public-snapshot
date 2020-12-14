@@ -17,15 +17,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -168,12 +168,10 @@ func newGitHubTestRepo(name string, externalService *types.ExternalService) *typ
 			ServiceType: "github",
 			ServiceID:   "https://github.com/",
 		},
-		RepoFields: &types.RepoFields{
-			Sources: map[string]*types.SourceInfo{
-				externalService.URN(): {
-					ID:       externalService.URN(),
-					CloneURL: fmt.Sprintf("https://secrettoken@%s", name),
-				},
+		Sources: map[string]*types.SourceInfo{
+			externalService.URN(): {
+				ID:       externalService.URN(),
+				CloneURL: fmt.Sprintf("https://secrettoken@%s", name),
 			},
 		},
 	}
@@ -238,93 +236,13 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 	t.Cleanup(func() { git.Mocks.MergeBase = nil })
 }
 
-func addChangeset(t *testing.T, ctx context.Context, s *ee.Store, c *campaigns.Campaign, changeset int64) {
+func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *campaigns.Changeset, campaign int64) {
 	t.Helper()
 
-	c.ChangesetIDs = append(c.ChangesetIDs, changeset)
-	if err := s.UpdateCampaign(ctx, c); err != nil {
+	c.CampaignIDs = append(c.CampaignIDs, campaign)
+	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatal(err)
 	}
-}
-
-// This is duplicated from campaigns/service_test.go, we need to find a place
-// to put these helpers.
-type testChangesetOpts struct {
-	repo         api.RepoID
-	campaign     int64
-	currentSpec  int64
-	previousSpec int64
-
-	externalServiceType string
-	externalID          string
-	externalBranch      string
-	externalState       campaigns.ChangesetExternalState
-	externalReviewState campaigns.ChangesetReviewState
-	externalCheckState  campaigns.ChangesetCheckState
-
-	publicationState campaigns.ChangesetPublicationState
-	reconcilerState  campaigns.ReconcilerState
-	failureMessage   string
-	unsynced         bool
-
-	ownedByCampaign int64
-
-	metadata interface{}
-}
-
-func createChangeset(
-	t *testing.T,
-	ctx context.Context,
-	store *ee.Store,
-	opts testChangesetOpts,
-) *campaigns.Changeset {
-	t.Helper()
-
-	if opts.externalServiceType == "" {
-		opts.externalServiceType = extsvc.TypeGitHub
-	}
-
-	changeset := &campaigns.Changeset{
-		RepoID:         opts.repo,
-		CurrentSpecID:  opts.currentSpec,
-		PreviousSpecID: opts.previousSpec,
-
-		ExternalServiceType: opts.externalServiceType,
-		ExternalID:          opts.externalID,
-		ExternalBranch:      git.EnsureRefPrefix(opts.externalBranch),
-		ExternalReviewState: opts.externalReviewState,
-		ExternalCheckState:  opts.externalCheckState,
-
-		PublicationState: opts.publicationState,
-		ReconcilerState:  opts.reconcilerState,
-		Unsynced:         opts.unsynced,
-
-		OwnedByCampaignID: opts.ownedByCampaign,
-
-		Metadata: opts.metadata,
-	}
-
-	if opts.failureMessage != "" {
-		changeset.FailureMessage = &opts.failureMessage
-	}
-
-	if string(opts.externalState) != "" {
-		changeset.ExternalState = opts.externalState
-	}
-
-	if opts.campaign != 0 {
-		changeset.CampaignIDs = []int64{opts.campaign}
-	}
-
-	if err := store.CreateChangeset(ctx, changeset); err != nil {
-		t.Fatalf("creating changeset failed: %s", err)
-	}
-
-	if err := store.UpsertChangesetEvents(ctx, changeset.Events()...); err != nil {
-		t.Fatalf("creating changeset events failed: %s", err)
-	}
-
-	return changeset
 }
 
 type testSpecOpts struct {
@@ -356,7 +274,7 @@ type testSpecOpts struct {
 func createChangesetSpec(
 	t *testing.T,
 	ctx context.Context,
-	store *ee.Store,
+	s *store.Store,
 	opts testSpecOpts,
 ) *campaigns.ChangesetSpec {
 	t.Helper()
@@ -396,7 +314,7 @@ func createChangesetSpec(
 		},
 	}
 
-	if err := store.CreateChangesetSpec(ctx, spec); err != nil {
+	if err := s.CreateChangesetSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 

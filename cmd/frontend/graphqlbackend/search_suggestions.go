@@ -164,7 +164,6 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// Only care about the first found repository.
 		repos, err := backend.Repos.List(ctx, db.ReposListOptions{
 			IncludePatterns: validValues,
-			OnlyRepoIDs:     true,
 			LimitOffset: &db.LimitOffset{
 				Limit: 1,
 			},

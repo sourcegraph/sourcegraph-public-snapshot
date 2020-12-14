@@ -1,14 +1,14 @@
 import { escapeRegExp } from 'lodash'
 import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
-import { parseCaseSensitivityFromQuery, parsePatternTypeFromQuery } from '../../../shared/src/util/url'
 import { replaceRange } from '../../../shared/src/util/strings'
-import { discreteValueAliases } from '../../../shared/src/search/parser/filters'
+import { discreteValueAliases } from '../../../shared/src/search/query/filters'
 import { VersionContext } from '../schema/site.schema'
 import { SearchPatternType } from '../../../shared/src/graphql-operations'
 import { Observable } from 'rxjs'
 import { ISavedSearch } from '../../../shared/src/graphql/schema'
 import { EventLogResult } from './backend'
 import { AggregateStreamingSearchResults } from './stream'
+import { findFilter, FilterKind } from '../../../shared/src/search/query/validate'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -54,10 +54,10 @@ export function parseSearchURLVersionContext(query: string): string | undefined 
 }
 
 export function searchURLIsCaseSensitive(query: string): boolean {
-    const queryCaseSensitivity = parseCaseSensitivityFromQuery(parseSearchURLQuery(query) || '')
-    if (queryCaseSensitivity) {
+    const globalCase = findFilter(parseSearchURLQuery(query) || '', 'case', FilterKind.Global)
+    if (globalCase?.value && globalCase.value.type === 'literal') {
         // if `case:` filter exists in the query, override the existing case: query param
-        return discreteValueAliases.yes.includes(queryCaseSensitivity.value)
+        return discreteValueAliases.yes.includes(globalCase.value.value)
     }
     const searchParameters = new URLSearchParams(query)
     const caseSensitive = searchParameters.get('case')
@@ -85,24 +85,26 @@ export function parseSearchURL(
     let patternType = parseSearchURLPatternType(urlSearchQuery)
     let caseSensitive = searchURLIsCaseSensitive(urlSearchQuery)
 
-    const patternTypeInQuery = parsePatternTypeFromQuery(finalQuery)
-    if (patternTypeInQuery) {
+    const globalPatternType = findFilter(finalQuery, 'patterntype', FilterKind.Global)
+    if (globalPatternType?.value && globalPatternType.value.type === 'literal') {
         // Any `patterntype:` filter in the query should override the patternType= URL query parameter if it exists.
-        finalQuery = replaceRange(finalQuery, patternTypeInQuery.range)
-        patternType = patternTypeInQuery.value as SearchPatternType
+        finalQuery = replaceRange(finalQuery, globalPatternType.range)
+        patternType = globalPatternType.value.value as SearchPatternType
     }
 
-    const caseInQuery = parseCaseSensitivityFromQuery(finalQuery)
-    if (caseInQuery) {
+    const globalCase = findFilter(finalQuery, 'case', FilterKind.Global)
+    if (globalCase?.value && globalCase.value.type === 'literal') {
         // Any `case:` filter in the query should override the case= URL query parameter if it exists.
-        finalQuery = replaceRange(finalQuery, caseInQuery.range)
+        finalQuery = replaceRange(finalQuery, globalCase.range)
 
-        if (discreteValueAliases.yes.includes(caseInQuery.value)) {
+        if (discreteValueAliases.yes.includes(globalCase.value.value)) {
             caseSensitive = true
-        } else if (discreteValueAliases.no.includes(caseInQuery.value)) {
+        } else if (discreteValueAliases.no.includes(globalCase.value.value)) {
             caseSensitive = false
         }
     }
+    // Invariant: If case:value was in the query, it is erased at this point. Add case:yes if needed.
+    finalQuery = caseSensitive ? `${finalQuery} case:yes` : finalQuery
 
     return {
         query: finalQuery,

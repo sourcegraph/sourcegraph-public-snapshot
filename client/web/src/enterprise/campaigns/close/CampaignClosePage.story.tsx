@@ -64,6 +64,7 @@ const campaignDefaults: CampaignFields = {
     },
     currentSpec: {
         originalInput: 'name: awesome-campaign\ndescription: somestring',
+        supersedingCampaignSpec: null,
     },
 }
 

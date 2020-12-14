@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -37,19 +37,17 @@ func TestRepo(t *testing.T, store repos.Store, serviceKind string) *types.Repo {
 
 	return &types.Repo{
 		Name:    api.RepoName(fmt.Sprintf("repo-%d", svc.ID)),
+		URI:     fmt.Sprintf("repo-%d", svc.ID),
 		Private: true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", svc.ID),
 			ServiceType: extsvc.KindToType(serviceKind),
 			ServiceID:   fmt.Sprintf("https://%s.com/", strings.ToLower(serviceKind)),
 		},
-		RepoFields: &types.RepoFields{
-			URI: fmt.Sprintf("repo-%d", svc.ID),
-			Sources: map[string]*types.SourceInfo{
-				svc.URN(): {
-					ID:       svc.URN(),
-					CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
-				},
+		Sources: map[string]*types.SourceInfo{
+			svc.URN(): {
+				ID:       svc.URN(),
+				CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
 			},
 		},
 	}

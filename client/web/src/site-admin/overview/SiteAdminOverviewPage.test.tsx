@@ -53,8 +53,8 @@ describe('SiteAdminOverviewPage', () => {
                     of({
                         repositories: 0,
                         repositoryStats: {
-                            gitDirBytes: 1825299556,
-                            indexedLinesCount: 2616264,
+                            gitDirBytes: '1825299556',
+                            indexedLinesCount: '2616264',
                         },
                         users: 1,
                         orgs: 1,
@@ -89,8 +89,8 @@ describe('SiteAdminOverviewPage', () => {
                     of({
                         repositories: 100,
                         repositoryStats: {
-                            gitDirBytes: 1825299556,
-                            indexedLinesCount: 2616264,
+                            gitDirBytes: '1825299556',
+                            indexedLinesCount: '2616264',
                         },
                         users: 1,
                         orgs: 1,
@@ -132,8 +132,8 @@ describe('SiteAdminOverviewPage', () => {
                     of({
                         repositories: 100,
                         repositoryStats: {
-                            gitDirBytes: 1825299556,
-                            indexedLinesCount: 2616264,
+                            gitDirBytes: '1825299556',
+                            indexedLinesCount: '2616264',
                         },
                         users: 10,
                         orgs: 5,

@@ -20,7 +20,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -31,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -206,14 +206,12 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "http://github.com",
 			},
-			RepoFields: &types.RepoFields{
-				Sources: map[string]*types.SourceInfo{},
-				Metadata: &github.Repository{
-					ID:            "bar",
-					NameWithOwner: "foo/bar",
-				},
+			Sources: map[string]*types.SourceInfo{},
+			Metadata: &github.Repository{
+				ID:            "bar",
+				NameWithOwner: "foo/bar",
 			},
-		}).With(repos.Opt.RepoSources(githubService.URN()))
+		}).With(types.Opt.RepoSources(githubService.URN()))
 
 		gitlabService := &types.ExternalService{
 			ID:          1,
@@ -235,16 +233,14 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 				ServiceType: extsvc.TypeGitLab,
 				ServiceID:   "http://gitlab.com",
 			},
-			RepoFields: &types.RepoFields{
-				Sources: map[string]*types.SourceInfo{},
-				Metadata: &gitlab.Project{
-					ProjectCommon: gitlab.ProjectCommon{
-						ID:                1,
-						PathWithNamespace: "foo/bar",
-					},
+			Sources: map[string]*types.SourceInfo{},
+			Metadata: &gitlab.Project{
+				ProjectCommon: gitlab.ProjectCommon{
+					ID:                1,
+					PathWithNamespace: "foo/bar",
 				},
 			},
-		}).With(repos.Opt.RepoSources(gitlabService.URN()))
+		}).With(types.Opt.RepoSources(gitlabService.URN()))
 
 		bitbucketServerService := &types.ExternalService{
 			ID:          1,
@@ -267,17 +263,15 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 				ServiceType: "bitbucketServer",
 				ServiceID:   "http://bitbucketserver.mycorp.com",
 			},
-			RepoFields: &types.RepoFields{
-				Sources: map[string]*types.SourceInfo{},
-				Metadata: &bitbucketserver.Repo{
-					ID:   1,
-					Slug: "bar",
-					Project: &bitbucketserver.Project{
-						Key: "foo",
-					},
+			Sources: map[string]*types.SourceInfo{},
+			Metadata: &bitbucketserver.Repo{
+				ID:   1,
+				Slug: "bar",
+				Project: &bitbucketserver.Project{
+					Key: "foo",
 				},
 			},
-		}).With(repos.Opt.RepoSources(bitbucketServerService.URN()))
+		}).With(types.Opt.RepoSources(bitbucketServerService.URN()))
 
 		type testCase struct {
 			name  string
@@ -309,7 +303,7 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 			testCases = append(testCases, testCase{
 				name:  "excluded from every external service of the same kind/" + k.svc.Kind,
 				svcs:  svcs,
-				repos: types.Repos{k.repo}.With(repos.Opt.RepoSources()),
+				repos: types.Repos{k.repo}.With(types.Opt.RepoSources()),
 				kind:  k.svc.Kind,
 				res: &protocol.ExcludeRepoResponse{
 					ExternalServices: apiExternalServices(svcs.With(func(e *types.ExternalService) {
@@ -318,17 +312,15 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 							ExternalRepo: k.repo.ExternalRepo,
 							Name:         api.RepoName(k.repo.Name),
 							Private:      k.repo.Private,
-							RepoFields: &types.RepoFields{
-								URI:         k.repo.URI,
-								Description: k.repo.Description,
-								Fork:        k.repo.Fork,
-								Archived:    k.repo.Archived,
-								Cloned:      k.repo.Cloned,
-								CreatedAt:   k.repo.CreatedAt,
-								UpdatedAt:   k.repo.UpdatedAt,
-								DeletedAt:   k.repo.DeletedAt,
-								Metadata:    k.repo.Metadata,
-							},
+							URI:          k.repo.URI,
+							Description:  k.repo.Description,
+							Fork:         k.repo.Fork,
+							Archived:     k.repo.Archived,
+							Cloned:       k.repo.Cloned,
+							CreatedAt:    k.repo.CreatedAt,
+							UpdatedAt:    k.repo.UpdatedAt,
+							DeletedAt:    k.repo.DeletedAt,
+							Metadata:     k.repo.Metadata,
 						}
 
 						if err := e.Exclude(tmp); err != nil {
@@ -431,13 +423,11 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "http://github.com",
 			},
-			RepoFields: &types.RepoFields{
-				Metadata: new(github.Repository),
-				Sources: map[string]*types.SourceInfo{
-					svc.URN(): {
-						ID:       svc.URN(),
-						CloneURL: "https://secret-token@github.com/foo/bar",
-					},
+			Metadata: new(github.Repository),
+			Sources: map[string]*types.SourceInfo{
+				svc.URN(): {
+					ID:       svc.URN(),
+					CloneURL: "https://secret-token@github.com/foo/bar",
 				},
 			},
 		}
@@ -449,12 +439,10 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "http://github.com",
 			},
-			RepoFields: &types.RepoFields{
-				Metadata: new(github.Repository),
-				Sources: map[string]*types.SourceInfo{
-					svc.URN(): {
-						ID: svc.URN(),
-					},
+			Metadata: new(github.Repository),
+			Sources: map[string]*types.SourceInfo{
+				svc.URN(): {
+					ID: svc.URN(),
 				},
 			},
 		}
@@ -609,10 +597,8 @@ func testServerRepoExternalServices(t *testing.T, store repos.Store) func(t *tes
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "http://github.com",
 			},
-			RepoFields: &types.RepoFields{
-				Metadata: new(github.Repository),
-			},
-		}).With(repos.Opt.RepoSources(service1.URN(), service2.URN()))
+			Metadata: new(github.Repository),
+		}).With(types.Opt.RepoSources(service1.URN(), service2.URN()))
 
 		if err := store.InsertRepos(ctx, repoNoSources, repoSources); err != nil {
 			t.Fatal(err)
@@ -688,7 +674,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 			{
 				name:            "all cloned",
 				gitserverCloned: []string{"foobar"},
-				stored:          []*types.Repo{{Name: "foobar", RepoFields: &types.RepoFields{Cloned: true}}},
+				stored:          []*types.Repo{{Name: "foobar", Cloned: true}},
 				res: &protocol.StatusMessagesResponse{
 					Messages: []protocol.StatusMessage{},
 				},
@@ -709,7 +695,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 			},
 			{
 				name:            "subset cloned",
-				stored:          []*types.Repo{{Name: "foobar", RepoFields: &types.RepoFields{Cloned: true}}, {Name: "barfoo"}},
+				stored:          []*types.Repo{{Name: "foobar", Cloned: true}, {Name: "barfoo"}},
 				gitserverCloned: []string{"foobar"},
 				res: &protocol.StatusMessagesResponse{
 					Messages: []protocol.StatusMessage{
@@ -723,7 +709,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 			},
 			{
 				name:            "more cloned than stored",
-				stored:          []*types.Repo{{Name: "foobar", RepoFields: &types.RepoFields{Cloned: true}}},
+				stored:          []*types.Repo{{Name: "foobar", Cloned: true}},
 				gitserverCloned: []string{"foobar", "barfoo"},
 				res: &protocol.StatusMessagesResponse{
 					Messages: []protocol.StatusMessage{},
@@ -746,7 +732,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 			{
 				name:            "case insensitivity",
 				gitserverCloned: []string{"foobar"},
-				stored:          []*types.Repo{{Name: "FOOBar", RepoFields: &types.RepoFields{Cloned: true}}},
+				stored:          []*types.Repo{{Name: "FOOBar", Cloned: true}},
 				res: &protocol.StatusMessagesResponse{
 					Messages: []protocol.StatusMessage{},
 				},
@@ -754,7 +740,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 			{
 				name:            "case insensitivity to gitserver names",
 				gitserverCloned: []string{"FOOBar"},
-				stored:          []*types.Repo{{Name: "FOOBar", RepoFields: &types.RepoFields{Cloned: true}}},
+				stored:          []*types.Repo{{Name: "FOOBar", Cloned: true}},
 				res: &protocol.StatusMessagesResponse{
 					Messages: []protocol.StatusMessage{},
 				},
@@ -803,7 +789,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 						ServiceType: extsvc.TypeGitHub,
 						ServiceID:   "https://github.com/",
 					}
-					if r.RepoFields != nil && r.Cloned {
+					if r.Cloned {
 						cloned = append(cloned, string(r.Name))
 					}
 				}
@@ -923,94 +909,88 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 			}
 
 			githubRepository := &types.Repo{
-				Name: "github.com/foo/bar",
+				Name:        "github.com/foo/bar",
+				Description: "The description",
+				Archived:    false,
+				Fork:        false,
+				CreatedAt:   now,
+				UpdatedAt:   now,
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
-				RepoFields: &types.RepoFields{
-					Description: "The description",
-					Archived:    false,
-					Fork:        false,
-					CreatedAt:   now,
-					UpdatedAt:   now,
-					Sources: map[string]*types.SourceInfo{
-						githubSource.URN(): {
-							ID:       githubSource.URN(),
-							CloneURL: "git@github.com:foo/bar.git",
-						},
+				Sources: map[string]*types.SourceInfo{
+					githubSource.URN(): {
+						ID:       githubSource.URN(),
+						CloneURL: "git@github.com:foo/bar.git",
 					},
-					Metadata: &github.Repository{
-						ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-						URL:           "github.com/foo/bar",
-						DatabaseID:    1234,
-						Description:   "The description",
-						NameWithOwner: "foo/bar",
-					},
+				},
+				Metadata: &github.Repository{
+					ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+					URL:           "github.com/foo/bar",
+					DatabaseID:    1234,
+					Description:   "The description",
+					NameWithOwner: "foo/bar",
 				},
 			}
 
 			awsCodeCommitRepository := &types.Repo{
-				Name: "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+				Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+				Description: "The stripe-go lib",
+				Archived:    false,
+				Fork:        false,
+				CreatedAt:   now,
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
 					ServiceType: extsvc.TypeAWSCodeCommit,
 					ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
 				},
-				RepoFields: &types.RepoFields{
-					Description: "The stripe-go lib",
-					Archived:    false,
-					Fork:        false,
-					CreatedAt:   now,
-					Sources: map[string]*types.SourceInfo{
-						awsSource.URN(): {
-							ID:       awsSource.URN(),
-							CloneURL: "git@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
-						},
+				Sources: map[string]*types.SourceInfo{
+					awsSource.URN(): {
+						ID:       awsSource.URN(),
+						CloneURL: "git@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
 					},
-					Metadata: &awscodecommit.Repository{
-						ARN:          "arn:aws:codecommit:us-west-1:999999999999:stripe-go",
-						AccountID:    "999999999999",
-						ID:           "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-						Name:         "stripe-go",
-						Description:  "The stripe-go lib",
-						HTTPCloneURL: "https://git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
-						LastModified: &now,
-					},
+				},
+				Metadata: &awscodecommit.Repository{
+					ARN:          "arn:aws:codecommit:us-west-1:999999999999:stripe-go",
+					AccountID:    "999999999999",
+					ID:           "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+					Name:         "stripe-go",
+					Description:  "The stripe-go lib",
+					HTTPCloneURL: "https://git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
+					LastModified: &now,
 				},
 			}
 
 			gitlabRepository := &types.Repo{
-				Name: "gitlab.com/gitlab-org/gitaly",
+				Name:        "gitlab.com/gitlab-org/gitaly",
+				Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+				URI:         "gitlab.com/gitlab-org/gitaly",
+				CreatedAt:   now,
+				UpdatedAt:   now,
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "2009901",
 					ServiceType: extsvc.TypeGitLab,
 					ServiceID:   "https://gitlab.com/",
 				},
-				RepoFields: &types.RepoFields{
-					Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-					URI:         "gitlab.com/gitlab-org/gitaly",
-					CreatedAt:   now,
-					UpdatedAt:   now,
-					Sources: map[string]*types.SourceInfo{
-						gitlabSource.URN(): {
-							ID:       gitlabSource.URN(),
-							CloneURL: "https://gitlab.com/gitlab-org/gitaly.git",
-						},
+				Sources: map[string]*types.SourceInfo{
+					gitlabSource.URN(): {
+						ID:       gitlabSource.URN(),
+						CloneURL: "https://gitlab.com/gitlab-org/gitaly.git",
 					},
-					Metadata: &gitlab.Project{
-						ProjectCommon: gitlab.ProjectCommon{
-							ID:                2009901,
-							PathWithNamespace: "gitlab-org/gitaly",
-							Description:       "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-							WebURL:            "https://gitlab.com/gitlab-org/gitaly",
-							HTTPURLToRepo:     "https://gitlab.com/gitlab-org/gitaly.git",
-							SSHURLToRepo:      "git@gitlab.com:gitlab-org/gitaly.git",
-						},
-						Visibility: "",
-						Archived:   false,
+				},
+				Metadata: &gitlab.Project{
+					ProjectCommon: gitlab.ProjectCommon{
+						ID:                2009901,
+						PathWithNamespace: "gitlab-org/gitaly",
+						Description:       "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+						WebURL:            "https://gitlab.com/gitlab-org/gitaly",
+						HTTPURLToRepo:     "https://gitlab.com/gitlab-org/gitaly.git",
+						SSHURLToRepo:      "git@gitlab.com:gitlab-org/gitaly.git",
 					},
+					Visibility: "",
+					Archived:   false,
 				},
 			}
 

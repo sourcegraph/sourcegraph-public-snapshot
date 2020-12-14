@@ -12,7 +12,7 @@ import {
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import * as path from 'path'
 import { DiffHunkLineType } from '../graphql-operations'
-import { encodeURIComponentExceptSlashes } from '../../../shared/src/util/url'
+import { encodeURIPathComponent } from '../../../shared/src/util/url'
 import { ExtensionManifest } from '../../../shared/src/extensions/extensionManifest'
 import { Settings } from '../../../shared/src/settings/settings'
 import type * as sourcegraph from 'sourcegraph'
@@ -386,13 +386,13 @@ describe('Repository', () => {
             // Assert breadcrumb order
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
             assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', clickedFileName])
 
             // Return to repo page
-            await driver.page.waitForSelector('a.repo-header__repo')
-            await driver.page.click('a.repo-header__repo')
+            await driver.page.waitForSelector('.test-repo-header-repo-link')
+            await driver.page.click('.test-repo-header-repo-link')
 
             await driver.page.waitForSelector('h2.tree-page__title')
             await assertSelectorHasText('h2.tree-page__title', ' ' + shortRepositoryName)
@@ -415,9 +415,9 @@ describe('Repository', () => {
                 ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
                 FileExternalLinks: ({ filePath, repoName, revision }) =>
                     createFileExternalLinksResult(
-                        `https://${encodeURIComponentExceptSlashes(repoName)}/blob/${encodeURIComponentExceptSlashes(
+                        `https://${encodeURIPathComponent(repoName)}/blob/${encodeURIPathComponent(
                             revision
-                        )}/${encodeURIComponentExceptSlashes(filePath)}`
+                        )}/${encodeURIPathComponent(filePath)}`
                     ),
                 TreeEntries: () => ({
                     repository: {
@@ -464,7 +464,7 @@ describe('Repository', () => {
 
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
             assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', filePath])
 
@@ -491,6 +491,53 @@ describe('Repository', () => {
 
             const blobContent = await driver.page.evaluate(() => document.querySelector('.test-repo-blob')?.textContent)
             assert.strictEqual(blobContent, `content for: ${filePath}`)
+        })
+
+        it('works with a plus sign in the repository name', async () => {
+            const shortRepositoryName = 'ubuntu/+source/quemu'
+            const repositorySourcegraphUrl = '/ubuntu/+source/quemu'
+
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+                ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
+                FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
+                TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, ['readme.md']),
+
+                TreeCommits: () => ({
+                    node: {
+                        __typename: 'Repository',
+                        commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false } } },
+                    },
+                }),
+                Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}`),
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
+
+            await driver.page.waitForSelector('h2.tree-page__title')
+            await assertSelectorHasText('h2.tree-page__title', ` ${shortRepositoryName}`)
+            await assertSelectorHasText('.test-tree-entry-file', 'readme.md')
+
+            await driver.page.waitForSelector('#monaco-query-input .view-lines')
+            // TODO: find a more reliable way to get the current search query,
+            // to account for the fact that it may _actually_ contain non-breaking spaces
+            // (and not just have spaces rendered as non-breaking in the DOM by Monaco)
+            // https://github.com/sourcegraph/sourcegraph/issues/14756
+            const searchQuery = (
+                await driver.page.evaluate(() => document.querySelector('#monaco-query-input .view-lines')?.textContent)
+            )?.replace(/\u00A0/g, ' ')
+            assert.strictEqual(searchQuery, 'repo:^ubuntu/\\+source/quemu$ ') // + should be escaped in regular expression
+
+            // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
+            await driver.page.$eval('.test-tree-file-link', linkElement => (linkElement as HTMLElement).click())
+            await driver.page.waitForSelector('.test-repo-blob')
+
+            await driver.page.waitForSelector('.test-breadcrumb')
+            const breadcrumbTexts = await driver.page.evaluate(() =>
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
+            )
+            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', 'readme.md'])
         })
 
         it('works with spaces in the repository name', async () => {
@@ -525,7 +572,7 @@ describe('Repository', () => {
 
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent)
+                [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
             assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', 'readme.md'])
         })
@@ -552,9 +599,9 @@ describe('Repository', () => {
                 ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
                 FileExternalLinks: ({ filePath, repoName, revision }) =>
                     createFileExternalLinksResult(
-                        `https://${encodeURIComponentExceptSlashes(repoName)}/blob/${encodeURIComponentExceptSlashes(
+                        `https://${encodeURIPathComponent(repoName)}/blob/${encodeURIPathComponent(
                             revision
-                        )}/${encodeURIComponentExceptSlashes(filePath)}`
+                        )}/${encodeURIPathComponent(filePath)}`
                     ),
                 ViewerSettings: () => ({
                     viewerSettings: {

@@ -6,31 +6,43 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/batch"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// scanUploadMeta scans upload metadata grouped by commit from the return value of `*Store.query`.
-func scanUploadMeta(rows *sql.Rows, queryErr error) (_ map[string][]UploadMeta, err error) {
+// scanCommitGraphView scans a commit graph view from the return value of `*Store.query`.
+func scanCommitGraphView(rows *sql.Rows, queryErr error) (_ *commitgraph.CommitGraphView, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	uploadMeta := map[string][]UploadMeta{}
+	commitGraphView := commitgraph.NewCommitGraphView()
+
 	for rows.Next() {
-		var commit string
-		var upload UploadMeta
-		if err := rows.Scan(&upload.UploadID, &commit, &upload.Root, &upload.Indexer, &upload.Distance, &upload.AncestorVisible, &upload.Overwritten); err != nil {
+		var meta commitgraph.UploadMeta
+		var commit, token string
+		var ancestorVisible, overwritten bool
+
+		if err := rows.Scan(&meta.UploadID, &commit, &token, &meta.Flags, &ancestorVisible, &overwritten); err != nil {
 			return nil, err
 		}
 
-		uploadMeta[commit] = append(uploadMeta[commit], upload)
+		if ancestorVisible {
+			meta.Flags |= commitgraph.FlagAncestorVisible
+		}
+		if overwritten {
+			meta.Flags |= commitgraph.FlagOverwritten
+		}
+
+		commitGraphView.Add(meta, commit, token)
 	}
 
-	return uploadMeta, nil
+	return commitGraphView, nil
 }
 
 // HasRepository determines if there is LSIF data for the given repository.
@@ -121,10 +133,10 @@ func (s *Store) DirtyRepositories(ctx context.Context) (_ map[int]int, err error
 // If dirtyToken is supplied, the repository will be unmarked when the supplied token does matches the most recent
 // token stored in the database, the flag will not be cleared as another request for update has come in since this
 // token has been read.
-func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, graph map[string][]string, tipCommit string, dirtyToken int) (err error) {
+func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, graph *gitserver.CommitGraph, tipCommit string, dirtyToken int) (err error) {
 	ctx, endObservation := s.operations.calculateVisibleUploads.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
-		log.Int("numKeys", len(graph)),
+		log.Int("numKeys", len(graph.Order())),
 		log.String("tipCommit", tipCommit),
 		log.Int("dirtyToken", dirtyToken),
 	}})
@@ -138,8 +150,8 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 
 	// Pull all queryable upload metadata known to this repository so we can correlate
 	// it with the current  commit graph.
-	uploadMeta, err := scanUploadMeta(tx.Store.Query(ctx, sqlf.Sprintf(`
-		SELECT id, commit, root, indexer, 0 as distance, true as ancestor_visible, false as overwritten
+	commitGraphView, err := scanCommitGraphView(tx.Store.Query(ctx, sqlf.Sprintf(`
+		SELECT id, commit, md5(root || ':' || indexer) as token, 0 as distance, true as ancestor_visible, false as overwritten
 		FROM lsif_uploads
 		WHERE state = 'completed' AND repository_id = %s
 	`, repositoryID)))
@@ -148,10 +160,7 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 	}
 
 	// Determine which uploads are visible to which commits for this repository
-	visibleUploads, err := calculateVisibleUploads(graph, uploadMeta)
-	if err != nil {
-		return err
-	}
+	visibleUploads := commitgraph.CalculateVisibleUploads(graph, commitGraphView)
 
 	// Clear all old visibility data for this repository
 	for _, query := range []string{
@@ -163,6 +172,7 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 		}
 	}
 
+	// Update the set of uploads that are visible from each commit for a given repository.
 	nearestUploadsInserter := batch.NewBatchInserter(
 		ctx,
 		s.Store.Handle().DB(),
@@ -174,36 +184,45 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, g
 		"ancestor_visible",
 		"overwritten",
 	)
-	for commit, uploads := range visibleUploads {
-		for _, uploadMeta := range uploads {
-			if err := nearestUploadsInserter.Insert(
-				ctx,
-				repositoryID,
-				dbutil.CommitBytea(commit),
-				uploadMeta.UploadID,
-				uploadMeta.Distance,
-				uploadMeta.AncestorVisible,
-				uploadMeta.Overwritten,
-			); err != nil {
-				return err
-			}
-		}
-	}
-	if err := nearestUploadsInserter.Flush(ctx); err != nil {
-		return err
-	}
 
 	// Update which repositories are visible from the tip of the default branch. This
 	// flag is used to determine which bundles for a repository we open during a global
 	// find references query.
-	uploadsVisibleAtTipInserter := batch.NewBatchInserter(ctx, s.Store.Handle().DB(), "lsif_uploads_visible_at_tip", "repository_id", "upload_id")
+	uploadsVisibleAtTipInserter := batch.NewBatchInserter(
+		ctx,
+		s.Store.Handle().DB(),
+		"lsif_uploads_visible_at_tip",
+		"repository_id",
+		"upload_id",
+	)
 
-	for _, uploadMeta := range visibleUploads[tipCommit] {
-		if err := uploadsVisibleAtTipInserter.Insert(ctx, repositoryID, uploadMeta.UploadID); err != nil {
-			return err
+	for v := range visibleUploads {
+		for _, uploadMeta := range v.Uploads {
+			if err := nearestUploadsInserter.Insert(
+				ctx,
+				repositoryID,
+				dbutil.CommitBytea(v.Commit),
+				uploadMeta.UploadID,
+				uploadMeta.Flags&commitgraph.MaxDistance,
+				(uploadMeta.Flags&commitgraph.FlagAncestorVisible) != 0,
+				(uploadMeta.Flags&commitgraph.FlagOverwritten) != 0,
+			); err != nil {
+				return err
+			}
+		}
+
+		if v.Commit == tipCommit {
+			for _, uploadMeta := range v.Uploads {
+				if err := uploadsVisibleAtTipInserter.Insert(ctx, repositoryID, uploadMeta.UploadID); err != nil {
+					return err
+				}
+			}
 		}
 	}
 	if err := uploadsVisibleAtTipInserter.Flush(ctx); err != nil {
+		return err
+	}
+	if err := nearestUploadsInserter.Flush(ctx); err != nil {
 		return err
 	}
 

@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -23,7 +24,7 @@ import (
 )
 
 type changesetResolver struct {
-	store       *ee.Store
+	store       *store.Store
 	httpFactory *httpcli.Factory
 
 	changeset *campaigns.Changeset
@@ -50,14 +51,14 @@ type changesetResolver struct {
 	specErr  error
 }
 
-func NewChangesetResolverWithNextSync(store *ee.Store, httpFactory *httpcli.Factory, changeset *campaigns.Changeset, repo *types.Repo, nextSyncAt *time.Time) *changesetResolver {
+func NewChangesetResolverWithNextSync(store *store.Store, httpFactory *httpcli.Factory, changeset *campaigns.Changeset, repo *types.Repo, nextSyncAt *time.Time) *changesetResolver {
 	r := NewChangesetResolver(store, httpFactory, changeset, repo)
 	r.attemptedPreloadNextSyncAt = true
 	r.preloadedNextSyncAt = nextSyncAt
 	return r
 }
 
-func NewChangesetResolver(store *ee.Store, httpFactory *httpcli.Factory, changeset *campaigns.Changeset, repo *types.Repo) *changesetResolver {
+func NewChangesetResolver(store *store.Store, httpFactory *httpcli.Factory, changeset *campaigns.Changeset, repo *types.Repo) *changesetResolver {
 	return &changesetResolver{
 		store:        store,
 		httpFactory:  httpFactory,
@@ -113,7 +114,7 @@ func (r *changesetResolver) computeSpec(ctx context.Context) (*campaigns.Changes
 
 func (r *changesetResolver) computeEvents(ctx context.Context) ([]*campaigns.ChangesetEvent, error) {
 	r.eventsOnce.Do(func() {
-		opts := ee.ListChangesetEventsOpts{
+		opts := store.ListChangesetEventsOpts{
 			ChangesetIDs: []int64{r.changeset.ID},
 		}
 		es, _, err := r.store.ListChangesetEvents(ctx, opts)
@@ -134,7 +135,7 @@ func (r *changesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, e
 			}
 			return
 		}
-		syncData, err := r.store.ListChangesetSyncData(ctx, ee.ListChangesetSyncDataOpts{ChangesetIDs: []int64{r.changeset.ID}})
+		syncData, err := r.store.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ChangesetIDs: []int64{r.changeset.ID}})
 		if err != nil {
 			r.nextSyncAtErr = err
 			return
@@ -165,7 +166,7 @@ func (r *changesetResolver) Repository(ctx context.Context) *graphqlbackend.Repo
 }
 
 func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignsArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
-	opts := ee.ListCampaignsOpts{
+	opts := store.ListCampaignsOpts{
 		ChangesetID: r.changeset.ID,
 	}
 

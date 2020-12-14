@@ -2,7 +2,6 @@ import * as H from 'history'
 import * as React from 'react'
 import ArrowCollapseVerticalIcon from 'mdi-react/ArrowCollapseVerticalIcon'
 import ArrowExpandVerticalIcon from 'mdi-react/ArrowExpandVerticalIcon'
-import CheckIcon from 'mdi-react/CheckIcon'
 import classNames from 'classnames'
 import DownloadIcon from 'mdi-react/DownloadIcon'
 import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
@@ -33,9 +32,7 @@ interface SearchResultsInfoBarProps
 
     // Saved queries
     showSavedQueryButton?: boolean
-    onDidCreateSavedQuery: () => void
     onSaveQueryClick: () => void
-    didSave: boolean
 
     location: H.Location
 
@@ -70,12 +67,10 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInf
 export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => (
     <div className={classNames(props.className, 'search-results-info-bar')} data-testid="results-info-bar">
         <small className="search-results-info-bar__row">
-            <div className="search-results-info-bar__row-left">
-                {props.stats}
-                <QuotesInterpretedLiterallyNotice {...props} />
-            </div>
+            {props.stats}
+            <QuotesInterpretedLiterallyNotice {...props} />
 
-            <ul className="search-results-info-bar__row-right nav align-items-center justify-content-end">
+            <ul className="nav align-items-center justify-content-end">
                 <ActionsNavItems
                     {...props}
                     extraContext={{ searchQuery: props.query || null }}
@@ -112,18 +107,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                             type="button"
                             onClick={props.onSaveQueryClick}
                             className="btn btn-link nav-link text-decoration-none"
-                            disabled={props.didSave}
                         >
-                            {props.didSave ? (
-                                <>
-                                    <CheckIcon className="icon-inline" /> Query saved
-                                </>
-                            ) : (
-                                <>
-                                    <DownloadIcon className="icon-inline test-save-search-link" /> Save this search
-                                    query
-                                </>
-                            )}
+                            <DownloadIcon className="icon-inline test-save-search-link" /> Save this search query
                         </button>
                     </li>
                 )}

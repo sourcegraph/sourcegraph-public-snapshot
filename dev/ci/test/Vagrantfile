@@ -37,7 +37,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       srv.vm.provider :google do |g, o|
         g.service_account = ENV["VAGRANT_SERVICE_ACCOUNT"] || nil
         g.machine_type = server['machine_type']
-        g.image = 'e2e-491e9f27-2020-10-28t17-32-00z'
+        g.image = 'e2e-cd59179f-2020-12-04t18-24-14z'
         g.image_project_id = 'sourcegraph-ci'
         g.google_project_id = project_id
         g.name = "#{server['name']}-"+"#{Time.now.to_i}"

@@ -169,7 +169,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			name:         "gjson handles comments",
 			kind:         extsvc.KindGitHub,
 			config:       `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["affiliated"]} // comment`,
-			hasNamespace: true,
+			hasNamespace: false,
 			wantErr:      "<nil>",
 		},
 		{
@@ -193,6 +193,20 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			hasNamespace: true,
 			wantErr:      `field "rateLimit" is not allowed in a user-added external service`,
 		},
+		{
+			name:         "authorization required for GitHub",
+			kind:         extsvc.KindGitHub,
+			config:       `{"url": "https://github.com", "token": "abc", "repos": ["abc/testrepo"]}`,
+			hasNamespace: true,
+			wantErr:      "1 error occurred:\n\t* authorization required\n\n",
+		},
+		{
+			name:         "authorization required for GitLab",
+			kind:         extsvc.KindGitHub,
+			config:       `{"url": "https://gitlab.com", "token": "abc", "repos": ["abc/testrepo"]}`,
+			hasNamespace: true,
+			wantErr:      "1 error occurred:\n\t* authorization required\n\n",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -200,7 +214,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 				test.setup(t)
 			}
 
-			err := ExternalServices.ValidateConfig(context.Background(), ValidateExternalServiceConfigOptions{
+			_, err := ExternalServices.ValidateConfig(context.Background(), ValidateExternalServiceConfigOptions{
 				Kind:         test.kind,
 				Config:       test.config,
 				HasNamespace: test.hasNamespace,
@@ -247,6 +261,21 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 			},
 			wantUnrestricted: false,
+		},
+		{
+			name: "with authorization in comments",
+			externalService: &types.ExternalService{
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "GITHUB #3",
+				Config: `
+{
+	"url": "https://github.com",
+	"repositoryQuery": ["none"],
+	"token": "abc",
+	// "authorization": {}
+}`,
+			},
+			wantUnrestricted: true,
 		},
 	}
 	for _, test := range tests {
@@ -336,6 +365,20 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			update: &ExternalServiceUpdate{
 				DisplayName: strptr("GITHUB (updated) #2"),
 				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+			},
+			wantUnrestricted: true,
+		},
+		{
+			name: "update with authorization in comments",
+			update: &ExternalServiceUpdate{
+				DisplayName: strptr("GITHUB (updated) #3"),
+				Config: strptr(`
+{
+	"url": "https://github.com",
+	"repositoryQuery": ["none"],
+	"token": "def",
+	// "authorization": {}
+}`),
 			},
 			wantUnrestricted: true,
 		},
@@ -445,6 +488,11 @@ VALUES (%d, 1, ''), (%d, 2, '')
 	want := []*types.Repo{
 		{ID: 2, Name: "github.com/user/repo2"},
 	}
+
+	repos = types.Repos(repos).With(func(r *types.Repo) {
+		r.CreatedAt = time.Time{}
+		r.Sources = nil
+	})
 	if diff := cmp.Diff(want, repos); diff != "" {
 		t.Fatalf("Repos mismatch (-want +got):\n%s", diff)
 	}
@@ -518,7 +566,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 		{
 			Kind:            extsvc.KindGitHub,
 			DisplayName:     "GITHUB #1",
-			Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 			NamespaceUserID: user.ID,
 		},
 		{

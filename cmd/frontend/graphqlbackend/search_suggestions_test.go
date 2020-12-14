@@ -79,7 +79,6 @@ func TestSearchSuggestions(t *testing.T) {
 			// Validate that the following options are invariant
 			// when calling the DB through Repos.List, no matter how
 			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.OnlyRepoIDs, true)
 			assertEqual(t, op.LimitOffset, limitOffset)
 
 			if reflect.DeepEqual(op.IncludePatterns, []string{"foo"}) {
@@ -228,7 +227,6 @@ func TestSearchSuggestions(t *testing.T) {
 			// Validate that the following options are invariant
 			// when calling the DB through Repos.List, no matter how
 			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.OnlyRepoIDs, true)
 			assertEqual(t, op.LimitOffset, limitOffset)
 			assertEqual(t, op.IncludePatterns, []string{"foo"})
 
@@ -277,7 +275,6 @@ func TestSearchSuggestions(t *testing.T) {
 		db.Mocks.Repos.List = func(_ context.Context, have db.ReposListOptions) ([]*types.Repo, error) {
 			want := db.ReposListOptions{
 				IncludePatterns: []string{"foo"},
-				OnlyRepoIDs:     true,
 				LimitOffset: &db.LimitOffset{
 					Limit: 1,
 				},
@@ -338,7 +335,6 @@ func TestSearchSuggestions(t *testing.T) {
 			// Validate that the following options are invariant
 			// when calling the DB through Repos.List, no matter how
 			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.OnlyRepoIDs, true)
 			assertEqual(t, op.LimitOffset, limitOffset)
 			assertEqual(t, op.IncludePatterns, []string{"foo"})
 

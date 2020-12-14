@@ -1,7 +1,7 @@
 import { Suggestion } from '../Suggestion'
 import { assign } from 'lodash/fp'
 import { FilterType } from '../../../../../shared/src/search/interactive/util'
-import { resolveFilter } from '../../../../../shared/src/search/parser/filters'
+import { resolveFilter } from '../../../../../shared/src/search/query/filters'
 
 /** FilterTypes which have a finite number of valid options. */
 export type FiniteFilterType =

@@ -15,9 +15,9 @@ import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifUploadFields } from '../../../graphql-operations'
 import { CodeIntelStateBanner } from '../shared/CodeIntelStateBanner'
-import { CodeIntelUploadOrIndexTimeline } from '../shared/CodeIntelUploadOrIndexTimeline'
 import { deleteLsifUpload, fetchLsifUpload as defaultFetchUpload } from './backend'
 import { CodeIntelUploadMeta } from './CodeIntelUploadMeta'
+import { CodeIntelUploadTimeline } from './CodeIntelUploadTimeline'
 
 export interface CodeIntelUploadPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
     fetchLsifUpload?: typeof defaultFetchUpload
@@ -129,7 +129,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                             <CodeIntelUploadMeta node={uploadOrError} now={now} />
                         </div>
                     </div>
-                    <CodeIntelUploadOrIndexTimeline node={uploadOrError} className="mb-3" />
+                    <CodeIntelUploadTimeline upload={uploadOrError} className="mb-3" />
                 </>
             )}
         </div>

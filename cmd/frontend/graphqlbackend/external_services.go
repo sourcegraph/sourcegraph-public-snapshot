@@ -245,7 +245,7 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *deleteEx
 	// service, so kick off in the background.
 	go func() {
 		if err := syncExternalService(context.Background(), es); err != nil {
-			log15.Error("Performing final sync after external service deletion", "err", err)
+			log15.Warn("Performing final sync after external service deletion", "err", err)
 		}
 	}()
 

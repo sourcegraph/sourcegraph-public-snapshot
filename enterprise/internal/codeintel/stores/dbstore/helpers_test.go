@@ -12,10 +12,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type printableRank struct{ value *int }
@@ -147,7 +149,7 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 				indexer,
 				indexer_args,
 				outfile,
-				log_contents
+				execution_logs
 			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			index.ID,
@@ -166,7 +168,7 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 			index.Indexer,
 			pq.Array(index.IndexerArgs),
 			index.Outfile,
-			index.LogContents,
+			pq.Array(dbworkerstore.ExecutionLogEntries(index.ExecutionLogs)),
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
@@ -217,7 +219,7 @@ func insertVisibleAtTip(t *testing.T, db *sql.DB, repositoryID int, uploadIDs ..
 }
 
 // insertNearestUploads populates the lsif_nearest_uploads table with the given upload metadata.
-func insertNearestUploads(t *testing.T, db *sql.DB, repositoryID int, uploads map[string][]UploadMeta) {
+func insertNearestUploads(t *testing.T, db *sql.DB, repositoryID int, uploads map[string][]commitgraph.UploadMeta) {
 	var rows []*sqlf.Query
 	for commit, metas := range uploads {
 		for _, meta := range metas {
@@ -226,9 +228,9 @@ func insertNearestUploads(t *testing.T, db *sql.DB, repositoryID int, uploads ma
 				repositoryID,
 				dbutil.CommitBytea(commit),
 				meta.UploadID,
-				meta.Distance,
-				meta.AncestorVisible,
-				meta.Overwritten,
+				meta.Flags&commitgraph.MaxDistance,
+				(meta.Flags&commitgraph.FlagAncestorVisible) != 0,
+				(meta.Flags&commitgraph.FlagOverwritten) != 0,
 			))
 		}
 	}
@@ -242,48 +244,45 @@ func insertNearestUploads(t *testing.T, db *sql.DB, repositoryID int, uploads ma
 	}
 }
 
-func toUploadMeta(uploads []Upload) map[string][]UploadMeta {
-	meta := map[string][]UploadMeta{}
+func toCommitGraphView(uploads []Upload) *commitgraph.CommitGraphView {
+	commitGraphView := commitgraph.NewCommitGraphView()
 	for _, upload := range uploads {
-		meta[upload.Commit] = append(meta[upload.Commit], UploadMeta{
-			UploadID: upload.ID,
-			Root:     upload.Root,
-			Indexer:  upload.Indexer,
-		})
+		commitGraphView.Add(commitgraph.UploadMeta{UploadID: upload.ID}, upload.Commit, fmt.Sprintf("%s:%s", upload.Root, upload.Indexer))
 	}
 
-	return meta
+	return commitGraphView
 }
 
-var UploadMetaComparer = cmp.Comparer(func(x, y UploadMeta) bool {
-	return x.UploadID == y.UploadID && x.Distance == y.Distance
+// UploadMetaComparer compares the upload identifier and distances of two upload meta values.
+var UploadMetaComparer = cmp.Comparer(func(x, y commitgraph.UploadMeta) bool {
+	return x.UploadID == y.UploadID && (x.Flags&commitgraph.MaxDistance) == (y.Flags&commitgraph.MaxDistance)
 })
 
-func scanVisibleUploads(rows *sql.Rows, queryErr error) (_ map[string][]UploadMeta, err error) {
+func scanVisibleUploads(rows *sql.Rows, queryErr error) (_ map[string][]commitgraph.UploadMeta, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	uploadMeta := map[string][]UploadMeta{}
+	uploadMeta := map[string][]commitgraph.UploadMeta{}
 	for rows.Next() {
 		var commit string
 		var uploadID int
-		var distance int
+		var distance uint32
 		if err := rows.Scan(&commit, &uploadID, &distance); err != nil {
 			return nil, err
 		}
 
-		uploadMeta[commit] = append(uploadMeta[commit], UploadMeta{
+		uploadMeta[commit] = append(uploadMeta[commit], commitgraph.UploadMeta{
 			UploadID: uploadID,
-			Distance: distance,
+			Flags:    distance,
 		})
 	}
 
 	return uploadMeta, nil
 }
 
-func getVisibleUploads(t *testing.T, db *sql.DB, repositoryID int) map[string][]UploadMeta {
+func getVisibleUploads(t *testing.T, db *sql.DB, repositoryID int) map[string][]commitgraph.UploadMeta {
 	query := sqlf.Sprintf(
 		`SELECT encode(commit_bytea, 'hex'), upload_id, distance FROM lsif_nearest_uploads WHERE repository_id = %s AND NOT overwritten ORDER BY upload_id`,
 		repositoryID,
@@ -310,11 +309,11 @@ func getUploadsVisibleAtTip(t *testing.T, db *sql.DB, repositoryID int) []int {
 	return ids
 }
 
-func normalizeVisibleUploads(uploadMetas map[string][]UploadMeta) map[string][]UploadMeta {
+func normalizeVisibleUploads(uploadMetas map[string][]commitgraph.UploadMeta) map[string][]commitgraph.UploadMeta {
 	for commit, uploads := range uploadMetas {
-		var filtered []UploadMeta
+		var filtered []commitgraph.UploadMeta
 		for _, upload := range uploads {
-			if !upload.Overwritten {
+			if (upload.Flags & commitgraph.FlagOverwritten) == 0 {
 				filtered = append(filtered, upload)
 			}
 		}

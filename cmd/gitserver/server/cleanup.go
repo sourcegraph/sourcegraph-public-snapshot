@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
@@ -37,6 +38,11 @@ const (
 	repoTTLGC = time.Hour * 24 * 2
 )
 
+// EnableGCAuto is a temporary flag that allows us to control whether or not
+// `git gc --auto` is invoked during janitorial activities. This flag will
+// likely evolve into some form of site config value in the future.
+var enableGCAuto, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "true", "Use git-gc during janitorial cleanup phases"))
+
 var (
 	reposRemoved = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_removed",
@@ -50,6 +56,14 @@ var (
 		Name: "src_gitserver_repos_removed_disk_pressure",
 		Help: "number of repos removed due to not enough disk space",
 	})
+	janitorRunning = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_gitserver_janitor_running",
+		Help: "set to 1 when the gitserver janitor background job is running",
+	})
+	jobTimer = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "src_gitserver_janitor_job_duration_seconds",
+		Help: "Duration of the individual jobs within the gitserver janitor background job",
+	}, []string{"job_name"})
 )
 
 const reposStatsName = "repos-stats.json"
@@ -61,6 +75,10 @@ const reposStatsName = "repos-stats.json"
 // 3. Remove inactive repos on sourcegraph.com
 // 4. Reclone repos after a while. (simulate git gc)
 func (s *Server) cleanupRepos() {
+	janitorRunning.Set(1)
+
+	defer janitorRunning.Set(0)
+
 	bCtx, bCancel := s.serverContext()
 	defer bCancel()
 
@@ -134,12 +152,7 @@ func (s *Server) cleanupRepos() {
 			log15.Warn("setting backed off reclone time failed", "repo", repo, "cloned", recloneTime, "reason", reason, "error", err)
 		}
 
-		remoteURL, err := repoRemoteURL(ctx, dir)
-		if err != nil {
-			return false, errors.Wrap(err, "failed to get remote URL")
-		}
-
-		if _, err := s.cloneRepo(ctx, repo, remoteURL, &cloneOptions{Block: true, Overwrite: true}); err != nil {
+		if _, err := s.cloneRepo(ctx, repo, &cloneOptions{Block: true, Overwrite: true}); err != nil {
 			return true, err
 		}
 		reposRecloned.Inc()
@@ -179,6 +192,13 @@ func (s *Server) cleanupRepos() {
 		return false, multi
 	}
 
+	performGC := func(dir GitDir) (done bool, err error) {
+		if !enableGCAuto {
+			return false, nil
+		}
+		return false, gitGC(dir)
+	}
+
 	type cleanupFn struct {
 		Name string
 		Do   func(GitDir) (bool, error)
@@ -198,6 +218,13 @@ func (s *Server) cleanupRepos() {
 		// these problems. git gc is slow and resource intensive. It is
 		// cheaper and faster to just reclone the repository.
 		{"maybe reclone", maybeReclone},
+		// Runs a number of housekeeping tasks within the current repository,
+		// such as compressing file revisions (to reduce disk space and increase
+		// performance), removing unreachable objects which may have been created
+		// from prior invocations of git add, packing refs, pruning reflog, rerere
+		// metadata or stale working trees. May also update ancillary indexes such
+		// as the commit-graph.
+		{"garbage collect", performGC},
 	}
 
 	err := bestEffortWalk(s.ReposDir, func(dir string, fi os.FileInfo) error {
@@ -217,10 +244,12 @@ func (s *Server) cleanupRepos() {
 		gitDir := GitDir(dir)
 
 		for _, cfn := range cleanups {
+			start := time.Now()
 			done, err := cfn.Do(gitDir)
 			if err != nil {
 				log15.Error("error running cleanup command", "name", cfn.Name, "repo", gitDir, "error", err)
 			}
+			jobTimer.WithLabelValues(cfn.Name).Observe(time.Since(start).Seconds())
 			if done {
 				break
 			}
@@ -622,6 +651,19 @@ func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
 	if err != nil {
 		log15.Error("failed to set maybeCorruptRepo config", repo, "repo", "error", err)
 	}
+}
+
+// gitGC will invoke `git-gc` to clean up any garbage in the repo. It will
+// operate synchronously and be aggressive with its internal heurisitcs when
+// deciding to act (meaning it will act now at lower thresholds).
+func gitGC(dir GitDir) error {
+	cmd := exec.Command("git", "-c", "gc.auto=1", "-c", "gc.autoDetach=false", "gc", "--auto")
+	dir.Set(cmd)
+	err := cmd.Run()
+	if err != nil {
+		return errors.Wrapf(wrapCmdError(cmd, err), "failed to git-gc")
+	}
+	return nil
 }
 
 func gitConfigGet(dir GitDir, key string) (string, error) {

@@ -72,7 +72,9 @@ func main() {
 	}
 	addr := net.JoinHostPort(host, port)
 	server := &http.Server{
-		Addr: addr,
+		ReadTimeout:  75 * time.Second,
+		WriteTimeout: 10 * time.Minute,
+		Addr:         addr,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// For cluster liveness and readiness probes
 			if r.URL.Path == "/healthz" {

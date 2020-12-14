@@ -63,4 +63,8 @@
     &__show-more {
         flex: 0 0 auto;
     }
+
+    &__filter {
+        max-width: 30% !important;
+    }
 }
