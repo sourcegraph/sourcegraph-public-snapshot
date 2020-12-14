@@ -46,7 +46,7 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} />)
+        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
         expect(element).toMatchSnapshot()
     })
 
@@ -66,7 +66,7 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} />)
+        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
         expect(element.find(Form)).toHaveLength(0)
     })
 
@@ -90,7 +90,7 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} />)
+        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
         const searchAgainButton = element.find(Button)
         expect(searchAgainButton).toHaveLength(1)
         expect(searchAgainButton.prop('disabled')).toBe(true)
@@ -136,7 +136,7 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} />)
+        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
 
         const checkboxes = element.find(Input)
         expect(checkboxes).toHaveLength(3)
@@ -190,7 +190,7 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} />)
+        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
 
         const checkboxes = element.find(Input)
         expect(checkboxes).toHaveLength(3)
