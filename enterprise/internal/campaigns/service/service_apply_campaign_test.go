@@ -885,7 +885,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				specOpts.CampaignSpec = campaignSpec3.ID
 				spec2 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
-				campaign, changesets = applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 1)
+				_, changesets = applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 1)
 
 				attachedChangeset := changesets[0]
 				if have, want := attachedChangeset.ID, c.ID; have != want {
@@ -1036,7 +1036,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				specOpts.CampaignSpec = campaignSpec3.ID
 				spec2 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
-				campaign, changesets = applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 1)
+				_, changesets = applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 1)
 
 				attachedChangeset := changesets[0]
 				if have, want := attachedChangeset.ID, c.ID; have != want {

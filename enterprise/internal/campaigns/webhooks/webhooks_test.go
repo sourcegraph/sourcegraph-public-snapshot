@@ -208,7 +208,6 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				if diff := cmp.Diff(tc.ChangesetEvents, have, opts...); diff != "" {
 					t.Error(diff)
 				}
-
 			})
 		}
 	}

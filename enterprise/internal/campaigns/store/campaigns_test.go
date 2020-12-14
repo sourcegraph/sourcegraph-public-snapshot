@@ -11,16 +11,15 @@ import (
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
 func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock ct.Clock) {
-	campaigns := make([]*cmpgn.Campaign, 0, 3)
+	cs := make([]*campaigns.Campaign, 0, 3)
 
 	t.Run("Create", func(t *testing.T) {
-		for i := 0; i < cap(campaigns); i++ {
-			c := &cmpgn.Campaign{
+		for i := 0; i < cap(cs); i++ {
+			c := &campaigns.Campaign{
 				Name:        fmt.Sprintf("test-campaign-%d", i),
 				Description: "All the Javascripts are belong to us",
 
@@ -63,7 +62,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				t.Fatal(diff)
 			}
 
-			campaigns = append(campaigns, c)
+			cs = append(cs, c)
 		}
 	})
 
@@ -73,12 +72,12 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 			t.Fatal(err)
 		}
 
-		if have, want := count, len(campaigns); have != want {
+		if have, want := count, len(cs); have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
 
 		changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-			CampaignIDs: []int64{campaigns[0].ID},
+			CampaignIDs: []int64{cs[0].ID},
 		})
 
 		count, err = s.CountCampaigns(ctx, CountCampaignsOpts{ChangesetID: changeset.ID})
@@ -91,7 +90,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 		}
 
 		t.Run("OnlyForAuthor set", func(t *testing.T) {
-			for _, c := range campaigns {
+			for _, c := range cs {
 				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{InitialApplierID: c.InitialApplierID})
 				if err != nil {
 					t.Fatal(err)
@@ -104,7 +103,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 
 		t.Run("NamespaceUserID", func(t *testing.T) {
 			wantCounts := map[int32]int{}
-			for _, c := range campaigns {
+			for _, c := range cs {
 				if c.NamespaceUserID == 0 {
 					continue
 				}
@@ -128,7 +127,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 
 		t.Run("NamespaceOrgID", func(t *testing.T) {
 			wantCounts := map[int32]int{}
-			for _, c := range campaigns {
+			for _, c := range cs {
 				if c.NamespaceOrgID == 0 {
 					continue
 				}
@@ -153,9 +152,9 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 
 	t.Run("List", func(t *testing.T) {
 		t.Run("By ChangesetID", func(t *testing.T) {
-			for i := 1; i <= len(campaigns); i++ {
+			for i := 1; i <= len(cs); i++ {
 				changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-					CampaignIDs: []int64{campaigns[i-1].ID},
+					CampaignIDs: []int64{cs[i-1].ID},
 				})
 				opts := ListCampaignsOpts{ChangesetID: changeset.ID}
 
@@ -168,7 +167,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
 				}
 
-				have, want := ts, campaigns[i-1:i]
+				have, want := ts, cs[i-1:i]
 				if len(have) != len(want) {
 					t.Fatalf("listed %d campaigns, want: %d", len(have), len(want))
 				}
@@ -180,9 +179,9 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 		})
 
 		// The campaigns store returns the campaigns in reversed order.
-		reversedCampaigns := make([]*cmpgn.Campaign, len(campaigns))
-		for i, c := range campaigns {
-			reversedCampaigns[len(campaigns)-i-1] = c
+		reversedCampaigns := make([]*campaigns.Campaign, len(cs))
+		for i, c := range cs {
+			reversedCampaigns[len(cs)-i-1] = c
 		}
 
 		t.Run("With Limit", func(t *testing.T) {
@@ -236,23 +235,23 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 
 		filterTests := []struct {
 			name  string
-			state cmpgn.CampaignState
-			want  []*cmpgn.Campaign
+			state campaigns.CampaignState
+			want  []*campaigns.Campaign
 		}{
 			{
 				name:  "Any",
-				state: cmpgn.CampaignStateAny,
+				state: campaigns.CampaignStateAny,
 				want:  reversedCampaigns,
 			},
 			{
 				name:  "Closed",
-				state: cmpgn.CampaignStateClosed,
+				state: campaigns.CampaignStateClosed,
 				want:  reversedCampaigns[:len(reversedCampaigns)-1],
 			},
 			{
 				name:  "Open",
-				state: cmpgn.CampaignStateOpen,
-				want:  campaigns[0:1],
+				state: campaigns.CampaignStateOpen,
+				want:  cs[0:1],
 			},
 		}
 
@@ -269,7 +268,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 		}
 
 		t.Run("ListCampaigns OnlyForAuthor set", func(t *testing.T) {
-			for _, c := range campaigns {
+			for _, c := range cs {
 				have, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{InitialApplierID: c.InitialApplierID})
 				if err != nil {
 					t.Fatal(err)
@@ -287,7 +286,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 		})
 
 		t.Run("ListCampaigns by NamespaceUserID", func(t *testing.T) {
-			for _, c := range campaigns {
+			for _, c := range cs {
 				if c.NamespaceUserID == 0 {
 					continue
 				}
@@ -306,7 +305,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 		})
 
 		t.Run("ListCampaigns by NamespaceOrgID", func(t *testing.T) {
-			for _, c := range campaigns {
+			for _, c := range cs {
 				if c.NamespaceOrgID == 0 {
 					continue
 				}
@@ -326,7 +325,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 	})
 
 	t.Run("Update", func(t *testing.T) {
-		for _, c := range campaigns {
+		for _, c := range cs {
 			c.Name += "-updated"
 			c.Description += "-updated"
 			c.InitialApplierID++
@@ -358,7 +357,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 
 	t.Run("Get", func(t *testing.T) {
 		t.Run("ByID", func(t *testing.T) {
-			want := campaigns[0]
+			want := cs[0]
 			opts := GetCampaignOpts{ID: want.ID}
 
 			have, err := s.GetCampaign(ctx, opts)
@@ -372,7 +371,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 		})
 
 		t.Run("ByCampaignSpecID", func(t *testing.T) {
-			want := campaigns[0]
+			want := cs[0]
 			opts := GetCampaignOpts{CampaignSpecID: want.CampaignSpecID}
 
 			have, err := s.GetCampaign(ctx, opts)
@@ -386,7 +385,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 		})
 
 		t.Run("ByName", func(t *testing.T) {
-			want := campaigns[0]
+			want := cs[0]
 
 			have, err := s.GetCampaign(ctx, GetCampaignOpts{Name: want.Name})
 			if err != nil {
@@ -399,7 +398,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 		})
 
 		t.Run("ByNamespaceUserID", func(t *testing.T) {
-			for _, c := range campaigns {
+			for _, c := range cs {
 				if c.NamespaceUserID == 0 {
 					continue
 				}
@@ -419,7 +418,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 		})
 
 		t.Run("ByNamespaceOrgID", func(t *testing.T) {
-			for _, c := range campaigns {
+			for _, c := range cs {
 				if c.NamespaceOrgID == 0 {
 					continue
 				}
@@ -451,8 +450,8 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 	})
 
 	t.Run("Delete", func(t *testing.T) {
-		for i := range campaigns {
-			err := s.DeleteCampaign(ctx, campaigns[i].ID)
+		for i := range cs {
+			err := s.DeleteCampaign(ctx, cs[i].ID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -462,7 +461,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 				t.Fatal(err)
 			}
 
-			if have, want := count, len(campaigns)-(i+1); have != want {
+			if have, want := count, len(cs)-(i+1); have != want {
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
 		}

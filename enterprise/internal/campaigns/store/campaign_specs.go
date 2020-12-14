@@ -8,6 +8,7 @@ import (
 	"github.com/dineshappavoo/basex"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
