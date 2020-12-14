@@ -1,13 +1,13 @@
 import classnames from 'classnames'
 import React, { useCallback, useMemo, useState } from 'react'
-import { Observable, of } from 'rxjs'
+import { Observable } from 'rxjs'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { AuthenticatedUser } from '../../../auth'
 import * as H from 'history'
 import { Toggle } from '../../../../../branded/src/components/Toggle'
 import { FormActionArea } from './FormActionArea'
 import { FormTriggerArea } from './FormTriggerArea'
-import { mergeMap, startWith, catchError, tap } from 'rxjs/operators'
+import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 import { Form } from '../../../../../branded/src/components/Form'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
 import { CodeMonitorFields } from '../../../graphql-operations'
@@ -95,7 +95,8 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                 submit.pipe(
                     tap(event => event.preventDefault()),
                     filter(() => formCompletion.actionCompleted && formCompletion.triggerCompleted),
-                    mergeMap(() => onSubmit(currentCodeMonitorState).pipe(
+                    mergeMap(() =>
+                        onSubmit(currentCodeMonitorState).pipe(
                             startWith(LOADING),
                             catchError(error => [asError(error)]),
                             tap(successOrError => {
@@ -104,7 +105,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                                 }
                             })
                         )
-                 )
+                    )
                 ),
             [onSubmit, currentCodeMonitorState, history, formCompletion]
         )
