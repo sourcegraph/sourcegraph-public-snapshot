@@ -16,6 +16,7 @@ import { catchError, map, startWith } from 'rxjs/operators'
 import { asError, isErrorLike } from '../../../../shared/src/util/errors'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Redirect } from 'react-router'
 
 export interface CodeMonitoringPageProps
     extends BreadcrumbsProps,
@@ -69,7 +70,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         setMonitorListFilter('user')
     }, [])
 
-    return (
+    return props.authenticatedUser ? (
         <div className="code-monitoring-page container mt-5">
             <PageTitle title="Code Monitoring" />
             <PageHeader
@@ -245,5 +246,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                 </>
             )}
         </div>
+    ) : (
+        <Redirect to="/sign-in" />
     )
 }

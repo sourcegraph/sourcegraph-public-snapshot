@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import React from 'react'
-import { RouteComponentProps } from 'react-router'
+import { Redirect, RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { startWith, catchError, tap } from 'rxjs/operators'
 import { CodeMonitoringProps } from '.'
@@ -90,7 +90,7 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
         [authenticatedUser.id, match.params.id, updateCodeMonitor]
     )
 
-    return (
+    return props.authenticatedUser ? (
         <div className="container col-8 mt-5">
             <PageTitle title="Manage code monitor" />
             <div className="page-header d-flex flex-wrap align-items-center">
@@ -114,5 +114,7 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
                 </>
             )}
         </div>
+    ) : (
+        <Redirect to="/sign-in" />
     )
 }

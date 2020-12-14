@@ -1,5 +1,6 @@
 import * as H from 'history'
 import React, { useCallback, useMemo } from 'react'
+import { Redirect } from 'react-router'
 import { Observable } from 'rxjs'
 import { CodeMonitoringProps } from '.'
 import { AuthenticatedUser } from '../../auth'
@@ -51,7 +52,7 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
         [authenticatedUser.id, createCodeMonitor]
     )
 
-    return (
+    return props.authenticatedUser ? (
         <div className="container col-8 mt-5">
             <PageTitle title="Create new code monitor" />
             <div className="page-header d-flex flex-wrap align-items-center">
@@ -64,5 +65,7 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
             </a>
             <CodeMonitorForm {...props} onSubmit={createMonitorRequest} submitButtonLabel="Create code monitor" />
         </div>
+    ) : (
+        <Redirect to="/sign-in" />
     )
 }
