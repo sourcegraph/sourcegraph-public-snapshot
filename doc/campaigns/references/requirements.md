@@ -29,4 +29,5 @@ While the latest version of Sourcegraph server is always recommended, version 3.
 - Latest version of the [Sourcegraph CLI `src`](../../cli/index.md)
   - `src` is supported on Linux or macOS , Windows support is experimental
 - Docker
+  - Note that you need to be able to communicate with the Docker daemon: most out of the box setups will configure your user account to be able to do so, but if `docker ps` fails you may need to either add your user to the `docker` group (recommended) or run as root (not recommended).
 - Git
