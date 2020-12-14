@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/batch"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -61,11 +60,7 @@ func (s *Store) SameRepoPager(ctx context.Context, repositoryID int, commit, sch
 		sqlf.Sprintf("r.scheme = %s", scheme),
 		sqlf.Sprintf("r.name = %s", name),
 		sqlf.Sprintf("r.version = %s", version),
-		sqlf.Sprintf(
-			"r.dump_id IN (SELECT upload_id FROM lsif_nearest_uploads WHERE repository_id = %s AND commit_bytea = %s AND NOT overwritten)",
-			repositoryID,
-			dbutil.CommitBytea(commit),
-		),
+		sqlf.Sprintf("r.dump_id IN (%s)", makeVisibleUploadsQuery(repositoryID, commit)),
 	}
 
 	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(

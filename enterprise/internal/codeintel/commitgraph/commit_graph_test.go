@@ -58,84 +58,32 @@ func TestCalculateVisibleUploads(t *testing.T) {
 	commitGraphView.Add(UploadMeta{UploadID: 55}, "h", "sub3/:lsif-go")
 	commitGraphView.Add(UploadMeta{UploadID: 56}, "m", "sub3/:lsif-go")
 
-	visibleUploads := map[string][]UploadMeta{}
-	for v := range CalculateVisibleUploads(testGraph, commitGraphView) {
-		visibleUploads[v.Commit] = v.Uploads
-	}
-
-	for _, uploads := range visibleUploads {
-		sort.Slice(uploads, func(i, j int) bool {
-			return uploads[i].UploadID-uploads[j].UploadID < 0
-		})
-	}
+	visibleUploads, links := makeTestGraph(testGraph, commitGraphView)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
-		"a": {
-			{UploadID: 50, Flags: 0 | FlagAncestorVisible},
-			{UploadID: 51, Flags: 2},
-			{UploadID: 52, Flags: 1},
-		},
-		"b": {
-			{UploadID: 50, Flags: 1 | FlagAncestorVisible},
-			{UploadID: 51, Flags: 1},
-		},
-		"c": {
-			{UploadID: 50, Flags: 1 | FlagAncestorVisible},
-			{UploadID: 51, Flags: 4},
-			{UploadID: 52, Flags: 0 | FlagAncestorVisible},
-		},
-		"d": {
-			{UploadID: 50, Flags: 2 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 1 | FlagAncestorVisible},
-		},
-		"e": {
-			{UploadID: 50, Flags: 2 | FlagAncestorVisible},
-			{UploadID: 51, Flags: 3},
-			{UploadID: 52, Flags: 1 | FlagAncestorVisible},
-		},
-		"g": {
-			{UploadID: 50, Flags: 3 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 2 | FlagAncestorVisible},
-		},
-		"f": {
-			{UploadID: 50, Flags: 3 | FlagAncestorVisible},
-			{UploadID: 51, Flags: 2},
-			{UploadID: 53, Flags: 0 | FlagAncestorVisible},
-		},
-		"i": {
-			{UploadID: 50, Flags: 4 | FlagAncestorVisible},
-			{UploadID: 54, Flags: 0 | FlagAncestorVisible},
-		},
-		"l": {
-			{UploadID: 45, Flags: 1},
-			{UploadID: 50, Flags: 5 | FlagAncestorVisible},
-			{UploadID: 54, Flags: 1 | FlagAncestorVisible | FlagOverwritten},
-		},
-		"h": {
-			{UploadID: 50, Flags: 4 | FlagAncestorVisible},
-			{UploadID: 51, Flags: 1},
-			{UploadID: 55, Flags: 0 | FlagAncestorVisible},
-		},
-		"j": {
-			{UploadID: 50, Flags: 2 | FlagAncestorVisible},
-			{UploadID: 51, Flags: 0 | FlagAncestorVisible},
-			{UploadID: 55, Flags: 1 | FlagAncestorVisible},
-		},
-		"k": {
-			{UploadID: 50, Flags: 5 | FlagAncestorVisible},
-			{UploadID: 55, Flags: 1 | FlagAncestorVisible},
-		},
-		"m": {
-			{UploadID: 50, Flags: 6 | FlagAncestorVisible},
-			{UploadID: 56, Flags: 0 | FlagAncestorVisible},
-		},
-		"n": {
-			{UploadID: 45, Flags: 0 | FlagAncestorVisible},
-			{UploadID: 50, Flags: 6 | FlagAncestorVisible},
-		},
+		"a": {{UploadID: 50, Distance: 0}},
+		"b": {{UploadID: 50, Distance: 1}},
+		"c": {{UploadID: 50, Distance: 1}, {UploadID: 52, Distance: 0}},
+		"f": {{UploadID: 50, Distance: 3}, {UploadID: 53, Distance: 0}},
+		"i": {{UploadID: 50, Distance: 4}, {UploadID: 54, Distance: 0}},
+		"h": {{UploadID: 50, Distance: 4}, {UploadID: 55, Distance: 0}},
+		"j": {{UploadID: 50, Distance: 2}, {UploadID: 51, Distance: 0}, {UploadID: 55, Distance: 1}},
+		"m": {{UploadID: 50, Distance: 6}, {UploadID: 56, Distance: 0}},
+		"n": {{UploadID: 45, Distance: 0}, {UploadID: 50, Distance: 6}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, visibleUploads); diff != "" {
-		t.Errorf("unexpected graph (-want +got):\n%s", diff)
+		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	}
+
+	expectedLinks := map[string]LinkRelationship{
+		"d": {Commit: "d", AncestorCommit: "c", Distance: 1},
+		"e": {Commit: "e", AncestorCommit: "c", Distance: 1},
+		"g": {Commit: "g", AncestorCommit: "c", Distance: 2},
+		"k": {Commit: "k", AncestorCommit: "h", Distance: 1},
+		"l": {Commit: "l", AncestorCommit: "i", Distance: 1},
+	}
+	if diff := cmp.Diff(expectedLinks, links); diff != "" {
+		t.Errorf("unexpected links (-want +got):\n%s", diff)
 	}
 }
 
@@ -176,151 +124,63 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 	commitGraphView.Add(UploadMeta{UploadID: 52}, "i", "sub2/:lsif-go")
 	commitGraphView.Add(UploadMeta{UploadID: 53}, "q", "sub3/:lsif-go")
 
-	visibleUploads := map[string][]UploadMeta{}
-	for v := range CalculateVisibleUploads(testGraph, commitGraphView) {
-		visibleUploads[v.Commit] = v.Uploads
-	}
-
-	for _, uploads := range visibleUploads {
-		sort.Slice(uploads, func(i, j int) bool {
-			return uploads[i].UploadID-uploads[j].UploadID < 0
-		})
-	}
+	visibleUploads, links := makeTestGraph(testGraph, commitGraphView)
 
 	expectedVisibleUploads := map[string][]UploadMeta{
-		"a": {
-			{UploadID: 50, Flags: 0 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 6},
-			{UploadID: 53, Flags: 11},
-		},
-		"b": {
-			{UploadID: 51, Flags: 0 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 5},
-			{UploadID: 53, Flags: 10},
-		},
-		"c": {
-			{UploadID: 50, Flags: 1 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 5},
-			{UploadID: 53, Flags: 10},
-		},
-		"d": {
-			{UploadID: 51, Flags: 1 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 4},
-			{UploadID: 53, Flags: 9},
-		},
-		"e": {
-			{UploadID: 50, Flags: 2 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 4},
-			{UploadID: 53, Flags: 9},
-		},
-		"f": {
-			{UploadID: 51, Flags: 2 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 3},
-			{UploadID: 53, Flags: 8},
-		},
-		"g": {
-			{UploadID: 51, Flags: 3 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 2},
-			{UploadID: 53, Flags: 7},
-		},
-		"h": {
-			{UploadID: 51, Flags: 4 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 1},
-			{UploadID: 53, Flags: 6},
-		},
-		"i": {
-			{UploadID: 51, Flags: 5 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 0 | FlagAncestorVisible},
-			{UploadID: 53, Flags: 5},
-		},
-		"j": {
-			{UploadID: 51, Flags: 6 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 1 | FlagAncestorVisible},
-			{UploadID: 53, Flags: 4},
-		},
-		"k": {
-			{UploadID: 51, Flags: 7 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 2 | FlagAncestorVisible},
-			{UploadID: 53, Flags: 3},
-		},
-		"l": {
-			{UploadID: 51, Flags: 8 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 3 | FlagAncestorVisible},
-			{UploadID: 53, Flags: 2},
-		},
-		"m": {
-			{UploadID: 51, Flags: 8 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 3 | FlagAncestorVisible},
-			{UploadID: 53, Flags: 2},
-		},
-		"n": {
-			{UploadID: 51, Flags: 9 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 4 | FlagAncestorVisible},
-		},
-		"o": {
-			{UploadID: 51, Flags: 9 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 4 | FlagAncestorVisible},
-			{UploadID: 53, Flags: 1},
-		},
-		"p": {
-			{UploadID: 51, Flags: 10 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 5 | FlagAncestorVisible},
-		},
-		"q": {
-			{UploadID: 51, Flags: 10 | FlagAncestorVisible},
-			{UploadID: 52, Flags: 5 | FlagAncestorVisible},
-			{UploadID: 53, Flags: 0 | FlagAncestorVisible},
-		},
+		"a": {{UploadID: 50, Distance: 0}},
+		"b": {{UploadID: 51, Distance: 0}},
+		"c": {{UploadID: 50, Distance: 1}},
+		"d": {{UploadID: 51, Distance: 1}},
+		"e": {{UploadID: 50, Distance: 2}},
+		"f": {{UploadID: 51, Distance: 2}},
+		"g": {{UploadID: 51, Distance: 3}},
+		"h": {{UploadID: 51, Distance: 4}},
+		"i": {{UploadID: 51, Distance: 5}, {UploadID: 52, Distance: 0}},
+		"l": {{UploadID: 51, Distance: 8}, {UploadID: 52, Distance: 3}},
+		"m": {{UploadID: 51, Distance: 8}, {UploadID: 52, Distance: 3}},
+		"o": {{UploadID: 51, Distance: 9}, {UploadID: 52, Distance: 4}},
+		"q": {{UploadID: 51, Distance: 10}, {UploadID: 52, Distance: 5}, {UploadID: 53, Distance: 0}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, visibleUploads); diff != "" {
-		t.Errorf("unexpected graph (-want +got):\n%s", diff)
+		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	}
+
+	expectedLinks := map[string]LinkRelationship{
+		"j": {Commit: "j", AncestorCommit: "i", Distance: 1},
+		"k": {Commit: "k", AncestorCommit: "i", Distance: 2},
+		"n": {Commit: "n", AncestorCommit: "l", Distance: 1},
+		"p": {Commit: "p", AncestorCommit: "l", Distance: 2},
+	}
+	if diff := cmp.Diff(expectedLinks, links); diff != "" {
+		t.Errorf("unexpected links (-want +got):\n%s", diff)
 	}
 }
 
-func TestReverseGraph(t *testing.T) {
-	reverseGraph := reverseGraph(map[string][]string{
-		"a": {"b", "c"},
-		"b": {"d"},
-		"c": {"e", "f"},
-		"d": {},
-		"e": {"f"},
-		"f": {"g"},
-	})
-	for _, parents := range reverseGraph {
-		sort.Strings(parents)
-	}
-
-	expectedReverseGraph := map[string][]string{
-		"a": nil,
-		"b": {"a"},
-		"c": {"a"},
-		"d": {"b"},
-		"e": {"c"},
-		"f": {"c", "e"},
-		"g": {"f"},
-	}
-	if diff := cmp.Diff(expectedReverseGraph, reverseGraph); diff != "" {
-		t.Errorf("unexpected graph (-want +got):\n%s", diff)
-	}
-}
+//
+// Benchmarks
+//
 
 func BenchmarkCalculateVisibleUploads(b *testing.B) {
 	commitGraph, err := readBenchmarkCommitGraph()
 	if err != nil {
-		b.Fatalf("failed to read benchmark commit graph: %s", err)
+		b.Fatalf("unexpected error reading benchmark commit graph: %s", err)
 	}
 	commitGraphView, err := readBenchmarkCommitGraphView()
 	if err != nil {
-		b.Fatalf("failed to read benchmark commit graph view: %s", err)
+		b.Fatalf("unexpected error reading benchmark commit graph view: %s", err)
 	}
 
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
-		for range CalculateVisibleUploads(commitGraph, commitGraphView) {
-		}
+	uploadsByCommit, links := NewGraph(commitGraph, commitGraphView).Gather()
+
+	var numUploads int
+	for uploads := range uploadsByCommit {
+		numUploads += len(uploads)
 	}
+
+	fmt.Printf("\nNum Uploads: %d\nNum Links:   %d\n\n", numUploads, len(links))
 }
 
 func readBenchmarkCommitGraph() (*gitserver.CommitGraph, error) {
@@ -385,4 +245,17 @@ func readBenchmarkFile(path string) ([]byte, error) {
 	}
 
 	return contents, nil
+}
+
+// makeTestGraph calls Gather on a new graph then sorts the uploads deterministically
+// for easier comparison. Order of the upload list is not relevant to production flows.
+func makeTestGraph(commitGraph *gitserver.CommitGraph, commitGraphView *CommitGraphView) (uploads map[string][]UploadMeta, links map[string]LinkRelationship) {
+	uploads, links = NewGraph(commitGraph, commitGraphView).Gather()
+	for _, us := range uploads {
+		sort.Slice(us, func(i, j int) bool {
+			return us[i].UploadID-us[j].UploadID < 0
+		})
+	}
+
+	return uploads, links
 }
