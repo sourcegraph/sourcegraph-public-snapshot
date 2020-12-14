@@ -50,7 +50,7 @@ func (r *changesetApplyPreviewResolver) ToHiddenChangesetApplyPreview() (graphql
 			store:             r.store,
 			mapping:           r.mapping,
 			preloadedNextSync: r.preloadedNextSync,
-		}, false
+		}, true
 	}
 	return nil, false
 }

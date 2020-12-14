@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"strconv"
 	"sync"
 	"time"
 
@@ -21,26 +22,37 @@ type changesetApplyPreviewConnectionResolver struct {
 	opts           store.GetRewirerMappingsOpts
 	campaignSpecID int64
 
-	once     sync.Once
-	mappings store.RewirerMappings
-	campaign *campaigns.Campaign
-	err      error
+	once       sync.Once
+	mappings   store.RewirerMappings
+	campaign   *campaigns.Campaign
+	totalCount int
+	err        error
 }
 
 func (r *changesetApplyPreviewConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	mappings, _, err := r.compute(ctx)
+	_, _, totalCount, err := r.compute(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(mappings)), nil
+	return int32(totalCount), nil
 }
 
 func (r *changesetApplyPreviewConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(false), nil
+	if r.opts.LimitOffset == nil {
+		return graphqlutil.HasNextPage(false), nil
+	}
+	_, _, totalCount, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if (r.opts.LimitOffset.Limit + r.opts.LimitOffset.Offset) >= totalCount {
+		return graphqlutil.HasNextPage(false), nil
+	}
+	return graphqlutil.NextPageCursor(strconv.Itoa(r.opts.LimitOffset.Limit + r.opts.LimitOffset.Offset)), nil
 }
 
 func (r *changesetApplyPreviewConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetApplyPreviewResolver, error) {
-	mappings, campaign, err := r.compute(ctx)
+	mappings, campaign, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +79,7 @@ func (r *changesetApplyPreviewConnectionResolver) Nodes(ctx context.Context) ([]
 	return resolvers, nil
 }
 
-func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (store.RewirerMappings, *campaigns.Campaign, error) {
+func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (store.RewirerMappings, *campaigns.Campaign, int, error) {
 	r.once.Do(func() {
 		opts := r.opts
 		opts.CampaignSpecID = r.campaignSpecID
@@ -92,7 +104,22 @@ func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (
 			return
 		}
 		r.err = r.mappings.Hydrate(ctx, r.store)
+		if r.err != nil {
+			r.err = err
+			return
+		}
+
+		allOpts := store.GetRewirerMappingsOpts{
+			CampaignSpecID: opts.CampaignSpecID,
+			CampaignID:     opts.CampaignID,
+		}
+		allMappings, err := r.store.GetRewirerMappings(ctx, allOpts)
+		if err != nil {
+			r.err = err
+			return
+		}
+		r.totalCount = len(allMappings)
 	})
 
-	return r.mappings, r.campaign, r.err
+	return r.mappings, r.campaign, r.totalCount, r.err
 }

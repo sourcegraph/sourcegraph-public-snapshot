@@ -9,6 +9,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 )
 
