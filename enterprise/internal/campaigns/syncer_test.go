@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -296,8 +296,10 @@ func TestSyncRegistry(t *testing.T) {
 		UpdatedAt:   time.Time{},
 	}
 
-	repoStore := MockRepoStore{
-		listExternalServices: func(ctx context.Context, args repos.StoreListExternalServicesArgs) (services []*types.ExternalService, err error) {
+	var repoStore MockRepoStore
+
+	esStore := MockExternalServiceStore{
+		list: func(context.Context, db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 			return []*types.ExternalService{
 				extSvc,
 			}, nil
@@ -317,7 +319,7 @@ func TestSyncRegistry(t *testing.T) {
 		},
 	}
 
-	r := NewSyncRegistry(ctx, syncStore, repoStore, nil)
+	r := NewSyncRegistry(ctx, syncStore, repoStore, esStore, nil)
 
 	assertSyncerCount := func(want int) {
 		r.mu.Lock()
@@ -420,32 +422,19 @@ func (m MockSyncStore) Transact(ctx context.Context) (*store.Store, error) {
 }
 
 type MockRepoStore struct {
-	listExternalServices func(context.Context, repos.StoreListExternalServicesArgs) ([]*types.ExternalService, error)
-	listRepos            func(context.Context, repos.StoreListReposArgs) ([]*types.Repo, error)
+	get func(ctx context.Context, id api.RepoID) (*types.Repo, error)
 }
 
-func (m MockRepoStore) UpsertExternalServices(ctx context.Context, svcs ...*types.ExternalService) error {
-	panic("implement me")
+func (m MockRepoStore) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
+	return m.get(ctx, id)
 }
 
-func (m MockRepoStore) UpsertRepos(ctx context.Context, repos ...*types.Repo) error {
-	panic("implement me")
+type MockExternalServiceStore struct {
+	list func(context.Context, db.ExternalServicesListOptions) ([]*types.ExternalService, error)
 }
 
-func (m MockRepoStore) ListExternalServices(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*types.ExternalService, error) {
-	return m.listExternalServices(ctx, args)
-}
-
-func (m MockRepoStore) ListRepos(ctx context.Context, args repos.StoreListReposArgs) ([]*types.Repo, error) {
-	return m.listRepos(ctx, args)
-}
-
-func (m MockRepoStore) SetClonedRepos(ctx context.Context, repoNames ...string) error {
-	panic("implement me")
-}
-
-func (m MockRepoStore) CountNotClonedRepos(ctx context.Context) (uint64, error) {
-	panic("implement me")
+func (m MockExternalServiceStore) List(ctx context.Context, args db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	return m.list(ctx, args)
 }
 
 func mockListChangesets(ctx context.Context, opts store.ListChangesetsOpts) (campaigns.Changesets, int64, error) {

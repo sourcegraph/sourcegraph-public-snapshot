@@ -2,7 +2,6 @@ package campaigns
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -63,8 +63,8 @@ func (h Webhook) getRepoForPR(
 	pr PR,
 	externalServiceID string,
 ) (*types.Repo, error) {
-	reposTx := repos.NewDBStore(tx.DB(), sql.TxOptions{})
-	rs, err := reposTx.ListRepos(ctx, repos.StoreListReposArgs{
+	reposTx := db.NewRepoStoreWith(tx)
+	rs, err := reposTx.List(ctx, db.ReposListOptions{
 		ExternalRepos: []api.ExternalRepoSpec{
 			{
 				ID:          pr.RepoExternalID,
