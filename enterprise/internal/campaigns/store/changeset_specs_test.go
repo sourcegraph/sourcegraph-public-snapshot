@@ -24,7 +24,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
-	if err := rs.DeleteRepos(ctx, deletedRepo.ID); err != nil {
+	if err := repoStore.Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
 

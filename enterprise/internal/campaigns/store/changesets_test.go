@@ -54,7 +54,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		t.Fatal(err)
 	}
 	deletedRepo := otherRepo.With(types.Opt.RepoDeletedAt(clock.Now()))
-	if err := reposStore.DeleteRepos(ctx, deletedRepo.ID); err != nil {
+	if err := rs.Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
 
