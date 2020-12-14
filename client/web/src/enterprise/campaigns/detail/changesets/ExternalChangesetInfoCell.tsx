@@ -88,8 +88,12 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
 function isImporting(node: ExternalChangesetFields): boolean {
     return (
         [ChangesetReconcilerState.QUEUED, ChangesetReconcilerState.PROCESSING].includes(node.reconcilerState) &&
-        !node.title
+        !hasHeadReference(node)
     )
+}
+
+function importingFailed(node: ExternalChangesetFields): boolean {
+    return !hasHeadReference(node) && node.reconcilerState === ChangesetReconcilerState.ERRORED
 }
 
 function headReference(node: ExternalChangesetFields): string | undefined {
@@ -105,8 +109,4 @@ function hasHeadReference(
     currentSpec: ChangesetSpecFields & { description: GitBranchChangesetDescriptionFields }
 } {
     return node.currentSpec?.description.__typename === 'GitBranchChangesetDescription'
-}
-
-function importingFailed(node: ExternalChangesetFields): boolean {
-    return node.reconcilerState === ChangesetReconcilerState.ERRORED && !node.title
 }
