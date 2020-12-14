@@ -33,7 +33,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 
 	cstore := store.New(dbconn.Global)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	repoStore := db.NewRepoStoreWith(store)
+	repoStore := db.NewRepoStoreWith(cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
 	inaccessibleRepo := newGitHubTestRepo("github.com/sourcegraph/private", newGitHubExternalService(t, rstore))

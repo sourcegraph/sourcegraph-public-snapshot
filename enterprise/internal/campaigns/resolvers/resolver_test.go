@@ -95,7 +95,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 
 	cstore := store.New(dbconn.Global)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	repoStore := db.NewRepoStoreWith(store)
+	repoStore := db.NewRepoStoreWith(cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -210,7 +210,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 
 	cstore := store.New(dbconn.Global)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	repoStore := db.NewRepoStoreWith(store)
+	repoStore := db.NewRepoStoreWith(cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -285,7 +285,7 @@ func TestApplyCampaign(t *testing.T) {
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(dbconn.Global, clock)
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	repoStore := db.NewRepoStoreWith(store)
+	repoStore := db.NewRepoStoreWith(cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
 	if err := repoStore.Create(ctx, repo); err != nil {

@@ -32,7 +32,7 @@ func TestCampaignConnectionResolver(t *testing.T) {
 
 	cstore := store.New(dbconn.Global)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	repoStore := db.NewRepoStoreWith(store)
+	repoStore := db.NewRepoStoreWith(cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
 	if err := repoStore.Create(ctx, repo); err != nil {

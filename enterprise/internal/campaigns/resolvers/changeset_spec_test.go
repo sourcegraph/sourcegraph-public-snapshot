@@ -46,7 +46,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 	}
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
-	repoStore := db.NewRepoStoreWith(store)
+	repoStore := db.NewRepoStoreWith(cstore)
 
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)

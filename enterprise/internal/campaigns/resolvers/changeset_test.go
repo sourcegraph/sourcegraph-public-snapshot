@@ -37,7 +37,7 @@ func TestChangesetResolver(t *testing.T) {
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(dbconn.Global, clock)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	repoStore := db.NewRepoStoreWith(store)
+	repoStore := db.NewRepoStoreWith(cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
 	if err := repoStore.Create(ctx, repo); err != nil {
