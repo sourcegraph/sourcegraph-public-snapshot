@@ -1240,8 +1240,7 @@ type ChangesetSpecConnection {
 }
 
 """
-An entry in the preview for actions to be taken when applyCampaign would have
-been called at the point of time this preview was created at.
+A preview for which actions applyCampaign would result in when called at the point of time this preview was created at.
 """
 union ChangesetApplyPreview = VisibleChangesetApplyPreview | HiddenChangesetApplyPreview
 
