@@ -3,11 +3,13 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"sort"
 	"strconv"
 
 	"github.com/dineshappavoo/basex"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -459,10 +461,11 @@ func (rm RewirerMappings) ChangesetIDs() []int64 {
 			changesetIDMap[m.ChangesetID] = struct{}{}
 		}
 	}
-	changesetIDs := make([]int64, len(changesetIDMap))
+	changesetIDs := make([]int64, 0, len(changesetIDMap))
 	for id := range changesetIDMap {
 		changesetIDs = append(changesetIDs, id)
 	}
+	sort.Slice(changesetIDs, func(i, j int) bool { return changesetIDs[i] < changesetIDs[j] })
 	return changesetIDs
 }
 
@@ -474,10 +477,11 @@ func (rm RewirerMappings) ChangesetSpecIDs() []int64 {
 			changesetSpecIDMap[m.ChangesetSpecID] = struct{}{}
 		}
 	}
-	changesetSpecIDs := make([]int64, len(changesetSpecIDMap))
+	changesetSpecIDs := make([]int64, 0, len(changesetSpecIDMap))
 	for id := range changesetSpecIDMap {
 		changesetSpecIDs = append(changesetSpecIDs, id)
 	}
+	sort.Slice(changesetSpecIDs, func(i, j int) bool { return changesetSpecIDs[i] < changesetSpecIDs[j] })
 	return changesetSpecIDs
 }
 
@@ -487,10 +491,11 @@ func (rm RewirerMappings) RepoIDs() []api.RepoID {
 	for _, m := range rm {
 		repoIDMap[m.RepoID] = struct{}{}
 	}
-	repoIDs := make([]api.RepoID, len(repoIDMap))
+	repoIDs := make([]api.RepoID, 0, len(repoIDMap))
 	for id := range repoIDMap {
 		repoIDs = append(repoIDs, id)
 	}
+	sort.Slice(repoIDs, func(i, j int) bool { return repoIDs[i] < repoIDs[j] })
 	return repoIDs
 }
 
