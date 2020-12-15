@@ -6,28 +6,28 @@ export interface CampaignListIntroProps {
     licensed: boolean | undefined
 }
 
-export const CampaignListIntro: React.FunctionComponent<CampaignListIntroProps> = ({ licensed }) => {
-    if (licensed !== false) {
-        return (
-            <div className="row">
-                <div className="col-12 mb-2">
-                    <CampaignChangelogAlert />
-                </div>
-            </div>
-        )
-    }
-
-    return (
-        <div className="row">
-            <div className="col-12 col-md-6 mb-2">
-                <CampaignUnlicensedAlert />
-            </div>
-            <div className="col-12 col-md-6 mb-2">
+export const CampaignListIntro: React.FunctionComponent<CampaignListIntroProps> = ({ licensed }) => (
+    <div className="row mb-2">
+        {licensed === true ? (
+            <div className="col-12">
                 <CampaignChangelogAlert />
             </div>
-        </div>
-    )
-}
+        ) : (
+            <>
+                {licensed === false && (
+                    <>
+                        <div className="col-12 col-md-6">
+                            <CampaignUnlicensedAlert />
+                        </div>
+                        <div className="col-12 col-md-6">
+                            <CampaignChangelogAlert />
+                        </div>
+                    </>
+                )}
+            </>
+        )}
+    </div>
+)
 
 const CampaignChangelogAlert: React.FunctionComponent = () => (
     <DismissibleAlert className="campaign-list-intro__alert" partialStorageKey="campaign-list-intro-changelog-3.23">
