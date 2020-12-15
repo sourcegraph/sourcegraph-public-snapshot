@@ -113,13 +113,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     },
     {
         path: '/code-hosts',
-        render: props => (
-            <UserAddCodeHostsPageContainer
-                userID={props.user.id}
-                history={props.history}
-                telemetryService={props.telemetryService}
-            />
-        ),
+        render: props => <UserAddCodeHostsPageContainer userID={props.user.id} history={props.history} />,
         exact: true,
         condition: props =>
             window.context.externalServicesUserModeEnabled ||
