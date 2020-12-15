@@ -351,10 +351,17 @@ describe('Campaigns', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
+    const campaignLicenseGraphQlResults = {
+        AreCampaignsLicensed: () => ({
+            enterpriseLicenseHasFeature: true,
+        }),
+    }
+
     describe('Campaigns list', () => {
         it('lists global campaigns', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
+                ...campaignLicenseGraphQlResults,
                 Campaigns: () => ({
                     campaigns: {
                         nodes: [campaignListNode],
@@ -367,9 +374,6 @@ describe('Campaigns', () => {
                     allCampaigns: {
                         totalCount: 1,
                     },
-                }),
-                AreCampaignsLicensed: () => ({
-                    enterpriseLicenseHasFeature: true,
                 }),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/campaigns')
@@ -393,6 +397,7 @@ describe('Campaigns', () => {
         it('lists user campaigns', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
+                ...campaignLicenseGraphQlResults,
                 ...mockCommonGraphQLResponses('user'),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/users/alice/campaigns')
@@ -411,6 +416,7 @@ describe('Campaigns', () => {
         it('lists org campaigns', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
+                ...campaignLicenseGraphQlResults,
                 ...mockCommonGraphQLResponses('org'),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/campaigns')
