@@ -5,23 +5,25 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock ct.Clock) {
-	repo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
-	otherRepo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
-	gitlabRepo := ct.TestRepo(t, reposStore, extsvc.KindGitLab)
-	bitbucketRepo := ct.TestRepo(t, reposStore, extsvc.KindBitbucketServer)
-	awsRepo := ct.TestRepo(t, reposStore, extsvc.KindAWSCodeCommit)
-
+func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	rs := db.NewRepoStoreWith(s.Store)
+	es := db.NewExternalServicesStoreWith(s.Store)
+
+	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
+	otherRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
+	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)
+	bitbucketRepo := ct.TestRepo(t, es, extsvc.KindBitbucketServer)
+	awsRepo := ct.TestRepo(t, es, extsvc.KindAWSCodeCommit)
 
 	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo, bitbucketRepo, awsRepo); err != nil {
 		t.Fatal(err)
@@ -84,16 +86,14 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, reposStore r
 			}
 
 			// We fetch the ExternalService and make sure that Type and URL match
-			es, err := reposStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
-				IDs: []int64{id},
-			})
+			extSvc, err := es.GetByID(ctx, id)
 			if err != nil {
+				if errcode.IsNotFound(err) {
+					t.Fatalf("external service %d not found", id)
+				}
+
 				t.Fatalf("unexpected error: %s", err)
 			}
-			if len(es) != 1 {
-				t.Fatalf("wrong number of external services: %d", len(es))
-			}
-			extSvc := es[0]
 			if have, want := extSvc.Kind, extsvc.TypeToKind(repo.ExternalRepo.ServiceType); have != want {
 				t.Fatalf("wrong external service kind. want=%q, have=%q", want, have)
 			}

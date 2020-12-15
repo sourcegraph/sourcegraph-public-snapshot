@@ -13,10 +13,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -24,8 +24,8 @@ import (
 
 type GitLabWebhook struct{ *Webhook }
 
-func NewGitLabWebhook(store *store.Store, repos repos.Store, now func() time.Time) *GitLabWebhook {
-	return &GitLabWebhook{&Webhook{store, repos, now, extsvc.TypeGitLab}}
+func NewGitLabWebhook(store *store.Store, externalServices *db.ExternalServiceStore, now func() time.Time) *GitLabWebhook {
+	return &GitLabWebhook{&Webhook{store, externalServices, now, extsvc.TypeGitLab}}
 }
 
 // ServeHTTP implements the http.Handler interface.
@@ -107,7 +107,7 @@ func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw str
 		return nil, errors.Wrap(err, "parsing the raw external service ID")
 	}
 
-	es, err := h.Repos.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+	es, err := h.ExternalServices.List(ctx, db.ExternalServicesListOptions{
 		IDs:   []int64{id},
 		Kinds: []string{extsvc.KindGitLab},
 	})

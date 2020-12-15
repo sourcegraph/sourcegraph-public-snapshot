@@ -21,11 +21,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock ct.Clock) {
+func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
@@ -44,11 +43,12 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		HeadRefName:  "campaigns/test",
 	}
 
-	repo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
-	otherRepo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
-	gitlabRepo := ct.TestRepo(t, reposStore, extsvc.KindGitLab)
+	rs := db.NewRepoStoreWith(s)
+	es := db.NewExternalServicesStoreWith(s)
 
-	rs := db.NewRepoStoreWith(reposStore.(*repos.DBStore))
+	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
+	otherRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
+	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)
 
 	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
@@ -1108,7 +1108,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	})
 }
 
-func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock ct.Clock) {
+func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
@@ -1148,10 +1148,12 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		IncludesCreatedEdit: false,
 	}
 
-	githubRepo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
-	gitlabRepo := ct.TestRepo(t, reposStore, extsvc.KindGitLab)
+	rs := db.NewRepoStoreWith(s)
+	es := db.NewExternalServicesStoreWith(s)
 
-	rs := db.NewRepoStoreWith(s.Store)
+	githubRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
+	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)
+
 	if err := rs.Create(ctx, githubRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
@@ -1354,7 +1356,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	})
 }
 
-func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock ct.Clock) {
+func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	// This is similar to the setup in testStoreChangesets(), but we need a more
 	// fine grained set of changesets to handle the different scenarios. Namely,
 	// we need to cover:
@@ -1413,13 +1415,15 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		return cs
 	}
 
+	rs := db.NewRepoStoreWith(s)
+	es := db.NewExternalServicesStoreWith(s)
+
 	// Set up repositories for each code host type we want to test.
 	var (
-		githubRepo = ct.TestRepo(t, reposStore, extsvc.KindGitHub)
-		bbsRepo    = ct.TestRepo(t, reposStore, extsvc.KindBitbucketServer)
-		gitlabRepo = ct.TestRepo(t, reposStore, extsvc.KindGitLab)
+		githubRepo = ct.TestRepo(t, es, extsvc.KindGitHub)
+		bbsRepo    = ct.TestRepo(t, es, extsvc.KindBitbucketServer)
+		gitlabRepo = ct.TestRepo(t, es, extsvc.KindGitLab)
 	)
-	rs := db.NewRepoStoreWith(reposStore.(*repos.DBStore))
 	if err := rs.Create(ctx, githubRepo, bbsRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}

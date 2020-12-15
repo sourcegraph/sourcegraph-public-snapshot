@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -121,7 +120,7 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 	return timestamp
 }
 
-func newGitHubExternalService(t *testing.T, store repos.Store) *types.ExternalService {
+func newGitHubExternalService(t *testing.T, store *db.ExternalServiceStore) *types.ExternalService {
 	t.Helper()
 
 	clock := dbtesting.NewFakeClock(time.Now(), 0)
@@ -135,8 +134,7 @@ func newGitHubExternalService(t *testing.T, store repos.Store) *types.ExternalSe
 		UpdatedAt:   now,
 	}
 
-	// create a few external services
-	if err := store.UpsertExternalServices(context.Background(), &svc); err != nil {
+	if err := store.Upsert(context.Background(), &svc); err != nil {
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 

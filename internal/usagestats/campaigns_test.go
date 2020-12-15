@@ -2,7 +2,6 @@ package usagestats
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 	"time"
@@ -14,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -23,8 +21,9 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	// Create stub repo.
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	repoStore := db.NewRepoStoreWithDB(dbconn.Global)
+	esStore := db.NewExternalServicesStoreWithDB(dbconn.Global)
+
 	now := time.Now()
 	svc := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
@@ -33,7 +32,7 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
-	if err := rstore.UpsertExternalServices(ctx, &svc); err != nil {
+	if err := esStore.Upsert(ctx, &svc); err != nil {
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 	repo := &types.Repo{
