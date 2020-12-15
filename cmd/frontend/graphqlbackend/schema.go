@@ -691,6 +691,9 @@ type Mutation {
 
     The returned CampaignSpec is immutable and expires after a certain period of time (if not used
     in a call to applyCampaign), which can be queried on CampaignSpec.expiresAt.
+
+    If campaigns are unlicensed and the number of changesetSpecIDs is higher than what's allowed in
+    the free tier, an error with the error code ErrCampaignsUnlicensed is returned.
     """
     createCampaignSpec(
         """
@@ -2957,6 +2960,12 @@ type Query {
     the configured code hosts are able to see.
     """
     affiliatedRepositories(user: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
+
+    """
+    Checks whether the given feature is enabled on Sourcegraph. Open source
+    installations will always return false for any feature.
+    """
+    enterpriseLicenseHasFeature(feature: String!): Boolean!
 }
 
 """
