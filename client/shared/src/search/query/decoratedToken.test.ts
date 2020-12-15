@@ -343,6 +343,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "metaRegexpCharacterClass"
               },
               {
+                "startIndex": 4,
+                "scopes": "identifier"
+              },
+              {
                 "startIndex": 5,
                 "scopes": "metaRegexpCharacterClass"
               },
@@ -371,6 +375,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "metaRegexpCharacterClass"
               },
               {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
                 "startIndex": 4,
                 "scopes": "metaRegexpCharacterClass"
               },
@@ -387,6 +395,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "metaRegexpCharacterClass"
               },
               {
+                "startIndex": 8,
+                "scopes": "identifier"
+              },
+              {
                 "startIndex": 9,
                 "scopes": "metaRegexpCharacterClass"
               },
@@ -401,6 +413,10 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 12,
                 "scopes": "metaRegexpCharacterClass"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "identifier"
               },
               {
                 "startIndex": 14,
@@ -515,6 +531,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "metaRegexpAlternative"
               },
               {
+                "startIndex": 9,
+                "scopes": "identifier"
+              },
+              {
                 "startIndex": 10,
                 "scopes": "metaRegexpDelimited"
               },
@@ -523,12 +543,20 @@ describe('getMonacoTokens()', () => {
                 "scopes": "metaRegexpAlternative"
               },
               {
+                "startIndex": 12,
+                "scopes": "identifier"
+              },
+              {
                 "startIndex": 13,
                 "scopes": "metaRegexpDelimited"
               },
               {
                 "startIndex": 14,
                 "scopes": "metaRegexpAlternative"
+              },
+              {
+                "startIndex": 15,
+                "scopes": "identifier"
               }
             ]
         `)
@@ -556,6 +584,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "metaRegexpAlternative"
               },
               {
+                "startIndex": 8,
+                "scopes": "identifier"
+              },
+              {
                 "startIndex": 9,
                 "scopes": "metaRegexpDelimited"
               },
@@ -576,6 +608,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "metaRegexpAlternative"
               },
               {
+                "startIndex": 14,
+                "scopes": "identifier"
+              },
+              {
                 "startIndex": 15,
                 "scopes": "metaRegexpDelimited"
               },
@@ -594,6 +630,10 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 19,
                 "scopes": "metaRegexpAlternative"
+              },
+              {
+                "startIndex": 20,
+                "scopes": "identifier"
               },
               {
                 "startIndex": 21,
@@ -730,11 +770,96 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 7,
-                "scopes": "metaStructuralHole"
+                "scopes": "metaStructuralRegexpHole"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaStructuralVariable"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "metaStructuralRegexpSeparator"
+              },
+              {
+                "startIndex": 11,
+                "scopes": "metaRegexpCharacterClass"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "metaRegexpEscapedCharacter"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "metaRegexpCharacterClass"
+              },
+              {
+                "startIndex": 15,
+                "scopes": "metaStructuralRegexpHole"
               },
               {
                 "startIndex": 16,
                 "scopes": "identifier"
+              }
+            ]
+        `)
+    })
+
+    test('decorate structural holes with valid inlined regexp, no variable', () => {
+        expect(
+            getMonacoTokens(toSuccess(scanSearchQuery('repo:foo :[~a?|b*]', false, SearchPatternType.structural)), true)
+        ).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaStructuralRegexpHole"
+              },
+              {
+                "startIndex": 11,
+                "scopes": "metaStructuralVariable"
+              },
+              {
+                "startIndex": 11,
+                "scopes": "metaStructuralRegexpSeparator"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "metaRegexpRangeQuantifier"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "metaRegexpAlternative"
+              },
+              {
+                "startIndex": 15,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 16,
+                "scopes": "metaRegexpRangeQuantifier"
+              },
+              {
+                "startIndex": 17,
+                "scopes": "metaStructuralRegexpHole"
               }
             ]
         `)
@@ -791,6 +916,7 @@ describe('getMonacoTokens()', () => {
             ]
         `)
     })
+
     test('decorate structural hole ... alias', () => {
         expect(getMonacoTokens(toSuccess(scanSearchQuery('r:foo ...:...', false, SearchPatternType.structural)), true))
             .toMatchInlineSnapshot(`
@@ -818,6 +944,152 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 10,
                 "scopes": "metaStructuralHole"
+              }
+            ]
+        `)
+    })
+
+    test('decorate repo revision syntax, separate revisions', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:foo@HEAD:v1.2:3')), true)).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "metaRepoRevisionSeparator"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaRevisionLabel"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "metaRevisionSeparator"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "metaRevisionLabel"
+              },
+              {
+                "startIndex": 18,
+                "scopes": "metaRevisionSeparator"
+              },
+              {
+                "startIndex": 19,
+                "scopes": "metaRevisionLabel"
+              }
+            ]
+        `)
+    })
+
+    test('decorate revision field syntax, separate revisions', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:foo rev:HEAD:v1.2:3')), true)).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "metaRevisionLabel"
+              },
+              {
+                "startIndex": 17,
+                "scopes": "metaRevisionSeparator"
+              },
+              {
+                "startIndex": 18,
+                "scopes": "metaRevisionLabel"
+              },
+              {
+                "startIndex": 22,
+                "scopes": "metaRevisionSeparator"
+              },
+              {
+                "startIndex": 23,
+                "scopes": "metaRevisionLabel"
+              }
+            ]
+        `)
+    })
+
+    test('decorate repo revision syntax, path with wildcard and negation', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:foo@*refs/heads/*:*!refs/heads/release*')), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "metaRepoRevisionSeparator"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaRevisionLabel"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaRevisionIncludeGlobMarker"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "metaRevisionReferencePath"
+              },
+              {
+                "startIndex": 21,
+                "scopes": "metaRevisionWildcard"
+              },
+              {
+                "startIndex": 22,
+                "scopes": "metaRevisionLabel"
+              },
+              {
+                "startIndex": 22,
+                "scopes": "metaRevisionSeparator"
+              },
+              {
+                "startIndex": 23,
+                "scopes": "metaRevisionLabel"
+              },
+              {
+                "startIndex": 23,
+                "scopes": "metaRevisionExcludeGlobMarker"
+              },
+              {
+                "startIndex": 25,
+                "scopes": "metaRevisionReferencePath"
+              },
+              {
+                "startIndex": 43,
+                "scopes": "metaRevisionWildcard"
+              },
+              {
+                "startIndex": 44,
+                "scopes": "metaRevisionLabel"
               }
             ]
         `)

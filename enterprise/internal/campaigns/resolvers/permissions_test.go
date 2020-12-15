@@ -12,8 +12,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -37,8 +38,9 @@ func TestPermissionLevels(t *testing.T) {
 
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := ee.NewStore(dbconn.Global)
-	sr := &Resolver{store: store}
+	cstore := store.New(dbconn.Global)
+	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	sr := &Resolver{store: cstore}
 	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -53,12 +55,12 @@ func TestPermissionLevels(t *testing.T) {
 	ctx := context.Background()
 
 	// Global test data that we reuse in every test
-	adminID := insertTestUser(t, dbconn.Global, "perm-level-admin", true)
-	userID := insertTestUser(t, dbconn.Global, "perm-level-user", false)
+	adminID := ct.CreateTestUser(t, true).ID
+	userID := ct.CreateTestUser(t, false).ID
 
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
-	if err := reposStore.InsertRepos(ctx, repo); err != nil {
+	repoStore := db.NewRepoStoreWith(cstore)
+	repo := newGitHubTestRepo("github.com/sourcegraph/permission-levels-test", newGitHubExternalService(t, rstore))
+	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -67,11 +69,11 @@ func TestPermissionLevels(t *testing.T) {
 		ExternalServiceType: "github",
 		ExternalID:          "1234",
 	}
-	if err := store.CreateChangeset(ctx, changeset); err != nil {
+	if err := cstore.CreateChangeset(ctx, changeset); err != nil {
 		t.Fatal(err)
 	}
 
-	createCampaign := func(t *testing.T, s *ee.Store, name string, userID int32, campaignSpecID int64) (campaignID int64) {
+	createCampaign := func(t *testing.T, s *store.Store, name string, userID int32, campaignSpecID int64) (campaignID int64) {
 		t.Helper()
 
 		c := &campaigns.Campaign{
@@ -100,7 +102,7 @@ func TestPermissionLevels(t *testing.T) {
 		return c.ID
 	}
 
-	createCampaignSpec := func(t *testing.T, s *ee.Store, userID int32) (randID string, id int64) {
+	createCampaignSpec := func(t *testing.T, s *store.Store, userID int32) (randID string, id int64) {
 		t.Helper()
 
 		cs := &campaigns.CampaignSpec{UserID: userID, NamespaceUserID: userID}
@@ -111,10 +113,10 @@ func TestPermissionLevels(t *testing.T) {
 		return cs.RandID, cs.ID
 	}
 
-	cleanUpCampaigns := func(t *testing.T, s *ee.Store) {
+	cleanUpCampaigns := func(t *testing.T, s *store.Store) {
 		t.Helper()
 
-		campaigns, next, err := s.ListCampaigns(ctx, ee.ListCampaignsOpts{LimitOpts: ee.LimitOpts{Limit: 1000}})
+		campaigns, next, err := s.ListCampaigns(ctx, store.ListCampaignsOpts{LimitOpts: store.LimitOpts{Limit: 1000}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -130,12 +132,12 @@ func TestPermissionLevels(t *testing.T) {
 	}
 
 	t.Run("queries", func(t *testing.T) {
-		cleanUpCampaigns(t, store)
+		cleanUpCampaigns(t, cstore)
 
-		adminCampaignSpec, adminCampaignSpecID := createCampaignSpec(t, store, adminID)
-		adminCampaign := createCampaign(t, store, "admin", adminID, adminCampaignSpecID)
-		userCampaignSpec, userCampaignSpecID := createCampaignSpec(t, store, userID)
-		userCampaign := createCampaign(t, store, "user", userID, userCampaignSpecID)
+		adminCampaignSpec, adminCampaignSpecID := createCampaignSpec(t, cstore, adminID)
+		adminCampaign := createCampaign(t, cstore, "admin", adminID, adminCampaignSpecID)
+		userCampaignSpec, userCampaignSpecID := createCampaignSpec(t, cstore, userID)
+		userCampaign := createCampaign(t, cstore, "user", userID, userCampaignSpecID)
 
 		t.Run("CampaignByID", func(t *testing.T) {
 			tests := []struct {
@@ -604,17 +606,17 @@ func TestPermissionLevels(t *testing.T) {
 				for _, tc := range tests {
 					for _, restrict := range []bool{true, false} {
 						t.Run(fmt.Sprintf("%s restrict: %v", tc.name, restrict), func(t *testing.T) {
-							cleanUpCampaigns(t, store)
+							cleanUpCampaigns(t, cstore)
 
-							campaignSpecRandID, campaignSpecID := createCampaignSpec(t, store, tc.campaignAuthor)
-							campaignID := createCampaign(t, store, "test-campaign", tc.campaignAuthor, campaignSpecID)
+							campaignSpecRandID, campaignSpecID := createCampaignSpec(t, cstore, tc.campaignAuthor)
+							campaignID := createCampaign(t, cstore, "test-campaign", tc.campaignAuthor, campaignSpecID)
 
 							// We add the changeset to the campaign. It doesn't
 							// matter for the addChangesetsToCampaign mutation,
 							// since that is idempotent and we want to solely
 							// check for auth errors.
 							changeset.CampaignIDs = []int64{campaignID}
-							if err := store.UpdateChangeset(ctx, changeset); err != nil {
+							if err := cstore.UpdateChangeset(ctx, changeset); err != nil {
 								t.Fatal(err)
 							}
 
@@ -709,7 +711,7 @@ func TestPermissionLevels(t *testing.T) {
 
 				for _, tc := range tests {
 					t.Run(tc.name, func(t *testing.T) {
-						cleanUpCampaigns(t, store)
+						cleanUpCampaigns(t, cstore)
 
 						namespaceID := string(graphqlbackend.MarshalUserID(tc.currentUser))
 						if tc.currentUser == 0 {
@@ -755,8 +757,8 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := ee.NewStore(dbconn.Global)
-	sr := &Resolver{store: store}
+	cstore := store.New(dbconn.Global)
+	sr := &Resolver{store: cstore}
 	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -768,16 +770,17 @@ func TestRepositoryPermissions(t *testing.T) {
 	mockBackendCommits(t, testRev)
 
 	// Global test data that we reuse in every test
-	userID := insertTestUser(t, dbconn.Global, "perm-level-user", false)
+	userID := ct.CreateTestUser(t, false).ID
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	repoStore := db.NewRepoStoreWith(cstore)
 
 	// Create 2 repositories
-	repos := make([]*repos.Repo, 0, 2)
+	repos := make([]*types.Repo, 0, 2)
 	for i := 0; i < cap(repos); i++ {
-		name := fmt.Sprintf("github.com/sourcegraph/repo-%d", i)
+		name := fmt.Sprintf("github.com/sourcegraph/test-repository-permissions-repo-%d", i)
 		r := newGitHubTestRepo(name, newGitHubExternalService(t, reposStore))
-		if err := reposStore.InsertRepos(ctx, r); err != nil {
+		if err := repoStore.Create(ctx, r); err != nil {
 			t.Fatal(err)
 		}
 		repos = append(repos, r)
@@ -791,7 +794,6 @@ func TestRepositoryPermissions(t *testing.T) {
 		changesetDiffStat := apitest.DiffStat{Added: 0, Changed: 2, Deleted: 0}
 
 		changesets := make([]*campaigns.Changeset, 0, len(repos))
-		changesetIDs := make([]int64, 0, cap(changesets))
 		for _, r := range repos {
 			c := &campaigns.Changeset{
 				RepoID:              r.ID,
@@ -808,18 +810,17 @@ func TestRepositoryPermissions(t *testing.T) {
 				},
 			}
 			c.SetDiffStat(changesetDiffStat.ToDiffStat())
-			if err := store.CreateChangeset(ctx, c); err != nil {
+			if err := cstore.CreateChangeset(ctx, c); err != nil {
 				t.Fatal(err)
 			}
 			changesets = append(changesets, c)
-			changesetIDs = append(changesetIDs, c.ID)
 		}
 
 		spec := &campaigns.CampaignSpec{
 			NamespaceUserID: userID,
 			UserID:          userID,
 		}
-		if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+		if err := cstore.CreateCampaignSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
@@ -831,13 +832,13 @@ func TestRepositoryPermissions(t *testing.T) {
 			LastAppliedAt:    time.Now(),
 			CampaignSpecID:   spec.ID,
 		}
-		if err := store.CreateCampaign(ctx, campaign); err != nil {
+		if err := cstore.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 		// We attach the two changesets to the campaign
 		for _, c := range changesets {
 			c.CampaignIDs = []int64{campaign.ID}
-			if err := store.UpdateChangeset(ctx, c); err != nil {
+			if err := cstore.UpdateChangeset(ctx, c); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -923,7 +924,7 @@ func TestRepositoryPermissions(t *testing.T) {
 			UserID:          userID,
 			NamespaceUserID: userID,
 		}
-		if err := store.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+		if err := cstore.CreateCampaignSpec(ctx, campaignSpec); err != nil {
 			t.Fatal(err)
 		}
 
@@ -937,7 +938,7 @@ func TestRepositoryPermissions(t *testing.T) {
 				DiffStatChanged: 4,
 				DiffStatDeleted: 4,
 			}
-			if err := store.CreateChangesetSpec(ctx, c); err != nil {
+			if err := cstore.CreateChangesetSpec(ctx, c); err != nil {
 				t.Fatal(err)
 			}
 			changesetSpecs = append(changesetSpecs, c)

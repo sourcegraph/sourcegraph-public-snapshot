@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -16,9 +16,9 @@ import (
 type campaignsCodeHostConnectionResolver struct {
 	userID                int32
 	onlyWithoutCredential bool
-	opts                  ee.ListCodeHostsOpts
+	opts                  store.ListCodeHostsOpts
 	limitOffset           db.LimitOffset
-	store                 *ee.Store
+	store                 *store.Store
 
 	once          sync.Once
 	chs           []*campaigns.CodeHost

@@ -61,6 +61,11 @@ func NewRepoStoreWithDB(db dbutil.DB) *RepoStore {
 	return &RepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
+// NewRepoStoreWithDB instantiates and returns a new RepoStore using the other store handle.
+func NewRepoStoreWith(other basestore.ShareableStore) *RepoStore {
+	return &RepoStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
 func (s *RepoStore) With(other basestore.ShareableStore) *RepoStore {
 	return &RepoStore{Store: s.Store.With(other)}
 }
@@ -158,7 +163,7 @@ func (s *RepoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.R
 	}
 	q := sqlf.Sprintf("id IN (%s)", sqlf.Join(items, ","))
 	var repos []*types.Repo
-	err := s.getReposBySQL(ctx, true, nil, q, nil, func(rows *sql.Rows) error {
+	err := s.getReposBySQL(ctx, false, nil, q, nil, func(rows *sql.Rows) error {
 		var repo types.Repo
 
 		if err := scanRepo(rows, &repo); err != nil {
@@ -284,15 +289,13 @@ var getBySQLColumns = []string{
 }
 
 func minimalColumns(columns []string) []string {
-	return columns[:6]
+	return columns[:2]
 }
 
 func (s *RepoStore) getBySQL(ctx context.Context, queryConds, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	var repos []*types.Repo
 	err := s.getReposBySQL(ctx, false, nil, queryConds, querySuffix, func(rows *sql.Rows) error {
-		repo := types.Repo{
-			RepoFields: &types.RepoFields{},
-		}
+		var repo types.Repo
 
 		if err := scanRepo(rows, &repo); err != nil {
 			return err
@@ -355,17 +358,6 @@ func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause,
 }
 
 func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
-	if r.RepoFields == nil {
-		return rows.Scan(
-			&r.ID,
-			&r.Name,
-			&r.Private,
-			&dbutil.NullString{S: &r.ExternalRepo.ID},
-			&dbutil.NullString{S: &r.ExternalRepo.ServiceType},
-			&dbutil.NullString{S: &r.ExternalRepo.ServiceID},
-		)
-	}
-
 	var sources dbutil.NullJSONRawMessage
 	var metadata json.RawMessage
 
@@ -473,6 +465,9 @@ type ReposListOptions struct {
 	// The id is that of the external_services table NOT the external_service_id in the repo table
 	ExternalServiceIDs []int64
 
+	// ExternalRepos of repos to list. When zero-valued, this is omitted from the predicate set.
+	ExternalRepos []api.ExternalRepoSpec
+
 	// PatternQuery is an expression tree of patterns to query. The atoms of
 	// the query are strings which are regular expression patterns.
 	PatternQuery query.Q
@@ -500,9 +495,6 @@ type ReposListOptions struct {
 
 	// OnlyPrivate excludes non-private repositories from the list.
 	OnlyPrivate bool
-
-	// OnlyRepoIDs skips fetching of RepoFields in each Repo.
-	OnlyRepoIDs bool
 
 	// Index when set will only include repositories which should be indexed
 	// if true. If false it will exclude repositories which should be
@@ -581,11 +573,8 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 	s.ensureStore()
 
 	var repos []*types.Repo
-	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
+	err = s.list(ctx, tr, false, opt, func(rows *sql.Rows) error {
 		var repo types.Repo
-		if !opt.OnlyRepoIDs {
-			repo.RepoFields = &types.RepoFields{}
-		}
 
 		if err := scanRepo(rows, &repo); err != nil {
 			return err
@@ -601,7 +590,6 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 }
 
 // ListRepoNames returns a list of repositories names and ids.
-// It overrides the OnlyRepoIDs options by setting it to true.
 func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (results []*types.RepoName, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListRepoNames", "")
 	defer func() {
@@ -610,20 +598,12 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 	}()
 	s.ensureStore()
 
-	opt.OnlyRepoIDs = true
-
 	var repos []*types.RepoName
-	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
+	err = s.list(ctx, tr, true, opt, func(rows *sql.Rows) error {
 		var r types.RepoName
 		err := rows.Scan(
 			&r.ID,
 			&r.Name,
-			// TODO(asdine): The following variables are only there to scan requested columns but are never used.
-			// These will be deleted once we rework the getReposBySQL method to only fetch 2 columns instead of 6.
-			new(bool),
-			&dbutil.NullString{S: new(string)},
-			&dbutil.NullString{S: new(string)},
-			&dbutil.NullString{S: new(string)},
 		)
 		if err != nil {
 			return err
@@ -638,7 +618,7 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 	return repos, nil
 }
 
-func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
+func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
 	conds, err := s.listSQL(opt)
 	if err != nil {
 		return err
@@ -666,7 +646,7 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 	tr.LogFields(trace.SQL(queryConds), trace.SQL(querySuffix))
 
-	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fromClause, queryConds, querySuffix, scanRepo)
+	return s.getReposBySQL(ctx, minimal, fromClause, queryConds, querySuffix, scanRepo)
 }
 
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.
@@ -1059,6 +1039,14 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 		}
 		conds = append(conds,
 			sqlf.Sprintf("LOWER(external_service_type) IN (%s)", sqlf.Join(ks, ",")))
+	}
+
+	if len(opt.ExternalRepos) > 0 {
+		er := make([]*sqlf.Query, 0, len(opt.ExternalRepos))
+		for _, spec := range opt.ExternalRepos {
+			er = append(er, sqlf.Sprintf("(external_id = %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
+		}
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
 	}
 
 	if opt.NoForks {

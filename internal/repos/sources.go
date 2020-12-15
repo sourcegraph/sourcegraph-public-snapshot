@@ -126,6 +126,10 @@ type ChangesetSource interface {
 	ReopenChangeset(context.Context, *Changeset) error
 }
 
+type AffiliatedRepositorySource interface {
+	AffiliatedRepositories(ctx context.Context) ([]types.CodeHostRepository, error)
+}
+
 // UnsupportedAuthenticatorError is returned by WithAuthenticator if the
 // authenticator isn't supported on that code host.
 type UnsupportedAuthenticatorError struct {
@@ -162,7 +166,7 @@ type SourceResult struct {
 	// Source points to the Source that produced this result
 	Source Source
 	// Repo is the repository that was listed by the Source
-	Repo *Repo
+	Repo *types.Repo
 	// Err is only set in case the Source ran into an error when listing repositories
 	Err error
 }
@@ -182,6 +186,10 @@ func (s *SourceError) Error() string {
 		}).Error()
 	}
 	return s.Err.Error()
+}
+
+func (s *SourceError) Cause() error {
+	return s.Err
 }
 
 func sourceErrorFormatFunc(es []error) string {
@@ -265,8 +273,8 @@ func group(srcs []Source) map[string]Sources {
 }
 
 // listAll calls ListRepos on the given Source and collects the SourceResults
-// the Source sends over a channel into a slice of *Repo and a single error
-func listAll(ctx context.Context, src Source, onSourced ...func(*Repo) error) ([]*Repo, error) {
+// the Source sends over a channel into a slice of *types.Repo and a single error
+func listAll(ctx context.Context, src Source, onSourced ...func(*types.Repo) error) ([]*types.Repo, error) {
 	results := make(chan SourceResult)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -277,7 +285,7 @@ func listAll(ctx context.Context, src Source, onSourced ...func(*Repo) error) ([
 	}()
 
 	var (
-		repos []*Repo
+		repos []*types.Repo
 		errs  *multierror.Error
 	)
 

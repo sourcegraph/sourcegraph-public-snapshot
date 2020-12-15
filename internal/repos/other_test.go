@@ -29,7 +29,7 @@ func TestSrcExpose(t *testing.T) {
 	cases := []struct {
 		name string
 		body string
-		want []*Repo
+		want []*types.Repo
 		err  string
 	}{{
 		name: "error",
@@ -42,11 +42,11 @@ func TestSrcExpose(t *testing.T) {
 	}, {
 		name: "empty",
 		body: `{"items":[]}`,
-		want: []*Repo{},
+		want: []*types.Repo{},
 	}, {
 		name: "minimal",
 		body: `{"Items":[{"uri": "foo"},{"uri":"bar/baz"}]}`,
-		want: []*Repo{{
+		want: []*types.Repo{{
 			URI:  "foo",
 			Name: "foo",
 			ExternalRepo: api.ExternalRepoSpec{
@@ -54,7 +54,7 @@ func TestSrcExpose(t *testing.T) {
 				ServiceType: extsvc.TypeOther,
 				ID:          "foo",
 			},
-			Sources: map[string]*SourceInfo{
+			Sources: map[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
 					CloneURL: s.URL + "/foo/.git",
@@ -68,7 +68,7 @@ func TestSrcExpose(t *testing.T) {
 				ServiceType: extsvc.TypeOther,
 				ID:          "bar/baz",
 			},
-			Sources: map[string]*SourceInfo{
+			Sources: map[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
 					CloneURL: s.URL + "/bar/baz/.git",
@@ -78,7 +78,7 @@ func TestSrcExpose(t *testing.T) {
 	}, {
 		name: "override",
 		body: `{"Items":[{"uri": "/repos/foo", "name": "foo", "description": "hi"}]}`,
-		want: []*Repo{{
+		want: []*types.Repo{{
 			URI:         "/repos/foo",
 			Name:        "foo",
 			Description: "hi",
@@ -87,7 +87,7 @@ func TestSrcExpose(t *testing.T) {
 				ServiceType: extsvc.TypeOther,
 				ID:          "/repos/foo",
 			},
-			Sources: map[string]*SourceInfo{
+			Sources: map[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
 					CloneURL: s.URL + "/repos/foo/.git",
@@ -97,7 +97,7 @@ func TestSrcExpose(t *testing.T) {
 	}, {
 		name: "immutable",
 		body: `{"Items":[{"uri": "foo", "enabled": false, "externalrepo": {"serviceid": "x", "servicetype": "y", "id": "z"}, "sources": {"x":{"id":"x", "cloneurl":"y"}}}]}`,
-		want: []*Repo{{
+		want: []*types.Repo{{
 			URI:  "foo",
 			Name: "foo",
 			ExternalRepo: api.ExternalRepoSpec{
@@ -105,7 +105,7 @@ func TestSrcExpose(t *testing.T) {
 				ServiceType: extsvc.TypeOther,
 				ID:          "foo",
 			},
-			Sources: map[string]*SourceInfo{
+			Sources: map[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
 					CloneURL: s.URL + "/foo/.git",

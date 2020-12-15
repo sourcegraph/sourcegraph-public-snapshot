@@ -14,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -79,12 +78,13 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 
-		cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repoResolver.repo)
-		if err != nil {
-			r.contentErr = err
-		}
-
-		r.content, r.contentErr = git.ReadFile(ctx, *cachedRepo, api.CommitID(r.commit.OID()), r.Path(), 0)
+		r.content, r.contentErr = git.ReadFile(
+			ctx,
+			r.commit.repoResolver.repo.Name,
+			api.CommitID(r.commit.OID()),
+			r.Path(),
+			0,
+		)
 	})
 
 	return string(r.content), r.contentErr
@@ -307,11 +307,13 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if r.isSingleChild != nil {
 		return *r.isSingleChild, nil
 	}
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repoResolver.repo)
-	if err != nil {
-		return false, err
-	}
-	entries, err := git.ReadDir(ctx, *cachedRepo, api.CommitID(r.commit.OID()), path.Dir(r.Path()), false)
+	entries, err := git.ReadDir(
+		ctx,
+		r.commit.repoResolver.repo.Name,
+		api.CommitID(r.commit.OID()),
+		path.Dir(r.Path()),
+		false,
+	)
 	if err != nil {
 		return false, err
 	}

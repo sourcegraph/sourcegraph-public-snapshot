@@ -6,26 +6,26 @@
   "skipped": [
    {
     "reason": "repository-missing",
-    "title": "1 missing",
-    "message": "1 repository could not be searched. Try reducing the scope of your query with repo: repogroup: or other filters.",
-    "severity": "warn"
+    "title": "2 missing",
+    "message": "2 repositories could not be searched. Try searching again or reducing the scope of your query with `repo:`, `repogroup:` or other filters.\n* `missing-2`\n* `missing-1`",
+    "severity": "info"
    },
    {
     "reason": "repository-cloning",
     "title": "1 cloning",
-    "message": "1 repository could not be searched since they are still cloning. Try searching again or reducing the scope of your query with repo: repogroup: or other filters.",
-    "severity": "warn"
+    "message": "`cloning-1` could not be searched since it is still cloning. Try searching again or reducing the scope of your query with `repo:`,  `repogroup:` or other filters.",
+    "severity": "info"
    },
    {
     "reason": "shard-match-limit",
     "title": "result limit hit",
     "message": "Not all results have been returned due to hitting a match limit. Sourcegraph has limits for the number of results returned from a line, document and repository.",
-    "severity": "warn"
+    "severity": "info"
    },
    {
     "reason": "shard-timeout",
-    "title": "1 timedout",
-    "message": "1 repository could not be searched in time. Try reducing the scope of your query with repo: repogroup: or other filters.",
+    "title": "1 timed out",
+    "message": "`timedout-1` could not be searched in time. Try searching again or reducing the scope of your query with `repo:`,  `repogroup:` or other filters.",
     "severity": "warn"
    },
    {

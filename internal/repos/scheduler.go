@@ -14,6 +14,7 @@ import (
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // schedulerConfig tracks the active scheduler configuration.
@@ -103,7 +104,6 @@ type updateScheduler struct {
 // a configuration source, such as information retrieved from GitHub for a
 // given GitHubConnection.
 type configuredRepo struct {
-	URL  string
 	ID   api.RepoID
 	Name api.RepoName
 }
@@ -207,7 +207,7 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 
 // requestRepoUpdate sends a request to gitserver to request an update.
 var requestRepoUpdate = func(ctx context.Context, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
-	return gitserver.DefaultClient.RequestRepoUpdate(ctx, gitserver.Repo{Name: repo.Name, URL: repo.URL}, since)
+	return gitserver.DefaultClient.RequestRepoUpdate(ctx, repo.Name, since)
 }
 
 // configuredLimiter returns a mutable limiter that is
@@ -282,7 +282,7 @@ func (s *updateScheduler) SetCloned(names []string) {
 //
 // If enqueue is true then r is also enqueued to the update queue for a git
 // fetch/clone soon.
-func (s *updateScheduler) upsert(r *Repo, enqueue bool) {
+func (s *updateScheduler) upsert(r *types.Repo, enqueue bool) {
 	repo := configuredRepoFromRepo(r)
 
 	updated := s.schedule.upsert(repo)
@@ -295,7 +295,7 @@ func (s *updateScheduler) upsert(r *Repo, enqueue bool) {
 	log15.Debug("scheduler.updateQueue.enqueued", "repo", r.Name, "updated", updated)
 }
 
-func (s *updateScheduler) remove(r *Repo) {
+func (s *updateScheduler) remove(r *types.Repo) {
 	repo := configuredRepoFromRepo(r)
 
 	if s.schedule.remove(repo) {
@@ -307,14 +307,10 @@ func (s *updateScheduler) remove(r *Repo) {
 	}
 }
 
-func configuredRepoFromRepo(r *Repo) configuredRepo {
+func configuredRepoFromRepo(r *types.Repo) configuredRepo {
 	repo := configuredRepo{
 		ID:   r.ID,
-		Name: api.RepoName(r.Name),
-	}
-
-	if urls := r.CloneURLs(); len(urls) > 0 {
-		repo.URL = urls[0]
+		Name: r.Name,
 	}
 
 	return repo
@@ -322,11 +318,10 @@ func configuredRepoFromRepo(r *Repo) configuredRepo {
 
 // UpdateOnce causes a single update of the given repository.
 // It neither adds nor removes the repo from the schedule.
-func (s *updateScheduler) UpdateOnce(id api.RepoID, name api.RepoName, url string) {
+func (s *updateScheduler) UpdateOnce(id api.RepoID, name api.RepoName) {
 	repo := configuredRepo{
 		ID:   id,
 		Name: name,
-		URL:  url,
 	}
 	schedManualFetch.Inc()
 	s.updateQueue.enqueue(repo, priorityHigh)

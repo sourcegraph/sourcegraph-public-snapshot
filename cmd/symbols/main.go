@@ -49,7 +49,7 @@ func main() {
 	go debugserver.Start()
 
 	service := symbols.Service{
-		FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
+		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 			return gitserver.DefaultClient.Archive(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: "tar"})
 		},
 		NewParser: symbols.NewParser,

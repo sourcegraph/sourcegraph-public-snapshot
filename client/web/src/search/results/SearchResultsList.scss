@@ -1,5 +1,6 @@
 .search-results-list {
     overflow-y: auto;
+    flex-grow: 1;
 
     &__more {
         width: 100%;
@@ -13,6 +14,10 @@
         padding: 0.25rem 0.5rem;
         text-align: center;
         border-bottom: 1px solid var(--border-color);
+    }
+
+    &__tabs {
+        flex-grow: 1;
     }
 
     // In narrow windows, make the results flush with the left/right sides,

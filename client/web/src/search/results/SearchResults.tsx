@@ -54,7 +54,7 @@ export interface SearchResultsProps
     history: H.History
     navbarSearchQueryState: QueryState
     telemetryService: Pick<EventLogger, 'log' | 'logViewEvent'>
-    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     searchRequest: (
         query: string,
         version: string,
@@ -76,7 +76,6 @@ interface SearchResultsState {
 
     // Saved Queries
     showSavedQueryModal: boolean
-    didSaveQuery: boolean
 
     /** The contributions, merged from all extensions, or undefined before the initial emission. */
     contributions?: Evaluated<Contributions>
@@ -98,7 +97,6 @@ export const LATEST_VERSION = 'V2'
 
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {
-        didSaveQuery: false,
         showSavedQueryModal: false,
         allExpanded: false,
         showVersionContextWarning: false,
@@ -268,17 +266,12 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     private showSaveQueryModal = (): void => {
-        this.setState({ showSavedQueryModal: true, didSaveQuery: false })
-    }
-
-    private onDidCreateSavedQuery = (): void => {
-        this.props.telemetryService.log('SavedQueryCreated')
-        this.setState({ showSavedQueryModal: false, didSaveQuery: true })
+        this.setState({ showSavedQueryModal: true })
     }
 
     private onModalClose = (): void => {
         this.props.telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
-        this.setState({ didSaveQuery: false, showSavedQueryModal: false })
+        this.setState({ showSavedQueryModal: false })
     }
 
     private onDismissWarning = (): void => {
@@ -328,8 +321,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     showSavedQueryModal={this.state.showSavedQueryModal}
                     onSaveQueryClick={this.showSaveQueryModal}
                     onSavedQueryModalClose={this.onModalClose}
-                    onDidCreateSavedQuery={this.onDidCreateSavedQuery}
-                    didSave={this.state.didSaveQuery}
                     shouldDisplayPerformanceWarning={shouldDisplayPerformanceWarning}
                 />
             </div>

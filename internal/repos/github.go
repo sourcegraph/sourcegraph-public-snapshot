@@ -49,6 +49,7 @@ var _ Source = &GithubSource{}
 var _ UserSource = &GithubSource{}
 var _ DraftChangesetSource = &GithubSource{}
 var _ ChangesetSource = &GithubSource{}
+var _ AffiliatedRepositorySource = &GithubSource{}
 
 // NewGithubSource returns a new GithubSource from the given external service.
 func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
@@ -125,7 +126,7 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 		githubDotCom:     githubDotCom,
 		v3Client:         github.NewV3Client(apiURL, token, cli),
 		v4Client:         github.NewV4Client(apiURL, token, cli),
-		searchClient:     github.NewV3Client(apiURL, token, cli).WithSeparateRateLimitMonitor(),
+		searchClient:     github.NewV3SearchClient(apiURL, token, cli),
 		originalHostname: originalHostname,
 	}, nil
 }
@@ -324,7 +325,7 @@ func (s GithubSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
 
 // GetRepo returns the Github repository with the given name and owner
 // ("org/repo-name")
-func (s GithubSource) GetRepo(ctx context.Context, nameWithOwner string) (*Repo, error) {
+func (s GithubSource) GetRepo(ctx context.Context, nameWithOwner string) (*types.Repo, error) {
 	r, err := s.getRepository(ctx, nameWithOwner)
 	if err != nil {
 		return nil, err
@@ -332,14 +333,14 @@ func (s GithubSource) GetRepo(ctx context.Context, nameWithOwner string) (*Repo,
 	return s.makeRepo(r), nil
 }
 
-func (s GithubSource) makeRepo(r *github.Repository) *Repo {
+func (s GithubSource) makeRepo(r *github.Repository) *types.Repo {
 	urn := s.svc.URN()
-	return &Repo{
-		Name: string(reposource.GitHubRepoName(
+	return &types.Repo{
+		Name: reposource.GitHubRepoName(
 			s.config.RepositoryPathPattern,
 			s.originalHostname,
 			r.NameWithOwner,
-		)),
+		),
 		URI: string(reposource.GitHubRepoName(
 			"",
 			s.originalHostname,
@@ -350,7 +351,7 @@ func (s GithubSource) makeRepo(r *github.Repository) *Repo {
 		Fork:         r.IsFork,
 		Archived:     r.IsArchived,
 		Private:      r.IsPrivate,
-		Sources: map[string]*SourceInfo{
+		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
 				CloneURL: s.authenticatedRemoteURL(r),
@@ -775,4 +776,52 @@ func exampleRepositoryQuerySplit(q string) string {
 	enc.SetEscapeHTML(false)
 	_ = enc.Encode(qs)
 	return strings.TrimSpace(b.String())
+}
+
+func (s *GithubSource) AffiliatedRepositories(ctx context.Context) ([]types.CodeHostRepository, error) {
+	var (
+		repos    []*github.Repository
+		nextPage string
+		done     bool
+		page     = 1
+		cost     int
+		err      error
+	)
+	defer func() {
+		remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
+		log15.Debug(
+			"github sync: ListAffiliated",
+			"repos", len(repos),
+			"rateLimitCost", cost,
+			"rateLimitRemaining", remaining,
+			"rateLimitReset", reset,
+			"retryAfter", retry,
+		)
+	}()
+	out := make([]types.CodeHostRepository, 0, len(repos))
+	for done == false {
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("context canceled")
+		default:
+		}
+		repos, nextPage, cost, err = s.v4Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, nextPage)
+		if err != nil {
+			return nil, err
+		}
+		if nextPage == "" {
+			done = true
+		}
+		for _, repo := range repos {
+			// the github user repositories API doesn't support query strings, so we'll have to filter here 😬
+			// this does make pagination more awkward though, as we won't paginate futher if you don't match anything
+			out = append(out, types.CodeHostRepository{
+				Name:       repo.NameWithOwner,
+				Private:    repo.IsPrivate,
+				CodeHostID: s.svc.ID,
+			})
+		}
+		page++
+	}
+	return out, nil
 }

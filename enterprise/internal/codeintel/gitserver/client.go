@@ -12,6 +12,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -65,9 +66,10 @@ func (c *CommitGraph) Graph() map[string][]string { return c.graph }
 func (c *CommitGraph) Order() []string            { return c.order }
 
 type CommitGraphOptions struct {
-	Commit string
-	Limit  int
-	Since  *time.Time
+	Commit  string
+	AllRefs bool
+	Limit   int
+	Since   *time.Time
 }
 
 // CommitGraph returns the commit graph for the given repository as a mapping from a commit
@@ -81,7 +83,10 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitG
 	}})
 	defer endObservation(1, observation.Args{})
 
-	commands := []string{"log", "--all", "--pretty=%H %P", "--topo-order"}
+	commands := []string{"log", "--pretty=%H %P", "--topo-order"}
+	if opts.AllRefs {
+		commands = append(commands, "--all")
+	}
 	if opts.Commit != "" {
 		commands = append(commands, opts.Commit)
 	}
@@ -312,12 +317,12 @@ func (c *Client) execGitCommand(ctx context.Context, repositoryID int, args ...s
 	return string(bytes.TrimSpace(out)), errors.Wrap(err, "gitserver.Command")
 }
 
-// repositoryIDToRepo creates a gitserver.Repo from a repository identifier.
-func (c *Client) repositoryIDToRepo(ctx context.Context, repositoryID int) (gitserver.Repo, error) {
+// repositoryIDToRepo creates a api.RepoName from a repository identifier.
+func (c *Client) repositoryIDToRepo(ctx context.Context, repositoryID int) (api.RepoName, error) {
 	repoName, err := c.dbStore.RepoName(ctx, repositoryID)
 	if err != nil {
-		return gitserver.Repo{}, errors.Wrap(err, "store.RepoName")
+		return "", errors.Wrap(err, "store.RepoName")
 	}
 
-	return gitserver.Repo{Name: api.RepoName(repoName)}, nil
+	return api.RepoName(repoName), nil
 }

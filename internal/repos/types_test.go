@@ -27,8 +27,8 @@ func TestExternalService_Exclude(t *testing.T) {
 	type testCase struct {
 		name   string
 		svcs   types.ExternalServices
-		repos  Repos
-		assert ExternalServicesAssertion
+		repos  types.Repos
+		assert types.ExternalServicesAssertion
 	}
 
 	githubService := types.ExternalService{
@@ -108,7 +108,7 @@ func TestExternalService_Exclude(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	repos := Repos{
+	repos := types.Repos{
 		{
 			Metadata: &github.Repository{
 				ID:            "foo",
@@ -259,7 +259,7 @@ func TestExternalService_Exclude(t *testing.T) {
 			name:   "already excluded repos are ignored",
 			svcs:   svcs,
 			repos:  repos,
-			assert: Assert.ExternalServicesEqual(svcs...),
+			assert: types.Assert.ExternalServicesEqual(svcs...),
 		})
 	}
 	{
@@ -342,7 +342,7 @@ func TestExternalService_Exclude(t *testing.T) {
 			name:  "repos are excluded",
 			svcs:  svcs,
 			repos: repos,
-			assert: Assert.ExternalServicesEqual(
+			assert: types.Assert.ExternalServicesEqual(
 				githubService.With(func(e *types.ExternalService) {
 					e.Config = formatJSON(t, `
 					{
@@ -438,17 +438,15 @@ func TestExternalService_Exclude(t *testing.T) {
 					ExternalRepo: r.ExternalRepo,
 					Name:         api.RepoName(r.Name),
 					Private:      r.Private,
-					RepoFields: &types.RepoFields{
-						URI:         r.URI,
-						Description: r.Description,
-						Fork:        r.Fork,
-						Archived:    r.Archived,
-						Cloned:      r.Cloned,
-						CreatedAt:   r.CreatedAt,
-						UpdatedAt:   r.UpdatedAt,
-						DeletedAt:   r.DeletedAt,
-						Metadata:    r.Metadata,
-					},
+					URI:          r.URI,
+					Description:  r.Description,
+					Fork:         r.Fork,
+					Archived:     r.Archived,
+					Cloned:       r.Cloned,
+					CreatedAt:    r.CreatedAt,
+					UpdatedAt:    r.UpdatedAt,
+					DeletedAt:    r.DeletedAt,
+					Metadata:     r.Metadata,
 				}
 			}
 			var err error
@@ -466,7 +464,7 @@ func TestExternalService_Exclude(t *testing.T) {
 }
 
 func TestReposNamesSummary(t *testing.T) {
-	var rps Repos
+	var rps types.Repos
 
 	eid := func(id int) api.ExternalRepoSpec {
 		return api.ExternalRepoSpec{
@@ -477,7 +475,7 @@ func TestReposNamesSummary(t *testing.T) {
 	}
 
 	for i := 0; i < 5; i++ {
-		rps = append(rps, &Repo{Name: "bar", ExternalRepo: eid(i)})
+		rps = append(rps, &types.Repo{Name: "bar", ExternalRepo: eid(i)})
 	}
 
 	expected := "bar bar bar bar bar"
@@ -489,7 +487,7 @@ func TestReposNamesSummary(t *testing.T) {
 	rps = nil
 
 	for i := 0; i < 22; i++ {
-		rps = append(rps, &Repo{Name: "b", ExternalRepo: eid(i)})
+		rps = append(rps, &types.Repo{Name: "b", ExternalRepo: eid(i)})
 	}
 
 	expected = "b b b b b b b b b b b b b b b b b b b b..."
@@ -510,10 +508,10 @@ func TestPick(t *testing.T) {
 			ServiceID:   "https://fake.com",
 		}
 	}
-	a := &Repo{Name: "bar", ExternalRepo: eid("1")}
-	b := &Repo{Name: "bar", ExternalRepo: eid("2")}
+	a := &types.Repo{Name: "bar", ExternalRepo: eid("1")}
+	b := &types.Repo{Name: "bar", ExternalRepo: eid("2")}
 
-	for _, args := range [][2]*Repo{{a, b}, {b, a}} {
+	for _, args := range [][2]*types.Repo{{a, b}, {b, a}} {
 		keep, discard := pick(args[0], args[1])
 		if keep != a || discard != b {
 			t.Errorf("unexpected pick(%v, %v)", args[0], args[1])

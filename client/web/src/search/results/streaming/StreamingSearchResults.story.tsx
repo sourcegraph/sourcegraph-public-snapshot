@@ -58,7 +58,7 @@ const defaultProps: StreamingSearchResultsProps = {
 
     streamSearch: () => of(streamingSearchResult),
 
-    fetchHighlightedFileLines: () => of(HIGHLIGHTED_FILE_LINES_LONG),
+    fetchHighlightedFileLineRanges: () => of(HIGHLIGHTED_FILE_LINES_LONG),
 }
 
 const { add } = storiesOf('web/search/results/streaming/StreamingSearchResults', module).addParameters({
@@ -185,6 +185,46 @@ add('loading with some results', () => {
             durationMs: 500,
             matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
             skipped: [],
+        },
+    }
+
+    return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
+})
+
+add('server-side alert', () => {
+    const result: AggregateStreamingSearchResults = {
+        results: MULTIPLE_SEARCH_RESULT.results,
+        filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
+        progress: {
+            done: true,
+            durationMs: 500,
+            matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
+            skipped: [],
+        },
+        alert: {
+            proposedQueries: [{ query: 'test', description: 'new query' }],
+            title: 'Test alert',
+            description: 'This is an alert',
+        },
+    }
+
+    return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
+})
+
+add('server-side alert with no results', () => {
+    const result: AggregateStreamingSearchResults = {
+        results: [],
+        filters: [],
+        progress: {
+            done: true,
+            durationMs: 500,
+            matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
+            skipped: [],
+        },
+        alert: {
+            proposedQueries: [{ query: 'test', description: 'Test query' }],
+            title: 'Test Alert',
+            description: 'This is a test alert',
         },
     }
 

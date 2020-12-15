@@ -93,7 +93,7 @@ func (r *RepositoryResolver) IsFork(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return r.repo.RepoFields.Fork, nil
+	return r.repo.Fork, nil
 }
 
 func (r *RepositoryResolver) IsArchived(ctx context.Context) (bool, error) {
@@ -101,7 +101,7 @@ func (r *RepositoryResolver) IsArchived(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return r.repo.RepoFields.Archived, nil
+	return r.repo.Archived, nil
 }
 
 func (r *RepositoryResolver) IsPrivate(ctx context.Context) (bool, error) {
@@ -173,17 +173,12 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	do := func() (*GitRefResolver, error) {
-		cachedRepo, err := backend.CachedGitRepo(ctx, r.repo)
-		if err != nil {
-			return nil, err
-		}
-
-		refBytes, _, exitCode, err := git.ExecSafe(ctx, *cachedRepo, []string{"symbolic-ref", "HEAD"})
+		refBytes, _, exitCode, err := git.ExecSafe(ctx, r.repo.Name, []string{"symbolic-ref", "HEAD"})
 		refName := string(bytes.TrimSpace(refBytes))
 
 		if err == nil && exitCode == 0 {
 			// Check that our repo is not empty
-			_, err = git.ResolveRevision(ctx, *cachedRepo, "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
+			_, err = git.ResolveRevision(ctx, r.repo.Name, "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
 		}
 
 		// If we fail to get the default branch due to cloning or being empty, we return nothing.
@@ -282,10 +277,6 @@ func (r *RepositoryResolver) ToCommitSearchResult() (*CommitSearchResultResolver
 	return nil, false
 }
 
-func (r *RepositoryResolver) searchResultURIs() (string, string) {
-	return string(r.repo.Name), ""
-}
-
 func (r *RepositoryResolver) resultCount() int32 {
 	return 1
 }
@@ -296,7 +287,9 @@ func (r *RepositoryResolver) Type() *types.Repo {
 
 func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	r.hydration.Do(func() {
-		if r.repo.RepoFields != nil {
+		// Repositories with an empty creation date were created using RepoName.ToRepo(),
+		// they only contain ID and name information.
+		if !r.repo.CreatedAt.IsZero() {
 			return
 		}
 
@@ -305,7 +298,7 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 		var repo *types.Repo
 		repo, r.err = db.Repos.Get(ctx, r.repo.ID)
 		if r.err == nil {
-			r.repo.RepoFields = repo.RepoFields
+			r.repo = repo
 		}
 	})
 
@@ -391,11 +384,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 		// NoEnsureRevision. We do this, otherwise RepositoryResolver.Commit
 		// will try and fetch it from the remote host. However, this is not on
 		// the remote host since we created it.
-		cachedRepo, err := backend.CachedGitRepo(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
-		_, err = git.ResolveRevision(ctx, *cachedRepo, targetRef, git.ResolveRevisionOptions{
+		_, err = git.ResolveRevision(ctx, repo.Name, targetRef, git.ResolveRevisionOptions{
 			NoEnsureRevision: true,
 		})
 		if err != nil {

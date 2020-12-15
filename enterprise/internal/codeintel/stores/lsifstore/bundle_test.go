@@ -355,7 +355,7 @@ func TestDatabasePackageInformation(t *testing.T) {
 	}
 }
 
-func populateTestStore(t *testing.T) *Store {
+func populateTestStore(t testing.TB) *Store {
 	contents, err := ioutil.ReadFile("./testdata/lsif-go@ad3507cb.sql")
 	if err != nil {
 		t.Fatalf("unexpected error reading testdata: %s", err)

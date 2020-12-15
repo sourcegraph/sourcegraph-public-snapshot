@@ -6,6 +6,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
@@ -105,7 +106,8 @@ func (u *CommitUpdater) tryUpdate(ctx context.Context, repositoryID, dirtyToken 
 		oldestCommitDateWithUpload = oldestCommitDateWithUpload.Add(-time.Second)
 
 		graph, err = u.gitserverClient.CommitGraph(ctx, repositoryID, gitserver.CommitGraphOptions{
-			Since: &oldestCommitDateWithUpload,
+			AllRefs: true,
+			Since:   &oldestCommitDateWithUpload,
 		})
 		if err != nil {
 			return errors.Wrap(err, "gitserver.CommitGraph")

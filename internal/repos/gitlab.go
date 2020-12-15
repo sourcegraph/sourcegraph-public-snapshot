@@ -38,6 +38,7 @@ var _ Source = &GitLabSource{}
 var _ UserSource = &GitLabSource{}
 var _ DraftChangesetSource = &GitLabSource{}
 var _ ChangesetSource = &GitLabSource{}
+var _ AffiliatedRepositorySource = &GitLabSource{}
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
 func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
@@ -120,7 +121,7 @@ func (s GitLabSource) ListRepos(ctx context.Context, results chan SourceResult) 
 }
 
 // GetRepo returns the GitLab repository with the given pathWithNamespace.
-func (s GitLabSource) GetRepo(ctx context.Context, pathWithNamespace string) (*Repo, error) {
+func (s GitLabSource) GetRepo(ctx context.Context, pathWithNamespace string) (*types.Repo, error) {
 	proj, err := s.client.GetProject(ctx, gitlab.GetProjectOp{
 		PathWithNamespace: pathWithNamespace,
 		CommonOp:          gitlab.CommonOp{NoCache: true},
@@ -138,15 +139,15 @@ func (s GitLabSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
+func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 	urn := s.svc.URN()
-	return &Repo{
-		Name: string(reposource.GitLabRepoName(
+	return &types.Repo{
+		Name: reposource.GitLabRepoName(
 			s.config.RepositoryPathPattern,
 			s.baseURL.Hostname(),
 			proj.PathWithNamespace,
 			s.nameTransformations,
-		)),
+		),
 		URI: string(reposource.GitLabRepoName(
 			"",
 			s.baseURL.Hostname(),
@@ -158,7 +159,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
 		Fork:         proj.ForkedFromProject != nil,
 		Archived:     proj.Archived,
 		Private:      proj.Visibility == "private",
-		Sources: map[string]*SourceInfo{
+		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
 				CloneURL: s.authenticatedRemoteURL(proj),
@@ -485,6 +486,11 @@ func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gi
 		return errors.Wrap(err, "retrieving notes")
 	}
 
+	events, err := s.getMergeRequestResourceStateEvents(ctx, project, mr)
+	if err != nil {
+		return errors.Wrap(err, "retrieving resource state events")
+	}
+
 	pipelines, err := s.getMergeRequestPipelines(ctx, project, mr)
 	if err != nil {
 		return errors.Wrap(err, "retrieving pipelines")
@@ -492,6 +498,7 @@ func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gi
 
 	mr.Notes = notes
 	mr.Pipelines = pipelines
+	mr.ResourceStateEvents = events
 	return nil
 }
 
@@ -533,6 +540,40 @@ func readSystemNotes(it func() ([]*gitlab.Note, error)) ([]*gitlab.Note, error) 
 				notes = append(notes, note)
 			}
 		}
+	}
+}
+
+// getMergeRequestResourceStateEvents retrieves the events attached to a merge request in
+// descending time order.
+func (s *GitLabSource) getMergeRequestResourceStateEvents(ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest) ([]*gitlab.ResourceStateEvent, error) {
+	// Get the forward iterator that gives us a note page at a time.
+	it := s.client.GetMergeRequestResourceStateEvents(ctx, project, mr.IID)
+
+	// Now we can iterate over the pages of notes and fill in the slice to be
+	// returned.
+	events, err := readMergeRequestResourceStateEvents(it)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading resource state events pages")
+	}
+
+	return events, nil
+}
+
+func readMergeRequestResourceStateEvents(it func() ([]*gitlab.ResourceStateEvent, error)) ([]*gitlab.ResourceStateEvent, error) {
+	var events []*gitlab.ResourceStateEvent
+
+	for {
+		page, err := it()
+		if err != nil {
+			return nil, errors.Wrap(err, "retrieving resource state events page")
+		}
+		if len(page) == 0 {
+			// The terminal condition for the iterator is returning an empty
+			// slice with no error, so we can stop iterating here.
+			return events, nil
+		}
+
+		events = append(events, page...)
 	}
 }
 
@@ -599,4 +640,31 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 func (s *GitLabSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
 	c.Title = gitlab.UnsetWIP(c.Title)
 	return s.UpdateChangeset(ctx, c)
+}
+
+func (s *GitLabSource) AffiliatedRepositories(ctx context.Context) ([]types.CodeHostRepository, error) {
+	queryURL, err := projectQueryToURL("projects?membership=true&archived=no", 40) // first page URL
+	if err != nil {
+		return nil, err
+	}
+	var (
+		projects    []*gitlab.Project
+		nextPageURL = &queryURL
+	)
+
+	out := []types.CodeHostRepository{}
+	for nextPageURL != nil {
+		projects, nextPageURL, err = s.client.ListProjects(ctx, *nextPageURL)
+		if err != nil {
+			return nil, err
+		}
+		for _, p := range projects {
+			out = append(out, types.CodeHostRepository{
+				Name:       p.PathWithNamespace,
+				Private:    p.Visibility == "private",
+				CodeHostID: s.svc.ID,
+			})
+		}
+	}
+	return out, nil
 }

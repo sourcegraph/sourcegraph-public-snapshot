@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var defaultTime = time.Date(2000, 1, 1, 1, 1, 1, 1, time.UTC)
@@ -56,12 +57,12 @@ func startRecording() (*recording, func()) {
 }
 
 func TestUpdateQueue_enqueue(t *testing.T) {
-	a := configuredRepo{ID: 1, Name: "a", URL: "a.com"}
-	a2 := configuredRepo{ID: 1, Name: "a2", URL: "a2.com"}
-	b := configuredRepo{ID: 2, Name: "b", URL: "b.com"}
-	c := configuredRepo{ID: 3, Name: "c", URL: "c.com"}
-	d := configuredRepo{ID: 4, Name: "d", URL: "d.com"}
-	e := configuredRepo{ID: 5, Name: "e", URL: "e.com"}
+	a := configuredRepo{ID: 1, Name: "a"}
+	a2 := configuredRepo{ID: 1, Name: "a2"}
+	b := configuredRepo{ID: 2, Name: "b"}
+	c := configuredRepo{ID: 3, Name: "c"}
+	d := configuredRepo{ID: 4, Name: "d"}
+	e := configuredRepo{ID: 5, Name: "e"}
 
 	type enqueueCall struct {
 		repo     configuredRepo
@@ -297,9 +298,9 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 }
 
 func TestUpdateQueue_remove(t *testing.T) {
-	a := configuredRepo{ID: 1, Name: "a", URL: "a.com"}
-	b := configuredRepo{ID: 2, Name: "b", URL: "b.com"}
-	c := configuredRepo{ID: 3, Name: "c", URL: "c.com"}
+	a := configuredRepo{ID: 1, Name: "a"}
+	b := configuredRepo{ID: 2, Name: "b"}
+	c := configuredRepo{ID: 3, Name: "c"}
 
 	type removeCall struct {
 		repo     configuredRepo
@@ -457,8 +458,8 @@ func TestUpdateQueue_remove(t *testing.T) {
 }
 
 func TestUpdateQueue_acquireNext(t *testing.T) {
-	a := configuredRepo{ID: 1, Name: "a", URL: "a.com"}
-	b := configuredRepo{ID: 2, Name: "b", URL: "b.com"}
+	a := configuredRepo{ID: 1, Name: "a"}
+	b := configuredRepo{ID: 2, Name: "b"}
 
 	tests := []struct {
 		name           string
@@ -557,8 +558,8 @@ func verifyQueue(t *testing.T, s *updateScheduler, expected []*repoUpdate) {
 }
 
 func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
-	a := configuredRepo{ID: 1, Name: "a", URL: "a.com"}
-	b := configuredRepo{ID: 2, Name: "b", URL: "b.com"}
+	a := configuredRepo{ID: 1, Name: "a"}
+	b := configuredRepo{ID: 2, Name: "b"}
 
 	tests := []struct {
 		name            string
@@ -577,30 +578,24 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 				{Repo: a, Seq: 1, Updating: false},
 			},
 			diff: Diff{
-				Deleted: []*Repo{
-					{ID: a.ID, Name: string(a.Name), URI: a.URL},
+				Deleted: []*types.Repo{
+					{ID: a.ID, Name: a.Name},
 				},
 			},
 		},
 		{
 			name: "diff with add and modified repos",
 			diff: Diff{
-				Added: []*Repo{
+				Added: []*types.Repo{
 					{
 						ID:   a.ID,
-						Name: string(a.Name),
-						Sources: map[string]*SourceInfo{
-							string(a.Name): {CloneURL: a.URL},
-						},
+						Name: a.Name,
 					},
 				},
-				Modified: []*Repo{
+				Modified: []*types.Repo{
 					{
 						ID:   b.ID,
-						Name: string(b.Name),
-						Sources: map[string]*SourceInfo{
-							string(b.Name): {CloneURL: b.URL},
-						},
+						Name: b.Name,
 					},
 				},
 			},
@@ -622,18 +617,15 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 				{Repo: a, Seq: 1, Updating: false},
 			},
 			diff: Diff{
-				Unmodified: []*Repo{
+				Unmodified: []*types.Repo{
 					{
 						ID:        a.ID,
-						Name:      string(a.Name),
+						Name:      a.Name,
 						DeletedAt: defaultTime,
 					},
 					{
 						ID:   b.ID,
-						Name: string(b.Name),
-						Sources: map[string]*SourceInfo{
-							string(b.Name): {CloneURL: b.URL},
-						},
+						Name: b.Name,
 					},
 				},
 			},
@@ -661,9 +653,9 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 }
 
 func TestSchedule_upsert(t *testing.T) {
-	a := configuredRepo{ID: 1, Name: "a", URL: "a.com"}
-	a2 := configuredRepo{ID: 1, Name: "a2", URL: "a2.com"}
-	b := configuredRepo{ID: 2, Name: "b", URL: "b.com"}
+	a := configuredRepo{ID: 1, Name: "a"}
+	a2 := configuredRepo{ID: 1, Name: "a2"}
+	b := configuredRepo{ID: 2, Name: "b"}
 
 	type upsertCall struct {
 		time time.Time
@@ -843,11 +835,11 @@ func TestUpdateQueue_setCloned(t *testing.T) {
 }
 
 func TestSchedule_updateInterval(t *testing.T) {
-	a := configuredRepo{ID: 1, Name: "a", URL: "a.com"}
-	b := configuredRepo{ID: 2, Name: "b", URL: "b.com"}
-	c := configuredRepo{ID: 3, Name: "c", URL: "c.com"}
-	d := configuredRepo{ID: 4, Name: "d", URL: "d.com"}
-	e := configuredRepo{ID: 5, Name: "e", URL: "e.com"}
+	a := configuredRepo{ID: 1, Name: "a"}
+	b := configuredRepo{ID: 2, Name: "b"}
+	c := configuredRepo{ID: 3, Name: "c"}
+	d := configuredRepo{ID: 4, Name: "d"}
+	e := configuredRepo{ID: 5, Name: "e"}
 
 	type updateCall struct {
 		time     time.Time
@@ -1021,9 +1013,9 @@ func TestSchedule_updateInterval(t *testing.T) {
 }
 
 func TestSchedule_remove(t *testing.T) {
-	a := configuredRepo{ID: 1, Name: "a", URL: "a.com"}
-	b := configuredRepo{ID: 2, Name: "b", URL: "b.com"}
-	c := configuredRepo{ID: 3, Name: "c", URL: "c.com"}
+	a := configuredRepo{ID: 1, Name: "a"}
+	b := configuredRepo{ID: 2, Name: "b"}
+	c := configuredRepo{ID: 3, Name: "c"}
 
 	type removeCall struct {
 		time time.Time
@@ -1158,11 +1150,11 @@ func verifyScheduleRecording(t *testing.T, s *updateScheduler, timeAfterFuncDela
 }
 
 func TestUpdateScheduler_runSchedule(t *testing.T) {
-	a := configuredRepo{ID: 1, Name: "a", URL: "a.com"}
-	b := configuredRepo{ID: 2, Name: "b", URL: "b.com"}
-	c := configuredRepo{ID: 3, Name: "c", URL: "c.com"}
-	d := configuredRepo{ID: 4, Name: "d", URL: "d.com"}
-	e := configuredRepo{ID: 5, Name: "e", URL: "e.com"}
+	a := configuredRepo{ID: 1, Name: "a"}
+	b := configuredRepo{ID: 2, Name: "b"}
+	c := configuredRepo{ID: 3, Name: "c"}
+	d := configuredRepo{ID: 4, Name: "d"}
+	e := configuredRepo{ID: 5, Name: "e"}
 
 	tests := []struct {
 		name                  string
@@ -1280,9 +1272,9 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 }
 
 func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
-	a := configuredRepo{ID: 1, Name: "a", URL: "a.com"}
-	b := configuredRepo{ID: 2, Name: "b", URL: "b.com"}
-	c := configuredRepo{ID: 3, Name: "c", URL: "c.com"}
+	a := configuredRepo{ID: 1, Name: "a"}
+	b := configuredRepo{ID: 2, Name: "b"}
+	c := configuredRepo{ID: 3, Name: "c"}
 
 	type mockRequestRepoUpdate struct {
 		repo configuredRepo

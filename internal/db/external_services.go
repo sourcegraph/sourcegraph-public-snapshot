@@ -3,13 +3,13 @@ package db
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
@@ -49,6 +49,11 @@ type ExternalServiceStore struct {
 // NewExternalServicesStoreWithDB instantiates and returns a new ExternalServicesStore with prepared statements.
 func NewExternalServicesStoreWithDB(db dbutil.DB) *ExternalServiceStore {
 	return &ExternalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+}
+
+// NewExternalServicesStoreWithDB instantiates and returns a new ExternalServicesStore with prepared statements.
+func NewExternalServicesStoreWith(other basestore.ShareableStore) *ExternalServiceStore {
+	return &ExternalServiceStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
 func (e *ExternalServiceStore) With(other basestore.ShareableStore) *ExternalServiceStore {
@@ -217,41 +222,35 @@ func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 	switch opt.Kind {
 	case extsvc.KindGitHub:
 		var c schema.GitHubConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
-		}
-		if opt.HasNamespace && c.Authorization == nil {
-			errs = multierror.Append(errs, errAuthorizationRequired)
 		}
 		err = e.validateGitHubConnection(ctx, opt.ID, &c)
 
 	case extsvc.KindGitLab:
 		var c schema.GitLabConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
-		}
-		if opt.HasNamespace && c.Authorization == nil {
-			errs = multierror.Append(errs, errAuthorizationRequired)
 		}
 		err = e.validateGitLabConnection(ctx, opt.ID, &c, opt.AuthProviders)
 
 	case extsvc.KindBitbucketServer:
 		var c schema.BitbucketServerConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
 		}
 		err = e.validateBitbucketServerConnection(ctx, opt.ID, &c)
 
 	case extsvc.KindBitbucketCloud:
 		var c schema.BitbucketCloudConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
 		}
 		err = e.validateBitbucketCloudConnection(ctx, opt.ID, &c)
 
 	case extsvc.KindOther:
 		var c schema.OtherExternalServiceConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
 		}
 		err = validateOtherExternalServiceConnection(&c)
@@ -466,6 +465,53 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	})
 	if err != nil {
 		return err
+	}
+
+	// NOTE: For GitHub and GitLab user code host connections on Sourcegraph Cloud,
+	//  we always want to enforce repository permissions using OAuth to prevent
+	//  unexpected resource leaking.
+	if envvar.SourcegraphDotComMode() && es.NamespaceUserID != 0 {
+		switch es.Kind {
+		case extsvc.KindGitHub:
+			var c schema.GitHubConnection
+			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+				return err
+			}
+
+			if c.Authorization == nil {
+				c.Authorization = &schema.GitHubAuthorization{}
+
+				normalized, err = jsoniter.Marshal(c)
+				if err != nil {
+					return err
+				}
+			}
+
+		case extsvc.KindGitLab:
+			var c schema.GitLabConnection
+			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+				return err
+			}
+
+			if c.Authorization == nil {
+				c.Authorization = &schema.GitLabAuthorization{
+					IdentityProvider: schema.IdentityProvider{
+						Oauth: &schema.OAuthIdentity{
+							Type: "oauth",
+						},
+					},
+				}
+
+				normalized, err = jsoniter.Marshal(c)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		// We expect users to edit code host connections via our UI so no JSON with
+		// comments should appear, thus OK to set config as normalized.
+		es.Config = string(normalized)
 	}
 
 	es.CreatedAt = timeutil.Now()

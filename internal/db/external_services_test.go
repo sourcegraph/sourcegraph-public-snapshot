@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -193,20 +194,6 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			hasNamespace: true,
 			wantErr:      `field "rateLimit" is not allowed in a user-added external service`,
 		},
-		{
-			name:         "authorization required for GitHub",
-			kind:         extsvc.KindGitHub,
-			config:       `{"url": "https://github.com", "token": "abc", "repos": ["abc/testrepo"]}`,
-			hasNamespace: true,
-			wantErr:      "1 error occurred:\n\t* authorization required\n\n",
-		},
-		{
-			name:         "authorization required for GitLab",
-			kind:         extsvc.KindGitHub,
-			config:       `{"url": "https://gitlab.com", "token": "abc", "repos": ["abc/testrepo"]}`,
-			hasNamespace: true,
-			wantErr:      "1 error occurred:\n\t* authorization required\n\n",
-		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -233,6 +220,21 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	}
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
+
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(false)
+
+	user, err := Users.Create(ctx,
+		NewUser{
+			Email:           "alice@example.com",
+			Username:        "alice",
+			Password:        "password",
+			EmailIsVerified: true,
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// Create a new external service
 	confGet := func() *conf.Unified {
@@ -276,6 +278,27 @@ func TestExternalServicesStore_Create(t *testing.T) {
 }`,
 			},
 			wantUnrestricted: true,
+		},
+
+		{
+			name: "Cloud: auto-add authorization to user code host connections for GitHub",
+			externalService: &types.ExternalService{
+				Kind:            extsvc.KindGitHub,
+				DisplayName:     "GITHUB #4",
+				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				NamespaceUserID: user.ID,
+			},
+			wantUnrestricted: false,
+		},
+		{
+			name: "Cloud: auto-add authorization to user code host connections for GitLab",
+			externalService: &types.ExternalService{
+				Kind:            extsvc.KindGitLab,
+				DisplayName:     "GITLAB #1",
+				Config:          `{"url": "https://gitlab.com", "projectQuery": ["none"], "token": "abc"}`,
+				NamespaceUserID: user.ID,
+			},
+			wantUnrestricted: false,
 		},
 	}
 	for _, test := range tests {
@@ -488,6 +511,11 @@ VALUES (%d, 1, ''), (%d, 2, '')
 	want := []*types.Repo{
 		{ID: 2, Name: "github.com/user/repo2"},
 	}
+
+	repos = types.Repos(repos).With(func(r *types.Repo) {
+		r.CreatedAt = time.Time{}
+		r.Sources = nil
+	})
 	if diff := cmp.Diff(want, repos); diff != "" {
 		t.Fatalf("Repos mismatch (-want +got):\n%s", diff)
 	}

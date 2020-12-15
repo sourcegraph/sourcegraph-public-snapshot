@@ -38,7 +38,7 @@ func TestExampleRepositoryQuerySplit(t *testing.T) {
 }
 
 func TestGithubSource_CreateChangeset(t *testing.T) {
-	repo := &Repo{
+	repo := &types.Repo{
 		Metadata: &github.Repository{
 			ID:            "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
 			NameWithOwner: "sourcegraph/automation-testing",
@@ -350,14 +350,14 @@ func TestGithubSource_LoadChangeset(t *testing.T) {
 		{
 			name: "found",
 			cs: &Changeset{
-				Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
+				Repo:      &types.Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
 				Changeset: &campaigns.Changeset{ExternalID: "5550"},
 			},
 		},
 		{
 			name: "not-found",
 			cs: &Changeset{
-				Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
+				Repo:      &types.Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
 				Changeset: &campaigns.Changeset{ExternalID: "100000"},
 			},
 			err: "Changeset with external ID 100000 not found",
@@ -417,7 +417,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 	testCases := []struct {
 		name          string
 		nameWithOwner string
-		assert        func(*testing.T, *Repo)
+		assert        func(*testing.T, *types.Repo)
 		err           string
 	}{
 		{
@@ -433,10 +433,10 @@ func TestGithubSource_GetRepo(t *testing.T) {
 		{
 			name:          "found",
 			nameWithOwner: "sourcegraph/sourcegraph",
-			assert: func(t *testing.T, have *Repo) {
+			assert: func(t *testing.T, have *types.Repo) {
 				t.Helper()
 
-				want := &Repo{
+				want := &types.Repo{
 					Name:        "github.com/sourcegraph/sourcegraph",
 					Description: "Code search and navigation tool (self-hosted)",
 					URI:         "github.com/sourcegraph/sourcegraph",
@@ -445,7 +445,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 						ServiceType: "github",
 						ServiceID:   "https://github.com/",
 					},
-					Sources: map[string]*SourceInfo{
+					Sources: map[string]*types.SourceInfo{
 						"extsvc:github:0": {
 							ID:       "extsvc:github:0",
 							CloneURL: "https://github.com/sourcegraph/sourcegraph",
@@ -554,7 +554,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			var got []*Repo
+			var got []*types.Repo
 			for _, r := range repos {
 				got = append(got, s.makeRepo(r))
 			}
@@ -591,8 +591,8 @@ func TestMatchOrg(t *testing.T) {
 }
 
 func TestGithubSource_ListRepos(t *testing.T) {
-	assertAllReposListed := func(want []string) ReposAssertion {
-		return func(t testing.TB, rs Repos) {
+	assertAllReposListed := func(want []string) types.ReposAssertion {
+		return func(t testing.TB, rs types.Repos) {
 			t.Helper()
 
 			have := rs.Names()
@@ -607,7 +607,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 
 	testCases := []struct {
 		name   string
-		assert ReposAssertion
+		assert types.ReposAssertion
 		mw     httpcli.Middleware
 		conf   *schema.GitHubConnection
 		err    string

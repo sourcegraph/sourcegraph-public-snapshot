@@ -10,10 +10,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -29,15 +31,16 @@ func TestChangesetResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "campaign-resolver", true)
+	userID := ct.CreateTestUser(t, true).ID
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := ee.NewStoreWithClock(dbconn.Global, clock)
+	cstore := store.NewWithClock(dbconn.Global, clock)
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	repoStore := db.NewRepoStoreWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
-	if err := rstore.InsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-resolver-test", newGitHubExternalService(t, rstore))
+	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -50,59 +53,59 @@ func TestChangesetResolver(t *testing.T) {
 	mockBackendCommits(t, api.CommitID(baseRev))
 	mockRepoComparison(t, baseRev, headRev, testDiff)
 
-	unpublishedSpec := createChangesetSpec(t, ctx, store, testSpecOpts{
-		user:          userID,
-		repo:          repo.ID,
-		headRef:       "refs/heads/my-new-branch",
-		published:     false,
-		title:         "ChangesetSpec Title",
-		body:          "ChangesetSpec Body",
-		commitMessage: "The commit message",
-		commitDiff:    testDiff,
-		baseRev:       baseRev,
-		baseRef:       "refs/heads/master",
+	unpublishedSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+		User:          userID,
+		Repo:          repo.ID,
+		HeadRef:       "refs/heads/my-new-branch",
+		Published:     false,
+		Title:         "ChangesetSpec Title",
+		Body:          "ChangesetSpec Body",
+		CommitMessage: "The commit message",
+		CommitDiff:    testDiff,
+		BaseRev:       baseRev,
+		BaseRef:       "refs/heads/master",
 	})
-	unpublishedChangeset := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                repo.ID,
-		currentSpec:         unpublishedSpec.ID,
-		externalServiceType: "github",
-		publicationState:    campaigns.ChangesetPublicationStateUnpublished,
-		reconcilerState:     campaigns.ReconcilerStateCompleted,
+	unpublishedChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		CurrentSpec:         unpublishedSpec.ID,
+		ExternalServiceType: "github",
+		PublicationState:    campaigns.ChangesetPublicationStateUnpublished,
+		ReconcilerState:     campaigns.ReconcilerStateCompleted,
 	})
-	erroredSpec := createChangesetSpec(t, ctx, store, testSpecOpts{
-		user:          userID,
-		repo:          repo.ID,
-		headRef:       "refs/heads/my-failing-branch",
-		published:     true,
-		title:         "ChangesetSpec Title",
-		body:          "ChangesetSpec Body",
-		commitMessage: "The commit message",
-		commitDiff:    testDiff,
-		baseRev:       baseRev,
-		baseRef:       "refs/heads/master",
+	erroredSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
+		User:          userID,
+		Repo:          repo.ID,
+		HeadRef:       "refs/heads/my-failing-branch",
+		Published:     true,
+		Title:         "ChangesetSpec Title",
+		Body:          "ChangesetSpec Body",
+		CommitMessage: "The commit message",
+		CommitDiff:    testDiff,
+		BaseRev:       baseRev,
+		BaseRef:       "refs/heads/master",
 	})
-	erroredChangeset := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                repo.ID,
-		currentSpec:         erroredSpec.ID,
-		externalServiceType: "github",
-		publicationState:    campaigns.ChangesetPublicationStateUnpublished,
-		reconcilerState:     campaigns.ReconcilerStateErrored,
-		failureMessage:      "very bad error",
+	erroredChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		CurrentSpec:         erroredSpec.ID,
+		ExternalServiceType: "github",
+		PublicationState:    campaigns.ChangesetPublicationStateUnpublished,
+		ReconcilerState:     campaigns.ReconcilerStateErrored,
+		FailureMessage:      "very bad error",
 	})
 
 	labelEventDescriptionText := "the best label in town"
 
-	syncedGitHubChangeset := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                repo.ID,
-		externalServiceType: "github",
-		externalID:          "12345",
-		externalBranch:      "open-pr",
-		externalState:       campaigns.ChangesetExternalStateOpen,
-		externalCheckState:  campaigns.ChangesetCheckStatePending,
-		externalReviewState: campaigns.ChangesetReviewStateChangesRequested,
-		publicationState:    campaigns.ChangesetPublicationStatePublished,
-		reconcilerState:     campaigns.ReconcilerStateCompleted,
-		metadata: &github.PullRequest{
+	syncedGitHubChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		ExternalServiceType: "github",
+		ExternalID:          "12345",
+		ExternalBranch:      "open-pr",
+		ExternalState:       campaigns.ChangesetExternalStateOpen,
+		ExternalCheckState:  campaigns.ChangesetCheckStatePending,
+		ExternalReviewState: campaigns.ChangesetReviewStateChangesRequested,
+		PublicationState:    campaigns.ChangesetPublicationStatePublished,
+		ReconcilerState:     campaigns.ReconcilerStateCompleted,
+		Metadata: &github.PullRequest{
 			ID:          "12345",
 			Title:       "GitHub PR Title",
 			Body:        "GitHub PR Body",
@@ -141,24 +144,24 @@ func TestChangesetResolver(t *testing.T) {
 		},
 	})
 	events := syncedGitHubChangeset.Events()
-	if err := store.UpsertChangesetEvents(ctx, events...); err != nil {
+	if err := cstore.UpsertChangesetEvents(ctx, events...); err != nil {
 		t.Fatal(err)
 	}
 
-	unsyncedChangeset := createChangeset(t, ctx, store, testChangesetOpts{
-		repo:                repo.ID,
-		externalServiceType: "github",
-		externalID:          "9876",
-		unsynced:            true,
-		publicationState:    campaigns.ChangesetPublicationStatePublished,
-		reconcilerState:     campaigns.ReconcilerStateQueued,
+	unsyncedChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		ExternalServiceType: "github",
+		ExternalID:          "9876",
+		Unsynced:            true,
+		PublicationState:    campaigns.ChangesetPublicationStatePublished,
+		ReconcilerState:     campaigns.ReconcilerStateQueued,
 	})
 
 	spec := &campaigns.CampaignSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+	if err := cstore.CreateCampaignSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -170,13 +173,13 @@ func TestChangesetResolver(t *testing.T) {
 		LastApplierID:    userID,
 		LastAppliedAt:    time.Now(),
 	}
-	if err := store.CreateCampaign(ctx, campaign); err != nil {
+	if err := cstore.CreateCampaign(ctx, campaign); err != nil {
 		t.Fatal(err)
 	}
 	// Associate the changeset with a campaign, so it's considered in syncer logic.
-	addChangeset(t, ctx, store, syncedGitHubChangeset, campaign.ID)
+	addChangeset(t, ctx, cstore, syncedGitHubChangeset, campaign.ID)
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -193,7 +196,7 @@ func TestChangesetResolver(t *testing.T) {
 				Typename:   "ExternalChangeset",
 				Title:      unpublishedSpec.Spec.Title,
 				Body:       unpublishedSpec.Spec.Body,
-				Repository: apitest.Repository{Name: repo.Name},
+				Repository: apitest.Repository{Name: string(repo.Name)},
 				// Not scheduled for sync, because it's not published.
 				NextSyncAt: "",
 				Labels:     []apitest.Label{},
@@ -213,7 +216,7 @@ func TestChangesetResolver(t *testing.T) {
 				Typename:   "ExternalChangeset",
 				Title:      erroredSpec.Spec.Title,
 				Body:       erroredSpec.Spec.Body,
-				Repository: apitest.Repository{Name: repo.Name},
+				Repository: apitest.Repository{Name: string(repo.Name)},
 				// Not scheduled for sync, because it's not published.
 				NextSyncAt: "",
 				Labels:     []apitest.Label{},
@@ -239,7 +242,7 @@ func TestChangesetResolver(t *testing.T) {
 				CheckState:    "PENDING",
 				ReviewState:   "CHANGES_REQUESTED",
 				NextSyncAt:    marshalDateTime(t, now.Add(8*time.Hour)),
-				Repository:    apitest.Repository{Name: repo.Name},
+				Repository:    apitest.Repository{Name: string(repo.Name)},
 				ExternalURL: apitest.ExternalURL{
 					URL:         "https://github.com/sourcegraph/sourcegraph/pull/12345",
 					ServiceType: "github",
@@ -265,7 +268,7 @@ func TestChangesetResolver(t *testing.T) {
 			want: apitest.Changeset{
 				Typename:         "ExternalChangeset",
 				ExternalID:       "9876",
-				Repository:       apitest.Repository{Name: repo.Name},
+				Repository:       apitest.Repository{Name: string(repo.Name)},
 				Labels:           []apitest.Label{},
 				PublicationState: string(campaigns.ChangesetPublicationStatePublished),
 				ReconcilerState:  string(campaigns.ReconcilerStateQueued),

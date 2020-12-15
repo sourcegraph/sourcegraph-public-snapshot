@@ -120,6 +120,36 @@ const CampaignSpecSchemaJSON = `{
         }
       }
     },
+    "transformChanges": {
+      "type": "object",
+      "description": "Optional transformations to apply to the changes produced in each repository.",
+      "additionalProperties": false,
+      "properties": {
+        "group": {
+          "type": "array",
+          "description": "A list of groups of changes in a repository that each create a separate, additional changeset for this repository, with all ungrouped changes being in the default changeset.",
+          "additionalProperties": false,
+          "required": ["directory", "branchSuffix"],
+          "properties": {
+            "directory": {
+              "type": "string",
+              "description": "The directory path (relative to the repository root) of the changes to include in this group.",
+              "minLength": 1
+            },
+            "branch": {
+              "type": "string",
+              "description": "The branch on the repository to propose changes to. If unset, the repository's default branch is used.",
+              "minLength": 1
+            },
+            "repository": {
+              "type": "string",
+              "description": "Only apply this transformation in the repository with this name (as it is known to Sourcegraph).",
+              "examples": ["github.com/foo/bar"]
+            }
+          }
+        }
+      }
+    },
     "importChangesets": {
       "type": "array",
       "description": "Import existing changesets on code hosts.",

@@ -230,13 +230,8 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		repo = &types.Repo{Name: api.RepoName(*args.Name)}
 	}
 
-	gitserverRepo, err := backend.GitRepo(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
-
 	var result checkMirrorRepositoryConnectionResult
-	if err := gitserver.DefaultClient.IsRepoCloneable(ctx, gitserverRepo); err != nil {
+	if err := gitserver.DefaultClient.IsRepoCloneable(ctx, repo.Name); err != nil {
 		result.errorMessage = err.Error()
 	}
 	return &result, nil
@@ -266,11 +261,7 @@ func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struc
 		return nil, err
 	}
 
-	gitserverRepo, err := backend.GitRepo(ctx, repo.repo)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
+	if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repo.repo.Name); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil

@@ -1516,6 +1516,10 @@ type Campaign implements Node {
         Only return changesets that have been published by this campaign. Imported changesets will be omitted.
         """
         onlyPublishedByThisCampaign: Boolean
+        """
+        Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
+        """
+        search: String
     ): ChangesetConnection!
 
     """
@@ -2798,6 +2802,12 @@ type Query {
         """
         after: String
     ): LSIFIndexConnection!
+
+    """
+    Repos affiliated with the user & code hosts, these repos are not necessarily synced, but ones that
+    the configured code hosts are able to see.
+    """
+    affiliatedRepositories(user: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
 }
 
 """
@@ -4607,6 +4617,22 @@ type HighlightedDiffHunkBody {
 }
 
 """
+A specific highlighted line range to fetch.
+"""
+input HighlightLineRange {
+    """
+    The first line to fetch (0-indexed, inclusive). Values outside the bounds of the file will
+    automatically be clamped within the valid range.
+    """
+    startLine: Int!
+    """
+    The last line to fetch (0-indexed, inclusive). Values outside the bounds of the file will
+    automatically be clamped within the valid range.
+    """
+    endLine: Int!
+}
+
+"""
 A changed region ("hunk") in a file diff.
 """
 type FileDiffHunk {
@@ -5816,7 +5842,17 @@ type GitBlob implements TreeEntry & File2 {
     """
     Highlight the blob contents.
     """
-    highlight(disableTimeout: Boolean!, isLightTheme: Boolean!, highlightLongLines: Boolean = false): HighlightedFile!
+    highlight(
+        disableTimeout: Boolean!
+        isLightTheme: Boolean!
+        """
+        If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
+        2000 bytes is enabled. This may produce a significant amount of HTML
+        which some browsers (such as Chrome, but not Firefox) may have trouble
+        rendering efficiently.
+        """
+        highlightLongLines: Boolean = false
+    ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule
     """
@@ -5982,9 +6018,15 @@ type HighlightedFile {
     """
     aborted: Boolean!
     """
-    The HTML.
+    The HTML table that can be used to display the highlighted file.
     """
     html: String!
+    """
+    A list of the desired line ranges. Each list is a list of lines, where each element is an HTML
+    table row '<tr>...</tr>' string. This is useful if you only need to display specific subsets of
+    the file.
+    """
+    lineRanges(ranges: [HighlightLineRange!]!): [[String!]!]!
 }
 
 """
@@ -8906,4 +8948,32 @@ type EventLogsConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+"""
+A list of code host repositories
+"""
+type CodeHostRepositoryConnection {
+    """
+    A list of repositories affiliated with a code host.
+    """
+    nodes: [CodeHostRepository!]!
+}
+
+"""
+A repository returned directly from a code host
+"""
+type CodeHostRepository {
+    """
+    The Name "owner/reponame" of the repo
+    """
+    name: String!
+    """
+    The code host the repo came from
+    """
+    codeHost: ExternalService
+    """
+    Is the repo private
+    """
+    private: Boolean!
 }

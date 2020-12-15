@@ -932,7 +932,6 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 	} else {
 		tr.LazyPrintf("Repos.List - start")
 		options := db.ReposListOptions{
-			OnlyRepoIDs:     true,
 			IncludePatterns: includePatterns,
 			Names:           versionContextRepositories,
 			ExcludePattern:  unionRegExps(excludePatterns),

@@ -3,6 +3,7 @@ module github.com/sourcegraph/sourcegraph
 go 1.14
 
 require (
+	cloud.google.com/go v0.56.0
 	cloud.google.com/go/bigquery v1.6.0 // indirect
 	cloud.google.com/go/pubsub v1.3.1
 	cloud.google.com/go/storage v1.6.0
@@ -44,7 +45,6 @@ require (
 	github.com/gchaincl/sqlhooks v1.3.0
 	github.com/getsentry/raven-go v0.2.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/gin-gonic/gin v1.6.3 // indirect
 	github.com/gitchander/permutation v0.0.0-20181107151852-9e56b92e9909
 	github.com/gliderlabs/ssh v0.3.0 // indirect
 	github.com/glycerine/go-unsnap-stream v0.0.0-20190901134440-81cf024a9e0a // indirect
@@ -53,7 +53,6 @@ require (
 	github.com/go-openapi/spec v0.19.9 // indirect
 	github.com/go-openapi/strfmt v0.19.5
 	github.com/go-openapi/validate v0.19.11 // indirect
-	github.com/go-playground/validator/v10 v10.3.0 // indirect
 	github.com/go-redsync/redsync v1.4.2
 	github.com/gobwas/glob v0.2.3
 	github.com/golang-migrate/migrate/v4 v4.11.0
@@ -96,8 +95,6 @@ require (
 	github.com/jordan-wright/email v4.0.1-0.20200824153738-3f5bafa1cd84+incompatible
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.10
-	github.com/karlseguin/expect v1.0.7 // indirect
-	github.com/karlseguin/typed v1.1.7 // indirect
 	github.com/karrick/godirwalk v1.16.1
 	github.com/keegancsmith/rpc v1.3.0
 	github.com/keegancsmith/sqlf v1.1.0
@@ -170,10 +167,9 @@ require (
 	github.com/tidwall/gjson v1.6.1
 	github.com/tinylib/msgp v1.1.2 // indirect
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
-	github.com/uber/gonduit v0.6.1
+	github.com/uber/gonduit v0.11.0
 	github.com/uber/jaeger-client-go v2.25.0+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible
-	github.com/ugorji/go v1.1.8 // indirect
 	github.com/willf/bitset v1.1.11 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0
@@ -214,8 +210,6 @@ replace (
 	// the alertmanager project is currently not planning on accepting changes for.
 	github.com/prometheus/alertmanager => github.com/bobheadxi/alertmanager v0.21.1-0.20200727091526-3e856a90b534
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
-
-	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
 )
 
 // We maintain our own fork of Zoekt. Update with ./dev/zoekt/update

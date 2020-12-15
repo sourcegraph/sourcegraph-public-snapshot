@@ -253,7 +253,7 @@ func (s BitbucketServerSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived bool) *Repo {
+func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived bool) *types.Repo {
 	host, err := url.Parse(s.config.Url)
 	if err != nil {
 		// This should never happen
@@ -289,13 +289,13 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 
 	urn := s.svc.URN()
 
-	return &Repo{
-		Name: string(reposource.BitbucketServerRepoName(
+	return &types.Repo{
+		Name: reposource.BitbucketServerRepoName(
 			s.config.RepositoryPathPattern,
 			host.Hostname(),
 			project,
 			repo.Slug,
-		)),
+		),
 		URI: string(reposource.BitbucketServerRepoName(
 			"",
 			host.Hostname(),
@@ -311,7 +311,7 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 		Fork:        repo.Origin != nil,
 		Archived:    isArchived,
 		Private:     !repo.Public,
-		Sources: map[string]*SourceInfo{
+		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
 				CloneURL: cloneURL,

@@ -15,16 +15,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/state"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type changesetResolver struct {
-	store       *ee.Store
-	httpFactory *httpcli.Factory
+	store *store.Store
 
 	changeset *campaigns.Changeset
 
@@ -34,7 +34,7 @@ type changesetResolver struct {
 
 	// cache changeset events as they are used more than once
 	eventsOnce sync.Once
-	events     ee.ChangesetEvents
+	events     state.ChangesetEvents
 	eventsErr  error
 
 	attemptedPreloadNextSyncAt bool
@@ -50,17 +50,16 @@ type changesetResolver struct {
 	specErr  error
 }
 
-func NewChangesetResolverWithNextSync(store *ee.Store, httpFactory *httpcli.Factory, changeset *campaigns.Changeset, repo *types.Repo, nextSyncAt *time.Time) *changesetResolver {
-	r := NewChangesetResolver(store, httpFactory, changeset, repo)
+func NewChangesetResolverWithNextSync(store *store.Store, changeset *campaigns.Changeset, repo *types.Repo, nextSyncAt *time.Time) *changesetResolver {
+	r := NewChangesetResolver(store, changeset, repo)
 	r.attemptedPreloadNextSyncAt = true
 	r.preloadedNextSyncAt = nextSyncAt
 	return r
 }
 
-func NewChangesetResolver(store *ee.Store, httpFactory *httpcli.Factory, changeset *campaigns.Changeset, repo *types.Repo) *changesetResolver {
+func NewChangesetResolver(store *store.Store, changeset *campaigns.Changeset, repo *types.Repo) *changesetResolver {
 	return &changesetResolver{
 		store:        store,
-		httpFactory:  httpFactory,
 		repo:         repo,
 		repoResolver: graphqlbackend.NewRepositoryResolver(repo),
 		changeset:    changeset,
@@ -113,7 +112,7 @@ func (r *changesetResolver) computeSpec(ctx context.Context) (*campaigns.Changes
 
 func (r *changesetResolver) computeEvents(ctx context.Context) ([]*campaigns.ChangesetEvent, error) {
 	r.eventsOnce.Do(func() {
-		opts := ee.ListChangesetEventsOpts{
+		opts := store.ListChangesetEventsOpts{
 			ChangesetIDs: []int64{r.changeset.ID},
 		}
 		es, _, err := r.store.ListChangesetEvents(ctx, opts)
@@ -134,14 +133,14 @@ func (r *changesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, e
 			}
 			return
 		}
-		syncData, err := r.store.ListChangesetSyncData(ctx, ee.ListChangesetSyncDataOpts{ChangesetIDs: []int64{r.changeset.ID}})
+		syncData, err := r.store.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ChangesetIDs: []int64{r.changeset.ID}})
 		if err != nil {
 			r.nextSyncAtErr = err
 			return
 		}
 		for _, d := range syncData {
 			if d.ChangesetID == r.changeset.ID {
-				r.nextSyncAt = ee.NextSync(r.store.Clock(), d)
+				r.nextSyncAt = syncer.NextSync(r.store.Clock(), d)
 				return
 			}
 		}
@@ -165,7 +164,7 @@ func (r *changesetResolver) Repository(ctx context.Context) *graphqlbackend.Repo
 }
 
 func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignsArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
-	opts := ee.ListCampaignsOpts{
+	opts := store.ListCampaignsOpts{
 		ChangesetID: r.changeset.ID,
 	}
 
@@ -198,7 +197,7 @@ func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.
 		}
 	}
 
-	return &campaignsConnectionResolver{store: r.store, httpFactory: r.httpFactory, opts: opts}, nil
+	return &campaignsConnectionResolver{store: r.store, opts: opts}, nil
 }
 
 func (r *changesetResolver) CreatedAt() graphqlbackend.DateTime {
@@ -335,7 +334,7 @@ func (r *changesetResolver) CurrentSpec(ctx context.Context) (graphqlbackend.Vis
 		return nil, err
 	}
 
-	return NewChangesetSpecResolverWithRepo(r.store, r.httpFactory, r.repo, spec), nil
+	return NewChangesetSpecResolverWithRepo(r.store, r.repo, spec), nil
 }
 
 func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {
@@ -357,7 +356,7 @@ func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.Change
 	// or removed but we'll also take into account any changeset events that
 	// have happened since the last sync in order to reflect changes that
 	// have come in via webhooks
-	labels := ee.ComputeLabels(r.changeset, es)
+	labels := state.ComputeLabels(r.changeset, es)
 	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(labels))
 	for _, l := range labels {
 		resolvers = append(resolvers, &changesetLabelResolver{label: l})

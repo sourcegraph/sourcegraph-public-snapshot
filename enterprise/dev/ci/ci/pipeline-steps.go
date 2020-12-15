@@ -107,6 +107,12 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 	}
 }
 
+func addBrandedTests(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":jest: Test branded client code",
+		bk.Cmd("dev/ci/yarn-test.sh client/branded"),
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
+}
+
 // Adds PostgreSQL backcompat tests.
 func addPostgresBackcompat(pipeline *bk.Pipeline) {
 	// TODO: We do not test Postgres DB backcompat anymore.
@@ -331,28 +337,16 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 
 	return func(pipeline *bk.Pipeline) {
 		switch {
-		// build all images for tagged releases
-		case c.taggedRelease:
+		// build candidate images but do not deploy `insiders` images
+		case c.taggedRelease || c.isMasterDryRun || c.shouldRunE2EandQA():
 			for _, dockerImage := range images.SourcegraphDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
 
-		// replicates `main` build but does not deploy `insiders` images
-		case c.isMasterDryRun:
-			for _, dockerImage := range images.SourcegraphDockerImages {
-				addDockerImage(c, dockerImage, false)(pipeline)
-			}
-
-		// deploy `insiders` images for `main`
+		// build candidate images and deploy `insiders` images
 		case c.branch == "main":
 			for _, dockerImage := range images.SourcegraphDockerImages {
 				addDockerImage(c, dockerImage, true)(pipeline)
-			}
-
-		// ensure candidate images are available for testing
-		case c.shouldRunE2EandQA():
-			for _, dockerImage := range images.SourcegraphDockerImages {
-				addDockerImage(c, dockerImage, false)(pipeline)
 			}
 
 		// only build candidate image for the specified image in the branch name
@@ -382,7 +376,7 @@ func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 			// Building Docker image located under $REPO_ROOT/docker-images/
 			cmds = append(cmds, bk.Cmd(filepath.Join("docker-images", app, "build.sh")))
 		} else {
-			// Building Docker images located under 4REPO_ROOT/cmd/
+			// Building Docker images located under $REPO_ROOT/cmd/
 			cmdDir := func() string {
 				if _, err := os.Stat(filepath.Join("enterprise/cmd", app)); err != nil {
 					fmt.Fprintf(os.Stderr, "github.com/sourcegraph/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead\n", app, app)

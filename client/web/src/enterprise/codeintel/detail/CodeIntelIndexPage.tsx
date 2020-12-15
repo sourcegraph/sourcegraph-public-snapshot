@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import classNames from 'classnames'
 import * as H from 'history'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import React, { FunctionComponent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
@@ -108,7 +107,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
                         typeName="index"
                         pluralTypeName="indexes"
                         history={history}
-                        className={classNames('mb-3', classNamesByState.get(indexOrError.state))}
+                        className={classNamesByState.get(indexOrError.state)}
                     />
                     <div className="card mb-3">
                         <div className="card-body">

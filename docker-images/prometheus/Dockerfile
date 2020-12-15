@@ -15,12 +15,12 @@ FROM prom/alertmanager:v0.21.0@sha256:913293083cb14085bfc01018bb30d1dcbbc9ed197a
 FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d AS monitoring_builder
 RUN mkdir -p '/generated/prometheus'
 COPY ./.bin/monitoring-generator /bin/monitoring-generator
-RUN PROMETHEUS_DIR='/generated/prometheus' GRAFANA_DIR='' DOC_SOLUTIONS_FILE='' NO_PRUNE=true /bin/monitoring-generator
+RUN PROMETHEUS_DIR='/generated/prometheus' GRAFANA_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator
 RUN ls '/generated/prometheus'
 
 # Prepare final image
 # hadolint ignore=DL3007
-FROM quay.io/prometheus/busybox-linux-amd64:latest@sha256:248b7ec76e03e6b4fbb796fc3cdd2f91dad45546a6d7dee61c322475e0e8a08f
+FROM quay.io/prometheus/busybox-linux-amd64:latest@sha256:fca3819d670cdaee0d785499fda202ea01c0640ca0803d26ae6dbf2a1c8c041c
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"

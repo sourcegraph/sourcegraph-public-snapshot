@@ -371,7 +371,9 @@ func RepoUpdater() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						sharedContainerCPUUsage("repo-updater", monitoring.ObservableOwnerCloud),
-						sharedContainerMemoryUsage("repo-updater", monitoring.ObservableOwnerCloud),
+						sharedContainerMemoryUsage("repo-updater", monitoring.ObservableOwnerCloud).
+							WithWarning(nil).
+							WithCritical(monitoring.Alert().GreaterOrEqual(90)),
 					},
 					{
 						sharedContainerRestarts("repo-updater", monitoring.ObservableOwnerCloud),
@@ -408,7 +410,8 @@ func RepoUpdater() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedKubernetesPodsAvailable("repo-updater", monitoring.ObservableOwnerCloud),
+						sharedKubernetesPodsAvailable("repo-updater", monitoring.ObservableOwnerCloud).
+							WithCritical(monitoring.Alert().LessOrEqual(90).For(1 * time.Minute)),
 					},
 				},
 			},

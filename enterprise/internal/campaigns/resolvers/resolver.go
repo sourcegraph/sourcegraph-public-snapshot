@@ -9,10 +9,13 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/search"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/service"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -20,20 +23,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
 // Resolver is the GraphQL resolver of all things related to Campaigns.
 type Resolver struct {
-	store       *ee.Store
-	httpFactory *httpcli.Factory
+	store *store.Store
 }
 
-// NewResolver returns a new Resolver whose store uses the given db
-func NewResolver(db *sql.DB) graphqlbackend.CampaignsResolver {
-	return &Resolver{store: ee.NewStore(db)}
+// New returns a new Resolver whose store uses the given db
+func New(db *sql.DB) graphqlbackend.CampaignsResolver {
+	return &Resolver{store: store.New(db)}
 }
 
 func campaignsEnabled(ctx context.Context) error {
@@ -81,9 +82,9 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, nil
 	}
 
-	changeset, err := r.store.GetChangeset(ctx, ee.GetChangesetOpts{ID: changesetID})
+	changeset, err := r.store.GetChangeset(ctx, store.GetChangesetOpts{ID: changesetID})
 	if err != nil {
-		if err == ee.ErrNoResults {
+		if err == store.ErrNoResults {
 			return nil, nil
 		}
 		return nil, err
@@ -96,7 +97,7 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
-	return NewChangesetResolver(r.store, r.httpFactory, changeset, repo), nil
+	return NewChangesetResolver(r.store, changeset, repo), nil
 }
 
 func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignResolver, error) {
@@ -113,15 +114,15 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 		return nil, nil
 	}
 
-	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
+	campaign, err := r.store.GetCampaign(ctx, store.GetCampaignOpts{ID: campaignID})
 	if err != nil {
-		if err == ee.ErrNoResults {
+		if err == store.ErrNoResults {
 			return nil, nil
 		}
 		return nil, err
 	}
 
-	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
 func (r *Resolver) Campaign(ctx context.Context, args *graphqlbackend.CampaignArgs) (graphqlbackend.CampaignResolver, error) {
@@ -129,7 +130,7 @@ func (r *Resolver) Campaign(ctx context.Context, args *graphqlbackend.CampaignAr
 		return nil, err
 	}
 
-	opts := ee.GetCampaignOpts{Name: args.Name}
+	opts := store.GetCampaignOpts{Name: args.Name}
 
 	err := graphqlbackend.UnmarshalNamespaceID(graphql.ID(args.Namespace), &opts.NamespaceUserID, &opts.NamespaceOrgID)
 	if err != nil {
@@ -138,13 +139,13 @@ func (r *Resolver) Campaign(ctx context.Context, args *graphqlbackend.CampaignAr
 
 	campaign, err := r.store.GetCampaign(ctx, opts)
 	if err != nil {
-		if err == ee.ErrNoResults {
+		if err == store.ErrNoResults {
 			return nil, nil
 		}
 		return nil, err
 	}
 
-	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
 func (r *Resolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignSpecResolver, error) {
@@ -161,16 +162,16 @@ func (r *Resolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (graphql
 		return nil, nil
 	}
 
-	opts := ee.GetCampaignSpecOpts{RandID: campaignSpecRandID}
+	opts := store.GetCampaignSpecOpts{RandID: campaignSpecRandID}
 	campaignSpec, err := r.store.GetCampaignSpec(ctx, opts)
 	if err != nil {
-		if err == ee.ErrNoResults {
+		if err == store.ErrNoResults {
 			return nil, nil
 		}
 		return nil, err
 	}
 
-	return &campaignSpecResolver{store: r.store, httpFactory: r.httpFactory, campaignSpec: campaignSpec}, nil
+	return &campaignSpecResolver{store: r.store, campaignSpec: campaignSpec}, nil
 }
 
 func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetSpecResolver, error) {
@@ -187,16 +188,16 @@ func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 		return nil, nil
 	}
 
-	opts := ee.GetChangesetSpecOpts{RandID: changesetSpecRandID}
+	opts := store.GetChangesetSpecOpts{RandID: changesetSpecRandID}
 	changesetSpec, err := r.store.GetChangesetSpec(ctx, opts)
 	if err != nil {
-		if err == ee.ErrNoResults {
+		if err == store.ErrNoResults {
 			return nil, nil
 		}
 		return nil, err
 	}
 
-	return NewChangesetSpecResolver(ctx, r.store, r.httpFactory, changesetSpec)
+	return NewChangesetSpecResolver(ctx, r.store, changesetSpec)
 }
 
 func (r *Resolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignsCredentialResolver, error) {
@@ -240,7 +241,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		return nil, err
 	}
 
-	opts := ee.ApplyCampaignOpts{
+	opts := service.ApplyCampaignOpts{
 		// This is what differentiates CreateCampaign from ApplyCampaign
 		FailIfCampaignExists: true,
 	}
@@ -254,20 +255,20 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		return nil, ErrIDIsZero{}
 	}
 
-	svc := ee.NewService(r.store, r.httpFactory)
+	svc := service.New(r.store)
 	campaign, err := svc.ApplyCampaign(ctx, opts)
 	if err != nil {
-		if err == ee.ErrEnsureCampaignFailed {
+		if err == service.ErrEnsureCampaignFailed {
 			return nil, ErrEnsureCampaignFailed{}
-		} else if err == ee.ErrApplyClosedCampaign {
+		} else if err == service.ErrApplyClosedCampaign {
 			return nil, ErrApplyClosedCampaign{}
-		} else if err == ee.ErrMatchingCampaignExists {
+		} else if err == service.ErrMatchingCampaignExists {
 			return nil, ErrMatchingCampaignExists{}
 		}
 		return nil, err
 	}
 
-	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
 func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.ApplyCampaignArgs) (graphqlbackend.CampaignResolver, error) {
@@ -282,7 +283,7 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		return nil, err
 	}
 
-	opts := ee.ApplyCampaignOpts{}
+	opts := service.ApplyCampaignOpts{}
 
 	opts.CampaignSpecRandID, err = unmarshalCampaignSpecID(args.CampaignSpec)
 	if err != nil {
@@ -300,22 +301,22 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		}
 	}
 
-	svc := ee.NewService(r.store, r.httpFactory)
+	svc := service.New(r.store)
 	// 🚨 SECURITY: ApplyCampaign checks whether the user has permission to
 	// apply the campaign spec
 	campaign, err := svc.ApplyCampaign(ctx, opts)
 	if err != nil {
-		if err == ee.ErrEnsureCampaignFailed {
+		if err == service.ErrEnsureCampaignFailed {
 			return nil, ErrEnsureCampaignFailed{}
-		} else if err == ee.ErrApplyClosedCampaign {
+		} else if err == service.ErrApplyClosedCampaign {
 			return nil, ErrApplyClosedCampaign{}
-		} else if err == ee.ErrMatchingCampaignExists {
+		} else if err == service.ErrMatchingCampaignExists {
 			return nil, ErrMatchingCampaignExists{}
 		}
 		return nil, err
 	}
 
-	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
 func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.CreateCampaignSpecArgs) (graphqlbackend.CampaignSpecResolver, error) {
@@ -334,7 +335,7 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 		return nil, err
 	}
 
-	opts := ee.CreateCampaignSpecOpts{RawSpec: args.CampaignSpec}
+	opts := service.CreateCampaignSpecOpts{RawSpec: args.CampaignSpec}
 
 	err = graphqlbackend.UnmarshalNamespaceID(args.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
 	if err != nil {
@@ -349,7 +350,7 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 		opts.ChangesetSpecRandIDs = append(opts.ChangesetSpecRandIDs, randID)
 	}
 
-	svc := ee.NewService(r.store, r.httpFactory)
+	svc := service.New(r.store)
 	campaignSpec, err := svc.CreateCampaignSpec(ctx, opts)
 	if err != nil {
 		return nil, err
@@ -361,14 +362,13 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 
 	specResolver := &campaignSpecResolver{
 		store:        r.store,
-		httpFactory:  r.httpFactory,
 		campaignSpec: campaignSpec,
 	}
 
 	return specResolver, nil
 }
 
-func logCampaignSpecCreated(ctx context.Context, opts *ee.CreateCampaignSpecOpts) error {
+func logCampaignSpecCreated(ctx context.Context, opts *service.CreateCampaignSpecOpts) error {
 	// Log an analytics event when a CampaignSpec has been created.
 	// See internal/usagestats/campaigns.go.
 	actor := actor.FromContext(ctx)
@@ -402,18 +402,21 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 		return nil, err
 	}
 
-	user, err := db.Users.GetByCurrentAuthUser(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
+	act := actor.FromContext(ctx)
+	// Actor MUST be logged in at this stage, because campaignsCreateAccess checks that already.
+	// To be extra safe, we'll just do the cheap check again here so if anyone ever modifies
+	// campaignsCreateAccess, we still enforce it here.
+	if !act.IsAuthenticated() {
+		return nil, backend.ErrNotAuthenticated
 	}
 
-	svc := ee.NewService(r.store, r.httpFactory)
-	spec, err := svc.CreateChangesetSpec(ctx, args.ChangesetSpec, user.ID)
+	svc := service.New(r.store)
+	spec, err := svc.CreateChangesetSpec(ctx, args.ChangesetSpec, act.UID)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewChangesetSpecResolver(ctx, r.store, r.httpFactory, spec)
+	return NewChangesetSpecResolver(ctx, r.store, spec)
 }
 
 func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCampaignArgs) (graphqlbackend.CampaignResolver, error) {
@@ -437,7 +440,9 @@ func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCa
 		return nil, ErrIDIsZero{}
 	}
 
-	var opts ee.MoveCampaignOpts
+	opts := service.MoveCampaignOpts{
+		CampaignID: campaignID,
+	}
 
 	if args.NewName != nil {
 		opts.NewName = *args.NewName
@@ -450,14 +455,14 @@ func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCa
 		}
 	}
 
-	svc := ee.NewService(r.store, r.httpFactory)
+	svc := service.New(r.store)
 	// 🚨 SECURITY: MoveCampaign checks whether the current user is authorized.
 	campaign, err := svc.MoveCampaign(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
 func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.DeleteCampaignArgs) (_ *graphqlbackend.EmptyResponse, err error) {
@@ -479,7 +484,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, ErrIDIsZero{}
 	}
 
-	svc := ee.NewService(r.store, r.httpFactory)
+	svc := service.New(r.store)
 	// 🚨 SECURITY: DeleteCampaign checks whether current user is authorized.
 	err = svc.DeleteCampaign(ctx, campaignID)
 	return &graphqlbackend.EmptyResponse{}, err
@@ -490,7 +495,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		return nil, err
 	}
 
-	opts := ee.ListCampaignsOpts{}
+	opts := store.ListCampaignsOpts{}
 
 	state, err := parseCampaignState(args.State)
 	if err != nil {
@@ -529,9 +534,8 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 	}
 
 	return &campaignsConnectionResolver{
-		store:       r.store,
-		httpFactory: r.httpFactory,
-		opts:        opts,
+		store: r.store,
+		opts:  opts,
 	}, nil
 }
 
@@ -567,7 +571,7 @@ func (r *Resolver) CampaignsCodeHosts(ctx context.Context, args *graphqlbackend.
 // If the args do not include a filter that would reveal sensitive information
 // about a changeset the user doesn't have access to, the second return value
 // is false.
-func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaignID int64) (opts ee.ListChangesetsOpts, optsSafe bool, err error) {
+func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaignID int64) (opts store.ListChangesetsOpts, optsSafe bool, err error) {
 	if args == nil {
 		return opts, true, nil
 	}
@@ -641,6 +645,17 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaign
 		opts.OwnedByCampaignID = campaignID
 		opts.PublicationState = &published
 	}
+	if args.Search != nil {
+		ts, err := search.ParseChangesetSearch(*args.Search)
+		if err != nil {
+			return opts, false, errors.Wrap(err, "parsing search")
+		}
+		opts.TextSearch = ts.TextSearch
+		// Since we search for the repository name in text searches, the
+		// presence or absence of results may leak information about hidden
+		// repositories.
+		safe = false
+	}
 
 	return opts, safe, nil
 }
@@ -665,14 +680,14 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		return nil, ErrIDIsZero{}
 	}
 
-	svc := ee.NewService(r.store, r.httpFactory)
+	svc := service.New(r.store)
 	// 🚨 SECURITY: CloseCampaign checks whether current user is authorized.
 	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets)
 	if err != nil {
 		return nil, errors.Wrap(err, "closing campaign")
 	}
 
-	return &campaignResolver{store: r.store, httpFactory: r.httpFactory, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
 func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {
@@ -695,7 +710,7 @@ func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncC
 	}
 
 	// 🚨 SECURITY: EnqueueChangesetSync checks whether current user is authorized.
-	svc := ee.NewService(r.store, r.httpFactory)
+	svc := service.New(r.store)
 	if err = svc.EnqueueChangesetSync(ctx, changesetID); err != nil {
 		return nil, err
 	}
@@ -757,7 +772,7 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 
 	var a auth.Authenticator
 	if kind == extsvc.KindBitbucketServer {
-		svc := ee.NewService(r.store, r.httpFactory)
+		svc := service.New(r.store)
 		username, err := svc.FetchUsernameForBitbucketServerToken(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential)
 		if err != nil {
 			return nil, err

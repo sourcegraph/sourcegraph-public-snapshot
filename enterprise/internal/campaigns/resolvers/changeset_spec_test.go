@@ -7,10 +7,11 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -29,10 +30,10 @@ func TestChangesetSpecResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "changeset-spec-by-id", false)
+	userID := ct.CreateTestUser(t, false).ID
 
-	store := ee.NewStore(dbconn.Global)
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	cstore := store.New(dbconn.Global)
+	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	// Creating user with matching email to the changeset spec author.
 	user, err := db.Users.Create(ctx, db.NewUser{
@@ -45,8 +46,9 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
-	if err := reposStore.InsertRepos(ctx, repo); err != nil {
+	repoStore := db.NewRepoStoreWith(cstore)
+	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-spec-resolver-test", newGitHubExternalService(t, rstore))
+	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
@@ -59,11 +61,11 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 	campaignSpec.NamespaceUserID = userID
-	if err := store.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+	if err := cstore.CreateCampaignSpec(ctx, campaignSpec); err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -216,7 +218,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 			spec.RepoID = repo.ID
 			spec.CampaignSpecID = campaignSpec.ID
 
-			if err := store.CreateChangesetSpec(ctx, spec); err != nil {
+			if err := cstore.CreateChangesetSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
 

@@ -25,7 +25,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
   useBreadcrumb={[Function]}
 >
   <div
-    className="container mt-3 web-content"
+    className="code-monitoring-page container mt-5"
   >
     <PageTitle
       title="Code Monitoring"
@@ -39,7 +39,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
           <Memo(PlusIcon)
             className="icon-inline"
           />
-          Add new code monitor
+          Create new code monitor
         </AnchorLink>
       }
       icon={
@@ -94,7 +94,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
             <Memo(PlusIcon)
               className="icon-inline"
             />
-            Add new code monitor
+            Create new code monitor
           </a>
         </AnchorLink>
       </div>
@@ -1552,7 +1552,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
   useBreadcrumb={[Function]}
 >
   <div
-    className="container mt-3 web-content"
+    className="code-monitoring-page container mt-5"
   >
     <PageTitle
       title="Code Monitoring"
@@ -1566,7 +1566,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
           <Memo(PlusIcon)
             className="icon-inline"
           />
-          Add new code monitor
+          Create new code monitor
         </AnchorLink>
       }
       icon={
@@ -1621,7 +1621,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
             <Memo(PlusIcon)
               className="icon-inline"
             />
-            Add new code monitor
+            Create new code monitor
           </a>
         </AnchorLink>
       </div>
@@ -2176,7 +2176,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
   useBreadcrumb={[Function]}
 >
   <div
-    className="container mt-3 web-content"
+    className="code-monitoring-page container mt-5"
   >
     <PageTitle
       title="Code Monitoring"
@@ -2190,7 +2190,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
           <Memo(PlusIcon)
             className="icon-inline"
           />
-          Add new code monitor
+          Create new code monitor
         </AnchorLink>
       }
       icon={
@@ -2245,7 +2245,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
             <Memo(PlusIcon)
               className="icon-inline"
             />
-            Add new code monitor
+            Create new code monitor
           </a>
         </AnchorLink>
       </div>
