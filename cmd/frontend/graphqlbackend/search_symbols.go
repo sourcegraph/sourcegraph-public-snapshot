@@ -154,16 +154,14 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			limitHit := symbolCount(res) > limit
-			repoErr = handleRepoSearchResult(common, repoRevs, limitHit, false, repoErr)
-			if repoErr != nil {
+			repoCommon, fatalErr := handleRepoSearchResult(repoRevs, len(repoSymbols) > limit, false, repoErr)
+			if fatalErr != nil {
 				if ctx.Err() == nil || errors.Cause(repoErr) != ctx.Err() {
 					// Only record error if it's not directly caused by a context error.
 					run.Error(repoErr)
 				}
-			} else {
-				common.searched = append(common.searched, repoRevs.Repo)
 			}
+			common.update(&repoCommon)
 			if repoSymbols != nil {
 				addMatches(repoSymbols)
 			}
