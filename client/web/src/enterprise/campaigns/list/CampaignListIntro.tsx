@@ -70,7 +70,7 @@ const CampaignChangelogAlert: React.FunctionComponent = () => (
 )
 
 const CampaignUnlicensedAlert: React.FunctionComponent = () => (
-    <DismissibleAlert className="campaign-list-intro__alert" partialStorageKey="campaign-list-intro-trial">
+    <div className="campaign-list-intro__alert">
         <div className="campaign-list-intro__card card p-2 h-100">
             <div className="card-body d-flex align-items-start">
                 {/* d-none d-sm-block ensure that we hide the icon on XS displays. */}
@@ -88,5 +88,5 @@ const CampaignUnlicensedAlert: React.FunctionComponent = () => (
                 </div>
             </div>
         </div>
-    </DismissibleAlert>
+    </div>
 )
