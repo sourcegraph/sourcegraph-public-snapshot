@@ -4,7 +4,7 @@ import React from 'react'
 import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/apply/CreateUpdateCampaignAlert', module)
+const { add } = storiesOf('web/campaigns/preview/CreateUpdateCampaignAlert', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
     .addParameters({
         chromatic: {

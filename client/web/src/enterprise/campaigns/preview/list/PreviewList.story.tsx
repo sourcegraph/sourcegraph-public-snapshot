@@ -7,7 +7,7 @@ import { visibleChangesetApplyPreviewNodeStories } from './VisibleChangesetApply
 import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/apply/PreviewList', module)
+const { add } = storiesOf('web/campaigns/preview/PreviewList', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
     .addParameters({
         chromatic: {

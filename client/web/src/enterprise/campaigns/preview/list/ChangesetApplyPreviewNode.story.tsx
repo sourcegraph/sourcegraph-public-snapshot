@@ -6,7 +6,7 @@ import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPrevie
 import { of } from 'rxjs'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/apply/ChangesetApplyPreviewNode', module).addDecorator(story => (
+const { add } = storiesOf('web/campaigns/preview/ChangesetApplyPreviewNode', module).addDecorator(story => (
     <div className="p-3 container web-content preview-list__grid">{story()}</div>
 ))
 

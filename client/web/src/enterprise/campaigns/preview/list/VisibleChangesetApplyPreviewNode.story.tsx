@@ -11,7 +11,7 @@ import { of } from 'rxjs'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 import { ChangesetSpecOperation } from '../../../../../../shared/src/graphql-operations'
 
-const { add } = storiesOf('web/campaigns/apply/VisibleChangesetApplyPreviewNode', module).addDecorator(story => (
+const { add } = storiesOf('web/campaigns/preview/VisibleChangesetApplyPreviewNode', module).addDecorator(story => (
     <div className="p-3 container web-content preview-list__grid">{story()}</div>
 ))
 

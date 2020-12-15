@@ -4,7 +4,7 @@ import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNo
 import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/apply/HiddenChangesetApplyPreviewNode', module).addDecorator(story => (
+const { add } = storiesOf('web/campaigns/preview/HiddenChangesetApplyPreviewNode', module).addDecorator(story => (
     <div className="p-3 container web-content preview-list__grid">{story()}</div>
 ))
 
