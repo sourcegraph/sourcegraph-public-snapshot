@@ -1,21 +1,21 @@
 import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
-import { CampaignApplyPage } from './CampaignApplyPage'
+import { CampaignPreviewPage } from './CampaignPreviewPage'
 import { of, Observable } from 'rxjs'
 import {
-    CampaignSpecChangesetSpecsResult,
-    ChangesetSpecFields,
+    CampaignSpecApplyPreviewConnectionFields,
     CampaignSpecFields,
+    ChangesetApplyPreviewFields,
     ExternalServiceKind,
 } from '../../../graphql-operations'
-import { visibleChangesetSpecStories } from './VisibleChangesetSpecNode.story'
-import { hiddenChangesetSpecStories } from './HiddenChangesetSpecNode.story'
+import { visibleChangesetApplyPreviewNodeStories } from './list/VisibleChangesetApplyPreviewNode.story'
+import { hiddenChangesetApplyPreviewStories } from './list/HiddenChangesetApplyPreviewNode.story'
 import { fetchCampaignSpecById } from './backend'
 import { addDays, subDays } from 'date-fns'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/apply/CampaignApplyPage', module)
+const { add } = storiesOf('web/campaigns/preview/CampaignPreviewPage', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
     .addParameters({
         chromatic: {
@@ -23,9 +23,9 @@ const { add } = storiesOf('web/campaigns/apply/CampaignApplyPage', module)
         },
     })
 
-const nodes: ChangesetSpecFields[] = [
-    ...Object.values(visibleChangesetSpecStories),
-    ...Object.values(hiddenChangesetSpecStories),
+const nodes: ChangesetApplyPreviewFields[] = [
+    ...Object.values(visibleChangesetApplyPreviewNodeStories),
+    ...Object.values(hiddenChangesetApplyPreviewStories),
 ]
 
 const campaignSpec = (): CampaignSpecFields => ({
@@ -93,9 +93,7 @@ const fetchCampaignSpecUpdate: typeof fetchCampaignSpecById = () =>
         },
     })
 
-const queryChangesetSpecs = (): Observable<
-    (CampaignSpecChangesetSpecsResult['node'] & { __typename: 'CampaignSpec' })['changesetSpecs']
-> =>
+const queryChangesetApplyPreview = (): Observable<CampaignSpecApplyPreviewConnectionFields> =>
     of({
         pageInfo: {
             endCursor: null,
@@ -105,9 +103,7 @@ const queryChangesetSpecs = (): Observable<
         nodes,
     })
 
-const queryEmptyChangesetSpecs = (): Observable<
-    (CampaignSpecChangesetSpecsResult['node'] & { __typename: 'CampaignSpec' })['changesetSpecs']
-> =>
+const queryEmptyChangesetApplyPreview = (): Observable<CampaignSpecApplyPreviewConnectionFields> =>
     of({
         pageInfo: {
             endCursor: null,
@@ -117,18 +113,17 @@ const queryEmptyChangesetSpecs = (): Observable<
         nodes: [],
     })
 
-const queryEmptyFileDiffs = () =>
-    of({ fileDiffs: { totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] } })
+const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
 add('Create', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignApplyPage
+            <CampaignPreviewPage
                 {...props}
                 expandChangesetDescriptions={true}
-                specID="123123"
+                campaignSpecID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecCreate}
-                queryChangesetSpecs={queryChangesetSpecs}
+                queryChangesetApplyPreview={queryEmptyChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 authenticatedUser={{ url: '/users/alice' }}
             />
@@ -139,12 +134,12 @@ add('Create', () => (
 add('Update', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignApplyPage
+            <CampaignPreviewPage
                 {...props}
                 expandChangesetDescriptions={true}
-                specID="123123"
+                campaignSpecID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecUpdate}
-                queryChangesetSpecs={queryChangesetSpecs}
+                queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 authenticatedUser={{ url: '/users/alice' }}
             />
@@ -155,12 +150,12 @@ add('Update', () => (
 add('Missing credentials', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignApplyPage
+            <CampaignPreviewPage
                 {...props}
                 expandChangesetDescriptions={true}
-                specID="123123"
+                campaignSpecID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecMissingCredentials}
-                queryChangesetSpecs={queryChangesetSpecs}
+                queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 authenticatedUser={{ url: '/users/alice' }}
             />
@@ -171,12 +166,12 @@ add('Missing credentials', () => (
 add('No changesets', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignApplyPage
+            <CampaignPreviewPage
                 {...props}
                 expandChangesetDescriptions={true}
-                specID="123123"
+                campaignSpecID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecCreate}
-                queryChangesetSpecs={queryEmptyChangesetSpecs}
+                queryChangesetApplyPreview={queryEmptyChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 authenticatedUser={{ url: '/users/alice' }}
             />

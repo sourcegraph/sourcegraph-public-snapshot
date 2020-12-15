@@ -4,14 +4,10 @@ import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 import { isEqual } from 'lodash'
 import { PageTitle } from '../../../components/PageTitle'
-import {
-    fetchCampaignSpecById as _fetchCampaignSpecById,
-    queryChangesetSpecs,
-    queryChangesetSpecFileDiffs,
-} from './backend'
+import { fetchCampaignSpecById as _fetchCampaignSpecById } from './backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CampaignHeader } from '../detail/CampaignHeader'
-import { ChangesetSpecList } from './ChangesetSpecList'
+import { PreviewList } from './list/PreviewList'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -20,11 +16,12 @@ import { CampaignDescription } from '../detail/CampaignDescription'
 import { CampaignSpecInfoByline } from './CampaignSpecInfoByline'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../../auth'
-import { CampaignSpecMissingCredentialsAlert } from './CampaignSpecMissingCredentialsAlert'
+import { MissingCredentialsAlert } from './MissingCredentialsAlert'
 import { SupersedingCampaignSpecAlert } from '../detail/SupersedingCampaignSpecAlert'
+import { queryChangesetSpecFileDiffs, queryChangesetApplyPreview } from './list/backend'
 
-export interface CampaignApplyPageProps extends ThemeProps, TelemetryProps {
-    specID: string
+export interface CampaignPreviewPageProps extends ThemeProps, TelemetryProps {
+    campaignSpecID: string
     history: H.History
     location: H.Location
     authenticatedUser: Pick<AuthenticatedUser, 'url'>
@@ -32,22 +29,22 @@ export interface CampaignApplyPageProps extends ThemeProps, TelemetryProps {
     /** Used for testing. */
     fetchCampaignSpecById?: typeof _fetchCampaignSpecById
     /** Used for testing. */
-    queryChangesetSpecs?: typeof queryChangesetSpecs
+    queryChangesetApplyPreview?: typeof queryChangesetApplyPreview
     /** Used for testing. */
     queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
     /** Expand changeset descriptions, for testing only. */
     expandChangesetDescriptions?: boolean
 }
 
-export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> = ({
-    specID,
+export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPageProps> = ({
+    campaignSpecID: specID,
     history,
     location,
     authenticatedUser,
     isLightTheme,
     telemetryService,
     fetchCampaignSpecById = _fetchCampaignSpecById,
-    queryChangesetSpecs,
+    queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
 }) => {
@@ -86,7 +83,7 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 className="test-campaign-apply-page"
             />
             <CampaignSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} className="mb-3" />
-            <CampaignSpecMissingCredentialsAlert
+            <MissingCredentialsAlert
                 authenticatedUser={authenticatedUser}
                 viewerCampaignsCodeHosts={spec.viewerCampaignsCodeHosts}
             />
@@ -99,12 +96,12 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 telemetryService={telemetryService}
             />
             <CampaignDescription history={history} description={spec.description.description} />
-            <ChangesetSpecList
+            <PreviewList
                 campaignSpecID={specID}
                 history={history}
                 location={location}
                 isLightTheme={isLightTheme}
-                queryChangesetSpecs={queryChangesetSpecs}
+                queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                 expandChangesetDescriptions={expandChangesetDescriptions}
             />

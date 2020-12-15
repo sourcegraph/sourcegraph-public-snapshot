@@ -2,6 +2,7 @@ package apitest
 
 import (
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
@@ -196,6 +197,7 @@ type CampaignSpec struct {
 	Creator   *User
 
 	ChangesetSpecs ChangesetSpecConnection
+	ApplyPreview   ChangesetApplyPreviewConnection
 
 	ViewerCanAdminister bool
 
@@ -231,12 +233,6 @@ type ChangesetSpec struct {
 	Typename string `json:"__typename"`
 	ID       string
 
-	Operations []campaigns.ReconcilerOperation
-	Delta      ChangesetSpecDelta
-	Changeset  struct {
-		ID string
-	}
-
 	Description ChangesetSpecDescription
 
 	ExpiresAt *graphqlbackend.DateTime
@@ -246,6 +242,27 @@ type ChangesetSpecConnection struct {
 	Nodes      []ChangesetSpec
 	TotalCount int
 	PageInfo   PageInfo
+}
+
+type ChangesetApplyPreviewConnection struct {
+	Nodes      []ChangesetApplyPreview
+	TotalCount int
+	PageInfo   PageInfo
+}
+
+type ChangesetApplyPreview struct {
+	Typename string `json:"__typename"`
+
+	Operations []campaigns.ReconcilerOperation
+	Delta      ChangesetSpecDelta
+	Targets    ChangesetApplyPreviewTargets
+}
+
+type ChangesetApplyPreviewTargets struct {
+	Typename string `json:"__typename"`
+
+	ChangesetSpec ChangesetSpec
+	Changeset     Changeset
 }
 
 type ChangesetSpecDescription struct {

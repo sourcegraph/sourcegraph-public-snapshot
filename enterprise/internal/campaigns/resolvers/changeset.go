@@ -39,7 +39,7 @@ type changesetResolver struct {
 
 	attemptedPreloadNextSyncAt bool
 	// When the next sync is scheduled
-	preloadedNextSyncAt *time.Time
+	preloadedNextSyncAt time.Time
 	nextSyncAtOnce      sync.Once
 	nextSyncAt          time.Time
 	nextSyncAtErr       error
@@ -50,7 +50,7 @@ type changesetResolver struct {
 	specErr  error
 }
 
-func NewChangesetResolverWithNextSync(store *store.Store, changeset *campaigns.Changeset, repo *types.Repo, nextSyncAt *time.Time) *changesetResolver {
+func NewChangesetResolverWithNextSync(store *store.Store, changeset *campaigns.Changeset, repo *types.Repo, nextSyncAt time.Time) *changesetResolver {
 	r := NewChangesetResolver(store, changeset, repo)
 	r.attemptedPreloadNextSyncAt = true
 	r.preloadedNextSyncAt = nextSyncAt
@@ -128,9 +128,7 @@ func (r *changesetResolver) computeEvents(ctx context.Context) ([]*campaigns.Cha
 func (r *changesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, error) {
 	r.nextSyncAtOnce.Do(func() {
 		if r.attemptedPreloadNextSyncAt {
-			if r.preloadedNextSyncAt != nil {
-				r.nextSyncAt = *r.preloadedNextSyncAt
-			}
+			r.nextSyncAt = r.preloadedNextSyncAt
 			return
 		}
 		syncData, err := r.store.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ChangesetIDs: []int64{r.changeset.ID}})
