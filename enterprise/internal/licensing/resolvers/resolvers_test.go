@@ -72,12 +72,9 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			oldEnforce := licensing.EnforceTiers
 			oldMock := licensing.MockCheckFeature
-			licensing.EnforceTiers = true
 			licensing.MockCheckFeature = tc.mock
 			defer func() {
-				licensing.EnforceTiers = oldEnforce
 				licensing.MockCheckFeature = oldMock
 			}()
 
@@ -95,23 +92,6 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 			if have.EnterpriseLicenseHasFeature != tc.want {
 				t.Errorf("unexpected has feature response: have=%v want=%v", have, tc.want)
 			}
-		})
-
-		t.Run(name+" without enforcement", func(t *testing.T) {
-			oldEnforce := licensing.EnforceTiers
-			licensing.EnforceTiers = false
-			defer func() { licensing.EnforceTiers = oldEnforce }()
-
-			var have struct{ EnterpriseLicenseHasFeature bool }
-			if err := apitest.Exec(ctx, t, schema, map[string]interface{}{
-				"feature": tc.feature,
-			}, &have, query); err != nil {
-				t.Errorf("unexpected error: %v", err)
-			}
-			if !have.EnterpriseLicenseHasFeature {
-				t.Error("unexpected disallowance when tiers aren't enforced")
-			}
-
 		})
 	}
 }
