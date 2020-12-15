@@ -149,6 +149,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             }}
                             value={currentCodeMonitorState.description}
                             autoFocus={true}
+                            spellCheck={false}
                         />
                     </div>
                     <small className="text-muted">
