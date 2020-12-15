@@ -58,8 +58,8 @@ Watch your code with code monitors and trigger actions to run automatically in r
 
 ## Explanations
 
-- [Core concepts](how-tos/core_concepts.md)
-- [Best practices](how-tos/best_practices.md)
+- [Core concepts](explanations/core_concepts.md)
+- [Best practices](explanations/best_practices.md)
 - [Starting points and ideas](how-tos/starting_points.md)
 
 ## Questions & Feedback
