@@ -59,8 +59,6 @@ interface InputValidationEvent {
  * `useInputValidation` helps with coordinating the constraint validation API
  * and custom synchronous and asynchronous validators.
  *
- * ## Example
- *
  * ### Limitations:
  * - If you set state when the input element is not rendered, the latest value
  * cannot be validated, since the bulk of validation is done by calling
@@ -72,9 +70,9 @@ export function useInputValidation(
     options: ValidationOptions
 ): [
     InputValidationState,
-    (change: React.ChangeEvent<HTMLInputElement>) => void,
-    (input: HTMLInputElement | null) => void,
-    (InputValidationEvent: InputValidationEvent) => void
+    (changeEvent: React.ChangeEvent<HTMLInputElement>) => void,
+    (inputElement: HTMLInputElement | null) => void,
+    (override: InputValidationEvent) => void
 ] {
     const [inputState, setInputState] = useState<InputValidationState>({
         kind: 'NOT_VALIDATED',
@@ -84,7 +82,7 @@ export function useInputValidation(
     // We use a ref callback instead of a mutable ref object so we have a
     // 'notifier' observable that emits when the input reference changes.
     // This is important because the input element can be conditionally rendered,
-    // and we can only validate through the Constraint Validation when we
+    // and we can only validate through the Constraint Validation API when we
     // have a reference to an HTMLElement. See this case when a consumer specifies
     // an initial value while the input element isn't rendered yet:
     //
@@ -156,14 +154,12 @@ export const VALIDATION_DEBOUNCE_TIME = 500
  */
 export function createValidationPipeline(
     { asynchronousValidators, synchronousValidators, initialValue }: ValidationOptions,
-    inputReferences: Subject<HTMLInputElement | null>,
+    inputReferences: Observable<HTMLInputElement | null>,
     onValidationUpdate: (
         validationState: InputValidationState | ((validationState: InputValidationState) => InputValidationState)
     ) => void
 ) {
-    return (
-        inputValidationEvents: Observable<InputValidationEvent>
-    ): Observable<unknown> => // TODO(tj): we don't use the return value anymore,, what to do?
+    return (inputValidationEvents: Observable<InputValidationEvent>): Observable<unknown> =>
         // Emit the latest input validation event along with the latest input element reference whenever
         // either observable emits.
         combineLatest([
@@ -182,8 +178,6 @@ export function createValidationPipeline(
             // This is to allow immediate validation on type but at the same time not flag invalid input as it's being typed.
             debounceTime(VALIDATION_DEBOUNCE_TIME),
             switchMap(([{ value, validate }, inputReference]) => {
-                console.log({ value, inputReference })
-
                 // if the input element isn't rendered right now, we can't/shouldn't validate input.
                 if (!inputReference || !validate) {
                     return EMPTY
