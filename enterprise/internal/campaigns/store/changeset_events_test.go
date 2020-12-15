@@ -9,10 +9,9 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
-func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock ct.Clock) {
+func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	issueComment := &github.IssueComment{
 		DatabaseID: 443827703,
 		Author: github.Actor{

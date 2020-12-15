@@ -12,15 +12,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs repos.Store, clock ct.Clock) {
-	repo := ct.TestRepo(t, rs, extsvc.KindGitHub)
-	deletedRepo := ct.TestRepo(t, rs, extsvc.KindGitHub).With(types.Opt.RepoDeletedAt(clock.Now()))
+func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+	repoStore := db.NewRepoStoreWith(s)
+	esStore := db.NewExternalServicesStoreWith(s)
 
-	repoStore := db.NewRepoStoreWith(s.Store)
+	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(types.Opt.RepoDeletedAt(clock.Now()))
 
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)

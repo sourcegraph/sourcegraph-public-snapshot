@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -18,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -33,7 +31,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 	userID := ct.CreateTestUser(t, false).ID
 
 	cstore := store.New(dbconn.Global)
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	esStore := db.NewExternalServicesStoreWith(cstore)
 
 	// Creating user with matching email to the changeset spec author.
 	user, err := db.Users.Create(ctx, db.NewUser{
@@ -47,7 +45,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 	}
 
 	repoStore := db.NewRepoStoreWith(cstore)
-	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-spec-resolver-test", newGitHubExternalService(t, rstore))
+	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-spec-resolver-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}

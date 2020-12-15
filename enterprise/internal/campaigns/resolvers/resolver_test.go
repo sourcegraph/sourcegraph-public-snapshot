@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -27,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -94,10 +92,10 @@ func TestCreateCampaignSpec(t *testing.T) {
 	userID := user.ID
 
 	cstore := store.New(dbconn.Global)
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	repoStore := db.NewRepoStoreWith(cstore)
+	esStore := db.NewExternalServicesStoreWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/create-campaign-spec-test", newGitHubExternalService(t, rstore))
+	repo := newGitHubTestRepo("github.com/sourcegraph/create-campaign-spec-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -209,10 +207,10 @@ func TestCreateChangesetSpec(t *testing.T) {
 	userID := ct.CreateTestUser(t, true).ID
 
 	cstore := store.New(dbconn.Global)
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	repoStore := db.NewRepoStoreWith(cstore)
+	esStore := db.NewExternalServicesStoreWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/create-changeset-spec-test", newGitHubExternalService(t, rstore))
+	repo := newGitHubTestRepo("github.com/sourcegraph/create-changeset-spec-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -284,10 +282,10 @@ func TestApplyCampaign(t *testing.T) {
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(dbconn.Global, clock)
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	repoStore := db.NewRepoStoreWith(cstore)
+	esStore := db.NewExternalServicesStoreWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/apply-campaign-test", newGitHubExternalService(t, rstore))
+	repo := newGitHubTestRepo("github.com/sourcegraph/apply-campaign-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
