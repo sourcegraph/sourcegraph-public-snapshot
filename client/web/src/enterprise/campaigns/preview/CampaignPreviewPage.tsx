@@ -4,11 +4,7 @@ import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 import { isEqual } from 'lodash'
 import { PageTitle } from '../../../components/PageTitle'
-import {
-    fetchCampaignSpecById as _fetchCampaignSpecById,
-    queryChangesetSpecs,
-    queryChangesetSpecFileDiffs,
-} from './backend'
+import { fetchCampaignSpecById as _fetchCampaignSpecById } from './backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CampaignHeader } from '../detail/CampaignHeader'
 import { ChangesetSpecList } from './list/ChangesetSpecList'
@@ -22,6 +18,7 @@ import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetrySer
 import { AuthenticatedUser } from '../../../auth'
 import { MissingCredentialsAlert } from './MissingCredentialsAlert'
 import { SupersedingCampaignSpecAlert } from '../detail/SupersedingCampaignSpecAlert'
+import { queryChangesetSpecFileDiffs, queryChangesetSpecs } from './list/backend'
 
 export interface CampaignPreviewPageProps extends ThemeProps, TelemetryProps {
     campaignSpecID: string
