@@ -13,9 +13,9 @@ import {
 import * as changelog from './changelog'
 import * as campaigns from './campaigns'
 import { Config, releaseVersions } from './config'
-import { formatDate, timezoneLink } from './util'
+import { cacheFolder, formatDate, timezoneLink } from './util'
 import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
-import { readFileSync, writeFileSync } from 'fs'
+import { readFileSync, rmdirSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import commandExists from 'command-exists'
 
@@ -36,6 +36,8 @@ export type StepID =
     | 'release:add-to-campaign'
     | 'release:finalize'
     | 'release:close'
+    // util
+    | 'util:clear-cache'
     // testing
     | '_test:google-calendar'
     | '_test:slack'
@@ -258,7 +260,7 @@ If you have changes that should go into this patch release, <${patchRequestTempl
                         owner: 'sourcegraph',
                         repo: 'sourcegraph',
                         base: 'main',
-                        head: `publish-${release.version}`,
+                        head: `changelog-${release.version}`,
                         title: prMessage,
                         commitMessage: prMessage,
                         edits: [
@@ -281,7 +283,7 @@ If you have changes that should go into this patch release, <${patchRequestTempl
                                 // Update changelog
                                 writeFileSync(changelogPath, changelogContents)
                             },
-                        ], // Changes already done
+                        ],
                     },
                 ],
                 dryRun: config.dryRun.changesets,
@@ -610,6 +612,13 @@ Campaign: ${campaignURL}`,
 @${config.captainGitHubUsername}: Please complete the post-release steps before closing this issue.`,
                 })
             }
+        },
+    },
+    {
+        id: 'util:clear-cache',
+        description: 'Clear release tool cache',
+        run: () => {
+            rmdirSync(cacheFolder, { recursive: true })
         },
     },
     {
