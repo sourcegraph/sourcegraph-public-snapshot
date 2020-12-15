@@ -10,10 +10,12 @@ import { useEventObservable } from '../../../../shared/src/util/useObservable'
 import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
 import { CodeMonitoringProps } from '.'
 import { sendTestEmail } from './backend'
+import { AuthenticatedUser } from '../../auth'
 
 export interface CodeMonitorNodeProps extends Pick<CodeMonitoringProps, 'toggleCodeMonitorEnabled'> {
     node: CodeMonitorFields
     location: H.Location
+    authentictedUser: AuthenticatedUser
 }
 
 const LOADING = 'LOADING' as const
@@ -22,6 +24,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
     toggleCodeMonitorEnabled,
     location,
     node,
+    authentictedUser,
 }: CodeMonitorNodeProps) => {
     const [enabled, setEnabled] = useState<boolean>(node.enabled)
 
@@ -81,7 +84,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                     {node.actions.nodes.length > 0 && (
                         <div className="d-flex text-muted">
                             New search result → Sends email notifications{' '}
-                            {hasEnabledAction && (
+                            {authentictedUser.siteAdmin && hasEnabledAction && (
                                 <button
                                     type="button"
                                     className="btn btn-link p-0 border-0 ml-2"
