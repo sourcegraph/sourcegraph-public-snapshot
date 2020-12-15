@@ -70,7 +70,6 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                         <div onClick={toggleMonitor} className="test-toggle-monitor-enabled">
                             <Toggle value={enabled} className="mr-3" disabled={toggleMonitorOrError === LOADING} />
                         </div>
-                        {/** TODO: link to edit pages. */}
                         <Link to={`${location.pathname}/${node.id}`}>Edit</Link>
                     </div>
                 </div>
