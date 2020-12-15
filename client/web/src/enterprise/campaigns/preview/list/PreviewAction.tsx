@@ -63,7 +63,7 @@ export const PreviewActionPublish: React.FunctionComponent<{ className?: string 
 )
 export const PreviewActionPublishDraft: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <UploadIcon className="text-muted" data-tooltip="This changeset will be published as draft to its code host" />
+        <UploadIcon className="text-muted" data-tooltip="This changeset will be published as a draft to its code host" />
         <span>Publish draft</span>
     </div>
 )
@@ -76,7 +76,7 @@ export const PreviewActionImport: React.FunctionComponent<{ className?: string }
 // TODO: This is currently correct, but as soon as we have a detach reconciler operation, that should be taken into account.
 export const PreviewActionClose: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <CloseCircleOutlineIcon className="text-danger" data-tooltip="This changeset will be closed on the codehost" />
+        <CloseCircleOutlineIcon className="text-danger" data-tooltip="This changeset will be closed on the code host" />
         <span>Close &amp; Detach</span>
     </div>
 )
@@ -88,19 +88,19 @@ export const PreviewActionDetach: React.FunctionComponent<{ className?: string }
 )
 export const PreviewActionReopen: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <SourceBranchRefreshIcon data-tooltip="This changeset will be reopened on the codehost" />
+        <SourceBranchRefreshIcon data-tooltip="This changeset will be reopened on the code host" />
         <span>Reopen</span>
     </div>
 )
 export const PreviewActionUndraft: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <SourceBranchCheckIcon data-tooltip="This changeset will be marked as ready for review on the codehost" />
+        <SourceBranchCheckIcon data-tooltip="This changeset will be marked as ready for review on the code host" />
         <span>Undraft</span>
     </div>
 )
 export const PreviewActionUpdate: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <SourceBranchSyncIcon data-tooltip="This changeset will be updated on the codehost" />
+        <SourceBranchSyncIcon data-tooltip="This changeset will be updated on the code host" />
         <span>Update</span>
     </div>
 )

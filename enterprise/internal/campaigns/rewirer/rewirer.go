@@ -10,7 +10,7 @@ import (
 )
 
 type ChangesetRewirer struct {
-	// The mappings need to be hydrated for the changesetRewirer to consume them.
+	// The mappings need to be hydrated for the ChangesetRewirer to consume them.
 	mappings   store.RewirerMappings
 	campaignID int64
 }
