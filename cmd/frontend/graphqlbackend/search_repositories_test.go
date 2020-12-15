@@ -240,11 +240,8 @@ func TestMatchRepos(t *testing.T) {
 	in := append(want, makeRepositoryRevisions("beef/bam", "qux/bas")...)
 	pattern := regexp.MustCompile("foo")
 
-	common, repos := matchRepos(pattern, in)
+	repos := matchRepos(pattern, in)
 
-	if !(len(common.repos) == len(in)) {
-		t.Fatalf("expected %d, got %d", len(in), len(common.repos))
-	}
 	// because of the concurrency we cannot rely on the order of "repos" to be the
 	// same as "want". Hence we create map of repo names and compare those.
 	toMap := func(reporevs []*search.RepositoryRevisions) map[string]struct{} {

@@ -107,7 +107,7 @@ func TestSearchSuggestions(t *testing.T) {
 			if want := "foo"; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
-			fm := mkFileMatch(&types.Repo{Name: "repo"}, "dir/file")
+			fm := mkFileMatch(&types.RepoName{Name: "repo"}, "dir/file")
 			fm.uri = "git://repo?rev#dir/file"
 			fm.CommitID = "rev"
 			return []*FileMatchResolver{fm}, &searchResultsCommon{}, nil
@@ -167,7 +167,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, `"foo" or "."`)
 			}
 			mk := func(name api.RepoName, path string) *FileMatchResolver {
-				fm := mkFileMatch(&types.Repo{Name: name}, path)
+				fm := mkFileMatch(&types.RepoName{Name: name}, path)
 				fm.uri = fileMatchURI(name, "rev", path)
 				fm.CommitID = "rev"
 				return fm
@@ -251,7 +251,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", repos, want)
 			}
 			return []*FileMatchResolver{
-				mkFileMatch(&types.Repo{Name: "foo-repo"}, "dir/file"),
+				mkFileMatch(&types.RepoName{Name: "foo-repo"}, "dir/file"),
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -372,7 +372,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", repos, want)
 			}
 			return []*FileMatchResolver{
-				mkFileMatch(&types.Repo{Name: "foo-repo"}, "dir/bar-file"),
+				mkFileMatch(&types.RepoName{Name: "foo-repo"}, "dir/bar-file"),
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()

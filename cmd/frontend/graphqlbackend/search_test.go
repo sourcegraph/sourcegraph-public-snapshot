@@ -760,9 +760,9 @@ func TestComputeExcludedRepositories(t *testing.T) {
 	}
 }
 
-func mkFileMatch(repo *types.Repo, path string, lineNumbers ...int32) *FileMatchResolver {
+func mkFileMatch(repo *types.RepoName, path string, lineNumbers ...int32) *FileMatchResolver {
 	if repo == nil {
-		repo = &types.Repo{
+		repo = &types.RepoName{
 			ID:   1,
 			Name: "repo",
 		}
@@ -775,7 +775,7 @@ func mkFileMatch(repo *types.Repo, path string, lineNumbers ...int32) *FileMatch
 		uri:          fileMatchURI(repo.Name, "", path),
 		JPath:        path,
 		JLineMatches: lines,
-		Repo:         &RepositoryResolver{innerRepo: repo},
+		Repo:         &RepositoryResolver{innerRepo: repo.ToRepo()},
 	}
 }
 

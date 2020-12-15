@@ -363,6 +363,53 @@ func RepoUpdater() *monitoring.Container {
 							PossibleSolutions: "Check repo-updater logs. Check code host connectivity",
 						},
 					},
+					{
+						{
+							Name:            "github_graphql_rate_limit_remaining",
+							Description:     "remaining calls to GitHub graphql API before hitting the rate limit",
+							Query:           `max by (name) (src_github_rate_limit_remaining_v2{resource="graphql"})`,
+							DataMayNotExist: true,
+							// 5% of initial limit of 5000
+							Critical:          monitoring.Alert().LessOrEqual(250),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}"),
+							Owner:             monitoring.ObservableOwnerCloud,
+							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
+						},
+						{
+							Name:            "github_rest_rate_limit_remaining",
+							Description:     "remaining calls to GitHub rest API before hitting the rate limit",
+							Query:           `max by (name) (src_github_rate_limit_remaining_v2{resource="rest"})`,
+							DataMayNotExist: true,
+							// 5% of initial limit of 5000
+							Critical:          monitoring.Alert().LessOrEqual(250),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}"),
+							Owner:             monitoring.ObservableOwnerCloud,
+							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
+						},
+						{
+							Name:              "github_search_rate_limit_remaining",
+							Description:       "remaining calls to GitHub search API before hitting the rate limit",
+							Query:             `max by (name) (src_github_rate_limit_remaining_v2{resource="search"})`,
+							DataMayNotExist:   true,
+							Critical:          monitoring.Alert().LessOrEqual(5),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}"),
+							Owner:             monitoring.ObservableOwnerCloud,
+							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
+						},
+					},
+					{
+						{
+							Name:            "gitlab_rest_rate_limit_remaining",
+							Description:     "remaining calls to GitLab rest API before hitting the rate limit",
+							Query:           `max by (name) (src_gitlab_rate_limit_remaining{resource="rest"})`,
+							DataMayNotExist: true,
+							// 5% of initial limit of 600
+							Critical:          monitoring.Alert().LessOrEqual(30),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}"),
+							Owner:             monitoring.ObservableOwnerCloud,
+							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
+						},
+					},
 				},
 			},
 			{

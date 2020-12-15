@@ -91,7 +91,7 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.Count = mockCount
 
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
-			return nil, &searchResultsCommon{repos: []*types.RepoName{{ID: 1, Name: "repo"}}}, nil
+			return nil, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -149,8 +149,8 @@ func TestSearchResults(t *testing.T) {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			repo := &types.RepoName{ID: 1, Name: "repo"}
-			fm := mkFileMatch(repo.ToRepo(), "dir/file", 123)
-			return []*FileMatchResolver{fm}, &searchResultsCommon{repos: []*types.RepoName{repo}}, nil
+			fm := mkFileMatch(repo, "dir/file", 123)
+			return []*FileMatchResolver{fm}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -214,8 +214,8 @@ func TestSearchResults(t *testing.T) {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			repo := &types.RepoName{ID: 1, Name: "repo"}
-			fm := mkFileMatch(repo.ToRepo(), "dir/file", 123)
-			return []*FileMatchResolver{fm}, &searchResultsCommon{repos: []*types.RepoName{repo}}, nil
+			fm := mkFileMatch(repo, "dir/file", 123)
+			return []*FileMatchResolver{fm}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -522,9 +522,9 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 }
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
-	repo := &types.Repo{Name: "testRepo"}
+	repo := &types.RepoName{Name: "testRepo"}
 	repoMatch := &RepositoryResolver{
-		innerRepo: repo,
+		innerRepo: repo.ToRepo(),
 	}
 	fileMatch := func(path string) *FileMatchResolver {
 		return mkFileMatch(repo, path)
