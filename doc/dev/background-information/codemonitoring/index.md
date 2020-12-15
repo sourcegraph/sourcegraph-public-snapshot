@@ -50,8 +50,8 @@ to `settings > User account > settings`.
 
 Each type of trigger or type of action is represented by its own table in the
 database; queries are represented by `cm_queries`, and emails are represented by
-`cm_emails` and `cm_recipients`. The job tables (`cm_trigger_jobs` and `
-cm_action_jobs`) on the other hand contain the jobs for all types of triggers
+`cm_emails` and `cm_recipients`. The job tables (`cm_trigger_jobs` and
+`cm_action_jobs`) on the other hand contain the jobs for all types of triggers
 and actions. 
 
 For example: Each type of action is represented by a separate nullable column in
