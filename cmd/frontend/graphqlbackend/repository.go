@@ -277,10 +277,6 @@ func (r *RepositoryResolver) ToCommitSearchResult() (*CommitSearchResultResolver
 	return nil, false
 }
 
-func (r *RepositoryResolver) searchResultURIs() (string, string) {
-	return string(r.repo.Name), ""
-}
-
 func (r *RepositoryResolver) resultCount() int32 {
 	return 1
 }

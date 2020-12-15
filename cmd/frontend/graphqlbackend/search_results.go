@@ -2039,8 +2039,6 @@ func isContextError(ctx context.Context, err error) bool {
 //
 // Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
 type SearchResultResolver interface {
-	searchResultURIGetter
-
 	ToRepository() (*RepositoryResolver, bool)
 	ToFileMatch() (*FileMatchResolver, bool)
 	ToCommitSearchResult() (*CommitSearchResultResolver, bool)
@@ -2048,35 +2046,67 @@ type SearchResultResolver interface {
 	resultCount() int32
 }
 
-type searchResultURIGetter interface {
-	// SearchResultURIs returns the repo name and file uri respectively
-	searchResultURIs() (string, string)
+// compareFileLengths sorts file paths such that they appear earlier if they
+// match file: patterns in the query exactly.
+func compareFileLengths(left, right string, exactFilePatterns map[string]struct{}) bool {
+	_, aMatch := exactFilePatterns[path.Base(left)]
+	_, bMatch := exactFilePatterns[path.Base(right)]
+	if aMatch || bMatch {
+		if aMatch && bMatch {
+			// Prefer shorter file names (ie root files come first)
+			if len(left) != len(right) {
+				return len(left) < len(right)
+			}
+			return left < right
+		}
+		// Prefer exact match
+		return aMatch
+	}
+	return left < right
 }
 
-// compareSearchResults sorts alphabetically unless one of the filenames is contained in exactFilePatterns,
-// in which case exact matches are sorted by length of their file path and then alphabetically.
-func compareSearchResults(a, b searchResultURIGetter, exactFilePatterns map[string]struct{}) bool {
-	arepo, afile := a.searchResultURIs()
-	brepo, bfile := b.searchResultURIs()
+func compareDates(left, right *time.Time) bool {
+	if left == nil || right == nil {
+		return left != nil // Place the value that is defined first.
+	}
+	return (*left).After(*right)
+}
+
+// compareSearchResults sorts repository matches, file matches, and commits.
+// Repositories and filenames are sorted alphabetically. As a refinement, if any
+// filename matches a value in a non-empty set exactFilePatterns, then such
+// filenames are listed earlier.
+//
+// Commits are sorted by date. Commits are not associated with repositories, and
+// will always list after repository or file match results, if any.
+func compareSearchResults(left, right SearchResultResolver, exactFilePatterns map[string]struct{}) bool {
+	sortKeys := func(result SearchResultResolver) (string, string, *time.Time) {
+		switch r := result.(type) {
+		case *RepositoryResolver:
+			return string(r.repo.Name), "", nil
+		case *FileMatchResolver:
+			return r.Repo.Name(), r.JPath, nil
+		case *CommitSearchResultResolver:
+			// Commits are relatively sorted by date, and after repo
+			// or path names. We use ~ as the key for repo and
+			// paths,lexicographically last in ASCII.
+			return "~", "~", &r.commit.commit.Author.Date
+		}
+		// Unreachable.
+		panic("unreachable: compareSearchResults expects RepositoryResolver, FileMatchResolver, or CommitSearchResultResolver")
+	}
+
+	arepo, afile, adate := sortKeys(left)
+	brepo, bfile, bdate := sortKeys(right)
 
 	if arepo == brepo {
 		if len(exactFilePatterns) == 0 {
-			return afile < bfile
-		}
-		_, aMatch := exactFilePatterns[path.Base(afile)]
-		_, bMatch := exactFilePatterns[path.Base(bfile)]
-		if aMatch || bMatch {
-			if aMatch && bMatch {
-				// Prefer shorter file names (ie root files come first)
-				if len(afile) != len(bfile) {
-					return len(afile) < len(bfile)
-				}
+			if afile != bfile {
 				return afile < bfile
 			}
-			// prefer exact match
-			return aMatch
+			return compareDates(adate, bdate)
 		}
-		return afile < bfile
+		return compareFileLengths(afile, bfile, exactFilePatterns)
 	}
 	return arepo < brepo
 }
