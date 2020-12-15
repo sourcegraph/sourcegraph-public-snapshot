@@ -368,6 +368,15 @@ describe('Campaigns', () => {
                         totalCount: 1,
                     },
                 }),
+                AreCampaignsLicensed: () => ({
+                    site: {
+                        productSubscription: {
+                            license: {
+                                tags: ['campaigns'],
+                            },
+                        },
+                    },
+                }),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/campaigns')
             await driver.page.waitForSelector('.test-campaign-list-page')
