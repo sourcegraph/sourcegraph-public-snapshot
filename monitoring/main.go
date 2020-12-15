@@ -16,7 +16,7 @@ import (
 func optsFromEnv() monitoring.GenerateOptions {
 	return monitoring.GenerateOptions{
 		DisablePrune: getEnvBool("NO_PRUNE", false),
-		LiveReload:   getEnvBool("RELOAD", false),
+		Reload:       getEnvBool("RELOAD", false),
 
 		GrafanaDir:    getEnvStr("GRAFANA_DIR", "../docker-images/grafana/config/provisioning/dashboards/sourcegraph/"),
 		PrometheusDir: getEnvStr("PROMETHEUS_DIR", "../docker-images/prometheus/config/"),

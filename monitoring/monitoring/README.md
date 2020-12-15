@@ -80,7 +80,7 @@ type GenerateOptions struct {
     // Toggles pruning of dangling generated assets through simple heuristic, should be disabled during builds
     DisablePrune bool
     // Trigger reload of active Prometheus or Grafana instance (requires respective output directories)
-    LiveReload bool
+    Reload bool
 
     // Output directory for generated Grafana assets
     GrafanaDir string

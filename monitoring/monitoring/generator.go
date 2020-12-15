@@ -31,7 +31,7 @@ type GenerateOptions struct {
 	// Toggles pruning of dangling generated assets through simple heuristic, should be disabled during builds
 	DisablePrune bool
 	// Trigger reload of active Prometheus or Grafana instance (requires respective output directories)
-	LiveReload bool
+	Reload bool
 
 	// Output directory for generated Grafana assets
 	GrafanaDir string
@@ -77,7 +77,7 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 			generatedAssets = append(generatedAssets, generatedDashboard)
 
 			// Reload specific dashboard
-			if opts.LiveReload {
+			if opts.Reload {
 				clog.Debug("Reloading Grafana instance", "instance", localGrafanaURL)
 				client := sdk.NewClient(localGrafanaURL, localGrafanaCredentials, sdk.DefaultHTTPClient)
 				_, err := client.SetDashboard(context.Background(), *board, sdk.SetDashboardParams{Overwrite: true})
@@ -112,7 +112,7 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 	}
 
 	// Reload all Prometheus rules
-	if opts.PrometheusDir != "" && opts.LiveReload {
+	if opts.PrometheusDir != "" && opts.Reload {
 		// Reload all Prometheus rules
 		logger.Debug("Reloading Prometheus instance", "instance", localPrometheusURL)
 		resp, err := http.Post(localPrometheusURL+"/-/reload", "", nil)
