@@ -32,7 +32,7 @@ func addRepos() {
 	log.Println("Site admin authenticated:", username)
 
 	// Open our jsonFile
-	jsonFile, err := os.Open("repos.json")
+	jsonFile, err := os.Open(*extsvcConfig)
 	// if we os.Open returns an error then handle it
 	if err != nil {
 		fmt.Println(err)
@@ -60,7 +60,7 @@ func addRepos() {
 	for i := range externalsvcs {
 
 		// Set up external service
-		_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+		esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 			Kind:        externalsvcs[i].Kind,
 			DisplayName: externalsvcs[i].DisplayName,
 			Config: mustMarshalJSONString(struct {
@@ -75,6 +75,8 @@ func addRepos() {
 		})
 		if err != nil {
 			log.Fatal(err)
+		} else {
+			log.Print(esID)
 		}
 	}
 
