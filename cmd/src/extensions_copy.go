@@ -73,6 +73,7 @@ Copy an extension from Sourcegraph.com to your private registry.
 		}
 
 		withCfg(&config{Endpoint: "https://sourcegraph.com"}, func() {
+			dotComClient := cfg.apiClient(apiFlags, flagSet.Output())
 			query := `query GetExtension(
 	$extensionID: String!
 ){
@@ -86,7 +87,7 @@ Copy an extension from Sourcegraph.com to your private registry.
   }
 }`
 
-			ok, err = client.NewRequest(query, map[string]interface{}{
+			ok, err = dotComClient.NewRequest(query, map[string]interface{}{
 				"extensionID": extensionID,
 			}).Do(ctx, &extensionResult)
 		})
