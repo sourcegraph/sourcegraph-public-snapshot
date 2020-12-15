@@ -151,11 +151,11 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	c.resultCount += other.resultCount
 
 	if c.partial == nil {
-		c.partial = make(map[api.RepoID]struct{})
-	}
-
-	for repo := range other.partial {
-		c.partial[repo] = struct{}{}
+		c.partial = other.partial
+	} else {
+		for repo := range other.partial {
+			c.partial[repo] = struct{}{}
+		}
 	}
 }
 
