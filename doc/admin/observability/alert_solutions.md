@@ -3349,7 +3349,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions:**
 
-- _repo-updater: less than 500 remaining calls to GitHub graphql API before hitting the rate limit_
+- _repo-updater: less than 250 remaining calls to GitHub graphql API before hitting the rate limit_
 
 **Possible solutions:**
 
@@ -3358,7 +3358,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_github_graphql_rate_limit_remaining"
+  "critical_repo-updater_github_graphql_rate_limit_remaining"
 ]
 ```
 
@@ -3370,7 +3370,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions:**
 
-- _repo-updater: less than 500 remaining calls to GitHub core API before hitting the rate limit_
+- _repo-updater: less than 250 remaining calls to GitHub core API before hitting the rate limit_
 
 **Possible solutions:**
 
@@ -3379,7 +3379,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_github_core_rate_limit_remaining"
+  "critical_repo-updater_github_core_rate_limit_remaining"
 ]
 ```
 
@@ -3400,7 +3400,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_github_search_rate_limit_remaining"
+  "critical_repo-updater_github_search_rate_limit_remaining"
 ]
 ```
 
@@ -3412,7 +3412,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions:**
 
-- _repo-updater: less than 60 remaining calls to GitLab API before hitting the rate limit_
+- _repo-updater: less than 30 remaining calls to GitLab API before hitting the rate limit_
 
 **Possible solutions:**
 
@@ -3421,7 +3421,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_gitlab_rate_limit_remaining"
+  "critical_repo-updater_gitlab_rate_limit_remaining"
 ]
 ```
 
