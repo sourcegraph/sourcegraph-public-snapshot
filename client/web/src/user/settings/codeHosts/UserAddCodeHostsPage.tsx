@@ -82,12 +82,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             </p>
             {isErrorLike(statusOrError) && (
                 <div className="alert alert-danger my-4">
-                    <code>{statusOrError.message}</code>
+                    <div className="pb-2">{statusOrError.message}</div>
                     <strong>Could not connect to GitHub.</strong> Please <Link to="/">update your access token</Link> to
                     restore the connection.
                 </div>
             )}
-            {codeHostExternalServices && statusOrError === 'loaded' && (
+            {codeHostExternalServices && statusOrError !== 'loading' && (
                 <ul className="list-group">
                     {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) => (
                         <li key={id} className="list-group-item">

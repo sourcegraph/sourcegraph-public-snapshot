@@ -4,8 +4,8 @@
     }
     &__icon--inside {
         position: absolute;
-        right: 2em;
-        top: calc(50% - 1.5em);
+        right: 0.5rem;
+        top: 0.5rem;
     }
     &__icon--success.mdi-icon {
         fill: var(--success);

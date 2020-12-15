@@ -132,6 +132,7 @@ export const listExternalServiceFragment = gql`
         kind
         displayName
         config
+        warning
     }
 `
 

@@ -14,6 +14,13 @@ interface CodeHostConfig {
     token: string
 }
 
+const getServiceConfig = (kind: ExternalServiceKind, token: string): string => {
+    const { defaultConfig } = defaultExternalServices[kind]
+    const config = JSON.parse(defaultConfig) as CodeHostConfig
+    config.token = token
+    return JSON.stringify(config, null, 2)
+}
+
 export const AddCodeHostConnectionModal: React.FunctionComponent<{
     userID: Scalars['ID']
     name: string
@@ -29,30 +36,40 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
 
     const onChangeToken: React.ChangeEventHandler<HTMLInputElement> = event => setToken(event.target.value)
 
+    const handleError = useCallback(
+        (error: ErrorLike | string): void => {
+            setIsLoading(false)
+            onDidCancel()
+            onDidError(asError(error))
+        },
+        [onDidCancel, onDidError]
+    )
+
     const onTokenSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
         async event => {
             event.preventDefault()
             setIsLoading(true)
+
             try {
                 if (token) {
-                    const { defaultConfig } = defaultExternalServices[kind]
-                    const config: CodeHostConfig = JSON.parse(defaultConfig)
-                    config.token = token
-                    const finalConfig = JSON.stringify(config, null, 2)
+                    const config = getServiceConfig(kind, token)
 
-                    await addExternalService(
-                        { input: { kind, displayName: name, config: finalConfig, namespace: userID } },
+                    const { warning } = await addExternalService(
+                        { input: { kind, config, displayName: name, namespace: userID } },
                         eventLogger
                     )
-                    onDidAdd()
+
+                    if (warning) {
+                        handleError(warning)
+                    } else {
+                        onDidAdd()
+                    }
                 }
             } catch (error) {
-                setIsLoading(false)
-                onDidCancel()
-                onDidError(asError(error))
+                handleError(error)
             }
         },
-        [userID, token, kind, name, onDidAdd, onDidError, onDidCancel]
+        [userID, token, kind, name, handleError, onDidAdd]
     )
 
     return (
@@ -66,20 +83,23 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                 <Form onSubmit={onTokenSubmit}>
                     <div className="form-group mb-4">
                         <label htmlFor="code-host-token">Personal access token</label>
-                        <input
-                            id="code-host-token"
-                            name="code-host-token"
-                            type="text"
-                            value={token}
-                            onChange={onChangeToken}
-                            className="form-control pr-4"
-                            required={true}
-                            minLength={1}
-                        />
-                        <ShieldCheckIcon
-                            className="icon-inline add-user-code-hosts-page__icon--inside add-user-code-hosts-page__icon--muted"
-                            data-tooltip="Data will be encrypted and will not be visible again."
-                        />
+                        <div className="position-relative">
+                            <input
+                                id="code-host-token"
+                                name="code-host-token"
+                                type="text"
+                                value={token}
+                                onChange={onChangeToken}
+                                className="form-control pr-4"
+                                required={true}
+                                minLength={1}
+                            />
+                            <ShieldCheckIcon
+                                className="icon-inline add-user-code-hosts-page__icon--inside add-user-code-hosts-page__icon--muted"
+                                data-tooltip="Data will be encrypted and will not be visible again."
+                            />
+                        </div>
+
                         {hintFragment}
                     </div>
                     <div className="d-flex justify-content-end">
