@@ -511,7 +511,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 			indexedCommon, matches, err := indexed.Search(ctx)
 			mu.Lock()
 			defer mu.Unlock()
-			common.update(indexedCommon)
+			common.update(&indexedCommon)
 			tr.LogFields(otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
 			if err != nil && searchErr == nil && !overLimitCanceled {
 				searchErr = err
