@@ -16,6 +16,7 @@ import {
     ChangesetCheckState,
     ChangesetReviewState,
     CampaignFields,
+    ChangesetSpecType,
 } from '../../../graphql-operations'
 import { useMemo, useCallback } from '@storybook/addons'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
@@ -147,6 +148,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                 error: null,
                 currentSpec: {
                     id: 'spec-rand-id-1',
+                    type: ChangesetSpecType.BRANCH,
                     description: {
                         __typename: 'GitBranchChangesetDescription',
                         headRef: 'my-branch',
@@ -182,6 +184,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                 error: 'Cannot create PR, insufficient token scope.',
                 currentSpec: {
                     id: 'spec-rand-id-2',
+                    type: ChangesetSpecType.BRANCH,
                     description: {
                         __typename: 'GitBranchChangesetDescription',
                         headRef: 'my-branch',

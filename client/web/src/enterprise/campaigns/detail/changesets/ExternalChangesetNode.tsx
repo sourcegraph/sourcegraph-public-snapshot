@@ -8,7 +8,7 @@ import * as H from 'history'
 import React, { useState, useCallback } from 'react'
 import { DiffStat } from '../../../../components/diff/DiffStat'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../backend'
-import { ExternalChangesetFields } from '../../../../graphql-operations'
+import { ChangesetSpecType, ExternalChangesetFields } from '../../../../graphql-operations'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import { ChangesetStatusCell } from './ChangesetStatusCell'
@@ -104,7 +104,9 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                 <>
                     <div />
                     <div className="external-changeset-node__expanded-section p-2">
-                        <DownloadDiffButton changesetID={node.id} />
+                        {node.currentSpec?.type === ChangesetSpecType.BRANCH && (
+                            <DownloadDiffButton changesetID={node.id} />
+                        )}
                         {node.error && <ErrorAlert error={node.error} history={history} />}
                         <ChangesetFileDiff
                             changesetID={node.id}
