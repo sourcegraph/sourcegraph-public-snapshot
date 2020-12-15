@@ -172,6 +172,11 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
             nodeComponent={[Function]}
             nodeComponentProps={
               Object {
+                "authentictedUser": Object {
+                  "email": "alice@alice.com",
+                  "id": "foobar",
+                  "username": "alice",
+                },
                 "location": "[Location path=/code-monitoring]",
                 "toggleCodeMonitorEnabled": [Function],
               }
@@ -464,6 +469,11 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                 nodeComponent={[Function]}
                 nodeComponentProps={
                   Object {
+                    "authentictedUser": Object {
+                      "email": "alice@alice.com",
+                      "id": "foobar",
+                      "username": "alice",
+                    },
                     "location": "[Location path=/code-monitoring]",
                     "toggleCodeMonitorEnabled": [Function],
                   }
@@ -477,6 +487,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                   className="filtered-connection__nodes "
                 >
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo0"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -528,13 +545,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -588,6 +598,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo1"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -639,13 +656,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -699,6 +709,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo2"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -750,13 +767,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -810,6 +820,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo3"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -861,13 +878,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -921,6 +931,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo4"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -972,13 +989,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -1032,6 +1042,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo5"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1083,13 +1100,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -1143,6 +1153,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo6"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1194,13 +1211,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -1254,6 +1264,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo7"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1305,13 +1322,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -1365,6 +1375,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo9"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1416,13 +1433,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -1476,6 +1486,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo10"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1527,13 +1544,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -1779,6 +1789,11 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
             nodeComponent={[Function]}
             nodeComponentProps={
               Object {
+                "authentictedUser": Object {
+                  "email": "alice@alice.com",
+                  "id": "foobar",
+                  "username": "alice",
+                },
                 "location": "[Location path=/code-monitoring]",
                 "toggleCodeMonitorEnabled": [Function],
               }
@@ -1889,6 +1904,11 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                 nodeComponent={[Function]}
                 nodeComponentProps={
                   Object {
+                    "authentictedUser": Object {
+                      "email": "alice@alice.com",
+                      "id": "foobar",
+                      "username": "alice",
+                    },
                     "location": "[Location path=/code-monitoring]",
                     "toggleCodeMonitorEnabled": [Function],
                   }
@@ -1902,6 +1922,13 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                   className="filtered-connection__nodes "
                 >
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo0"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1953,13 +1980,6 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -2013,6 +2033,13 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo1"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -2064,13 +2091,6 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -2124,6 +2144,13 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo2"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -2175,13 +2202,6 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -2427,6 +2447,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
             nodeComponent={[Function]}
             nodeComponentProps={
               Object {
+                "authentictedUser": Object {
+                  "email": "alice@alice.com",
+                  "id": "foobar",
+                  "username": "alice",
+                },
                 "location": "[Location path=/code-monitoring]",
                 "toggleCodeMonitorEnabled": [Function],
               }
@@ -2771,6 +2796,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                 nodeComponent={[Function]}
                 nodeComponentProps={
                   Object {
+                    "authentictedUser": Object {
+                      "email": "alice@alice.com",
+                      "id": "foobar",
+                      "username": "alice",
+                    },
                     "location": "[Location path=/code-monitoring]",
                     "toggleCodeMonitorEnabled": [Function],
                   }
@@ -2784,6 +2814,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                   className="filtered-connection__nodes "
                 >
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo0"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -2835,13 +2872,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -2895,6 +2925,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo1"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -2946,13 +2983,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -3006,6 +3036,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo2"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3057,13 +3094,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -3117,6 +3147,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo3"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3168,13 +3205,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -3228,6 +3258,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo4"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3279,13 +3316,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -3339,6 +3369,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo5"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3390,13 +3427,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -3450,6 +3480,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo6"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3501,13 +3538,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -3561,6 +3591,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo7"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3612,13 +3649,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -3672,6 +3702,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo9"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3723,13 +3760,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -3783,6 +3813,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo10"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3834,13 +3871,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -3894,6 +3924,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo11"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3945,13 +3982,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
@@ -4005,6 +4035,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo12"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -4056,13 +4093,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                           >
                             New search result → Sends email notifications
                              
-                            <button
-                              className="btn btn-link p-0 border-0 ml-2"
-                              onClick={[Function]}
-                              type="button"
-                            >
-                              Send test email
-                            </button>
                           </div>
                         </div>
                         <div
