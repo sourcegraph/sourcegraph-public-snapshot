@@ -308,6 +308,29 @@ const SiteSchemaJSON = `{
       "default": false,
       "group": "External services"
     },
+    "gitUpdateInterval": {
+      "description": "JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.",
+      "type": "array",
+      "items": {
+        "title": "UpdateIntervalRule",
+        "type": "object",
+        "required": ["pattern", "interval"],
+        "additionalProperties": false,
+        "properties": {
+          "pattern": {
+            "description": "A regular expression matching a repo name",
+            "type": "string",
+            "minLength": 1
+          },
+          "interval": {
+            "description": "An integer representing the number of minutes to wait until the next update",
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "group": "External services"
+    },
     "disablePublicRepoRedirects": {
       "description": "Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
       "type": "boolean",

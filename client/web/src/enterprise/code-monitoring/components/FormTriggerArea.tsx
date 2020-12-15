@@ -138,6 +138,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 required={true}
                                 autoFocus={true}
                                 ref={queryInputReference}
+                                spellCheck={false}
                             />
                             <div className="trigger-area__query-input-preview-link p-2">
                                 <Link

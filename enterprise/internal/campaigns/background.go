@@ -11,7 +11,6 @@ import (
 	ossDB "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -20,7 +19,6 @@ import (
 func InitBackgroundJobs(
 	ctx context.Context,
 	db *sql.DB,
-	rstore repos.Store,
 	cf *httpcli.Factory,
 	// TODO(eseliger): Remove this parameter as the sunset of repo-updater is approaching.
 	// We should switch to our own polling mechanism instead of using repo-updaters.
@@ -36,5 +34,5 @@ func InitBackgroundJobs(
 		server.ChangesetSyncRegistry = syncRegistry
 	}
 
-	go goroutine.MonitorBackgroundRoutines(ctx, background.Routines(ctx, db, cstore, rstore, cf)...)
+	go goroutine.MonitorBackgroundRoutines(ctx, background.Routines(ctx, db, cstore, cf)...)
 }

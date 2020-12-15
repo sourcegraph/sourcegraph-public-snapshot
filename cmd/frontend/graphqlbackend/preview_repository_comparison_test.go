@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
@@ -92,7 +93,7 @@ index 9bd8209..d2acfa9 100644
 	wantHeadRevision := api.CommitID("b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec")
 	mockBackendCommits(t, api.CommitID(wantBaseRef), wantHeadRevision)
 
-	repo := &types.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph"}
+	repo := &types.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph", CreatedAt: time.Now()}
 
 	previewComparisonResolver, err := NewPreviewRepositoryComparisonResolver(ctx, NewRepositoryResolver(repo), string(wantHeadRevision), testDiff)
 	if err != nil {

@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
-import { GitBranchChangesetDescriptionFields } from '../../../graphql-operations'
-import { formatPersonName, PersonLink } from '../../../person/PersonLink'
-import { UserAvatar } from '../../../user/UserAvatar'
+import { GitBranchChangesetDescriptionFields } from '../../../../graphql-operations'
+import { formatPersonName, PersonLink } from '../../../../person/PersonLink'
+import { UserAvatar } from '../../../../user/UserAvatar'
 
 const dotDotDot = '\u22EF'
 
@@ -19,8 +19,8 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> =
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(isExpandedInitially)
 
     const toggleShowCommitMessageBody = useCallback((): void => {
-        setShowCommitMessageBody(!showCommitMessageBody)
-    }, [showCommitMessageBody])
+        setShowCommitMessageBody(previousState => !previousState)
+    }, [])
 
     return (
         <>

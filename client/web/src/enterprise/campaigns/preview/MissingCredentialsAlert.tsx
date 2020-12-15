@@ -5,12 +5,12 @@ import { AuthenticatedUser } from '../../../auth'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { ViewerCampaignsCodeHostsFields } from '../../../graphql-operations'
 
-export interface CampaignSpecMissingCredentialsAlertProps {
+export interface MissingCredentialsAlertProps {
     viewerCampaignsCodeHosts: ViewerCampaignsCodeHostsFields
     authenticatedUser: Pick<AuthenticatedUser, 'url'>
 }
 
-export const CampaignSpecMissingCredentialsAlert: React.FunctionComponent<CampaignSpecMissingCredentialsAlertProps> = ({
+export const MissingCredentialsAlert: React.FunctionComponent<MissingCredentialsAlertProps> = ({
     viewerCampaignsCodeHosts,
     authenticatedUser,
 }) => {

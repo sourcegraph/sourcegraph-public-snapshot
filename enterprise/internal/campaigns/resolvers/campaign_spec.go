@@ -77,6 +77,30 @@ func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context, args *graphql
 	}, nil
 }
 
+func (r *campaignSpecResolver) ApplyPreview(ctx context.Context, args *graphqlbackend.ChangesetApplyPreviewConnectionArgs) (graphqlbackend.ChangesetApplyPreviewConnectionResolver, error) {
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return nil, err
+	}
+	opts := store.GetRewirerMappingsOpts{
+		LimitOffset: &db.LimitOffset{
+			Limit: int(args.First),
+		},
+	}
+	if args.After != nil {
+		id, err := strconv.Atoi(*args.After)
+		if err != nil {
+			return nil, err
+		}
+		opts.LimitOffset.Offset = id
+	}
+
+	return &changesetApplyPreviewConnectionResolver{
+		store:          r.store,
+		opts:           opts,
+		campaignSpecID: r.campaignSpec.ID,
+	}, nil
+}
+
 func (r *campaignSpecResolver) Description() graphqlbackend.CampaignDescriptionResolver {
 	return &campaignDescriptionResolver{
 		name:        r.campaignSpec.Spec.Name,

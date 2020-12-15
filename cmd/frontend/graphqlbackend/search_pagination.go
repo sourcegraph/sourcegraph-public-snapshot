@@ -276,7 +276,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameter
 			// searchFilesInRepos can return a nil structure, but the executor
 			// requires a non-nil one always (which is more sane).
 			fileCommon = &searchResultsCommon{
-				partial: map[api.RepoName]struct{}{},
+				partial: map[api.RepoID]struct{}{},
 			}
 		}
 		// fileResults is not sorted so we must sort it now. fileCommon may or
@@ -332,7 +332,7 @@ type executor func(batch []*search.RepositoryRevisions) ([]SearchResultResolver,
 func repoOfResult(result SearchResultResolver) string {
 	switch r := result.(type) {
 	case *RepositoryResolver:
-		return string(r.repo.Name)
+		return string(r.Name())
 	case *FileMatchResolver:
 		return r.Repo.Name()
 	case *CommitSearchResultResolver:
@@ -562,7 +562,8 @@ func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, last
 	final := &searchResultsCommon{
 		limitHit:         false, // irrelevant in paginated search
 		indexUnavailable: common.indexUnavailable,
-		partial:          make(map[api.RepoName]struct{}),
+		repos:            make(map[api.RepoID]*types.Repo),
+		partial:          make(map[api.RepoID]struct{}),
 		resultCount:      common.resultCount,
 	}
 
@@ -577,6 +578,7 @@ func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, last
 			if firstResultRepo != "" && string(r.Name) < firstResultRepo {
 				continue
 			}
+			final.repos[r.ID] = r
 			dst = append(dst, r)
 			if string(r.Name) == lastResultRepo {
 				break
@@ -584,7 +586,17 @@ func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, last
 		}
 		return dst
 	}
-	final.repos = doAppend(final.repos, common.repos)
+
+	for _, r := range common.repos {
+		if lastResultRepo == "" || string(r.Name) > lastResultRepo {
+			continue
+		}
+		if firstResultRepo != "" && string(r.Name) < firstResultRepo {
+			continue
+		}
+		final.repos[r.ID] = r
+	}
+
 	final.searched = doAppend(final.searched, common.searched)
 	final.indexed = doAppend(final.indexed, common.indexed)
 	final.cloning = doAppend(final.cloning, common.cloning)

@@ -28,7 +28,7 @@ func TestSearchProgress(t *testing.T) {
 			SearchResults: []SearchResultResolver{mkFileMatch(&types.Repo{Name: "found-1"}, "dir/file", 123)},
 			searchResultsCommon: searchResultsCommon{
 				limitHit: true,
-				repos:    mkRepos("found-1", "missing-1", "missing-2", "cloning-1", "timedout-1"),
+				repos:    reposMap(mkRepos("found-1", "missing-1", "missing-2", "cloning-1", "timedout-1")...),
 				missing:  mkRepos("missing-1", "missing-2"),
 				cloning:  mkRepos("cloning-1"),
 				timedout: mkRepos("timedout-1"),

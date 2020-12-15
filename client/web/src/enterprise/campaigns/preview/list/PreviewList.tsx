@@ -1,12 +1,12 @@
 import React, { useCallback } from 'react'
 import * as H from 'history'
-import { ThemeProps } from '../../../../../shared/src/theme'
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
-import { Scalars, ChangesetSpecFields } from '../../../graphql-operations'
-import { queryChangesetSpecs as _queryChangesetSpecs, queryChangesetSpecFileDiffs } from './backend'
-import { ChangesetSpecNode, ChangesetSpecNodeProps } from './ChangesetSpecNode'
-import { ChangesetSpecListHeader } from './ChangesetSpecListHeader'
-import { EmptyChangesetSpecListElement } from './EmptyChangesetSpecListElement'
+import { ThemeProps } from '../../../../../../shared/src/theme'
+import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
+import { ChangesetApplyPreviewFields, Scalars } from '../../../../graphql-operations'
+import { queryChangesetApplyPreview as _queryChangesetApplyPreview, queryChangesetSpecFileDiffs } from './backend'
+import { ChangesetApplyPreviewNode, ChangesetApplyPreviewNodeProps } from './ChangesetApplyPreviewNode'
+import { PreviewListHeader } from './PreviewListHeader'
+import { EmptyPreviewListElement } from './EmptyPreviewListElement'
 
 interface Props extends ThemeProps {
     campaignSpecID: Scalars['ID']
@@ -14,7 +14,7 @@ interface Props extends ThemeProps {
     location: H.Location
 
     /** For testing only. */
-    queryChangesetSpecs?: typeof _queryChangesetSpecs
+    queryChangesetApplyPreview?: typeof _queryChangesetApplyPreview
     /** For testing only. */
     queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
     /** Expand changeset descriptions, for testing only. */
@@ -22,34 +22,35 @@ interface Props extends ThemeProps {
 }
 
 /**
- * A list of a campaign spec's changeset specs.
+ * A list of a campaign spec's preview nodes.
  */
-export const ChangesetSpecList: React.FunctionComponent<Props> = ({
+export const PreviewList: React.FunctionComponent<Props> = ({
     campaignSpecID,
     history,
     location,
     isLightTheme,
-    queryChangesetSpecs = _queryChangesetSpecs,
+
+    queryChangesetApplyPreview = _queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
 }) => {
-    const queryChangesetSpecsConnection = useCallback(
+    const queryChangesetApplyPreviewConnection = useCallback(
         (args: FilteredConnectionQueryArguments) =>
-            queryChangesetSpecs({
+            queryChangesetApplyPreview({
                 first: args.first ?? null,
                 after: args.after ?? null,
                 campaignSpec: campaignSpecID,
             }),
-        [campaignSpecID, queryChangesetSpecs]
+        [campaignSpecID, queryChangesetApplyPreview]
     )
 
     return (
         <>
-            <h3>Changesets</h3>
+            <h3>Preview</h3>
             <hr className="mb-3" />
-            <FilteredConnection<ChangesetSpecFields, Omit<ChangesetSpecNodeProps, 'node'>>
+            <FilteredConnection<ChangesetApplyPreviewFields, Omit<ChangesetApplyPreviewNodeProps, 'node'>>
                 className="mt-2"
-                nodeComponent={ChangesetSpecNode}
+                nodeComponent={ChangesetApplyPreviewNode}
                 nodeComponentProps={{
                     isLightTheme,
                     history,
@@ -57,7 +58,7 @@ export const ChangesetSpecList: React.FunctionComponent<Props> = ({
                     queryChangesetSpecFileDiffs,
                     expandChangesetDescriptions,
                 }}
-                queryConnection={queryChangesetSpecsConnection}
+                queryConnection={queryChangesetApplyPreviewConnection}
                 hideSearch={true}
                 defaultFirst={15}
                 noun="changeset"
@@ -66,11 +67,11 @@ export const ChangesetSpecList: React.FunctionComponent<Props> = ({
                 location={location}
                 useURLQuery={true}
                 listComponent="div"
-                listClassName="changeset-spec-list__grid mb-3"
-                headComponent={ChangesetSpecListHeader}
+                listClassName="preview-list__grid mb-3"
+                headComponent={PreviewListHeader}
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}
-                emptyElement={<EmptyChangesetSpecListElement />}
+                emptyElement={<EmptyPreviewListElement />}
             />
         </>
     )

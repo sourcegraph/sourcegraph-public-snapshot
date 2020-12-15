@@ -195,7 +195,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 	}
 
 	workspace := fileMatchURI(repo.Name, rev, "")
-	repoResolver := &RepositoryResolver{repo: repo}
+	repoResolver := &RepositoryResolver{innerRepo: repo}
 	resolvers := make([]*FileMatchResolver, 0, len(matches))
 	for _, fm := range matches {
 		lineMatches := make([]*lineMatch, 0, len(fm.LineMatches))
@@ -305,7 +305,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	common = &searchResultsCommon{partial: make(map[api.RepoName]struct{})}
+	common = &searchResultsCommon{partial: make(map[api.RepoID]struct{})}
 
 	indexedTyp := textRequest
 	if args.PatternInfo.IsStructuralPat {
@@ -478,7 +478,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 					}
 					if repoLimitHit {
 						// We did not return all results in this repository.
-						common.partial[repoRev.Repo.Name] = struct{}{}
+						common.partial[repoRev.Repo.ID] = struct{}{}
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
 					if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, false, err); fatalErr != nil {
@@ -508,33 +508,12 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		go func() {
 			// TODO limitHit, handleRepoSearchResult
 			defer wg.Done()
-			matches, limitHit, reposLimitHit, err := indexed.Search(ctx)
+			indexedCommon, matches, err := indexed.Search(ctx)
 			mu.Lock()
 			defer mu.Unlock()
-			if ctx.Err() == nil {
-				for _, repo := range indexed.Repos() {
-					common.searched = append(common.searched, repo.Repo)
-					common.indexed = append(common.indexed, repo.Repo)
-				}
-				for repo := range reposLimitHit {
-					// Repos that aren't included in the result set due to exceeded limits are partially searched
-					// for dynamic filter purposes. Note, reposLimitHit may include repos that did not have any results
-					// returned in the original result set, because indexed search has `limitHit` for the
-					// entire search rather than per repo as in non-indexed search.
-					common.partial[api.RepoName(repo)] = struct{}{}
-				}
-			}
-			if limitHit {
-				common.limitHit = true
-			}
-			if err == errNoResultsInTimeout {
-				// Effectively, all repositories have timed out.
-				for _, repo := range indexed.Repos() {
-					common.timedout = append(common.timedout, repo.Repo)
-				}
-			}
+			common.update(indexedCommon)
 			tr.LogFields(otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
-			if err != nil && err != errNoResultsInTimeout && searchErr == nil && !overLimitCanceled {
+			if err != nil && searchErr == nil && !overLimitCanceled {
 				searchErr = err
 				tr.LazyPrintf("cancel indexed search due to error: %v", err)
 				cancel()
@@ -593,15 +572,6 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 	wg.Wait()
 	if searchErr != nil {
 		return nil, common, searchErr
-	}
-
-	repos, err := getRepos(ctx, args.RepoPromise)
-	if err != nil {
-		return nil, common, err
-	}
-	common.repos = make([]*types.Repo, len(repos))
-	for i, repo := range repos {
-		common.repos[i] = repo.Repo
 	}
 
 	flattened := flattenFileMatches(unflattened, int(args.PatternInfo.FileMatchLimit))

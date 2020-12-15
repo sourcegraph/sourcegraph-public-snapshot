@@ -3,6 +3,7 @@ package repos
 import (
 	"container/heap"
 	"context"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -194,7 +195,9 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 					schedError.Inc()
 					log15.Warn("error requesting repo update", "uri", repo.Name, "err", err)
 				}
-				if resp != nil && resp.LastFetched != nil && resp.LastChanged != nil {
+				if interval := getCustomInterval(conf.Get(), string(repo.Name)); interval > 0 {
+					s.schedule.updateInterval(repo, interval)
+				} else if resp != nil && resp.LastFetched != nil && resp.LastChanged != nil {
 					// This is the heuristic that is described in the updateScheduler documentation.
 					// Update that documentation if you update this logic.
 					interval := resp.LastFetched.Sub(*resp.LastChanged) / 2
@@ -203,6 +206,23 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 			}(ctx, repo, cancel)
 		}
 	}
+}
+
+func getCustomInterval(c *conf.Unified, repoName string) time.Duration {
+	if c == nil {
+		return 0
+	}
+	for _, rule := range c.GitUpdateInterval {
+		re, err := regexp.Compile(rule.Pattern)
+		if err != nil {
+			log15.Warn("error compiling GitUpdateInterval pattern", "error", err)
+			continue
+		}
+		if re.MatchString(repoName) {
+			return time.Duration(rule.Interval) * time.Minute
+		}
+	}
+	return 0
 }
 
 // requestRepoUpdate sends a request to gitserver to request an update.

@@ -98,6 +98,11 @@ func (c *V4Client) WithAuthenticator(a auth.Authenticator) *V4Client {
 	return NewV4Client(c.apiURL, a, c.httpClient)
 }
 
+// RateLimitMonitor exposes the rate limit monitor.
+func (c *V4Client) RateLimitMonitor() *ratelimit.Monitor {
+	return c.rateLimitMonitor
+}
+
 func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[string]interface{}, result interface{}) (err error) {
 	reqBody, err := json.Marshal(struct {
 		Query     string                 `json:"query"`

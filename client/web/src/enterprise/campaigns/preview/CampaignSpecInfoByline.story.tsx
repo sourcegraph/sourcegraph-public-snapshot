@@ -4,7 +4,7 @@ import { CampaignSpecInfoByline } from './CampaignSpecInfoByline'
 import { subDays } from 'date-fns'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/apply/CampaignSpecInfoByline', module).addDecorator(story => (
+const { add } = storiesOf('web/campaigns/preview/CampaignSpecInfoByline', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
 ))
 

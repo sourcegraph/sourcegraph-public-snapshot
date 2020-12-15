@@ -3,12 +3,14 @@ package store
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -479,5 +481,197 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				t.Fatalf("tc=%s\n\t want changeset spec NOT to be deleted, but got deleted", printTestCase(tc))
 			}
 		}
+	})
+
+	t.Run("GetRewirerMappings", func(t *testing.T) {
+		// Create some test data
+		user := ct.CreateTestUser(t, true)
+		campaignSpec := ct.CreateCampaignSpec(t, ctx, s, "get-rewirer-mappings", user.ID)
+		var mappings RewirerMappings = make(RewirerMappings, 3)
+		changesetSpecIDs := make([]int64, 0, cap(mappings))
+		for i := 0; i < cap(mappings); i++ {
+			spec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+				HeadRef:      fmt.Sprintf("refs/heads/test-get-rewirer-mappings-%d", i),
+				Repo:         repo.ID,
+				CampaignSpec: campaignSpec.ID,
+			})
+			changesetSpecIDs = append(changesetSpecIDs, spec.ID)
+			mappings[i] = &RewirerMapping{
+				ChangesetSpecID: spec.ID,
+				RepoID:          repo.ID,
+			}
+		}
+
+		t.Run("NoLimit", func(t *testing.T) {
+			// Empty limit should return all entries.
+			opts := GetRewirerMappingsOpts{
+				CampaignSpecID: campaignSpec.ID,
+			}
+			ts, err := s.GetRewirerMappings(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			{
+				have, want := ts.RepoIDs(), []api.RepoID{repo.ID}
+				if len(have) != len(want) {
+					t.Fatalf("listed %d repo ids, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+
+			{
+				have, want := ts.ChangesetIDs(), []int64{}
+				if len(have) != len(want) {
+					t.Fatalf("listed %d changeset ids, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+
+			{
+				have, want := ts.ChangesetSpecIDs(), changesetSpecIDs
+				if len(have) != len(want) {
+					t.Fatalf("listed %d changeset spec ids, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+
+			{
+				have, want := ts, mappings
+				if len(have) != len(want) {
+					t.Fatalf("listed %d mappings, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+		})
+
+		t.Run("WithLimit", func(t *testing.T) {
+			for i := 1; i <= len(mappings); i++ {
+				t.Run(strconv.Itoa(i), func(t *testing.T) {
+					opts := GetRewirerMappingsOpts{
+						CampaignSpecID: campaignSpec.ID,
+						LimitOffset:    &db.LimitOffset{Limit: i},
+					}
+					ts, err := s.GetRewirerMappings(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					{
+						have, want := ts.RepoIDs(), []api.RepoID{repo.ID}
+						if len(have) != len(want) {
+							t.Fatalf("listed %d repo ids, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+
+					{
+						have, want := ts.ChangesetIDs(), []int64{}
+						if len(have) != len(want) {
+							t.Fatalf("listed %d changeset ids, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+
+					{
+						have, want := ts.ChangesetSpecIDs(), changesetSpecIDs[:i]
+						if len(have) != len(want) {
+							t.Fatalf("listed %d changeset spec ids, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+
+					{
+						have, want := ts, mappings[:i]
+						if len(have) != len(want) {
+							t.Fatalf("listed %d mappings, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatal(diff)
+						}
+					}
+				})
+			}
+		})
+
+		t.Run("WithLimitAndOffset", func(t *testing.T) {
+			offset := 0
+			for i := 1; i <= len(mappings); i++ {
+				t.Run(strconv.Itoa(i), func(t *testing.T) {
+					opts := GetRewirerMappingsOpts{
+						CampaignSpecID: campaignSpec.ID,
+						LimitOffset:    &db.LimitOffset{Limit: 1, Offset: offset},
+					}
+					ts, err := s.GetRewirerMappings(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					{
+						have, want := ts.RepoIDs(), []api.RepoID{repo.ID}
+						if len(have) != len(want) {
+							t.Fatalf("listed %d repo ids, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+
+					{
+						have, want := ts.ChangesetIDs(), []int64{}
+						if len(have) != len(want) {
+							t.Fatalf("listed %d changeset ids, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+
+					{
+						have, want := ts.ChangesetSpecIDs(), changesetSpecIDs[i-1:i]
+						if len(have) != len(want) {
+							t.Fatalf("listed %d changeset spec ids, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+
+					{
+						have, want := ts, mappings[i-1:i]
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+
+					offset++
+				})
+			}
+		})
 	})
 }
