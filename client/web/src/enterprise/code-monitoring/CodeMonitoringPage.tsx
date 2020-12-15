@@ -182,8 +182,10 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                 <div>
                                     <h4>Questions and feedback</h4>
                                     <p className="text-muted">
-                                        We want to hear your feedback. {/* TODO: add link */}
-                                        <a className="link">Share your thoughts</a>
+                                        We want to hear your feedback.{' '}
+                                        <a href="mailto:feedback@sourcegraph.com" className="link">
+                                            Share your thoughts
+                                        </a>
                                     </p>
                                 </div>
                             </div>
@@ -254,8 +256,8 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                             </div>
                         </div>
                         <div className="mt-5">
-                            {/* TODO: add link */}
-                            We want to hear your feedback! <a href="/">Share your thoughts</a>
+                            We want to hear your feedback!{' '}
+                            <a href="mailto:feedback@sourcegraph.com">Share your thoughts</a>
                         </div>
                     </div>
                 </>
