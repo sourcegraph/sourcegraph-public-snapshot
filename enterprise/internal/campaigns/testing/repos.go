@@ -66,7 +66,8 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 			Url:             "https://github.com",
 			Token:           "SECRETTOKEN",
 			RepositoryQuery: []string{"none"},
-			Authorization:   &schema.GitHubAuthorization{},
+			// This field is needed to enforce permissions
+			Authorization: &schema.GitHubAuthorization{},
 		}),
 	}
 

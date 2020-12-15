@@ -129,9 +129,10 @@ func newGitHubExternalService(t *testing.T, store *db.ExternalServiceStore) *typ
 	svc := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
-		Config:      `{"url": "https://github.com", "authorization": {}}`,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		// The authorization field is needed to enforce permissions
+		Config:    `{"url": "https://github.com", "authorization": {}}`,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 
 	if err := store.Upsert(context.Background(), &svc); err != nil {
