@@ -1,6 +1,6 @@
 import { compact, head } from 'lodash'
 import { useMemo, useState, useCallback } from 'react'
-import { combineLatest, concat, EMPTY, Observable, of, Subject, zip } from 'rxjs'
+import { combineLatest, concat, EMPTY, Observable, of, ReplaySubject, zip } from 'rxjs'
 import { catchError, map, switchMap, tap, debounceTime } from 'rxjs/operators'
 import { useEventObservable } from './useObservable'
 import { asError } from './errors'
@@ -95,7 +95,9 @@ export function useInputValidation(
     // inputRefs:  null - - - - - - element
     // validation: x - - - - - - - - - -
 
-    const inputReferences = useMemo(() => new Subject<HTMLInputElement | null>(), [])
+    // The validation pipeline is subscribed to after initial render (`useEffect` in `useObservable`),
+    // so after the ref callback is called. Buffer 1 emission to counteract this.
+    const inputReferences = useMemo(() => new ReplaySubject<HTMLInputElement | null>(1), [])
     const nextInputReference = useCallback(
         (input: HTMLInputElement | null) => {
             // React calls ref callbacks when the element is rendered (calls with the element)

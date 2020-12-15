@@ -332,10 +332,9 @@ describe('input validation', () => {
     })
 
     describe('useInputValidation() hook', () => {
-        // it doesn't validate without an input reference
         it.skip('does not validate until input element is rendered', () => {})
 
-        it.skip('works with the state override', () => {
+        it('works with the state override', () => {
             const { result } = renderHook(() =>
                 useInputValidation({
                     synchronousValidators: [isDotCo],
