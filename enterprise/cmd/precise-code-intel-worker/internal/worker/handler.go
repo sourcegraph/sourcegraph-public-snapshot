@@ -11,6 +11,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/correlation"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -94,15 +95,10 @@ func (h *handler) handle(ctx context.Context, dbStore DBStore, upload store.Uplo
 			return err
 		}
 
-		// Start a nested transaction. In the event that something after this point fails, we want to
-		// update the upload record with an error message but do not want to alter any other data in
-		// the database. Rolling back to this savepoint will allow us to discard any other changes
-		// but still commit the transaction as a whole.
-
-		// with Postgres savepoints. In the event that something after this point fails, we want to
-		// update the upload record with an error message but do not want to alter any other data in
-		// the database. Rolling back to this savepoint will allow us to discard any other changes
-		// but still commit the transaction as a whole.
+		// Start a nested transaction with Postgres savepoints. In the event that something after this
+		// point fails, we want to update the upload record with an error message but do not want to
+		// alter any other data in the database. Rolling back to this savepoint will allow us to discard
+		// any other changes but still commit the transaction as a whole.
 		tx, err := dbStore.Transact(ctx)
 		if err != nil {
 			return errors.Wrap(err, "store.Transact")

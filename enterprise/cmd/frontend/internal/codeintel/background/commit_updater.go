@@ -5,10 +5,13 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // Updater periodically re-calculates the commit and upload visibility graph for repositories
@@ -19,16 +22,23 @@ import (
 type CommitUpdater struct {
 	dbStore         DBStore
 	gitserverClient GitserverClient
+	operations      *operations
 }
 
 var _ goroutine.Handler = &CommitUpdater{}
 
 // NewCommitUpdater returns a background routine that periodically updates the commit graph
 // and visible uploads for each repository marked as dirty.
-func NewCommitUpdater(dbStore DBStore, gitserverClient GitserverClient, interval time.Duration) goroutine.BackgroundRoutine {
+func NewCommitUpdater(
+	dbStore DBStore,
+	gitserverClient GitserverClient,
+	interval time.Duration,
+	operations *operations,
+) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &CommitUpdater{
 		dbStore:         dbStore,
 		gitserverClient: gitserverClient,
+		operations:      operations,
 	})
 }
 
@@ -52,23 +62,41 @@ func (u *CommitUpdater) HandleError(err error) {
 	log15.Error("Failed to run update process", "err", err)
 }
 
-// tryUpdate pulls the commit graph for the given repository from gitserver, pulls the set
-// of LSIF upload objects for the given repository from Postgres, and correlates them into a
-// visibility graph. This graph is then upserted back into Postgres for use by find closest
-// dumps queries.
-//
-// This method will attempt to acquire an advisory lock to give exclusive access to the update
-// procedure for this repository. If the lock is already held, this method will simply return
-// early. The user should supply a dirty token that is associated with the given repository so
-// that the repository can be unmarked as long as the repository is not marked as dirty again
-// before the update completes.
-func (u *CommitUpdater) tryUpdate(ctx context.Context, repositoryID, dirtyToken int) error {
+// tryUpdate will call update while holding an advisory lock to give exclusive access to the
+// update procedure for this repository. If the lock is already held, this method will simply
+// do nothing.
+func (u *CommitUpdater) tryUpdate(ctx context.Context, repositoryID, dirtyToken int) (err error) {
 	ok, unlock, err := u.dbStore.Lock(ctx, repositoryID, false)
 	if err != nil || !ok {
 		return errors.Wrap(err, "store.Lock")
 	}
 	defer func() {
 		err = unlock(err)
+	}()
+
+	return u.update(ctx, repositoryID, dirtyToken)
+}
+
+// update pulls the commit graph for the given repository from gitserver, pulls the set of LSIF
+// upload objects for the given repository from Postgres, and correlates them into a visibility
+// graph. This graph is then upserted back into Postgres for use by find closest dumps queries.
+//
+// The user should supply a dirty token that is associated with the given repository so that
+// the repository can be unmarked as long as the repository is not marked as dirty again before
+// the update completes.
+func (u *CommitUpdater) update(ctx context.Context, repositoryID, dirtyToken int) (err error) {
+	// Enable tracing on the context and trace the operation
+	ctx = ot.WithShouldTrace(ctx, true)
+
+	ctx, traceLog, endObservation := u.operations.commitUpdate.WithAndLogger(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", repositoryID),
+			log.Int("dirtyToken", dirtyToken),
+		},
+	})
+	var fields []log.Field
+	defer func() {
+		endObservation(1, observation.Args{LogFields: fields})
 	}()
 
 	// Construct a view of the git graph that we will later decorate with upload information.
@@ -86,8 +114,10 @@ func (u *CommitUpdater) tryUpdate(ctx context.Context, repositoryID, dirtyToken 
 		return errors.Wrap(err, "store.OldestDumpForRepository")
 	}
 
-	var graph *gitserver.CommitGraph
+	var commitGraph *gitserver.CommitGraph
 	if ok {
+		traceLog(log.Int("dumpID", dump.ID))
+
 		oldestCommitDateWithUpload, err := u.gitserverClient.CommitDate(ctx, repositoryID, dump.Commit)
 		if err != nil {
 			// TODO(efritz) - handle missing commit error condition. This is probably an extremely
@@ -104,27 +134,30 @@ func (u *CommitUpdater) tryUpdate(ctx context.Context, repositoryID, dirtyToken 
 		// oldest dump is defined. This flag only has second resolution, so we shouldn't be pulling
 		// back any more data than we wanted.
 		oldestCommitDateWithUpload = oldestCommitDateWithUpload.Add(-time.Second)
+		traceLog(log.String("since", oldestCommitDateWithUpload.String()))
 
-		graph, err = u.gitserverClient.CommitGraph(ctx, repositoryID, gitserver.CommitGraphOptions{
+		commitGraph, err = u.gitserverClient.CommitGraph(ctx, repositoryID, gitserver.CommitGraphOptions{
 			AllRefs: true,
 			Since:   &oldestCommitDateWithUpload,
 		})
 		if err != nil {
 			return errors.Wrap(err, "gitserver.CommitGraph")
 		}
+		traceLog(log.Int("numCommitGraphKeys", len(commitGraph.Order())))
 	} else {
-		graph = gitserver.ParseCommitGraph(nil)
+		commitGraph = gitserver.ParseCommitGraph(nil)
 	}
 
 	tipCommit, err := u.gitserverClient.Head(ctx, repositoryID)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.Head")
 	}
+	traceLog(log.String("tipCommit", tipCommit))
 
 	// Decorate the commit graph with the set of processed uploads are visible from each commit,
 	// then bulk update the denormalized view in Postgres. We call this with an empty graph as well
 	// so that we end up clearing the stale data and bulk inserting nothing.
-	if err := u.dbStore.CalculateVisibleUploads(ctx, repositoryID, graph, tipCommit, dirtyToken); err != nil {
+	if err := u.dbStore.CalculateVisibleUploads(ctx, repositoryID, commitGraph, tipCommit, dirtyToken); err != nil {
 		return errors.Wrap(err, "store.CalculateVisibleUploads")
 	}
 

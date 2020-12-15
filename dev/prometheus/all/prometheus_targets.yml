@@ -45,9 +45,9 @@
     # executor-queue
     - host.docker.internal:6091
 - labels:
-    job: executor
+    job: sourcegraph-code-intel-indexers
   targets:
-    # executor
+    # sourcegraph-code-intel-indexers
     - host.docker.internal:6092
 - labels:
     job: postgres_exporter

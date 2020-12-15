@@ -12,6 +12,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
@@ -155,7 +156,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 func mustRegisterQueueMetric(observationContext *observation.Context, dbStore *store.Store) {
 	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_upload_queue_uploads_total",
-		Help: "Total number of queued in the queued state.",
+		Help: "Total number of uploads in the queued state.",
 	}, func() float64 {
 		count, err := dbStore.QueueSize(context.Background())
 		if err != nil {

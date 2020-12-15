@@ -693,6 +693,166 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <br />
 
+## frontend: num_dirty_repositories
+
+<p class="subtitle">code-intel: number of repositories with a stale commit graph</p>
+
+**Descriptions:**
+
+- _frontend: 100+ number of repositories with a stale commit graph_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_num_dirty_repositories"
+]
+```
+
+<br />
+
+## frontend: dirty_repositories_growth_rate
+
+<p class="subtitle">code-intel: stale commit graph growth rate rate every 5m</p>
+
+**Descriptions:**
+
+- _frontend: 5+ stale commit graph growth rate rate every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_dirty_repositories_growth_rate"
+]
+```
+
+<br />
+
+## frontend: codeintel_commit_graph_updater_99th_percentile_duration
+
+<p class="subtitle">code-intel: 99th percentile successful commit graph updater operation duration over 5m</p>
+
+**Descriptions:**
+
+- _frontend: 20s+ 99th percentile successful commit graph updater operation duration over 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_codeintel_commit_graph_updater_99th_percentile_duration"
+]
+```
+
+<br />
+
+## frontend: codeintel_commit_graph_updater_errors
+
+<p class="subtitle">code-intel: commit graph updater errors every 5m</p>
+
+**Descriptions:**
+
+- _frontend: 20+ commit graph updater errors every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_codeintel_commit_graph_updater_errors"
+]
+```
+
+<br />
+
+## frontend: codeintel_upload_records_removed
+
+<p class="subtitle">code-intel: upload records expired or deleted every 5m</p>
+
+**Descriptions:**
+
+- _frontend: 20+ upload records expired or deleted every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_codeintel_upload_records_removed"
+]
+```
+
+<br />
+
+## frontend: codeintel_index_records_removed
+
+<p class="subtitle">code-intel: index records expired or deleted every 5m</p>
+
+**Descriptions:**
+
+- _frontend: 20+ index records expired or deleted every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_codeintel_index_records_removed"
+]
+```
+
+<br />
+
+## frontend: codeintel_uploads_purged
+
+<p class="subtitle">code-intel: data for unreferenced upload records purged every 5m</p>
+
+**Descriptions:**
+
+- _frontend: 20+ data for unreferenced upload records purged every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_codeintel_uploads_purged"
+]
+```
+
+<br />
+
+## frontend: codeintel_background_errors
+
+<p class="subtitle">code-intel: codeintel-related background process errors every 5m</p>
+
+**Descriptions:**
+
+- _frontend: 20+ codeintel-related background process errors every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_codeintel_background_errors"
+]
+```
+
+<br />
+
 ## frontend: internal_indexed_search_error_responses
 
 <p class="subtitle">search: internal indexed search error responses every 5m</p>
