@@ -37,6 +37,7 @@ const config = {
   moduleNameMapper: {
     '\\.s?css$': 'identity-obj-proxy',
     '\\.ya?ml$': 'identity-obj-proxy',
+    '\\.svg$': 'identity-obj-proxy',
     '^worker-loader': 'identity-obj-proxy',
     // monaco-editor uses the "module" field in package.json, which isn't supported by Jest
     // https://github.com/facebook/jest/issues/2702

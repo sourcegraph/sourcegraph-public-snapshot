@@ -17,6 +17,7 @@ import { ChangesetReviewStatusCell } from './ChangesetReviewStatusCell'
 import { ErrorAlert } from '../../../../components/alerts'
 import { ChangesetFileDiff } from './ChangesetFileDiff'
 import { ExternalChangesetInfoCell } from './ExternalChangesetInfoCell'
+import { DownloadDiffButton } from './DownloadDiffButton'
 
 export interface ExternalChangesetNodeProps extends ThemeProps {
     node: ExternalChangesetFields
@@ -28,6 +29,8 @@ export interface ExternalChangesetNodeProps extends ThemeProps {
     } & ExtensionsControllerProps
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
+    /** For testing only. */
+    expandByDefault?: boolean
 }
 
 export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNodeProps> = ({
@@ -38,8 +41,9 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     location,
     extensionInfo,
     queryExternalChangesetWithFileDiffs,
+    expandByDefault,
 }) => {
-    const [isExpanded, setIsExpanded] = useState(false)
+    const [isExpanded, setIsExpanded] = useState(expandByDefault ?? false)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
         event => {
             event.preventDefault()
@@ -100,6 +104,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                 <>
                     <div />
                     <div className="external-changeset-node__expanded-section p-2">
+                        <DownloadDiffButton changesetID={node.id} />
                         {node.error && <ErrorAlert error={node.error} history={history} />}
                         <ChangesetFileDiff
                             changesetID={node.id}

@@ -13,6 +13,7 @@ const config = {
     ecmaFeatures: {
       jsx: true,
     },
+    EXPERIMENTAL_useSourceOfProjectReferenceRedirect: true,
     project: __dirname + '/tsconfig.json',
   },
   settings: {

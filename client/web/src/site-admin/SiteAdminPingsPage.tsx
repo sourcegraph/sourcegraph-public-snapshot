@@ -191,6 +191,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         <li>Total count of unique users engaging with the panels</li>
                     </ul>
                 </li>
+                <li>Weekly retention rates for user cohorts created in the last 12 weeks</li>
                 <li>
                     Search onboarding engagement
                     <ul>

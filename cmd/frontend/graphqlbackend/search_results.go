@@ -23,14 +23,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/src-d/enry/v2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -39,10 +39,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/src-d/enry/v2"
 )
 
 // searchResultsCommon contains fields that should be returned by all funcs
@@ -50,13 +50,20 @@ import (
 type searchResultsCommon struct {
 	limitHit bool // whether the limit on results was hit
 
-	repos    []*types.Repo             // repos that were matched by the repo-related filters
-	searched []*types.Repo             // repos that were searched
-	indexed  []*types.Repo             // repos that were searched using an index
-	cloning  []*types.Repo             // repos that could not be searched because they were still being cloned
-	missing  []*types.Repo             // repos that could not be searched because they do not exist
-	excluded excludedRepos             // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
-	partial  map[api.RepoName]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
+	// repos that were matched by the repo-related filters. This should only
+	// be set once by search, when we have resolved repos.
+	//
+	// TODO All other fields are sets of repo IDs. They can only contain repos
+	// that are in this map.
+	repos map[api.RepoID]*types.Repo
+
+	searched []*types.Repo // repos that were searched
+	indexed  []*types.Repo // repos that were searched using an index
+	cloning  []*types.Repo // repos that could not be searched because they were still being cloned
+	missing  []*types.Repo // repos that could not be searched because they do not exist
+	excluded excludedRepos // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
+
+	partial map[api.RepoID]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
 
 	maxResultsCount, resultCount int32
 
@@ -73,7 +80,15 @@ func (c *searchResultsCommon) LimitHit() bool {
 }
 
 func (c *searchResultsCommon) Repositories() []*RepositoryResolver {
-	return RepositoryResolvers(c.repos)
+	repos := c.repos
+	resolvers := make([]*RepositoryResolver, 0, len(repos))
+	for _, r := range repos {
+		resolvers = append(resolvers, &RepositoryResolver{innerRepo: r})
+	}
+	sort.Slice(resolvers, func(a, b int) bool {
+		return resolvers[a].innerRepo.ID < resolvers[b].innerRepo.ID
+	})
+	return resolvers
 }
 
 func (c *searchResultsCommon) RepositoriesCount() int32 {
@@ -115,11 +130,21 @@ func RepositoryResolvers(repos types.Repos) []*RepositoryResolver {
 
 // update updates c with the other data, deduping as necessary. It modifies c but
 // does not modify other.
-func (c *searchResultsCommon) update(other searchResultsCommon) {
+func (c *searchResultsCommon) update(other *searchResultsCommon) {
+	if other == nil {
+		return
+	}
+
 	c.limitHit = c.limitHit || other.limitHit
 	c.indexUnavailable = c.indexUnavailable || other.indexUnavailable
 
-	c.repos = append(c.repos, other.repos...)
+	if c.repos == nil {
+		c.repos = other.repos
+	} else {
+		for id, r := range other.repos {
+			c.repos[id] = r
+		}
+	}
 	c.searched = append(c.searched, other.searched...)
 	c.indexed = append(c.indexed, other.indexed...)
 	c.cloning = append(c.cloning, other.cloning...)
@@ -130,11 +155,11 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	c.resultCount += other.resultCount
 
 	if c.partial == nil {
-		c.partial = make(map[api.RepoName]struct{})
-	}
-
-	for repo := range other.partial {
-		c.partial[repo] = struct{}{}
+		c.partial = other.partial
+	} else {
+		for repo := range other.partial {
+			c.partial[repo] = struct{}{}
+		}
 	}
 }
 
@@ -171,7 +196,7 @@ type SearchResultsResolver struct {
 
 	// cache for user settings. Ideally this should be set just once in the code path
 	// by an upstream resolver
-	userSettings *schema.Settings
+	UserSettings *schema.Settings
 }
 
 func (sr *SearchResultsResolver) Results() []SearchResultResolver {
@@ -200,7 +225,7 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 func (sr *SearchResultsResolver) Alert() *searchAlert { return sr.alert }
 
 func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
-	return int32(time.Since(sr.start).Nanoseconds() / int64(time.Millisecond))
+	return int32(time.Since(sr.start).Milliseconds())
 }
 
 // commonFileFilters are common filters used. It is used by DynamicFilters to
@@ -240,8 +265,8 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	// For search, sr.userSettings is set in (r *searchResolver) Results(ctx
 	// context.Context). However we might regress on that or call DynamicFilters from
 	// other code paths. Hence we fallback to accessing the user settings directly.
-	if sr.userSettings != nil {
-		globbing = getBoolPtr(sr.userSettings.SearchGlobbing, false)
+	if sr.UserSettings != nil {
+		globbing = getBoolPtr(sr.UserSettings.SearchGlobbing, false)
 	} else {
 		settings, err := decodedViewerFinalSettings(ctx)
 		if err != nil {
@@ -272,7 +297,8 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 		sf.score = score
 	}
 
-	addRepoFilter := func(uri string, rev string, lineMatchCount int32) {
+	addRepoFilter := func(repo *RepositoryResolver, rev string, lineMatchCount int32) {
+		uri := repo.Name()
 		var filter string
 		if globbing {
 			filter = fmt.Sprintf(`repo:%s`, uri)
@@ -285,7 +311,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 			// are @ and :, both of which are disallowed in git refs
 			filter = filter + fmt.Sprintf(`@%s`, rev)
 		}
-		_, limitHit := sr.searchResultsCommon.partial[api.RepoName(uri)]
+		_, limitHit := sr.searchResultsCommon.partial[repo.IDInt32()]
 		// Increment number of matches per repo. Add will override previous entry for uri
 		repoToMatchCount[uri] += lineMatchCount
 		add(filter, uri, repoToMatchCount[uri], limitHit, "repo", scoreDefault)
@@ -335,7 +361,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 				rev = *fm.InputRev
 			}
 			lines := fm.resultCount()
-			addRepoFilter(fm.Repo.Name(), rev, lines)
+			addRepoFilter(fm.Repo, rev, lines)
 			addLangFilter(fm.path(), lines, fm.LimitHit())
 			addFileFilter(fm.path(), lines, fm.LimitHit())
 
@@ -346,7 +372,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 			// It should be fine to leave this blank since revision specifiers
 			// can only be used with the 'repo:' scope. In that case,
 			// we shouldn't be getting any repositoy name matches back.
-			addRepoFilter(r.Name(), "", 1)
+			addRepoFilter(r, "", 1)
 		}
 	}
 
@@ -446,7 +472,7 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *FileMat
 		return time.Time{}, nil
 	}
 	lm := fm.LineMatches()[0]
-	hunks, err := git.BlameFile(ctx, gitserver.Repo{Name: fm.Repo.repo.Name}, fm.path(), &git.BlameOptions{
+	hunks, err := git.BlameFile(ctx, fm.Repo.innerRepo.Name, fm.path(), &git.BlameOptions{
 		NewestCommit: fm.CommitID,
 		StartLine:    int(lm.LineNumber()),
 		EndLine:      int(lm.LineNumber()),
@@ -729,6 +755,7 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	var merged []SearchResultResolver
 	rightFileMatches := make(map[string]*FileMatchResolver)
 	rightRepoMatches := make(map[string]*RepositoryResolver)
+	rightCommitMatches := make(map[string]*CommitSearchResultResolver)
 
 	// accumulate matches for the right subexpression in a lookup.
 	for _, r := range right.SearchResults {
@@ -738,6 +765,10 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 		}
 		if repoMatch, ok := r.ToRepository(); ok {
 			rightRepoMatches[string(repoMatch.URL())] = repoMatch
+			continue
+		}
+		if commitMatch, ok := r.ToCommitSearchResult(); ok {
+			rightCommitMatches[commitMatch.url] = commitMatch
 			continue
 		}
 		merged = append(merged, r)
@@ -752,7 +783,6 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 				count++
 				continue
 			}
-
 			// merge line matches with a file match that already exists.
 			rightFileMatch.appendMatches(leftFileMatch)
 			rightFileMatches[leftFileMatch.uri] = rightFileMatch
@@ -765,10 +795,17 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 				// no overlap with existing matches.
 				merged = append(merged, leftMatch)
 				count++
-				continue
 			}
+			continue
+		}
 
-			rightRepoMatches[string(leftRepoMatch.URL())] = rightRepoMatch
+		if leftCommitMatch, ok := leftMatch.ToCommitSearchResult(); ok {
+			rightCommitMatch := rightCommitMatches[leftCommitMatch.url]
+			if rightCommitMatch == nil {
+				// no overlap with existing matches.
+				merged = append(merged, leftMatch)
+				count++
+			}
 			continue
 		}
 		merged = append(merged, leftMatch)
@@ -780,9 +817,12 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	for _, v := range rightRepoMatches {
 		merged = append(merged, v)
 	}
+	for _, v := range rightCommitMatches {
+		merged = append(merged, v)
+	}
 
 	left.SearchResults = merged
-	left.searchResultsCommon.update(right.searchResultsCommon)
+	left.searchResultsCommon.update(&right.searchResultsCommon)
 	// set the count that tracks non-overlapping result count.
 	left.searchResultsCommon.resultCount = int32(count)
 	return left
@@ -831,7 +871,7 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 		merged = append(merged, leftMatch)
 	}
 	left.SearchResults = merged
-	left.searchResultsCommon.update(right.searchResultsCommon)
+	left.searchResultsCommon.update(&right.searchResultsCommon)
 	// for intersect we want the newly computed intersection size.
 	left.searchResultsCommon.resultCount = int32(len(merged))
 	return left
@@ -1142,7 +1182,7 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 	}
 	// copy userSettings from searchResolver to SearchResultsResolver
 	if srr != nil {
-		srr.userSettings = r.userSettings
+		srr.UserSettings = r.userSettings
 	}
 	if srr == nil {
 		srr = &SearchResultsResolver{}
@@ -1625,6 +1665,10 @@ func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]st
 }
 
 type aggregator struct {
+	// resultChannel if non-nil will send all results we receive down it. See
+	// searchResolver.SetResultChannel
+	resultChannel chan<- []SearchResultResolver
+
 	mu       sync.Mutex
 	results  []SearchResultResolver
 	common   searchResultsCommon
@@ -1640,7 +1684,18 @@ func (a *aggregator) get() ([]SearchResultResolver, searchResultsCommon, *multie
 	return a.results, a.common, a.multiErr
 }
 
+// report sends results down resultChannel and collects the results.
 func (a *aggregator) report(ctx context.Context, results []SearchResultResolver, common *searchResultsCommon, err error) {
+	if a.resultChannel != nil {
+		a.resultChannel <- results
+	}
+
+	a.collect(ctx, results, common, err)
+}
+
+// collect the results. This doesn't send down resultChannel. Should only be
+// used by non-streaming supported backends.
+func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver, common *searchResultsCommon, err error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	// Timeouts are reported through searchResultsCommon so don't report an error for them
@@ -1663,7 +1718,7 @@ func (a *aggregator) report(ctx context.Context, results []SearchResultResolver,
 		}
 	}
 	if common != nil {
-		a.common.update(*common)
+		a.common.update(common)
 	}
 }
 
@@ -1730,8 +1785,9 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 		return
 	}
 
-	diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, args)
-	a.report(ctx, diffResults, diffCommon, errors.Wrap(err, "diff search failed"))
+	// searchCommitDiffsInRepos supports streamings, so we use a.collect.
+	diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, args, a.resultChannel)
+	a.collect(ctx, diffResults, diffCommon, errors.Wrap(err, "diff search failed"))
 }
 
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) {
@@ -1750,8 +1806,8 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 	a.report(ctx, commitResults, commitCommon, errors.Wrap(err, "commit search failed"))
 }
 
-// isGlobalSearch returns true if the query contains the filters repo or
-// repogroup. For structural queries and queries with version context
+// isGlobalSearch returns true if the query does not contain repo, repogroup, or
+// repohasfile filters. For structural queries and queries with version context
 // isGlobalSearch always return false.
 func (r *searchResolver) isGlobalSearch() bool {
 	if r.patternType == query.SearchTypeStructural {
@@ -1760,7 +1816,7 @@ func (r *searchResolver) isGlobalSearch() bool {
 	if r.versionContext != nil && *r.versionContext != "" {
 		return false
 	}
-	return len(r.query.Values(query.FieldRepo)) == 0 && len(r.query.Values(query.FieldRepoGroup)) == 0
+	return len(r.query.Values(query.FieldRepo)) == 0 && len(r.query.Values(query.FieldRepoGroup)) == 0 && len(r.query.Values(query.FieldRepoHasFile)) == 0
 }
 
 // doResults is one of the highest level search functions that handles finding results.
@@ -1844,8 +1900,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	agg := aggregator{
-		common:      searchResultsCommon{maxResultsCount: r.maxResults()},
-		fileMatches: make(map[string]*FileMatchResolver),
+		resultChannel: r.resultChannel,
+		common:        searchResultsCommon{maxResultsCount: r.maxResults()},
+		fileMatches:   make(map[string]*FileMatchResolver),
 	}
 
 	isFileOrPath := func() bool {
@@ -1889,9 +1946,24 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	if alertResult != nil {
 		return alertResult, nil
 	}
-	args.RepoPromise.Resolve(resolved.repoRevs)
 
-	agg.report(ctx, nil, &searchResultsCommon{excluded: resolved.excludedRepos}, nil)
+	// Send down our first bit of progress.
+	{
+		repos := make(map[api.RepoID]*types.Repo, len(resolved.repoRevs))
+		for _, repoRev := range resolved.repoRevs {
+			repos[repoRev.Repo.ID] = repoRev.Repo
+		}
+
+		agg.report(ctx, nil, &searchResultsCommon{
+			repos:    repos,
+			excluded: resolved.excludedRepos,
+		}, nil)
+	}
+
+	// Resolve repo promise so searches waiting on it can proceed. We do this
+	// after reporting the above progress to ensure we don't get search
+	// results before the above reporting.
+	args.RepoPromise.Resolve(resolved.repoRevs)
 
 	// Apply search limits and generate warnings before firing off workers.
 	// This currently limits diff and commit search to a set number of
@@ -1987,10 +2059,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		alert = alertForMissingRepoRevs(r.patternType, resolved.missingRepoRevs)
 	}
 
-	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
-		alert = alertForQuotesInQueryInLiteralMode(r.query.ParseTree())
-	}
-
 	// If we have some results, only log the error instead of returning it,
 	// because otherwise the client would not receive the partial results
 	if len(results) > 0 && multiErr != nil {
@@ -2026,8 +2094,6 @@ func isContextError(ctx context.Context, err error) bool {
 //
 // Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
 type SearchResultResolver interface {
-	searchResultURIGetter
-
 	ToRepository() (*RepositoryResolver, bool)
 	ToFileMatch() (*FileMatchResolver, bool)
 	ToCommitSearchResult() (*CommitSearchResultResolver, bool)
@@ -2035,35 +2101,67 @@ type SearchResultResolver interface {
 	resultCount() int32
 }
 
-type searchResultURIGetter interface {
-	// SearchResultURIs returns the repo name and file uri respectively
-	searchResultURIs() (string, string)
+// compareFileLengths sorts file paths such that they appear earlier if they
+// match file: patterns in the query exactly.
+func compareFileLengths(left, right string, exactFilePatterns map[string]struct{}) bool {
+	_, aMatch := exactFilePatterns[path.Base(left)]
+	_, bMatch := exactFilePatterns[path.Base(right)]
+	if aMatch || bMatch {
+		if aMatch && bMatch {
+			// Prefer shorter file names (ie root files come first)
+			if len(left) != len(right) {
+				return len(left) < len(right)
+			}
+			return left < right
+		}
+		// Prefer exact match
+		return aMatch
+	}
+	return left < right
 }
 
-// compareSearchResults sorts alphabetically unless one of the filenames is contained in exactFilePatterns,
-// in which case exact matches are sorted by length of their file path and then alphabetically.
-func compareSearchResults(a, b searchResultURIGetter, exactFilePatterns map[string]struct{}) bool {
-	arepo, afile := a.searchResultURIs()
-	brepo, bfile := b.searchResultURIs()
+func compareDates(left, right *time.Time) bool {
+	if left == nil || right == nil {
+		return left != nil // Place the value that is defined first.
+	}
+	return (*left).After(*right)
+}
+
+// compareSearchResults sorts repository matches, file matches, and commits.
+// Repositories and filenames are sorted alphabetically. As a refinement, if any
+// filename matches a value in a non-empty set exactFilePatterns, then such
+// filenames are listed earlier.
+//
+// Commits are sorted by date. Commits are not associated with repositories, and
+// will always list after repository or file match results, if any.
+func compareSearchResults(left, right SearchResultResolver, exactFilePatterns map[string]struct{}) bool {
+	sortKeys := func(result SearchResultResolver) (string, string, *time.Time) {
+		switch r := result.(type) {
+		case *RepositoryResolver:
+			return string(r.Name()), "", nil
+		case *FileMatchResolver:
+			return r.Repo.Name(), r.JPath, nil
+		case *CommitSearchResultResolver:
+			// Commits are relatively sorted by date, and after repo
+			// or path names. We use ~ as the key for repo and
+			// paths,lexicographically last in ASCII.
+			return "~", "~", &r.commit.commit.Author.Date
+		}
+		// Unreachable.
+		panic("unreachable: compareSearchResults expects RepositoryResolver, FileMatchResolver, or CommitSearchResultResolver")
+	}
+
+	arepo, afile, adate := sortKeys(left)
+	brepo, bfile, bdate := sortKeys(right)
 
 	if arepo == brepo {
 		if len(exactFilePatterns) == 0 {
-			return afile < bfile
-		}
-		_, aMatch := exactFilePatterns[path.Base(afile)]
-		_, bMatch := exactFilePatterns[path.Base(bfile)]
-		if aMatch || bMatch {
-			if aMatch && bMatch {
-				// Prefer shorter file names (ie root files come first)
-				if len(afile) != len(bfile) {
-					return len(afile) < len(bfile)
-				}
+			if afile != bfile {
 				return afile < bfile
 			}
-			// prefer exact match
-			return aMatch
+			return compareDates(adate, bdate)
 		}
-		return afile < bfile
+		return compareFileLengths(afile, bfile, exactFilePatterns)
 	}
 	return arepo < brepo
 }

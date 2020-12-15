@@ -234,6 +234,12 @@ const SiteSchemaJSON = `{
               ]
             }
           ]
+        },
+        "enablePermissionsWebhooks": {
+          "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": false }
         }
       },
       "examples": [
@@ -271,6 +277,12 @@ const SiteSchemaJSON = `{
       "!go": { "pointer": true },
       "group": "Campaigns"
     },
+    "campaigns.restrictToAdmins": {
+      "description": "When enabled, only site admins can create and apply campaigns.",
+      "type": "boolean",
+      "group": "Campaigns",
+      "default": false
+    },
     "corsOrigin": {
       "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
       "type": "string",
@@ -294,6 +306,29 @@ const SiteSchemaJSON = `{
       "description": "Disable periodically fetching git contents for existing repositories.",
       "type": "boolean",
       "default": false,
+      "group": "External services"
+    },
+    "gitUpdateInterval": {
+      "description": "JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.",
+      "type": "array",
+      "items": {
+        "title": "UpdateIntervalRule",
+        "type": "object",
+        "required": ["pattern", "interval"],
+        "additionalProperties": false,
+        "properties": {
+          "pattern": {
+            "description": "A regular expression matching a repo name",
+            "type": "string",
+            "minLength": 1
+          },
+          "interval": {
+            "description": "An integer representing the number of minutes to wait until the next update",
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
       "group": "External services"
     },
     "disablePublicRepoRedirects": {
@@ -810,6 +845,12 @@ const SiteSchemaJSON = `{
       "description": "The minimum number of Unicode code points that a password must contain.",
       "type": "integer",
       "default": 12,
+      "group": "Authentication"
+    },
+    "auth.passwordResetLinkExpiry": {
+      "description": "The duration (in seconds) that a password reset link is considered valid.",
+      "type": "integer",
+      "default": 14400,
       "group": "Authentication"
     },
     "update.channel": {

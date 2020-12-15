@@ -9,7 +9,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/authz/github"
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

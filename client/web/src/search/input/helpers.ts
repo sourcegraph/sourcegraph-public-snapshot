@@ -4,9 +4,9 @@ import {
     isNegatedFilter,
     resolveNegatedFilter,
 } from '../../../../shared/src/search/interactive/util'
-import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
+import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
 import { uniqueId } from 'lodash'
-import { validateFilter, isSingularFilter } from '../../../../shared/src/search/parser/filters'
+import { validateFilter, isSingularFilter } from '../../../../shared/src/search/query/filters'
 
 /**
  * Converts a plain text query into a an object containing the two components
@@ -26,21 +26,17 @@ export function convertPlainTextToInteractiveQuery(
 
     if (scannedQuery.type === 'success') {
         for (const token of scannedQuery.term) {
-            if (
-                token.type === 'filter' &&
-                token.filterValue &&
-                validateFilter(token.filterType.value, token.filterValue).valid
-            ) {
-                const filterType = token.filterType.value as FilterType
+            if (token.type === 'filter' && token.value && validateFilter(token.field.value, token.value).valid) {
+                const filterType = token.field.value as FilterType
                 newFiltersInQuery[isSingularFilter(filterType) ? filterType : uniqueId(filterType)] = {
                     type: isNegatedFilter(filterType) ? resolveNegatedFilter(filterType) : filterType,
-                    value: query.slice(token.filterValue.range.start, token.filterValue.range.end),
+                    value: query.slice(token.value.range.start, token.value.range.end),
                     editable: false,
                     negated: isNegatedFilter(filterType),
                 }
             } else if (
                 token.type !== 'filter' ||
-                (token.type === 'filter' && !validateFilter(token.filterType.value, token.filterValue).valid)
+                (token.type === 'filter' && !validateFilter(token.field.value, token.value).valid)
             ) {
                 newNavbarQuery = [newNavbarQuery, query.slice(token.range.start, token.range.end)]
                     .filter(query => query.length > 0)

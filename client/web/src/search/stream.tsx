@@ -10,17 +10,17 @@ import { SearchPatternType } from '../graphql-operations'
 // until it is no longer a proof of concept and instead works well.
 
 export type SearchEvent =
-    | { type: 'filematches'; data: FileMatch[] }
-    | { type: 'repomatches'; data: RepositoryMatch[] }
-    | { type: 'commitmatches'; data: CommitMatch[] }
-    | { type: 'symbolmatches'; data: FileSymbolMatch[] }
+    | { type: 'matches'; data: Match[] }
     | { type: 'progress'; data: Progress }
     | { type: 'filters'; data: Filter[] }
     | { type: 'alert'; data: Alert }
     | { type: 'error'; data: Error }
     | { type: 'done'; data: {} }
 
+type Match = FileMatch | RepositoryMatch | CommitMatch | FileSymbolMatch
+
 interface FileMatch {
+    type: 'file'
     name: string
     repository: string
     branches?: string[]
@@ -34,7 +34,8 @@ interface LineMatch {
     offsetAndLengths: number[][]
 }
 
-interface FileSymbolMatch extends Omit<FileMatch, 'lineMatches'> {
+interface FileSymbolMatch extends Omit<FileMatch, 'lineMatches' | 'type'> {
+    type: 'symbol'
     symbols: SymbolMatch[]
 }
 
@@ -54,6 +55,7 @@ type MarkdownText = string
  * @see GQL.IGenericSearchResultInterface
  */
 interface CommitMatch {
+    type: 'commit'
     icon: string
     label: MarkdownText
     url: string
@@ -63,7 +65,7 @@ interface CommitMatch {
     ranges: number[][]
 }
 
-type RepositoryMatch = Pick<FileMatch, 'repository' | 'branches'>
+type RepositoryMatch = { type: 'repo' } & Pick<FileMatch, 'repository' | 'branches'>
 
 /**
  * An aggregate type representing a progress update.
@@ -139,7 +141,7 @@ interface Skipped {
     }
 }
 
-interface Filter {
+export interface Filter {
     value: string
     label: string
     count: number
@@ -149,12 +151,12 @@ interface Filter {
 
 interface Alert {
     title: string
-    description?: string
-    proposedQueries: ProposedQuery[]
+    description?: string | null
+    proposedQueries: ProposedQuery[] | null
 }
 
 interface ProposedQuery {
-    description?: string
+    description?: string | null
     query: string
 }
 
@@ -166,37 +168,38 @@ const toGQLLineMatch = (line: LineMatch): GQL.ILineMatch => ({
     preview: line.line,
 })
 
-function toGQLFileMatchBase(fm: Omit<FileMatch, 'lineMatches'>): GQL.IFileMatch {
+function toGQLFileMatchBase(fileMatch: FileMatch | FileSymbolMatch): GQL.IFileMatch {
     let revision = ''
-    if (fm.branches) {
-        const branch = fm.branches[0]
+    if (fileMatch.branches) {
+        const branch = fileMatch.branches[0]
         if (branch !== '') {
             revision = '@' + branch
         }
-    } else if (fm.version) {
-        revision = '@' + fm.version
+    } else if (fileMatch.version) {
+        revision = '@' + fileMatch.version
     }
 
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const file: GQL.IGitBlob = {
-        path: fm.name,
+        path: fileMatch.name,
         // /github.com/gorilla/mux@v1.7.2/-/blob/mux_test.go
         // TODO return in response?
-        url: '/' + fm.repository + revision + '/-/blob/' + fm.name,
+        url: '/' + fileMatch.repository + revision + '/-/blob/' + fileMatch.name,
         commit: {
-            oid: fm.version || '',
+            oid: fileMatch.version || '',
         },
     } as GQL.IGitBlob
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const repository: GQL.IRepository = {
-        name: fm.repository,
-    } as GQL.IRepository
+    const repository = toGQLRepositoryMatch({
+        type: 'repo',
+        repository: fileMatch.repository,
+        branches: fileMatch.branches,
+    })
     return {
         __typename: 'FileMatch',
         file,
         repository,
         revSpec: null,
-        resource: fm.name,
+        resource: fileMatch.name,
         symbols: [],
         lineMatches: [],
         limitHit: false,
@@ -241,12 +244,12 @@ function toGQLRepositoryMatch(repo: RepositoryMatch): GQL.IRepository {
         url: '/' + label,
         detail: toMarkdown('Repository name match'),
         matches: [],
+        name: repo.repository,
     }
 
     return gqlRepo as GQL.IRepository
 }
 
-//
 function toGQLCommitMatch(commit: CommitMatch): GQL.ICommitSearchResult {
     const match = {
         __typename: 'SearchResultMatch',
@@ -273,118 +276,75 @@ function toGQLCommitMatch(commit: CommitMatch): GQL.ICommitSearchResult {
     return gqlCommit as GQL.ICommitSearchResult
 }
 
-function setProgress(results: GQL.ISearchResults, progress: Progress): GQL.ISearchResults {
-    // The progress API doesn't have a way to extract lists of repos that were
-    // searched/cloning/missing/etc. We only have numbers, so we don't set those
-    // fields in the PoC.
-    const exact = progress.done && progress.skipped.length === 0
-    const hasSkippedLimitReason = progress.skipped.some(skipped => skipped.reason.indexOf('-limit') > 0)
-    return {
-        ...results,
-        matchCount: progress.matchCount,
-        resultCount: progress.matchCount,
-        approximateResultCount: `${progress.matchCount}${exact ? '' : '+'}`,
-        limitHit: hasSkippedLimitReason,
-        repositoriesCount: progress.repositoriesCount || 0,
-        elapsedMilliseconds: progress.durationMs,
+export interface AggregateStreamingSearchResults {
+    results: GQL.SearchResult[]
+    alert?: Alert
+    filters: Filter[]
+    progress: Progress
+}
+
+const emptyAggregateResults: AggregateStreamingSearchResults = {
+    results: [],
+    filters: [],
+    progress: {
+        done: false,
+        durationMs: 0,
+        matchCount: 0,
+        skipped: [],
+    },
+}
+
+function toGQLSearchResult(match: Match): GQL.SearchResult {
+    switch (match.type) {
+        case 'file':
+            return toGQLFileMatch(match)
+        case 'repo':
+            return toGQLRepositoryMatch(match)
+        case 'commit':
+            return toGQLCommitMatch(match)
+        case 'symbol':
+            return toGQLSymbolMatch(match)
     }
 }
 
-const toGQLSearchFilter = (filter: Omit<Filter, 'type'>): GQL.ISearchFilter => ({
-    __typename: 'SearchFilter',
-    ...filter,
-})
-
-const toGQLSearchAlert = (alert: Alert): GQL.ISearchAlert => ({
-    __typename: 'SearchAlert',
-    title: alert.title,
-    description: alert.description || null,
-    proposedQueries:
-        alert.proposedQueries?.map(pq => ({
-            __typename: 'SearchQueryDescription',
-            description: pq.description || null,
-            query: pq.query,
-        })) || null,
-})
-
-const emptyGQLSearchResults: GQL.ISearchResults = {
-    __typename: 'SearchResults',
-    matchCount: 0,
-    resultCount: 0,
-    approximateResultCount: '',
-    limitHit: false,
-    sparkline: [],
-    repositories: [],
-    repositoriesCount: 0,
-    repositoriesSearched: [],
-    indexedRepositoriesSearched: [],
-    cloning: [],
-    missing: [],
-    timedout: [],
-    indexUnavailable: false,
-    alert: null,
-    elapsedMilliseconds: 0,
-    dynamicFilters: [],
-    results: [],
-    pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
-}
-
 /**
- * Converts a stream of SearchEvents into an aggregated GQL.ISearchResult
+ * Converts a stream of SearchEvents into AggregateStreamingSearchResults
  */
-export const switchToGQLISearchResults: OperatorFunction<SearchEvent, GQL.ISearchResults> = pipe(
-    scan((results: GQL.ISearchResults, newEvent: SearchEvent) => {
+const switchAggregateSearchResults: OperatorFunction<SearchEvent, AggregateStreamingSearchResults> = pipe(
+    scan((results: AggregateStreamingSearchResults, newEvent: SearchEvent) => {
         switch (newEvent.type) {
-            case 'filematches':
+            case 'matches':
                 return {
                     ...results,
-                    // File matches are additive
-                    results: results.results.concat(newEvent.data.map(toGQLFileMatch)),
-                }
-
-            case 'repomatches':
-                return {
-                    ...results,
-                    // Repository matches are additive
-                    results: results.results.concat(newEvent.data.map(toGQLRepositoryMatch)),
-                }
-
-            case 'commitmatches':
-                return {
-                    ...results,
-                    // Generic matches are additive
-                    results: results.results.concat(newEvent.data.map(toGQLCommitMatch)),
-                }
-
-            case 'symbolmatches':
-                return {
-                    ...results,
-                    // symbol matches are additive
-                    results: results.results.concat(newEvent.data.map(toGQLSymbolMatch)),
+                    // Matches are additive
+                    results: results.results.concat(newEvent.data.map(toGQLSearchResult)),
                 }
 
             case 'progress':
-                // progress updates replace
-                return setProgress(results, newEvent.data)
+                return {
+                    ...results,
+                    // Progress updates replace
+                    progress: newEvent.data,
+                }
 
             case 'filters':
                 return {
                     ...results,
                     // New filter results replace all previous ones
-                    dynamicFilters: newEvent.data.map(toGQLSearchFilter),
+                    filters: newEvent.data,
                 }
 
             case 'alert':
                 return {
                     ...results,
-                    alert: toGQLSearchAlert(newEvent.data),
+                    alert: newEvent.data,
                 }
 
             default:
                 return results
         }
-    }, emptyGQLSearchResults),
-    defaultIfEmpty(emptyGQLSearchResults)
+    }, emptyAggregateResults),
+    defaultIfEmpty(emptyAggregateResults)
 )
 
 const observeMessages = <T extends SearchEvent>(
@@ -428,10 +388,7 @@ const messageHandlers: {
             observer.error(error)
             eventSource.close()
         }),
-    filematches: observeMessages,
-    symbolmatches: observeMessages,
-    repomatches: observeMessages,
-    commitmatches: observeMessages,
+    matches: observeMessages,
     progress: observeMessages,
     filters: observeMessages,
     alert: observeMessages,
@@ -443,7 +400,7 @@ const messageHandlers: {
  *
  * @param query the search query to send to Sourcegraph's backend.
  */
-export function search(
+function search(
     query: string,
     version: string,
     patternType: SearchPatternType,
@@ -472,4 +429,14 @@ export function search(
             eventSource.close()
         }
     })
+}
+
+/** Initiate a streaming search and aggregate the results */
+export function aggregateStreamingSearch(
+    query: string,
+    version: string,
+    patternType: SearchPatternType,
+    versionContext: string | undefined
+): Observable<AggregateStreamingSearchResults> {
+    return search(query, version, patternType, versionContext).pipe(switchAggregateSearchResults)
 }

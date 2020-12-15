@@ -24,7 +24,7 @@ describe('SearchResults', () => {
         location: history.location,
         history,
         navbarSearchQueryState: { query: '', cursorPosition: 0 },
-        fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_REQUEST,
+        fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
         searchRequest: OBSERVABLE_SEARCH_REQUEST,
         isLightTheme: true,
         settingsCascade: NOOP_SETTINGS_CASCADE,
@@ -46,7 +46,6 @@ describe('SearchResults', () => {
         setVersionContext: () => undefined,
         availableVersionContexts: undefined,
         previousVersionContext: 'sg-last-version-context',
-        searchStreaming: false,
     }
 
     it('calls the search request once', () => {

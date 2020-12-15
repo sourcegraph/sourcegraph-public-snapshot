@@ -58,7 +58,7 @@ describe('Sourcegraph extensions regression test suite', () => {
     let graphQLClient: GraphQLClient
     let resourceManager: TestResourceManager
     before(async function () {
-        this.timeout(60 * 1000)
+        this.timeout(2 * 60 * 1000)
         ;({ driver, gqlClient: graphQLClient, resourceManager } = await getTestTools(config))
         resourceManager.add(
             'User',
@@ -118,6 +118,13 @@ describe('Sourcegraph extensions regression test suite', () => {
         console.log('------------------------ one -------------------------------')
 
         // Wait for the "Coverage: X%" button to appear and click it
+        await driver.page.waitForSelector(
+            '.test-action-items[data-menu="editor/title"] .test-action-item[href^="https://codecov.io/"]',
+            { timeout: 0 }
+        )
+        await driver.page.click(
+            '.test-action-items[data-menu="editor/title"] .test-action-item[href^="https://codecov.io/"]'
+        )
 
         console.log('------------------------ two -------------------------------')
 
@@ -131,7 +138,7 @@ describe('Sourcegraph extensions regression test suite', () => {
         console.log('------------------------ four -------------------------------')
 
         // Open the command palette and click "Show line/hit branch counts"
-        await driver.page.click('.command-list-popover-button')
+        await driver.page.click('.test-command-list-button')
 
         console.log('------------------------ five -------------------------------')
 
@@ -145,25 +152,24 @@ describe('Sourcegraph extensions regression test suite', () => {
         console.log('------------------------ seven -------------------------------')
 
         // Check that the the "View commit report" button links to the correct location
-        await driver.page.click('.command-list-popover-button')
+        await driver.page.click('.test-command-list-button')
 
         console.log('------------------------ eight -------------------------------')
 
         await Promise.all([
-            driver.page.waitForNavigation(),
+            driver.browser.waitForTarget(
+                target =>
+                    target.url() ===
+                    'https://codecov.io/gh/theupdateframework/notary/commit/62258bc0beb3bdc41de1e927a57acaee06bebe4b'
+            ),
             driver.findElementWithText('Codecov: View commit report', { action: 'click' }),
         ])
-
-        console.log('------------------------ nine -------------------------------')
-        expect(driver.page.url()).toEqual(
-            'https://codecov.io/gh/theupdateframework/notary/commit/62258bc0beb3bdc41de1e927a57acaee06bebe4b'
-        )
 
         console.log('------------------------ ten -------------------------------')
     })
 
     test('Datadog extension', async function () {
-        this.timeout(10 * 1000)
+        this.timeout(20 * 1000)
         await activateAndConfigureExtension(
             {
                 username: testUsername,
@@ -186,7 +192,7 @@ describe('Sourcegraph extensions regression test suite', () => {
     })
 
     test('Sentry extension', async function () {
-        this.timeout(10 * 1000)
+        this.timeout(60 * 1000)
         await activateAndConfigureExtension(
             {
                 username: testUsername,

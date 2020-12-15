@@ -2,11 +2,11 @@ import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { FiltersToTypeAndValue } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
-import { scanSearchQuery, CharacterRange } from '../search/parser/scanner'
 import { replaceRange } from './strings'
-import { discreteValueAliases } from '../search/parser/filters'
+import { discreteValueAliases } from '../search/query/filters'
 import { tryCatch } from './errors'
 import { SearchPatternType } from '../graphql-operations'
+import { findFilter, FilterKind } from '../search/query/validate'
 
 export interface RepoSpec {
     /**
@@ -469,7 +469,7 @@ function parseLineOrPosition(
 
 /** Encodes a repository at a revspec for use in a URL. */
 export function encodeRepoRevision({ repoName, revision }: RepoSpec & Partial<RevisionSpec>): string {
-    return revision ? `${encodeURIComponentExceptSlashes(repoName)}@${escapeRevspecForURL(revision)}` : repoName
+    return revision ? `${encodeURIPathComponent(repoName)}@${escapeRevspecForURL(revision)}` : repoName
 }
 
 export function toPrettyBlobURL(
@@ -507,7 +507,7 @@ export function toRepoURL(target: RepoSpec & Partial<RevisionSpec>): string {
  * for (e.g.) branches with slashes look a lot nicer with '/' than '%2F'.
  */
 export function escapeRevspecForURL(revision: string): string {
-    return encodeURIComponentExceptSlashes(revision)
+    return encodeURIPathComponent(revision)
 }
 
 export function toViewStateHashComponent(viewState: string | undefined): string {
@@ -517,17 +517,25 @@ export function toViewStateHashComponent(viewState: string | undefined): string 
 const positionString = (position: Position): string =>
     position.line.toString() + (position.character ? `,${position.character}` : '')
 
-export const encodeURIComponentExceptSlashes = (component: string): string =>
-    component.split('/').map(encodeURIComponent).join('/')
+/**
+ * %-Encodes a path component of a URI.
+ *
+ * It encodes all special characters except forward slashes and the plus sign `+`. The plus sign only has meaning
+ * as a space in the query component of a URL, because its special meaning is defined for the
+ * `application/x-www-form-urlencoded` MIME type, which is used for queries. It is not part of the general
+ * `%`-encoding for URLs.
+ */
+export const encodeURIPathComponent = (component: string): string =>
+    component.split('/').map(encodeURIComponent).join('/').replace(/%2B/g, '+')
 
 /**
  * The inverse of parseRepoURI, this generates a string from parsed values.
  */
 export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
     const revision = parsed.commitID || parsed.revision
-    let uri = `git://${encodeURIComponentExceptSlashes(parsed.repoName)}`
-    uri += revision ? '?' + encodeURIComponentExceptSlashes(revision) : ''
-    uri += parsed.filePath ? '#' + encodeURIComponentExceptSlashes(parsed.filePath) : ''
+    let uri = `git://${encodeURIPathComponent(parsed.repoName)}`
+    uri += revision ? '?' + encodeURIPathComponent(revision) : ''
+    uri += parsed.filePath ? '#' + encodeURIPathComponent(parsed.filePath) : ''
     uri += parsed.position || parsed.range ? ':' : ''
     uri += parsed.position ? positionString(parsed.position) : ''
     uri += parsed.range ? positionString(parsed.range.start) + '-' + positionString(parsed.range.end) : ''
@@ -535,10 +543,10 @@ export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
 }
 
 export const toRootURI = ({ repoName, commitID }: RepoSpec & ResolvedRevisionSpec): string =>
-    `git://${encodeURIComponentExceptSlashes(repoName)}?${commitID}`
+    `git://${encodeURIPathComponent(repoName)}?${commitID}`
 
 export function toURIWithPath({ repoName, filePath, commitID }: RepoSpec & ResolvedRevisionSpec & FileSpec): string {
-    return `git://${encodeURIComponentExceptSlashes(repoName)}?${commitID}#${encodeURIComponentExceptSlashes(filePath)}`
+    return `git://${encodeURIPathComponent(repoName)}?${commitID}#${encodeURIPathComponent(filePath)}`
 }
 
 /**
@@ -585,49 +593,35 @@ export function buildSearchURLQuery(
     searchParametersList?: { key: string; value: string }[]
 ): string {
     const searchParameters = new URLSearchParams()
-    let fullQuery = query
+    let queryParameter = query
+    let patternTypeParameter: string = patternType
+    let caseParameter: string = caseSensitive ? 'yes' : 'no'
 
     if (filtersInQuery && !isEmpty(filtersInQuery)) {
-        fullQuery = [generateFiltersQuery(filtersInQuery), fullQuery].filter(query => query.length > 0).join(' ')
+        queryParameter = [generateFiltersQuery(filtersInQuery), queryParameter]
+            .filter(query => query.length > 0)
+            .join(' ')
     }
 
-    const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
-    if (patternTypeInQuery) {
-        const { start, end } = patternTypeInQuery.range
-        fullQuery = replaceRange(fullQuery, { start: Math.max(0, start - 1), end }).trim()
-        searchParameters.set('q', fullQuery)
-        searchParameters.set('patternType', patternTypeInQuery.value)
-    } else {
-        searchParameters.set('q', fullQuery)
-        searchParameters.set('patternType', patternType)
+    const globalPatternType = findFilter(queryParameter, 'patterntype', FilterKind.Global)
+    if (globalPatternType?.value && globalPatternType.value.type === 'literal') {
+        const { start, end } = globalPatternType.range
+        patternTypeParameter = query.slice(globalPatternType.value.range.start, end)
+        queryParameter = replaceRange(queryParameter, { start: Math.max(0, start - 1), end }).trim()
     }
 
-    const caseInQuery = parseCaseSensitivityFromQuery(fullQuery)
-    if (caseInQuery) {
-        fullQuery = replaceRange(fullQuery, caseInQuery.range)
-        searchParameters.set('q', fullQuery)
+    const globalCase = findFilter(queryParameter, 'case', FilterKind.Global)
+    if (globalCase?.value && globalCase.value.type === 'literal') {
+        // When case:value is explicit in the query, override any previous value of caseParameter.
+        caseParameter = discreteValueAliases.yes.includes(globalCase.value.value) ? 'yes' : 'no'
+        queryParameter = replaceRange(queryParameter, globalCase.range)
+    }
 
-        if (discreteValueAliases.yes.includes(caseInQuery.value)) {
-            fullQuery = replaceRange(fullQuery, caseInQuery.range)
-            searchParameters.set('case', caseInQuery.value)
-        } else {
-            // For now, remove case when case:no, since it's the default behavior. Avoids
-            // queries breaking when only `repo:` filters are specified.
-            //
-            // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
-            searchParameters.delete('case')
-        }
-    } else {
-        searchParameters.set('q', fullQuery)
-        if (caseSensitive) {
-            searchParameters.set('case', 'yes')
-        } else {
-            // For now, remove case when case:no, since it's the default behavior. Avoids
-            // queries breaking when only `repo:` filters are specified.
-            //
-            // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
-            searchParameters.delete('case')
-        }
+    searchParameters.set('q', queryParameter)
+    searchParameters.set('patternType', patternTypeParameter)
+
+    if (caseParameter === 'yes') {
+        searchParameters.set('case', caseParameter)
     }
 
     if (versionContext) {
@@ -653,41 +647,6 @@ export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): str
         .filter(filter => filter.value.trim().length > 0)
         .map(filter => `${filter.negated ? '-' : ''}${filter.type}:${filter.value}`)
         .join(' ')
-}
-
-export function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
-    const scannedQuery = scanSearchQuery(query)
-    if (scannedQuery.type === 'success') {
-        for (const token of scannedQuery.term) {
-            if (
-                token.type === 'filter' &&
-                token.filterType.value.toLowerCase() === 'patterntype' &&
-                token.filterValue
-            ) {
-                return {
-                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
-                    value: query.slice(token.filterValue.range.start, token.filterValue.range.end),
-                }
-            }
-        }
-    }
-
-    return undefined
-}
-
-export function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
-    const scannedQuery = scanSearchQuery(query)
-    if (scannedQuery.type === 'success') {
-        for (const token of scannedQuery.term) {
-            if (token.type === 'filter' && token.filterType.value.toLowerCase() === 'case' && token.filterValue) {
-                return {
-                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
-                    value: query.slice(token.filterValue.range.start, token.filterValue.range.end),
-                }
-            }
-        }
-    }
-    return undefined
 }
 
 /**

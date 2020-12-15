@@ -34,6 +34,7 @@ import { browserPortToMessagePort, findMessagePorts } from '../../shared/platfor
 import { EndpointPair } from '../../../../shared/src/platform/context'
 import { BrowserActionIconState, setBrowserActionIconState } from '../browser-action-icon'
 import { fetchSite } from '../../shared/backend/server'
+import { patternToRegex } from 'webext-patterns'
 
 const IS_EXTENSION = true
 
@@ -121,8 +122,6 @@ const requestGraphQL = <T, V = object>({
         )
     )
 
-initializeOmniboxInterface(requestGraphQL)
-
 async function main(): Promise<void> {
     const subscriptions = new Subscription()
 
@@ -144,12 +143,17 @@ async function main(): Promise<void> {
             )
             .subscribe()
     )
-    // Configure the omnibox when the sourcegraphURL changes.
-    subscriptions.add(
-        observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
-            configureOmnibox(sourcegraphURL)
-        })
-    )
+
+    if (browser.omnibox) {
+        initializeOmniboxInterface(requestGraphQL)
+
+        // Configure the omnibox when the sourcegraphURL changes.
+        subscriptions.add(
+            observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
+                configureOmnibox(sourcegraphURL)
+            })
+        )
+    }
 
     // Update the browserAction icon based on the state of the extension
     subscriptions.add(
@@ -199,7 +203,7 @@ async function main(): Promise<void> {
         if (
             changeInfo.status === 'complete' &&
             customServerOrigins.some(
-                origin => origin === '<all_urls>' || (!!tab.url && tab.url.startsWith(origin.replace('/*', '')))
+                origin => origin === '<all_urls>' || (!!tab.url && urlMatchesPattern(tab.url, origin))
             )
         ) {
             // Inject content script whenever a new tab was opened with a URL for which we have permission
@@ -450,4 +454,17 @@ function observeBrowserActionState(): Observable<BrowserActionIconState> {
         }),
         distinctUntilChanged()
     )
+}
+
+function urlMatchesPattern(url: string, originPermissionPattern: string): boolean {
+    // Workaround for bug in `webext-patterns`. Remove workaround when fixed upstream.
+    // https://github.com/fregante/webext-patterns/issues/2
+    if (originPermissionPattern.includes('://*.')) {
+        const bareDomainPattern = originPermissionPattern.replace('://*.', '://')
+        if (patternToRegex(bareDomainPattern).test(url)) {
+            return true
+        }
+    }
+
+    return patternToRegex(originPermissionPattern).test(url)
 }

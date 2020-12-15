@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -164,6 +165,8 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		// CPU for 30s.
 		stabilizeTimeout = 30 * time.Second
 	}
+
+	p.Filepath = normalizeFilepath(p.Filepath)
 
 	resp, err := client.Highlight(ctx, &gosyntect.Query{
 		Code:             code,
@@ -474,14 +477,14 @@ func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
 	if err != nil {
 		return nil, aborted, err
 	}
-	lines, err := splitHighlightedLines(html)
+	lines, err := splitHighlightedLines(html, false)
 	return lines, aborted, err
 }
 
 // splitHighlightedLines takes the highlighted HTML table and returns a slice
 // of highlighted strings, where each string corresponds a single line in the
 // original, highlighted file.
-func splitHighlightedLines(input template.HTML) ([]template.HTML, error) {
+func splitHighlightedLines(input template.HTML, wholeRow bool) ([]template.HTML, error) {
 	doc, err := html.Parse(strings.NewReader(string(input)))
 	if err != nil {
 		return nil, err
@@ -498,8 +501,13 @@ func splitHighlightedLines(input template.HTML) ([]template.HTML, error) {
 	var buf bytes.Buffer
 	tr := table.FirstChild.FirstChild // table > tbody > tr
 	for tr != nil {
-		div := tr.LastChild.FirstChild // tr > td > div
-		err = html.Render(&buf, div)
+		var render *html.Node
+		if wholeRow {
+			render = tr
+		} else {
+			render = tr.LastChild.FirstChild // tr > td > div
+		}
+		err = html.Render(&buf, render)
 		if err != nil {
 			return nil, err
 		}
@@ -509,4 +517,65 @@ func splitHighlightedLines(input template.HTML) ([]template.HTML, error) {
 	}
 
 	return lines, nil
+}
+
+// normalizeFilepath ensures that the filepath p has a lowercase extension, i.e. it applies the
+// following transformations:
+//
+// 	a/b/c/FOO.TXT → a/b/c/FOO.txt
+// 	FOO.Sh → FOO.sh
+//
+// The following are left unmodified, as they already have lowercase extensions:
+//
+// 	a/b/c/FOO.txt
+// 	a/b/c/Makefile
+// 	Makefile.am
+// 	FOO.txt
+//
+// It expects the filepath uses forward slashes always.
+func normalizeFilepath(p string) string {
+	ext := path.Ext(p)
+	ext = strings.ToLower(ext)
+	return p[:len(p)-len(ext)] + ext
+}
+
+// LineRange describes a line range.
+//
+// It uses int32 for GraphQL compatability.
+type LineRange struct {
+	// StartLine is the 0-based inclusive start line of the range.
+	StartLine int32
+
+	// EndLine is the 0-based exclusive end line of the range.
+	EndLine int32
+}
+
+// SplitLineRanges takes a syntax highlighted HTML table (returned by highlight.Code) and splits out
+// the specified line ranges, returning HTML table rows `<tr>...</tr>` for each line range.
+//
+// Input line ranges will automatically be clamped within the bounds of the file.
+func SplitLineRanges(html template.HTML, ranges []LineRange) ([][]string, error) {
+	lines, err := splitHighlightedLines(html, true)
+	if err != nil {
+		return nil, err
+	}
+	var lineRanges [][]string
+	for _, r := range ranges {
+		if r.StartLine < 0 {
+			r.StartLine = 0
+		}
+		if r.EndLine > int32(len(lines)) {
+			r.EndLine = int32(len(lines))
+		}
+		if r.StartLine > r.EndLine {
+			r.StartLine = 0
+			r.EndLine = 0
+		}
+		tableRows := make([]string, 0, r.EndLine-r.StartLine)
+		for _, line := range lines[r.StartLine:r.EndLine] {
+			tableRows = append(tableRows, string(line))
+		}
+		lineRanges = append(lineRanges, tableRows)
+	}
+	return lineRanges, nil
 }

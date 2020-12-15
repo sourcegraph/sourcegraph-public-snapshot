@@ -11,11 +11,11 @@ import { subtypeOf } from '../../util/types'
 const { add } = storiesOf('shared/ActivationDropdown', module).addDecorator(story => (
     <>
         <style>{webMainStyles}</style>
-        <div className="theme-light">{story()}</div>
+        <div>{story()}</div>
     </>
 ))
 
-const baseActivation: Activation = {
+const baseActivation = (): Activation => ({
     steps: [
         {
             id: 'ConnectedCodeHost',
@@ -47,21 +47,20 @@ const baseActivation: Activation = {
     refetch: action('Refetch'),
     update: action('Update'),
     completed: undefined,
-}
+})
 const history = H.createMemoryHistory({ keyLength: 0 })
 const commonProps = subtypeOf<Partial<ActivationDropdownProps>>()({
     alwaysShow: true,
     history,
-    // Make sure the dropdown is not rendered outside the theme-light container
     portal: false,
 })
 
-add('Loading', () => <ActivationDropdown {...commonProps} activation={baseActivation} />)
+add('Loading', () => <ActivationDropdown {...commonProps} activation={baseActivation()} />)
 add('0/4 completed', () => (
     <ActivationDropdown
         {...commonProps}
         activation={{
-            ...baseActivation,
+            ...baseActivation(),
             completed: {
                 ConnectedCodeHost: boolean('ConnectedCodeHost', false),
                 DidSearch: boolean('DidSearch', false),
@@ -75,7 +74,7 @@ add('1/4 completed', () => (
     <ActivationDropdown
         {...commonProps}
         activation={{
-            ...baseActivation,
+            ...baseActivation(),
             completed: {
                 ConnectedCodeHost: boolean('ConnectedCodeHost', true),
                 DidSearch: boolean('DidSearch', false),

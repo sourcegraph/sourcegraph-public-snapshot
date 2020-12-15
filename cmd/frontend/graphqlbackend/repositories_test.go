@@ -7,8 +7,9 @@ import (
 
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/gqltesting"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestRepositories(t *testing.T) {
@@ -17,10 +18,8 @@ func TestRepositories(t *testing.T) {
 		{Name: "repo1"},
 		{Name: "repo2"},
 		{
-			Name: "repo3",
-			RepoFields: &types.RepoFields{
-				Cloned: true,
-			},
+			Name:   "repo3",
+			Cloned: true,
 		},
 	}
 	db.Mocks.Repos.List = func(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {

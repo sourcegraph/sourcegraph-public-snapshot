@@ -1,7 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
@@ -9,13 +8,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
-import {
-    parseSearchURLQuery,
-    PatternTypeProps,
-    InteractiveSearchProps,
-    CaseSensitivityProps,
-    SearchStreamingProps,
-} from '..'
+import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps, CaseSensitivityProps } from '..'
 import { FetchFileParameters } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
 import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
@@ -27,12 +20,10 @@ import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { isDefined, hasProperty } from '../../../../shared/src/util/types'
-import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { SearchResult } from '../../components/SearchResult'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { eventLogger } from '../../tracking/eventLogger'
-import { shouldDisplayPerformanceWarning } from '../backend'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { ErrorAlert } from '../../components/alerts'
 import { VersionContextProps } from '../../../../shared/src/search/util'
@@ -40,6 +31,9 @@ import { DeployType } from '../../jscontext'
 import { AuthenticatedUser } from '../../auth'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { QueryState } from '../helpers'
+import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
+import { SearchResultsStats } from './SearchResultsStats'
+import { SearchAlert } from './SearchAlert'
 
 const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     typeof value === 'object' &&
@@ -56,8 +50,7 @@ export interface SearchResultsListProps
         PatternTypeProps,
         CaseSensitivityProps,
         InteractiveSearchProps,
-        VersionContextProps,
-        SearchStreamingProps {
+        VersionContextProps {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null
@@ -77,13 +70,12 @@ export interface SearchResultsListProps
     showSavedQueryButton?: boolean
     showSavedQueryModal: boolean
     onSavedQueryModalClose: () => void
-    onDidCreateSavedQuery: () => void
     onSaveQueryClick: () => void
-    didSave: boolean
 
     interactiveSearchMode: boolean
 
-    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+    shouldDisplayPerformanceWarning: (deployType: DeployType) => Observable<boolean>
 }
 
 interface State {
@@ -304,9 +296,9 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         this.componentUpdates.next(this.props)
 
         this.subscriptions.add(
-            shouldDisplayPerformanceWarning(this.props.deployType).subscribe(displayPerformanceWarning =>
-                this.setState({ displayPerformanceWarning })
-            )
+            this.props
+                .shouldDisplayPerformanceWarning(this.props.deployType)
+                .subscribe(displayPerformanceWarning => this.setState({ displayPerformanceWarning }))
         )
     }
 
@@ -376,50 +368,30 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         <SearchResultsInfoBar
                                             {...this.props}
                                             query={parsedQuery}
-                                            results={results}
-                                            showDotComMarketing={this.props.isSourcegraphDotCom}
-                                            displayPerformanceWarning={this.state.displayPerformanceWarning}
+                                            resultsFound={results.results.length > 0}
                                             className="border-bottom flex-grow-1"
+                                            stats={
+                                                <SearchResultsStats
+                                                    results={results}
+                                                    onShowMoreResultsClick={this.props.onShowMoreResultsClick}
+                                                />
+                                            }
                                         />
                                     </div>
 
+                                    {!results.alert && this.state.displayPerformanceWarning && (
+                                        <PerformanceWarningAlert />
+                                    )}
+
                                     {/* Server-provided help message */}
                                     {results.alert && (
-                                        <div className="alert alert-info m-2" data-testid="alert-container">
-                                            <h3>
-                                                <AlertCircleIcon className="icon-inline" /> {results.alert.title}
-                                            </h3>
-                                            <p>{results.alert.description}</p>
-                                            {results.alert.proposedQueries && (
-                                                <>
-                                                    <h4>Did you mean:</h4>
-                                                    <ul className="list-unstyled">
-                                                        {results.alert.proposedQueries.map(proposedQuery => (
-                                                            <li key={proposedQuery.query}>
-                                                                <Link
-                                                                    className="btn btn-secondary btn-sm"
-                                                                    data-testid="proposed-query-link"
-                                                                    to={
-                                                                        '/search?' +
-                                                                        buildSearchURLQuery(
-                                                                            proposedQuery.query,
-                                                                            this.props.patternType,
-                                                                            this.props.caseSensitive,
-                                                                            this.props.versionContext,
-                                                                            {}
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    {proposedQuery.query || proposedQuery.description}
-                                                                </Link>
-                                                                {proposedQuery.query &&
-                                                                    proposedQuery.description &&
-                                                                    ` — ${proposedQuery.description}`}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </>
-                                            )}{' '}
+                                        <SearchAlert
+                                            alert={results.alert}
+                                            caseSensitive={this.props.caseSensitive}
+                                            patternType={this.props.patternType}
+                                            versionContext={this.props.versionContext}
+                                        >
+                                            {' '}
                                             {results.timedout.length > 0 &&
                                                 results.timedout.length === results.repositoriesCount &&
                                                 /* All repositories timed out. */
@@ -437,7 +409,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                           ]
                                                         : []
                                                 )}
-                                        </div>
+                                        </SearchAlert>
                                     )}
 
                                     {/* Results */}
@@ -534,7 +506,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         showAllMatches={false}
                         isLightTheme={this.props.isLightTheme}
                         allExpanded={this.props.allExpanded}
-                        fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
+                        fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
                         repoDisplayName={this.state.fileMatchRepoDisplayNames.get(result.repository.name)}
                         settingsCascade={this.props.settingsCascade}
                     />

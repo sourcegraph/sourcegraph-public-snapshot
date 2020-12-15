@@ -4,19 +4,6 @@
 .markdown-body pre.chroma {
   font-size: 0.75em;
 }
-
-img.screenshot {
-    max-width: 600px;
-    margin: 1em;
-    margin-bottom: 0.5em;
-    border: 1px solid lightgrey;
-    border-radius: 10px;
-}
-
-img.center {
-  display: block;
-  margin: auto
-}
 </style>
 
 <p class="lead">

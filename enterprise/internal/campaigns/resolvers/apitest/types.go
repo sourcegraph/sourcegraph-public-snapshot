@@ -2,6 +2,7 @@ package apitest
 
 import (
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
@@ -196,6 +197,7 @@ type CampaignSpec struct {
 	Creator   *User
 
 	ChangesetSpecs ChangesetSpecConnection
+	ApplyPreview   ChangesetApplyPreviewConnection
 
 	ViewerCanAdminister bool
 
@@ -211,6 +213,20 @@ type CampaignSpec struct {
 
 	CreatedAt graphqlbackend.DateTime
 	ExpiresAt *graphqlbackend.DateTime
+
+	SupersedingCampaignSpec *CampaignSpec
+}
+
+// ChangesetSpecDelta is the delta between two ChangesetSpecs describing the same Changeset.
+type ChangesetSpecDelta struct {
+	TitleChanged         bool
+	BodyChanged          bool
+	Undraft              bool
+	BaseRefChanged       bool
+	DiffChanged          bool
+	CommitMessageChanged bool
+	AuthorNameChanged    bool
+	AuthorEmailChanged   bool
 }
 
 type ChangesetSpec struct {
@@ -226,6 +242,27 @@ type ChangesetSpecConnection struct {
 	Nodes      []ChangesetSpec
 	TotalCount int
 	PageInfo   PageInfo
+}
+
+type ChangesetApplyPreviewConnection struct {
+	Nodes      []ChangesetApplyPreview
+	TotalCount int
+	PageInfo   PageInfo
+}
+
+type ChangesetApplyPreview struct {
+	Typename string `json:"__typename"`
+
+	Operations []campaigns.ReconcilerOperation
+	Delta      ChangesetSpecDelta
+	Targets    ChangesetApplyPreviewTargets
+}
+
+type ChangesetApplyPreviewTargets struct {
+	Typename string `json:"__typename"`
+
+	ChangesetSpec ChangesetSpec
+	Changeset     Changeset
 }
 
 type ChangesetSpecDescription struct {

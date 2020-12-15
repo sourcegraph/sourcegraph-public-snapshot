@@ -9,13 +9,14 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	uploadstoremocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
@@ -223,7 +224,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 //
 //
 
-func copyTestDump(ctx context.Context, key string, offsetBytes int64) (io.ReadCloser, error) {
+func copyTestDump(ctx context.Context, key string) (io.ReadCloser, error) {
 	return os.Open("../../testdata/dump1.lsif.gz")
 }
 

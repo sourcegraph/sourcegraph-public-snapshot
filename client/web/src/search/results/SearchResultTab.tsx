@@ -6,13 +6,13 @@ import { toggleSearchType } from '../helpers'
 import { buildSearchURLQuery, generateFiltersQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
 import { PatternTypeProps, CaseSensitivityProps, parseSearchURLQuery, InteractiveSearchProps } from '..'
-import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
+import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 
 interface Props
     extends Omit<PatternTypeProps, 'setPatternType'>,
         Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
-        Pick<InteractiveSearchProps, 'filtersInQuery'>,
+        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
         VersionContextProps {
     location: H.Location
     type: SearchType
@@ -31,7 +31,7 @@ export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
     location,
     type,
     query,
-    filtersInQuery,
+    filtersInQuery = {},
     patternType,
     caseSensitive,
     versionContext,
@@ -48,11 +48,11 @@ export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
         // Parse any `type:` filter that exists in a query so
         // we can check whether this tab should be active.
         for (const token of scannedQuery.term) {
-            if (token.type === 'filter' && token.filterType.value === 'type' && token.filterValue) {
+            if (token.type === 'filter' && token.field.value === 'type' && token.value) {
                 typeInQuery =
-                    token.filterValue.type === 'literal'
-                        ? (token.filterValue.value as SearchType)
-                        : (token.filterValue.quotedValue as SearchType)
+                    token.value.type === 'literal'
+                        ? (token.value.value as SearchType)
+                        : (token.value.quotedValue as SearchType)
             }
         }
     }

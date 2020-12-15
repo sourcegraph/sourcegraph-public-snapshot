@@ -116,6 +116,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addBrowserExt,
 			addWebApp,
 			addSharedTests(c),
+			addBrandedTests,
 			addGoTests,
 			addGoBuild,
 			addDockerfileLint,
@@ -129,12 +130,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		//
 		// PERF: Try to order steps such that slower steps are first.
 		pipelineOperations = []func(*bk.Pipeline){
+			triggerAsync(c),               // triggers a slow pipeline, so do it first.
 			addBackendIntegrationTests(c), // ~11m
 			addDockerImages(c, false),     // ~8m (candidate images)
 			addLint,                       // ~4.5m
 			addSharedTests(c),             // ~4.5m
 			addWebApp,                     // ~3m
 			addBrowserExt,                 // ~2m
+			addBrandedTests,               // ~1.5m
 			addGoTests,                    // ~1.5m
 			addCheck,                      // ~1m
 			addGoBuild,                    // ~0.5m

@@ -38,7 +38,7 @@ func (c *Client) ListRepos(ctx context.Context) ([]*Repo, error) {
 	out, err := exec.CommandContext(ctx, "ssh", c.Host, "info").Output()
 	if err != nil {
 		log15.Error("listing gitolite failed", "error", err, "out", string(out))
-		return nil, err
+		return nil, maybeUnauthorized(err)
 	}
 	return decodeRepos(c.Host, string(out)), nil
 }
@@ -76,4 +76,25 @@ func decodeRepos(host, gitoliteInfo string) []*Repo {
 	}
 
 	return repos
+}
+
+// newErrUnauthorized will return an errUnauthorized wrapping err if there is permission issue.
+// Otherwise, it return err unchanged
+// This ensures that we implement the unauthorizeder interface from the errcode package
+func maybeUnauthorized(err error) error {
+	if err == nil {
+		return nil
+	}
+	if !strings.Contains(err.Error(), "permission denied") {
+		return err
+	}
+	return &errUnauthorized{error: err}
+}
+
+type errUnauthorized struct {
+	error
+}
+
+func (*errUnauthorized) Unauthorized() bool {
+	return true
 }

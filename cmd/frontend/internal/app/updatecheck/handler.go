@@ -17,13 +17,14 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hubspot"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // pubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
@@ -34,17 +35,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	//version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.21.2")
+	latestReleaseDockerServerImageBuild = newBuild("3.22.1")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.21.2")
+	latestReleaseKubernetesBuild = newBuild("3.22.1")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("3.21.2")
+	latestReleaseDockerComposeOrPureDocker = newBuild("3.22.1")
 )
 
 func getLatestRelease(deployType string) build {
@@ -182,6 +183,7 @@ type pingRequest struct {
 	HomepagePanels       json.RawMessage `json:"homepagePanels"`
 	SearchOnboarding     json.RawMessage `json:"searchOnboarding"`
 	Repositories         json.RawMessage `json:"repositories"`
+	RetentionStatistics  json.RawMessage `json:"retentionStatistics"`
 	CodeIntelUsage       json.RawMessage `json:"codeIntelUsage"`
 	NewCodeIntelUsage    json.RawMessage `json:"newCodeIntelUsage"`
 	SearchUsage          json.RawMessage `json:"searchUsage"`
@@ -282,6 +284,7 @@ type pingPayload struct {
 	GrowthStatistics     json.RawMessage `json:"growth_statistics"`
 	SavedSearches        json.RawMessage `json:"saved_searches"`
 	HomepagePanels       json.RawMessage `json:"homepage_panels"`
+	RetentionStatistics  json.RawMessage `json:"retention_statistics"`
 	Repositories         json.RawMessage `json:"repositories"`
 	SearchOnboarding     json.RawMessage `json:"search_onboarding"`
 	DependencyVersions   json.RawMessage `json:"dependency_versions"`
@@ -362,6 +365,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		GrowthStatistics:     pr.GrowthStatistics,
 		SavedSearches:        pr.SavedSearches,
 		HomepagePanels:       pr.HomepagePanels,
+		RetentionStatistics:  pr.RetentionStatistics,
 		Repositories:         pr.Repositories,
 		SearchOnboarding:     pr.SearchOnboarding,
 		InstallerEmail:       pr.InitialAdminEmail,

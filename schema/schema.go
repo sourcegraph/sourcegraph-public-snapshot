@@ -317,6 +317,8 @@ type CampaignSpec struct {
 	On []interface{} `json:"on,omitempty"`
 	// Steps description: The sequence of commands to run (for each repository branch matched in the `on` property) to produce the campaign's changes.
 	Steps []*Step `json:"steps,omitempty"`
+	// TransformChanges description: Optional transformations to apply to the changes produced in each repository.
+	TransformChanges *TransformChanges `json:"transformChanges,omitempty"`
 }
 
 // ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
@@ -427,6 +429,8 @@ type ExperimentalFeatures struct {
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
+	// EnablePermissionsWebhooks description: Enables webhook consumers to sync permissions from external services faster than the defaults schedule
+	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
 	// SearchIndexBranches description: A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
@@ -1105,6 +1109,8 @@ type SettingsExperimentalFeatures struct {
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
 	// CopyQueryButton description: Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
+	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
+	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
 	// EnableSmartQuery description: Enables contextual syntax highlighting and hovers for search queries in the web app
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
 	// SearchStats description: Enables a new page that shows language statistics about the results for a search query.
@@ -1135,6 +1141,8 @@ type SiteConfiguration struct {
 	AuthEnableUsernameChanges bool `json:"auth.enableUsernameChanges,omitempty"`
 	// AuthMinPasswordLength description: The minimum number of Unicode code points that a password must contain.
 	AuthMinPasswordLength int `json:"auth.minPasswordLength,omitempty"`
+	// AuthPasswordResetLinkExpiry description: The duration (in seconds) that a password reset link is considered valid.
+	AuthPasswordResetLinkExpiry int `json:"auth.passwordResetLinkExpiry,omitempty"`
 	// AuthProviders description: The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including Google Workspace), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).
 	AuthProviders []AuthProviders `json:"auth.providers,omitempty"`
 	// AuthPublic description: WARNING: This option has been removed as of 3.8.
@@ -1165,6 +1173,8 @@ type SiteConfiguration struct {
 	CampaignsEnabled *bool `json:"campaigns.enabled,omitempty"`
 	// CampaignsReadAccessEnabled description: DEPRECATED: Enables read-only access to campaigns for non-site-admin users. This doesn't have an effect anymore.
 	CampaignsReadAccessEnabled *bool `json:"campaigns.readAccess.enabled,omitempty"`
+	// CampaignsRestrictToAdmins description: When enabled, only site admins can create and apply campaigns.
+	CampaignsRestrictToAdmins bool `json:"campaigns.restrictToAdmins,omitempty"`
 	// CorsOrigin description: Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.
 	CorsOrigin string `json:"corsOrigin,omitempty"`
 	// DebugSearchSymbolsParallelism description: (debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.
@@ -1197,6 +1207,8 @@ type SiteConfiguration struct {
 	GitCloneURLToRepositoryName []*CloneURLToRepositoryName `json:"git.cloneURLToRepositoryName,omitempty"`
 	// GitMaxConcurrentClones description: Maximum number of git clone processes that will be run concurrently per gitserver to update repositories. Note: the global git update scheduler respects gitMaxConcurrentClones. However, we allow each gitserver to run upto gitMaxConcurrentClones to allow for urgent fetches. Urgent fetches are used when a user is browsing a PR and we do not have the commit yet.
 	GitMaxConcurrentClones int `json:"gitMaxConcurrentClones,omitempty"`
+	// GitUpdateInterval description: JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.
+	GitUpdateInterval []*UpdateIntervalRule `json:"gitUpdateInterval,omitempty"`
 	// GithubClientID description: Client ID for GitHub. (DEPRECATED)
 	GithubClientID string `json:"githubClientID,omitempty"`
 	// GithubClientSecret description: Client secret for GitHub. (DEPRECATED)
@@ -1257,8 +1269,8 @@ type SiteConfiguration struct {
 type Step struct {
 	// Container description: The Docker image used to launch the Docker container in which the shell command is run.
 	Container string `json:"container"`
-	// Env description: Environment variables to set in the environment when running this command.
-	Env map[string]string `json:"env,omitempty"`
+	// Env description: Environment variables to set in the step environment.
+	Env interface{} `json:"env,omitempty"`
 	// Files description: Files that should be mounted into or be created inside the Docker container.
 	Files map[string]string `json:"files,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
@@ -1272,6 +1284,18 @@ type TlsExternal struct {
 	// InsecureSkipVerify description: insecureSkipVerify controls whether a client verifies the server's certificate chain and host name.
 	// If InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to man-in-the-middle attacks.
 	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
+}
+
+// TransformChanges description: Optional transformations to apply to the changes produced in each repository.
+type TransformChanges struct {
+	// Group description: A list of groups of changes in a repository that each create a separate, additional changeset for this repository, with all ungrouped changes being in the default changeset.
+	Group []interface{} `json:"group,omitempty"`
+}
+type UpdateIntervalRule struct {
+	// Interval description: An integer representing the number of minutes to wait until the next update
+	Interval int `json:"interval"`
+	// Pattern description: A regular expression matching a repo name
+	Pattern string `json:"pattern"`
 }
 type UsernameIdentity struct {
 	Type string `json:"type"`

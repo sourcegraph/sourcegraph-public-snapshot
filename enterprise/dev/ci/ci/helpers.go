@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
@@ -129,7 +130,7 @@ func (c Config) ensureCommit() error {
 	if !found {
 		fmt.Printf("This branch %q at commit %s does not include any of these commits: %s.\n", c.branch, c.commit, strings.Join(c.mustIncludeCommit, ", "))
 		fmt.Println("Rebase onto the latest main to get the latest CI fixes.")
-		fmt.Printf("Errors from `git merge-base --is-ancestor $COMMIT HEAD`: %s", errs.Error())
+		fmt.Printf("Errors from `git merge-base --is-ancestor $COMMIT HEAD`: %s", errs)
 		return errs
 	}
 	return nil
@@ -165,4 +166,13 @@ func (c Config) isGoOnly() bool {
 
 func (c Config) shouldRunE2EandQA() bool {
 	return c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "main"
+}
+
+// candidateImageTag provides the tag for a candidate image built for this Buildkite run.
+//
+// Note that the availability of this image depends on whether a candidate gets built,
+// as determined in `addDockerImages()`.
+func (c Config) candidateImageTag() string {
+	buildNumber := os.Getenv("BUILDKITE_BUILD_NUMBER")
+	return images.CandidateImageTag(c.commit, buildNumber)
 }

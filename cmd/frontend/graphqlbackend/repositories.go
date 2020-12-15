@@ -8,14 +8,15 @@ import (
 	"github.com/google/zoekt"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func (r *schemaResolver) Repositories(args *struct {
@@ -198,7 +199,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 			break
 		}
 
-		resolvers = append(resolvers, &RepositoryResolver{repo: repo})
+		resolvers = append(resolvers, &RepositoryResolver{innerRepo: repo})
 	}
 	return resolvers, nil
 }
@@ -288,7 +289,7 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 	}
 
 	if !args.Enabled {
-		_, err := repoupdater.DefaultClient.ExcludeRepo(ctx, repo.repo.ID)
+		_, err := repoupdater.DefaultClient.ExcludeRepo(ctx, repo.IDInt32())
 		if err != nil {
 			return nil, errors.Wrapf(err, "repo-updater.exclude-repos")
 		}
@@ -296,11 +297,7 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 
 	// Trigger update when enabling.
 	if args.Enabled {
-		gitserverRepo, err := backend.GitRepo(ctx, repo.repo)
-		if err != nil {
-			return nil, err
-		}
-		if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
+		if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repo.innerRepo.Name); err != nil {
 			return nil, err
 		}
 	}
@@ -323,7 +320,7 @@ func toRepositoryResolvers(repos []*types.Repo) []*RepositoryResolver {
 
 	resolvers := make([]*RepositoryResolver, len(repos))
 	for i := range repos {
-		resolvers[i] = &RepositoryResolver{repo: repos[i]}
+		resolvers[i] = &RepositoryResolver{innerRepo: repos[i]}
 	}
 
 	return resolvers

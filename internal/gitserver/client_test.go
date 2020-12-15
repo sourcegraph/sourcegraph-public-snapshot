@@ -64,17 +64,6 @@ func TestClient_Archive(t *testing.T) {
 	}
 	defer os.RemoveAll(root)
 
-	srv := httptest.NewServer((&server.Server{
-		ReposDir: filepath.Join(root, "repos"),
-	}).Handler())
-	defer srv.Close()
-
-	cli := gitserver.NewClient(&http.Client{})
-	cli.Addrs = func(context.Context) []string {
-		u, _ := url.Parse(srv.URL)
-		return []string{u.Host}
-	}
-
 	tests := map[api.RepoName]struct {
 		remote string
 		want   map[string]string
@@ -97,16 +86,34 @@ func TestClient_Archive(t *testing.T) {
 		},
 	}
 
+	srv := httptest.NewServer((&server.Server{
+		ReposDir: filepath.Join(root, "repos"),
+		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
+			testData := tests[name]
+			if testData.remote != "" {
+				return testData.remote, nil
+			}
+			return "", fmt.Errorf("no remote for %s", name)
+		},
+	}).Handler())
+	defer srv.Close()
+
+	cli := gitserver.NewClient(&http.Client{})
+	cli.Addrs = func(context.Context) []string {
+		u, _ := url.Parse(srv.URL)
+		return []string{u.Host}
+	}
+
 	ctx := context.Background()
 	for name, test := range tests {
 		t.Run(string(name), func(t *testing.T) {
 			if test.remote != "" {
-				if _, err := cli.RequestRepoUpdate(ctx, gitserver.Repo{Name: name, URL: test.remote}, 0); err != nil {
+				if _, err := cli.RequestRepoUpdate(ctx, name, 0); err != nil {
 					t.Fatal(err)
 				}
 			}
 
-			rc, err := cli.Archive(ctx, gitserver.Repo{Name: name}, gitserver.ArchiveOptions{Treeish: "HEAD", Format: "zip"})
+			rc, err := cli.Archive(ctx, name, gitserver.ArchiveOptions{Treeish: "HEAD", Format: "zip"})
 			if have, want := fmt.Sprint(err), fmt.Sprint(test.err); have != want {
 				t.Errorf("archive: have err %v, want %v", have, want)
 			}

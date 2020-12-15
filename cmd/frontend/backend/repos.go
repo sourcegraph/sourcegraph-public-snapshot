@@ -8,9 +8,11 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -19,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -88,6 +91,11 @@ func shouldRedirect(name api.RepoName) bool {
 		extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...) != nil
 }
 
+var metricIsRepoCloneable = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_frontend_repo_add_is_cloneable",
+	Help: "temporary metric to measure if this codepath is valuable on sourcegraph.com",
+}, []string{"status"})
+
 // Add adds the repository with the given name to the database by calling
 // repo-updater when in sourcegraph.com mode.
 func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
@@ -98,16 +106,20 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
 	if host := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...); host != nil {
-		gitserverRepo, err := quickGitserverRepo(ctx, name, host.ServiceType)
-		if err != nil {
+		status := "unknown"
+		defer func() {
+			metricIsRepoCloneable.WithLabelValues(status).Inc()
+		}()
+
+		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, name); err != nil {
+			if ctx.Err() != nil {
+				status = "timeout"
+			} else {
+				status = "fail"
+			}
 			return err
 		}
-
-		if gitserverRepo != nil {
-			if err := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); err != nil {
-				return err
-			}
-		}
+		status = "success"
 	}
 
 	// Looking up the repo in repo-updater makes it sync that repo to the
@@ -158,17 +170,12 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 
-	cachedRepo, err := CachedGitRepo(ctx, repo)
+	invCtx, err := InventoryContext(repo.Name, commitID, forceEnhancedLanguageDetection)
 	if err != nil {
 		return nil, err
 	}
 
-	invCtx, err := InventoryContext(*cachedRepo, commitID, forceEnhancedLanguageDetection)
-	if err != nil {
-		return nil, err
-	}
-
-	root, err := git.Stat(ctx, *cachedRepo, commitID, "")
+	root, err := git.Stat(ctx, repo.Name, commitID, "")
 	if err != nil {
 		return nil, err
 	}

@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // usernamesForTests is a list of test cases containing valid and invalid usernames and org names.
@@ -544,7 +544,7 @@ func TestUsers_Delete(t *testing.T) {
 			err = ExternalServices.Create(ctx, confGet, &types.ExternalService{
 				Kind:            extsvc.KindGitHub,
 				DisplayName:     "GITHUB #1",
-				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 				NamespaceUserID: user.ID,
 			})
 			if err != nil {
@@ -620,6 +620,43 @@ func TestUsers_Delete(t *testing.T) {
 				t.Errorf("got error %v, want ErrUserNotFound", err)
 			}
 		})
+	}
+}
+
+func TestUsers_HasTag(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	var id int32
+	if err := dbconn.Global.QueryRowContext(ctx, "INSERT INTO users (username, tags) VALUES ('karim', '{\"foo\", \"bar\"}') RETURNING id").Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+
+	// lookup existing tag
+	ok, err := Users.HasTag(ctx, id, "foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("expected tag to be found")
+	}
+
+	// lookup non-existing tag
+	ok, err = Users.HasTag(ctx, id, "baz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ok {
+		t.Fatal("expected tag to be not found")
+	}
+
+	// lookup non-existing user
+	ok, err = Users.HasTag(ctx, id+1, "bar")
+	if err == nil || ok {
+		t.Fatal("expected user to be not found")
 	}
 }
 

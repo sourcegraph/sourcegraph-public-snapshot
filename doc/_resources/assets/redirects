@@ -138,7 +138,7 @@
 /user/search/saved_searches /user/search/how-to/saved_searches 308
 /user/search/scopes /user/search/how-to/scopes 308
 
-/user/code_intelligence/basic_code_intelligence /user/code_intelligence/explanations/basic_code_intelligence 308
+/user/code_intelligence/basic_code_intelligence /user/code_intelligence/explanations/search_based_code_intelligence 308
 /user/code_intelligence/features    /user/code_intelligence/explanations/features 308
 /user/code_intelligence/lsif   /user/code_intelligence/explanations/precise_code_intelligence 308
 /user/code_intelligence/precise_code_intelligence   /user/code_intelligence/explanations/precise_code_intelligence 308
@@ -148,7 +148,7 @@
 /user/code_intelligence/languages/go    /user/code_intelligence/how-to/index_a_go_repository 308
 /user/code_intelligence/languages/typescript_and_javascript /user/code_intelligence/how-to/index_a_typescript_and_javascript_repository 308
 
-/user/code_intelligence/explanations/basic_code_intelligence /code_intelligence/explanations/basic_code_intelligence 308
+/user/code_intelligence/explanations/basic_code_intelligence /code_intelligence/explanations/search_based_code_intelligence 308
 /user/code_intelligence/explanations/features /code_intelligence/explanations/features 308
 /user/code_intelligence/explanations/precise_code_intelligence /code_intelligence/explanations/precise_code_intelligence 308
 /user/code_intelligence/explanations/writing_an_indexer /code_intelligence/explanations/writing_an_indexer 308

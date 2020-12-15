@@ -1,19 +1,28 @@
 package graphqlbackend
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func BenchmarkPrometheusFieldName(b *testing.B) {
@@ -95,4 +104,171 @@ func TestMain(m *testing.M) {
 		log.SetOutput(ioutil.Discard)
 	}
 	os.Exit(m.Run())
+}
+
+func TestAffiliatedRepositories(t *testing.T) {
+	resetMocks()
+	db.Mocks.ExternalServices.List = func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+		return []*types.ExternalService{
+			{
+				ID:          1,
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "github",
+			},
+			{
+				ID:          2,
+				Kind:        extsvc.KindGitLab,
+				DisplayName: "gitlab",
+			},
+			{
+				ID:   3,
+				Kind: extsvc.KindBitbucketCloud, // unsupported, should be ignored
+			},
+		}, nil
+	}
+	db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+		switch id {
+		case 1:
+			return &types.ExternalService{
+				ID:          1,
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "github",
+			}, nil
+		case 2:
+			return &types.ExternalService{
+				ID:          2,
+				Kind:        extsvc.KindGitLab,
+				DisplayName: "gitlab",
+			}, nil
+		}
+		return nil, nil
+	}
+	db.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
+		return &types.User{
+			ID:        userID,
+			SiteAdmin: userID == 1,
+		}, nil
+	}
+	cf = httpcli.NewFactory(
+		nil,
+		func(c *http.Client) error {
+			c.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
+				buf := &bytes.Buffer{}
+				enc := json.NewEncoder(buf)
+				switch r.URL.Path {
+				case "/api/graphql": //github
+					enc.Encode(repoResponse{
+						Data: data{
+							Viewer: viewer{
+								Repositories: repositories{
+									Nodes: []githubRepository{
+										{
+											NameWithOwner: "test-user/test",
+											IsPrivate:     false,
+										},
+									},
+								},
+							},
+						},
+					})
+				case "/api/v4/projects": //gitlab
+					enc.Encode([]gitlabRepository{
+						{
+							PathWithNamespace: "test-user2/test2",
+							Visibility:        "public",
+						},
+					})
+				default:
+					t.Fatalf("unexpected path: %s", r.URL.Path)
+				}
+				return &http.Response{
+					Body:       ioutil.NopCloser(buf),
+					StatusCode: http.StatusOK,
+				}, nil
+			})
+			return nil
+		},
+	)
+
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 1,
+	})
+
+	gqltesting.RunTests(t, []*gqltesting.Test{
+		{
+			Context: ctx,
+			Schema:  mustParseGraphQLSchema(t),
+			Query: `
+			{
+				affiliatedRepositories(
+					user: "VXNlcjox"
+				) {
+					nodes {
+						name,
+						private,
+						codeHost {
+							displayName
+						}
+					}
+				}
+			}
+			`,
+			ExpectedResult: `
+				{
+					"affiliatedRepositories": {
+						"nodes": [
+							{
+								"name": "test-user/test",
+								"private": false,
+								"codeHost": {
+									"displayName": "github"
+								}
+							},
+							{
+								"name": "test-user2/test2",
+								"private": false,
+								"codeHost": {
+									"displayName": "gitlab"
+								}
+							}
+						]
+					}
+				}
+			`,
+		},
+	})
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) {
+	return f(r)
+}
+
+// copied from the github client, just the fields we need
+type githubRepository struct {
+	NameWithOwner string
+	IsPrivate     bool
+}
+
+type repoResponse struct {
+	Data data `json:"data"`
+}
+type data struct {
+	Viewer viewer `json:"viewer"`
+}
+
+type viewer struct {
+	Repositories repositories `json:"repositories"`
+}
+
+type repositories struct {
+	Nodes []githubRepository `json:"nodes"`
+}
+
+type gitlabRepository struct {
+	Visibility        string `json:"visibility"`
+	ID                int    `json:"id"`
+	PathWithNamespace string `json:"path_with_namespace"`
 }

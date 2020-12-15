@@ -11,11 +11,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestSearchRepositories(t *testing.T) {
@@ -38,14 +39,14 @@ func TestSearchRepositories(t *testing.T) {
 			return []*FileMatchResolver{
 				{
 					uri:  "git://" + string(repoName) + "?1a2b3c#" + "f.go",
-					Repo: &RepositoryResolver{repo: &types.Repo{ID: 123}},
+					Repo: &RepositoryResolver{innerRepo: &types.Repo{ID: 123}},
 				},
 			}, &searchResultsCommon{}, nil
 		case "bar/one":
 			return []*FileMatchResolver{
 				{
 					uri:  "git://" + string(repoName) + "?1a2b3c#" + "f.go",
-					Repo: &RepositoryResolver{repo: &types.Repo{ID: 789}},
+					Repo: &RepositoryResolver{innerRepo: &types.Repo{ID: 789}},
 				},
 			}, &searchResultsCommon{}, nil
 		case "foo/no-match":
@@ -113,7 +114,7 @@ func TestSearchRepositories(t *testing.T) {
 				if !ok {
 					t.Fatal("expected repo result")
 				}
-				got = append(got, string(r.repo.Name))
+				got = append(got, r.Name())
 			}
 			sort.Strings(got)
 
@@ -136,7 +137,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 			return []*FileMatchResolver{
 				{
 					uri:  "git://" + string(repoName) + "?1a2b3c#" + "foo.go",
-					Repo: &RepositoryResolver{repo: &types.Repo{ID: 123}},
+					Repo: &RepositoryResolver{innerRepo: &types.Repo{ID: 123}},
 				},
 			}, &searchResultsCommon{}, nil
 		case "foo/no-match":
@@ -154,7 +155,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 			return []*FileMatchResolver{
 				{
 					uri:  "git://" + string(repo.Repo.Name) + "?1a2b3c#" + "foo.go",
-					Repo: &RepositoryResolver{repo: &types.Repo{ID: 123}},
+					Repo: &RepositoryResolver{innerRepo: &types.Repo{ID: 123}},
 				},
 			}, &searchResultsCommon{}, nil
 		}
@@ -189,7 +190,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 			return []*FileMatchResolver{
 				{
 					uri:  "git://" + string(repo.Repo.Name) + "?1a2b3c#" + "foo.go",
-					Repo: &RepositoryResolver{repo: &types.Repo{ID: 123}},
+					Repo: &RepositoryResolver{innerRepo: &types.Repo{ID: 123}},
 				},
 			}, &searchResultsCommon{}, nil
 		}
@@ -239,11 +240,8 @@ func TestMatchRepos(t *testing.T) {
 	in := append(want, makeRepositoryRevisions("beef/bam", "qux/bas")...)
 	pattern := regexp.MustCompile("foo")
 
-	common, repos := matchRepos(pattern, in)
+	repos := matchRepos(pattern, in)
 
-	if !(len(common.repos) == len(in)) {
-		t.Fatalf("expected %d, got %d", len(in), len(common.repos))
-	}
 	// because of the concurrency we cannot rely on the order of "repos" to be the
 	// same as "want". Hence we create map of repo names and compare those.
 	toMap := func(reporevs []*search.RepositoryRevisions) map[string]struct{} {

@@ -1,12 +1,12 @@
 package db
 
 import (
-	"testing"
-
 	"context"
+	"testing"
+	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type MockRepos struct {
@@ -52,7 +52,7 @@ func (s *MockRepos) MockGetByName(t testing.TB, want api.RepoName, repo api.Repo
 			t.Errorf("got repo name %q, want %q", name, want)
 			return nil, &RepoNotFoundErr{Name: name}
 		}
-		return &types.Repo{ID: repo, Name: name}, nil
+		return &types.Repo{ID: repo, Name: name, CreatedAt: time.Now()}, nil
 	}
 	return
 }

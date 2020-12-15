@@ -13,5 +13,5 @@ jobs:
              recipients: |
                   team/web=@joelkw @felixfbecker @jeanduplessis
                   team/cloud=@tsenart
-                  team/search=@lguychard @poojaj-tech
+                  team/search=@lguychard
                   team/code-intelligence=@macraig

@@ -41,6 +41,7 @@ exports[`PlainQueryInput empty 1`] = `
       </div>
       <div
         aria-checked={true}
+        aria-disabled={false}
         aria-label="Regular expression toggle"
         className="btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle test-regexp-toggle toggle-container__toggle--active test-regexp-toggle--active"
         data-tooltip="Disable regular expression"
@@ -62,6 +63,7 @@ exports[`PlainQueryInput empty 1`] = `
       </div>
       <div
         aria-checked={false}
+        aria-disabled={false}
         aria-label="Structural search toggle"
         className="btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle test-structural-search-toggle test-structural-search-toggle--active"
         data-tooltip="Enable structural search"
@@ -127,6 +129,7 @@ exports[`PlainQueryInput with query 1`] = `
       </div>
       <div
         aria-checked={true}
+        aria-disabled={false}
         aria-label="Regular expression toggle"
         className="btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle test-regexp-toggle toggle-container__toggle--active test-regexp-toggle--active"
         data-tooltip="Disable regular expression"
@@ -148,6 +151,7 @@ exports[`PlainQueryInput with query 1`] = `
       </div>
       <div
         aria-checked={false}
+        aria-disabled={false}
         aria-label="Structural search toggle"
         className="btn btn-icon icon-inline toggle-container__toggle test-regexp-toggle test-structural-search-toggle test-structural-search-toggle--active"
         data-tooltip="Enable structural search"

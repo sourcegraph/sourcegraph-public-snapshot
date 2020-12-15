@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 
 	"github.com/graph-gophers/graphql-go"
@@ -42,29 +41,23 @@ type GitCommitResolver struct {
 	// oid MUST be specified and a 40-character Git SHA.
 	oid GitObjectID
 
-	gitRepoOnce sync.Once
-	gitRepo     *gitserver.Repo
-	gitRepoErr  error
+	gitRepo api.RepoName
 
 	commitOnce sync.Once
 	commit     *git.Commit
 	commitErr  error
 }
 
+// When set to nil, commit will be loaded lazily as needed by the resolver. Pass in a commit when you have batch loaded
+// a bunch of them and already have them at hand.
 func toGitCommitResolver(repo *RepositoryResolver, id api.CommitID, commit *git.Commit) *GitCommitResolver {
 	return &GitCommitResolver{
 		repoResolver:    repo,
 		includeUserInfo: true,
+		gitRepo:         repo.innerRepo.Name,
 		oid:             GitObjectID(id),
 		commit:          commit,
 	}
-}
-
-func (r *GitCommitResolver) resolveGitRepo(ctx context.Context) (*gitserver.Repo, error) {
-	r.gitRepoOnce.Do(func() {
-		r.gitRepo, r.gitRepoErr = backend.CachedGitRepo(ctx, r.repoResolver.repo)
-	})
-	return r.gitRepo, r.gitRepoErr
 }
 
 func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*git.Commit, error) {
@@ -73,14 +66,8 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*git.Commit, err
 			return
 		}
 
-		gitRepo, err := r.resolveGitRepo(ctx)
-		if err != nil {
-			r.commitErr = err
-			return
-		}
-
 		opts := git.ResolveRevisionOptions{}
-		r.commit, r.commitErr = git.GetCommit(ctx, *gitRepo, nil, api.CommitID(r.oid), opts)
+		r.commit, r.commitErr = git.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts)
 	})
 	return r.commit, r.commitErr
 }
@@ -188,19 +175,19 @@ func (r *GitCommitResolver) CanonicalURL() (string, error) {
 }
 
 func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	return externallink.Commit(ctx, r.repoResolver.repo, api.CommitID(r.oid))
+	repo, err := r.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return externallink.Commit(ctx, repo, api.CommitID(r.oid))
 }
 
 func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
 }) (*GitTreeEntryResolver, error) {
-	gitRepo, err := r.resolveGitRepo(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	stat, err := git.Stat(ctx, *gitRepo, api.CommitID(r.oid), args.Path)
+	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -217,12 +204,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
 }) (*GitTreeEntryResolver, error) {
-	gitRepo, err := r.resolveGitRepo(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	stat, err := git.Stat(ctx, *gitRepo, api.CommitID(r.oid), args.Path)
+	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +224,12 @@ func (r *GitCommitResolver) File(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
-	inventory, err := backend.Repos.GetInventory(ctx, r.repoResolver.repo, api.CommitID(r.oid), false)
+	repo, err := r.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	inventory, err := backend.Repos.GetInventory(ctx, repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +242,12 @@ func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 }
 
 func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*languageStatisticsResolver, error) {
-	inventory, err := backend.Repos.GetInventory(ctx, r.repoResolver.repo, api.CommitID(r.oid), false)
+	repo, err := r.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	inventory, err := backend.Repos.GetInventory(ctx, repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -287,12 +279,7 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 func (r *GitCommitResolver) BehindAhead(ctx context.Context, args *struct {
 	Revspec string
 }) (*behindAheadCountsResolver, error) {
-	gitRepo, err := r.resolveGitRepo(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	counts, err := git.GetBehindAhead(ctx, *gitRepo, args.Revspec, string(r.oid))
+	counts, err := git.GetBehindAhead(ctx, r.gitRepo, args.Revspec, string(r.oid))
 	if err != nil {
 		return nil, err
 	}
@@ -312,7 +299,7 @@ func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
 // canonical OID for the revision.
 func (r *GitCommitResolver) inputRevOrImmutableRev() string {
 	if r.inputRev != nil && *r.inputRev != "" {
-		return escapeRevspecForURL(*r.inputRev)
+		return escapePathForURL(*r.inputRev)
 	}
 	return string(r.oid)
 }
@@ -331,7 +318,7 @@ func (r *GitCommitResolver) repoRevURL() (string, error) {
 		rev = string(r.oid)
 	}
 	if rev != "" {
-		return url + "@" + escapeRevspecForURL(rev), nil
+		return url + "@" + escapePathForURL(rev), nil
 	}
 	return url, nil
 }

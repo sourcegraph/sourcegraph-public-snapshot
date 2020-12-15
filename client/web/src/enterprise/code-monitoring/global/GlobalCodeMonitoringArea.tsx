@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
+import { CodeMonitoringProps } from '..'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
@@ -10,6 +11,7 @@ import { BreadcrumbsProps, BreadcrumbSetters, Breadcrumbs } from '../../../compo
 import { lazyComponent } from '../../../util/lazyComponent'
 import { CodeMonitoringPageProps } from '../CodeMonitoringPage'
 import { CreateCodeMonitorPageProps } from '../CreateCodeMonitorPage'
+import { ManageCodeMonitorPageProps } from '../ManageCodeMonitorPage'
 
 interface Props
     extends RouteComponentProps<{}>,
@@ -18,7 +20,8 @@ interface Props
         TelemetryProps,
         PlatformContextProps,
         BreadcrumbsProps,
-        BreadcrumbSetters {
+        BreadcrumbSetters,
+        CodeMonitoringProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }
@@ -30,6 +33,11 @@ const CodeMonitoringPage = lazyComponent<CodeMonitoringPageProps, 'CodeMonitorin
 const CreateCodeMonitorPage = lazyComponent<CreateCodeMonitorPageProps, 'CreateCodeMonitorPage'>(
     () => import('../CreateCodeMonitorPage'),
     'CreateCodeMonitorPage'
+)
+
+const ManageCodeMonitorPage = lazyComponent<ManageCodeMonitorPageProps, 'ManageCodeMonitorPage'>(
+    () => import('../ManageCodeMonitorPage'),
+    'ManageCodeMonitorPage'
 )
 
 /**
@@ -54,7 +62,7 @@ export const AuthenticatedCodeMonitoringArea = withAuthenticatedUser<Authenticat
         )
     )
 
-    return (
+    return outerProps.authenticatedUser ? (
         <div className="w-100">
             <Breadcrumbs breadcrumbs={outerProps.breadcrumbs} location={outerProps.location} />
             <div className="container web-content">
@@ -70,8 +78,15 @@ export const AuthenticatedCodeMonitoringArea = withAuthenticatedUser<Authenticat
                         render={props => <CreateCodeMonitorPage {...outerProps} {...props} {...breadcrumbSetters} />}
                         exact={true}
                     />
+                    <Route
+                        path={`${match.path}/:id`}
+                        render={props => <ManageCodeMonitorPage {...outerProps} {...props} {...breadcrumbSetters} />}
+                        exact={true}
+                    />
                 </Switch>
             </div>
         </div>
+    ) : (
+        <Redirect to="/sign-in" />
     )
 })

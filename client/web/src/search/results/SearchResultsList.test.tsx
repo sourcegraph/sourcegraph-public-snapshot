@@ -15,7 +15,7 @@ import {
     SEARCH_REQUEST,
 } from '../../../../shared/src/util/searchTestHelpers'
 import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
-import { NEVER } from 'rxjs'
+import { NEVER, of } from 'rxjs'
 import { FiltersToTypeAndValue, FilterType } from '../../../../shared/src/search/interactive/util'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 
@@ -100,11 +100,9 @@ describe('SearchResultsList', () => {
 
         showSavedQueryModal: false,
         onSavedQueryModalClose: sinon.spy(),
-        onDidCreateSavedQuery: sinon.spy(),
         onSaveQueryClick: sinon.spy(),
-        didSave: false,
 
-        fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_REQUEST,
+        fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
 
         isLightTheme: true,
         settingsCascade: {
@@ -127,7 +125,8 @@ describe('SearchResultsList', () => {
         versionContext: undefined,
 
         navbarSearchQueryState: { query: '', cursorPosition: 0 },
-        searchStreaming: false,
+
+        shouldDisplayPerformanceWarning: () => of(false),
     }
 
     it('displays loading text when results is undefined', () => {

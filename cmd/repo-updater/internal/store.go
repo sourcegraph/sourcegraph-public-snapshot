@@ -13,14 +13,14 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	internaldb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
-	"github.com/sourcegraph/sourcegraph/internal/secret"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // A Store exposes methods to read and write repos and external services.
@@ -195,7 +195,7 @@ func (s *Store) ListExternalRepoSpecs(ctx context.Context) (ids map[api.External
 	}(time.Now())
 
 	const ListExternalRepoSpecsQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.ListExternalRepoSpecs
+-- source: internal/repos/store.go:DBStore.ListExternalRepoSpecs
 SELECT
 	id,
 	external_id,
@@ -244,7 +244,6 @@ func (s *Store) ListSyncJobs(ctx context.Context) ([]SyncJob, error) {
 			process_after,
 			num_resets,
 			num_failures,
-			log_contents,
 			external_service_id,
 			next_sync_at
 		 FROM external_service_sync_jobs_with_next_sync_at
@@ -261,10 +260,6 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 	var jobs []SyncJob
 
 	for rows.Next() {
-		// required field for the sync worker, but
-		// the value is thrown out here
-		var logContents *string
-
 		var job SyncJob
 		if err := rows.Scan(
 			&job.ID,
@@ -275,7 +270,6 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 			&job.ProcessAfter,
 			&job.NumResets,
 			&job.NumFailures,
-			&logContents,
 			&job.ExternalServiceID,
 			&job.NextSyncAt,
 		); err != nil {
@@ -524,106 +518,88 @@ func batchReposQuery(fmtstr string, repos []*types.Repo) (_ *sqlf.Query, err err
 }
 
 func (s *Store) UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]types.SourceInfo) (err error) {
-	tr, ctx := s.trace(ctx, "Store.UpsertSources")
-	tr.LogFields(otlog.Int("count", len(inserts)+len(deletes)))
-
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-		count := float64(len(inserts) + len(updates) + len(deletes))
-
-		s.Metrics.UpsertSources.Observe(secs, count, &err)
-		logging.Log(s.Log, "store.upsert-sources", &err, "count", count)
-
-		tr.SetError(err)
-		tr.Finish()
-	}(time.Now())
-
 	if len(inserts)+len(updates)+len(deletes) == 0 {
 		return nil
 	}
 
-	marshalSourceList := func(sources map[api.RepoID][]types.SourceInfo) ([]byte, error) {
-		srcs := make([]externalServiceRepo, 0, len(sources))
+	type sourceSlices struct {
+		externalServiceIDs []int64
+		repoIDs            []int64
+		cloneURLs          []string
+	}
+
+	makeSourceSlices := func(sources map[api.RepoID][]types.SourceInfo) sourceSlices {
+		srcs := sourceSlices{
+			externalServiceIDs: make([]int64, 0, len(sources)),
+			repoIDs:            make([]int64, 0, len(sources)),
+			cloneURLs:          make([]string, 0, len(sources)),
+		}
 		for rid, infoList := range sources {
 			for _, info := range infoList {
-				srcs = append(srcs, externalServiceRepo{
-					ExternalServiceID: info.ExternalServiceID(),
-					RepoID:            int64(rid),
-					CloneURL:          secret.StringValue{S: &info.CloneURL},
-				})
+				srcs.externalServiceIDs = append(srcs.externalServiceIDs, info.ExternalServiceID())
+				srcs.repoIDs = append(srcs.repoIDs, int64(rid))
+				srcs.cloneURLs = append(srcs.cloneURLs, info.CloneURL)
 			}
 		}
-		return json.Marshal(srcs)
+		return srcs
 	}
 
-	insertedSources, err := marshalSourceList(inserts)
-	if err != nil {
-		return err
+	insertedSources := makeSourceSlices(inserts)
+	updatedSources := makeSourceSlices(updates)
+
+	var q *sqlf.Query
+
+	// When upserting sources we only want to perform delete statements when there are actual deletes that need to happen
+	// so that we don't inadvertently trigger trig_soft_delete_orphan_repo_by_external_service_repo
+	if len(deletes) > 0 {
+		deletedSources := makeSourceSlices(deletes)
+		q = sqlf.Sprintf(upsertSourcesWithDeletesQueryFmtstr,
+			// Updated
+			pq.Int64Array(updatedSources.externalServiceIDs),
+			pq.Int64Array(updatedSources.repoIDs),
+			pq.StringArray(updatedSources.cloneURLs),
+			// Inserted
+			pq.Int64Array(insertedSources.externalServiceIDs),
+			pq.Int64Array(insertedSources.repoIDs),
+			pq.StringArray(insertedSources.cloneURLs),
+			// Deleted
+			pq.Int64Array(deletedSources.externalServiceIDs),
+			pq.Int64Array(deletedSources.repoIDs),
+		)
+	} else {
+		q = sqlf.Sprintf(upsertSourcesQueryFmtstr,
+			// Updated
+			pq.Int64Array(updatedSources.externalServiceIDs),
+			pq.Int64Array(updatedSources.repoIDs),
+			pq.StringArray(updatedSources.cloneURLs),
+			// Inserted
+			pq.Int64Array(insertedSources.externalServiceIDs),
+			pq.Int64Array(insertedSources.repoIDs),
+			pq.StringArray(insertedSources.cloneURLs),
+		)
 	}
 
-	updatedSources, err := marshalSourceList(updates)
-	if err != nil {
-		return err
-	}
-
-	deletedSources, err := marshalSourceList(deletes)
-	if err != nil {
-		return err
-	}
-
-	q := sqlf.Sprintf(upsertSourcesQueryFmtstr,
-		string(deletedSources),
-		string(updatedSources),
-		string(insertedSources),
-	)
-
-	err = s.Exec(ctx, q)
-	return err
+	return s.Exec(ctx, q)
 }
 
-const upsertSourcesQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.UpsertSources
-WITH deleted_sources_list AS (
-  SELECT * FROM ROWS FROM (
-	json_to_recordset(%s)
-	AS (
-		external_service_id bigint,
-		repo_id             integer,
-		clone_url           text
-	)
-  )
-  WITH ORDINALITY
-),
-updated_sources_list AS (
-  SELECT * FROM ROWS FROM (
-    json_to_recordset(%s)
-    AS (
-      external_service_id bigint,
-      repo_id             integer,
-      clone_url           text
-    )
-  )
-  WITH ORDINALITY
+var upsertSourcesQueryFmtstr = upsertSourcesFmtstrPrefix + upsertSourcesFmtstrSuffix
+var upsertSourcesWithDeletesQueryFmtstr = upsertSourcesFmtstrPrefix + upsertSourcesFmtstrDeletes + upsertSourcesFmtstrSuffix
+
+const upsertSourcesFmtstrPrefix = `
+-- source: internal/repos/store.go:DBStore.UpsertSources
+WITH updated_sources_list AS (
+  SELECT * FROM
+  unnest(%s::bigint[], %s::integer[], %s::text[]) AS
+  x ( external_service_id, repo_id, clone_url )
 ),
 inserted_sources_list AS (
-  SELECT * FROM ROWS FROM (
-    json_to_recordset(%s)
-    AS (
-        external_service_id bigint,
-        repo_id             integer,
-        clone_url           text
-    )
-  )
-  WITH ORDINALITY
+  SELECT * FROM
+  unnest(%s::bigint[], %s::integer[], %s::text[]) AS
+  x ( external_service_id, repo_id, clone_url )
 ),
-delete_sources AS (
-  DELETE FROM external_service_repos AS e
-  USING deleted_sources_list AS d
-  WHERE
-	  e.external_service_id = d.external_service_id
-	AND
-      e.repo_id = d.repo_id
-),
+`
+
+const upsertSourcesFmtstrSuffix = `
 update_sources AS (
   UPDATE external_service_repos AS e
   SET
@@ -643,6 +619,26 @@ INSERT INTO external_service_repos (
   repo_id,
   clone_url
 FROM inserted_sources_list
+ON CONFLICT ON CONSTRAINT external_service_repos_repo_id_external_service_id_unique
+DO
+  UPDATE SET clone_url = EXCLUDED.clone_url
+  WHERE external_service_repos.clone_url != EXCLUDED.clone_url
+`
+
+const upsertSourcesFmtstrDeletes = `
+deleted_sources_list AS (
+  SELECT * FROM
+  unnest(%s::bigint[], %s::integer[]) AS
+  x ( external_service_id, repo_id )
+),
+delete_sources AS (
+  DELETE FROM external_service_repos AS e
+  USING deleted_sources_list AS d
+  WHERE
+	  e.external_service_id = d.external_service_id
+	AND
+      e.repo_id = d.repo_id
+),
 `
 
 func (s *Store) SetClonedRepos(ctx context.Context, repoNames ...string) (err error) {
@@ -670,7 +666,7 @@ func (s *Store) SetClonedRepos(ctx context.Context, repoNames ...string) (err er
 }
 
 const setClonedReposQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
+-- source: internal/repos/store.go:DBStore.SetClonedRepos
 WITH repo_names AS (
   SELECT unnest(%s::citext[])::citext AS name
 ),
@@ -708,7 +704,7 @@ func (s *Store) CountNotClonedRepos(ctx context.Context) (count uint64, err erro
 }
 
 const CountNotClonedReposQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.CountNotClonedRepos
+-- source: internal/repos/store.go:DBStore.CountNotClonedRepos
 SELECT COUNT(*) FROM repo WHERE deleted_at IS NULL AND NOT cloned
 `
 
@@ -734,7 +730,7 @@ func (s *Store) CountUserAddedRepos(ctx context.Context) (count uint64, err erro
 }
 
 const CountTotalUserAddedReposQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.CountUserAddedRepos
+-- source: internal/repos/store.go:DBStore.CountUserAddedRepos
 SELECT COUNT(*)
 FROM
     repo r
@@ -860,9 +856,9 @@ func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
 }
 
 type externalServiceRepo struct {
-	ExternalServiceID int64              `json:"external_service_id"`
-	RepoID            int64              `json:"repo_id"`
-	CloneURL          secret.StringValue `json:"clone_url"`
+	ExternalServiceID int64  `json:"external_service_id"`
+	RepoID            int64  `json:"repo_id"`
+	CloneURL          string `json:"clone_url"`
 }
 
 func sourcesColumn(repoID api.RepoID, sources map[string]*types.SourceInfo) (json.RawMessage, error) {
@@ -871,7 +867,7 @@ func sourcesColumn(repoID api.RepoID, sources map[string]*types.SourceInfo) (jso
 		records = append(records, externalServiceRepo{
 			ExternalServiceID: src.ExternalServiceID(),
 			RepoID:            int64(repoID),
-			CloneURL:          secret.StringValue{S: &src.CloneURL},
+			CloneURL:          src.CloneURL,
 		})
 	}
 

@@ -8,10 +8,12 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var matchHoleRegexp = lazyregexp.New(splitOnHolesPattern())
@@ -33,7 +35,7 @@ func splitOnHolesPattern() string {
 	}, "|")
 }
 
-var matchRegexpPattern = lazyregexp.New(`(\w+)?~(.*)`)
+var matchRegexpPattern = lazyregexp.New(`:\[(\w+)?~(.*)\]`)
 
 type Term interface {
 	term()
@@ -41,33 +43,43 @@ type Term interface {
 }
 
 type Literal string
-type RegexpPattern string
+type Hole string
 
 func (Literal) term() {}
 func (t Literal) String() string {
 	return string(t)
 }
 
-func (RegexpPattern) term() {}
-func (t RegexpPattern) String() string {
+func (Hole) term() {}
+func (t Hole) String() string {
 	return string(t)
 }
 
-// templateToRegexp parses a comby pattern to a list of Terms where a Term is
-// either a literal or a regular expression extracted from hole syntax.
-func templateToRegexp(buf []byte) []Term {
-	// uses `open` to track whether [] are balanced when parsing hole syntax
-	// and uses `inside` to track whether [] are balanced inside holes that
-	// contain regular expressions
-	var open, inside, advance int
+// parseTemplate parses a comby pattern to a list of Terms where a Term is
+// either a literal or hole metasyntax.
+func parseTemplate(buf []byte) []Term {
+	// Track context of whether we are inside an opening hole, e.g., after
+	// ':['. Value is greater than 1 when inside.
+	var open int
+	// Track whether we are balanced inside a regular expression character
+	// set like '[a]' inside an open hole, e.g., :[foo~[a]]. Value is greater
+	// than 1 when inside.
+	var inside int
+
+	var start int
 	var r rune
-	var currentLiteral, currentHole []rune
+	var token []rune
 	var result []Term
 
 	next := func() rune {
-		r, advance := utf8.DecodeRune(buf)
-		buf = buf[advance:]
+		r, start := utf8.DecodeRune(buf)
+		buf = buf[start:]
 		return r
+	}
+
+	appendTerm := func(term Term) {
+		result = append(result, term)
+		token = []rune{}
 	}
 
 	for len(buf) > 0 {
@@ -75,66 +87,65 @@ func templateToRegexp(buf []byte) []Term {
 		switch r {
 		case ':':
 			if open > 0 {
-				currentHole = append(currentHole, ':')
+				// ':' inside a hole, likely part of a regexp pattern.
+				token = append(token, ':')
 				continue
 			}
-			if len(buf[advance:]) > 0 {
-				if buf[advance] == ':' {
-					// maybe the start of another hole like ::[foo]
-					currentLiteral = append(currentLiteral, ':')
-					continue
-				}
-				r = next()
-				if r == '[' {
+			if len(buf[start:]) > 0 {
+				// Look ahead and see if this is the start of a hole.
+				if r, _ := utf8.DecodeRune(buf); r == '[' {
+					// It is the start of a hole, consume the '['.
+					r = next()
 					open++
-					result = append(result, Literal(currentLiteral))
-					currentLiteral = []rune{}
+					appendTerm(Literal(token))
+					// Persist the literal token scanned up to this point.
+					token = append(token, ':', '[')
 					continue
 				}
-				currentLiteral = append(currentLiteral, ':', r)
+				// Something else, push the ':' we saw and continue.
+				token = append(token, ':')
 				continue
 			}
-			currentLiteral = append(currentLiteral, ':')
+			// Trailing ':'
+			token = append(token, ':')
 		case '\\':
-			if len(buf[advance:]) > 0 && open > 0 {
-				// assume this is an escape sequence for a regex hole
+			if len(buf[start:]) > 0 && open > 0 {
+				// Assume this is an escape sequence for a regexp hole.
 				r = next()
-				currentHole = append(currentHole, '\\', r)
+				token = append(token, '\\', r)
 				continue
 			}
-			currentLiteral = append(currentLiteral, '\\')
+			token = append(token, '\\')
 		case '[':
 			if open > 0 {
+				// Assume this is a character set inside a regexp hole.
 				inside++
-				currentHole = append(currentHole, '[')
+				token = append(token, '[')
 				continue
 			}
-			currentLiteral = append(currentLiteral, r)
+			token = append(token, '[')
 		case ']':
 			if open > 0 && inside > 0 {
+				// This ']' closes a regular expression inside a hole.
 				inside--
-				currentHole = append(currentHole, ']')
+				token = append(token, ']')
 				continue
 			}
 			if open > 0 {
-				if matchRegexpPattern.MatchString(string(currentHole)) {
-					extractedRegexp := matchRegexpPattern.ReplaceAllString(string(currentHole), `$2`)
-					currentHole = []rune{}
-					result = append(result, RegexpPattern(extractedRegexp))
-				}
+				// This ']' closes a hole.
 				open--
+				token = append(token, ']')
+				appendTerm(Hole(token))
 				continue
 			}
-			currentLiteral = append(currentLiteral, r)
+			token = append(token, r)
 		default:
-			if open > 0 {
-				currentHole = append(currentHole, r)
-			} else {
-				currentLiteral = append(currentLiteral, r)
-			}
+			token = append(token, r)
 		}
 	}
-	result = append(result, Literal(currentLiteral))
+	if len(token) > 0 {
+		result = append(result, Literal(token))
+	}
 	return result
 }
 
@@ -152,7 +163,7 @@ var onMatchWhitespace = lazyregexp.New(`[\s]+`)
 func StructuralPatToRegexpQuery(pattern string, shortcircuit bool) string {
 	var pieces []string
 
-	terms := templateToRegexp([]byte(pattern))
+	terms := parseTemplate([]byte(pattern))
 	for _, term := range terms {
 		if term.String() == "" {
 			continue
@@ -162,8 +173,11 @@ func StructuralPatToRegexpQuery(pattern string, shortcircuit bool) string {
 			piece := regexp.QuoteMeta(v.String())
 			piece = onMatchWhitespace.ReplaceAllLiteralString(piece, `[\s]+`)
 			pieces = append(pieces, piece)
-		case RegexpPattern:
-			pieces = append(pieces, v.String())
+		case Hole:
+			if matchRegexpPattern.MatchString(v.String()) {
+				extractedRegexp := matchRegexpPattern.ReplaceAllString(v.String(), `$2`)
+				pieces = append(pieces, extractedRegexp)
+			}
 		default:
 			panic("Unreachable")
 		}
@@ -251,7 +265,7 @@ func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPat
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, partial map[api.RepoID]struct{}, err error) {
 	if len(repos.repoRevs) == 0 {
 		return nil, false, nil, nil
 	}
@@ -317,31 +331,11 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		return nil, false, nil, nil
 	}
 
-	// Zoekt did not evaluate some files in repositories or ignored some repositories. Record skipped repos.
-	reposLimitHit = make(map[string]struct{})
-	if limitHit {
-		for _, file := range resp.Files {
-			if _, ok := reposLimitHit[file.Repository]; !ok {
-				reposLimitHit[file.Repository] = struct{}{}
-			}
-		}
-	}
-
-	if fileMatchLimit := int(args.PatternInfo.FileMatchLimit); len(resp.Files) > fileMatchLimit {
-		// Trim files based on count.
-		fileMatchesInSkippedRepos := resp.Files[fileMatchLimit:]
-		resp.Files = resp.Files[:fileMatchLimit]
-
-		if !limitHit {
-			// Record skipped repos with trimmed files.
-			for _, file := range fileMatchesInSkippedRepos {
-				if _, ok := reposLimitHit[file.Repository]; !ok {
-					reposLimitHit[file.Repository] = struct{}{}
-				}
-			}
-		}
-		limitHit = true
-	}
+	limitHit, files, partial := zoektLimitMatches(limitHit, int(args.PatternInfo.FileMatchLimit), resp.Files, func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool) {
+		repo, inputRevs := repos.GetRepoInputRev(file)
+		return repo, inputRevs, true
+	})
+	resp.Files = files
 
 	maxLineMatches := 25 + k
 	matches := make([]*FileMatchResolver, len(resp.Files))
@@ -355,7 +349,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		}
 		repoRev := repos.repoRevs[file.Repository]
 		if repoResolvers[repoRev.Repo.Name] == nil {
-			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{repo: repoRev.Repo}
+			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{innerRepo: repoRev.Repo}
 		}
 		matches[i] = &FileMatchResolver{
 			JPath:     file.FileName,
@@ -366,5 +360,5 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		}
 	}
 
-	return matches, limitHit, reposLimitHit, nil
+	return matches, limitHit, partial, nil
 }

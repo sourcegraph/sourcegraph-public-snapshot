@@ -17,24 +17,25 @@ import (
 // Index is a subset of the lsif_indexes table and stores both processed and unprocessed
 // records.
 type Index struct {
-	ID             int          `json:"id"`
-	Commit         string       `json:"commit"`
-	QueuedAt       time.Time    `json:"queuedAt"`
-	State          string       `json:"state"`
-	FailureMessage *string      `json:"failureMessage"`
-	StartedAt      *time.Time   `json:"startedAt"`
-	FinishedAt     *time.Time   `json:"finishedAt"`
-	ProcessAfter   *time.Time   `json:"processAfter"`
-	NumResets      int          `json:"numResets"`
-	NumFailures    int          `json:"numFailures"`
-	RepositoryID   int          `json:"repositoryId"`
-	RepositoryName string       `json:"repositoryName"`
-	DockerSteps    []DockerStep `json:"docker_steps"`
-	Root           string       `json:"root"`
-	Indexer        string       `json:"indexer"`
-	IndexerArgs    []string     `json:"indexer_args"`
-	Outfile        string       `json:"outfile"`
-	Rank           *int         `json:"placeInQueue"`
+	ID             int                            `json:"id"`
+	Commit         string                         `json:"commit"`
+	QueuedAt       time.Time                      `json:"queuedAt"`
+	State          string                         `json:"state"`
+	FailureMessage *string                        `json:"failureMessage"`
+	StartedAt      *time.Time                     `json:"startedAt"`
+	FinishedAt     *time.Time                     `json:"finishedAt"`
+	ProcessAfter   *time.Time                     `json:"processAfter"`
+	NumResets      int                            `json:"numResets"`
+	NumFailures    int                            `json:"numFailures"`
+	RepositoryID   int                            `json:"repositoryId"`
+	RepositoryName string                         `json:"repositoryName"`
+	DockerSteps    []DockerStep                   `json:"docker_steps"`
+	Root           string                         `json:"root"`
+	Indexer        string                         `json:"indexer"`
+	IndexerArgs    []string                       `json:"indexer_args"`
+	Outfile        string                         `json:"outfile"`
+	ExecutionLogs  []workerutil.ExecutionLogEntry `json:"execution_logs"`
+	Rank           *int                           `json:"placeInQueue"`
 }
 
 func (i Index) RecordID() int {
@@ -51,6 +52,8 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 	var indexes []Index
 	for rows.Next() {
 		var index Index
+		var executionLogs []dbworkerstore.ExecutionLogEntry
+
 		if err := rows.Scan(
 			&index.ID,
 			&index.Commit,
@@ -69,9 +72,14 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 			&index.Indexer,
 			pq.Array(&index.IndexerArgs),
 			&index.Outfile,
+			pq.Array(&executionLogs),
 			&index.Rank,
 		); err != nil {
 			return nil, err
+		}
+
+		for _, entry := range executionLogs {
+			index.ExecutionLogs = append(index.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
 		}
 
 		indexes = append(indexes, index)
@@ -127,6 +135,7 @@ func (s *Store) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool, err 
 			u.indexer,
 			u.indexer_args,
 			u.outfile,
+			u.execution_logs,
 			s.rank
 		FROM lsif_indexes_with_repository_name u
 		LEFT JOIN (
@@ -150,11 +159,11 @@ type GetIndexesOptions struct {
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
 func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Index, _ int, err error) {
 	ctx, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("opts.RepositoryID", opts.RepositoryID),
-		log.String("opts.State", opts.State),
-		log.String("opts.Term", opts.Term),
-		log.Int("opts.Limit", opts.Limit),
-		log.Int("opts.Offset", opts.Offset),
+		log.Int("repositoryID", opts.RepositoryID),
+		log.String("state", opts.State),
+		log.String("term", opts.Term),
+		log.Int("limit", opts.Limit),
+		log.Int("offset", opts.Offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -209,6 +218,7 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 				u.indexer,
 				u.indexer_args,
 				u.outfile,
+				u.execution_logs,
 				s.rank
 			FROM lsif_indexes_with_repository_name u
 			LEFT JOIN (
@@ -279,9 +289,16 @@ func (s *Store) IsQueued(ctx context.Context, repositoryID int, commit string) (
 // InsertIndex inserts a new index and returns its identifier.
 func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error) {
 	ctx, endObservation := s.operations.insertIndex.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("index.ID", index.ID),
+		log.Int("indexID", index.ID),
 	}})
 	defer endObservation(1, observation.Args{})
+
+	if index.DockerSteps == nil {
+		index.DockerSteps = []DockerStep{}
+	}
+	if index.IndexerArgs == nil {
+		index.IndexerArgs = []string{}
+	}
 
 	id, _, err := basestore.ScanFirstInt(s.Store.Query(
 		ctx,
@@ -294,8 +311,9 @@ func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error)
 				root,
 				indexer,
 				indexer_args,
-				outfile
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+				outfile,
+				execution_logs
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 			RETURNING id
 		`,
 			index.State,
@@ -306,6 +324,7 @@ func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error)
 			index.Indexer,
 			pq.Array(index.IndexerArgs),
 			index.Outfile,
+			pq.Array(dbworkerstore.ExecutionLogEntries(index.ExecutionLogs)),
 		),
 	))
 
@@ -358,24 +377,11 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf(`u.indexer`),
 	sqlf.Sprintf(`u.indexer_args`),
 	sqlf.Sprintf(`u.outfile`),
+	sqlf.Sprintf(`u.execution_logs`),
 	sqlf.Sprintf("NULL"),
 }
 
 var IndexColumnsWithNullRank = indexColumnsWithNullRank
-
-// SetIndexLogContents updates the log contents fo the index.
-func (s *Store) SetIndexLogContents(ctx context.Context, indexID int, contents string) (err error) {
-	ctx, endObservation := s.operations.setIndexLogContents.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("indexID", indexID),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	return s.Store.Exec(ctx, sqlf.Sprintf(`
-		UPDATE lsif_indexes
-		SET log_contents = %s
-		WHERE id = %s
-	`, contents, indexID))
-}
 
 // DequeueIndex selects the oldest queued index and locks it with a transaction. If there is such an index,
 // the index is returned along with a store instance which wraps the transaction. This transaction must be

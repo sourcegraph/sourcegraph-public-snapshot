@@ -43,7 +43,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
     const emptyDisplay = (
         <div className="panel-container__empty-container text-muted">
             <small>
-                Use saved searches to alert you to uses of a favorite api, or changes to code you need to monitor.
+                Use saved searches to alert you to uses of a favorite API, or changes to code you need to monitor.
             </small>
             {authenticatedUser && (
                 <Link

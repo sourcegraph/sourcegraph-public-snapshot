@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/schema"
+	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
@@ -157,14 +158,14 @@ func IsTimeout(err error) bool {
 	})
 }
 
-// IsTerminal will check if err or one of its causes is a terminal error that cannot be retried.
-func IsTerminal(err error) bool {
-	type terminaler interface {
-		Terminal() bool
+// IsNonRetryable will check if err or one of its causes is a error that cannot be retried.
+func IsNonRetryable(err error) bool {
+	type nonRetryabler interface {
+		NonRetryable() bool
 	}
 	return isErrorPredicate(err, func(err error) bool {
-		e, ok := err.(terminaler)
-		return ok && e.Terminal()
+		e, ok := err.(nonRetryabler)
+		return ok && e.NonRetryable()
 	})
 }
 
@@ -175,15 +176,25 @@ func isErrorPredicate(err error, p func(err error) bool) bool {
 		Cause() error
 	}
 
-	for err != nil {
-		if p(err) {
-			return true
-		}
-		cause, ok := err.(causer)
-		if !ok {
-			break
-		}
-		err = cause.Cause()
+	errs := []error{err}
+
+	// We often use multierr.Error which doesn't implement causer
+	if me, ok := err.(*multierror.Error); ok {
+		errs = me.Errors
 	}
+
+	for _, err := range errs {
+		for err != nil {
+			if p(err) {
+				return true
+			}
+			cause, ok := err.(causer)
+			if !ok {
+				break
+			}
+			err = cause.Cause()
+		}
+	}
+
 	return false
 }

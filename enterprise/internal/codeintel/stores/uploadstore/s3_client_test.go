@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"regexp"
 	"sort"
+	"strconv"
 	"testing"
 	"time"
 
@@ -14,6 +17,7 @@ import (
 	s3 "github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -21,7 +25,7 @@ func TestS3Init(t *testing.T) {
 	s3Client := NewMockS3API()
 	client := testS3Client(s3Client, nil)
 	if err := client.Init(context.Background()); err != nil {
-		t.Fatalf("unexpected error initializing client: %s", err.Error())
+		t.Fatalf("unexpected error initializing client: %s", err)
 	}
 
 	if calls := s3Client.CreateBucketFunc.History(); len(calls) != 1 {
@@ -44,7 +48,7 @@ func TestS3InitBucketExists(t *testing.T) {
 
 		client := testS3Client(s3Client, nil)
 		if err := client.Init(context.Background()); err != nil {
-			t.Fatalf("unexpected error initializing client: %s", err.Error())
+			t.Fatalf("unexpected error initializing client: %s", err)
 		}
 
 		if calls := s3Client.CreateBucketFunc.History(); len(calls) != 1 {
@@ -65,7 +69,7 @@ func TestS3UnmanagedInit(t *testing.T) {
 	s3Client := NewMockS3API()
 	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false, makeOperations(&observation.TestContext))
 	if err := client.Init(context.Background()); err != nil {
-		t.Fatalf("unexpected error initializing client: %s", err.Error())
+		t.Fatalf("unexpected error initializing client: %s", err)
 	}
 
 	if calls := s3Client.CreateBucketFunc.History(); len(calls) != 0 {
@@ -83,15 +87,15 @@ func TestS3Get(t *testing.T) {
 	}, nil)
 
 	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false, makeOperations(&observation.TestContext))
-	rc, err := client.Get(context.Background(), "test-key", 0)
+	rc, err := client.Get(context.Background(), "test-key")
 	if err != nil {
-		t.Fatalf("unexpected error getting key: %s", err.Error())
+		t.Fatalf("unexpected error getting key: %s", err)
 	}
-
 	defer rc.Close()
+
 	contents, err := ioutil.ReadAll(rc)
 	if err != nil {
-		t.Fatalf("unexpected error reading object: %s", err.Error())
+		t.Fatalf("unexpected error reading object: %s", err)
 	}
 
 	if string(contents) != "TEST PAYLOAD" {
@@ -109,37 +113,100 @@ func TestS3Get(t *testing.T) {
 	}
 }
 
-func TestS3GetSkipBytes(t *testing.T) {
-	s3Client := NewMockS3API()
-	s3Client.GetObjectFunc.SetDefaultReturn(&s3.GetObjectOutput{
-		Body: ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))),
-	}, nil)
+var bytesPattern = regexp.MustCompile(`bytes=(\d+)-`)
 
-	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false, makeOperations(&observation.TestContext))
-	rc, err := client.Get(context.Background(), "test-key", 20)
-	if err != nil {
-		t.Fatalf("unexpected error getting key: %s", err.Error())
+func TestS3GetTransientErrors(t *testing.T) {
+	// read 50 bytes then return a connection reset error
+	ioCopyHook = func(w io.Writer, r io.Reader) (int64, error) {
+		var buf bytes.Buffer
+		_, readErr := io.CopyN(&buf, r, 50)
+		if readErr != nil && readErr != io.EOF {
+			return 0, readErr
+		}
+
+		n, writeErr := io.Copy(w, bytes.NewReader(buf.Bytes()))
+		if writeErr != nil {
+			return 0, writeErr
+		}
+
+		if readErr == io.EOF {
+			readErr = nil
+		} else {
+			readErr = errors.New("read: connection reset by peer")
+		}
+		return n, readErr
 	}
 
+	s3Client := fullContentsS3API()
+	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false, makeOperations(&observation.TestContext))
+	rc, err := client.Get(context.Background(), "test-key")
+	if err != nil {
+		t.Fatalf("unexpected error getting key: %s", err)
+	}
 	defer rc.Close()
+
 	contents, err := ioutil.ReadAll(rc)
 	if err != nil {
-		t.Fatalf("unexpected error reading object: %s", err.Error())
+		t.Fatalf("unexpected error reading object: %s", err)
 	}
 
-	if string(contents) != "TEST PAYLOAD" {
-		t.Fatalf("unexpected contents. want=%s have=%s", "TEST PAYLOAD", contents)
+	if diff := cmp.Diff(fullContents, contents); diff != "" {
+		t.Errorf("unexpected payload (-want +got):\n%s", diff)
 	}
 
-	if calls := s3Client.GetObjectFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of GetObject calls. want=%d have=%d", 1, len(calls))
-	} else if value := *calls[0].Arg1.Bucket; value != "test-bucket" {
-		t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
-	} else if value := *calls[0].Arg1.Key; value != "test-key" {
-		t.Errorf("unexpected key argument. want=%s have=%s", "test-key", value)
-	} else if value := *calls[0].Arg1.Range; value != "bytes=20-" {
-		t.Errorf("unexpected range argument. want=%s have=%s", "", value)
+	expectedGetObjectCalls := len(fullContents)/50 + 1
+	if calls := s3Client.GetObjectFunc.History(); len(calls) != expectedGetObjectCalls {
+		t.Fatalf("unexpected number of GetObject calls. want=%d have=%d", expectedGetObjectCalls, len(calls))
 	}
+}
+
+func TestS3GetReadNothingLoop(t *testing.T) {
+	// read nothing then return a connection reset error
+	ioCopyHook = func(w io.Writer, r io.Reader) (int64, error) {
+		return 0, errors.New("read: connection reset by peer")
+	}
+
+	s3Client := fullContentsS3API()
+	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false, makeOperations(&observation.TestContext))
+	rc, err := client.Get(context.Background(), "test-key")
+	if err != nil {
+		t.Fatalf("unexpected error getting key: %s", err)
+	}
+	defer rc.Close()
+
+	if _, err := ioutil.ReadAll(rc); err != errNoDownloadProgress {
+		t.Fatalf("unexpected error reading object. want=%q have=%q", errNoDownloadProgress, err)
+	}
+}
+
+var fullContents = func() []byte {
+	var fullContents []byte
+	for i := 0; i < 1000; i++ {
+		fullContents = append(fullContents, []byte(fmt.Sprintf("payload %d\n", i))...)
+	}
+
+	return fullContents
+}()
+
+func fullContentsS3API() *MockS3API {
+	s3Client := NewMockS3API()
+	s3Client.GetObjectFunc.SetDefaultHook(func(ctx context.Context, input *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
+		offset := 0
+		if input.Range != nil {
+			match := bytesPattern.FindStringSubmatch(*input.Range)
+			if len(match) != 0 {
+				offset, _ = strconv.Atoi(match[1])
+			}
+		}
+
+		out := &s3.GetObjectOutput{
+			Body: ioutil.NopCloser(bytes.NewReader(fullContents[offset:])),
+		}
+
+		return out, nil
+	})
+
+	return s3Client
 }
 
 func TestS3Upload(t *testing.T) {
@@ -165,7 +232,7 @@ func TestS3Upload(t *testing.T) {
 
 	size, err := client.Upload(context.Background(), "test-key", bytes.NewReader([]byte("TEST PAYLOAD")))
 	if err != nil {
-		t.Fatalf("unexpected error getting key: %s", err.Error())
+		t.Fatalf("unexpected error getting key: %s", err)
 	} else if size != 12 {
 		t.Errorf("unexpected size. want=%d have=%d", 12, size)
 	}
@@ -201,7 +268,7 @@ func TestS3Combine(t *testing.T) {
 
 	size, err := client.Compose(context.Background(), "test-key", "test-src1", "test-src2", "test-src3")
 	if err != nil {
-		t.Fatalf("unexpected error getting key: %s", err.Error())
+		t.Fatalf("unexpected error getting key: %s", err)
 	} else if size != 42 {
 		t.Errorf("unexpected size. want=%d have=%d", 42, size)
 	}
@@ -301,7 +368,7 @@ func TestS3Delete(t *testing.T) {
 
 	client := testS3Client(s3Client, nil)
 	if err := client.Delete(context.Background(), "test-key"); err != nil {
-		t.Fatalf("unexpected error getting key: %s", err.Error())
+		t.Fatalf("unexpected error getting key: %s", err)
 	}
 
 	if calls := s3Client.DeleteObjectFunc.History(); len(calls) != 1 {

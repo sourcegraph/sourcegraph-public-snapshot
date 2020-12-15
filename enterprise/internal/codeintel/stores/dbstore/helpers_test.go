@@ -3,19 +3,21 @@ package dbstore
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strconv"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type printableRank struct{ value *int }
@@ -42,7 +44,7 @@ func makeCommit(i int) string {
 }
 
 // insertUploads populates the lsif_uploads table with the given upload models.
-func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
+func insertUploads(t testing.TB, db *sql.DB, uploads ...Upload) {
 	for _, upload := range uploads {
 		if upload.Commit == "" {
 			upload.Commit = makeCommit(upload.ID)
@@ -108,7 +110,7 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 }
 
 // insertIndexes populates the lsif_indexes table with the given index models.
-func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
+func insertIndexes(t testing.TB, db *sql.DB, indexes ...Index) {
 	for _, index := range indexes {
 		if index.Commit == "" {
 			index.Commit = makeCommit(index.ID)
@@ -146,8 +148,9 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 				root,
 				indexer,
 				indexer_args,
-				outfile
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+				outfile,
+				execution_logs
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			index.ID,
 			index.Commit,
@@ -165,6 +168,7 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 			index.Indexer,
 			pq.Array(index.IndexerArgs),
 			index.Outfile,
+			pq.Array(dbworkerstore.ExecutionLogEntries(index.ExecutionLogs)),
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
@@ -175,7 +179,7 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 
 // insertRepo creates a repository record with the given id and name. If there is already a repository
 // with the given identifier, nothing happens
-func insertRepo(t *testing.T, db *sql.DB, id int, name string) {
+func insertRepo(t testing.TB, db *sql.DB, id int, name string) {
 	if name == "" {
 		name = fmt.Sprintf("n-%d", id)
 	}
@@ -191,7 +195,7 @@ func insertRepo(t *testing.T, db *sql.DB, id int, name string) {
 }
 
 // insertPackageReferences populates the lsif_references table with the given package references.
-func insertPackageReferences(t *testing.T, store *Store, packageReferences []lsifstore.PackageReference) {
+func insertPackageReferences(t testing.TB, store *Store, packageReferences []lsifstore.PackageReference) {
 	if err := store.UpdatePackageReferences(context.Background(), packageReferences); err != nil {
 		t.Fatalf("unexpected error updating package references: %s", err)
 	}
@@ -199,7 +203,7 @@ func insertPackageReferences(t *testing.T, store *Store, packageReferences []lsi
 
 // insertVisibleAtTip populates rows of the lsif_uploads_visible_at_tip table for the given repository
 // with the given identifiers.
-func insertVisibleAtTip(t *testing.T, db *sql.DB, repositoryID int, uploadIDs ...int) {
+func insertVisibleAtTip(t testing.TB, db *sql.DB, repositoryID int, uploadIDs ...int) {
 	var rows []*sqlf.Query
 	for _, uploadID := range uploadIDs {
 		rows = append(rows, sqlf.Sprintf("(%s, %s)", repositoryID, uploadID))
@@ -215,24 +219,29 @@ func insertVisibleAtTip(t *testing.T, db *sql.DB, repositoryID int, uploadIDs ..
 }
 
 // insertNearestUploads populates the lsif_nearest_uploads table with the given upload metadata.
-func insertNearestUploads(t *testing.T, db *sql.DB, repositoryID int, uploads map[string][]UploadMeta) {
+func insertNearestUploads(t testing.TB, db *sql.DB, repositoryID int, uploads map[string][]commitgraph.UploadMeta) {
 	var rows []*sqlf.Query
-	for commit, metas := range uploads {
-		for _, meta := range metas {
-			rows = append(rows, sqlf.Sprintf(
-				"(%s, %s, %s, %s, %s, %s)",
-				repositoryID,
-				dbutil.CommitBytea(commit),
-				meta.UploadID,
-				meta.Distance,
-				meta.AncestorVisible,
-				meta.Overwritten,
-			))
+	for commit, uploadMetas := range uploads {
+		uploadsByLength := make(map[int]int, len(uploadMetas))
+		for _, uploadMeta := range uploadMetas {
+			uploadsByLength[uploadMeta.UploadID] = int(uploadMeta.Distance)
 		}
+
+		serializedUploadMetas, err := json.Marshal(uploadsByLength)
+		if err != nil {
+			t.Fatalf("unexpected error marshalling uploads: %s", err)
+		}
+
+		rows = append(rows, sqlf.Sprintf(
+			"(%s, %s, %s)",
+			repositoryID,
+			dbutil.CommitBytea(commit),
+			serializedUploadMetas,
+		))
 	}
 
 	query := sqlf.Sprintf(
-		`INSERT INTO lsif_nearest_uploads (repository_id, commit_bytea, upload_id, distance, ancestor_visible, overwritten) VALUES %s`,
+		`INSERT INTO lsif_nearest_uploads (repository_id, commit_bytea, uploads) VALUES %s`,
 		sqlf.Join(rows, ","),
 	)
 	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
@@ -240,39 +249,56 @@ func insertNearestUploads(t *testing.T, db *sql.DB, repositoryID int, uploads ma
 	}
 }
 
-func toUploadMeta(uploads []Upload) map[string][]UploadMeta {
-	meta := map[string][]UploadMeta{}
-	for _, upload := range uploads {
-		meta[upload.Commit] = append(meta[upload.Commit], UploadMeta{
-			UploadID: upload.ID,
-			Root:     upload.Root,
-			Indexer:  upload.Indexer,
-		})
+func insertLinks(t testing.TB, db *sql.DB, repositoryID int, links map[string]commitgraph.LinkRelationship) {
+	if len(links) == 0 {
+		return
 	}
 
-	return meta
+	var rows []*sqlf.Query
+	for commit, link := range links {
+		rows = append(rows, sqlf.Sprintf(
+			"(%s, %s, %s, %s)",
+			repositoryID,
+			dbutil.CommitBytea(commit),
+			dbutil.CommitBytea(link.AncestorCommit),
+			link.Distance,
+		))
+	}
+
+	query := sqlf.Sprintf(
+		`INSERT INTO lsif_nearest_uploads_links (repository_id, commit_bytea, ancestor_commit_bytea, distance) VALUES %s`,
+		sqlf.Join(rows, ","),
+	)
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error while updating links: %s %s", err, query.Query(sqlf.PostgresBindVar))
+	}
 }
 
-var UploadMetaComparer = cmp.Comparer(func(x, y UploadMeta) bool {
-	return x.UploadID == y.UploadID && x.Distance == y.Distance
-})
+func toCommitGraphView(uploads []Upload) *commitgraph.CommitGraphView {
+	commitGraphView := commitgraph.NewCommitGraphView()
+	for _, upload := range uploads {
+		commitGraphView.Add(commitgraph.UploadMeta{UploadID: upload.ID}, upload.Commit, fmt.Sprintf("%s:%s", upload.Root, upload.Indexer))
+	}
 
-func scanVisibleUploads(rows *sql.Rows, queryErr error) (_ map[string][]UploadMeta, err error) {
+	return commitGraphView
+}
+
+func scanVisibleUploads(rows *sql.Rows, queryErr error) (_ map[string][]commitgraph.UploadMeta, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	uploadMeta := map[string][]UploadMeta{}
+	uploadMeta := map[string][]commitgraph.UploadMeta{}
 	for rows.Next() {
 		var commit string
 		var uploadID int
-		var distance int
+		var distance uint32
 		if err := rows.Scan(&commit, &uploadID, &distance); err != nil {
 			return nil, err
 		}
 
-		uploadMeta[commit] = append(uploadMeta[commit], UploadMeta{
+		uploadMeta[commit] = append(uploadMeta[commit], commitgraph.UploadMeta{
 			UploadID: uploadID,
 			Distance: distance,
 		})
@@ -281,20 +307,28 @@ func scanVisibleUploads(rows *sql.Rows, queryErr error) (_ map[string][]UploadMe
 	return uploadMeta, nil
 }
 
-func getVisibleUploads(t *testing.T, db *sql.DB, repositoryID int) map[string][]UploadMeta {
-	query := sqlf.Sprintf(
-		`SELECT encode(commit_bytea, 'hex'), upload_id, distance FROM lsif_nearest_uploads WHERE repository_id = %s AND NOT overwritten ORDER BY upload_id`,
-		repositoryID,
-	)
-	uploads, err := scanVisibleUploads(db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...))
-	if err != nil {
-		t.Fatalf("unexpected error getting visible uploads: %s", err)
+func getVisibleUploads(t testing.TB, db *sql.DB, repositoryID int, commits []string) map[string][]int {
+	idsByCommit := map[string][]int{}
+	for _, commit := range commits {
+		query := makeVisibleUploadsQuery(repositoryID, commit)
+
+		uploadIDs, err := basestore.ScanInts(db.QueryContext(
+			context.Background(),
+			query.Query(sqlf.PostgresBindVar),
+			query.Args()...,
+		))
+		if err != nil {
+			t.Fatalf("unexpected error getting visible upload IDs: %s", err)
+		}
+		sort.Ints(uploadIDs)
+
+		idsByCommit[commit] = uploadIDs
 	}
 
-	return uploads
+	return idsByCommit
 }
 
-func getUploadsVisibleAtTip(t *testing.T, db *sql.DB, repositoryID int) []int {
+func getUploadsVisibleAtTip(t testing.TB, db *sql.DB, repositoryID int) []int {
 	query := sqlf.Sprintf(
 		`SELECT upload_id FROM lsif_uploads_visible_at_tip WHERE repository_id = %s ORDER BY upload_id`,
 		repositoryID,
@@ -308,20 +342,11 @@ func getUploadsVisibleAtTip(t *testing.T, db *sql.DB, repositoryID int) []int {
 	return ids
 }
 
-func normalizeVisibleUploads(uploadMetas map[string][]UploadMeta) map[string][]UploadMeta {
-	for commit, uploads := range uploadMetas {
-		var filtered []UploadMeta
-		for _, upload := range uploads {
-			if !upload.Overwritten {
-				filtered = append(filtered, upload)
-			}
-		}
-
-		sort.Slice(filtered, func(i, j int) bool {
-			return filtered[i].UploadID-filtered[j].UploadID < 0
+func normalizeVisibleUploads(uploadMetas map[string][]commitgraph.UploadMeta) map[string][]commitgraph.UploadMeta {
+	for _, uploads := range uploadMetas {
+		sort.Slice(uploads, func(i, j int) bool {
+			return uploads[i].UploadID-uploads[j].UploadID < 0
 		})
-
-		uploadMetas[commit] = filtered
 	}
 
 	return uploadMetas

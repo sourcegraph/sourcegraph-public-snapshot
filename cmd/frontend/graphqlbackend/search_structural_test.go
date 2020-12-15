@@ -8,14 +8,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -36,7 +36,7 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 	mockSearchFilesInRepo = func(
 		ctx context.Context,
 		repo *types.Repo,
-		gitserverRepo gitserver.Repo,
+		gitserverRepo api.RepoName,
 		rev string,
 		info *search.TextPatternInfo,
 		fetchTimeout time.Duration,
@@ -188,7 +188,7 @@ func TestStructuralPatToRegexpQuery(t *testing.T) {
 		{
 			Name:    "Not well-formed is undefined",
 			Pattern: ":[[",
-			Want:    `(.|\s)*?`,
+			Want:    `(:\[\[)`,
 		},
 		{
 			Name:    "Complex regex with character class",

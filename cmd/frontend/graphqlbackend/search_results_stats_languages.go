@@ -7,11 +7,12 @@ import (
 	"sync"
 
 	"github.com/neelance/parallel"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatisticsResolver, error) {
@@ -74,8 +75,8 @@ func searchResultsStatsLanguages(ctx context.Context, results []SearchResultReso
 
 	for _, res := range results {
 		if fileMatch, ok := res.ToFileMatch(); ok {
-			sawRepo(fileMatch.Repository().repo)
-			key := repoCommit{repo: fileMatch.Repository().repo.ID, commitID: fileMatch.CommitID}
+			sawRepo(fileMatch.Repository().innerRepo)
+			key := repoCommit{repo: fileMatch.Repository().IDInt32(), commitID: fileMatch.CommitID}
 
 			if _, ok := filesMap[key]; !ok {
 				filesMap[key] = &fileStatsWork{}
@@ -95,7 +96,7 @@ func searchResultsStatsLanguages(ctx context.Context, results []SearchResultReso
 				})
 			}
 		} else if repo, ok := res.ToRepository(); ok && !hasNonRepoMatches {
-			sawRepo(repo.repo)
+			sawRepo(repo.innerRepo)
 			run.Acquire()
 			goroutine.Go(func() {
 				defer run.Release()
@@ -113,7 +114,12 @@ func searchResultsStatsLanguages(ctx context.Context, results []SearchResultReso
 					run.Error(err)
 					return
 				}
-				inv, err := backend.Repos.GetInventory(ctx, repo.repo, api.CommitID(target), true)
+				repo, err := repo.repo(ctx)
+				if err != nil {
+					run.Error(err)
+					return
+				}
+				inv, err := backend.Repos.GetInventory(ctx, repo, api.CommitID(target), true)
 				if err != nil {
 					run.Error(err)
 					return
@@ -134,12 +140,7 @@ func searchResultsStatsLanguages(ctx context.Context, results []SearchResultReso
 		goroutine.Go(func() {
 			defer run.Release()
 
-			cachedRepo, err := backend.CachedGitRepo(ctx, repos[key.repo])
-			if err != nil {
-				run.Error(err)
-				return
-			}
-			invCtx, err := backend.InventoryContext(*cachedRepo, key.commitID, true)
+			invCtx, err := backend.InventoryContext(repos[key.repo].Name, key.commitID, true)
 			if err != nil {
 				run.Error(err)
 				return

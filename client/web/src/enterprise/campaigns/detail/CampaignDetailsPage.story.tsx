@@ -65,6 +65,7 @@ const campaignDefaults: CampaignFields = {
     },
     currentSpec: {
         originalInput: 'name: awesome-campaign\ndescription: somestring',
+        supersedingCampaignSpec: null,
     },
 }
 
@@ -145,7 +146,13 @@ const queryChangesets: typeof _queryChangesets = () =>
                 reconcilerState: ChangesetReconcilerState.COMPLETED,
                 publicationState: ChangesetPublicationState.PUBLISHED,
                 error: null,
-                currentSpec: { id: 'spec-rand-id-1' },
+                currentSpec: {
+                    id: 'spec-rand-id-1',
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        headRef: 'my-branch',
+                    },
+                },
             },
             {
                 __typename: 'ExternalChangeset',
@@ -174,7 +181,13 @@ const queryChangesets: typeof _queryChangesets = () =>
                 reconcilerState: ChangesetReconcilerState.ERRORED,
                 publicationState: ChangesetPublicationState.UNPUBLISHED,
                 error: 'Cannot create PR, insufficient token scope.',
-                currentSpec: { id: 'spec-rand-id-2' },
+                currentSpec: {
+                    id: 'spec-rand-id-2',
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        headRef: 'my-branch',
+                    },
+                },
             },
         ],
     })
@@ -260,23 +273,34 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
 
 const deleteCampaign = () => Promise.resolve(undefined)
 
-const stories: Record<string, string> = {
-    Overview: '/users/alice/campaigns/awesome-campaign',
-    'Burndown chart': '/users/alice/campaigns/awesome-campaign?tab=chart',
-    'Spec file': '/users/alice/campaigns/awesome-campaign?tab=spec',
+const stories: Record<string, { url: string; supersededCampaignSpec?: boolean }> = {
+    Overview: { url: '/users/alice/campaigns/awesome-campaign' },
+    'Burndown chart': { url: '/users/alice/campaigns/awesome-campaign?tab=chart' },
+    'Spec file': { url: '/users/alice/campaigns/awesome-campaign?tab=spec' },
+    'Superseded campaign': { url: '/users/alice/campaigns/awesome-campaign', supersededCampaignSpec: true },
 }
 
-for (const [name, url] of Object.entries(stories)) {
+for (const [name, { url, supersededCampaignSpec }] of Object.entries(stories)) {
     add(name, () => {
+        const supersedingCampaignSpec = boolean('supersedingCampaignSpec', !!supersededCampaignSpec)
         const viewerCanAdminister = boolean('viewerCanAdminister', true)
         const isClosed = boolean('isClosed', false)
         const campaign: CampaignFields = useMemo(
             () => ({
                 ...campaignDefaults,
+                currentSpec: {
+                    originalInput: campaignDefaults.currentSpec.originalInput,
+                    supersedingCampaignSpec: supersedingCampaignSpec
+                        ? {
+                              createdAt: subDays(new Date(), 1).toISOString(),
+                              applyURL: '/users/alice/campaigns/apply/newspecid',
+                          }
+                        : null,
+                },
                 viewerCanAdminister,
                 closedAt: isClosed ? subDays(now, 1).toISOString() : null,
             }),
-            [viewerCanAdminister, isClosed]
+            [supersedingCampaignSpec, viewerCanAdminister, isClosed]
         )
 
         const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])

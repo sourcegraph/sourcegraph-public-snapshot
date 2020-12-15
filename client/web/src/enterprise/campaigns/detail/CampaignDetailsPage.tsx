@@ -26,6 +26,7 @@ import { CampaignTabs } from './CampaignTabs'
 import { CampaignDetailsActionSection } from './CampaignDetailsActionSection'
 import { CampaignInfoByline } from './CampaignInfoByline'
 import { UnpublishedNotice } from './UnpublishedNotice'
+import { SupersedingCampaignSpecAlert } from './SupersedingCampaignSpecAlert'
 
 export interface CampaignDetailsPageProps
     extends ThemeProps,
@@ -125,6 +126,7 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
                 lastApplier={campaign.lastApplier}
                 className="mb-3"
             />
+            <SupersedingCampaignSpecAlert spec={campaign.currentSpec.supersedingCampaignSpec} />
             <UnpublishedNotice
                 unpublished={campaign.changesetsStats.unpublished}
                 total={campaign.changesetsStats.total}

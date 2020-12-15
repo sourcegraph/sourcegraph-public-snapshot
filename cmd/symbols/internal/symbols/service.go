@@ -12,7 +12,6 @@ import (
 	ctags "github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 // Service is the symbols service.
@@ -20,7 +19,7 @@ type Service struct {
 	// FetchTar returns an io.ReadCloser to a tar archive of a repository at the specified Git
 	// remote URL and commit ID. If the error implements "BadRequest() bool", it will be used to
 	// determine if the error is a bad request (eg invalid repo).
-	FetchTar func(context.Context, gitserver.Repo, api.CommitID) (io.ReadCloser, error)
+	FetchTar func(context.Context, api.RepoName, api.CommitID) (io.ReadCloser, error)
 
 	// MaxConcurrentFetchTar is the maximum number of concurrent calls allowed
 	// to FetchTar. It defaults to 15.

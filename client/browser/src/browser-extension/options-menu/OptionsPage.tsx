@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useInputValidation, deriveInputClassName } from '../../../../shared/src/util/useInputValidation'
 import { LoaderInput } from '../../../../branded/src/components/LoaderInput'
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
@@ -56,7 +56,8 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     currentHost,
 }) => {
     const [showAdvancedSettings, setShowAdvancedSettings] = useState(false)
-    const [urlState, nextUrlFieldChange, urlInputReference] = useInputValidation(
+    const urlInputReference = useRef<HTMLInputElement | null>(null)
+    const [urlState, nextUrlFieldChange, nextUrlInputElement] = useInputValidation(
         useMemo(
             () => ({
                 initialValue: sourcegraphUrl,
@@ -65,6 +66,14 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             }),
             [sourcegraphUrl, validateSourcegraphUrl]
         )
+    )
+
+    const urlInputElements = useCallback(
+        (urlInputElement: HTMLInputElement | null) => {
+            urlInputReference.current = urlInputElement
+            nextUrlInputElement(urlInputElement)
+        },
+        [nextUrlInputElement]
     )
 
     const toggleAdvancedSettings = useCallback(
@@ -115,7 +124,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                             pattern="^https://.*"
                             value={urlState.value}
                             onChange={nextUrlFieldChange}
-                            ref={urlInputReference}
+                            ref={urlInputElements}
                             spellCheck={false}
                             required={true}
                         />

@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -21,6 +21,7 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -243,7 +244,7 @@ func testStringResult(result *searchSuggestionResolver) string {
 	var name string
 	switch r := result.result.(type) {
 	case *RepositoryResolver:
-		name = "repo:" + string(r.repo.Name)
+		name = "repo:" + r.Name()
 	case *GitTreeEntryResolver:
 		name = "file:" + r.Path()
 	case *languageResolver:
@@ -673,20 +674,19 @@ func TestComputeExcludedRepositories(t *testing.T) {
 			Query: "repo:repo",
 			Repos: []types.Repo{
 				{
-					Name:       "repo-ordinary",
-					RepoFields: &types.RepoFields{},
+					Name: "repo-ordinary",
 				},
 				{
-					Name:       "repo-forked",
-					RepoFields: &types.RepoFields{Fork: true},
+					Name: "repo-forked",
+					Fork: true,
 				},
 				{
-					Name:       "repo-forked-2",
-					RepoFields: &types.RepoFields{Fork: true},
+					Name: "repo-forked-2",
+					Fork: true,
 				},
 				{
-					Name:       "repo-archived",
-					RepoFields: &types.RepoFields{Archived: true},
+					Name:     "repo-archived",
+					Archived: true,
 				},
 			},
 			WantExcludedRepos: excludedRepos{forks: 2, archived: 1},
@@ -696,8 +696,8 @@ func TestComputeExcludedRepositories(t *testing.T) {
 			Query: "repo:^repo-forked$",
 			Repos: []types.Repo{
 				{
-					Name:       "repo-forked",
-					RepoFields: &types.RepoFields{Fork: true},
+					Name: "repo-forked",
+					Fork: true,
 				},
 			},
 			WantExcludedRepos: excludedRepos{forks: 0, archived: 0},
@@ -707,12 +707,11 @@ func TestComputeExcludedRepositories(t *testing.T) {
 			Query: "repo:repo fork:no",
 			Repos: []types.Repo{
 				{
-					Name:       "repo",
-					RepoFields: &types.RepoFields{},
+					Name: "repo",
 				},
 				{
-					Name:       "repo-forked",
-					RepoFields: &types.RepoFields{Fork: true},
+					Name: "repo-forked",
+					Fork: true,
 				},
 			},
 			WantExcludedRepos: excludedRepos{forks: 0, archived: 0},
@@ -776,7 +775,7 @@ func mkFileMatch(repo *types.Repo, path string, lineNumbers ...int32) *FileMatch
 		uri:          fileMatchURI(repo.Name, "", path),
 		JPath:        path,
 		JLineMatches: lines,
-		Repo:         &RepositoryResolver{repo: repo},
+		Repo:         &RepositoryResolver{innerRepo: repo},
 	}
 }
 

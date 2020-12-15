@@ -12,22 +12,16 @@ import {
 } from './github'
 import * as changelog from './changelog'
 import * as campaigns from './campaigns'
-import { Config, releaseVersions, loadConfig } from './config'
-import { formatDate, timezoneLink } from './util'
+import { Config, releaseVersions } from './config'
+import { cacheFolder, formatDate, timezoneLink } from './util'
 import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
-import { readFileSync, writeFileSync } from 'fs'
+import { readFileSync, rmdirSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import commandExists from 'command-exists'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
-/**
- * Convenience function for getting relevant configured releases as semver.SemVer
- *
- * It prompts for a confirmation of the `upcomingRelease` that is cached for a week.
- */
-
-type StepID =
+export type StepID =
     | 'help'
     // release tracking
     | 'tracking:release-timeline'
@@ -40,12 +34,33 @@ type StepID =
     | 'release:create-candidate'
     | 'release:stage'
     | 'release:add-to-campaign'
+    | 'release:finalize'
     | 'release:close'
+    // util
+    | 'util:clear-cache'
     // testing
     | '_test:google-calendar'
     | '_test:slack'
     | '_test:campaign-create-from-changes'
     | '_test:config'
+
+/**
+ * Runs given release step with the provided configuration and arguments.
+ */
+export async function runStep(config: Config, step: StepID, ...args: string[]): Promise<void> {
+    if (!steps.map(({ id }) => id as string).includes(step)) {
+        throw new Error(`Unrecognized step ${JSON.stringify(step)}`)
+    }
+    await Promise.all(
+        steps
+            .filter(({ id }) => id === step)
+            .map(async step => {
+                if (step.run) {
+                    await step.run(config, ...args)
+                }
+            })
+    )
+}
 
 interface Step {
     id: StepID
@@ -237,7 +252,7 @@ If you have changes that should go into this patch release, <${patchRequestTempl
         argNames: ['changelogFile'],
         run: async (config, changelogFile = 'CHANGELOG.md') => {
             const { upcoming: release } = await releaseVersions(config)
-
+            const prMessage = `changelog: cut sourcegraph@${release.version}`
             await createChangesets({
                 requiredCommands: [],
                 changes: [
@@ -245,8 +260,9 @@ If you have changes that should go into this patch release, <${patchRequestTempl
                         owner: 'sourcegraph',
                         repo: 'sourcegraph',
                         base: 'main',
-                        head: `publish-${release.version}`,
-                        commitMessage: `release: sourcegraph@${release.version}`,
+                        head: `changelog-${release.version}`,
+                        title: prMessage,
+                        commitMessage: prMessage,
                         edits: [
                             (directory: string) => {
                                 console.log(`Updating '${changelogFile} for ${release.format()}'`)
@@ -267,8 +283,7 @@ If you have changes that should go into this patch release, <${patchRequestTempl
                                 // Update changelog
                                 writeFileSync(changelogPath, changelogContents)
                             },
-                        ], // Changes already done
-                        title: `changelog: cut sourcegraph@${release.version}`,
+                        ],
                     },
                 ],
                 dryRun: config.dryRun.changesets,
@@ -340,7 +355,7 @@ If you have changes that should go into this patch release, <${patchRequestTempl
             const campaign = campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphCLIConfig())
 
             // default values
-            const isPatchRelease = release.patch === 0
+            const notPatchRelease = release.patch === 0
             const versionRegex = '[0-9]+\\.[0-9]+\\.[0-9]+'
             const campaignURL = campaigns.campaignURL(campaign)
             const trackingIssue = await getTrackingIssue(await getAuthenticatedGitHubClient(), release)
@@ -351,11 +366,15 @@ If you have changes that should go into this patch release, <${patchRequestTempl
 
             // default PR content
             const defaultPRMessage = `release: sourcegraph@${release.version}`
-            const prBodyAndDraftState = (actionItems: string[]): { draft: boolean; body: string } => {
+            const prBodyAndDraftState = (
+                actionItems: string[],
+                customMessage?: string
+            ): { draft: boolean; body: string } => {
                 const defaultBody = `This pull request is part of the Sourcegraph ${release.version} release.
+${customMessage || ''}
 
 * [Release campaign](${campaignURL})
-* ${trackingIssue ? `[Tracking issue](${trackingIssue.url}` : 'No tracking issue exists for this release'}`
+* ${trackingIssue ? `[Tracking issue](${trackingIssue.url})` : 'No tracking issue exists for this release'}`
                 if (!actionItems || actionItems.length === 0) {
                     return { draft: false, body: defaultBody }
                 }
@@ -381,7 +400,7 @@ cc @${config.captainGitHubUsername}
                         repo: 'sourcegraph',
                         base: 'main',
                         head: `publish-${release.version}`,
-                        commitMessage: isPatchRelease
+                        commitMessage: notPatchRelease
                             ? `draft sourcegraph@${release.version} release`
                             : defaultPRMessage,
                         title: defaultPRMessage,
@@ -390,7 +409,7 @@ cc @${config.captainGitHubUsername}
                             `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' {} +`,
                             `${sed} -i -E 's/version \`${versionRegex}\`/version \`${release.version}\`/g' doc/index.md`,
                             `${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version}"/g' doc/admin/install/docker-compose/index.md`,
-                            isPatchRelease
+                            notPatchRelease
                                 ? `comby -in-place '{{$previousReleaseRevspec := ":[1]"}} {{$previousReleaseVersion := ":[2]"}} {{$currentReleaseRevspec := ":[3]"}} {{$currentReleaseVersion := ":[4]"}}' '{{$previousReleaseRevspec := ":[3]"}} {{$previousReleaseVersion := ":[4]"}} {{$currentReleaseRevspec := "v${release.version}"}} {{$currentReleaseVersion := "${release.major}.${release.minor}"}}' doc/_resources/templates/document.html`
                                 : `comby -in-place 'currentReleaseRevspec := ":[1]"' 'currentReleaseRevspec := "v${release.version}"' doc/_resources/templates/document.html`,
 
@@ -400,14 +419,14 @@ cc @${config.captainGitHubUsername}
                             `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newBuild(":[1]")' "latestReleaseDockerComposeOrPureDocker = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
 
                             // Add a stub to add upgrade guide entries
-                            isPatchRelease
+                            notPatchRelease
                                 ? `${sed} -i -E '/GENERATE UPGRADE GUIDE ON RELEASE/a \\\n\\n## ${previous.major}.${previous.minor} -> ${release.major}.${release.minor}\\n\\nTODO' doc/admin/updates/*.md`
                                 : 'echo "Skipping upgrade guide entries"',
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
                                 const items: string[] = []
-                                if (isPatchRelease) {
+                                if (notPatchRelease) {
                                     items.push('Update the upgrade guides in `doc/admin/updates`')
                                 } else {
                                     items.push(
@@ -416,10 +435,25 @@ cc @${config.captainGitHubUsername}
                                     )
                                 }
                                 items.push(
-                                    'Ensure all other pull requests in the campaign has been merged before merging this pull request'
+                                    'Ensure all other pull requests in the campaign have been merged - then run `yarn run release release:finalize` to generate the tags required, re-run Buildkite on this branch, and ensure the build passes before merging this pull request'
                                 )
                                 return items
                             })()
+                        ),
+                    },
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'about',
+                        base: 'main',
+                        head: `publish-${release.version}`,
+                        commitMessage: defaultPRMessage,
+                        title: defaultPRMessage,
+                        edits: [
+                            `${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' 'website/src/components/GetStarted.tsx'`,
+                        ],
+                        ...prBodyAndDraftState(
+                            [],
+                            notPatchRelease ? 'Note that this PR does *not* include the release blog post.' : undefined
                         ),
                     },
                     {
@@ -442,7 +476,7 @@ cc @${config.captainGitHubUsername}
                         edits: [`tools/update-docker-tags.sh ${release.version}`],
                         ...prBodyAndDraftState([
                             `Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md) to complete this PR ${
-                                isPatchRelease ? '(note: `pure-docker` release is optional for patch releases)' : ''
+                                notPatchRelease ? '' : '(note: `pure-docker` release is optional for patch releases)'
                             }`,
                         ]),
                     },
@@ -520,12 +554,10 @@ Campaign: ${campaignURL}`,
         },
     },
     {
-        id: 'release:close',
-        description: 'Mark a release as closed',
+        id: 'release:finalize',
+        description: 'Run final tasks for the sourcegraph/sourcegraph release pull request',
         run: async config => {
-            const { slackAnnounceChannel } = config
             const { upcoming: release } = await releaseVersions(config)
-            const githubClient = await getAuthenticatedGitHubClient()
 
             // Push final tags
             const branch = `${release.major}.${release.minor}`
@@ -542,17 +574,22 @@ Campaign: ${campaignURL}`,
                     config.dryRun.tags || false
                 )
             }
-            if (config.dryRun.tags) {
-                console.error('Do not close release with dry run! Aborting')
-                return
-            }
+        },
+    },
+    {
+        id: 'release:close',
+        description: 'Mark a release as closed',
+        run: async config => {
+            const { slackAnnounceChannel } = config
+            const { upcoming: release } = await releaseVersions(config)
+            const githubClient = await getAuthenticatedGitHubClient()
 
             // Set up announcement message
-            const versionAnchor = release.version.replace('.', '-')
+            const versionAnchor = release.format().replaceAll('.', '-')
             const campaignURL = campaigns.campaignURL(
                 campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphCLIConfig())
             )
-            const releaseMessage = `*${release.version} has been published*
+            const releaseMessage = `*Sourcegraph ${release.version} has been published*
 
 * Changelog: https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}
 * Release campaign: ${campaignURL}`
@@ -575,6 +612,13 @@ Campaign: ${campaignURL}`,
 @${config.captainGitHubUsername}: Please complete the post-release steps before closing this issue.`,
                 })
             }
+        },
+    },
+    {
+        id: 'util:clear-cache',
+        description: 'Clear release tool cache',
+        run: () => {
+            rmdirSync(cacheFolder, { recursive: true })
         },
     },
     {
@@ -633,37 +677,3 @@ Campaign: ${campaignURL}`,
         },
     },
 ]
-
-async function run(config: Config, stepIDToRun: StepID, ...stepArguments: string[]): Promise<void> {
-    await Promise.all(
-        steps
-            .filter(({ id }) => id === stepIDToRun)
-            .map(async step => {
-                if (step.run) {
-                    await step.run(config, ...stepArguments)
-                }
-            })
-    )
-}
-
-/**
- * Release captain automation
- */
-async function main(): Promise<void> {
-    const config = loadConfig()
-    const args = process.argv.slice(2)
-    if (args.length === 0) {
-        console.error('This command expects at least 1 argument')
-        await run(config, 'help')
-        return
-    }
-    const step = args[0]
-    if (!steps.map(({ id }) => id as string).includes(step)) {
-        console.error('Unrecognized step', JSON.stringify(step))
-        return
-    }
-    const stepArguments = args.slice(1)
-    await run(config, step as StepID, ...stepArguments)
-}
-
-main().catch(error => console.error(error))

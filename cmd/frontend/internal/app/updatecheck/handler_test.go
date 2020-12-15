@@ -9,8 +9,9 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestLatestDockerVersionPushed(t *testing.T) {
@@ -153,6 +154,7 @@ func TestSerializeBasic(t *testing.T) {
 		HasRepos:             true,
 		EverSearched:         false,
 		EverFindRefs:         true,
+		RetentionStatistics:  nil,
 	}
 
 	now := time.Now()
@@ -179,6 +181,7 @@ func TestSerializeBasic(t *testing.T) {
 		"search_onboarding": null,
 		"homepage_panels": null,
 		"repositories": null,
+		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
@@ -238,6 +241,7 @@ func TestSerializeFromQuery(t *testing.T) {
 		"homepage_panels": null,
 		"search_onboarding": null,
 		"repositories": null,
+		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
@@ -276,6 +280,7 @@ func TestSerializeAutomationUsage(t *testing.T) {
 		HasRepos:             true,
 		EverSearched:         false,
 		EverFindRefs:         true,
+		RetentionStatistics:  nil,
 	}
 
 	now := time.Now()
@@ -302,6 +307,7 @@ func TestSerializeAutomationUsage(t *testing.T) {
 		"homepage_panels": null,
 		"search_onboarding": null,
 		"repositories": null,
+		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
@@ -400,6 +406,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		HasRepos:             true,
 		EverSearched:         false,
 		EverFindRefs:         true,
+		RetentionStatistics:  nil,
 	}
 
 	payload, err := marshalPing(pr, true, "127.0.0.1", now)
@@ -478,6 +485,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"homepage_panels": null,
 		"search_onboarding": null,
 		"repositories": null,
+		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
@@ -542,6 +550,7 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 		HasRepos:             true,
 		EverSearched:         false,
 		EverFindRefs:         true,
+		RetentionStatistics:  nil,
 	}
 
 	payload, err := marshalPing(pr, true, "127.0.0.1", now)
@@ -620,6 +629,7 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 		"homepage_panels": null,
 		"search_onboarding": null,
 		"repositories": null,
+		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",

@@ -8,7 +8,7 @@ exports[`SearchPageFooter should render correctly 1`] = `
     <h4
       class="mb-2 mb-lg-0"
     >
-      Explore and Extend
+      Explore and extend
     </h4>
     <span
       class="d-flex flex-column flex-md-row align-items-center"

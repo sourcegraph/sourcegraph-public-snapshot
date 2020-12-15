@@ -25,7 +25,13 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		return err
 	}
 
-	resolver, err := newResolver(ctx)
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
+	resolver, err := newResolver(ctx, observationContext)
 	if err != nil {
 		return err
 	}
@@ -35,7 +41,7 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		return err
 	}
 
-	routines, err := newBackgroundRoutines()
+	routines, err := newBackgroundRoutines(observationContext)
 	if err != nil {
 		return err
 	}
@@ -56,7 +62,7 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 	return nil
 }
 
-func newResolver(ctx context.Context) (gql.CodeIntelResolver, error) {
+func newResolver(ctx context.Context, observationContext *observation.Context) (gql.CodeIntelResolver, error) {
 	hunkCache, err := codeintelresolvers.NewHunkCache(config.HunkCacheSize)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to initialize hunk cache: %s", err)
@@ -67,6 +73,7 @@ func newResolver(ctx context.Context) (gql.CodeIntelResolver, error) {
 		services.lsifStore,
 		services.api,
 		hunkCache,
+		observationContext,
 	)
 	resolver := codeintelgqlresolvers.NewResolver(innerResolver)
 
@@ -95,28 +102,32 @@ func newUploadHandler(ctx context.Context) (func(internal bool) http.Handler, er
 	return uploadHandler, nil
 }
 
-func newBackgroundRoutines() ([]goroutine.BackgroundRoutine, error) {
-	observationContext := &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-
+func newBackgroundRoutines(observationContext *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	dbStoreShim := &background.DBStoreShim{services.dbStore}
 	lsifStoreShim := services.lsifStore
 	gitserverClient := services.gitserverClient
 	metrics := background.NewMetrics(observationContext.Registerer)
 
 	routines := []goroutine.BackgroundRoutine{
-		background.NewAbandonedUploadJanitor(dbStoreShim, config.UploadTimeout, config.BackgroundTaskInterval, metrics),
-		background.NewDeletedRepositoryJanitor(dbStoreShim, config.BackgroundTaskInterval, metrics),
-		background.NewHardDeleter(dbStoreShim, lsifStoreShim, config.BackgroundTaskInterval, metrics),
-		background.NewIndexScheduler(dbStoreShim, gitserverClient, config.IndexBatchSize, config.MinimumTimeSinceLastEnqueue, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.BackgroundTaskInterval, metrics),
-		background.NewIndexabilityUpdater(dbStoreShim, gitserverClient, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.BackgroundTaskInterval, metrics),
-		background.NewRecordExpirer(dbStoreShim, config.DataTTL, config.BackgroundTaskInterval, metrics),
-		background.NewUploadResetter(dbStoreShim, config.BackgroundTaskInterval, metrics),
-		background.NewIndexResetter(dbStoreShim, config.BackgroundTaskInterval, metrics),
-		background.NewCommitUpdater(dbStoreShim, gitserverClient, config.BackgroundTaskInterval),
+		// Commit graph updater
+		background.NewCommitUpdater(dbStoreShim, gitserverClient, config.CommitGraphUpdateTaskInterval),
+
+		// Cleanup
+		background.NewAbandonedUploadJanitor(dbStoreShim, config.UploadTimeout, config.CleanupTaskInterval, metrics),
+		background.NewDeletedRepositoryJanitor(dbStoreShim, config.CleanupTaskInterval, metrics),
+		background.NewHardDeleter(dbStoreShim, lsifStoreShim, config.CleanupTaskInterval, metrics),
+		background.NewRecordExpirer(dbStoreShim, config.DataTTL, config.CleanupTaskInterval, metrics),
+		background.NewUploadResetter(dbStoreShim, config.CleanupTaskInterval, metrics),
+		background.NewIndexResetter(dbStoreShim, config.CleanupTaskInterval, metrics),
+	}
+
+	if config.EnableAutoIndexing {
+		// Auto indexing
+		routines = append(
+			routines,
+			background.NewIndexScheduler(dbStoreShim, gitserverClient, config.IndexBatchSize, config.MinimumTimeSinceLastEnqueue, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, metrics),
+			background.NewIndexabilityUpdater(dbStoreShim, gitserverClient, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, metrics),
+		)
 	}
 
 	return routines, nil

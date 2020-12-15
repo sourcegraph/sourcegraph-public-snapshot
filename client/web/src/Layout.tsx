@@ -24,7 +24,7 @@ import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
-import { fetchHighlightedFileLines } from './repo/backend'
+import { fetchHighlightedFileLineRanges } from './repo/backend'
 import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
@@ -65,6 +65,7 @@ import { SearchPatternType } from './graphql-operations'
 import { TelemetryProps } from '../../shared/src/telemetry/telemetryService'
 import { useObservable } from '../../shared/src/util/useObservable'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
+import { CodeMonitoringProps } from './enterprise/code-monitoring'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -84,7 +85,8 @@ export interface LayoutProps
         RepogroupHomepageProps,
         OnboardingTourProps,
         HomePanelsProps,
-        SearchStreamingProps {
+        SearchStreamingProps,
+        CodeMonitoringProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
@@ -116,7 +118,7 @@ export interface LayoutProps
     // Search
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
-    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     searchRequest: (
         query: QueryState['query'],
         version: string,
@@ -251,7 +253,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <ResizablePanel
                     {...props}
                     repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
-                    fetchHighlightedFileLines={fetchHighlightedFileLines}
+                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                 />
             )}
             <GlobalContributions

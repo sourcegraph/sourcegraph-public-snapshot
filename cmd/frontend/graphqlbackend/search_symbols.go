@@ -14,8 +14,8 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-lsp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -69,16 +70,11 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	ctx, cancelAll := context.WithCancel(ctx)
 	defer cancelAll()
 
-	common = &searchResultsCommon{partial: make(map[api.RepoName]struct{})}
+	common = &searchResultsCommon{partial: make(map[api.RepoID]struct{})}
 
 	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest)
 	if err != nil {
 		return nil, nil, err
-	}
-
-	common.repos = make([]*types.Repo, len(repos))
-	for i, repo := range repos {
-		common.repos[i] = repo.Repo
 	}
 
 	var searcherRepos []*search.RepositoryRevisions
@@ -129,21 +125,10 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	run.Acquire()
 	goroutine.Go(func() {
 		defer run.Release()
-		matches, limitHit, reposLimitHit, searchErr := indexed.Search(ctx)
+		indexedCommon, matches, searchErr := indexed.Search(ctx)
 		mu.Lock()
 		defer mu.Unlock()
-		if ctx.Err() == nil {
-			for _, repo := range indexed.Repos() {
-				common.searched = append(common.searched, repo.Repo)
-				common.indexed = append(common.indexed, repo.Repo)
-			}
-			for repo := range reposLimitHit {
-				common.partial[api.RepoName(repo)] = struct{}{}
-			}
-		}
-		if limitHit {
-			common.limitHit = true
-		}
+		common.update(&indexedCommon)
 		tr.LogFields(otlog.Object("searchErr", searchErr), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
 		if searchErr != nil && err == nil && !overLimitCanceled {
 			err = searchErr
@@ -237,7 +222,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commitID, err := git.ResolveRevision(ctx, repoRevs.GitserverRepo(), nil, inputRev, git.ResolveRevisionOptions{})
+	commitID, err := git.ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, git.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}

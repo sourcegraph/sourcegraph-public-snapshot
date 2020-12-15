@@ -4,7 +4,6 @@ Using campaigns requires a [code host connection](../../../admin/external_servic
 
 Site admins can also:
 
-- [Allow users to authenticate via the code host](../../../admin/auth/index.md#github), which makes it easier for users to authorize [code host interactions in campaigns](../explanations/permissions_in_campaigns.md#code-host-interactions-in-campaigns).
 - [Configure repository permissions](../../../admin/repo/permissions.md), which campaigns will respect.
-- [Disable campaigns for all users](../explanations/permissions_in_campaigns.md#disabling-campaigns-for-all-users).
-
+- [Disable campaigns](../explanations/permissions_in_campaigns.md#disabling-campaigns).
+- [Disable campaigns for non-site-admin users](../explanations/permissions_in_campaigns.md#disabling-campaigns-for-non-site-admin-users).
