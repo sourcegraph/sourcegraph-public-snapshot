@@ -61,7 +61,7 @@ on:
 1. For each `repositoriesMatchingQuery` it will:
 	1. Send a request to the Sourcegraph API to execute the search query.
 	1. Collect each result's _repository_: the ID, the name, the default branch and the current revision of the default branch. If the search result _is a repository result_ (i.e. a search query of `type:repo` only produces repositories) that's used. If it's a file match the file match's repository is used.
-	1. _Optional_: it the results are file matches, then their path in the repository is also saved, so that they can be used in the `steps` with [templating](../references/campaign_spec_templating.md).
+	1. _Optional_: if the results are file matches, then their path in the repository is also saved, so that they can be used in the `steps` with [templating](../references/campaign_spec_templating.md).
 1. For each `repository` without a `branch` it will:
 	1. Send a request to the Sourcegraph API to get the repository's ID, name, its default branch and the current revision of the default branch.
 1. For each `repository` _with_ a `branch` it will:
@@ -138,7 +138,7 @@ The diff is then combined with information about the repository in which the cha
 
 If the campaign spec contains `importChangesets` then `src` goes through the list of `importChangesets` and for each entry it will:
 
-1. Resolves the repository name, trying to get to get an ID, base branch, and revision for the given repository name.
+1. Resolve the repository name, trying to get to get an ID, base branch, and revision for the given repository name.
 1. Parse the `externalIDs`, checking that they're valid strings or numbers.
 1. For each external ID it saves a changeset spec that describes that a changeset with the given external ID, in the given repository, should be imported and tracked in the campaign.
 
