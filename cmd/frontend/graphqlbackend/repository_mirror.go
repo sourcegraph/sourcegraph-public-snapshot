@@ -49,7 +49,7 @@ func (r *repositoryMirrorInfoResolver) repoUpdateSchedulerInfo(ctx context.Conte
 	r.repoUpdateSchedulerInfoOnce.Do(func() {
 		args := repoupdaterprotocol.RepoUpdateSchedulerInfoArgs{
 			RepoName: r.repository.innerRepo.Name,
-			ID:       r.repository.innerRepo.ID,
+			ID:       r.repository.IDInt32(),
 		}
 		r.repoUpdateSchedulerInfoResult, r.repoUpdateSchedulerInfoErr = repoupdater.DefaultClient.RepoUpdateSchedulerInfo(ctx, args)
 	})

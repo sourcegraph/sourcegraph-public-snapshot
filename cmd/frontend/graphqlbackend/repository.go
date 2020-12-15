@@ -72,7 +72,11 @@ func RepositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*RepositoryRes
 }
 
 func (r *RepositoryResolver) ID() graphql.ID {
-	return MarshalRepositoryID(r.innerRepo.ID)
+	return MarshalRepositoryID(r.IDInt32())
+}
+
+func (r *RepositoryResolver) IDInt32() api.RepoID {
+	return r.innerRepo.ID
 }
 
 func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
@@ -235,7 +239,7 @@ func (r *RepositoryResolver) UpdatedAt() *DateTime {
 }
 
 func (r *RepositoryResolver) URL() string {
-	url := "/" + escapePathForURL(string(r.innerRepo.Name))
+	url := "/" + escapePathForURL(r.Name())
 	if r.rev != "" {
 		url += "@" + escapePathForURL(r.rev)
 	}
@@ -261,9 +265,9 @@ func (r *RepositoryResolver) Rev() string {
 func (r *RepositoryResolver) Label() (Markdown, error) {
 	var label string
 	if r.rev != "" {
-		label = string(r.innerRepo.Name) + "@" + r.rev
+		label = r.Name() + "@" + r.rev
 	} else {
-		label = string(r.innerRepo.Name)
+		label = r.Name()
 	}
 	text := "[" + label + "](/" + label + ")"
 	return Markdown(text), nil
@@ -299,10 +303,10 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 			return
 		}
 
-		log15.Debug("RepositoryResolver.hydrate", "repo.ID", r.innerRepo.ID)
+		log15.Debug("RepositoryResolver.hydrate", "repo.ID", r.IDInt32())
 
 		var repo *types.Repo
-		repo, r.err = db.Repos.Get(ctx, r.innerRepo.ID)
+		repo, r.err = db.Repos.Get(ctx, r.IDInt32())
 		if r.err == nil {
 			r.innerRepo = repo
 		}

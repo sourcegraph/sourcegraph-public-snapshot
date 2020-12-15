@@ -102,7 +102,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	var tags []*git.Tag
 	if args.Type == nil || *args.Type == gitRefTypeTag {
 		var err error
-		tags, err = git.ListTags(ctx, r.innerRepo.Name)
+		tags, err = git.ListTags(ctx, r.repoName())
 		if err != nil {
 			return nil, err
 		}
