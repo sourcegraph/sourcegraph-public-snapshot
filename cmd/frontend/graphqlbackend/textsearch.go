@@ -508,33 +508,12 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		go func() {
 			// TODO limitHit, handleRepoSearchResult
 			defer wg.Done()
-			matches, limitHit, reposLimitHit, err := indexed.Search(ctx)
+			indexedCommon, matches, err := indexed.Search(ctx)
 			mu.Lock()
 			defer mu.Unlock()
-			if ctx.Err() == nil {
-				for _, repo := range indexed.Repos() {
-					common.searched = append(common.searched, repo.Repo)
-					common.indexed = append(common.indexed, repo.Repo)
-				}
-				for repo := range reposLimitHit {
-					// Repos that aren't included in the result set due to exceeded limits are partially searched
-					// for dynamic filter purposes. Note, reposLimitHit may include repos that did not have any results
-					// returned in the original result set, because indexed search has `limitHit` for the
-					// entire search rather than per repo as in non-indexed search.
-					common.partial[repo] = struct{}{}
-				}
-			}
-			if limitHit {
-				common.limitHit = true
-			}
-			if err == errNoResultsInTimeout {
-				// Effectively, all repositories have timed out.
-				for _, repo := range indexed.Repos() {
-					common.timedout = append(common.timedout, repo.Repo)
-				}
-			}
+			common.update(indexedCommon)
 			tr.LogFields(otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
-			if err != nil && err != errNoResultsInTimeout && searchErr == nil && !overLimitCanceled {
+			if err != nil && searchErr == nil && !overLimitCanceled {
 				searchErr = err
 				tr.LazyPrintf("cancel indexed search due to error: %v", err)
 				cancel()

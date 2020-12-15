@@ -81,6 +81,9 @@ func TestIndexedSearch(t *testing.T) {
 	}
 
 	reposHEAD := makeRepositoryRevisions("foo/bar", "foo/foobar")
+	repoBar := reposHEAD[0].Repo
+	repoFooBar := reposHEAD[1].Repo
+	repos := []*types.Repo{repoBar, repoFooBar}
 	zoektRepos := []*zoekt.RepoListEntry{{
 		Repository: zoekt.Repository{
 			Name:     "foo/bar",
@@ -100,8 +103,7 @@ func TestIndexedSearch(t *testing.T) {
 		wantMatchURLs      []string
 		wantMatchInputRevs []string
 		wantUnindexed      []*search.RepositoryRevisions
-		wantLimitHit       bool
-		wantReposLimitHit  map[api.RepoID]struct{}
+		wantCommon         searchResultsCommon
 		wantErr            bool
 	}{
 		{
@@ -113,9 +115,11 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
 			},
-			wantLimitHit:      false,
-			wantReposLimitHit: nil,
-			wantErr:           false,
+			wantCommon: searchResultsCommon{
+				searched: repos,
+				indexed:  repos,
+			},
+			wantErr: false,
 		},
 		{
 			name: "no matches timeout",
@@ -126,9 +130,11 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Minute },
 			},
-			wantLimitHit:      false,
-			wantReposLimitHit: nil,
-			wantErr:           true,
+			wantCommon: searchResultsCommon{
+				searched: repos,
+				indexed:  repos,
+				timedout: repos,
+			},
 		},
 		{
 			name: "context timeout",
@@ -139,9 +145,11 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: true,
 				since:           func(time.Time) time.Duration { return 0 },
 			},
-			wantLimitHit:      false,
-			wantReposLimitHit: nil,
-			wantErr:           true,
+			wantCommon: searchResultsCommon{
+				searched: repos,
+				indexed:  repos,
+				timedout: repos,
+			},
 		},
 		{
 			name: "results",
@@ -188,7 +196,6 @@ func TestIndexedSearch(t *testing.T) {
 				},
 				since: func(time.Time) time.Duration { return 0 },
 			},
-			wantLimitHit:   false,
 			wantMatchCount: 5,
 			wantMatchURLs: []string{
 				"git://foo/bar#baz.go",
@@ -197,6 +204,10 @@ func TestIndexedSearch(t *testing.T) {
 			wantMatchInputRevs: []string{
 				"",
 				"",
+			},
+			wantCommon: searchResultsCommon{
+				searched: repos,
+				indexed:  repos,
 			},
 			wantErr: false,
 		},
@@ -222,7 +233,10 @@ func TestIndexedSearch(t *testing.T) {
 				},
 				since: func(time.Time) time.Duration { return 0 },
 			},
-			wantLimitHit: false,
+			wantCommon: searchResultsCommon{
+				searched: []*types.Repo{repoBar},
+				indexed:  []*types.Repo{repoBar},
+			},
 			wantMatchURLs: []string{
 				"git://foo/bar?HEAD#baz.go",
 				"git://foo/bar?dev#baz.go",
@@ -253,6 +267,10 @@ func TestIndexedSearch(t *testing.T) {
 					},
 				},
 			},
+			wantCommon: searchResultsCommon{
+				searched: []*types.Repo{repoBar},
+				indexed:  []*types.Repo{repoBar},
+			},
 			wantUnindexed: makeRepositoryRevisions("foo/bar@unindexed"),
 			wantMatchURLs: []string{
 				"git://foo/bar?HEAD#baz.go",
@@ -273,7 +291,6 @@ func TestIndexedSearch(t *testing.T) {
 			wantUnindexed:      makeRepositoryRevisions("foo/bar@HEAD"),
 			wantMatchURLs:      nil,
 			wantMatchInputRevs: nil,
-			wantLimitHit:       false,
 		},
 		{
 			name: "ref-glob with implicit /*",
@@ -288,7 +305,6 @@ func TestIndexedSearch(t *testing.T) {
 			wantUnindexed:      makeRepositoryRevisions("foo/bar@HEAD"),
 			wantMatchURLs:      nil,
 			wantMatchInputRevs: nil,
-			wantLimitHit:       false,
 		},
 	}
 	for _, tt := range tests {
@@ -323,16 +339,13 @@ func TestIndexedSearch(t *testing.T) {
 
 			indexed.since = tt.args.since
 
-			gotFm, gotLimitHit, gotReposLimitHit, err := indexed.Search(tt.args.ctx)
+			gotCommon, gotFm, err := indexed.Search(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
 			}
-			if gotLimitHit != tt.wantLimitHit {
-				t.Errorf("zoektSearchHEAD() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
-			}
-			if diff := cmp.Diff(tt.wantReposLimitHit, gotReposLimitHit, cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("reposLimitHit mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(&tt.wantCommon, &gotCommon, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("common mismatch (-want +got):\n%s", diff)
 			}
 
 			var gotMatchCount int

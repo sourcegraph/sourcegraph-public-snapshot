@@ -223,7 +223,7 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 			// treat empty list as preferring master
 			revs = []search.RevisionSpecifier{{RevSpec: ""}}
 		}
-		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{Name: api.RepoName(repoName)}, Revs: revs}
+		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoName)[0], Revs: revs}
 	}
 	return r
 }
