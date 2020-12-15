@@ -32,7 +32,7 @@ func newOperations(dbStore DBStore, observationContext *observation.Context) *op
 		Name: "codeintel.commitUpdater",
 		Metrics: metrics.NewOperationMetrics(
 			observationContext.Registerer,
-			"codeintel_commit_updater",
+			"codeintel_commit_graph_updater",
 			metrics.WithCountHelp("Total number of method invocations."),
 		),
 	})

@@ -695,11 +695,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ## frontend: num_dirty_repositories
 
-<p class="subtitle">code-intel: number of dirty repositories</p>
+<p class="subtitle">code-intel: number of repositories with a stale commit graph</p>
 
 **Descriptions:**
 
-- _frontend: 100+ number of dirty repositories_
+- _frontend: 100+ number of repositories with a stale commit graph_
 
 **Possible solutions:**
 
@@ -715,11 +715,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ## frontend: dirty_repositories_growth_rate
 
-<p class="subtitle">code-intel: dirty repositories growth rate every 5m</p>
+<p class="subtitle">code-intel: stale commit graph growth rate rate every 5m</p>
 
 **Descriptions:**
 
-- _frontend: 5+ dirty repositories growth rate every 5m_
+- _frontend: 5+ stale commit graph growth rate rate every 5m_
 
 **Possible solutions:**
 
@@ -733,13 +733,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <br />
 
-## frontend: codeintel_commit_updater_99th_percentile_duration
+## frontend: codeintel_commit_graph_updater_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful commit updater operation duration over 5m</p>
+<p class="subtitle">code-intel: 99th percentile successful commit graph updater operation duration over 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20s+ 99th percentile successful commit updater operation duration over 5m_
+- _frontend: 20s+ 99th percentile successful commit graph updater operation duration over 5m_
 
 **Possible solutions:**
 
@@ -747,19 +747,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_commit_updater_99th_percentile_duration"
+  "warning_frontend_codeintel_commit_graph_updater_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## frontend: codeintel_commit_updater_errors
+## frontend: codeintel_commit_graph_updater_errors
 
-<p class="subtitle">code-intel: commit updater errors every 5m</p>
+<p class="subtitle">code-intel: commit graph updater errors every 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20+ commit updater errors every 5m_
+- _frontend: 20+ commit graph updater errors every 5m_
 
 **Possible solutions:**
 
@@ -767,7 +767,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_commit_updater_errors"
+  "warning_frontend_codeintel_commit_graph_updater_errors"
 ]
 ```
 
@@ -775,11 +775,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ## frontend: codeintel_upload_records_removed
 
-<p class="subtitle">code-intel: upload records removed every 5m</p>
+<p class="subtitle">code-intel: upload records expired or deleted every 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20+ upload records removed every 5m_
+- _frontend: 20+ upload records expired or deleted every 5m_
 
 **Possible solutions:**
 
@@ -795,11 +795,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ## frontend: codeintel_index_records_removed
 
-<p class="subtitle">code-intel: index records removed every 5m</p>
+<p class="subtitle">code-intel: index records expired or deleted every 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20+ index records removed every 5m_
+- _frontend: 20+ index records expired or deleted every 5m_
 
 **Possible solutions:**
 
@@ -815,11 +815,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ## frontend: codeintel_uploads_purged
 
-<p class="subtitle">code-intel: uploads purged every 5m</p>
+<p class="subtitle">code-intel: data for unreferenced upload records purged every 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20+ uploads purged every 5m_
+- _frontend: 20+ data for unreferenced upload records purged every 5m_
 
 **Possible solutions:**
 
@@ -835,11 +835,11 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ## frontend: codeintel_background_errors
 
-<p class="subtitle">code-intel: background process errors every 5m</p>
+<p class="subtitle">code-intel: codeintel-related background process errors every 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20+ background process errors every 5m_
+- _frontend: 20+ codeintel-related background process errors every 5m_
 
 **Possible solutions:**
 
