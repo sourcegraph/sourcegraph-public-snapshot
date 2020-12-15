@@ -474,6 +474,7 @@ describe('Campaigns', () => {
                 // Change overrides to make campaign appear closed.
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
+                    ...campaignLicenseGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType, { closedAt: subDays(new Date(), 1).toISOString() }),
                     CampaignChangesets,
                     ChangesetCountsOverTime,
