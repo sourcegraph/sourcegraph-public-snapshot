@@ -63,7 +63,10 @@ export const PreviewActionPublish: React.FunctionComponent<{ className?: string 
 )
 export const PreviewActionPublishDraft: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <UploadIcon className="text-muted" data-tooltip="This changeset will be published as a draft to its code host" />
+        <UploadIcon
+            className="text-muted"
+            data-tooltip="This changeset will be published as a draft to its code host"
+        />
         <span>Publish draft</span>
     </div>
 )

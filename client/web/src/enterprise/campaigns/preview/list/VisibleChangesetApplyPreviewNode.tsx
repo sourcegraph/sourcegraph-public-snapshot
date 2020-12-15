@@ -124,8 +124,8 @@ const ExpandedSection: React.FunctionComponent<
     if (node.targets.changesetSpec.description.__typename === 'ExistingChangesetReference') {
         return (
             <div className="alert alert-info mb-0">
-                When run, the changeset with ID <strong>{node.targets.changesetSpec.description.externalID}</strong> will be imported
-                from <strong>{node.targets.changesetSpec.description.baseRepository.name}</strong>.
+                When run, the changeset with ID <strong>{node.targets.changesetSpec.description.externalID}</strong>{' '}
+                will be imported from <strong>{node.targets.changesetSpec.description.baseRepository.name}</strong>.
             </div>
         )
     }
