@@ -1,7 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
-import { CampaignApplyPage } from './CampaignApplyPage'
+import { CampaignPreviewPage } from './CampaignPreviewPage'
 import { of, Observable } from 'rxjs'
 import {
     CampaignSpecChangesetSpecsResult,
@@ -15,7 +15,7 @@ import { fetchCampaignSpecById } from './backend'
 import { addDays, subDays } from 'date-fns'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/apply/CampaignApplyPage', module)
+const { add } = storiesOf('web/campaigns/apply/CampaignPreviewPage', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
     .addParameters({
         chromatic: {
@@ -123,10 +123,10 @@ const queryEmptyFileDiffs = () =>
 add('Create', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignApplyPage
+            <CampaignPreviewPage
                 {...props}
                 expandChangesetDescriptions={true}
-                specID="123123"
+                campaignSpecID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecCreate}
                 queryChangesetSpecs={queryChangesetSpecs}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
@@ -139,10 +139,10 @@ add('Create', () => (
 add('Update', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignApplyPage
+            <CampaignPreviewPage
                 {...props}
                 expandChangesetDescriptions={true}
-                specID="123123"
+                campaignSpecID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecUpdate}
                 queryChangesetSpecs={queryChangesetSpecs}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
@@ -155,10 +155,10 @@ add('Update', () => (
 add('Missing credentials', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignApplyPage
+            <CampaignPreviewPage
                 {...props}
                 expandChangesetDescriptions={true}
-                specID="123123"
+                campaignSpecID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecMissingCredentials}
                 queryChangesetSpecs={queryChangesetSpecs}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
@@ -171,10 +171,10 @@ add('Missing credentials', () => (
 add('No changesets', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignApplyPage
+            <CampaignPreviewPage
                 {...props}
                 expandChangesetDescriptions={true}
-                specID="123123"
+                campaignSpecID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecCreate}
                 queryChangesetSpecs={queryEmptyChangesetSpecs}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}

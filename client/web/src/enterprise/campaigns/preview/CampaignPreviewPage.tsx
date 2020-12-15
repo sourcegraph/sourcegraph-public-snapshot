@@ -23,8 +23,8 @@ import { AuthenticatedUser } from '../../../auth'
 import { MissingCredentialsAlert } from './MissingCredentialsAlert'
 import { SupersedingCampaignSpecAlert } from '../detail/SupersedingCampaignSpecAlert'
 
-export interface CampaignApplyPageProps extends ThemeProps, TelemetryProps {
-    specID: string
+export interface CampaignPreviewPageProps extends ThemeProps, TelemetryProps {
+    campaignSpecID: string
     history: H.History
     location: H.Location
     authenticatedUser: Pick<AuthenticatedUser, 'url'>
@@ -39,8 +39,8 @@ export interface CampaignApplyPageProps extends ThemeProps, TelemetryProps {
     expandChangesetDescriptions?: boolean
 }
 
-export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> = ({
-    specID,
+export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPageProps> = ({
+    campaignSpecID: specID,
     history,
     location,
     authenticatedUser,
