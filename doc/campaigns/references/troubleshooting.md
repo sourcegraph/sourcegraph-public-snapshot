@@ -52,9 +52,9 @@ Go through the "[Quickstart](../quickstart.md)" to run a campaign that adds "Hel
 name: hello-world
 description: Add Hello World to READMEs
 
-# Find all repositories that contain a README.md file.
+# Find one repository with a README.md
 on:
-  - repositoriesMatchingQuery: file:README.md
+  - repositoriesMatchingQuery: repohasfile:README.md count:1
 
 # In each repository, run this command. Each repository's resulting diff is captured.
 steps:
