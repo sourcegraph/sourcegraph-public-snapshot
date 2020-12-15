@@ -74,6 +74,7 @@ export PERCY_TOKEN=#{ENV['PERCY_TOKEN']}
 export CI=#{ENV['CI']}
 
 # Env vars shared by e2e and QA tests - see:
+export TEST_USER_EMAIL=#{ENV['TEST_USER_EMAIL']}
 export TEST_USER_PASSWORD=#{ENV['TEST_USER_PASSWORD']}
 export SLOMO=#{ENV['SLOMO']}
 export DISPLAY=#{ENV['DISPLAY']}
@@ -83,6 +84,7 @@ export BITBUCKET_SERVER_URL=#{ENV['BITBUCKET_SERVER_URL']}
 export BITBUCKET_SERVER_TOKEN=#{ENV['BITBUCKET_SERVER_TOKEN']}
 export BITBUCKET_SERVER_USERNAME=#{ENV['BITBUCKET_SERVER_USERNAME']}
 export SGDEV_OVERRIDE_AUTH_SECRET=#{ENV['SGDEV_OVERRIDE_AUTH_SECRET']}
+export VAGRANT_RUN_ENV=#{ENV['VAGRANT_RUN_ENV']}
 
 # Env vars required by the QA tests - see:
 # https://my.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/mn37wmu5dzhll6qxcnpmutvlq4
