@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp/syntax"
+	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -199,12 +200,12 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 	return s.repos.repoRevs
 }
 
-func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[api.RepoID]struct{}, err error) {
+func (s *indexedSearchRequest) Search(ctx context.Context) (searchResultsCommon, []*FileMatchResolver, error) {
 	if s.args == nil {
-		return nil, false, nil, nil
+		return searchResultsCommon{}, nil, nil
 	}
 	if len(s.Repos()) == 0 && s.args.Mode != search.ZoektGlobalSearch {
-		return nil, false, nil, nil
+		return searchResultsCommon{}, nil, nil
 	}
 
 	since := time.Since
@@ -212,16 +213,52 @@ func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResol
 		since = s.since
 	}
 
+	var (
+		fm            []*FileMatchResolver
+		limitHit      bool
+		reposLimitHit map[api.RepoID]struct{}
+		err           error
+	)
+
 	switch s.typ {
 	case textRequest:
-		return zoektSearch(ctx, s.args, s.repos, s.typ, since)
+		fm, limitHit, reposLimitHit, err = zoektSearch(ctx, s.args, s.repos, s.typ, since)
 	case symbolRequest:
-		return zoektSearch(ctx, s.args, s.repos, s.typ, since)
+		fm, limitHit, reposLimitHit, err = zoektSearch(ctx, s.args, s.repos, s.typ, since)
 	case fileRequest:
-		return zoektSearchHEADOnlyFiles(ctx, s.args, s.repos, since)
+		fm, limitHit, reposLimitHit, err = zoektSearchHEADOnlyFiles(ctx, s.args, s.repos, since)
 	default:
-		return nil, false, nil, fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
+		return searchResultsCommon{}, nil, fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
 	}
+
+	noResultsInTimeout := false
+	if err == errNoResultsInTimeout {
+		noResultsInTimeout = true
+		err = nil
+	}
+
+	if err != nil {
+		return searchResultsCommon{}, nil, err
+	}
+
+	repos := make([]*types.Repo, 0, len(s.Repos()))
+	for _, r := range s.Repos() {
+		repos = append(repos, r.Repo)
+	}
+	sort.Sort(types.Repos(repos))
+
+	var timedout []*types.Repo
+	if noResultsInTimeout {
+		timedout = repos
+	}
+
+	return searchResultsCommon{
+		limitHit: limitHit,
+		searched: repos,
+		indexed:  repos,
+		partial:  reposLimitHit,
+		timedout: timedout,
+	}, fm, nil
 }
 
 func zoektResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k int) {
@@ -467,6 +504,10 @@ func zoektLimitMatches(limitHit bool, limit int, files []zoekt.FileMatch, getRep
 			limitHit = true
 			partialFiles = files[limit:]
 		}
+	}
+
+	if len(partialFiles) == 0 {
+		return limitHit, resultFiles, nil
 	}
 
 	partial := make(map[api.RepoID]struct{})
