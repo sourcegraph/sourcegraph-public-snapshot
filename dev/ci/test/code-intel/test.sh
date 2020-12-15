@@ -19,11 +19,20 @@ docker_logs() {
   chmod 744 $CONTAINER.log
 }
 
-IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION ./dev/run-server-image.sh -d --name $CONTAINER
+if [[ $VAGRANT_RUN_ENV="CI" ]]; then
+  IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION
+else
+  IMAGE=sourcegraph/server:latest
+fi
+
+./dev/run-server-image.sh -d --name $CONTAINER
 trap docker_logs exit
 sleep 15
 
-go run dev/ci/test/init-server.go
+pushd internal/cmd/init-server
+go build
+./init-server "$root_dir/dev/ci/test/code-intel/extsvc.json"
+popd
 
 # Load variables set up by init-server, disabling `-x` to avoid printing variables
 set +x
@@ -37,7 +46,6 @@ curl -f http://localhost:7080/healthz
 echo "TEST: Running tests"
 pushd internal/cmd/precise-code-intel-tester
 go build
-./precise-code-intel-tester addrepos
 ./scripts/download.sh
 ./precise-code-intel-tester upload
 sleep 10

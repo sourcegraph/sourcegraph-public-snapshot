@@ -26,7 +26,13 @@ docker_logs() {
   chmod 744 $CONTAINER.log
 }
 
-IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION ./dev/run-server-image.sh -d --name $CONTAINER
+if [[ $VAGRANT_RUN_ENV="CI" ]]; then
+  IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION
+else
+  IMAGE=sourcegraph/server:latest
+fi
+
+./dev/run-server-image.sh -d --name $CONTAINER
 trap docker_logs exit
 sleep 15
 
