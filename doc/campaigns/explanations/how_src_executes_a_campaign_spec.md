@@ -8,14 +8,14 @@ It explains what happens under the hood when a user uses applies or previews a c
 
 `src campaign apply` and `src campaign preview` execute a campaign spec the same way:
 
-1. Parse the campaign spec
-1. Resolve the namespace
-1. Prepare container images
-1. Resolve repositories
-1. Executing steps
-1. Sending changeset specs
-1. Sending campaign spec
-1. Preview or apply the campaign spec
+1. [Parse the campaign spec](#parse-campaign-spec)
+1. [Resolve the namespace](#resolving-namespace)
+1. [Prepare container images](#preparing-container-images)
+1. [Resolve repositories](#resolving-repositories)
+1. [Executing steps](#executing-steps)
+1. [Sending changeset specs](#sending-changeset-specs)
+1. [Sending campaign spec](#sending-campaign-spec)
+1. [Preview or apply the campaign spec](#preview-or-apply-the-campaign-spec)
 
 The difference is the last step: `src campaign apply` _applies_ the campaign spec where the `src campaign preview` only prints a URL at which you can preview what would happen if you apply it.
 
@@ -41,7 +41,7 @@ To do that it runs `docker image inspect --format {{.Id}} -- <container-image-na
 
 If that fails with a "No such image" error, `src` tries to pull the image by running `docker image pull <container-image-name>` and then running `docker image inspect --format {{.Id}} -- <container-image-name>` again.
 
-## Resolve repositories
+## Resolving repositories
 
 `src` resolves each entry in the campaign spec's `on` property to produce a _unique list of repositories (!)_ in which to execute the campaign spec's `steps`.
 
