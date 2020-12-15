@@ -637,7 +637,7 @@ describe('Campaigns', () => {
                 await driver.page.waitForSelector('.test-campaign-apply-page')
 
                 // Expand one changeset.
-                await driver.page.click('.test-campaigns-expand-changeset-spec')
+                await driver.page.click('.test-campaigns-expand-preview')
                 // Expect one diff to be rendered.
                 await driver.page.waitForSelector('.test-file-diff-node')
 
