@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -41,13 +39,13 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	esStore := db.NewExternalServicesStoreWith(cstore)
 	repoStore := db.NewRepoStoreWith(cstore)
 
 	rs := make([]*types.Repo, 0, 3)
 	for i := 0; i < cap(rs); i++ {
 		name := fmt.Sprintf("github.com/sourcegraph/test-changeset-apply-preview-connection-repo-%d", i)
-		r := newGitHubTestRepo(name, newGitHubExternalService(t, rstore))
+		r := newGitHubTestRepo(name, newGitHubExternalService(t, esStore))
 		if err := repoStore.Create(ctx, r); err != nil {
 			t.Fatal(err)
 		}
