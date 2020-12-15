@@ -42,9 +42,7 @@ Create a campaign by specifying a search query to get a list of repositories and
 <div class="cta-group">
 <a class="btn btn-primary" href="quickstart">★ Quickstart</a>
 <a class="btn" href="explanations/introduction_to_campaigns">Introduction to campaigns</a>
-<a class="btn" href="references/requirements">
-Requirements
-</a>
+<a class="btn" href="references/requirements">Requirements</a>
 </div>
 
 > NOTE: This documentation describes the campaign functionality shipped in Sourcegraph 3.19 and src-cli 3.18, and later versions of both. [Click here](https://docs.sourcegraph.com/@3.18/user/campaigns) to read the documentation for campaigns in older versions of Sourcegraph and src-cli.
@@ -79,6 +77,7 @@ Requirements
 - [Introduction to campaigns](explanations/introduction_to_campaigns.md)
 - [Permissions in campaigns](explanations/permissions_in_campaigns.md)
 - [Campaigns design](explanations/campaigns_design.md)
+- [How `src` executes a campaign spec](explanations/how_src_executes_a_campaign_spec.md)
 
 ## How-tos
 
