@@ -233,6 +233,12 @@ func mkRepos(names ...string) []*types.Repo {
 	for _, name := range names {
 		sum := md5.Sum([]byte(name))
 		id := api.RepoID(binary.BigEndian.Uint64(sum[:]))
+		if id < 0 {
+			id = -(id / 2)
+		}
+		if id == 0 {
+			id++
+		}
 		repos = append(repos, &types.Repo{ID: id, Name: api.RepoName(name)})
 	}
 	return repos
