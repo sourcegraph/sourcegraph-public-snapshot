@@ -1,5 +1,5 @@
 import React from 'react'
-import { ChangesetApplyPreviewFields, ChangesetSpecOperation } from '../../../graphql-operations'
+import { ChangesetApplyPreviewFields, ChangesetSpecOperation } from '../../../../graphql-operations'
 import BlankCircleIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import ImportIcon from 'mdi-react/ImportIcon'
 import UploadIcon from 'mdi-react/UploadIcon'

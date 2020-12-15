@@ -11,7 +11,7 @@ import {
 } from './backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CampaignHeader } from '../detail/CampaignHeader'
-import { ChangesetSpecList } from './ChangesetSpecList'
+import { ChangesetSpecList } from './list/ChangesetSpecList'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'

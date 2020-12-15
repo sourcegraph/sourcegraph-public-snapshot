@@ -7,10 +7,10 @@ import {
     ChangesetSpecType,
     Scalars,
     VisibleChangesetApplyPreviewFields,
-} from '../../../graphql-operations'
+} from '../../../../graphql-operations'
 import { of } from 'rxjs'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
-import { ChangesetSpecOperation } from '../../../../../shared/src/graphql-operations'
+import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+import { ChangesetSpecOperation } from '../../../../../../shared/src/graphql-operations'
 
 const { add } = storiesOf('web/campaigns/apply/VisibleChangesetSpecNode', module).addDecorator(story => (
     <div className="p-3 container web-content changeset-spec-list__grid">{story()}</div>

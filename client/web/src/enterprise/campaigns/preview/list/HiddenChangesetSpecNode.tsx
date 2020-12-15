@@ -1,5 +1,5 @@
 import React from 'react'
-import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../graphql-operations'
+import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import { ChangesetSpecAction } from './ChangesetSpecAction'
 

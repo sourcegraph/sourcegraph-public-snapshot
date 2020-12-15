@@ -9,8 +9,8 @@ import {
     ChangesetApplyPreviewFields,
     ExternalServiceKind,
 } from '../../../graphql-operations'
-import { visibleChangesetSpecStories } from './VisibleChangesetSpecNode.story'
-import { hiddenChangesetSpecStories } from './HiddenChangesetSpecNode.story'
+import { visibleChangesetSpecStories } from './list/VisibleChangesetSpecNode.story'
+import { hiddenChangesetSpecStories } from './list/HiddenChangesetSpecNode.story'
 import { fetchCampaignSpecById } from './backend'
 import { addDays, subDays } from 'date-fns'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'

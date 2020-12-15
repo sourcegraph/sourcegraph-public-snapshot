@@ -2,8 +2,8 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { HiddenChangesetSpecNode } from './HiddenChangesetSpecNode'
 import { addDays } from 'date-fns'
-import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
+import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
 const { add } = storiesOf('web/campaigns/apply/HiddenChangesetSpecNode', module).addDecorator(story => (
     <div className="p-3 container web-content changeset-spec-list__grid">{story()}</div>
