@@ -41,7 +41,7 @@ to `settings > User account > settings`.
 
 | Table           | Description                                                                                                                                                   |
 |:----------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| cm_monitors     | Holds meta data of a code monitor.                                                                                                                            |
+| cm_monitors     | Holds metadata of a code monitor.                                                                                                                            |
 | cm_queries      | Contains data for each (trigger) query.                                                                                                                       |
 | cm_emails       | Contains data for each (action) email.                                                                                                                        |
 | cm_recipients   | Each email action can have multiple recipients. Each recipient can either be a user or an organization. Each row in this table corresponds to one reciepient. |
