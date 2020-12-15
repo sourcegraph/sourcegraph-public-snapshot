@@ -1,5 +1,9 @@
 import React, { useEffect, useCallback, useState, useMemo } from 'react'
-import { areCampaignsLicensed, queryCampaigns as _queryCampaigns, queryCampaignsByNamespace } from './backend'
+import {
+    areCampaignsLicensed as _areCampaignsLicensed,
+    queryCampaigns as _queryCampaigns,
+    queryCampaignsByNamespace,
+} from './backend'
 import { RouteComponentProps } from 'react-router'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
 import { CampaignNode, CampaignNodeProps } from './CampaignNode'
@@ -27,6 +31,8 @@ export interface CampaignListPageProps extends TelemetryProps, Pick<RouteCompone
     displayNamespace?: boolean
     /** For testing only. */
     queryCampaigns?: typeof _queryCampaigns
+    /** For testing only. */
+    areCampaignsLicensed?: typeof _areCampaignsLicensed
     /** For testing only. */
     openTab?: SelectedTab
 }
@@ -66,6 +72,7 @@ type SelectedTab = 'campaigns' | 'gettingStarted'
  */
 export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = ({
     queryCampaigns = _queryCampaigns,
+    areCampaignsLicensed = _areCampaignsLicensed,
     displayNamespace = true,
     location,
     openTab,
@@ -105,7 +112,7 @@ export const CampaignListPage: React.FunctionComponent<CampaignListPageProps> = 
             ),
         [queryCampaigns, isFirstFetch, openTab]
     )
-    const licensed: boolean | undefined = useObservable(useMemo(() => areCampaignsLicensed(), []))
+    const licensed: boolean | undefined = useObservable(useMemo(() => areCampaignsLicensed(), [areCampaignsLicensed]))
 
     return (
         <>

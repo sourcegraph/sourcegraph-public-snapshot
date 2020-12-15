@@ -154,8 +154,8 @@ export const queryCampaignsByNamespace = ({
         })
     )
 
-export const areCampaignsLicensed = (): Observable<boolean> =>
-    requestGraphQL<AreCampaignsLicensedResult, AreCampaignsLicensedVariables>(
+export function areCampaignsLicensed(): Observable<boolean> {
+    return requestGraphQL<AreCampaignsLicensedResult, AreCampaignsLicensedVariables>(
         gql`
             query AreCampaignsLicensed {
                 enterpriseLicenseHasFeature(feature: "campaigns")
@@ -165,3 +165,4 @@ export const areCampaignsLicensed = (): Observable<boolean> =>
         map(dataOrThrowErrors),
         map(data => data.enterpriseLicenseHasFeature)
     )
+}
