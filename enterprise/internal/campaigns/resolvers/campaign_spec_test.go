@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
@@ -35,17 +36,15 @@ func TestCampaignSpecResolver(t *testing.T) {
 	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	repoStore := db.NewRepoStoreWith(cstore)
-
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
+	repo := newGitHubTestRepo("github.com/sourcegraph/campaign-spec-test", newGitHubExternalService(t, rstore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
-	username := "campaign-spec-by-id-user-name"
 	orgname := "test-org"
-	userID := insertTestUser(t, dbconn.Global, username, false)
-	adminID := insertTestUser(t, dbconn.Global, "alice", true)
+	userID := ct.CreateTestUser(t, false).ID
+	adminID := ct.CreateTestUser(t, true).ID
 	org, err := db.Orgs.Create(ctx, orgname, nil)
 	if err != nil {
 		t.Fatal(err)

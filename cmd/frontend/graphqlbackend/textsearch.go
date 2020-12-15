@@ -129,10 +129,6 @@ func (fm *FileMatchResolver) appendMatches(src *FileMatchResolver) {
 	fm.JLimitHit = fm.JLimitHit || src.JLimitHit
 }
 
-func (fm *FileMatchResolver) searchResultURIs() (string, string) {
-	return fm.Repo.Name(), fm.JPath
-}
-
 func (fm *FileMatchResolver) resultCount() int32 {
 	rc := len(fm.symbols) + fm.MatchCount
 	if rc > 0 {

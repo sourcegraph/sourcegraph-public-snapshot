@@ -15,7 +15,7 @@ FROM prom/alertmanager:v0.21.0@sha256:913293083cb14085bfc01018bb30d1dcbbc9ed197a
 FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d AS monitoring_builder
 RUN mkdir -p '/generated/prometheus'
 COPY ./.bin/monitoring-generator /bin/monitoring-generator
-RUN PROMETHEUS_DIR='/generated/prometheus' GRAFANA_DIR='' DOC_SOLUTIONS_FILE='' NO_PRUNE=true /bin/monitoring-generator
+RUN PROMETHEUS_DIR='/generated/prometheus' GRAFANA_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator
 RUN ls '/generated/prometheus'
 
 # Prepare final image

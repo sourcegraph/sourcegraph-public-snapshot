@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
@@ -28,7 +29,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "changeset-spec-connection-resolver", false)
+	userID := ct.CreateTestUser(t, false).ID
 
 	cstore := store.New(dbconn.Global)
 
@@ -45,7 +46,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 
 	rs := make([]*types.Repo, 0, 3)
 	for i := 0; i < cap(rs); i++ {
-		name := fmt.Sprintf("github.com/sourcegraph/repo-%d", i)
+		name := fmt.Sprintf("github.com/sourcegraph/test-changeset-spec-connection-repo-%d", i)
 		r := newGitHubTestRepo(name, newGitHubExternalService(t, rstore))
 		if err := repoStore.Create(ctx, r); err != nil {
 			t.Fatal(err)

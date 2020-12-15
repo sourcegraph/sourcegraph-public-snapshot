@@ -5,7 +5,7 @@ import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton
 
 export interface StreamingProgressProps {
     progress?: Progress
-    onSearchAgain?: (additionalFilters: string[]) => void
+    onSearchAgain: (additionalFilters: string[]) => void
 }
 
 export const defaultProgress: Progress = {

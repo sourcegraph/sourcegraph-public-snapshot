@@ -6,12 +6,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 type changesetEventResolver struct {
 	store             *store.Store
-	httpFactory       *httpcli.Factory
 	changesetResolver *changesetResolver
 	*campaigns.ChangesetEvent
 }

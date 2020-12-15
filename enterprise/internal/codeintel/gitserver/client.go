@@ -12,6 +12,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -65,9 +66,10 @@ func (c *CommitGraph) Graph() map[string][]string { return c.graph }
 func (c *CommitGraph) Order() []string            { return c.order }
 
 type CommitGraphOptions struct {
-	Commit string
-	Limit  int
-	Since  *time.Time
+	Commit  string
+	AllRefs bool
+	Limit   int
+	Since   *time.Time
 }
 
 // CommitGraph returns the commit graph for the given repository as a mapping from a commit
@@ -81,7 +83,10 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitG
 	}})
 	defer endObservation(1, observation.Args{})
 
-	commands := []string{"log", "--all", "--pretty=%H %P", "--topo-order"}
+	commands := []string{"log", "--pretty=%H %P", "--topo-order"}
+	if opts.AllRefs {
+		commands = append(commands, "--all")
+	}
 	if opts.Commit != "" {
 		commands = append(commands, opts.Commit)
 	}

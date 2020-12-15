@@ -770,11 +770,96 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 7,
-                "scopes": "metaStructuralHole"
+                "scopes": "metaStructuralRegexpHole"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaStructuralVariable"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "metaStructuralRegexpSeparator"
+              },
+              {
+                "startIndex": 11,
+                "scopes": "metaRegexpCharacterClass"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "metaRegexpEscapedCharacter"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "metaRegexpCharacterClass"
+              },
+              {
+                "startIndex": 15,
+                "scopes": "metaStructuralRegexpHole"
               },
               {
                 "startIndex": 16,
                 "scopes": "identifier"
+              }
+            ]
+        `)
+    })
+
+    test('decorate structural holes with valid inlined regexp, no variable', () => {
+        expect(
+            getMonacoTokens(toSuccess(scanSearchQuery('repo:foo :[~a?|b*]', false, SearchPatternType.structural)), true)
+        ).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaStructuralRegexpHole"
+              },
+              {
+                "startIndex": 11,
+                "scopes": "metaStructuralVariable"
+              },
+              {
+                "startIndex": 11,
+                "scopes": "metaStructuralRegexpSeparator"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "metaRegexpRangeQuantifier"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "metaRegexpAlternative"
+              },
+              {
+                "startIndex": 15,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 16,
+                "scopes": "metaRegexpRangeQuantifier"
+              },
+              {
+                "startIndex": 17,
+                "scopes": "metaStructuralRegexpHole"
               }
             ]
         `)

@@ -17,7 +17,7 @@ PGHOST=${PGHOST-$(get_pg_env HOST)}
 PGUSER=${PGUSER-$(get_pg_env USER)}
 PGPORT=${PGPORT-$(get_pg_env PORT)}
 # we need to be able to query schema_migrations table
-PGDATABASE=${PGDATABASE-$(get_pg_env DATABASE)}
+PGDATABASE=${PGDATABASE-$(get_pg_env DBNAME)}
 
 ADJUSTED_HOST=${PGHOST:-127.0.0.1}
 if [[ ("$ADJUSTED_HOST" == "localhost" || "$ADJUSTED_HOST" == "127.0.0.1" || -f "$ADJUSTED_HOST") && "$OSTYPE" != "linux-gnu" ]]; then

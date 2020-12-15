@@ -20,7 +20,7 @@ export interface SubmitSearchParameters
         VersionContextProps {
     history: H.History
     query: string
-    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type' | 'scopePage' | 'repogroupPage'
+    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type' | 'scopePage' | 'repogroupPage' | 'excludedResults'
     searchParameters?: { key: string; value: string }[]
 }
 

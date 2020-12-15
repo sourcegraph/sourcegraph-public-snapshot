@@ -712,16 +712,26 @@ Check constraints:
 
 # Table "public.lsif_nearest_uploads"
 ```
-      Column      |  Type   | Modifiers 
-------------------+---------+-----------
- repository_id    | integer | not null
- upload_id        | integer | not null
- distance         | integer | not null
- ancestor_visible | boolean | not null
- overwritten      | boolean | not null
- commit_bytea     | bytea   | not null
+    Column     |  Type   | Modifiers 
+---------------+---------+-----------
+ repository_id | integer | not null
+ commit_bytea  | bytea   | not null
+ uploads       | jsonb   | not null
 Indexes:
     "lsif_nearest_uploads_repository_id_commit_bytea" btree (repository_id, commit_bytea)
+
+```
+
+# Table "public.lsif_nearest_uploads_links"
+```
+        Column         |  Type   | Modifiers 
+-----------------------+---------+-----------
+ repository_id         | integer | not null
+ commit_bytea          | bytea   | not null
+ ancestor_commit_bytea | bytea   | not null
+ distance              | integer | not null
+Indexes:
+    "lsif_nearest_uploads_links_repository_id_commit_bytea" btree (repository_id, commit_bytea)
 
 ```
 
@@ -800,7 +810,7 @@ Referenced by:
  repository_id | integer | not null
  upload_id     | integer | not null
 Indexes:
-    "lsif_uploads_visible_at_tip_repository_id" btree (repository_id)
+    "lsif_uploads_visible_at_tip_repository_id_upload_id" btree (repository_id, upload_id)
 
 ```
 

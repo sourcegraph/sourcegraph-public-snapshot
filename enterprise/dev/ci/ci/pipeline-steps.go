@@ -337,28 +337,16 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 
 	return func(pipeline *bk.Pipeline) {
 		switch {
-		// build all images for tagged releases
-		case c.taggedRelease:
+		// build candidate images but do not deploy `insiders` images
+		case c.taggedRelease || c.isMasterDryRun || c.shouldRunE2EandQA():
 			for _, dockerImage := range images.SourcegraphDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
 
-		// replicates `main` build but does not deploy `insiders` images
-		case c.isMasterDryRun:
-			for _, dockerImage := range images.SourcegraphDockerImages {
-				addDockerImage(c, dockerImage, false)(pipeline)
-			}
-
-		// deploy `insiders` images for `main`
+		// build candidate images and deploy `insiders` images
 		case c.branch == "main":
 			for _, dockerImage := range images.SourcegraphDockerImages {
 				addDockerImage(c, dockerImage, true)(pipeline)
-			}
-
-		// ensure candidate images are available for testing
-		case c.shouldRunE2EandQA():
-			for _, dockerImage := range images.SourcegraphDockerImages {
-				addDockerImage(c, dockerImage, false)(pipeline)
 			}
 
 		// only build candidate image for the specified image in the branch name
