@@ -162,4 +162,4 @@ That request yields an ID that uniquely identifies this expanded version of the 
 
 If `src campaign apply` was used, then the ID of the campaign is then used to send another request to the Sourcegraph instance, to _apply_ the campaign spec.
 
-If `src campaign previe` was used to execute and create the campaign spec, then a URL is printed, pointing to a preview page on the Sourcegraph instance on which we can see what _would_ happen if we were to apply the campaign spec.
+If `src campaign preview` was used to execute and create the campaign spec, then a URL is printed, pointing to a preview page on the Sourcegraph instance on which we can see what _would_ happen if we were to apply the campaign spec.
