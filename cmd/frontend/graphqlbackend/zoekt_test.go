@@ -101,7 +101,7 @@ func TestIndexedSearch(t *testing.T) {
 		wantMatchInputRevs []string
 		wantUnindexed      []*search.RepositoryRevisions
 		wantLimitHit       bool
-		wantReposLimitHit  map[string]struct{}
+		wantReposLimitHit  map[api.RepoName]struct{}
 		wantErr            bool
 	}{
 		{
@@ -188,9 +188,8 @@ func TestIndexedSearch(t *testing.T) {
 				},
 				since: func(time.Time) time.Duration { return 0 },
 			},
-			wantLimitHit:      false,
-			wantReposLimitHit: map[string]struct{}{},
-			wantMatchCount:    5,
+			wantLimitHit:   false,
+			wantMatchCount: 5,
 			wantMatchURLs: []string{
 				"git://foo/bar#baz.go",
 				"git://foo/foobar#baz.go",
@@ -223,8 +222,7 @@ func TestIndexedSearch(t *testing.T) {
 				},
 				since: func(time.Time) time.Duration { return 0 },
 			},
-			wantLimitHit:      false,
-			wantReposLimitHit: map[string]struct{}{},
+			wantLimitHit: false,
 			wantMatchURLs: []string{
 				"git://foo/bar?HEAD#baz.go",
 				"git://foo/bar?dev#baz.go",
