@@ -33,7 +33,7 @@ import (
 func TestNullIDResilience(t *testing.T) {
 	sr := &Resolver{store: store.New(dbconn.Global)}
 
-	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +117,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -279,7 +279,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -390,7 +390,7 @@ func TestApplyCampaign(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -521,7 +521,7 @@ func TestCreateCampaign(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -595,7 +595,7 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -846,7 +846,7 @@ func TestCreateCampaignsCredential(t *testing.T) {
 	cstore := store.New(dbconn.Global)
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -910,7 +910,7 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 	cstore := store.New(dbconn.Global)
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
