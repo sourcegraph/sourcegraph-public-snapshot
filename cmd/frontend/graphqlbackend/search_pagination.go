@@ -562,6 +562,7 @@ func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, last
 	final := &searchResultsCommon{
 		limitHit:         false, // irrelevant in paginated search
 		indexUnavailable: common.indexUnavailable,
+		repos:            make(map[api.RepoID]*types.Repo),
 		partial:          make(map[api.RepoID]struct{}),
 		resultCount:      common.resultCount,
 	}
@@ -577,6 +578,7 @@ func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, last
 			if firstResultRepo != "" && string(r.Name) < firstResultRepo {
 				continue
 			}
+			final.repos[r.ID] = r
 			dst = append(dst, r)
 			if string(r.Name) == lastResultRepo {
 				break
@@ -584,7 +586,17 @@ func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, last
 		}
 		return dst
 	}
-	final.repos = doAppend(final.repos, common.repos)
+
+	for _, r := range common.repos {
+		if lastResultRepo == "" || string(r.Name) > lastResultRepo {
+			continue
+		}
+		if firstResultRepo != "" && string(r.Name) < firstResultRepo {
+			continue
+		}
+		final.repos[r.ID] = r
+	}
+
 	final.searched = doAppend(final.searched, common.searched)
 	final.indexed = doAppend(final.indexed, common.indexed)
 	final.cloning = doAppend(final.cloning, common.cloning)
