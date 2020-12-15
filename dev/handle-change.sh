@@ -55,7 +55,7 @@ done
 
 $generate_graphql && { go generate github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend || failed=true; }
 $generate_dashboards && { docker-images/grafana/jsonnet/build.sh || failed=true; }
-$generate_monitoring && { pushd monitoring >/dev/null && DEV=true go generate && popd >/dev/null || failed=true; }
+$generate_monitoring && { pushd monitoring >/dev/null && go generate && popd >/dev/null || failed=true; }
 $generate_schema && { go generate github.com/sourcegraph/sourcegraph/schema || failed=true; }
 
 if $all_cmds; then
