@@ -8,10 +8,12 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var matchHoleRegexp = lazyregexp.New(splitOnHolesPattern())
@@ -263,7 +265,7 @@ func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPat
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, partial map[api.RepoName]struct{}, err error) {
 	if len(repos.repoRevs) == 0 {
 		return nil, false, nil, nil
 	}
@@ -329,31 +331,11 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		return nil, false, nil, nil
 	}
 
-	// Zoekt did not evaluate some files in repositories or ignored some repositories. Record skipped repos.
-	reposLimitHit = make(map[string]struct{})
-	if limitHit {
-		for _, file := range resp.Files {
-			if _, ok := reposLimitHit[file.Repository]; !ok {
-				reposLimitHit[file.Repository] = struct{}{}
-			}
-		}
-	}
-
-	if fileMatchLimit := int(args.PatternInfo.FileMatchLimit); len(resp.Files) > fileMatchLimit {
-		// Trim files based on count.
-		fileMatchesInSkippedRepos := resp.Files[fileMatchLimit:]
-		resp.Files = resp.Files[:fileMatchLimit]
-
-		if !limitHit {
-			// Record skipped repos with trimmed files.
-			for _, file := range fileMatchesInSkippedRepos {
-				if _, ok := reposLimitHit[file.Repository]; !ok {
-					reposLimitHit[file.Repository] = struct{}{}
-				}
-			}
-		}
-		limitHit = true
-	}
+	limitHit, files, partial := zoektLimitMatches(limitHit, int(args.PatternInfo.FileMatchLimit), resp.Files, func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool) {
+		repo, inputRevs := repos.GetRepoInputRev(file)
+		return repo, inputRevs, true
+	})
+	resp.Files = files
 
 	maxLineMatches := 25 + k
 	matches := make([]*FileMatchResolver, len(resp.Files))
@@ -378,5 +360,5 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		}
 	}
 
-	return matches, limitHit, reposLimitHit, nil
+	return matches, limitHit, partial, nil
 }

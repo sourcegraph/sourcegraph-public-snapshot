@@ -521,7 +521,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 					// for dynamic filter purposes. Note, reposLimitHit may include repos that did not have any results
 					// returned in the original result set, because indexed search has `limitHit` for the
 					// entire search rather than per repo as in non-indexed search.
-					common.partial[api.RepoName(repo)] = struct{}{}
+					common.partial[repo] = struct{}{}
 				}
 			}
 			if limitHit {

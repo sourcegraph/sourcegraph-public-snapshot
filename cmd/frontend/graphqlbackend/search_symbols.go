@@ -139,7 +139,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 				common.indexed = append(common.indexed, repo.Repo)
 			}
 			for repo := range reposLimitHit {
-				common.partial[api.RepoName(repo)] = struct{}{}
+				common.partial[repo] = struct{}{}
 			}
 		}
 		if limitHit {
