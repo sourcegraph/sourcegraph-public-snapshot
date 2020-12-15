@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 asdf install
 yarn
 yarn generate
-yes | gcloud auth configure-docker
+echo yes | gcloud auth configure-docker
 
 apt-get install -y gcc python3-dev python3-setuptools
 pip3 install --no-cache-dir -U crcmod
