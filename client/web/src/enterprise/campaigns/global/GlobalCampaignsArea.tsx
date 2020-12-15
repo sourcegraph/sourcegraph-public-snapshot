@@ -9,7 +9,7 @@ import { AuthenticatedUser } from '../../../auth'
 import { Scalars } from '../../../../../shared/src/graphql-operations'
 import { lazyComponent } from '../../../util/lazyComponent'
 import { CampaignListPageProps, NamespaceCampaignListPageProps } from '../list/CampaignListPage'
-import { CampaignApplyPageProps } from '../apply/CampaignApplyPage'
+import { CampaignApplyPageProps } from '../preview/CampaignApplyPage'
 import { CreateCampaignPageProps } from '../create/CreateCampaignPage'
 import { CampaignDetailsPageProps } from '../detail/CampaignDetailsPage'
 import { CampaignClosePageProps } from '../close/CampaignClosePage'
@@ -24,7 +24,7 @@ const NamespaceCampaignListPage = lazyComponent<NamespaceCampaignListPageProps, 
     'NamespaceCampaignListPage'
 )
 const CampaignApplyPage = lazyComponent<CampaignApplyPageProps, 'CampaignApplyPage'>(
-    () => import('../apply/CampaignApplyPage'),
+    () => import('../preview/CampaignApplyPage'),
     'CampaignApplyPage'
 )
 const CreateCampaignPage = lazyComponent<CreateCampaignPageProps, 'CreateCampaignPage'>(
