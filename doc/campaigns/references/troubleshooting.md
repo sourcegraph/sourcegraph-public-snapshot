@@ -20,7 +20,7 @@ If `src` is correctly configured, then the output should look similar to the fol
 
 ```
 
-✔️  Authenticated as mmy-username on https://ssourcegraph.example.com
+✔️  Authenticated as my-username on https://sourcegraph.example.com
 
 ```
 
@@ -117,7 +117,7 @@ If `src` is stuck in the "Initializing workspace" phase for a repository or fail
 ```
 curl -L -v -X GET -H 'Accept: application/zip' \
   -H "Authorization: token $SRC_ACCESS_TOKEN" \
-  "SRC_ENDPOINT/github.com/my-org/my-repo@refs/heads/master/-/raw" \
+  "$SRC_ENDPOINT/github.com/my-org/my-repo@refs/heads/master/-/raw" \
   --output ~/tmp/my-repo.zip
 ```
 
