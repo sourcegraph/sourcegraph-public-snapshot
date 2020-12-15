@@ -50,7 +50,7 @@ func TestSearchResults(t *testing.T) {
 			// just remove that assumption in the following line of code.
 			switch m := result.(type) {
 			case *RepositoryResolver:
-				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.repo.Name)
+				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.innerRepo.Name)
 			case *FileMatchResolver:
 				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.JPath, m.JLineMatches[0].JLineNumber)
 			default:
@@ -522,7 +522,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 func TestSearchResolver_DynamicFilters(t *testing.T) {
 	repo := &types.Repo{Name: "testRepo"}
 	repoMatch := &RepositoryResolver{
-		repo: repo,
+		innerRepo: repo,
 	}
 	fileMatch := func(path string) *FileMatchResolver {
 		return mkFileMatch(repo, path)
@@ -1249,7 +1249,7 @@ func TestGetExactFilePatterns(t *testing.T) {
 func TestCompareSearchResults(t *testing.T) {
 	makeResult := func(repo, file string) *FileMatchResolver {
 		return &FileMatchResolver{
-			Repo:  &RepositoryResolver{repo: &types.Repo{Name: api.RepoName(repo)}},
+			Repo:  &RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName(repo)}},
 			JPath: file,
 		}
 	}

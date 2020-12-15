@@ -349,7 +349,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		}
 		repoRev := repos.repoRevs[file.Repository]
 		if repoResolvers[repoRev.Repo.Name] == nil {
-			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{repo: repoRev.Repo}
+			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{innerRepo: repoRev.Repo}
 		}
 		matches[i] = &FileMatchResolver{
 			JPath:     file.FileName,

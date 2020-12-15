@@ -89,7 +89,7 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 			revs = r.RevSpecs()
 		}
 		for _, rev := range revs {
-			results = append(results, &RepositoryResolver{repo: r.Repo, icon: repoIcon, rev: rev})
+			results = append(results, &RepositoryResolver{innerRepo: r.Repo, icon: repoIcon, rev: rev})
 		}
 	}
 
@@ -183,7 +183,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 				return nil, err
 			}
 			for _, m := range matches {
-				matchingIDs[m.Repo.repo.ID] = true
+				matchingIDs[m.Repo.IDInt32()] = true
 			}
 		}
 	} else {
@@ -211,7 +211,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 				return nil, err
 			}
 			for _, m := range matches {
-				matchingIDs[m.Repo.repo.ID] = false
+				matchingIDs[m.Repo.IDInt32()] = false
 			}
 		}
 	}
