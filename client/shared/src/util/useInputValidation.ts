@@ -55,6 +55,11 @@ interface InputValidationEvent {
 }
 
 /**
+ * Minimal interface of an HTMLElement that implements the Constraint validation API
+ */
+type ValidatingHTMLElement = Pick<HTMLInputElement, 'checkValidity' | 'setCustomValidity' | 'validationMessage'>
+
+/**
  * React hook to manage validation of a single form input field.
  * `useInputValidation` helps with coordinating the constraint validation API
  * and custom synchronous and asynchronous validators.
@@ -71,7 +76,7 @@ export function useInputValidation(
 ): [
     InputValidationState,
     (changeEvent: React.ChangeEvent<HTMLInputElement>) => void,
-    (inputElement: HTMLInputElement | null) => void,
+    (inputElement: ValidatingHTMLElement | null) => void,
     (override: InputValidationEvent) => void
 ] {
     const [inputState, setInputState] = useState<InputValidationState>({
@@ -82,7 +87,7 @@ export function useInputValidation(
     // We use a ref callback instead of a mutable ref object so we have a
     // 'notifier' observable that emits when the input reference changes.
     // This is important because the input element can be conditionally rendered,
-    // and we can only validate through the Constraint Validation API when we
+    // and we can only validate through the Constraint validation API when we
     // have a reference to an HTMLElement. See this case when a consumer specifies
     // an initial value while the input element isn't rendered yet:
     //
@@ -97,9 +102,9 @@ export function useInputValidation(
 
     // The validation pipeline is subscribed to after initial render (`useEffect` in `useObservable`),
     // so after the ref callback is called. Buffer 1 emission to counteract this.
-    const inputReferences = useMemo(() => new ReplaySubject<HTMLInputElement | null>(1), [])
+    const inputReferences = useMemo(() => new ReplaySubject<ValidatingHTMLElement | null>(1), [])
     const nextInputReference = useCallback(
-        (input: HTMLInputElement | null) => {
+        (input: ValidatingHTMLElement | null) => {
             // React calls ref callbacks when the element is rendered (calls with the element)
             // and when it leaves the DOM (calls with null). Unless this changes, we don't have to
             // track the input reference ourselves or use `distinctUntilChanged`; `inputReferences`
@@ -156,7 +161,7 @@ export const VALIDATION_DEBOUNCE_TIME = 500
  */
 export function createValidationPipeline(
     { asynchronousValidators, synchronousValidators, initialValue }: ValidationOptions,
-    inputReferences: Observable<HTMLInputElement | null>,
+    inputReferences: Observable<ValidatingHTMLElement | null>,
     onValidationUpdate: (
         validationState: InputValidationState | ((validationState: InputValidationState) => InputValidationState)
     ) => void

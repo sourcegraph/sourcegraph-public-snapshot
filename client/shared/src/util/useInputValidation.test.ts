@@ -55,7 +55,7 @@ describe('input validation', () => {
 
             const validationPipeline = createValidationPipeline(
                 validationOptions,
-                (inputReferences as unknown) as Observable<HTMLInputElement | null>,
+                inputReferences,
                 // We want to test the values that this callback is called with,
                 // not the emissions of the returned observable. Therefore, we will
                 // push these values to an array whose values we will assert.
@@ -345,7 +345,7 @@ describe('input validation', () => {
 
             act(() => {
                 const [, nextEmailFieldChange, emailInputReference] = result.current
-                emailInputReference((inputElement as unknown) as HTMLInputElement)
+                emailInputReference(inputElement)
 
                 inputElement.changeValue('test-string') // changing value for built-in validation
                 nextEmailFieldChange({
