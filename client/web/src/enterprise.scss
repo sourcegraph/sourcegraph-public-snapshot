@@ -3,11 +3,11 @@
 @import './SourcegraphWebApp';
 
 // Enterprise styles
-@import './enterprise/campaigns/preview/list/ChangesetSpecList';
-@import './enterprise/campaigns/preview/list/ChangesetSpecNode';
-@import './enterprise/campaigns/preview/list/EmptyChangesetSpecListElement';
-@import './enterprise/campaigns/preview/list/HiddenChangesetSpecNode';
-@import './enterprise/campaigns/preview/list/VisibleChangesetSpecNode';
+@import './enterprise/campaigns/preview/list/PreviewList';
+@import './enterprise/campaigns/preview/list/ChangesetApplyPreviewNode';
+@import './enterprise/campaigns/preview/list/EmptyPreviewListElement';
+@import './enterprise/campaigns/preview/list/HiddenChangesetApplyPreviewNode';
+@import './enterprise/campaigns/preview/list/VisibleChangesetApplyPreviewNode';
 @import './enterprise/campaigns/preview/CreateUpdateCampaignAlert';
 @import './enterprise/campaigns/close/CampaignCloseChangesetsList';
 @import './enterprise/campaigns/close/CampaignCloseChangesetsListEmptyElement';
