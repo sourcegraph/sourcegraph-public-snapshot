@@ -376,9 +376,9 @@ func RepoUpdater() *monitoring.Container {
 							PossibleSolutions: `Try restarting the pod to get a different public IP.`,
 						},
 						{
-							Name:            "github_core_rate_limit_remaining",
-							Description:     "remaining calls to GitHub core API before hitting the rate limit",
-							Query:           `max by (name) (src_github_rate_limit_remaining_v2{resource="core"})`,
+							Name:            "github_rest_rate_limit_remaining",
+							Description:     "remaining calls to GitHub rest API before hitting the rate limit",
+							Query:           `max by (name) (src_github_rate_limit_remaining_v2{resource="rest"})`,
 							DataMayNotExist: true,
 							// 5% of initial limit of 5000
 							Critical:          monitoring.Alert().LessOrEqual(250),
@@ -399,9 +399,9 @@ func RepoUpdater() *monitoring.Container {
 					},
 					{
 						{
-							Name:            "gitlab_rate_limit_remaining",
-							Description:     "remaining calls to GitLab API before hitting the rate limit",
-							Query:           `max by (name) (src_gitlab_rate_limit_remaining{resource="core"})`,
+							Name:            "gitlab_rest_rate_limit_remaining",
+							Description:     "remaining calls to GitLab rest API before hitting the rate limit",
+							Query:           `max by (name) (src_gitlab_rate_limit_remaining{resource="rest"})`,
 							DataMayNotExist: true,
 							// 5% of initial limit of 600
 							Critical:          monitoring.Alert().LessOrEqual(30),

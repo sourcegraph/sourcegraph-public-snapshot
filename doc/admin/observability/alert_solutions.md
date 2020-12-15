@@ -3364,13 +3364,13 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## repo-updater: github_core_rate_limit_remaining
+## repo-updater: github_rest_rate_limit_remaining
 
-<p class="subtitle">cloud: remaining calls to GitHub core API before hitting the rate limit</p>
+<p class="subtitle">cloud: remaining calls to GitHub rest API before hitting the rate limit</p>
 
 **Descriptions:**
 
-- _repo-updater: less than 250 remaining calls to GitHub core API before hitting the rate limit_
+- _repo-updater: less than 250 remaining calls to GitHub rest API before hitting the rate limit_
 
 **Possible solutions:**
 
@@ -3379,7 +3379,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "critical_repo-updater_github_core_rate_limit_remaining"
+  "critical_repo-updater_github_rest_rate_limit_remaining"
 ]
 ```
 
@@ -3406,13 +3406,13 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## repo-updater: gitlab_rate_limit_remaining
+## repo-updater: gitlab_rest_rate_limit_remaining
 
-<p class="subtitle">cloud: remaining calls to GitLab API before hitting the rate limit</p>
+<p class="subtitle">cloud: remaining calls to GitLab rest API before hitting the rate limit</p>
 
 **Descriptions:**
 
-- _repo-updater: less than 30 remaining calls to GitLab API before hitting the rate limit_
+- _repo-updater: less than 30 remaining calls to GitLab rest API before hitting the rate limit_
 
 **Possible solutions:**
 
@@ -3421,7 +3421,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "critical_repo-updater_gitlab_rate_limit_remaining"
+  "critical_repo-updater_gitlab_rest_rate_limit_remaining"
 ]
 ```
 

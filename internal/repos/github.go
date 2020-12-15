@@ -137,7 +137,7 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 	dotcomMode := envvar.SourcegraphDotComMode()
 	if !dotcomMode || (dotcomMode && c.CloudGlobal) {
 		for resource, client := range map[string]*ratelimit.Monitor{
-			"core":    v3Client.RateLimitMonitor(),
+			"rest":    v3Client.RateLimitMonitor(),
 			"graphql": v4Client.RateLimitMonitor(),
 			"search":  searchClient.RateLimitMonitor(),
 		} {
