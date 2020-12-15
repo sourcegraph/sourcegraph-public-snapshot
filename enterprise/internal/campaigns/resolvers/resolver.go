@@ -72,10 +72,6 @@ func campaignsCreateAccess(ctx context.Context) error {
 // checkLicense returns a user-facing error if the campaigns feature is not purchased
 // with the current license or any error occurred while validating the license.
 func checkLicense() error {
-	if !licensing.EnforceTiers {
-		return nil
-	}
-
 	if err := licensing.Check(licensing.FeatureCampaigns); err != nil {
 		if licensing.IsFeatureNotActivated(err) {
 			return err
