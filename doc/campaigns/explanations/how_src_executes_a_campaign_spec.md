@@ -1,6 +1,6 @@
 # How `src` executes a campaign spec
 
-This document is meant to help with debugging and troubleshooting the writing and execution of campaign specs with [Sourcegraph CLI `src`](../cli/index.md).
+This document is meant to help with debugging and troubleshooting the writing and execution of campaign specs with [Sourcegraph CLI `src`](../../cli/index.md).
 
 It explains what happens under the hood when a user uses applies or previews a campaign spec by running `src campaign apply` or `src campaign preview`.
 
