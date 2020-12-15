@@ -128,7 +128,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 		indexedCommon, matches, searchErr := indexed.Search(ctx)
 		mu.Lock()
 		defer mu.Unlock()
-		common.update(indexedCommon)
+		common.update(&indexedCommon)
 		tr.LogFields(otlog.Object("searchErr", searchErr), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
 		if searchErr != nil && err == nil && !overLimitCanceled {
 			err = searchErr

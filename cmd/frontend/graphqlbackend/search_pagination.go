@@ -185,7 +185,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	if err != nil {
 		return nil, err
 	}
-	common.update(*fileCommon)
+	common.update(fileCommon)
 
 	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d excludedFork=%d excludedArchived=%d timedout=%d",
 		len(results),
@@ -395,7 +395,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 
 		// Accumulate the results and stop if we have enough for the user.
 		results = append(results, batchResults...)
-		common.update(*batchCommon)
+		common.update(batchCommon)
 
 		if len(results) >= resultOffset+int(p.pagination.limit) {
 			break

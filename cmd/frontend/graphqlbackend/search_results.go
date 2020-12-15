@@ -130,7 +130,11 @@ func RepositoryResolvers(repos types.Repos) []*RepositoryResolver {
 
 // update updates c with the other data, deduping as necessary. It modifies c but
 // does not modify other.
-func (c *searchResultsCommon) update(other searchResultsCommon) {
+func (c *searchResultsCommon) update(other *searchResultsCommon) {
+	if other == nil {
+		return
+	}
+
 	c.limitHit = c.limitHit || other.limitHit
 	c.indexUnavailable = c.indexUnavailable || other.indexUnavailable
 
@@ -818,7 +822,7 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	}
 
 	left.SearchResults = merged
-	left.searchResultsCommon.update(right.searchResultsCommon)
+	left.searchResultsCommon.update(&right.searchResultsCommon)
 	// set the count that tracks non-overlapping result count.
 	left.searchResultsCommon.resultCount = int32(count)
 	return left
@@ -867,7 +871,7 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 		merged = append(merged, leftMatch)
 	}
 	left.SearchResults = merged
-	left.searchResultsCommon.update(right.searchResultsCommon)
+	left.searchResultsCommon.update(&right.searchResultsCommon)
 	// for intersect we want the newly computed intersection size.
 	left.searchResultsCommon.resultCount = int32(len(merged))
 	return left
@@ -1714,7 +1718,7 @@ func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver
 		}
 	}
 	if common != nil {
-		a.common.update(*common)
+		a.common.update(common)
 	}
 }
 
