@@ -2097,7 +2097,7 @@ func compareSearchResults(left, right SearchResultResolver, exactFilePatterns ma
 	sortKeys := func(result SearchResultResolver) (string, string, *time.Time) {
 		switch r := result.(type) {
 		case *RepositoryResolver:
-			return string(r.repo.Name), "", nil
+			return string(r.Name()), "", nil
 		case *FileMatchResolver:
 			return r.Repo.Name(), r.JPath, nil
 		case *CommitSearchResultResolver:

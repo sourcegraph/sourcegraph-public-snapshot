@@ -1249,7 +1249,7 @@ func TestGetExactFilePatterns(t *testing.T) {
 func TestCompareSearchResults(t *testing.T) {
 	makeResult := func(repo, file string) *FileMatchResolver {
 		return &FileMatchResolver{
-			Repo:  &RepositoryResolver{repo: &types.Repo{Name: api.RepoName(repo)}},
+			Repo:  &RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName(repo)}},
 			JPath: file,
 		}
 	}
