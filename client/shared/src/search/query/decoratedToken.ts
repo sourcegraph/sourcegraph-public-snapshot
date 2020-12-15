@@ -56,6 +56,7 @@ export enum MetaRegexpKind {
     EscapedCharacter = 'EscapedCharacter', // like \(
     CharacterSet = 'CharacterSet', // like \s
     CharacterClass = 'CharacterClass', // like [a-z]
+    CharacterClassMember = 'CharacterClassMember', // a character inside a charcter class like [abcd]
     LazyQuantifier = 'LazyQuantifier', // the ? after a range quantifier
     RangeQuantifier = 'RangeQuantifier', // like +
 }
@@ -129,8 +130,6 @@ export interface MetaRepoRevisionSeparator extends BaseMetaToken {
  * Coalesces consecutive pattern tokens. Used, for example, when parsing
  * literal characters like 'f', 'o', 'o' in regular expressions, which are
  * coalesced to 'foo' for hovers.
- *
- * @param tokens
  */
 const coalescePatterns = (tokens: DecoratedToken[]): DecoratedToken[] => {
     let previous: Pattern | undefined
@@ -307,6 +306,16 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                         range: { start: offset + node.start, end: offset + node.end },
                         value: node.raw,
                         kind: MetaRegexpKind.EscapedCharacter,
+                    })
+                    return
+                }
+                if (node.parent.type === 'CharacterClass') {
+                    // This character is inside a character class like [abcd] and is contextually special for hover tooltips.
+                    tokens.push({
+                        type: 'metaRegexp',
+                        range: { start: offset + node.start, end: offset + node.end },
+                        value: node.raw,
+                        kind: MetaRegexpKind.CharacterClassMember,
                     })
                     return
                 }
