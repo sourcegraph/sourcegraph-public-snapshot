@@ -240,7 +240,7 @@ func TestMatchRepos(t *testing.T) {
 	in := append(want, makeRepositoryRevisions("beef/bam", "qux/bas")...)
 	pattern := regexp.MustCompile("foo")
 
-	_, repos := matchRepos(pattern, in)
+	repos := matchRepos(pattern, in)
 
 	// because of the concurrency we cannot rely on the order of "repos" to be the
 	// same as "want". Hence we create map of repo names and compare those.

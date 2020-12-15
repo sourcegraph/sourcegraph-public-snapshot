@@ -64,7 +64,7 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		return nil, nil, err
 	}
 
-	common, repos := matchRepos(pattern, resolved)
+	repos := matchRepos(pattern, resolved)
 
 	// Filter the repos if there is a repohasfile: or -repohasfile field.
 	if len(args.PatternInfo.FilePatternsReposMustExclude) > 0 || len(args.PatternInfo.FilePatternsReposMustInclude) > 0 {
@@ -74,11 +74,13 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		}
 	}
 
+	limitHit := false
+
 	// Convert the repos to RepositoryResolvers.
 	results := make([]SearchResultResolver, 0, len(repos))
 	for _, r := range repos {
 		if len(results) == int(limit) {
-			common.limitHit = true
+			limitHit = true
 			break
 		}
 
@@ -92,10 +94,12 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		}
 	}
 
-	return results, common, nil
+	return results, &searchResultsCommon{
+		limitHit: limitHit,
+	}, nil
 }
 
-func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions) (*searchResultsCommon, []*search.RepositoryRevisions) {
+func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions) []*search.RepositoryRevisions {
 	/*
 		Local benchmarks showed diminishing returns for higher levels of concurrency.
 		5 workers seems to be a good trade-off for now. We might want to revisit this
@@ -150,7 +154,7 @@ func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions) 
 		matched = append(matched, <-results...)
 	}
 
-	return &searchResultsCommon{}, matched
+	return matched
 }
 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset
