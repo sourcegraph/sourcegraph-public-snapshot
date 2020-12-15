@@ -44,12 +44,9 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                 }
             } catch (error) {
                 setIsLoading(false)
+                onDidCancel()
                 onDidError(asError(error))
             }
-            // } finally {
-            //     setIsLoading(false)
-            //     onDidCancel()
-            // }
         },
         [token, kind, name, onDidAdd, onDidError, onDidCancel]
     )

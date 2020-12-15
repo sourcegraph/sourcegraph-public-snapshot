@@ -51,10 +51,8 @@ export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
                 await deleteExternalService(id)
                 onDidRemove()
             } catch (error) {
-                onDidError(asError(error))
-            } finally {
-                // always reset loading state and close modal
                 setIsLoading(false)
+                onDidError(asError(error))
                 onDidCancel()
             }
         },
