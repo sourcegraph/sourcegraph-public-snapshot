@@ -59,11 +59,11 @@ type Monitor struct {
 
 	mu        sync.Mutex
 	known     bool
-	limit     int       // last RateLimit-Limit HTTP response header value
-	remaining int       // last RateLimit-Remaining HTTP response header value
-	reset     time.Time // last RateLimit-Remaining HTTP response header value
-	retry     time.Time // deadline based on Retry-After HTTP response header value
-	collector func(known bool, remaining float64)
+	limit     int                     // last RateLimit-Limit HTTP response header value
+	remaining int                     // last RateLimit-Remaining HTTP response header value
+	reset     time.Time               // last RateLimit-Remaining HTTP response header value
+	retry     time.Time               // deadline based on Retry-After HTTP response header value
+	collector func(remaining float64) // metrics collector for remaining tokens
 
 	clock func() time.Time
 }
@@ -182,13 +182,13 @@ func (c *Monitor) Update(h http.Header) {
 	c.remaining = remaining
 	c.reset = time.Unix(resetAtSeconds, 0)
 
-	if c.collector != nil {
-		c.collector(c.known, float64(c.remaining))
+	if c.known && c.collector != nil {
+		c.collector(float64(c.remaining))
 	}
 }
 
 // SetCollector sets the metric collector.
-func (c *Monitor) SetCollector(collector func(known bool, remaining float64)) {
+func (c *Monitor) SetCollector(collector func(remaining float64)) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.collector = collector

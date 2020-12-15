@@ -141,10 +141,7 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 			if rlm == nil {
 				return
 			}
-			rlm.SetCollector(func(known bool, remaining float64) {
-				if !known {
-					return
-				}
+			rlm.SetCollector(func(remaining float64) {
 				githubRemainingGauge.WithLabelValues(resource, svc.DisplayName).Set(remaining)
 			})
 		}
