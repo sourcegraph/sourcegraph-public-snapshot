@@ -104,3 +104,4 @@ Requirements
 - [Requirements](references/requirements.md)
 - [Campaign spec YAML reference](references/campaign_spec_yaml_reference.md)
 - <span class="badge badge-experimental">Experimental</span> [Campaign spec templating](references/campaign_spec_templating.md)
+- [Troubleshooting](references/troubleshooting.md)
