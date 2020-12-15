@@ -81,7 +81,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         </sup>
                     </>
                 }
-                icon={VideoInputAntennaIcon}
+                icon={TowerIcon}
                 actions={
                     userHasCodeMonitors &&
                     userHasCodeMonitors !== 'loading' &&
@@ -247,3 +247,5 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         </div>
     )
 }
+
+const TowerIcon: React.FunctionComponent = () => <span>🗼</span>
