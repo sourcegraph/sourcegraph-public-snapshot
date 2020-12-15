@@ -92,18 +92,27 @@ add('Auth required', () => (
     </WebStory>
 ))
 
-add('Authenticated viewer', () => (
-    <WebStory>
-        {webProps => (
-            <GlobalNavbar
-                {...defaultProps(webProps)}
-                authRequired={false}
-                authenticatedUser={
-                    { username: 'alice', organizations: { nodes: [{ name: 'acme' }] } } as AuthenticatedUser
-                }
-                variant="default"
-                isSearchRelatedPage={false}
-            />
-        )}
-    </WebStory>
-))
+add(
+    'Authenticated viewer',
+    () => (
+        <WebStory>
+            {webProps => (
+                <GlobalNavbar
+                    {...defaultProps(webProps)}
+                    authRequired={false}
+                    authenticatedUser={
+                        { username: 'alice', organizations: { nodes: [{ name: 'acme' }] } } as AuthenticatedUser
+                    }
+                    variant="default"
+                    isSearchRelatedPage={false}
+                />
+            )}
+        </WebStory>
+    ),
+    {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/SFhXbl23TJ2j5tOF51NDtF/%F0%9F%93%9AWeb?node-id=985%3A1281',
+        },
+    }
+)
