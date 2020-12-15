@@ -199,7 +199,7 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 	return s.repos.repoRevs
 }
 
-func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[api.RepoName]struct{}, err error) {
+func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[api.RepoID]struct{}, err error) {
 	if s.args == nil {
 		return nil, false, nil, nil
 	}
@@ -305,7 +305,7 @@ var errNoResultsInTimeout = errors.New("no results found in specified timeout")
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, partial map[api.RepoName]struct{}, err error) {
+func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, partial map[api.RepoID]struct{}, err error) {
 	if args == nil {
 		return nil, false, nil, nil
 	}
@@ -452,7 +452,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 // limit. Additionally it calculates the set of repos with partial
 // results. This information is not returned by zoekt, so if zoekt indicates a
 // limit has been hit, we include all repos in partial.
-func zoektLimitMatches(limitHit bool, limit int, files []zoekt.FileMatch, getRepoInputRev func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool)) (bool, []zoekt.FileMatch, map[api.RepoName]struct{}) {
+func zoektLimitMatches(limitHit bool, limit int, files []zoekt.FileMatch, getRepoInputRev func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool)) (bool, []zoekt.FileMatch, map[api.RepoID]struct{}) {
 	var resultFiles []zoekt.FileMatch
 	var partialFiles []zoekt.FileMatch
 
@@ -469,7 +469,7 @@ func zoektLimitMatches(limitHit bool, limit int, files []zoekt.FileMatch, getRep
 		}
 	}
 
-	partial := make(map[api.RepoName]struct{})
+	partial := make(map[api.RepoID]struct{})
 	last := ""
 	for _, file := range partialFiles {
 		// PERF: skip lookup if it is the same repo as the last result
@@ -479,7 +479,7 @@ func zoektLimitMatches(limitHit bool, limit int, files []zoekt.FileMatch, getRep
 		last = file.Repository
 
 		if repo, _, ok := getRepoInputRev(&file); ok {
-			partial[repo.Name] = struct{}{}
+			partial[repo.ID] = struct{}{}
 		}
 	}
 

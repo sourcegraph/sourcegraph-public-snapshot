@@ -101,7 +101,7 @@ func TestIndexedSearch(t *testing.T) {
 		wantMatchInputRevs []string
 		wantUnindexed      []*search.RepositoryRevisions
 		wantLimitHit       bool
-		wantReposLimitHit  map[api.RepoName]struct{}
+		wantReposLimitHit  map[api.RepoID]struct{}
 		wantErr            bool
 	}{
 		{
