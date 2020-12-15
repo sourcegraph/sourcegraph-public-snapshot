@@ -98,7 +98,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		OwnedByCampaign:  campaign.ID,
 	})
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
