@@ -38,7 +38,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                     const { defaultConfig } = defaultExternalServices[kind]
                     const config: CodeHostConfig = JSON.parse(defaultConfig)
                     config.token = token
-                    const finalConfig = JSON.stringify(config)
+                    const finalConfig = JSON.stringify(config, null, 2)
 
                     await addExternalService(
                         { input: { kind, displayName: name, config: finalConfig, namespace: userID } },
