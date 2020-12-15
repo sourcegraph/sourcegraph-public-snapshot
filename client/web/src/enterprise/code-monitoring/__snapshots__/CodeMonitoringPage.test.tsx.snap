@@ -524,9 +524,17 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -627,9 +635,17 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Second test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -730,9 +746,17 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Third test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -833,9 +857,17 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Fourth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -936,9 +968,17 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Fifth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -1039,9 +1079,17 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Sixth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -1142,9 +1190,17 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Seventh test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -1245,9 +1301,17 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Eighth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -1348,9 +1412,17 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Ninth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -1451,9 +1523,17 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Tenth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -1869,9 +1949,17 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             Test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -1972,9 +2060,17 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             Second test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -2075,9 +2171,17 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             Third test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -2727,9 +2831,17 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -2830,9 +2942,17 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Second test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -2933,9 +3053,17 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Third test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -3036,9 +3164,17 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Fourth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -3139,9 +3275,17 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Fifth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -3242,9 +3386,17 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Sixth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -3345,9 +3497,17 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Seventh test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -3448,9 +3608,17 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Eighth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -3551,9 +3719,17 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Ninth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -3654,9 +3830,17 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Tenth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -3757,9 +3941,17 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Eleventh test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
@@ -3860,9 +4052,17 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Twelfth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
+                            <button
+                              className="btn btn-link p-0 border-0 ml-2"
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              Send test email
+                            </button>
                           </div>
                         </div>
                         <div
