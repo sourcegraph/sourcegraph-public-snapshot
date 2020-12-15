@@ -27,6 +27,6 @@ While the latest version of Sourcegraph server is always recommended, version 3.
 ## Requirements for developers creating and running campaigns
 
 - Latest version of the [Sourcegraph CLI `src`](../../cli/index.md)
-  - `src` is supported on Linux or macOS , Windows support is experimental
+  - `src` is supported on Linux or macOS, Windows support is experimental
 - Docker
 - Git

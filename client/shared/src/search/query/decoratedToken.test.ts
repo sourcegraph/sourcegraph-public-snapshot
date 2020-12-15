@@ -504,7 +504,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 1,
-                "scopes": "identifier"
+                "scopes": "metaRegexpCharacterClassMember"
               },
               {
                 "startIndex": 2,
@@ -669,7 +669,11 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 6,
-                "scopes": "identifier"
+                "scopes": "metaRegexpCharacterClassMember"
+              },
+              {
+                "startIndex": 7,
+                "scopes": "metaRegexpCharacterClassMember"
               },
               {
                 "startIndex": 8,
