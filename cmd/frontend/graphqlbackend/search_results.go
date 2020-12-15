@@ -2068,12 +2068,18 @@ func compareFileLengths(left, right string, exactFilePatterns map[string]struct{
 
 func compareDates(left, right *time.Time) bool {
 	if left == nil || right == nil {
-		return false
+		return left != nil // Place the value that is defined first.
 	}
 	return (*left).After(*right)
 }
 
-// FIXME
+// compareSearchResults sorts repository matches, file matches, and commits.
+// Repositories and filenames are sorted alphabetically. As a refinement, if any
+// filename matches a value in a non-empty set exactFilePatterns, then such
+// filenames are listed earlier.
+//
+// Commits are sorted by date. Commits are not associated with repositories, and
+// will always list after repository or file match results, if any.
 func compareSearchResults(left, right SearchResultResolver, exactFilePatterns map[string]struct{}) bool {
 	sortKeys := func(result SearchResultResolver) (string, string, *time.Time) {
 		switch r := result.(type) {
@@ -2088,7 +2094,7 @@ func compareSearchResults(left, right SearchResultResolver, exactFilePatterns ma
 			return "~", "~", &r.commit.commit.Author.Date
 		}
 		// Unreachable.
-		return "", "", nil
+		panic("unreachable: compareSearchResults expects RepositoryResolver, FileMatchResolver, or CommitSearchResultResolver")
 	}
 
 	arepo, afile, adate := sortKeys(left)

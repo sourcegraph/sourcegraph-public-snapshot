@@ -343,7 +343,7 @@ func repoOfResult(result SearchResultResolver) string {
 		return "~" // lexicographically last.
 	}
 	// Unreachable.
-	return ""
+	panic("unreachable: repoOfResult expects RepositoryResolver, FileMatchResolver, or CommitSearchResultResolver")
 }
 
 // execute executes the repository pagination plan by invoking the executor to
