@@ -32,23 +32,37 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
         'editor.hoverHighlightBackground': '#495057',
     },
     rules: [
+        // Sourcegraph base language tokens
         { token: 'identifier', foreground: '#f2f4f8' },
         { token: 'field', foreground: '#569cd6' },
         { token: 'keyword', foreground: '#da77f2' },
         { token: 'openingParen', foreground: '#da77f2' },
         { token: 'closingParen', foreground: '#da77f2' },
         { token: 'comment', foreground: '#ffa94d' },
+        // Sourcegraph decorated language tokens
+        { token: 'metaRepoRevisionSeparator', foreground: '#569cd9' },
         // Regexp pattern highlighting
-        { token: 'regexpMetaDelimited', foreground: '#ff6b6b' },
-        { token: 'regexpMetaAssertion', foreground: '#ff6b6b' },
-        { token: 'regexpMetaLazyQuantifier', foreground: '#ff6b6b' },
-        { token: 'regexpMetaEscapedCharacter', foreground: '#ffa8a8' },
-        { token: 'regexpMetaCharacterSet', foreground: '#da77f2' },
-        { token: 'regexpMetaCharacterClass', foreground: '#da77f2' },
-        { token: 'regexpMetaRangeQuantifier', foreground: '#3bc9db' },
-        { token: 'regexpMetaAlternative', foreground: '#3bc9db' },
+        { token: 'metaRegexpDelimited', foreground: '#ff6b6b' },
+        { token: 'metaRegexpAssertion', foreground: '#ff6b6b' },
+        { token: 'metaRegexpLazyQuantifier', foreground: '#ff6b6b' },
+        { token: 'metaRegexpEscapedCharacter', foreground: '#ffa8a8' },
+        { token: 'metaRegexpCharacterSet', foreground: '#da77f2' },
+        { token: 'metaRegexpCharacterClass', foreground: '#da77f2' },
+        { token: 'metaRegexpRangeQuantifier', foreground: '#3bc9db' },
+        { token: 'metaRegexpAlternative', foreground: '#3bc9db' },
         // Structural pattern highlighting
-        { token: 'structuralMetaHole', foreground: '#ff6b6b' },
+        { token: 'metaStructuralHole', foreground: '#ff6b6b' },
+        { token: 'metaStructuralRegexpHole', foreground: '#ff6b6b' },
+        { token: 'metaStructuralVariable', foreground: '#f2f4f8' },
+        { token: 'metaStructuralRegexpSeparator', foreground: '#ffa94d' },
+        // Revision highlighting
+        { token: 'metaRevisionSeparator', foreground: '#ffa94d' },
+        { token: 'metaRevisionIncludeGlobMarker', foreground: '#ff6b6b' },
+        { token: 'metaRevisionExcludeGlobMarker', foreground: '#ff6b6b' },
+        { token: 'metaRevisionCommitHash', foreground: '#f2f4f8' },
+        { token: 'metaRevisionLabel', foreground: '#f2f4f8' },
+        { token: 'metaRevisionReferencePath', foreground: '#f2f4f8' },
+        { token: 'metaRevisionWildcard', foreground: '#3bc9db' },
     ],
 })
 
@@ -72,23 +86,37 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
         'editor.hoverHighlightBackground': '#dee2e6',
     },
     rules: [
+        // Sourcegraph base language tokens
         { token: 'identifier', foreground: '#2b3750' },
         { token: 'field', foreground: '#268bd2' },
         { token: 'keyword', foreground: '#ae3ec9' },
         { token: 'openingParen', foreground: '#ae3ec9' },
         { token: 'closingParen', foreground: '#ae3ec9' },
         { token: 'comment', foreground: '#d9480f' },
+        // Sourcegraph decorated language tokens
+        { token: 'metaRepoRevisionSeparator', foreground: '#268bd2' },
         // Regexp pattern highlighting
-        { token: 'regexpMetaDelimited', foreground: '#c92a2a' },
-        { token: 'regexpMetaAssertion', foreground: '#c92a2a' },
-        { token: 'regexpMetaLazyQuantifier', foreground: '#c92a2a' },
-        { token: 'regexpMetaEscapedCharacter', foreground: '#af5200' },
-        { token: 'regexpMetaCharacterSet', foreground: '#ae3ec9' },
-        { token: 'regexpMetaCharacterClass', foreground: '#ae3ec9' },
-        { token: 'regexpMetaRangeQuantifier', foreground: '#1098ad' },
-        { token: 'regexpMetaAlternative', foreground: '#1098ad' },
+        { token: 'metaRegexpDelimited', foreground: '#c92a2a' },
+        { token: 'metaRegexpAssertion', foreground: '#c92a2a' },
+        { token: 'metaRegexpLazyQuantifier', foreground: '#c92a2a' },
+        { token: 'metaRegexpEscapedCharacter', foreground: '#af5200' },
+        { token: 'metaRegexpCharacterSet', foreground: '#ae3ec9' },
+        { token: 'metaRegexpCharacterClass', foreground: '#ae3ec9' },
+        { token: 'metaRegexpRangeQuantifier', foreground: '#1098ad' },
+        { token: 'metaRegexpAlternative', foreground: '#1098ad' },
         // Structural pattern highlighting
-        { token: 'structuralMetaHole', foreground: '#c92a2a' },
+        { token: 'metaStructuralHole', foreground: '#c92a2a' },
+        { token: 'metaStructuralRegexpHole', foreground: '#c92a2a' },
+        { token: 'metaStructuralVariable', foreground: '#2b3750' },
+        { token: 'metaStructuralRegexpSeparator', foreground: '#d9480f' },
+        // Revision highlighting
+        { token: 'metaRevisionSeparator', foreground: '#d9480f' },
+        { token: 'metaRevisionIncludeGlobMarker', foreground: '#c92a2a' },
+        { token: 'metaRevisionExcludeGlobMarker', foreground: '#c92a2a' },
+        { token: 'metaRevisionCommitHash', foreground: '#2b3750' },
+        { token: 'metaRevisionLabel', foreground: '#2b3750' },
+        { token: 'metaRevisionReferencePath', foreground: '#2b3750' },
+        { token: 'metaRevisionWildcard', foreground: '#1098ad' },
     ],
 })
 

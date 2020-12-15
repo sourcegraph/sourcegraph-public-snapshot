@@ -4,12 +4,14 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, startWith } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import { ThemeProps } from '../../../shared/src/theme'
 import { AbsoluteRepo } from '../../../shared/src/util/url'
 import { dirname } from '../util/path'
 import { TreeRoot } from './TreeRoot'
 import { getDomElement, scrollIntoView } from './util'
 
-interface Props extends AbsoluteRepo {
+interface Props extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps {
     history: H.History
     location: H.Location
     scrollRootSelector?: string
@@ -320,6 +322,8 @@ export class Tree extends React.PureComponent<Props, State> {
                     setChildNodes={this.setChildNode}
                     setActiveNode={this.setActiveNode}
                     sizeKey={this.props.sizeKey}
+                    extensionsController={this.props.extensionsController}
+                    isLightTheme={this.props.isLightTheme}
                 />
             </div>
         )

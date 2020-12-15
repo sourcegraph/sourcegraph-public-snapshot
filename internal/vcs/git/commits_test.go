@@ -26,7 +26,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 	}
 	tests := map[string]struct {
-		repo             gitserver.Repo
+		repo             api.RepoName
 		id               api.CommitID
 		wantCommit       *Commit
 		noEnsureRevision bool
@@ -61,7 +61,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		resolveRevisionOptions := ResolveRevisionOptions{
 			NoEnsureRevision: test.noEnsureRevision,
 		}
-		commit, err := GetCommit(ctx, test.repo, nil, test.id, resolveRevisionOptions)
+		commit, err := GetCommit(ctx, test.repo, test.id, resolveRevisionOptions)
 		if err != nil {
 			t.Errorf("%s: GetCommit: %s", label, err)
 			continue
@@ -72,7 +72,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		}
 
 		// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-		if _, err := GetCommit(ctx, test.repo, nil, NonExistentCommitID, resolveRevisionOptions); !gitserver.IsRevisionNotFound(err) {
+		if _, err := GetCommit(ctx, test.repo, NonExistentCommitID, resolveRevisionOptions); !gitserver.IsRevisionNotFound(err) {
 			t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 		}
 
@@ -185,7 +185,7 @@ func TestRepository_Commits(t *testing.T) {
 		},
 	}
 	tests := map[string]struct {
-		repo        gitserver.Repo
+		repo        api.RepoName
 		id          api.CommitID
 		wantCommits []*Commit
 		wantTotal   uint
@@ -267,7 +267,7 @@ func TestRepository_Commits_options(t *testing.T) {
 		},
 	}
 	tests := map[string]struct {
-		repo        gitserver.Repo
+		repo        api.RepoName
 		opt         CommitsOptions
 		wantCommits []*Commit
 		wantTotal   uint
@@ -346,7 +346,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 		},
 	}
 	tests := map[string]struct {
-		repo        gitserver.Repo
+		repo        api.RepoName
 		opt         CommitsOptions
 		wantCommits []*Commit
 		wantTotal   uint

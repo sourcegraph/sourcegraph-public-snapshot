@@ -44,14 +44,19 @@ func currentUserAllowedExternalServices(ctx context.Context) conf.ExternalServic
 		return mode
 	}
 
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return conf.ExternalServiceModeDisabled
+	}
+
 	// The user may have a tag that opts them in
-	err := backend.CheckActorHasTag(ctx, backend.TagAllowUserExternalServicePrivate)
-	if err == nil {
+	ok, _ := db.Users.HasTag(ctx, a.UID, db.TagAllowUserExternalServicePrivate)
+	if ok {
 		return conf.ExternalServiceModeAll
 	}
 
-	err = backend.CheckActorHasTag(ctx, backend.TagAllowUserExternalServicePublic)
-	if err == nil {
+	ok, _ = db.Users.HasTag(ctx, a.UID, db.TagAllowUserExternalServicePublic)
+	if ok {
 		return conf.ExternalServiceModePublic
 	}
 
@@ -240,7 +245,7 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *deleteEx
 	// service, so kick off in the background.
 	go func() {
 		if err := syncExternalService(context.Background(), es); err != nil {
-			log15.Error("Performing final sync after external service deletion", "err", err)
+			log15.Warn("Performing final sync after external service deletion", "err", err)
 		}
 	}()
 

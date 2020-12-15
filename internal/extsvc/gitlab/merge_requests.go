@@ -48,16 +48,19 @@ type MergeRequest struct {
 	// Merge Request. Once our minimum version is GitLab 12.0, we can use the
 	// GraphQL API to retrieve all of this data at once, but until then, we have
 	// to do it the old fashioned way with lots of REST requests.
-	Notes     []*Note
-	Pipelines []*Pipeline
+	Notes               []*Note
+	Pipelines           []*Pipeline
+	ResourceStateEvents []*ResourceStateEvent
+}
+
+// IsWIP returns true if the given title would result in GitLab rendering the MR as 'work in progress'.
+func IsWIP(title string) bool {
+	return strings.HasPrefix(title, "Draft:") || strings.HasPrefix(title, "WIP:")
 }
 
 // SetWIP ensures a "WIP:" prefix on the given title. If a "Draft:" prefix is found, that one is retained instead.
 func SetWIP(title string) string {
-	if strings.HasPrefix(title, "Draft:") {
-		return title
-	}
-	if strings.HasPrefix(title, "WIP:") {
+	if IsWIP(title) {
 		return title
 	}
 	return "WIP: " + title

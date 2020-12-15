@@ -36,7 +36,7 @@ import { ErrorAlert } from '../../components/alerts'
 import { subYears, formatISO } from 'date-fns'
 import { pluralize } from '../../../../shared/src/util/strings'
 import { useObservable } from '../../../../shared/src/util/useObservable'
-import { encodeURIComponentExceptSlashes, toPrettyBlobURL, toURIWithPath } from '../../../../shared/src/util/url'
+import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '../../../../shared/src/util/url'
 import { getViewsForContainer } from '../../../../shared/src/api/client/services/viewService'
 import { Settings } from '../../schema/settings.schema'
 import { ViewGrid } from './ViewGrid'
@@ -45,7 +45,10 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { TreeEntriesSection } from './TreeEntriesSection'
-import { GitCommitFields } from '../../graphql-operations'
+import { GitCommitFields, TreePageRepositoryFields } from '../../graphql-operations'
+import { getFileDecorations } from '../../backend/features'
+import { FileDecorationsByPath } from '../../../../shared/src/api/extension/flatExtensionApi'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -107,9 +110,7 @@ interface Props
         CopyQueryButtonProps,
         VersionContextProps,
         BreadcrumbSetters {
-    repoName: string
-    repoID: GQL.ID
-    repoDescription: string
+    repo: TreePageRepositoryFields
     /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */
     filePath: string
     commitID: string
@@ -119,10 +120,17 @@ interface Props
     globbing: boolean
 }
 
+export const treePageRepositoryFragment = gql`
+    fragment TreePageRepositoryFields on Repository {
+        id
+        name
+        description
+        viewerCanAdminister
+    }
+`
+
 export const TreePage: React.FunctionComponent<Props> = ({
-    repoName,
-    repoID,
-    repoDescription,
+    repo,
     commitID,
     revision,
     filePath,
@@ -151,14 +159,14 @@ export const TreePage: React.FunctionComponent<Props> = ({
                 element: (
                     <FilePathBreadcrumbs
                         key="path"
-                        repoName={repoName}
+                        repoName={repo.name}
                         revision={revision}
                         filePath={filePath}
                         isDir={true}
                     />
                 ),
             }
-        }, [repoName, revision, filePath])
+        }, [repo.name, revision, filePath])
     )
 
     const [showOlderCommits, setShowOlderCommits] = useState(false)
@@ -175,15 +183,32 @@ export const TreePage: React.FunctionComponent<Props> = ({
         useMemo(
             () =>
                 fetchTreeEntries({
-                    repoName,
+                    repoName: repo.name,
                     commitID,
                     revision,
                     filePath,
                     first: 2500,
                 }).pipe(catchError((error): [ErrorLike] => [asError(error)])),
-            [repoName, commitID, revision, filePath]
+            [repo.name, commitID, revision, filePath]
         )
     )
+
+    const fileDecorationsByPath =
+        useObservable<FileDecorationsByPath>(
+            useMemo(
+                () =>
+                    treeOrError && !isErrorLike(treeOrError)
+                        ? getFileDecorations({
+                              files: treeOrError.entries,
+                              extensionsController: props.extensionsController,
+                              repoName: repo.name,
+                              commitID,
+                              parentNodeUri: treeOrError.url,
+                          })
+                        : EMPTY,
+                [treeOrError, repo.name, commitID, props.extensionsController]
+            )
+        ) ?? {}
 
     const { services } = props.extensionsController
 
@@ -191,7 +216,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
         !isErrorLike(settingsCascade.final) && !!settingsCascade.final?.experimentalFeatures?.codeInsights
 
     // Add DirectoryViewer
-    const uri = toURIWithPath({ repoName, commitID, filePath })
+    const uri = toURIWithPath({ repoName: repo.name, commitID, filePath })
     useEffect(() => {
         if (!codeInsightsEnabled) {
             return
@@ -231,7 +256,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     )
 
     const getPageTitle = (): string => {
-        const repoString = displayRepoName(repoName)
+        const repoString = displayRepoName(repo.name)
         if (filePath) {
             return `${basename(filePath)} - ${repoString}`
         }
@@ -243,13 +268,13 @@ export const TreePage: React.FunctionComponent<Props> = ({
             const after: string | undefined = showOlderCommits ? undefined : formatISO(subYears(Date.now(), 1))
             return fetchTreeCommits({
                 ...args,
-                repo: repoID,
+                repo: repo.id,
                 revspec: revision || '',
                 filePath,
                 after,
             })
         },
-        [filePath, repoID, revision, showOlderCommits]
+        [filePath, repo.id, revision, showOlderCommits]
     )
 
     const emptyElement = showOlderCommits ? (
@@ -294,7 +319,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                 // If the tree is actually a blob, be helpful and redirect to the blob page.
                 // We don't have error names on GraphQL errors.
                 /not a directory/i.test(treeOrError.message) ? (
-                    <Redirect to={toPrettyBlobURL({ repoName, revision, commitID, filePath })} />
+                    <Redirect to={toPrettyBlobURL({ repoName: repo.name, revision, commitID, filePath })} />
                 ) : (
                     <ErrorAlert error={treeOrError} history={props.history} />
                 )
@@ -304,22 +329,22 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         {treeOrError.isRoot ? (
                             <>
                                 <h2 className="tree-page__title">
-                                    <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoName)}
+                                    <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repo.name)}
                                 </h2>
-                                {repoDescription && <p>{repoDescription}</p>}
+                                {repo.description && <p>{repo.description}</p>}
                                 <div className="btn-group mb-3">
                                     <Link className="btn btn-secondary" to={`${treeOrError.url}/-/commits`}>
                                         <SourceCommitIcon className="icon-inline" /> Commits
                                     </Link>
                                     <Link
                                         className="btn btn-secondary"
-                                        to={`/${encodeURIComponentExceptSlashes(repoName)}/-/branches`}
+                                        to={`/${encodeURIPathComponent(repo.name)}/-/branches`}
                                     >
                                         <SourceBranchIcon className="icon-inline" /> Branches
                                     </Link>
                                     <Link
                                         className="btn btn-secondary"
-                                        to={`/${encodeURIComponentExceptSlashes(repoName)}/-/tags`}
+                                        to={`/${encodeURIPathComponent(repo.name)}/-/tags`}
                                     >
                                         <TagIcon className="icon-inline" /> Tags
                                     </Link>
@@ -327,20 +352,28 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                         className="btn btn-secondary"
                                         to={
                                             revision
-                                                ? `/${encodeURIComponentExceptSlashes(
-                                                      repoName
+                                                ? `/${encodeURIPathComponent(
+                                                      repo.name
                                                   )}/-/compare/...${encodeURIComponent(revision)}`
-                                                : `/${encodeURIComponentExceptSlashes(repoName)}/-/compare`
+                                                : `/${encodeURIPathComponent(repo.name)}/-/compare`
                                         }
                                     >
                                         <HistoryIcon className="icon-inline" /> Compare
                                     </Link>
                                     <Link
                                         className="btn btn-secondary"
-                                        to={`/${encodeURIComponentExceptSlashes(repoName)}/-/stats/contributors`}
+                                        to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
                                     >
                                         <UserIcon className="icon-inline" /> Contributors
                                     </Link>
+                                    {repo.viewerCanAdminister && (
+                                        <Link
+                                            className="btn btn-secondary"
+                                            to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
+                                        >
+                                            <SettingsIcon className="icon-inline" /> Settings
+                                        </Link>
+                                    )}
                                 </div>
                             </>
                         ) : (
@@ -361,7 +394,12 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     )}
                     <section className="tree-page__section test-tree-entries">
                         <h3 className="tree-page__section-header">Files and directories</h3>
-                        <TreeEntriesSection parentPath={filePath} entries={treeOrError.entries} />
+                        <TreeEntriesSection
+                            parentPath={filePath}
+                            entries={treeOrError.entries}
+                            fileDecorationsByPath={fileDecorationsByPath}
+                            isLightTheme={props.isLightTheme}
+                        />
                     </section>
                     {/* eslint-disable react/jsx-no-bind */}
                     <ActionsContainer
@@ -397,7 +435,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 className: 'list-group-item',
                                 compact: true,
                             }}
-                            updateOnChange={`${repoName}:${revision}:${filePath}:${String(showOlderCommits)}`}
+                            updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
                             defaultFirst={7}
                             useURLQuery={false}
                             hideSearch={true}

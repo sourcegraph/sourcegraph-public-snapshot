@@ -22,6 +22,7 @@ type MockUsers struct {
 	Count                        func(ctx context.Context, opt *UsersListOptions) (int, error)
 	List                         func(ctx context.Context, opt *UsersListOptions) ([]*types.User, error)
 	InvalidateSessionsByID       func(ctx context.Context, id int32) error
+	HasTag                       func(ctx context.Context, userID int32, tag string) (bool, error)
 }
 
 func (s *MockUsers) MockGetByID_Return(t *testing.T, returns *types.User, returnsErr error) (called *bool) {

@@ -1,12 +1,13 @@
 import React from 'react'
 import { CodeMonitoringPage } from './CodeMonitoringPage'
 import { storiesOf } from '@storybook/react'
-import { WebStory } from '../../components/WebStory'
 import { AuthenticatedUser } from '../../auth'
 
 import { ListUserCodeMonitorsVariables } from '../../graphql-operations'
 import { of } from 'rxjs'
 import { mockCodeMonitorNodes } from './testing/util'
+import sinon from 'sinon'
+import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/CodeMonitoringPage', module)
 
@@ -21,11 +22,43 @@ const additionalProps = {
             },
             totalCount: 12,
         }),
+    toggleCodeMonitorEnabled: sinon.fake(),
 }
 
 add(
     'Code monitoring list page',
-    () => <WebStory>{props => <CodeMonitoringPage {...props} {...additionalProps} />}</WebStory>,
+    () => <EnterpriseWebStory>{props => <CodeMonitoringPage {...props} {...additionalProps} />}</EnterpriseWebStory>,
+    {
+        design: {
+            type: 'figma',
+            url:
+                'https://www.figma.com/file/Krh7HoQi0GFxtO2k399ZQ6/RFC-227-%E2%80%93-Code-monitoring-actions-and-notifications?node-id=246%3A11',
+        },
+    }
+)
+
+add(
+    'Code monitoring list page empty state',
+    () => (
+        <EnterpriseWebStory>
+            {props => (
+                <CodeMonitoringPage
+                    {...props}
+                    {...additionalProps}
+                    fetchUserCodeMonitors={({ id, first, after }: ListUserCodeMonitorsVariables) =>
+                        of({
+                            nodes: [],
+                            pageInfo: {
+                                endCursor: '',
+                                hasNextPage: false,
+                            },
+                            totalCount: 0,
+                        })
+                    }
+                />
+            )}
+        </EnterpriseWebStory>
+    ),
     {
         design: {
             type: 'figma',

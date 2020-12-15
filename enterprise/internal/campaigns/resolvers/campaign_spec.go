@@ -8,14 +8,15 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/service"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 func marshalCampaignSpecRandID(id string) graphql.ID {
@@ -30,10 +31,10 @@ func unmarshalCampaignSpecID(id graphql.ID) (campaignSpecRandID string, err erro
 var _ graphqlbackend.CampaignSpecResolver = &campaignSpecResolver{}
 
 type campaignSpecResolver struct {
-	store       *ee.Store
-	httpFactory *httpcli.Factory
+	store *store.Store
 
-	campaignSpec *campaigns.CampaignSpec
+	campaignSpec       *campaigns.CampaignSpec
+	preloadedNamespace *graphqlbackend.NamespaceResolver
 
 	// We cache the namespace on the resolver, since it's accessed more than once.
 	namespaceOnce sync.Once
@@ -56,7 +57,7 @@ func (r *campaignSpecResolver) ParsedInput() (graphqlbackend.JSONValue, error) {
 }
 
 func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context, args *graphqlbackend.ChangesetSpecsConnectionArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
-	opts := ee.ListChangesetSpecsOpts{CampaignSpecID: r.campaignSpec.ID}
+	opts := store.ListChangesetSpecsOpts{}
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
@@ -70,9 +71,9 @@ func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context, args *graphql
 	}
 
 	return &changesetSpecConnectionResolver{
-		store:       r.store,
-		httpFactory: r.httpFactory,
-		opts:        opts,
+		store:          r.store,
+		opts:           opts,
+		campaignSpecID: r.campaignSpec.ID,
 	}, nil
 }
 
@@ -97,6 +98,10 @@ func (r *campaignSpecResolver) Namespace(ctx context.Context) (*graphqlbackend.N
 
 func (r *campaignSpecResolver) computeNamespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
 	r.namespaceOnce.Do(func() {
+		if r.preloadedNamespace != nil {
+			r.namespace = r.preloadedNamespace
+			return
+		}
 		var (
 			err error
 			n   = &graphqlbackend.NamespaceResolver{}
@@ -154,11 +159,8 @@ func (r *campaignDescriptionResolver) Description() string {
 
 func (r *campaignSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
 	specsConnection := &changesetSpecConnectionResolver{
-		store:       r.store,
-		httpFactory: r.httpFactory,
-		opts: ee.ListChangesetSpecsOpts{
-			CampaignSpecID: r.campaignSpec.ID,
-		},
+		store:          r.store,
+		campaignSpecID: r.campaignSpec.ID,
 	}
 
 	specs, err := specsConnection.Nodes(ctx)
@@ -188,7 +190,7 @@ func (r *campaignSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.Di
 }
 
 func (r *campaignSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlbackend.CampaignResolver, error) {
-	svc := ee.NewService(r.store, r.httpFactory)
+	svc := service.New(r.store)
 	campaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, r.campaignSpec)
 	if err != nil {
 		return nil, err
@@ -198,10 +200,42 @@ func (r *campaignSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlba
 	}
 
 	return &campaignResolver{
-		store:       r.store,
-		httpFactory: r.httpFactory,
-		Campaign:    campaign,
+		store:    r.store,
+		Campaign: campaign,
 	}, nil
+}
+
+func (r *campaignSpecResolver) SupersedingCampaignSpec(ctx context.Context) (graphqlbackend.CampaignSpecResolver, error) {
+	namespace, err := r.computeNamespace(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	svc := service.New(r.store)
+	newest, err := svc.GetNewestCampaignSpec(ctx, r.store, r.campaignSpec, actor.FromContext(ctx).UID)
+	if err != nil {
+		return nil, err
+	}
+
+	// If this is the newest spec, then we can just return nil.
+	if newest == nil || newest.ID == r.campaignSpec.ID {
+		return nil, nil
+	}
+
+	// If this spec and the new spec have different creators, we shouldn't
+	// return this as a superseding spec.
+	if newest.UserID != r.campaignSpec.UserID {
+		return nil, nil
+	}
+
+	// Create our new resolver, reusing as many fields as we can from this one.
+	resolver := &campaignSpecResolver{
+		store:              r.store,
+		campaignSpec:       newest,
+		preloadedNamespace: namespace,
+	}
+
+	return resolver, nil
 }
 
 func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
@@ -220,7 +254,7 @@ func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, arg
 		}
 	}
 
-	specs, _, err := r.store.ListChangesetSpecs(ctx, ee.ListChangesetSpecsOpts{CampaignSpecID: r.campaignSpec.ID})
+	specs, _, err := r.store.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{CampaignSpecID: r.campaignSpec.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +271,7 @@ func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, arg
 		userID:                actor.UID,
 		onlyWithoutCredential: args.OnlyWithoutCredential,
 		store:                 r.store,
-		opts: ee.ListCodeHostsOpts{
+		opts: store.ListCodeHostsOpts{
 			RepoIDs: specs.RepoIDs(),
 		},
 		limitOffset: db.LimitOffset{

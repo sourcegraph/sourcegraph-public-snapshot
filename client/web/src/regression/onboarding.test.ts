@@ -146,16 +146,10 @@ describe('Onboarding', () => {
             await (await driver.findElementWithText('Connect your code host')).click()
         })
         await driver.waitUntilURL(driver.sourcegraphBaseUrl + '/site-admin/external-services')
-        // Verify confetti plays
         await driver.ensureHasExternalService({
             kind: testExternalServiceConfig.kind,
             displayName: testExternalServiceConfig.uniqueDisplayName,
             config: JSON.stringify(testExternalServiceConfig.config),
-        })
-        await delay(500) // wait for confetti to play a bit
-        await screenshots.verifyScreenshot({
-            filename: 'confetti-appears-after-adding-first-external-service.png',
-            description: 'confetti coming out of "Setup" navbar item',
         })
     })
 
@@ -171,31 +165,13 @@ describe('Onboarding', () => {
         }
         await setUserSiteAdmin(gqlClient, testUser.id, false)
 
-        const statusBarSelector = '.test-activation-progress-bar'
-
         // Initial status indicator
         await driver.page.goto(config.sourcegraphBaseUrl + '/search')
-        await screenshots.verifySelector(
-            'initial-progress-bar-is-gray-circle.png',
-            'gray circle',
-            statusBarSelector,
-            2000
-        )
 
         // Do a search
         await driver.page.waitForSelector('#monaco-query-input')
         await driver.page.type('#monaco-query-input', 'asdf')
         await driver.page.keyboard.press(Key.Enter)
-        await delay(500) // allow some time for confetti to play
-        await screenshots.verifyScreenshot({
-            filename: 'confetti-appears-after-first-search.png',
-            description: 'confetti coming out of "Setup" navbar item',
-        })
-        await screenshots.verifySelector(
-            'progress-bar-after-initial-search-is-half-green.png',
-            '50% green circle',
-            statusBarSelector
-        )
 
         // Do a find references
         await driver.page.goto(
@@ -212,16 +188,6 @@ describe('Onboarding', () => {
         await driver.page.click(findReferencesSelector)
         await driver.page.waitForSelector('.test-search-result')
 
-        await delay(500) // allow some time for confetti to play
-        await screenshots.verifyScreenshot({
-            filename: 'confetti-appears-after-find-refs.png',
-            description: 'confetti coming out of "Setup" navbar item',
-        })
-        await screenshots.verifySelector(
-            'progress-bar-after-search-and-fnd-refs-is-full-green.png',
-            '100% green circle',
-            statusBarSelector
-        )
         await driver.page.reload()
 
         // Activation dropdown should be hidden

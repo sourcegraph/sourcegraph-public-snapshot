@@ -3,6 +3,7 @@ module github.com/sourcegraph/sourcegraph
 go 1.14
 
 require (
+	cloud.google.com/go v0.56.0
 	cloud.google.com/go/bigquery v1.6.0 // indirect
 	cloud.google.com/go/pubsub v1.3.1
 	cloud.google.com/go/storage v1.6.0
@@ -44,7 +45,6 @@ require (
 	github.com/gchaincl/sqlhooks v1.3.0
 	github.com/getsentry/raven-go v0.2.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/gin-gonic/gin v1.6.3 // indirect
 	github.com/gitchander/permutation v0.0.0-20181107151852-9e56b92e9909
 	github.com/gliderlabs/ssh v0.3.0 // indirect
 	github.com/glycerine/go-unsnap-stream v0.0.0-20190901134440-81cf024a9e0a // indirect
@@ -53,7 +53,6 @@ require (
 	github.com/go-openapi/spec v0.19.9 // indirect
 	github.com/go-openapi/strfmt v0.19.5
 	github.com/go-openapi/validate v0.19.11 // indirect
-	github.com/go-playground/validator/v10 v10.3.0 // indirect
 	github.com/go-redsync/redsync v1.4.2
 	github.com/gobwas/glob v0.2.3
 	github.com/golang-migrate/migrate/v4 v4.11.0
@@ -96,8 +95,6 @@ require (
 	github.com/jordan-wright/email v4.0.1-0.20200824153738-3f5bafa1cd84+incompatible
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.10
-	github.com/karlseguin/expect v1.0.7 // indirect
-	github.com/karlseguin/typed v1.1.7 // indirect
 	github.com/karrick/godirwalk v1.16.1
 	github.com/keegancsmith/rpc v1.3.0
 	github.com/keegancsmith/sqlf v1.1.0
@@ -121,8 +118,6 @@ require (
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
-	github.com/onsi/ginkgo v1.12.1 // indirect
-	github.com/onsi/gomega v1.10.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opentracing-contrib/go-stdlib v1.0.0
 	github.com/opentracing/opentracing-go v1.2.0
@@ -130,6 +125,7 @@ require (
 	github.com/peterhellberg/link v1.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/pquerna/cachecontrol v0.0.0-20200819021114-67c6ae64274f // indirect
+	github.com/princjef/gomarkdoc v0.1.3
 	github.com/prometheus/alertmanager v0.21.0
 	github.com/prometheus/client_golang v1.6.0
 	github.com/prometheus/common v0.10.0
@@ -161,6 +157,7 @@ require (
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/gosyntect v0.0.0-20200429204402-842ed26129d0
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
+	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-00010101000000-000000000000
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/src-d/enry/v2 v2.1.0
@@ -170,10 +167,9 @@ require (
 	github.com/tidwall/gjson v1.6.1
 	github.com/tinylib/msgp v1.1.2 // indirect
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
-	github.com/uber/gonduit v0.6.1
+	github.com/uber/gonduit v0.11.0
 	github.com/uber/jaeger-client-go v2.25.0+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible
-	github.com/ugorji/go v1.1.8 // indirect
 	github.com/willf/bitset v1.1.11 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0
@@ -184,10 +180,10 @@ require (
 	go.uber.org/atomic v1.7.0
 	go.uber.org/automaxprocs v1.3.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
-	golang.org/x/net v0.0.0-20200930145003-4acb6c075d10
+	golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
-	golang.org/x/sys v0.0.0-20200915084602-288bc346aa39
+	golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	golang.org/x/tools v0.0.0-20200915031644-64986481280e
 	google.golang.org/api v0.29.0
@@ -214,8 +210,6 @@ replace (
 	// the alertmanager project is currently not planning on accepting changes for.
 	github.com/prometheus/alertmanager => github.com/bobheadxi/alertmanager v0.21.1-0.20200727091526-3e856a90b534
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
-
-	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
 )
 
 // We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
@@ -231,3 +225,5 @@ replace github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cd
 
 // See: https://github.com/ghodss/yaml/pull/65
 replace github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
+
+replace github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images => ./enterprise/dev/ci/images

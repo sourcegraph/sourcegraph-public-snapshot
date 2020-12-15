@@ -1,4 +1,7 @@
 external* @LawnGnome
 namespaces* @LawnGnome
 repos* @LawnGnome
+external* @eseliger
+namespaces* @eseliger
+repos* @eseliger
 repos_perm* @unknwon

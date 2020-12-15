@@ -23,7 +23,11 @@ import {
     ListCampaign,
     CampaignByNamespaceResult,
 } from '../graphql-operations'
-import { ExternalServiceKind, SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
+import {
+    ChangesetSpecOperation,
+    ExternalServiceKind,
+    SharedGraphQlOperations,
+} from '../../../shared/src/graphql-operations'
 
 const campaignListNode: ListCampaign = {
     id: 'campaign123',
@@ -199,7 +203,13 @@ const CampaignChangesets: (variables: CampaignChangesetsVariables) => CampaignCh
                     },
                     reviewState: ChangesetReviewState.APPROVED,
                     title: 'The changeset title',
-                    currentSpec: { id: 'spec-rand-id-1' },
+                    currentSpec: {
+                        id: 'spec-rand-id-1',
+                        description: {
+                            __typename: 'GitBranchChangesetDescription',
+                            headRef: 'my-branch',
+                        },
+                    },
                 },
             ],
         },
@@ -273,6 +283,7 @@ function mockCommonGraphQLResponses(
                 },
                 currentSpec: {
                     originalInput: 'name: awesome-campaign\ndescription: somesttring',
+                    supersedingCampaignSpec: null,
                 },
                 ...campaignOverrides,
             },
@@ -533,6 +544,7 @@ describe('Campaigns', () => {
                                           namespaceName: 'test-org',
                                           url: '/organizations/test-org',
                                       },
+                            supersedingCampaignSpec: null,
                             viewerCanAdminister: true,
                             viewerCampaignsCodeHosts: {
                                 totalCount: 0,
@@ -583,6 +595,11 @@ describe('Campaigns', () => {
                                         expiresAt: addDays(new Date(), 3).toISOString(),
                                         id: 'changesetspec123',
                                         type: ChangesetSpecType.BRANCH,
+                                        operations: [ChangesetSpecOperation.PUSH, ChangesetSpecOperation.PUBLISH],
+                                        delta: {
+                                            titleChanged: false,
+                                        },
+                                        changeset: null,
                                     },
                                 ],
                                 pageInfo: {
@@ -685,7 +702,8 @@ describe('Campaigns', () => {
                 ...commonWebGraphQlResults,
                 ...mockCommonGraphQLResponses('user'),
                 UserCampaignsCodeHosts: () => ({
-                    currentUser: {
+                    node: {
+                        __typename: 'User',
                         campaignsCodeHosts: {
                             totalCount: 1,
                             pageInfo: {

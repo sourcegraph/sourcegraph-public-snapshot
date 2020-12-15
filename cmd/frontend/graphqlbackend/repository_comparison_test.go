@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -50,7 +49,7 @@ func TestRepositoryComparison(t *testing.T) {
 	}
 	t.Cleanup(func() { git.Mocks.ExecReader = nil })
 
-	git.Mocks.MergeBase = func(repo gitserver.Repo, a, b api.CommitID) (api.CommitID, error) {
+	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
 		if string(a) != wantBaseRevision || string(b) != wantHeadRevision {
 			t.Fatalf("gitserver.MergeBase received wrong args: %s %s", a, b)
 		}
@@ -93,7 +92,7 @@ func TestRepositoryComparison(t *testing.T) {
 			{ID: api.CommitID(wantHeadRevision)},
 		}
 
-		git.Mocks.Commits = func(repo gitserver.Repo, opts git.CommitsOptions) ([]*git.Commit, error) {
+		git.Mocks.Commits = func(repo api.RepoName, opts git.CommitsOptions) ([]*git.Commit, error) {
 			wantRange := fmt.Sprintf("%s..%s", wantBaseRevision, wantHeadRevision)
 
 			if have, want := opts.Range, wantRange; have != want {

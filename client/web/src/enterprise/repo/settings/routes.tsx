@@ -1,12 +1,13 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import { repoSettingsAreaRoutes } from '../../../repo/settings/routes'
 import { RepoSettingsAreaRoute } from '../../../repo/settings/RepoSettingsArea'
+import { repoSettingsAreaRoutes } from '../../../repo/settings/routes'
 import { lazyComponent } from '../../../util/lazyComponent'
-import { CodeIntelUploadsPageProps } from '../../codeintel/list/CodeIntelUploadsPage'
-import { CodeIntelIndexesPageProps } from '../../codeintel/list/CodeIntelIndexesPage'
+import { CodeIntelIndexConfigurationPageProps } from '../../codeintel/configuration/CodeIntelIndexConfigurationPage'
 import { CodeIntelIndexPageProps } from '../../codeintel/detail/CodeIntelIndexPage'
 import { CodeIntelUploadPageProps } from '../../codeintel/detail/CodeIntelUploadPage'
+import { CodeIntelIndexesPageProps } from '../../codeintel/list/CodeIntelIndexesPage'
+import { CodeIntelUploadsPageProps } from '../../codeintel/list/CodeIntelUploadsPage'
 import { RepoSettingsPermissionsPageProps } from './RepoSettingsPermissionsPage'
 
 const RepoSettingsPermissionsPage = lazyComponent<RepoSettingsPermissionsPageProps, 'RepoSettingsPermissionsPage'>(
@@ -21,6 +22,11 @@ const CodeIntelUploadPage = lazyComponent<CodeIntelUploadPageProps, 'CodeIntelUp
     () => import('../../codeintel/detail/CodeIntelUploadPage'),
     'CodeIntelUploadPage'
 )
+const CodeIntelIndexConfigurationPage = lazyComponent<
+    CodeIntelIndexConfigurationPageProps,
+    'CodeIntelIndexConfigurationPage'
+>(() => import('../../codeintel/configuration/CodeIntelIndexConfigurationPage'), 'CodeIntelIndexConfigurationPage')
+
 const CodeIntelIndexesPage = lazyComponent<CodeIntelIndexesPageProps, 'CodeIntelIndexesPage'>(
     () => import('../../codeintel/list/CodeIntelIndexesPage'),
     'CodeIntelIndexesPage'
@@ -46,6 +52,11 @@ export const enterpriseRepoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] 
         path: '/code-intelligence/uploads/:id',
         exact: true,
         render: props => <CodeIntelUploadPage {...props} />,
+    },
+    {
+        path: '/code-intelligence/index-configuration',
+        exact: true,
+        render: props => <CodeIntelIndexConfigurationPage {...props} />,
     },
     {
         path: '/code-intelligence/indexes',

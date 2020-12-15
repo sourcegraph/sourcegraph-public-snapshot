@@ -4,7 +4,7 @@
 import Shepherd from 'shepherd.js'
 import { eventLogger } from '../../tracking/eventLogger'
 import { isEqual } from 'lodash'
-import { LANGUAGES } from '../../../../shared/src/search/parser/filters'
+import { LANGUAGES } from '../../../../shared/src/search/query/filters'
 
 export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'
 export const HAS_SEEN_TOUR_KEY = 'has-seen-onboarding-tour'
@@ -70,11 +70,10 @@ export function generateStepTooltip(options: {
  */
 export function generateBottomRow(tour: Shepherd.Tour, stepNumber: number, totalStepCount: number): HTMLElement {
     const closeTourButton = document.createElement('button')
-    closeTourButton.className = 'btn btn-link p-0'
+    closeTourButton.className = 'btn btn-link p-0 test-tour-close-button'
     closeTourButton.textContent = 'Close tour'
     closeTourButton.addEventListener('click', () => {
         tour.cancel()
-        localStorage.setItem(HAS_CANCELLED_TOUR_KEY, 'true')
         eventLogger.log('CloseOnboardingTourClicked', { stage: stepNumber })
     })
 

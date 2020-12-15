@@ -17,7 +17,7 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 
 ## [Background information](background-information/index.md)
 
-Clarification and discussion about key concepts, architecutre, and development stack.
+Clarification and discussion about key concepts, architecture, and development stack.
 
 ## Guidelines
 

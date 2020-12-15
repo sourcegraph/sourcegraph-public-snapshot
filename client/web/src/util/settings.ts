@@ -38,8 +38,8 @@ export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeO
         const defaultPatternType =
             settingsCascade.final &&
             !isErrorLike(settingsCascade.final) &&
-            settingsCascade.final['search.defaultPatternType']
-        return defaultPatternType || 'literal'
+            (settingsCascade.final['search.defaultPatternType'] as SearchPatternType.literal)
+        return defaultPatternType || SearchPatternType.literal
     }
     return
 }

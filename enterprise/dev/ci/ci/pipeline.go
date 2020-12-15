@@ -116,6 +116,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addBrowserExt,
 			addWebApp,
 			addSharedTests(c),
+			addBrandedTests,
 			addGoTests,
 			addGoBuild,
 			addDockerfileLint,
@@ -136,6 +137,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addSharedTests(c),             // ~4.5m
 			addWebApp,                     // ~3m
 			addBrowserExt,                 // ~2m
+			addBrandedTests,               // ~1.5m
 			addGoTests,                    // ~1.5m
 			addCheck,                      // ~1m
 			addGoBuild,                    // ~0.5m

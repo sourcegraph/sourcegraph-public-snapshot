@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 func TestMerger_MergeBase(t *testing.T) {
@@ -29,7 +29,7 @@ func TestMerger_MergeBase(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m qux --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo gitserver.Repo
+		repo api.RepoName
 		a, b string // can be any revspec; is resolved during the test
 
 		wantMergeBase string // can be any revspec; is resolved during test
@@ -42,19 +42,19 @@ func TestMerger_MergeBase(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		a, err := ResolveRevision(ctx, test.repo, nil, test.a, ResolveRevisionOptions{})
+		a, err := ResolveRevision(ctx, test.repo, test.a, ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on a: %s", label, test.a, err)
 			continue
 		}
 
-		b, err := ResolveRevision(ctx, test.repo, nil, test.b, ResolveRevisionOptions{})
+		b, err := ResolveRevision(ctx, test.repo, test.b, ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on b: %s", label, test.b, err)
 			continue
 		}
 
-		want, err := ResolveRevision(ctx, test.repo, nil, test.wantMergeBase, ResolveRevisionOptions{})
+		want, err := ResolveRevision(ctx, test.repo, test.wantMergeBase, ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on wantMergeBase: %s", label, test.wantMergeBase, err)
 			continue

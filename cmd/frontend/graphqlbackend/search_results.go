@@ -31,7 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -172,7 +171,7 @@ type SearchResultsResolver struct {
 
 	// cache for user settings. Ideally this should be set just once in the code path
 	// by an upstream resolver
-	userSettings *schema.Settings
+	UserSettings *schema.Settings
 }
 
 func (sr *SearchResultsResolver) Results() []SearchResultResolver {
@@ -201,7 +200,7 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 func (sr *SearchResultsResolver) Alert() *searchAlert { return sr.alert }
 
 func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
-	return int32(time.Since(sr.start).Nanoseconds() / int64(time.Millisecond))
+	return int32(time.Since(sr.start).Milliseconds())
 }
 
 // commonFileFilters are common filters used. It is used by DynamicFilters to
@@ -241,8 +240,8 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	// For search, sr.userSettings is set in (r *searchResolver) Results(ctx
 	// context.Context). However we might regress on that or call DynamicFilters from
 	// other code paths. Hence we fallback to accessing the user settings directly.
-	if sr.userSettings != nil {
-		globbing = getBoolPtr(sr.userSettings.SearchGlobbing, false)
+	if sr.UserSettings != nil {
+		globbing = getBoolPtr(sr.UserSettings.SearchGlobbing, false)
 	} else {
 		settings, err := decodedViewerFinalSettings(ctx)
 		if err != nil {
@@ -447,7 +446,7 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *FileMat
 		return time.Time{}, nil
 	}
 	lm := fm.LineMatches()[0]
-	hunks, err := git.BlameFile(ctx, gitserver.Repo{Name: fm.Repo.repo.Name}, fm.path(), &git.BlameOptions{
+	hunks, err := git.BlameFile(ctx, fm.Repo.repo.Name, fm.path(), &git.BlameOptions{
 		NewestCommit: fm.CommitID,
 		StartLine:    int(lm.LineNumber()),
 		EndLine:      int(lm.LineNumber()),
@@ -730,6 +729,7 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	var merged []SearchResultResolver
 	rightFileMatches := make(map[string]*FileMatchResolver)
 	rightRepoMatches := make(map[string]*RepositoryResolver)
+	rightCommitMatches := make(map[string]*CommitSearchResultResolver)
 
 	// accumulate matches for the right subexpression in a lookup.
 	for _, r := range right.SearchResults {
@@ -739,6 +739,10 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 		}
 		if repoMatch, ok := r.ToRepository(); ok {
 			rightRepoMatches[string(repoMatch.URL())] = repoMatch
+			continue
+		}
+		if commitMatch, ok := r.ToCommitSearchResult(); ok {
+			rightCommitMatches[commitMatch.url] = commitMatch
 			continue
 		}
 		merged = append(merged, r)
@@ -753,7 +757,6 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 				count++
 				continue
 			}
-
 			// merge line matches with a file match that already exists.
 			rightFileMatch.appendMatches(leftFileMatch)
 			rightFileMatches[leftFileMatch.uri] = rightFileMatch
@@ -766,10 +769,17 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 				// no overlap with existing matches.
 				merged = append(merged, leftMatch)
 				count++
-				continue
 			}
+			continue
+		}
 
-			rightRepoMatches[string(leftRepoMatch.URL())] = rightRepoMatch
+		if leftCommitMatch, ok := leftMatch.ToCommitSearchResult(); ok {
+			rightCommitMatch := rightCommitMatches[leftCommitMatch.url]
+			if rightCommitMatch == nil {
+				// no overlap with existing matches.
+				merged = append(merged, leftMatch)
+				count++
+			}
 			continue
 		}
 		merged = append(merged, leftMatch)
@@ -779,6 +789,9 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 		merged = append(merged, v)
 	}
 	for _, v := range rightRepoMatches {
+		merged = append(merged, v)
+	}
+	for _, v := range rightCommitMatches {
 		merged = append(merged, v)
 	}
 
@@ -1143,7 +1156,7 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 	}
 	// copy userSettings from searchResolver to SearchResultsResolver
 	if srr != nil {
-		srr.userSettings = r.userSettings
+		srr.UserSettings = r.userSettings
 	}
 	if srr == nil {
 		srr = &SearchResultsResolver{}
@@ -2005,10 +2018,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		alert = alertForMissingRepoRevs(r.patternType, resolved.missingRepoRevs)
 	}
 
-	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
-		alert = alertForQuotesInQueryInLiteralMode(r.query.ParseTree())
-	}
-
 	// If we have some results, only log the error instead of returning it,
 	// because otherwise the client would not receive the partial results
 	if len(results) > 0 && multiErr != nil {
@@ -2044,8 +2053,6 @@ func isContextError(ctx context.Context, err error) bool {
 //
 // Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
 type SearchResultResolver interface {
-	searchResultURIGetter
-
 	ToRepository() (*RepositoryResolver, bool)
 	ToFileMatch() (*FileMatchResolver, bool)
 	ToCommitSearchResult() (*CommitSearchResultResolver, bool)
@@ -2053,35 +2060,67 @@ type SearchResultResolver interface {
 	resultCount() int32
 }
 
-type searchResultURIGetter interface {
-	// SearchResultURIs returns the repo name and file uri respectively
-	searchResultURIs() (string, string)
+// compareFileLengths sorts file paths such that they appear earlier if they
+// match file: patterns in the query exactly.
+func compareFileLengths(left, right string, exactFilePatterns map[string]struct{}) bool {
+	_, aMatch := exactFilePatterns[path.Base(left)]
+	_, bMatch := exactFilePatterns[path.Base(right)]
+	if aMatch || bMatch {
+		if aMatch && bMatch {
+			// Prefer shorter file names (ie root files come first)
+			if len(left) != len(right) {
+				return len(left) < len(right)
+			}
+			return left < right
+		}
+		// Prefer exact match
+		return aMatch
+	}
+	return left < right
 }
 
-// compareSearchResults sorts alphabetically unless one of the filenames is contained in exactFilePatterns,
-// in which case exact matches are sorted by length of their file path and then alphabetically.
-func compareSearchResults(a, b searchResultURIGetter, exactFilePatterns map[string]struct{}) bool {
-	arepo, afile := a.searchResultURIs()
-	brepo, bfile := b.searchResultURIs()
+func compareDates(left, right *time.Time) bool {
+	if left == nil || right == nil {
+		return left != nil // Place the value that is defined first.
+	}
+	return (*left).After(*right)
+}
+
+// compareSearchResults sorts repository matches, file matches, and commits.
+// Repositories and filenames are sorted alphabetically. As a refinement, if any
+// filename matches a value in a non-empty set exactFilePatterns, then such
+// filenames are listed earlier.
+//
+// Commits are sorted by date. Commits are not associated with repositories, and
+// will always list after repository or file match results, if any.
+func compareSearchResults(left, right SearchResultResolver, exactFilePatterns map[string]struct{}) bool {
+	sortKeys := func(result SearchResultResolver) (string, string, *time.Time) {
+		switch r := result.(type) {
+		case *RepositoryResolver:
+			return string(r.repo.Name), "", nil
+		case *FileMatchResolver:
+			return r.Repo.Name(), r.JPath, nil
+		case *CommitSearchResultResolver:
+			// Commits are relatively sorted by date, and after repo
+			// or path names. We use ~ as the key for repo and
+			// paths,lexicographically last in ASCII.
+			return "~", "~", &r.commit.commit.Author.Date
+		}
+		// Unreachable.
+		panic("unreachable: compareSearchResults expects RepositoryResolver, FileMatchResolver, or CommitSearchResultResolver")
+	}
+
+	arepo, afile, adate := sortKeys(left)
+	brepo, bfile, bdate := sortKeys(right)
 
 	if arepo == brepo {
 		if len(exactFilePatterns) == 0 {
-			return afile < bfile
-		}
-		_, aMatch := exactFilePatterns[path.Base(afile)]
-		_, bMatch := exactFilePatterns[path.Base(bfile)]
-		if aMatch || bMatch {
-			if aMatch && bMatch {
-				// Prefer shorter file names (ie root files come first)
-				if len(afile) != len(bfile) {
-					return len(afile) < len(bfile)
-				}
+			if afile != bfile {
 				return afile < bfile
 			}
-			// prefer exact match
-			return aMatch
+			return compareDates(adate, bdate)
 		}
-		return afile < bfile
+		return compareFileLengths(afile, bfile, exactFilePatterns)
 	}
 	return arepo < brepo
 }

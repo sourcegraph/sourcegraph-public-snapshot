@@ -49,7 +49,7 @@ func main() {
 	go debugserver.Start()
 
 	service := symbols.Service{
-		FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
+		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 			return gitserver.DefaultClient.Archive(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: "tar"})
 		},
 		NewParser: symbols.NewParser,
@@ -75,7 +75,12 @@ func main() {
 		host = "127.0.0.1"
 	}
 	addr := net.JoinHostPort(host, port)
-	server := &http.Server{Addr: addr, Handler: handler}
+	server := &http.Server{
+		ReadTimeout:  75 * time.Second,
+		WriteTimeout: 10 * time.Minute,
+		Addr:         addr,
+		Handler:      handler,
+	}
 	go shutdownOnSIGINT(server)
 
 	log15.Info("symbols: listening", "addr", addr)

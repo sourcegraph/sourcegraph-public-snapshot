@@ -1,5 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useState, useCallback } from 'react'
+import * as H from 'history'
 import { Observable, concat, of } from 'rxjs'
 import { switchMap, catchError, startWith, takeUntil, tap, delay } from 'rxjs/operators'
 import { Toggle } from '../../../../branded/src/components/Toggle'
@@ -7,15 +8,20 @@ import { Link } from '../../../../shared/src/components/Link'
 import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { useEventObservable } from '../../../../shared/src/util/useObservable'
 import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
-import { toggleCodeMonitorEnabled } from './backend'
+import { CodeMonitoringProps } from '.'
 
-interface CodeMonitorNodeProps {
+export interface CodeMonitorNodeProps extends Pick<CodeMonitoringProps, 'toggleCodeMonitorEnabled'> {
     node: CodeMonitorFields
+    location: H.Location
 }
 
 const LOADING = 'LOADING' as const
 
-export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({ node }: CodeMonitorNodeProps) => {
+export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
+    toggleCodeMonitorEnabled,
+    location,
+    node,
+}: CodeMonitorNodeProps) => {
     const [enabled, setEnabled] = useState<boolean>(node.enabled)
 
     const [toggleMonitor, toggleMonitorOrError] = useEventObservable(
@@ -44,7 +50,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                         )
                     })
                 ),
-            [node, enabled, setEnabled]
+            [node, enabled, setEnabled, toggleCodeMonitorEnabled]
         )
     )
 
@@ -61,11 +67,11 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                 <div className="d-flex flex-column">
                     <div className="d-flex">
                         {toggleMonitorOrError === LOADING && <LoadingSpinner className="icon-inline mr-2" />}
-                        <div onClick={toggleMonitor}>
+                        <div onClick={toggleMonitor} className="test-toggle-monitor-enabled">
                             <Toggle value={enabled} className="mr-3" disabled={toggleMonitorOrError === LOADING} />
                         </div>
                         {/** TODO: link to edit pages. */}
-                        <Link to="/">Edit</Link>
+                        <Link to={`${location.pathname}/${node.id}`}>Edit</Link>
                     </div>
                 </div>
             </div>

@@ -1,10 +1,12 @@
 import signale from 'signale'
 import webpack from 'webpack'
 import config from '../config/webpack/production.config'
+import shelljs from 'shelljs'
 import * as tasks from './tasks'
 
 const buildChrome = tasks.buildChrome('prod')
 const buildFirefox = tasks.buildFirefox('prod')
+const buildSafari = tasks.buildSafari('prod')
 
 tasks.copyAssets()
 
@@ -23,6 +25,15 @@ compiler.run((error, stats) => {
 
     buildChrome()
     buildFirefox()
+    if (isXcodeAvailable()) {
+        buildSafari()
+    } else {
+        signale.debug('Skipping Safari build because Xcode tools were not found (xcrun, xcodebuild)')
+    }
     tasks.copyIntegrationAssets()
     signale.success('Build done')
 })
+
+function isXcodeAvailable(): boolean {
+    return !!shelljs.which('xcrun') && !!shelljs.which('xcodebuild')
+}

@@ -138,22 +138,29 @@ interface Props extends RouteComponentProps<{}> {}
 export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> {
     public static FILTERS: FilteredConnectionFilter[] = [
         {
-            label: 'All',
-            id: 'all',
-            tooltip: 'Show all extensions',
-            args: { remote: true, local: true },
-        },
-        {
-            label: 'Remote',
-            id: 'remote',
-            tooltip: 'Show only extensions from the remote registry',
-            args: { remote: true, local: false },
-        },
-        {
-            label: 'Local',
-            id: 'local',
-            tooltip: 'Show only extensions from the local registry',
-            args: { remote: false, local: true },
+            id: 'filter',
+            label: 'Filter',
+            type: 'radio',
+            values: [
+                {
+                    label: 'All',
+                    value: 'all',
+                    tooltip: 'Show all extensions',
+                    args: { remote: true, local: true },
+                },
+                {
+                    label: 'Remote',
+                    value: 'remote',
+                    tooltip: 'Show only extensions from the remote registry',
+                    args: { remote: true, local: false },
+                },
+                {
+                    label: 'Local',
+                    value: 'local',
+                    tooltip: 'Show only extensions from the local registry',
+                    args: { remote: false, local: true },
+                },
+            ],
         },
     ]
 

@@ -5,6 +5,7 @@ package resolvers
 import (
 	"context"
 	api "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
+	gitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"sync"
@@ -847,6 +848,10 @@ type MockDBStore struct {
 	// GetIndexByIDFunc is an instance of a mock function object controlling
 	// the behavior of the method GetIndexByID.
 	GetIndexByIDFunc *DBStoreGetIndexByIDFunc
+	// GetIndexConfigurationByRepositoryIDFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// GetIndexConfigurationByRepositoryID.
+	GetIndexConfigurationByRepositoryIDFunc *DBStoreGetIndexConfigurationByRepositoryIDFunc
 	// GetIndexesFunc is an instance of a mock function object controlling
 	// the behavior of the method GetIndexes.
 	GetIndexesFunc *DBStoreGetIndexesFunc
@@ -877,6 +882,10 @@ type MockDBStore struct {
 	// SameRepoPagerFunc is an instance of a mock function object
 	// controlling the behavior of the method SameRepoPager.
 	SameRepoPagerFunc *DBStoreSameRepoPagerFunc
+	// UpdateIndexConfigurationByRepositoryIDFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// UpdateIndexConfigurationByRepositoryID.
+	UpdateIndexConfigurationByRepositoryIDFunc *DBStoreUpdateIndexConfigurationByRepositoryIDFunc
 }
 
 // NewMockDBStore creates a new mock of the DBStore interface. All methods
@@ -899,7 +908,7 @@ func NewMockDBStore() *MockDBStore {
 			},
 		},
 		FindClosestDumpsFromGraphFragmentFunc: &DBStoreFindClosestDumpsFromGraphFragmentFunc{
-			defaultHook: func(context.Context, int, string, string, bool, string, map[string][]string) ([]dbstore.Dump, error) {
+			defaultHook: func(context.Context, int, string, string, bool, string, *gitserver.CommitGraph) ([]dbstore.Dump, error) {
 				return nil, nil
 			},
 		},
@@ -911,6 +920,11 @@ func NewMockDBStore() *MockDBStore {
 		GetIndexByIDFunc: &DBStoreGetIndexByIDFunc{
 			defaultHook: func(context.Context, int) (dbstore.Index, bool, error) {
 				return dbstore.Index{}, false, nil
+			},
+		},
+		GetIndexConfigurationByRepositoryIDFunc: &DBStoreGetIndexConfigurationByRepositoryIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.IndexConfiguration, bool, error) {
+				return dbstore.IndexConfiguration{}, false, nil
 			},
 		},
 		GetIndexesFunc: &DBStoreGetIndexesFunc{
@@ -963,6 +977,11 @@ func NewMockDBStore() *MockDBStore {
 				return 0, nil, nil
 			},
 		},
+		UpdateIndexConfigurationByRepositoryIDFunc: &DBStoreUpdateIndexConfigurationByRepositoryIDFunc{
+			defaultHook: func(context.Context, int, []byte) error {
+				return nil
+			},
+		},
 	}
 }
 
@@ -987,6 +1006,9 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		GetIndexByIDFunc: &DBStoreGetIndexByIDFunc{
 			defaultHook: i.GetIndexByID,
+		},
+		GetIndexConfigurationByRepositoryIDFunc: &DBStoreGetIndexConfigurationByRepositoryIDFunc{
+			defaultHook: i.GetIndexConfigurationByRepositoryID,
 		},
 		GetIndexesFunc: &DBStoreGetIndexesFunc{
 			defaultHook: i.GetIndexes,
@@ -1017,6 +1039,9 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		SameRepoPagerFunc: &DBStoreSameRepoPagerFunc{
 			defaultHook: i.SameRepoPager,
+		},
+		UpdateIndexConfigurationByRepositoryIDFunc: &DBStoreUpdateIndexConfigurationByRepositoryIDFunc{
+			defaultHook: i.UpdateIndexConfigurationByRepositoryID,
 		},
 	}
 }
@@ -1364,15 +1389,15 @@ func (c DBStoreFindClosestDumpsFuncCall) Results() []interface{} {
 // the FindClosestDumpsFromGraphFragment method of the parent MockDBStore
 // instance is invoked.
 type DBStoreFindClosestDumpsFromGraphFragmentFunc struct {
-	defaultHook func(context.Context, int, string, string, bool, string, map[string][]string) ([]dbstore.Dump, error)
-	hooks       []func(context.Context, int, string, string, bool, string, map[string][]string) ([]dbstore.Dump, error)
+	defaultHook func(context.Context, int, string, string, bool, string, *gitserver.CommitGraph) ([]dbstore.Dump, error)
+	hooks       []func(context.Context, int, string, string, bool, string, *gitserver.CommitGraph) ([]dbstore.Dump, error)
 	history     []DBStoreFindClosestDumpsFromGraphFragmentFuncCall
 	mutex       sync.Mutex
 }
 
 // FindClosestDumpsFromGraphFragment delegates to the next hook function in
 // the queue and stores the parameter and result values of this invocation.
-func (m *MockDBStore) FindClosestDumpsFromGraphFragment(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string, v6 map[string][]string) ([]dbstore.Dump, error) {
+func (m *MockDBStore) FindClosestDumpsFromGraphFragment(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string, v6 *gitserver.CommitGraph) ([]dbstore.Dump, error) {
 	r0, r1 := m.FindClosestDumpsFromGraphFragmentFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
 	m.FindClosestDumpsFromGraphFragmentFunc.appendCall(DBStoreFindClosestDumpsFromGraphFragmentFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1})
 	return r0, r1
@@ -1381,7 +1406,7 @@ func (m *MockDBStore) FindClosestDumpsFromGraphFragment(v0 context.Context, v1 i
 // SetDefaultHook sets function that is called when the
 // FindClosestDumpsFromGraphFragment method of the parent MockDBStore
 // instance is invoked and the hook queue is empty.
-func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string, map[string][]string) ([]dbstore.Dump, error)) {
+func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string, *gitserver.CommitGraph) ([]dbstore.Dump, error)) {
 	f.defaultHook = hook
 }
 
@@ -1390,7 +1415,7 @@ func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) SetDefaultHook(hook func(
 // instance inovkes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) PushHook(hook func(context.Context, int, string, string, bool, string, map[string][]string) ([]dbstore.Dump, error)) {
+func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) PushHook(hook func(context.Context, int, string, string, bool, string, *gitserver.CommitGraph) ([]dbstore.Dump, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1399,7 +1424,7 @@ func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) PushHook(hook func(contex
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) SetDefaultReturn(r0 []dbstore.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string, bool, string, map[string][]string) ([]dbstore.Dump, error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, bool, string, *gitserver.CommitGraph) ([]dbstore.Dump, error) {
 		return r0, r1
 	})
 }
@@ -1407,12 +1432,12 @@ func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) SetDefaultReturn(r0 []dbs
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) PushReturn(r0 []dbstore.Dump, r1 error) {
-	f.PushHook(func(context.Context, int, string, string, bool, string, map[string][]string) ([]dbstore.Dump, error) {
+	f.PushHook(func(context.Context, int, string, string, bool, string, *gitserver.CommitGraph) ([]dbstore.Dump, error) {
 		return r0, r1
 	})
 }
 
-func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) nextHook() func(context.Context, int, string, string, bool, string, map[string][]string) ([]dbstore.Dump, error) {
+func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) nextHook() func(context.Context, int, string, string, bool, string, *gitserver.CommitGraph) ([]dbstore.Dump, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1467,7 +1492,7 @@ type DBStoreFindClosestDumpsFromGraphFragmentFuncCall struct {
 	Arg5 string
 	// Arg6 is the value of the 7th argument passed to this method
 	// invocation.
-	Arg6 map[string][]string
+	Arg6 *gitserver.CommitGraph
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []dbstore.Dump
@@ -1709,6 +1734,123 @@ func (c DBStoreGetIndexByIDFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBStoreGetIndexByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// DBStoreGetIndexConfigurationByRepositoryIDFunc describes the behavior
+// when the GetIndexConfigurationByRepositoryID method of the parent
+// MockDBStore instance is invoked.
+type DBStoreGetIndexConfigurationByRepositoryIDFunc struct {
+	defaultHook func(context.Context, int) (dbstore.IndexConfiguration, bool, error)
+	hooks       []func(context.Context, int) (dbstore.IndexConfiguration, bool, error)
+	history     []DBStoreGetIndexConfigurationByRepositoryIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetIndexConfigurationByRepositoryID delegates to the next hook function
+// in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockDBStore) GetIndexConfigurationByRepositoryID(v0 context.Context, v1 int) (dbstore.IndexConfiguration, bool, error) {
+	r0, r1, r2 := m.GetIndexConfigurationByRepositoryIDFunc.nextHook()(v0, v1)
+	m.GetIndexConfigurationByRepositoryIDFunc.appendCall(DBStoreGetIndexConfigurationByRepositoryIDFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// GetIndexConfigurationByRepositoryID method of the parent MockDBStore
+// instance is invoked and the hook queue is empty.
+func (f *DBStoreGetIndexConfigurationByRepositoryIDFunc) SetDefaultHook(hook func(context.Context, int) (dbstore.IndexConfiguration, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetIndexConfigurationByRepositoryID method of the parent MockDBStore
+// instance inovkes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *DBStoreGetIndexConfigurationByRepositoryIDFunc) PushHook(hook func(context.Context, int) (dbstore.IndexConfiguration, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreGetIndexConfigurationByRepositoryIDFunc) SetDefaultReturn(r0 dbstore.IndexConfiguration, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (dbstore.IndexConfiguration, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreGetIndexConfigurationByRepositoryIDFunc) PushReturn(r0 dbstore.IndexConfiguration, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (dbstore.IndexConfiguration, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *DBStoreGetIndexConfigurationByRepositoryIDFunc) nextHook() func(context.Context, int) (dbstore.IndexConfiguration, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreGetIndexConfigurationByRepositoryIDFunc) appendCall(r0 DBStoreGetIndexConfigurationByRepositoryIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// DBStoreGetIndexConfigurationByRepositoryIDFuncCall objects describing the
+// invocations of this function.
+func (f *DBStoreGetIndexConfigurationByRepositoryIDFunc) History() []DBStoreGetIndexConfigurationByRepositoryIDFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreGetIndexConfigurationByRepositoryIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreGetIndexConfigurationByRepositoryIDFuncCall is an object that
+// describes an invocation of method GetIndexConfigurationByRepositoryID on
+// an instance of MockDBStore.
+type DBStoreGetIndexConfigurationByRepositoryIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 dbstore.IndexConfiguration
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreGetIndexConfigurationByRepositoryIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreGetIndexConfigurationByRepositoryIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
@@ -2848,6 +2990,120 @@ func (c DBStoreSameRepoPagerFuncCall) Args() []interface{} {
 // invocation.
 func (c DBStoreSameRepoPagerFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// DBStoreUpdateIndexConfigurationByRepositoryIDFunc describes the behavior
+// when the UpdateIndexConfigurationByRepositoryID method of the parent
+// MockDBStore instance is invoked.
+type DBStoreUpdateIndexConfigurationByRepositoryIDFunc struct {
+	defaultHook func(context.Context, int, []byte) error
+	hooks       []func(context.Context, int, []byte) error
+	history     []DBStoreUpdateIndexConfigurationByRepositoryIDFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateIndexConfigurationByRepositoryID delegates to the next hook
+// function in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockDBStore) UpdateIndexConfigurationByRepositoryID(v0 context.Context, v1 int, v2 []byte) error {
+	r0 := m.UpdateIndexConfigurationByRepositoryIDFunc.nextHook()(v0, v1, v2)
+	m.UpdateIndexConfigurationByRepositoryIDFunc.appendCall(DBStoreUpdateIndexConfigurationByRepositoryIDFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// UpdateIndexConfigurationByRepositoryID method of the parent MockDBStore
+// instance is invoked and the hook queue is empty.
+func (f *DBStoreUpdateIndexConfigurationByRepositoryIDFunc) SetDefaultHook(hook func(context.Context, int, []byte) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateIndexConfigurationByRepositoryID method of the parent MockDBStore
+// instance inovkes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *DBStoreUpdateIndexConfigurationByRepositoryIDFunc) PushHook(hook func(context.Context, int, []byte) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreUpdateIndexConfigurationByRepositoryIDFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, []byte) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreUpdateIndexConfigurationByRepositoryIDFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, []byte) error {
+		return r0
+	})
+}
+
+func (f *DBStoreUpdateIndexConfigurationByRepositoryIDFunc) nextHook() func(context.Context, int, []byte) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreUpdateIndexConfigurationByRepositoryIDFunc) appendCall(r0 DBStoreUpdateIndexConfigurationByRepositoryIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// DBStoreUpdateIndexConfigurationByRepositoryIDFuncCall objects describing
+// the invocations of this function.
+func (f *DBStoreUpdateIndexConfigurationByRepositoryIDFunc) History() []DBStoreUpdateIndexConfigurationByRepositoryIDFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreUpdateIndexConfigurationByRepositoryIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreUpdateIndexConfigurationByRepositoryIDFuncCall is an object that
+// describes an invocation of method UpdateIndexConfigurationByRepositoryID
+// on an instance of MockDBStore.
+type DBStoreUpdateIndexConfigurationByRepositoryIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []byte
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreUpdateIndexConfigurationByRepositoryIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreUpdateIndexConfigurationByRepositoryIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // MockLSIFStore is a mock implementation of the LSIFStore interface (from

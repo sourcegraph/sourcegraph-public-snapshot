@@ -9,13 +9,12 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/authz"
 	frontendAuthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
-	campaignsBackground "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/background"
+	codemonitorsBackground "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -25,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -44,14 +44,9 @@ func enterpriseInit(
 ) (debugDumpers []debugserver.Dumper) {
 	ctx := context.Background()
 
-	campaignsStore := campaigns.NewStoreWithClock(db, timeutil.Now)
+	codemonitorsBackground.StartBackgroundJobs(ctx, db)
 
-	syncRegistry := campaigns.NewSyncRegistry(ctx, campaignsStore, repoStore, cf)
-	if server != nil {
-		server.ChangesetSyncRegistry = syncRegistry
-	}
-
-	campaignsBackground.StartBackgroundJobs(ctx, db, campaignsStore, repoStore, cf)
+	campaigns.InitBackgroundJobs(ctx, db, repoStore, cf, server)
 
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db

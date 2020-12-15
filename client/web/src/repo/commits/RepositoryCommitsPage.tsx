@@ -13,7 +13,7 @@ import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
 import { RevisionSpec, ResolvedRevisionSpec } from '../../../../shared/src/util/url'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { GitCommitFields } from '../../graphql-operations'
+import { GitCommitFields, RepositoryFields } from '../../graphql-operations'
 import { externalLinkFieldsFragment } from '../backend'
 
 export const gitCommitFragment = gql`
@@ -109,7 +109,7 @@ interface Props
         Partial<RevisionSpec>,
         ResolvedRevisionSpec,
         BreadcrumbSetters {
-    repo: GQL.IRepository
+    repo: RepositoryFields
 
     history: H.History
     location: H.Location

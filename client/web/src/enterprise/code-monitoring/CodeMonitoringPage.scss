@@ -1,0 +1,55 @@
+.code-monitoring-page {
+    .theme-light & {
+        h3,
+        h4 {
+            // Overriding the custom header colors in web-content styles.
+            color: var(--body-color);
+        }
+    }
+    .theme-dark & {
+        h3,
+        h4 {
+            // Overriding the custom header colors in web-content styles.
+            color: var(--body-color);
+        }
+    }
+
+    &__start {
+        &-subheading {
+            font-size: 16px;
+        }
+
+        &-button {
+            width: fit-content;
+        }
+
+        &-points {
+            color: var(--body-color);
+            padding-right: 0;
+            padding-left: 0;
+
+            &-panel {
+                &-container {
+                    .col,
+                    [class*='col-'] {
+                        &:first-child {
+                            padding-right: 0.75rem;
+                        }
+                        &:not(:first-child) {
+                            padding-left: 0.75rem;
+                        }
+                    }
+                }
+
+                border: 1px solid var(--border-color);
+                border-radius: 4px;
+                padding: 1rem;
+            }
+        }
+    }
+
+    &__learn-more {
+        padding-right: 0;
+        padding-left: 0;
+    }
+}

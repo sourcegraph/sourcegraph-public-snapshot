@@ -24,7 +24,7 @@ export const FilePathBreadcrumbs: React.FunctionComponent<
     }
     const partToClassName = (index: number): string =>
         index === parts.length - 1
-            ? 'part-last test-breadcrumb-part-last'
+            ? 'font-weight-bold test-breadcrumb-part-last'
             : 'part-directory test-breadcrumb-part-directory'
 
     const spans: JSX.Element[] = []

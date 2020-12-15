@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 
 	"github.com/graph-gophers/graphql-go"
@@ -42,7 +41,7 @@ type GitCommitResolver struct {
 	// oid MUST be specified and a 40-character Git SHA.
 	oid GitObjectID
 
-	gitRepo gitserver.Repo
+	gitRepo api.RepoName
 
 	commitOnce sync.Once
 	commit     *git.Commit
@@ -55,7 +54,7 @@ func toGitCommitResolver(repo *RepositoryResolver, id api.CommitID, commit *git.
 	return &GitCommitResolver{
 		repoResolver:    repo,
 		includeUserInfo: true,
-		gitRepo:         gitserver.Repo{Name: repo.repo.Name},
+		gitRepo:         repo.repo.Name,
 		oid:             GitObjectID(id),
 		commit:          commit,
 	}
@@ -68,7 +67,7 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*git.Commit, err
 		}
 
 		opts := git.ResolveRevisionOptions{}
-		r.commit, r.commitErr = git.GetCommit(ctx, r.gitRepo, nil, api.CommitID(r.oid), opts)
+		r.commit, r.commitErr = git.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts)
 	})
 	return r.commit, r.commitErr
 }

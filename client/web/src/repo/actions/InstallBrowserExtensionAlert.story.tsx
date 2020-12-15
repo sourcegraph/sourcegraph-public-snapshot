@@ -24,13 +24,7 @@ for (const serviceType of services) {
                         isChrome={true}
                         onAlertDismissed={onAlertDismissed}
                         codeHostIntegrationMessaging="browser-extension"
-                        externalURLs={[
-                            {
-                                __typename: 'ExternalLink',
-                                url: '',
-                                serviceType,
-                            },
-                        ]}
+                        externalURLs={[{ url: '', serviceType }]}
                     />
                 )}
             </WebStory>
@@ -51,13 +45,7 @@ for (const serviceType of services) {
                         isChrome={false}
                         onAlertDismissed={onAlertDismissed}
                         codeHostIntegrationMessaging="browser-extension"
-                        externalURLs={[
-                            {
-                                __typename: 'ExternalLink',
-                                url: '',
-                                serviceType,
-                            },
-                        ]}
+                        externalURLs={[{ url: '', serviceType }]}
                     />
                 )}
             </WebStory>
@@ -78,13 +66,7 @@ for (const serviceType of services) {
                         isChrome={false}
                         onAlertDismissed={onAlertDismissed}
                         codeHostIntegrationMessaging="native-integration"
-                        externalURLs={[
-                            {
-                                __typename: 'ExternalLink',
-                                url: '',
-                                serviceType,
-                            },
-                        ]}
+                        externalURLs={[{ url: '', serviceType }]}
                     />
                 )}
             </WebStory>

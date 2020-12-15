@@ -12,16 +12,24 @@ interface Props {
 
     className?: string
 
+    repoClassName?: string
+
     onClick?: React.MouseEventHandler<HTMLElement>
 }
 
-export const RepoLink: React.FunctionComponent<Props> = ({ repoName: fullRepoName, to, className, onClick }) => {
+export const RepoLink: React.FunctionComponent<Props> = ({
+    repoName: fullRepoName,
+    to,
+    className,
+    onClick,
+    repoClassName,
+}) => {
     const [repoBase, repoName] = splitPath(displayRepoName(fullRepoName))
     const children = (
         <>
             {' '}
             {repoBase ? `${repoBase}/` : null}
-            <strong>{repoName}</strong>
+            <span className={repoClassName}>{repoName}</span>
         </>
     )
     if (to === null) {

@@ -51,7 +51,13 @@ const nodes: ChangesetFields[] = [
             },
             reviewState: ChangesetReviewState.COMMENTED,
             error: null,
-            currentSpec: { id: 'spec-rand-id-1' },
+            currentSpec: {
+                id: 'spec-rand-id-1',
+                description: {
+                    __typename: 'GitBranchChangesetDescription',
+                    headRef: 'my-branch',
+                },
+            },
         })
     ),
     ...Object.values(ChangesetExternalState).map(

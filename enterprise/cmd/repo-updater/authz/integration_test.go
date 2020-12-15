@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	extsvcGitHub "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -87,7 +87,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	authz.SetProviders(false, []authz.Provider{provider})
 	defer authz.SetProviders(true, nil)
 
-	repo := repos.Repo{
+	repo := types.Repo{
 		Name:    "github.com/sourcegraph-vcr-repos/private-org-repo-1",
 		Private: true,
 		URI:     "github.com/sourcegraph-vcr-repos/private-org-repo-1",
@@ -95,7 +95,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
-		Sources: map[string]*repos.SourceInfo{
+		Sources: map[string]*types.SourceInfo{
 			svc.URN(): {
 				ID: svc.URN(),
 			},

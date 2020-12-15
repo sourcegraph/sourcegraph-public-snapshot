@@ -26,11 +26,15 @@ type MonitorRegistry struct {
 	monitors map[string]*Monitor
 }
 
-// GetOrSet fetches the rate limit monitor associated with the given code host / token tuple.
-// If none has been configured yet, the provided monitor will be set.
-func (r *MonitorRegistry) GetOrSet(baseURL, authHash string, monitor *Monitor) *Monitor {
+// GetOrSet fetches the rate limit monitor associated with the given code host /
+// token tuple and an optional resource key. If none has been configured yet, the
+// provided monitor will be set.
+func (r *MonitorRegistry) GetOrSet(baseURL, authHash, resource string, monitor *Monitor) *Monitor {
 	baseURL = normaliseURL(baseURL)
 	key := baseURL + ":" + authHash
+	if len(resource) > 0 {
+		key = key + ":" + resource
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if _, ok := r.monitors[key]; !ok {

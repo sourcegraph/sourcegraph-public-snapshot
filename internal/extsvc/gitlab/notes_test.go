@@ -141,13 +141,6 @@ func TestGetMergeRequestNotes(t *testing.T) {
 	})
 }
 
-func TestNoteKey(t *testing.T) {
-	note := &Note{ID: 42}
-	if have, want := note.Key(), "Note:42"; have != want {
-		t.Errorf("incorrect note key: have %s; want %s", have, want)
-	}
-}
-
 func TestNoteToEvent(t *testing.T) {
 	t.Run("non-system note", func(t *testing.T) {
 		note := &Note{System: false}

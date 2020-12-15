@@ -135,12 +135,7 @@ func searchResultsStatsLanguages(ctx context.Context, results []SearchResultReso
 		goroutine.Go(func() {
 			defer run.Release()
 
-			cachedRepo, err := backend.CachedGitRepo(ctx, repos[key.repo])
-			if err != nil {
-				run.Error(err)
-				return
-			}
-			invCtx, err := backend.InventoryContext(*cachedRepo, key.commitID, true)
+			invCtx, err := backend.InventoryContext(repos[key.repo].Name, key.commitID, true)
 			if err != nil {
 				run.Error(err)
 				return

@@ -11,6 +11,7 @@ import { BreadcrumbsProps, BreadcrumbSetters, Breadcrumbs } from '../../../compo
 import { lazyComponent } from '../../../util/lazyComponent'
 import { CodeMonitoringPageProps } from '../CodeMonitoringPage'
 import { CreateCodeMonitorPageProps } from '../CreateCodeMonitorPage'
+import { ManageCodeMonitorPageProps } from '../ManageCodeMonitorPage'
 
 interface Props
     extends RouteComponentProps<{}>,
@@ -32,6 +33,11 @@ const CodeMonitoringPage = lazyComponent<CodeMonitoringPageProps, 'CodeMonitorin
 const CreateCodeMonitorPage = lazyComponent<CreateCodeMonitorPageProps, 'CreateCodeMonitorPage'>(
     () => import('../CreateCodeMonitorPage'),
     'CreateCodeMonitorPage'
+)
+
+const ManageCodeMonitorPage = lazyComponent<ManageCodeMonitorPageProps, 'ManageCodeMonitorPage'>(
+    () => import('../ManageCodeMonitorPage'),
+    'ManageCodeMonitorPage'
 )
 
 /**
@@ -70,6 +76,11 @@ export const AuthenticatedCodeMonitoringArea = withAuthenticatedUser<Authenticat
                     <Route
                         path={`${match.url}/new`}
                         render={props => <CreateCodeMonitorPage {...outerProps} {...props} {...breadcrumbSetters} />}
+                        exact={true}
+                    />
+                    <Route
+                        path={`${match.path}/:id`}
+                        render={props => <ManageCodeMonitorPage {...outerProps} {...props} {...breadcrumbSetters} />}
                         exact={true}
                     />
                 </Switch>

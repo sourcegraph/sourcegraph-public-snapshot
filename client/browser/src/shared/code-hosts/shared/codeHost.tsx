@@ -105,7 +105,6 @@ import {
 } from './nativeTooltips'
 import { handleTextFields, TextField } from './textFields'
 import { delayUntilIntersecting, ViewResolver } from './views'
-import { IS_LIGHT_THEME } from './consts'
 import { NotificationType, HoverAlert } from 'sourcegraph'
 import { isHTTPAuthError } from '../../../../../shared/src/backend/fetch'
 import { asError } from '../../../../../shared/src/util/errors'
@@ -116,6 +115,7 @@ import { isFirefox, observeSourcegraphURL } from '../../util/context'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
 import { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
 import { background } from '../../../browser-extension/web-extension-api/runtime'
+import { ThemeProps } from '../../../../../shared/src/theme'
 
 registerHighlightContributions()
 
@@ -161,6 +161,12 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Basic contextual information for the current code host.
      */
     getContext?: () => CodeHostContext
+
+    /**
+     * An Observable for whether the code host is in light theme (vs dark theme).
+     * Defaults to always light theme.
+     */
+    isLightTheme?: Observable<boolean>
 
     /**
      * Mount getter for the repository "View on Sourcegraph" button.
@@ -317,7 +323,7 @@ export interface CodeIntelligenceProps extends TelemetryProps {
 
 export const createOverlayMount = (codeHostName: string, container: HTMLElement): HTMLElement => {
     const mount = document.createElement('div')
-    mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`, 'theme-light')
+    mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`)
     container.append(mount)
     return mount
 }
@@ -426,21 +432,34 @@ function initCodeIntelligence({
         tokenize: codeHost.codeViewsRequireTokenization,
     })
 
-    class HoverOverlayContainer extends React.Component<{}, HoverState<HoverContext, HoverMerged, ActionItemAction>> {
+    class HoverOverlayContainer extends React.Component<
+        {},
+        HoverState<HoverContext, HoverMerged, ActionItemAction> & ThemeProps
+    > {
         private subscription = new Subscription()
         private nextOverlayElement = hoverOverlayElements.next.bind(hoverOverlayElements)
         private nextCloseButtonClick = closeButtonClicks.next.bind(closeButtonClicks)
 
         constructor(props: {}) {
             super(props)
-            this.state = hoverifier.hoverState
+            this.state = {
+                ...hoverifier.hoverState,
+                isLightTheme: true,
+            }
+        }
+        public componentDidMount(): void {
             this.subscription.add(
                 hoverifier.hoverStateUpdates.subscribe(update => {
                     this.setState(update)
                 })
             )
-        }
-        public componentDidMount(): void {
+            if (codeHost.isLightTheme) {
+                this.subscription.add(
+                    codeHost.isLightTheme.subscribe(isLightTheme => {
+                        this.setState({ isLightTheme })
+                    })
+                )
+            }
             containerComponentUpdates.next()
         }
         public componentWillUnmount(): void {
@@ -456,7 +475,7 @@ function initCodeIntelligence({
                     {...hoverOverlayProps}
                     {...codeHost.hoverOverlayClassProps}
                     telemetryService={telemetryService}
-                    isLightTheme={IS_LIGHT_THEME}
+                    isLightTheme={this.state.isLightTheme}
                     hoverRef={this.nextOverlayElement}
                     extensionsController={extensionsController}
                     platformContext={platformContext}
@@ -948,28 +967,36 @@ export function handleCodeHost({
 
             const applyDecorationsForFileInfo = (fileInfo: FileInfoWithContent, diffPart?: DiffPart): void => {
                 let decorationsByLine: DecorationMapByLine = new Map()
-                const update = (decorations?: TextDocumentDecoration[] | null): void => {
+                let previousIsLightTheme = true
+                const update = (decorations?: TextDocumentDecoration[] | null, isLightTheme?: boolean): void => {
                     try {
                         decorationsByLine = applyDecorations(
                             domFunctions,
                             element,
-                            decorations || [],
+                            decorations ?? [],
                             decorationsByLine,
+                            isLightTheme ?? true,
+                            previousIsLightTheme,
                             diffPart
                         )
+                        previousIsLightTheme = isLightTheme ?? true
                     } catch (error) {
                         console.error('Could not apply decorations to code view', codeViewEvent.element, error)
                     }
                 }
                 codeViewEvent.subscriptions.add(
-                    extensionsController.services.textDocumentDecoration
-                        .getDecorations(toTextDocumentIdentifier(fileInfo))
+                    combineLatest([
+                        extensionsController.services.textDocumentDecoration.getDecorations(
+                            toTextDocumentIdentifier(fileInfo)
+                        ),
+                        codeHost.isLightTheme ?? of(true),
+                    ])
                         // Make sure extensions get cleaned up un unsubscription
                         .pipe(finalize(update))
                         // The nested subscribe cannot be replaced with a switchMap()
                         // We manage the subscription correctly.
                         // eslint-disable-next-line rxjs/no-nested-subscribe
-                        .subscribe(update)
+                        .subscribe(([decorations, isLightTheme]) => update(decorations, isLightTheme))
                 )
             }
 

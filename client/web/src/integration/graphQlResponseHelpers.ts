@@ -1,4 +1,4 @@
-import { encodeURIComponentExceptSlashes } from '../../../shared/src/util/url'
+import { encodeURIPathComponent } from '../../../shared/src/util/url'
 import {
     TreeEntriesResult,
     BlobResult,
@@ -65,8 +65,8 @@ export const createRepositoryRedirectResult = (
         __typename: 'Repository',
         id: `RepositoryID:${repoName}`,
         name: repoName,
-        url: `/${encodeURIComponentExceptSlashes(repoName)}`,
-        externalURLs: [{ url: new URL(`https://${encodeURIComponentExceptSlashes(repoName)}`).href, serviceType }],
+        url: `/${encodeURIPathComponent(repoName)}`,
+        externalURLs: [{ url: new URL(`https://${encodeURIPathComponent(repoName)}`).href, serviceType }],
         description: 'bla',
         viewerCanAdminister: false,
         defaultBranch: { displayName: 'master' },
@@ -79,7 +79,7 @@ export const createResolveRevisionResult = (treeUrl: string, oid = '1'.repeat(40
         mirrorInfo: { cloneInProgress: false, cloneProgress: '', cloned: true },
         commit: {
             oid,
-            tree: { url: treeUrl },
+            tree: { url: '/' + treeUrl },
         },
         defaultBranch: { abbrevName: 'master' },
     },
