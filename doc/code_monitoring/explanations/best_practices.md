@@ -1,6 +1,6 @@
 # Best practices
 
-There are some best practices we recommend when creating code monitros.
+There are some best practices we recommend when creating code monitors.
 
 ## Privacy and visibility
 
