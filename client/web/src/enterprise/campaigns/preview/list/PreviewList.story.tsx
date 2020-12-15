@@ -2,7 +2,7 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { PreviewList } from './PreviewList'
 import { of, Observable } from 'rxjs'
-import { CampaignSpecChangesetSpecsResult, ChangesetApplyPreviewFields } from '../../../../graphql-operations'
+import { CampaignSpecApplyPreviewConnectionFields, ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { visibleChangesetApplyPreviewNodeStories } from './VisibleChangesetApplyPreviewNode.story'
 import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
@@ -20,9 +20,7 @@ const nodes: ChangesetApplyPreviewFields[] = [
     ...Object.values(hiddenChangesetApplyPreviewStories),
 ]
 
-const queryChangesetSpecs = (): Observable<
-    (CampaignSpecChangesetSpecsResult['node'] & { __typename: 'CampaignSpec' })['applyPreview']
-> =>
+const queryChangesetApplyPreview = (): Observable<CampaignSpecApplyPreviewConnectionFields> =>
     of({
         pageInfo: {
             endCursor: null,
@@ -41,7 +39,7 @@ add('List view', () => (
             <PreviewList
                 {...props}
                 campaignSpecID="123123"
-                queryChangesetSpecs={queryChangesetSpecs}
+                queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
             />
         )}

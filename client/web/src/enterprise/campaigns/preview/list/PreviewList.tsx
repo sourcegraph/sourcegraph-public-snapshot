@@ -3,7 +3,7 @@ import * as H from 'history'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { ChangesetApplyPreviewFields, Scalars } from '../../../../graphql-operations'
-import { queryChangesetSpecs as _queryChangesetSpecs, queryChangesetSpecFileDiffs } from './backend'
+import { queryChangesetApplyPreview as _queryChangesetApplyPreview, queryChangesetSpecFileDiffs } from './backend'
 import { ChangesetApplyPreviewNode, ChangesetApplyPreviewNodeProps } from './ChangesetApplyPreviewNode'
 import { PreviewListHeader } from './PreviewListHeader'
 import { EmptyPreviewListElement } from './EmptyPreviewListElement'
@@ -14,7 +14,7 @@ interface Props extends ThemeProps {
     location: H.Location
 
     /** For testing only. */
-    queryChangesetSpecs?: typeof _queryChangesetSpecs
+    queryChangesetApplyPreview?: typeof _queryChangesetApplyPreview
     /** For testing only. */
     queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
     /** Expand changeset descriptions, for testing only. */
@@ -30,18 +30,18 @@ export const PreviewList: React.FunctionComponent<Props> = ({
     location,
     isLightTheme,
 
-    queryChangesetSpecs = _queryChangesetSpecs,
+    queryChangesetApplyPreview = _queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
 }) => {
-    const queryChangesetSpecsConnection = useCallback(
+    const queryChangesetApplyPreviewConnection = useCallback(
         (args: FilteredConnectionQueryArguments) =>
-            queryChangesetSpecs({
+            queryChangesetApplyPreview({
                 first: args.first ?? null,
                 after: args.after ?? null,
                 campaignSpec: campaignSpecID,
             }),
-        [campaignSpecID, queryChangesetSpecs]
+        [campaignSpecID, queryChangesetApplyPreview]
     )
 
     return (
@@ -58,7 +58,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                     queryChangesetSpecFileDiffs,
                     expandChangesetDescriptions,
                 }}
-                queryConnection={queryChangesetSpecsConnection}
+                queryConnection={queryChangesetApplyPreviewConnection}
                 hideSearch={true}
                 defaultFirst={15}
                 noun="changeset"

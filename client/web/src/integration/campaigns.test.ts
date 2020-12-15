@@ -552,7 +552,7 @@ describe('Campaigns', () => {
                             },
                         },
                     }),
-                    CampaignSpecChangesetSpecs: () => ({
+                    CampaignSpecApplyPreview: () => ({
                         node: {
                             __typename: 'CampaignSpec',
                             applyPreview: {

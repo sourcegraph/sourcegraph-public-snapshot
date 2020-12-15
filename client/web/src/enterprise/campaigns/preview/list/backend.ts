@@ -1,11 +1,12 @@
 import { diffStatFields, fileDiffFields } from '../../../../backend/diff'
 import { gql, dataOrThrowErrors } from '../../../../../../shared/src/graphql/graphql'
 import {
-    CampaignSpecChangesetSpecsResult,
-    CampaignSpecChangesetSpecsVariables,
     ChangesetSpecFileDiffsVariables,
     ChangesetSpecFileDiffsResult,
     ChangesetSpecFileDiffsFields,
+    CampaignSpecApplyPreviewConnectionFields,
+    CampaignSpecApplyPreviewResult,
+    CampaignSpecApplyPreviewVariables,
 } from '../../../../graphql-operations'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -13,7 +14,6 @@ import { requestGraphQL } from '../../../../backend/graphql'
 
 export const changesetSpecFieldsFragment = gql`
     fragment CommonChangesetSpecFields on ChangesetSpec {
-        expiresAt
         type
     }
 
@@ -74,30 +74,32 @@ export const changesetSpecFieldsFragment = gql`
     ${diffStatFields}
 `
 
-export const queryChangesetSpecs = ({
+export const queryChangesetApplyPreview = ({
     campaignSpec,
     first,
     after,
-}: CampaignSpecChangesetSpecsVariables): Observable<
-    (CampaignSpecChangesetSpecsResult['node'] & { __typename: 'CampaignSpec' })['applyPreview']
-> =>
-    requestGraphQL<CampaignSpecChangesetSpecsResult, CampaignSpecChangesetSpecsVariables>(
+}: CampaignSpecApplyPreviewVariables): Observable<CampaignSpecApplyPreviewConnectionFields> =>
+    requestGraphQL<CampaignSpecApplyPreviewResult, CampaignSpecApplyPreviewVariables>(
         gql`
-            query CampaignSpecChangesetSpecs($campaignSpec: ID!, $first: Int, $after: String) {
+            query CampaignSpecApplyPreview($campaignSpec: ID!, $first: Int, $after: String) {
                 node(id: $campaignSpec) {
                     __typename
                     ... on CampaignSpec {
                         applyPreview(first: $first, after: $after) {
-                            totalCount
-                            pageInfo {
-                                endCursor
-                                hasNextPage
-                            }
-                            nodes {
-                                ...ChangesetApplyPreviewFields
-                            }
+                            ...CampaignSpecApplyPreviewConnectionFields
                         }
                     }
+                }
+            }
+
+            fragment CampaignSpecApplyPreviewConnectionFields on ChangesetApplyPreviewConnection {
+                totalCount
+                pageInfo {
+                    endCursor
+                    hasNextPage
+                }
+                nodes {
+                    ...ChangesetApplyPreviewFields
                 }
             }
 
@@ -113,10 +115,6 @@ export const queryChangesetSpecs = ({
 
             fragment HiddenChangesetApplyPreviewFields on HiddenChangesetApplyPreview {
                 __typename
-                # operations
-                # delta {
-                #     titleChanged
-                # }
                 targets {
                     __typename
                     ... on HiddenApplyPreviewTargetsAttach {
@@ -196,7 +194,7 @@ export const queryChangesetSpecs = ({
         })
     )
 
-export const changesetSpecFileDiffsFields = gql`
+const changesetSpecFileDiffsFields = gql`
     fragment ChangesetSpecFileDiffsFields on VisibleChangesetSpec {
         description {
             __typename

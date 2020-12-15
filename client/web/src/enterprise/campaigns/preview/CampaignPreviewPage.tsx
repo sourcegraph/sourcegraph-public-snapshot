@@ -18,7 +18,7 @@ import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetrySer
 import { AuthenticatedUser } from '../../../auth'
 import { MissingCredentialsAlert } from './MissingCredentialsAlert'
 import { SupersedingCampaignSpecAlert } from '../detail/SupersedingCampaignSpecAlert'
-import { queryChangesetSpecFileDiffs, queryChangesetSpecs } from './list/backend'
+import { queryChangesetSpecFileDiffs, queryChangesetApplyPreview } from './list/backend'
 
 export interface CampaignPreviewPageProps extends ThemeProps, TelemetryProps {
     campaignSpecID: string
@@ -29,7 +29,7 @@ export interface CampaignPreviewPageProps extends ThemeProps, TelemetryProps {
     /** Used for testing. */
     fetchCampaignSpecById?: typeof _fetchCampaignSpecById
     /** Used for testing. */
-    queryChangesetSpecs?: typeof queryChangesetSpecs
+    queryChangesetApplyPreview?: typeof queryChangesetApplyPreview
     /** Used for testing. */
     queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
     /** Expand changeset descriptions, for testing only. */
@@ -44,7 +44,7 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
     isLightTheme,
     telemetryService,
     fetchCampaignSpecById = _fetchCampaignSpecById,
-    queryChangesetSpecs,
+    queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
 }) => {
@@ -101,7 +101,7 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
                 history={history}
                 location={location}
                 isLightTheme={isLightTheme}
-                queryChangesetSpecs={queryChangesetSpecs}
+                queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                 expandChangesetDescriptions={expandChangesetDescriptions}
             />
