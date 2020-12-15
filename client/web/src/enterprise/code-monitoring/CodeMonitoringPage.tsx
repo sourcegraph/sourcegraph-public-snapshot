@@ -244,6 +244,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                     hideSearch={true}
                                     nodeComponent={CodeMonitorNode}
                                     nodeComponentProps={{
+                                        authentictedUser: props.authenticatedUser,
                                         location: props.location,
                                         toggleCodeMonitorEnabled,
                                     }}

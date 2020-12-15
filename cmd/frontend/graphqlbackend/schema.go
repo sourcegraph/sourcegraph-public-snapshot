@@ -825,6 +825,16 @@ type Mutation {
         """
         actions: [MonitorEditActionInput!]!
     ): Monitor!
+    """
+    Reset the timestamps of a trigger query. The query will be queued immediately and return
+    all results without a limit on the timeframe. Only site admins may perform this mutation.
+    """
+    resetTriggerQueryTimestamps(
+        """
+        The id of the trigger query.
+        """
+        id: ID!
+    ): EmptyResponse!
 }
 
 """

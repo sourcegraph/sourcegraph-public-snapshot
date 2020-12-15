@@ -237,16 +237,14 @@ func (r *actionRunner) Handle(ctx context.Context, workerStore dbworkerstore.Sto
 	return nil
 }
 
+// newQueryWithAfterFilter constructs a new query which finds search results
+// introduced after the last time we queried.
 func newQueryWithAfterFilter(q *cm.MonitorQuery) string {
-	// Construct a new query which finds search results introduced after the last
-	// time we queried.
-	var latestResult time.Time
-	if q.LatestResult != nil {
-		latestResult = *q.LatestResult
-	} else {
-		// We've never executed this search query before, so use the current
-		// time. We'll most certainly find nothing, which is okay.
-		latestResult = time.Now()
+	// For q.LatestResult = nil we return a query string without after: filter, which
+	// effectively triggers actions immediately provided the query returns any
+	// results.
+	if q.LatestResult == nil {
+		return q.QueryString
 	}
 	// ATTENTION: This is a stop gap. Add(time.Second) is necessary because currently
 	// the after: filter is implemented as "at OR after". If we didn't add a second
@@ -254,7 +252,7 @@ func newQueryWithAfterFilter(q *cm.MonitorQuery) string {
 	// result. This means there is non-zero chance that we miss results whenever
 	// commits have a timestamp equal to the value of :after but arrive after this
 	// job has run.
-	afterTime := latestResult.UTC().Add(time.Second).Format(time.RFC3339)
+	afterTime := (*q.LatestResult).UTC().Add(time.Second).Format(time.RFC3339)
 	return strings.Join([]string{q.QueryString, fmt.Sprintf(`after:"%s"`, afterTime)}, " ")
 }
 

@@ -164,6 +164,27 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	return m, nil
 }
 
+// ResetTriggerQueryTimestamps is a convenience function which resets the
+// timestamps `next_run` and `last_result` with the purpose to trigger associated
+// actions (emails, webhooks) immediately. This is useful during development and
+// troubleshooting. Only site admins can call this functions.
+func (r *Resolver) ResetTriggerQueryTimestamps(ctx context.Context, args *graphqlbackend.ResetTriggerQueryTimestampsArgs) (*graphqlbackend.EmptyResponse, error) {
+	err := backend.CheckCurrentUserIsSiteAdmin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var queryIDInt64 int64
+	err = relay.UnmarshalSpec(args.Id, &queryIDInt64)
+	if err != nil {
+		return nil, err
+	}
+	err = r.store.ResetTriggerQueryTimestamps(ctx, queryIDInt64)
+	if err != nil {
+		return nil, err
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
 func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) (actionIDs []graphql.ID, err error) {
 	limit := 50
 	var (

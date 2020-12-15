@@ -170,6 +170,11 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
             nodeComponent={[Function]}
             nodeComponentProps={
               Object {
+                "authentictedUser": Object {
+                  "email": "alice@alice.com",
+                  "id": "foobar",
+                  "username": "alice",
+                },
                 "location": "[Location path=/code-monitoring]",
                 "toggleCodeMonitorEnabled": [Function],
               }
@@ -462,6 +467,11 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                 nodeComponent={[Function]}
                 nodeComponentProps={
                   Object {
+                    "authentictedUser": Object {
+                      "email": "alice@alice.com",
+                      "id": "foobar",
+                      "username": "alice",
+                    },
                     "location": "[Location path=/code-monitoring]",
                     "toggleCodeMonitorEnabled": [Function],
                   }
@@ -475,6 +485,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                   className="filtered-connection__nodes "
                 >
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo0"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -522,9 +539,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -578,6 +596,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo1"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -625,9 +650,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Second test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -681,6 +707,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo2"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -728,9 +761,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Third test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -784,6 +818,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo3"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -831,9 +872,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Fourth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -887,6 +929,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo4"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -934,9 +983,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Fifth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -990,6 +1040,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo5"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1037,9 +1094,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Sixth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -1093,6 +1151,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo6"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1140,9 +1205,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Seventh test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -1196,6 +1262,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo7"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1243,9 +1316,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Eighth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -1299,6 +1373,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo9"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1346,9 +1427,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Ninth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -1402,6 +1484,13 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo10"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1449,9 +1538,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             Tenth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -1696,6 +1786,11 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
             nodeComponent={[Function]}
             nodeComponentProps={
               Object {
+                "authentictedUser": Object {
+                  "email": "alice@alice.com",
+                  "id": "foobar",
+                  "username": "alice",
+                },
                 "location": "[Location path=/code-monitoring]",
                 "toggleCodeMonitorEnabled": [Function],
               }
@@ -1806,6 +1901,11 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                 nodeComponent={[Function]}
                 nodeComponentProps={
                   Object {
+                    "authentictedUser": Object {
+                      "email": "alice@alice.com",
+                      "id": "foobar",
+                      "username": "alice",
+                    },
                     "location": "[Location path=/code-monitoring]",
                     "toggleCodeMonitorEnabled": [Function],
                   }
@@ -1819,6 +1919,13 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                   className="filtered-connection__nodes "
                 >
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo0"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1866,9 +1973,10 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             Test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -1922,6 +2030,13 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo1"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -1969,9 +2084,10 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             Second test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -2025,6 +2141,13 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo2"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -2072,9 +2195,10 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             Third test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -2319,6 +2443,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
             nodeComponent={[Function]}
             nodeComponentProps={
               Object {
+                "authentictedUser": Object {
+                  "email": "alice@alice.com",
+                  "id": "foobar",
+                  "username": "alice",
+                },
                 "location": "[Location path=/code-monitoring]",
                 "toggleCodeMonitorEnabled": [Function],
               }
@@ -2663,6 +2792,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                 nodeComponent={[Function]}
                 nodeComponentProps={
                   Object {
+                    "authentictedUser": Object {
+                      "email": "alice@alice.com",
+                      "id": "foobar",
+                      "username": "alice",
+                    },
                     "location": "[Location path=/code-monitoring]",
                     "toggleCodeMonitorEnabled": [Function],
                   }
@@ -2676,6 +2810,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                   className="filtered-connection__nodes "
                 >
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo0"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -2723,9 +2864,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -2779,6 +2921,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo1"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -2826,9 +2975,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Second test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -2882,6 +3032,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo2"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -2929,9 +3086,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Third test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -2985,6 +3143,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo3"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3032,9 +3197,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Fourth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -3088,6 +3254,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo4"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3135,9 +3308,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Fifth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -3191,6 +3365,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo5"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3238,9 +3419,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Sixth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -3294,6 +3476,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo6"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3341,9 +3530,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Seventh test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -3397,6 +3587,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo7"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3444,9 +3641,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Eighth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -3500,6 +3698,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo9"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3547,9 +3752,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Ninth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -3603,6 +3809,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo10"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3650,9 +3863,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Tenth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -3706,6 +3920,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo11"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3753,9 +3974,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Eleventh test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div
@@ -3809,6 +4031,13 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </div>
                   </CodeMonitorNode>
                   <CodeMonitorNode
+                    authentictedUser={
+                      Object {
+                        "email": "alice@alice.com",
+                        "id": "foobar",
+                        "username": "alice",
+                      }
+                    }
                     key="foo12"
                     location="[Location path=/code-monitoring]"
                     node={
@@ -3856,9 +4085,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             Twelfth test code monitor
                           </div>
                           <div
-                            className="text-muted"
+                            className="d-flex text-muted"
                           >
                             New search result → Sends email notifications
+                             
                           </div>
                         </div>
                         <div

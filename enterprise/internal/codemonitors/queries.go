@@ -64,10 +64,31 @@ func (s *Store) TriggerQueryByMonitorIDInt64(ctx context.Context, monitorID int6
 	return s.runTriggerQuery(ctx, sqlf.Sprintf(triggerQueryByMonitorFmtStr, monitorID))
 }
 
+const triggerQueryByIDFmtStr = `
+SELECT id, monitor, query, next_run, latest_result, created_by, created_at, changed_by, changed_at
+FROM cm_queries
+WHERE id = %s;
+`
+
+func (s *Store) triggerQueryByIDInt64(ctx context.Context, queryID int64) (*MonitorQuery, error) {
+	return s.runTriggerQuery(ctx, sqlf.Sprintf(triggerQueryByIDFmtStr, queryID))
+}
+
+const resetTriggerQueryTimestamps = `
+UPDATE cm_queries
+SET latest_result = null,
+    next_run = %s
+WHERE id = %s;
+`
+
+func (s *Store) ResetTriggerQueryTimestamps(ctx context.Context, queryID int64) error {
+	return s.Exec(ctx, sqlf.Sprintf(resetTriggerQueryTimestamps, s.Now(), queryID))
+}
+
 const createTriggerQueryFmtStr = `
 INSERT INTO cm_queries
-(monitor, query, created_by, created_at, changed_by, changed_at, next_run)
-VALUES (%s,%s,%s,%s,%s,%s,%s)
+(monitor, query, created_by, created_at, changed_by, changed_at, next_run, latest_result)
+VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
@@ -83,6 +104,7 @@ func (s *Store) createTriggerQueryQuery(ctx context.Context, monitorID int64, ar
 		a.UID,
 		now,
 		now,
+		now,
 		sqlf.Join(queryColumns, ", "),
 	), nil
 }
@@ -91,7 +113,8 @@ const updateTriggerQueryFmtStr = `
 UPDATE cm_queries
 SET query = %s,
 	changed_by = %s,
-	changed_at = %s
+	changed_at = %s,
+	latest_result = %s
 WHERE id = %s
 AND monitor = %s
 RETURNING %s;
@@ -117,6 +140,7 @@ func (s *Store) updateTriggerQueryQuery(ctx context.Context, args *graphqlbacken
 		updateTriggerQueryFmtStr,
 		args.Trigger.Update.Query,
 		a.UID,
+		now,
 		now,
 		triggerID,
 		monitorID,
