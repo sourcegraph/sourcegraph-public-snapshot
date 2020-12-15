@@ -8,8 +8,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestIndexSchedulerUpdateIndexConfigurationInDatabase(t *testing.T) {
@@ -61,7 +62,7 @@ func TestIndexSchedulerUpdateIndexConfigurationInDatabase(t *testing.T) {
 	scheduler := &IndexScheduler{
 		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
-		metrics:         NewMetrics(metrics.TestRegisterer),
+		operations:      newOperations(mockDBStore, &observation.TestContext),
 	}
 
 	if err := scheduler.Handle(context.Background()); err != nil {
@@ -186,7 +187,7 @@ func TestIndexSchedulerUpdateIndexConfigurationInRepository(t *testing.T) {
 	scheduler := &IndexScheduler{
 		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
-		metrics:         NewMetrics(metrics.TestRegisterer),
+		operations:      newOperations(mockDBStore, &observation.TestContext),
 	}
 
 	if err := scheduler.Handle(context.Background()); err != nil {
@@ -288,7 +289,7 @@ func TestIndexSchedulerUpdateIndexConfigurationInferred(t *testing.T) {
 	scheduler := &IndexScheduler{
 		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
-		metrics:         NewMetrics(metrics.TestRegisterer),
+		operations:      newOperations(mockDBStore, &observation.TestContext),
 	}
 
 	if err := scheduler.Handle(context.Background()); err != nil {
