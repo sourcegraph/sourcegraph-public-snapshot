@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestRepo(t *testing.T, store *db.ExternalServiceStore, serviceKind string) *types.Repo {
+func TestRepo(t *testing.T, store *idb.ExternalServiceStore, serviceKind string) *types.Repo {
 	t.Helper()
 
 	clock := dbtesting.NewFakeClock(time.Now(), 0)
@@ -63,11 +63,18 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) (
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: MarshalJSON(t, &schema.GitHubConnection{
-			Url:   "https://github.com",
-			Token: "SECRETTOKEN",
+			Url:             "https://github.com",
+			Token:           "SECRETTOKEN",
+			RepositoryQuery: []string{"none"},
+			Authorization:   &schema.GitHubAuthorization{},
 		}),
 	}
-	if err := esStore.Upsert(ctx, ext); err != nil {
+
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+
+	if err := esStore.Create(ctx, confGet, ext); err != nil {
 		t.Fatal(err)
 	}
 
