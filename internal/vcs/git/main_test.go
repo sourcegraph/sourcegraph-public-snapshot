@@ -120,10 +120,10 @@ func GitCommand(dir, name string, args ...string) *exec.Cmd {
 
 // MakeGitRepository calls initGitRepository to create a new Git repository and returns a handle to
 // it.
-func MakeGitRepository(t testing.TB, cmds ...string) gitserver.Repo {
+func MakeGitRepository(t testing.TB, cmds ...string) api.RepoName {
 	t.Helper()
 	dir := InitGitRepository(t, cmds...)
-	repo := gitserver.Repo{Name: api.RepoName(filepath.Base(dir)), URL: dir}
+	repo := api.RepoName(filepath.Base(dir))
 	if resp, err := gitserver.DefaultClient.RequestRepoUpdate(context.Background(), repo, 0); err != nil {
 		t.Fatal(err)
 	} else if resp.Error != "" {

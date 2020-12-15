@@ -14,8 +14,9 @@ To learn more about the generator\, see the top\-level program: https://github.c
 
 ## Index
 
-- [func Generate(containers ...*Container)](<#func-generate>)
+- [func Generate(opts GenerateOptions, containers ...*Container)](<#func-generate>)
 - [type Container](<#type-container>)
+- [type GenerateOptions](<#type-generateoptions>)
 - [type Group](<#type-group>)
 - [type Observable](<#type-observable>)
   - [func (o Observable) WithCritical(a *ObservableAlertDefinition) Observable](<#func-observable-withcritical>)
@@ -38,10 +39,10 @@ To learn more about the generator\, see the top\-level program: https://github.c
 - [type UnitType](<#type-unittype>)
 
 
-## func [Generate](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/generator.go#L25>)
+## func [Generate](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/generator.go#L37>)
 
 ```go
-func Generate(containers ...*Container)
+func Generate(opts GenerateOptions, containers ...*Container)
 ```
 
 Generate is the main Sourcegraph monitoring generator entrypoint\.
@@ -66,6 +67,26 @@ type Container struct {
 
     // Groups of observable information about the container.
     Groups []Group
+}
+```
+
+## type [GenerateOptions](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/generator.go#L22-L34>)
+
+GenerateOptions declares options for the monitoring generator\.
+
+```go
+type GenerateOptions struct {
+    // Toggles pruning of dangling generated assets through simple heuristic, should be disabled during builds
+    DisablePrune bool
+    // Trigger reload of active Prometheus or Grafana instance (requires respective output directories)
+    LiveReload bool
+
+    // Output directory for generated Grafana assets
+    GrafanaDir string
+    // Output directory for generated Prometheus assets
+    PrometheusDir string
+    // Output directory for generated documentation
+    DocsDir string
 }
 ```
 

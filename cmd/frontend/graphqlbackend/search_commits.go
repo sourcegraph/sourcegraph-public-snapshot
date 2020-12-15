@@ -70,12 +70,6 @@ func (r *CommitSearchResultResolver) ToCommitSearchResult() (*CommitSearchResult
 	return r, true
 }
 
-func (r *CommitSearchResultResolver) searchResultURIs() (string, string) {
-	// Diffs aren't going to be returned with other types of results
-	// and are already ordered in the desired order, so we'll just leave them in place.
-	return "~", "~" // lexicographically last in ASCII
-}
-
 func (r *CommitSearchResultResolver) resultCount() int32 {
 	return 1
 }

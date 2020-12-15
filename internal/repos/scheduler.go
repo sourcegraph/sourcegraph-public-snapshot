@@ -104,7 +104,6 @@ type updateScheduler struct {
 // a configuration source, such as information retrieved from GitHub for a
 // given GitHubConnection.
 type configuredRepo struct {
-	URL  string
 	ID   api.RepoID
 	Name api.RepoName
 }
@@ -208,7 +207,7 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 
 // requestRepoUpdate sends a request to gitserver to request an update.
 var requestRepoUpdate = func(ctx context.Context, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
-	return gitserver.DefaultClient.RequestRepoUpdate(ctx, gitserver.Repo{Name: repo.Name, URL: repo.URL}, since)
+	return gitserver.DefaultClient.RequestRepoUpdate(ctx, repo.Name, since)
 }
 
 // configuredLimiter returns a mutable limiter that is
@@ -311,11 +310,7 @@ func (s *updateScheduler) remove(r *types.Repo) {
 func configuredRepoFromRepo(r *types.Repo) configuredRepo {
 	repo := configuredRepo{
 		ID:   r.ID,
-		Name: api.RepoName(r.Name),
-	}
-
-	if urls := r.CloneURLs(); len(urls) > 0 {
-		repo.URL = urls[0]
+		Name: r.Name,
 	}
 
 	return repo
@@ -323,11 +318,10 @@ func configuredRepoFromRepo(r *types.Repo) configuredRepo {
 
 // UpdateOnce causes a single update of the given repository.
 // It neither adds nor removes the repo from the schedule.
-func (s *updateScheduler) UpdateOnce(id api.RepoID, name api.RepoName, url string) {
+func (s *updateScheduler) UpdateOnce(id api.RepoID, name api.RepoName) {
 	repo := configuredRepo{
 		ID:   id,
 		Name: name,
-		URL:  url,
 	}
 	schedManualFetch.Inc()
 	s.updateQueue.enqueue(repo, priorityHigh)

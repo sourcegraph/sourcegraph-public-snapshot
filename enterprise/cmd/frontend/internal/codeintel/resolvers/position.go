@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -124,12 +123,7 @@ func (p *positionAdjuster) readHunksCached(ctx context.Context, repo *types.Repo
 // readHunks returns a position-ordered slice of changes (additions or deletions) of
 // the given path between the given source and target commits.
 func (p *positionAdjuster) readHunks(ctx context.Context, repo *types.Repo, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
-
-	reader, err := git.ExecReader(ctx, *cachedRepo, []string{"diff", sourceCommit, targetCommit, "--", path})
+	reader, err := git.ExecReader(ctx, repo.Name, []string{"diff", sourceCommit, targetCommit, "--", path})
 	if err != nil {
 		return nil, err
 	}

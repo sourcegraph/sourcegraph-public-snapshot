@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 	"reflect"
@@ -13,6 +12,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -23,10 +23,10 @@ import (
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -56,7 +56,7 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook webhooks.Re
 	m.Get(apirouter.RepoRefresh).Handler(trace.TraceRoute(handler(serveRepoRefresh)))
 
 	gh := webhooks.GitHubWebhook{
-		Repos: repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
+		ExternalServices: db.NewExternalServicesStoreWithDB(dbconn.Global),
 	}
 
 	webhookhandlers.Init(&gh)

@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
@@ -130,10 +129,6 @@ func (fm *FileMatchResolver) appendMatches(src *FileMatchResolver) {
 	fm.JLimitHit = fm.JLimitHit || src.JLimitHit
 }
 
-func (fm *FileMatchResolver) searchResultURIs() (string, string) {
-	return fm.Repo.Name(), fm.JPath
-}
-
 func (fm *FileMatchResolver) resultCount() int32 {
 	rc := len(fm.symbols) + fm.MatchCount
 	if rc > 0 {
@@ -170,9 +165,9 @@ func (lm *lineMatch) LimitHit() bool {
 	return lm.JLimitHit
 }
 
-var mockSearchFilesInRepo func(ctx context.Context, repo *types.RepoName, gitserverRepo gitserver.Repo, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error)
+var mockSearchFilesInRepo func(ctx context.Context, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error)
 
-func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *types.RepoName, gitserverRepo gitserver.Repo, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]*FileMatchResolver, bool, error) {
+func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]*FileMatchResolver, bool, error) {
 	if mockSearchFilesInRepo != nil {
 		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
 	}
@@ -235,7 +230,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 
 // repoShouldBeSearched determines whether a repository should be searched in, based on whether the repository
 // fits in the subset of repositories specified in the query's `repohasfile` and `-repohasfile` flags if they exist.
-func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searchPattern *search.TextPatternInfo, gitserverRepo gitserver.Repo, commit api.CommitID, fetchTimeout time.Duration) (shouldBeSearched bool, err error) {
+func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searchPattern *search.TextPatternInfo, gitserverRepo api.RepoName, commit api.CommitID, fetchTimeout time.Duration) (shouldBeSearched bool, err error) {
 	shouldBeSearched = true
 	flagInQuery := len(searchPattern.FilePatternsReposMustInclude) > 0
 	if flagInQuery {
@@ -256,7 +251,7 @@ func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searc
 
 // repoHasFilesWithNamesMatching searches in a repository for matches for the patterns in the `repohasfile` or `-repohasfile` flags, and returns
 // whether or not the repoShouldBeSearched in or not, based on whether matches were returned.
-func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.Map, include bool, repoHasFileFlag []string, gitserverRepo gitserver.Repo, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
+func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.Map, include bool, repoHasFileFlag []string, gitserverRepo api.RepoName, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
 	for _, pattern := range repoHasFileFlag {
 		p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 		matches, _, err := searcher.Search(ctx, searcherURLs, gitserverRepo, commit, &p, fetchTimeout)
@@ -310,7 +305,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	common = &searchResultsCommon{partial: make(map[api.RepoName]struct{})}
+	common = &searchResultsCommon{partial: make(map[api.RepoID]struct{})}
 
 	indexedTyp := textRequest
 	if args.PatternInfo.IsStructuralPat {
@@ -483,7 +478,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 					}
 					if repoLimitHit {
 						// We did not return all results in this repository.
-						common.partial[repoRev.Repo.Name] = struct{}{}
+						common.partial[repoRev.Repo.ID] = struct{}{}
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
 					if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, false, err); fatalErr != nil {
@@ -513,33 +508,12 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		go func() {
 			// TODO limitHit, handleRepoSearchResult
 			defer wg.Done()
-			matches, limitHit, reposLimitHit, err := indexed.Search(ctx)
+			indexedCommon, matches, err := indexed.Search(ctx)
 			mu.Lock()
 			defer mu.Unlock()
-			if ctx.Err() == nil {
-				for _, repo := range indexed.Repos() {
-					common.searched = append(common.searched, repo.Repo)
-					common.indexed = append(common.indexed, repo.Repo)
-				}
-				for repo := range reposLimitHit {
-					// Repos that aren't included in the result set due to exceeded limits are partially searched
-					// for dynamic filter purposes. Note, reposLimitHit may include repos that did not have any results
-					// returned in the original result set, because indexed search has `limitHit` for the
-					// entire search rather than per repo as in non-indexed search.
-					common.partial[api.RepoName(repo)] = struct{}{}
-				}
-			}
-			if limitHit {
-				common.limitHit = true
-			}
-			if err == errNoResultsInTimeout {
-				// Effectively, all repositories have timed out.
-				for _, repo := range indexed.Repos() {
-					common.timedout = append(common.timedout, repo.Repo)
-				}
-			}
+			common.update(indexedCommon)
 			tr.LogFields(otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
-			if err != nil && err != errNoResultsInTimeout && searchErr == nil && !overLimitCanceled {
+			if err != nil && searchErr == nil && !overLimitCanceled {
 				searchErr = err
 				tr.LazyPrintf("cancel indexed search due to error: %v", err)
 				cancel()

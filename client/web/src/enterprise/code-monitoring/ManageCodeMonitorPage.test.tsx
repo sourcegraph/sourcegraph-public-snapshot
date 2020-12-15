@@ -6,6 +6,13 @@ import { mount } from 'enzyme'
 import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
 import { mockCodeMonitor } from './testing/util'
 import { NEVER, of } from 'rxjs'
+import { act } from 'react-dom/test-utils'
+import {
+    MonitorEditInput,
+    MonitorEditTriggerInput,
+    MonitorEditActionInput,
+    MonitorEmailPriority,
+} from '../../../../shared/src/graphql-operations'
 
 describe('ManageCodeMonitorPage', () => {
     const mockUser = {
@@ -25,7 +32,13 @@ describe('ManageCodeMonitorPage', () => {
         setBreadcrumb: sinon.spy(),
         useBreadcrumb: sinon.spy(),
         fetchUserCodeMonitors: sinon.spy(),
-        updateCodeMonitor: sinon.spy(),
+        updateCodeMonitor: sinon.spy(
+            (
+                monitorEditInput: MonitorEditInput,
+                triggerEditInput: MonitorEditTriggerInput,
+                actionEditInput: MonitorEditActionInput[]
+            ) => of(mockCodeMonitor.node)
+        ),
         fetchCodeMonitor: sinon.spy((id: string) => of(mockCodeMonitor)),
         match: {
             params: { id: 'test-id' },
@@ -39,7 +52,7 @@ describe('ManageCodeMonitorPage', () => {
 
     test('Form is pre-loaded with code monitor data', () => {
         const component = mount(<ManageCodeMonitorPage {...props} />)
-        expect(props.fetchCodeMonitor.calledOnce)
+        expect(props.fetchCodeMonitor.calledOnce).toBe(true)
 
         const nameInput = component.find('.test-name-input')
         expect(nameInput.length).toBe(1)
@@ -50,18 +63,43 @@ describe('ManageCodeMonitorPage', () => {
         expect(currentQueryValue.getDOMNode().innerHTML).toBe('test')
         expect(currentActionEmailValue.getDOMNode().innerHTML).toBe('user@me.com')
         component.unmount()
+        props.fetchCodeMonitor.resetHistory()
     })
 
     test('Updating the form executes the update request', () => {
-        const component = mount(<ManageCodeMonitorPage {...props} />)
+        let component = mount(<ManageCodeMonitorPage {...props} />)
         const nameInput = component.find('.test-name-input')
         const nameValue = nameInput.getDOMNode().getAttribute('value')
         expect(nameValue).toBe('Test code monitor')
-        nameInput.simulate('change', { target: { value: 'Test updated' } })
+        act(() => {
+            nameInput.simulate('change', { target: { value: 'Test updated' } })
+        })
+        component = component.update()
         const submitButton = component.find('.test-submit-monitor')
-        submitButton.simulate('click')
-        expect(props.updateCodeMonitor.calledOnce)
-        expect(props.updateCodeMonitor.calledWith({ ...mockCodeMonitor, name: 'Test code monitor' }))
+        submitButton.simulate('submit')
+        sinon.assert.called(props.updateCodeMonitor)
+        sinon.assert.calledWith(
+            props.updateCodeMonitor,
+            {
+                id: 'test-id',
+                update: { namespace: 'userID', description: 'Test updated', enabled: true },
+            },
+            { id: 'test-0', update: { query: 'test' } },
+            [
+                {
+                    email: {
+                        id: 'test-action-0',
+                        update: {
+                            enabled: true,
+                            priority: MonitorEmailPriority.NORMAL,
+                            recipients: ['userID'],
+                            header: '',
+                        },
+                    },
+                },
+            ]
+        )
+        props.updateCodeMonitor.resetHistory()
         component.unmount()
     })
 
@@ -102,7 +140,7 @@ describe('ManageCodeMonitorPage', () => {
         nameInput.simulate('change', { target: { value: 'Test code monitor updated' } })
         const cancelButton = component.find('.test-cancel-monitor')
         cancelButton.simulate('click')
-        expect(confirmStub.calledOnce)
+        sinon.assert.calledOnce(confirmStub)
         confirmStub.restore()
     })
 
@@ -111,16 +149,7 @@ describe('ManageCodeMonitorPage', () => {
         const confirmStub = sinon.stub(window, 'confirm')
         const cancelButton = component.find('.test-cancel-monitor')
         cancelButton.simulate('click')
-        expect(confirmStub.notCalled)
-        confirmStub.restore()
-    })
-
-    test('Cancelling without any changes made does not show confirmation prompt', () => {
-        const component = mount(<ManageCodeMonitorPage {...props} />)
-        const confirmStub = sinon.stub(window, 'confirm')
-        const cancelButton = component.find('.test-cancel-monitor')
-        cancelButton.simulate('click')
-        expect(confirmStub.notCalled)
+        sinon.assert.notCalled(confirmStub)
         confirmStub.restore()
     })
 
@@ -133,7 +162,7 @@ describe('ManageCodeMonitorPage', () => {
         const confirmDeleteButton = component.find('.test-confirm-delete-monitor')
         expect(confirmDeleteButton.length).toBe(1)
         confirmDeleteButton.simulate('click')
-        expect(props.deleteCodeMonitor.calledOnce)
+        sinon.assert.calledOnce(props.deleteCodeMonitor)
         expect(props.history.location.pathname).toEqual('/code-monitoring')
     })
 })

@@ -72,7 +72,11 @@ func RepositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*RepositoryRes
 }
 
 func (r *RepositoryResolver) ID() graphql.ID {
-	return MarshalRepositoryID(r.innerRepo.ID)
+	return MarshalRepositoryID(r.IDInt32())
+}
+
+func (r *RepositoryResolver) IDInt32() api.RepoID {
+	return r.innerRepo.ID
 }
 
 func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
@@ -170,22 +174,12 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	do := func() (*GitRefResolver, error) {
-		repo, err := r.repo(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		cachedRepo, err := backend.CachedGitRepo(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
-
-		refBytes, _, exitCode, err := git.ExecSafe(ctx, *cachedRepo, []string{"symbolic-ref", "HEAD"})
+		refBytes, _, exitCode, err := git.ExecSafe(ctx, r.innerRepo.Name, []string{"symbolic-ref", "HEAD"})
 		refName := string(bytes.TrimSpace(refBytes))
 
 		if err == nil && exitCode == 0 {
 			// Check that our repo is not empty
-			_, err = git.ResolveRevision(ctx, *cachedRepo, "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
+			_, err = git.ResolveRevision(ctx, r.innerRepo.Name, "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
 		}
 
 		// If we fail to get the default branch due to cloning or being empty, we return nothing.
@@ -245,7 +239,7 @@ func (r *RepositoryResolver) UpdatedAt() *DateTime {
 }
 
 func (r *RepositoryResolver) URL() string {
-	url := "/" + escapePathForURL(string(r.innerRepo.Name))
+	url := "/" + escapePathForURL(r.Name())
 	if r.rev != "" {
 		url += "@" + escapePathForURL(r.rev)
 	}
@@ -271,9 +265,9 @@ func (r *RepositoryResolver) Rev() string {
 func (r *RepositoryResolver) Label() (Markdown, error) {
 	var label string
 	if r.rev != "" {
-		label = string(r.innerRepo.Name) + "@" + r.rev
+		label = r.Name() + "@" + r.rev
 	} else {
-		label = string(r.innerRepo.Name)
+		label = r.Name()
 	}
 	text := "[" + label + "](/" + label + ")"
 	return Markdown(text), nil
@@ -293,10 +287,6 @@ func (r *RepositoryResolver) ToCommitSearchResult() (*CommitSearchResultResolver
 	return nil, false
 }
 
-func (r *RepositoryResolver) searchResultURIs() (string, string) {
-	return string(r.innerRepo.Name), ""
-}
-
 func (r *RepositoryResolver) resultCount() int32 {
 	return 1
 }
@@ -313,10 +303,10 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 			return
 		}
 
-		log15.Debug("RepositoryResolver.hydrate", "repo.ID", r.innerRepo.ID)
+		log15.Debug("RepositoryResolver.hydrate", "repo.ID", r.IDInt32())
 
 		var repo *types.Repo
-		repo, r.err = db.Repos.Get(ctx, r.innerRepo.ID)
+		repo, r.err = db.Repos.Get(ctx, r.IDInt32())
 		if r.err == nil {
 			r.innerRepo = repo
 		}
@@ -404,11 +394,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 		// NoEnsureRevision. We do this, otherwise RepositoryResolver.Commit
 		// will try and fetch it from the remote host. However, this is not on
 		// the remote host since we created it.
-		cachedRepo, err := backend.CachedGitRepo(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
-		_, err = git.ResolveRevision(ctx, *cachedRepo, targetRef, git.ResolveRevisionOptions{
+		_, err = git.ResolveRevision(ctx, repo.Name, targetRef, git.ResolveRevisionOptions{
 			NoEnsureRevision: true,
 		})
 		if err != nil {

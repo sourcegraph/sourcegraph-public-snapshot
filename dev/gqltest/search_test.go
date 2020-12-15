@@ -767,10 +767,11 @@ func TestSearch(t *testing.T) {
 
 	t.Run("And/Or search expression queries", func(t *testing.T) {
 		tests := []struct {
-			name       string
-			query      string
-			zeroResult bool
-			wantAlert  *gqltestutil.SearchAlert
+			name            string
+			query           string
+			zeroResult      bool
+			exactMatchCount int64
+			wantAlert       *gqltestutil.SearchAlert
 		}{
 			{
 				name:  `Or distributive property on content and file`,
@@ -800,6 +801,11 @@ func TestSearch(t *testing.T) {
 				name:  `Or distributive property on repo where only one repo contains match (tests repo cache is invalidated)`,
 				query: `(repo:^github\.com/sgtest/sourcegraph-typescript$ or repo:^github\.com/sgtest/go-diff$) package diff provides`,
 			},
+			{
+				name:            `Or distributive property on commits deduplicates and merges`,
+				query:           `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
+				exactMatchCount: 21,
+			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
@@ -820,6 +826,9 @@ func TestSearch(t *testing.T) {
 					if len(results.Results) == 0 {
 						t.Fatal("Want non-zero results but got 0")
 					}
+				}
+				if test.exactMatchCount != 0 && results.MatchCount != test.exactMatchCount {
+					t.Fatalf("Want exactly %d results but got %d", test.exactMatchCount, results.MatchCount)
 				}
 			})
 		}

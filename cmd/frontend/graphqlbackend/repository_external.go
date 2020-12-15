@@ -51,7 +51,7 @@ func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct 
 		return nil, err
 	}
 
-	svcs, err := repoupdater.DefaultClient.RepoExternalServices(ctx, r.innerRepo.ID)
+	svcs, err := repoupdater.DefaultClient.RepoExternalServices(ctx, r.IDInt32())
 	if err != nil {
 		return nil, err
 	}

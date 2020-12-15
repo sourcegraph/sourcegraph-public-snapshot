@@ -13,8 +13,8 @@ import (
 	gh "github.com/google/go-github/v28/github"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -32,7 +32,7 @@ type WebhookHandler func(ctx context.Context, extSvc *types.ExternalService, eve
 // and routing to any registered WebhookHandlers, events are routed by their event type,
 // passed in the X-Github-Event header
 type GitHubWebhook struct {
-	Repos repos.Store
+	ExternalServices *db.ExternalServiceStore
 
 	mu       sync.RWMutex
 	handlers map[string][]WebhookHandler
@@ -119,7 +119,7 @@ func (h *GitHubWebhook) getExternalService(r *http.Request, body []byte) (*types
 	if err != nil {
 		return nil, err
 	}
-	e, err := h.Repos.GetExternalService(r.Context(), externalServiceID)
+	e, err := h.ExternalServices.GetByID(r.Context(), externalServiceID)
 	if err != nil {
 		return nil, err
 	}
@@ -156,8 +156,8 @@ func (h *GitHubWebhook) findAndValidateExternalService(ctx context.Context, sig 
 	// in GitHub external services config.
 	// If there are no secrets or no secret managed to authenticate the request,
 	// we return an error to the client.
-	args := repos.StoreListExternalServicesArgs{Kinds: []string{extsvc.KindGitHub}}
-	es, err := h.Repos.ListExternalServices(ctx, args)
+	args := db.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}}
+	es, err := h.ExternalServices.List(ctx, args)
 	if err != nil {
 		return nil, err
 	}

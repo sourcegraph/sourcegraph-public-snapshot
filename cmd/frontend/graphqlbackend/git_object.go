@@ -5,7 +5,6 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -77,18 +76,7 @@ type gitObjectResolver struct {
 
 func (o *gitObjectResolver) resolve(ctx context.Context) (GitObjectID, gitObjectType, error) {
 	o.once.Do(func() {
-		repo, err := o.repo.repo(ctx)
-		if err != nil {
-			o.err = err
-			return
-		}
-
-		cachedRepo, err := backend.CachedGitRepo(ctx, repo)
-		if err != nil {
-			o.err = err
-			return
-		}
-		oid, objectType, err := git.GetObject(ctx, *cachedRepo, o.revspec)
+		oid, objectType, err := git.GetObject(ctx, o.repo.innerRepo.Name, o.revspec)
 		if err != nil {
 			o.err = err
 			return

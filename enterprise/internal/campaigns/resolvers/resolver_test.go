@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -16,8 +15,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -27,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -90,14 +88,15 @@ func TestCreateCampaignSpec(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	username := "create-campaign-spec-username"
-	userID := insertTestUser(t, dbconn.Global, username, true)
+	user := ct.CreateTestUser(t, true)
+	userID := user.ID
 
 	cstore := store.New(dbconn.Global)
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	repoStore := db.NewRepoStoreWith(cstore)
+	esStore := db.NewExternalServicesStoreWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
-	if err := reposStore.InsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/create-campaign-spec-test", newGitHubExternalService(t, esStore))
+	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -146,7 +145,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 		ExpiresAt:     have.ExpiresAt,
 		OriginalInput: rawSpec,
 		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
-		ApplyURL:      fmt.Sprintf("/users/%s/campaigns/apply/%s", username, have.ID),
+		ApplyURL:      fmt.Sprintf("/users/%s/campaigns/apply/%s", user.Username, have.ID),
 		Namespace:     apitest.UserOrg{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
 		Creator:       &apitest.User{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
 		ChangesetSpecs: apitest.ChangesetSpecConnection{
@@ -205,13 +204,14 @@ func TestCreateChangesetSpec(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "create-changeset-spec", true)
+	userID := ct.CreateTestUser(t, true).ID
 
 	cstore := store.New(dbconn.Global)
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	repoStore := db.NewRepoStoreWith(cstore)
+	esStore := db.NewExternalServicesStoreWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
-	if err := reposStore.InsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/create-changeset-spec-test", newGitHubExternalService(t, esStore))
+	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -277,15 +277,16 @@ func TestApplyCampaign(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "apply-campaign", true)
+	userID := ct.CreateTestUser(t, true).ID
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(dbconn.Global, clock)
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	repoStore := db.NewRepoStoreWith(cstore)
+	esStore := db.NewExternalServicesStoreWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
-	if err := reposStore.InsertRepos(ctx, repo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/apply-campaign-test", newGitHubExternalService(t, esStore))
+	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -439,7 +440,7 @@ func TestCreateCampaign(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "apply-campaign", true)
+	userID := ct.CreateTestUser(t, true).ID
 
 	cstore := store.New(dbconn.Global)
 
@@ -482,7 +483,7 @@ func TestCreateCampaign(t *testing.T) {
 	if len(errors) != 1 {
 		t.Fatalf("expected single errors, but got none")
 	}
-	if have, want := errors[0].Message, ee.ErrMatchingCampaignExists.Error(); have != want {
+	if have, want := errors[0].Message, service.ErrMatchingCampaignExists.Error(); have != want {
 		t.Fatalf("wrong error. want=%q, have=%q", want, have)
 	}
 }
@@ -501,13 +502,11 @@ func TestMoveCampaign(t *testing.T) {
 	ctx := context.Background()
 	dbtesting.SetupGlobalTestDB(t)
 
-	username := "move-campaign-username"
-	userID := insertTestUser(t, dbconn.Global, username, true)
+	user := ct.CreateTestUser(t, true)
+	userID := user.ID
 
-	org, err := db.Orgs.Create(ctx, "org", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	orgName := "move-campaign-test"
+	orgID := ct.InsertTestOrg(t, orgName)
 
 	cstore := store.New(dbconn.Global)
 
@@ -555,13 +554,13 @@ func TestMoveCampaign(t *testing.T) {
 		t.Fatalf("unexpected name (-want +got):\n%s", diff)
 	}
 
-	wantURL := fmt.Sprintf("/users/%s/campaigns/%s", username, newCampaignName)
+	wantURL := fmt.Sprintf("/users/%s/campaigns/%s", user.Username, newCampaignName)
 	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
 		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
 	}
 
 	// Move to a new namespace
-	orgAPIID := graphqlbackend.MarshalOrgID(org.ID)
+	orgAPIID := graphqlbackend.MarshalOrgID(orgID)
 	input = map[string]interface{}{
 		"campaign":     string(marshalCampaignID(campaign.ID)),
 		"newNamespace": orgAPIID,
@@ -573,7 +572,7 @@ func TestMoveCampaign(t *testing.T) {
 	if diff := cmp.Diff(string(orgAPIID), haveCampaign.Namespace.ID); diff != "" {
 		t.Fatalf("unexpected namespace (-want +got):\n%s", diff)
 	}
-	wantURL = fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, newCampaignName)
+	wantURL = fmt.Sprintf("/organizations/%s/campaigns/%s", orgName, newCampaignName)
 	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
 		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
 	}
@@ -779,7 +778,7 @@ func TestCreateCampaignsCredential(t *testing.T) {
 
 	pruneUserCredentials(t)
 
-	userID := insertTestUser(t, dbconn.Global, "create-credential", false)
+	userID := ct.CreateTestUser(t, false).ID
 
 	cstore := store.New(dbconn.Global)
 
@@ -833,7 +832,7 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 
 	pruneUserCredentials(t)
 
-	userID := insertTestUser(t, dbconn.Global, "delete-credential", true)
+	userID := ct.CreateTestUser(t, true).ID
 
 	cred, err := db.UserCredentials.Create(ctx, db.UserCredentialScope{
 		Domain:              db.UserCredentialDomainCampaigns,
@@ -869,7 +868,7 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 	if len(errors) != 1 {
 		t.Fatalf("expected single errors, but got none")
 	}
-	if have, want := errors[0].Message, "user credential not found: [1]"; have != want {
+	if have, want := errors[0].Message, fmt.Sprintf("user credential not found: [%d]", cred.ID); have != want {
 		t.Fatalf("wrong error code. want=%q, have=%q", want, have)
 	}
 }

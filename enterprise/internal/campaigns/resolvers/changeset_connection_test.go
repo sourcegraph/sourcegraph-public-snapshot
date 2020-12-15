@@ -2,12 +2,12 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
@@ -15,9 +15,9 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
 func TestChangesetConnectionResolver(t *testing.T) {
@@ -28,14 +28,15 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "changeset-connection-resolver", false)
+	userID := ct.CreateTestUser(t, false).ID
 
 	cstore := store.New(dbconn.Global)
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	repoStore := db.NewRepoStoreWith(cstore)
+	esStore := db.NewExternalServicesStoreWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
-	inaccessibleRepo := newGitHubTestRepo("github.com/sourcegraph/private", newGitHubExternalService(t, rstore))
-	if err := rstore.InsertRepos(ctx, repo, inaccessibleRepo); err != nil {
+	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-connection-test", newGitHubExternalService(t, esStore))
+	inaccessibleRepo := newGitHubTestRepo("github.com/sourcegraph/private", newGitHubExternalService(t, esStore))
+	if err := repoStore.Create(ctx, repo, inaccessibleRepo); err != nil {
 		t.Fatal(err)
 	}
 	ct.MockRepoPermissions(t, userID, repo.ID)

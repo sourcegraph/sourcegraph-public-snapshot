@@ -9,6 +9,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
@@ -441,34 +442,6 @@ func (o *ObservedStore) Done(err error) error {
 	}(time.Now())
 
 	return o.store.(TxStore).Done(err)
-}
-
-// GetExternalService calls into the inner Store and registers the observed results.
-func (o *ObservedStore) GetExternalService(ctx context.Context, id int64) (es *types.ExternalService, err error) {
-	tr, ctx := o.trace(ctx, "Store.GetExternalService")
-	tr.LogFields(
-		otlog.Object("id", id),
-	)
-
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-
-		o.metrics.ListExternalServices.Observe(secs, 1, &err)
-		logging.Log(o.log, "store.get-external-service", &err,
-			"id", fmt.Sprintf("%+v", id),
-			"count", 1,
-		)
-
-		tr.LogFields(
-			otlog.Int("count", 1),
-			otlog.Object("names", es.DisplayName),
-			otlog.Object("urns", es.URN()),
-		)
-		tr.SetError(err)
-		tr.Finish()
-	}(time.Now())
-
-	return o.store.GetExternalService(ctx, id)
 }
 
 // ListExternalServices calls into the inner Store and registers the observed results.

@@ -114,7 +114,7 @@ func TestSearchRepositories(t *testing.T) {
 				if !ok {
 					t.Fatal("expected repo result")
 				}
-				got = append(got, string(r.innerRepo.Name))
+				got = append(got, r.Name())
 			}
 			sort.Strings(got)
 

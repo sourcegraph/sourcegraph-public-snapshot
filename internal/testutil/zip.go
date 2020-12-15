@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 )
 
@@ -58,7 +57,7 @@ func TempZipFromFiles(files map[string]string) (path string, cleanup func(), err
 	}
 
 	ctx := context.Background()
-	repo := gitserver.Repo{Name: "foo", URL: "u"}
+	repo := api.RepoName("foo")
 	var commit api.CommitID = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
 	path, err = s.PrepareZip(ctx, repo, commit)
 	if err != nil {

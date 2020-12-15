@@ -76,7 +76,7 @@ func searchResultsStatsLanguages(ctx context.Context, results []SearchResultReso
 	for _, res := range results {
 		if fileMatch, ok := res.ToFileMatch(); ok {
 			sawRepo(fileMatch.Repository().innerRepo)
-			key := repoCommit{repo: fileMatch.Repository().innerRepo.ID, commitID: fileMatch.CommitID}
+			key := repoCommit{repo: fileMatch.Repository().IDInt32(), commitID: fileMatch.CommitID}
 
 			if _, ok := filesMap[key]; !ok {
 				filesMap[key] = &fileStatsWork{}
@@ -140,12 +140,7 @@ func searchResultsStatsLanguages(ctx context.Context, results []SearchResultReso
 		goroutine.Go(func() {
 			defer run.Release()
 
-			cachedRepo, err := backend.CachedGitRepo(ctx, repos[key.repo])
-			if err != nil {
-				run.Error(err)
-				return
-			}
-			invCtx, err := backend.InventoryContext(*cachedRepo, key.commitID, true)
+			invCtx, err := backend.InventoryContext(repos[key.repo].Name, key.commitID, true)
 			if err != nil {
 				run.Error(err)
 				return

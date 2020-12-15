@@ -20,7 +20,7 @@ func TestGCSInit(t *testing.T) {
 
 	client := testGCSClient(gcsClient, true)
 	if err := client.Init(context.Background()); err != nil {
-		t.Fatalf("unexpected error initializing client: %s", err.Error())
+		t.Fatalf("unexpected error initializing client: %s", err)
 	}
 
 	if calls := gcsClient.BucketFunc.History(); len(calls) != 1 {
@@ -46,7 +46,7 @@ func TestGCSInitBucketExists(t *testing.T) {
 
 	client := testGCSClient(gcsClient, true)
 	if err := client.Init(context.Background()); err != nil {
-		t.Fatalf("unexpected error initializing client: %s", err.Error())
+		t.Fatalf("unexpected error initializing client: %s", err)
 	}
 
 	if calls := gcsClient.BucketFunc.History(); len(calls) != 1 {
@@ -71,7 +71,7 @@ func TestGCSUnmanagedInit(t *testing.T) {
 
 	client := testGCSClient(gcsClient, false)
 	if err := client.Init(context.Background()); err != nil {
-		t.Fatalf("unexpected error initializing client: %s", err.Error())
+		t.Fatalf("unexpected error initializing client: %s", err)
 	}
 
 	if calls := gcsClient.BucketFunc.History(); len(calls) != 0 {
@@ -96,13 +96,13 @@ func TestGCSGet(t *testing.T) {
 	client := testGCSClient(gcsClient, false)
 	rc, err := client.Get(context.Background(), "test-key")
 	if err != nil {
-		t.Fatalf("unexpected error getting key: %s", err.Error())
+		t.Fatalf("unexpected error getting key: %s", err)
 	}
 
 	defer rc.Close()
 	contents, err := ioutil.ReadAll(rc)
 	if err != nil {
-		t.Fatalf("unexpected error reading object: %s", err.Error())
+		t.Fatalf("unexpected error reading object: %s", err)
 	}
 
 	if string(contents) != "TEST PAYLOAD" {
@@ -139,7 +139,7 @@ func TestGCSUpload(t *testing.T) {
 
 	size, err := client.Upload(context.Background(), "test-key", bytes.NewReader([]byte("TEST PAYLOAD")))
 	if err != nil {
-		t.Fatalf("unexpected error getting key: %s", err.Error())
+		t.Fatalf("unexpected error getting key: %s", err)
 	} else if size != 12 {
 		t.Errorf("unexpected size`. want=%d have=%d", 12, size)
 	}
@@ -184,7 +184,7 @@ func TestGCSCombine(t *testing.T) {
 
 	size, err := client.Compose(context.Background(), "test-key", "test-src1", "test-src2", "test-src3")
 	if err != nil {
-		t.Fatalf("unexpected error getting key: %s", err.Error())
+		t.Fatalf("unexpected error getting key: %s", err)
 	} else if size != 42 {
 		t.Errorf("unexpected size`. want=%d have=%d", 42, size)
 	}
@@ -237,7 +237,7 @@ func TestGCSDelete(t *testing.T) {
 
 	client := testGCSClient(gcsClient, false)
 	if err := client.Delete(context.Background(), "test-key"); err != nil {
-		t.Fatalf("unexpected error getting key: %s", err.Error())
+		t.Fatalf("unexpected error getting key: %s", err)
 	}
 
 	if calls := gcsClient.BucketFunc.History(); len(calls) != 1 {

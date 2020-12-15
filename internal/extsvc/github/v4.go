@@ -79,7 +79,7 @@ func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Cli
 	}
 
 	rl := ratelimit.DefaultRegistry.Get(apiURL.String())
-	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, &ratelimit.Monitor{HeaderPrefix: "X-"})
+	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, "graphql", &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V4Client{
 		apiURL:           apiURL,

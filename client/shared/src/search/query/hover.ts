@@ -9,6 +9,8 @@ import {
     MetaRevision,
     MetaGitRevision,
     MetaSourcegraphRevision,
+    MetaStructural,
+    MetaStructuralKind,
 } from './decoratedToken'
 import { resolveFilter } from './filters'
 
@@ -94,6 +96,19 @@ const toRegexpHover = (token: MetaRegexp): string => {
     }
 }
 
+const toStructuralHover = (token: MetaStructural): string => {
+    switch (token.kind) {
+        case MetaStructuralKind.Hole:
+            return '**Structural hole**. Matches code structures contextually. See the [syntax reference](https://docs.sourcegraph.com/code_search/reference/structural#syntax-reference) for a complete description.'
+        case MetaStructuralKind.RegexpHole:
+            return '**Regular expression hole**. Match the regular expression defined inside this hole.'
+        case MetaStructuralKind.Variable:
+            return '**Hole variable**. A descriptive name for the syntax matched by this hole.'
+        case MetaStructuralKind.RegexpSeparator:
+            return '**Regular expression separator**. Indicates the start of a regular expression that this hole should match.'
+    }
+}
+
 const toRevisionHover = (token: MetaRevision): string => {
     switch (token.kind) {
         case MetaGitRevision.CommitHash:
@@ -128,6 +143,8 @@ const toHover = (token: DecoratedToken): string => {
             return toRevisionHover(token)
         case 'metaRepoRevisionSeparator':
             return '**Search at revision**. Separates a repository pattern and the revisions to search, like commits or branches. The part before the `@` specifies the repositories to search, the part after the `@` specifies which revisions to search.'
+        case 'metaStructural':
+            return toStructuralHover(token)
     }
     return ''
 }
@@ -189,6 +206,9 @@ export const getHoverResult = (
                 values.push(toHover(token))
                 range = toMonacoRange(token.groupRange ? token.groupRange : token.range)
                 break
+            case 'metaStructural':
+                values.push(toHover(token))
+                range = toMonacoRange(token.groupRange ? token.groupRange : token.range)
         }
     })
     return {

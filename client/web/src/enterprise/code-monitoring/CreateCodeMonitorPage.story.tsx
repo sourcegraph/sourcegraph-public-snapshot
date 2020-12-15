@@ -3,6 +3,7 @@ import { CreateCodeMonitorPage } from './CreateCodeMonitorPage'
 import { storiesOf } from '@storybook/react'
 import { AuthenticatedUser } from '../../auth'
 import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
+import sinon from 'sinon'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/CreateCodeMonitorPage', module)
 
@@ -16,6 +17,7 @@ add(
                     authenticatedUser={
                         { id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser
                     }
+                    createCodeMonitor={sinon.fake()}
                 />
             )}
         </EnterpriseWebStory>
