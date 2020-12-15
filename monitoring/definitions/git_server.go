@@ -2,9 +2,9 @@ package definitions
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -90,7 +90,7 @@ func GitServer() *monitoring.Container {
 								- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).
 							`,
 						},
-						sharedFrontendInternalAPIErrorResponses("gitserver", monitoring.ObservableOwnerCloud),
+						shared.FrontendInternalAPIErrorResponses("gitserver", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -99,22 +99,22 @@ func GitServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedContainerCPUUsage("gitserver", monitoring.ObservableOwnerCloud),
-						sharedContainerMemoryUsage("gitserver", monitoring.ObservableOwnerCloud),
+						shared.ContainerCPUUsage("gitserver", monitoring.ObservableOwnerCloud),
+						shared.ContainerMemoryUsage("gitserver", monitoring.ObservableOwnerCloud),
 					},
 					{
-						sharedContainerRestarts("gitserver", monitoring.ObservableOwnerCloud),
-						sharedContainerFsInodes("gitserver", monitoring.ObservableOwnerCloud),
+						shared.ContainerRestarts("gitserver", monitoring.ObservableOwnerCloud),
+						shared.ContainerFsInodes("gitserver", monitoring.ObservableOwnerCloud),
 					},
 					{
 						{
 							Name:              "fs_io_operations",
 							Description:       "filesystem reads and writes rate by instance over 1h",
-							Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, promCadvisorContainerMatchers("gitserver")),
+							Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, shared.CadvisorNameMatcher("gitserver")),
 							DataMayNotExist:   true,
 							Warning:           monitoring.Alert().GreaterOrEqual(5000),
 							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}"),
-							Owner:             monitoring.ObservableOwnerSearch,
+							Owner:             monitoring.ObservableOwnerCloud,
 							PossibleSolutions: "none",
 						},
 					},
@@ -125,27 +125,16 @@ func GitServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("gitserver", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageLongTerm("gitserver", monitoring.ObservableOwnerCloud),
 						// gitserver generally uses up all the memory it gets, so
-						// alerting on long-term high memory usage is not very useful
-						{
-							Name:            "provisioning_container_memory_usage_long_term",
-							Description:     "container memory usage (1d maximum) by instance",
-							Query:           fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[1d])`, promCadvisorContainerMatchers("gitserver")),
-							DataMayNotExist: true,
-							Warning:         monitoring.Alert().LessOrEqual(30).For(14 * 24 * time.Hour),
-							PanelOptions:    monitoring.PanelOptions().LegendFormat("{{name}}").Unit(monitoring.Percentage).Max(100).Min(0),
-							Owner:           monitoring.ObservableOwnerDistribution,
-							PossibleSolutions: strings.Replace(`
-								- If usage is high:
-									- **Kubernetes:** Consider increasing memory limits in the 'Deployment.yaml' for the {{CONTAINER_NAME}} service.
-									- **Docker Compose:** Consider increasing 'memory:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-								- If usage is low, consider decreasing the above values.
-							`, "{{CONTAINER_NAME}}", "gitserver", -1),
-						},
+						// alerting on high memory usage is not very useful
+						shared.ProvisioningMemoryUsageLongTerm("gitserver", monitoring.ObservableOwnerCloud).WithNoAlerts(),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("gitserver", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageShortTerm("gitserver", monitoring.ObservableOwnerCloud),
+						// gitserver generally uses up all the memory it gets, so
+						// alerting on high memory usage is not very useful
+						shared.ProvisioningMemoryUsageShortTerm("gitserver", monitoring.ObservableOwnerCloud).WithNoAlerts(),
 					},
 				},
 			},
@@ -154,8 +143,8 @@ func GitServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedGoGoroutines("gitserver", monitoring.ObservableOwnerCloud),
-						sharedGoGcDuration("gitserver", monitoring.ObservableOwnerCloud),
+						shared.GoGoroutines("gitserver", monitoring.ObservableOwnerCloud),
+						shared.GoGcDuration("gitserver", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -164,7 +153,7 @@ func GitServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedKubernetesPodsAvailable("gitserver", monitoring.ObservableOwnerCloud),
+						shared.KubernetesPodsAvailable("gitserver", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},

@@ -1,6 +1,7 @@
 package definitions
 
 import (
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -64,12 +65,12 @@ func SyntectServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedContainerCPUUsage("syntect-server", monitoring.ObservableOwnerCloud),
-						sharedContainerMemoryUsage("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ContainerCPUUsage("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ContainerMemoryUsage("syntect-server", monitoring.ObservableOwnerCloud),
 					},
 					{
-						sharedContainerRestarts("syntect-server", monitoring.ObservableOwnerCloud),
-						sharedContainerFsInodes("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ContainerRestarts("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ContainerFsInodes("syntect-server", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -78,12 +79,12 @@ func SyntectServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("syntect-server", monitoring.ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageLongTerm("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageLongTerm("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningMemoryUsageLongTerm("syntect-server", monitoring.ObservableOwnerCloud),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("syntect-server", monitoring.ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageShortTerm("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageShortTerm("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningMemoryUsageShortTerm("syntect-server", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -92,7 +93,7 @@ func SyntectServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedKubernetesPodsAvailable("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.KubernetesPodsAvailable("syntect-server", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},

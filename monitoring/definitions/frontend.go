@@ -3,6 +3,7 @@ package definitions
 import (
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -543,12 +544,12 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedContainerCPUUsage("frontend", monitoring.ObservableOwnerCloud),
-						sharedContainerMemoryUsage("frontend", monitoring.ObservableOwnerCloud),
+						shared.ContainerCPUUsage("frontend", monitoring.ObservableOwnerCloud),
+						shared.ContainerMemoryUsage("frontend", monitoring.ObservableOwnerCloud),
 					},
 					{
-						sharedContainerRestarts("frontend", monitoring.ObservableOwnerCloud),
-						sharedContainerFsInodes("frontend", monitoring.ObservableOwnerCloud),
+						shared.ContainerRestarts("frontend", monitoring.ObservableOwnerCloud),
+						shared.ContainerFsInodes("frontend", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -557,12 +558,12 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("frontend", monitoring.ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageLongTerm("frontend", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageLongTerm("frontend", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningMemoryUsageLongTerm("frontend", monitoring.ObservableOwnerCloud),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("frontend", monitoring.ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageShortTerm("frontend", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageShortTerm("frontend", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningMemoryUsageShortTerm("frontend", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -571,8 +572,8 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedGoGoroutines("frontend", monitoring.ObservableOwnerCloud),
-						sharedGoGcDuration("frontend", monitoring.ObservableOwnerCloud),
+						shared.GoGoroutines("frontend", monitoring.ObservableOwnerCloud),
+						shared.GoGcDuration("frontend", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -581,7 +582,7 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedKubernetesPodsAvailable("frontend", monitoring.ObservableOwnerCloud),
+						shared.KubernetesPodsAvailable("frontend", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},

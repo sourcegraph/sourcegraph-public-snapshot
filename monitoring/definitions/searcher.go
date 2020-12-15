@@ -3,6 +3,7 @@ package definitions
 import (
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -35,7 +36,7 @@ func Searcher() *monitoring.Container {
 							Owner:             monitoring.ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
-						sharedFrontendInternalAPIErrorResponses("searcher", monitoring.ObservableOwnerSearch),
+						shared.FrontendInternalAPIErrorResponses("searcher", monitoring.ObservableOwnerSearch),
 					},
 				},
 			},
@@ -44,12 +45,12 @@ func Searcher() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedContainerCPUUsage("searcher", monitoring.ObservableOwnerSearch),
-						sharedContainerMemoryUsage("searcher", monitoring.ObservableOwnerSearch),
+						shared.ContainerCPUUsage("searcher", monitoring.ObservableOwnerSearch),
+						shared.ContainerMemoryUsage("searcher", monitoring.ObservableOwnerSearch),
 					},
 					{
-						sharedContainerRestarts("searcher", monitoring.ObservableOwnerSearch),
-						sharedContainerFsInodes("searcher", monitoring.ObservableOwnerSearch),
+						shared.ContainerRestarts("searcher", monitoring.ObservableOwnerSearch),
+						shared.ContainerFsInodes("searcher", monitoring.ObservableOwnerSearch),
 					},
 				},
 			},
@@ -58,12 +59,12 @@ func Searcher() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("searcher", monitoring.ObservableOwnerSearch),
-						sharedProvisioningMemoryUsageLongTerm("searcher", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningCPUUsageLongTerm("searcher", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningMemoryUsageLongTerm("searcher", monitoring.ObservableOwnerSearch),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("searcher", monitoring.ObservableOwnerSearch),
-						sharedProvisioningMemoryUsageShortTerm("searcher", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningCPUUsageShortTerm("searcher", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningMemoryUsageShortTerm("searcher", monitoring.ObservableOwnerSearch),
 					},
 				},
 			},
@@ -72,8 +73,8 @@ func Searcher() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedGoGoroutines("searcher", monitoring.ObservableOwnerSearch),
-						sharedGoGcDuration("searcher", monitoring.ObservableOwnerSearch),
+						shared.GoGoroutines("searcher", monitoring.ObservableOwnerSearch),
+						shared.GoGcDuration("searcher", monitoring.ObservableOwnerSearch),
 					},
 				},
 			},
@@ -82,7 +83,7 @@ func Searcher() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedKubernetesPodsAvailable("searcher", monitoring.ObservableOwnerSearch),
+						shared.KubernetesPodsAvailable("searcher", monitoring.ObservableOwnerSearch),
 					},
 				},
 			},

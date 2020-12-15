@@ -1292,7 +1292,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ## gitserver: fs_io_operations
 
-<p class="subtitle">search: filesystem reads and writes rate by instance over 1h</p>
+<p class="subtitle">cloud: filesystem reads and writes rate by instance over 1h</p>
 
 **Descriptions:**
 
@@ -1327,30 +1327,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "warning_gitserver_provisioning_container_cpu_usage_long_term"
-]
-```
-
-<br />
-
-## gitserver: provisioning_container_memory_usage_long_term
-
-<p class="subtitle">distribution: container memory usage (1d maximum) by instance</p>
-
-**Descriptions:**
-
-- _gitserver: less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
-
-**Possible solutions:**
-
-- If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the gitserver service.
-	- **Docker Compose:** Consider increasing `memory:` of the gitserver container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_gitserver_provisioning_container_memory_usage_long_term"
 ]
 ```
 
