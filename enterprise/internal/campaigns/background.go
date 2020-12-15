@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	ossDB "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -28,6 +29,13 @@ func InitBackgroundJobs(
 
 	repoStore := ossDB.NewRepoStoreWith(cstore)
 	esStore := ossDB.NewExternalServicesStoreWith(cstore)
+
+	// We use an internal actor so that we can freely load dependencies from
+	// the database without repository permissions being enforced.
+	// We do check for repository permissions conciously in the Rewirer when
+	// creating new changesets and in the executor, when talking to the code
+	// host, we manually check for CampaignsCredentials.
+	ctx = actor.WithInternalActor(ctx)
 
 	syncRegistry := syncer.NewSyncRegistry(ctx, cstore, repoStore, esStore, cf)
 	if server != nil {
