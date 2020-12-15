@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -35,18 +36,18 @@ func ZoektWebServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedContainerCPUUsage("zoekt-webserver", monitoring.ObservableOwnerSearch),
-						sharedContainerMemoryUsage("zoekt-webserver", monitoring.ObservableOwnerSearch),
+						shared.ContainerCPUUsage("zoekt-webserver", monitoring.ObservableOwnerSearch),
+						shared.ContainerMemoryUsage("zoekt-webserver", monitoring.ObservableOwnerSearch),
 					},
 					{
-						sharedContainerRestarts("zoekt-webserver", monitoring.ObservableOwnerSearch),
-						sharedContainerFsInodes("zoekt-webserver", monitoring.ObservableOwnerSearch),
+						shared.ContainerRestarts("zoekt-webserver", monitoring.ObservableOwnerSearch),
+						shared.ContainerFsInodes("zoekt-webserver", monitoring.ObservableOwnerSearch),
 					},
 					{
 						{
 							Name:              "fs_io_operations",
 							Description:       "filesystem reads and writes by instance rate over 1h",
-							Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, promCadvisorContainerMatchers("zoekt-webserver")),
+							Query:             fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, shared.CadvisorNameMatcher("zoekt-webserver")),
 							DataMayNotExist:   true,
 							Warning:           monitoring.Alert().GreaterOrEqual(5000),
 							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{name}}"),
@@ -61,12 +62,12 @@ func ZoektWebServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("zoekt-webserver", monitoring.ObservableOwnerSearch),
-						sharedProvisioningMemoryUsageLongTerm("zoekt-webserver", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningCPUUsageLongTerm("zoekt-webserver", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningMemoryUsageLongTerm("zoekt-webserver", monitoring.ObservableOwnerSearch),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("zoekt-webserver", monitoring.ObservableOwnerSearch),
-						sharedProvisioningMemoryUsageShortTerm("zoekt-webserver", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningCPUUsageShortTerm("zoekt-webserver", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningMemoryUsageShortTerm("zoekt-webserver", monitoring.ObservableOwnerSearch),
 					},
 				},
 			},

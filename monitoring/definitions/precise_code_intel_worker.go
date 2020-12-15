@@ -1,6 +1,9 @@
 package definitions
 
-import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+import (
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
+	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+)
 
 func PreciseCodeIntelWorker() *monitoring.Container {
 	return &monitoring.Container{
@@ -144,7 +147,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedFrontendInternalAPIErrorResponses("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.FrontendInternalAPIErrorResponses("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -153,12 +156,12 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedContainerCPUUsage("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
-						sharedContainerMemoryUsage("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.ContainerCPUUsage("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.ContainerMemoryUsage("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
 					},
 					{
-						sharedContainerRestarts("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
-						sharedContainerFsInodes("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.ContainerRestarts("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.ContainerFsInodes("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -167,12 +170,12 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
-						sharedProvisioningMemoryUsageLongTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningCPUUsageLongTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningMemoryUsageLongTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
-						sharedProvisioningMemoryUsageShortTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningCPUUsageShortTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningMemoryUsageShortTerm("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -181,8 +184,8 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedGoGoroutines("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
-						sharedGoGcDuration("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.GoGoroutines("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.GoGcDuration("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
 					},
 				},
 			},
@@ -191,7 +194,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedKubernetesPodsAvailable("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
+						shared.KubernetesPodsAvailable("precise-code-intel-worker", monitoring.ObservableOwnerCodeIntel),
 					},
 				},
 			},

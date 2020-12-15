@@ -617,6 +617,13 @@ func (o Observable) WithCritical(a *ObservableAlertDefinition) Observable {
 	return o
 }
 
+func (o Observable) WithNoAlerts() Observable {
+	o.Warning = nil
+	o.Critical = nil
+	o.NoAlert = true
+	return o
+}
+
 func (o Observable) validate() error {
 	if strings.Contains(o.Name, " ") || strings.ToLower(o.Name) != o.Name {
 		return fmt.Errorf("Observable.Name must be in lower_snake_case; found \"%s\"", o.Name)

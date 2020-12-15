@@ -20,6 +20,7 @@ To learn more about the generator\, see the top\-level program: https://github.c
 - [type Group](<#type-group>)
 - [type Observable](<#type-observable>)
   - [func (o Observable) WithCritical(a *ObservableAlertDefinition) Observable](<#func-observable-withcritical>)
+  - [func (o Observable) WithNoAlerts() Observable](<#func-observable-withnoalerts>)
   - [func (o Observable) WithWarning(a *ObservableAlertDefinition) Observable](<#func-observable-withwarning>)
 - [type ObservableAlertDefinition](<#type-observablealertdefinition>)
   - [func Alert() *ObservableAlertDefinition](<#func-alert>)
@@ -229,13 +230,19 @@ type Observable struct {
 func (o Observable) WithCritical(a *ObservableAlertDefinition) Observable
 ```
 
+### func \(Observable\) [WithNoAlerts](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L620>)
+
+```go
+func (o Observable) WithNoAlerts() Observable
+```
+
 ### func \(Observable\) [WithWarning](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L610>)
 
 ```go
 func (o Observable) WithWarning(a *ObservableAlertDefinition) Observable
 ```
 
-## type [ObservableAlertDefinition](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L654-L666>)
+## type [ObservableAlertDefinition](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L661-L673>)
 
 ObservableAlertDefinition defines when an alert would be considered firing\.
 
@@ -245,7 +252,7 @@ type ObservableAlertDefinition struct {
 }
 ```
 
-### func [Alert](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L649>)
+### func [Alert](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L656>)
 
 ```go
 func Alert() *ObservableAlertDefinition
@@ -253,19 +260,19 @@ func Alert() *ObservableAlertDefinition
 
 Alert provides a builder for defining alerting on an Observable\.
 
-### func \(\*ObservableAlertDefinition\) [For](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L678>)
+### func \(\*ObservableAlertDefinition\) [For](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L685>)
 
 ```go
 func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinition
 ```
 
-### func \(\*ObservableAlertDefinition\) [GreaterOrEqual](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L668>)
+### func \(\*ObservableAlertDefinition\) [GreaterOrEqual](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L675>)
 
 ```go
 func (a *ObservableAlertDefinition) GreaterOrEqual(f float64) *ObservableAlertDefinition
 ```
 
-### func \(\*ObservableAlertDefinition\) [LessOrEqual](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L673>)
+### func \(\*ObservableAlertDefinition\) [LessOrEqual](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L680>)
 
 ```go
 func (a *ObservableAlertDefinition) LessOrEqual(f float64) *ObservableAlertDefinition
@@ -291,7 +298,7 @@ const (
 )
 ```
 
-## type [ObservablePanelOptions](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L733-L739>)
+## type [ObservablePanelOptions](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L740-L746>)
 
 ObservablePanelOptions declares options for visualizing an Observable\.
 
@@ -301,7 +308,7 @@ type ObservablePanelOptions struct {
 }
 ```
 
-### func [PanelOptions](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L742>)
+### func [PanelOptions](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L749>)
 
 ```go
 func PanelOptions() ObservablePanelOptions
@@ -309,7 +316,7 @@ func PanelOptions() ObservablePanelOptions
 
 PanelOptions provides a builder for customizing an Observable visualization\.
 
-### func \(ObservablePanelOptions\) [Interval](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L779>)
+### func \(ObservablePanelOptions\) [Interval](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L786>)
 
 ```go
 func (p ObservablePanelOptions) Interval(ms int) ObservablePanelOptions
@@ -317,7 +324,7 @@ func (p ObservablePanelOptions) Interval(ms int) ObservablePanelOptions
 
 Interval declares the panel's interval in milliseconds\.
 
-### func \(ObservablePanelOptions\) [LegendFormat](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L767>)
+### func \(ObservablePanelOptions\) [LegendFormat](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L774>)
 
 ```go
 func (p ObservablePanelOptions) LegendFormat(format string) ObservablePanelOptions
@@ -325,7 +332,7 @@ func (p ObservablePanelOptions) LegendFormat(format string) ObservablePanelOptio
 
 LegendFormat sets the panel's legend format\, which may use Go template strings to select labels from the Prometheus query\.
 
-### func \(ObservablePanelOptions\) [Max](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L760>)
+### func \(ObservablePanelOptions\) [Max](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L767>)
 
 ```go
 func (p ObservablePanelOptions) Max(max float64) ObservablePanelOptions
@@ -333,7 +340,7 @@ func (p ObservablePanelOptions) Max(max float64) ObservablePanelOptions
 
 Max sets the maximum value of the Y axis on the panel\. The default is auto\.
 
-### func \(ObservablePanelOptions\) [Min](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L745>)
+### func \(ObservablePanelOptions\) [Min](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L752>)
 
 ```go
 func (p ObservablePanelOptions) Min(min float64) ObservablePanelOptions
@@ -341,7 +348,7 @@ func (p ObservablePanelOptions) Min(min float64) ObservablePanelOptions
 
 Min sets the minimum value of the Y axis on the panel\. The default is zero\.
 
-### func \(ObservablePanelOptions\) [MinAuto](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L754>)
+### func \(ObservablePanelOptions\) [MinAuto](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L761>)
 
 ```go
 func (p ObservablePanelOptions) MinAuto() ObservablePanelOptions
@@ -351,7 +358,7 @@ Min sets the minimum value of the Y axis on the panel to auto\, instead of the d
 
 This is generally only useful if trying to show negative numbers\.
 
-### func \(ObservablePanelOptions\) [Unit](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L773>)
+### func \(ObservablePanelOptions\) [Unit](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L780>)
 
 ```go
 func (p ObservablePanelOptions) Unit(t UnitType) ObservablePanelOptions
@@ -369,7 +376,7 @@ These correspond to a row of Grafana graphs\.
 type Row []Observable
 ```
 
-## type [UnitType](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L688>)
+## type [UnitType](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L695>)
 
 UnitType for controlling the unit type display on graphs\.
 
