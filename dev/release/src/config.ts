@@ -75,7 +75,7 @@ export async function releaseVersions(
     if (!parsedConfirmed) {
         error = `Provided version '${confirmVersion}' is not valid semver`
     } else if (semver.neq(parsedConfirmed, parsedUpcoming)) {
-        error = `Provided version '${confirmVersion}' and config.upcomingRelease '${config.upcomingRelease}' to not match - please update the release configuration at '${configPath}' and try again`
+        error = `Provided version '${confirmVersion}' and config.upcomingRelease '${config.upcomingRelease}' do not match - please update the release configuration at '${configPath}' and try again`
     }
 
     // If error, abort and remove the cached response (since it is invalid anyway)
