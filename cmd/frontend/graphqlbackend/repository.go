@@ -79,6 +79,11 @@ func (r *RepositoryResolver) IDInt32() api.RepoID {
 	return r.innerRepo.ID
 }
 
+// For internal use
+func (r *RepositoryResolver) repoID() api.RepoID {
+	return r.repo.ID
+}
+
 func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
 
 func UnmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {

@@ -50,13 +50,13 @@ import (
 type searchResultsCommon struct {
 	limitHit bool // whether the limit on results was hit
 
-	repos    []*types.Repo             // repos that were matched by the repo-related filters
-	searched []*types.Repo             // repos that were searched
-	indexed  []*types.Repo             // repos that were searched using an index
-	cloning  []*types.Repo             // repos that could not be searched because they were still being cloned
-	missing  []*types.Repo             // repos that could not be searched because they do not exist
-	excluded excludedRepos             // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
-	partial  map[api.RepoName]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
+	repos    []*types.Repo           // repos that were matched by the repo-related filters
+	searched []*types.Repo           // repos that were searched
+	indexed  []*types.Repo           // repos that were searched using an index
+	cloning  []*types.Repo           // repos that could not be searched because they were still being cloned
+	missing  []*types.Repo           // repos that could not be searched because they do not exist
+	excluded excludedRepos           // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
+	partial  map[api.RepoID]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
 
 	maxResultsCount, resultCount int32
 
@@ -130,7 +130,7 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	c.resultCount += other.resultCount
 
 	if c.partial == nil {
-		c.partial = make(map[api.RepoName]struct{})
+		c.partial = make(map[api.RepoID]struct{})
 	}
 
 	for repo := range other.partial {
@@ -272,7 +272,8 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 		sf.score = score
 	}
 
-	addRepoFilter := func(uri string, rev string, lineMatchCount int32) {
+	addRepoFilter := func(repo *RepositoryResolver, rev string, lineMatchCount int32) {
+		uri := repo.Name()
 		var filter string
 		if globbing {
 			filter = fmt.Sprintf(`repo:%s`, uri)
@@ -285,7 +286,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 			// are @ and :, both of which are disallowed in git refs
 			filter = filter + fmt.Sprintf(`@%s`, rev)
 		}
-		_, limitHit := sr.searchResultsCommon.partial[api.RepoName(uri)]
+		_, limitHit := sr.searchResultsCommon.partial[repo.repoID()]
 		// Increment number of matches per repo. Add will override previous entry for uri
 		repoToMatchCount[uri] += lineMatchCount
 		add(filter, uri, repoToMatchCount[uri], limitHit, "repo", scoreDefault)
@@ -335,7 +336,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 				rev = *fm.InputRev
 			}
 			lines := fm.resultCount()
-			addRepoFilter(fm.Repo.Name(), rev, lines)
+			addRepoFilter(fm.Repo, rev, lines)
 			addLangFilter(fm.path(), lines, fm.LimitHit())
 			addFileFilter(fm.path(), lines, fm.LimitHit())
 
@@ -346,7 +347,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 			// It should be fine to leave this blank since revision specifiers
 			// can only be used with the 'repo:' scope. In that case,
 			// we shouldn't be getting any repositoy name matches back.
-			addRepoFilter(r.Name(), "", 1)
+			addRepoFilter(r, "", 1)
 		}
 	}
 

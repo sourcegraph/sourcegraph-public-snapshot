@@ -305,7 +305,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	common = &searchResultsCommon{partial: make(map[api.RepoName]struct{})}
+	common = &searchResultsCommon{partial: make(map[api.RepoID]struct{})}
 
 	indexedTyp := textRequest
 	if args.PatternInfo.IsStructuralPat {
@@ -478,7 +478,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 					}
 					if repoLimitHit {
 						// We did not return all results in this repository.
-						common.partial[repoRev.Repo.Name] = struct{}{}
+						common.partial[repoRev.Repo.ID] = struct{}{}
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
 					if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, false, err); fatalErr != nil {

@@ -70,7 +70,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	ctx, cancelAll := context.WithCancel(ctx)
 	defer cancelAll()
 
-	common = &searchResultsCommon{partial: make(map[api.RepoName]struct{})}
+	common = &searchResultsCommon{partial: make(map[api.RepoID]struct{})}
 
 	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest)
 	if err != nil {

@@ -276,7 +276,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameter
 			// searchFilesInRepos can return a nil structure, but the executor
 			// requires a non-nil one always (which is more sane).
 			fileCommon = &searchResultsCommon{
-				partial: map[api.RepoName]struct{}{},
+				partial: map[api.RepoID]struct{}{},
 			}
 		}
 		// fileResults is not sorted so we must sort it now. fileCommon may or
@@ -562,7 +562,7 @@ func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, last
 	final := &searchResultsCommon{
 		limitHit:         false, // irrelevant in paginated search
 		indexUnavailable: common.indexUnavailable,
-		partial:          make(map[api.RepoName]struct{}),
+		partial:          make(map[api.RepoID]struct{}),
 		resultCount:      common.resultCount,
 	}
 
