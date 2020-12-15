@@ -8,14 +8,6 @@ const { add } = storiesOf('web/campaigns/CampaignListIntro', module).addDecorato
     <div className="p-3 container web-content">{story()}</div>
 ))
 
-add('Intro', () => (
-    <EnterpriseWebStory>
-        {() => (
-            <CampaignListIntro licensed={stateToInput(radios('licensed', LicensingState, LicensingState.Loading))} />
-        )}
-    </EnterpriseWebStory>
-))
-
 enum LicensingState {
     Licensed = 'Licensed',
     Unlicensed = 'Unlicensed',
@@ -31,4 +23,12 @@ function stateToInput(state: LicensingState): boolean | undefined {
         default:
             return undefined
     }
+}
+
+for (const state of Object.values(LicensingState)) {
+    add(state, () => (
+        <EnterpriseWebStory>
+            {() => <CampaignListIntro licensed={stateToInput(radios('licensed', LicensingState, state))} />}
+        </EnterpriseWebStory>
+    ))
 }
