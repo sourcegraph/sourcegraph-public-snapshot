@@ -79,8 +79,7 @@ const CampaignUnlicensedAlert: React.FunctionComponent = () => (
                     <h4>Campaigns trial</h4>
                     <p className="text-muted">
                         Campaigns is a paid feature of Sourcegraph. All users can create sample campaigns with up to
-                        five changesets without a license.{' '}
-                        <em>Note: Add limit:5 to your query to return only 5 repositories.</em>
+                        five changesets without a license.
                     </p>
                     <p className="text-muted mb-0">
                         <a href="https://about.sourcegraph.com/contact/sales/">Contact sales</a> to obtain a trial
