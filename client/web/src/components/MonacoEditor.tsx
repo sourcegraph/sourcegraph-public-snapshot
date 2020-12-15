@@ -48,6 +48,7 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
         { token: 'metaRegexpEscapedCharacter', foreground: '#ffa8a8' },
         { token: 'metaRegexpCharacterSet', foreground: '#da77f2' },
         { token: 'metaRegexpCharacterClass', foreground: '#da77f2' },
+        { token: 'metaRegexpCharacterClassMember', foreground: '#f2f4f8' },
         { token: 'metaRegexpRangeQuantifier', foreground: '#3bc9db' },
         { token: 'metaRegexpAlternative', foreground: '#3bc9db' },
         // Structural pattern highlighting
@@ -102,6 +103,7 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
         { token: 'metaRegexpEscapedCharacter', foreground: '#af5200' },
         { token: 'metaRegexpCharacterSet', foreground: '#ae3ec9' },
         { token: 'metaRegexpCharacterClass', foreground: '#ae3ec9' },
+        { token: 'metaRegexpCharacterClassMember', foreground: '#2b3750' },
         { token: 'metaRegexpRangeQuantifier', foreground: '#1098ad' },
         { token: 'metaRegexpAlternative', foreground: '#1098ad' },
         // Structural pattern highlighting
