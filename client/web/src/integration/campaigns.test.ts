@@ -369,13 +369,7 @@ describe('Campaigns', () => {
                     },
                 }),
                 AreCampaignsLicensed: () => ({
-                    site: {
-                        productSubscription: {
-                            license: {
-                                tags: ['campaigns'],
-                            },
-                        },
-                    },
+                    enterpriseLicenseHasFeature: true,
                 }),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/campaigns')

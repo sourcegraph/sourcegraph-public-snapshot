@@ -158,16 +158,10 @@ export const areCampaignsLicensed = (): Observable<boolean> =>
     requestGraphQL<AreCampaignsLicensedResult, AreCampaignsLicensedVariables>(
         gql`
             query AreCampaignsLicensed {
-                site {
-                    productSubscription {
-                        license {
-                            tags
-                        }
-                    }
-                }
+                enterpriseLicenseHasFeature(feature: "campaigns")
             }
         `
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => !!data.site.productSubscription.license?.tags.includes('campaigns'))
+        map(data => data.enterpriseLicenseHasFeature)
     )
