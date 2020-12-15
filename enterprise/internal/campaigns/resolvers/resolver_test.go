@@ -133,7 +133,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 		"default configuration": {
 			changesetSpecs: changesetSpecs,
 			disableFeature: false,
-			wantErr:        false,
+			wantErr:        true,
 		},
 		"no licence, but under the limit": {
 			changesetSpecs: changesetSpecs[0:maxUnlicensedChangesets],
@@ -148,9 +148,6 @@ func TestCreateCampaignSpec(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			if tc.disableFeature {
-				oldEnforce := licensing.EnforceTiers
-				licensing.EnforceTiers = true
-
 				oldMock := licensing.MockCheckFeature
 				licensing.MockCheckFeature = func(feature licensing.Feature) error {
 					if feature == licensing.FeatureCampaigns {
@@ -160,7 +157,6 @@ func TestCreateCampaignSpec(t *testing.T) {
 				}
 
 				defer func() {
-					licensing.EnforceTiers = oldEnforce
 					licensing.MockCheckFeature = oldMock
 				}()
 			}
