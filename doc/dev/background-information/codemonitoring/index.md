@@ -31,8 +31,8 @@ to `settings > User account > settings`.
 
 ```json
 {
-"experimentalFeatures": {
-  "codeMonitoring": true
+  "experimentalFeatures": {
+    "codeMonitoring": true
   }
 }
 ```
