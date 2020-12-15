@@ -439,6 +439,7 @@ describe('Campaigns', () => {
             it(`displays a single campaign for ${entityType}`, async () => {
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
+                    ...campaignLicenseGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType),
                     CampaignChangesets,
                     ChangesetCountsOverTime,
