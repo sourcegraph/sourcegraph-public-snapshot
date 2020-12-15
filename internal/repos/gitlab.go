@@ -100,8 +100,7 @@ func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf 
 
 	client := provider.GetPATClient(c.Token, "")
 
-	dotcomMode := envvar.SourcegraphDotComMode()
-	if !dotcomMode || (dotcomMode && c.CloudGlobal) {
+	if !envvar.SourcegraphDotComMode() || c.CloudGlobal {
 		client.RateLimitMonitor().SetCollector(func(remaining float64) {
 			gitlabRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(remaining)
 		})
