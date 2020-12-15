@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"net/url"
 	"strconv"
 	"strings"
@@ -12,6 +13,10 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -19,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -59,6 +65,12 @@ func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSo
 	}
 	return newGithubSource(svc, &c, cf)
 }
+
+var githubRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	// _v2 since we have an older metric defined in github-proxy
+	Name: "src_github_rate_limit_remaining_v2",
+	Help: "Number of calls to GitHub's API remaining before hitting the rate limit.",
+}, []string{"resource", "name"})
 
 func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
@@ -116,6 +128,24 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 
 	token := &auth.OAuthBearerToken{Token: c.Token}
 
+	var (
+		v3Client     = github.NewV3Client(apiURL, token, cli)
+		v4Client     = github.NewV4Client(apiURL, token, cli)
+		searchClient = github.NewV3SearchClient(apiURL, token, cli)
+	)
+
+	if !envvar.SourcegraphDotComMode() || c.CloudGlobal {
+		for resource, client := range map[string]*ratelimit.Monitor{
+			"rest":    v3Client.RateLimitMonitor(),
+			"graphql": v4Client.RateLimitMonitor(),
+			"search":  searchClient.RateLimitMonitor(),
+		} {
+			client.SetCollector(func(remaining float64) {
+				githubRemainingGauge.WithLabelValues(resource, svc.DisplayName).Set(remaining)
+			})
+		}
+	}
+
 	return &GithubSource{
 		svc:              svc,
 		config:           c,
@@ -124,9 +154,9 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 		excludeForks:     excludeForks,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
-		v3Client:         github.NewV3Client(apiURL, token, cli),
-		v4Client:         github.NewV4Client(apiURL, token, cli),
-		searchClient:     github.NewV3SearchClient(apiURL, token, cli),
+		v3Client:         v3Client,
+		v4Client:         v4Client,
+		searchClient:     searchClient,
 		originalHostname: originalHostname,
 	}, nil
 }

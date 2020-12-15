@@ -137,6 +137,23 @@ func TestMonitor_Update(t *testing.T) {
 			},
 		},
 		{
+			// GitLab uses different casing
+			name:   "RateLimit headers are set for GitLab",
+			before: &Monitor{clock: clock},
+			h: http.Header{
+				"Ratelimit-Limit":     []string{"500"},
+				"Ratelimit-Remaining": []string{"1"},
+				"Ratelimit-Reset":     []string{strconv.FormatInt(now.Add(time.Minute).Unix(), 10)},
+			},
+			after: &Monitor{
+				HeaderPrefix: "",
+				known:        true,
+				limit:        500,
+				remaining:    1,
+				reset:        time.Unix(now.Add(time.Minute).Unix(), 0),
+			},
+		},
+		{
 			name:   "Responses with X-From-Cache header are ignored",
 			before: &Monitor{clock: clock},
 			h: http.Header{
