@@ -1515,9 +1515,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
       <div
         className="mt-5"
       >
-        We want to hear your feedback! 
+        We want to hear your feedback!
+         
         <a
-          href="/"
+          href="mailto:feedback@sourcegraph.com"
         >
           Share your thoughts
         </a>
@@ -2139,9 +2140,10 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
       <div
         className="mt-5"
       >
-        We want to hear your feedback! 
+        We want to hear your feedback!
+         
         <a
-          href="/"
+          href="mailto:feedback@sourcegraph.com"
         >
           Share your thoughts
         </a>
@@ -3945,9 +3947,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
       <div
         className="mt-5"
       >
-        We want to hear your feedback! 
+        We want to hear your feedback!
+         
         <a
-          href="/"
+          href="mailto:feedback@sourcegraph.com"
         >
           Share your thoughts
         </a>

@@ -64,4 +64,4 @@ Watch your code with code monitors and trigger actions to run automatically in r
 
 ## Questions & Feedback
 
-We want to hear your feedback! <a href="mailto:">Share your thoughts</a>
+We want to hear your feedback! <a href="mailto:feedback@sourcegraph.com">Share your thoughts</a>
