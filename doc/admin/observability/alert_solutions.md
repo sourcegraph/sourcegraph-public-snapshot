@@ -3343,6 +3343,69 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
+## repo-updater: github_graphql_rate_limit_remaining
+
+<p class="subtitle">cloud: remaining calls to GitHub graphql API before hitting the rate limit</p>
+
+**Descriptions:**
+
+- _repo-updater: less than 500 remaining calls to GitHub graphql API before hitting the rate limit_
+
+**Possible solutions:**
+
+- Try restarting the pod to get a different public IP.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_github_graphql_rate_limit_remaining"
+]
+```
+
+<br />
+
+## repo-updater: github_core_rate_limit_remaining
+
+<p class="subtitle">cloud: remaining calls to GitHub core API before hitting the rate limit</p>
+
+**Descriptions:**
+
+- _repo-updater: less than 500 remaining calls to GitHub core API before hitting the rate limit_
+
+**Possible solutions:**
+
+- Try restarting the pod to get a different public IP.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_github_core_rate_limit_remaining"
+]
+```
+
+<br />
+
+## repo-updater: github_search_rate_limit_remaining
+
+<p class="subtitle">cloud: remaining calls to GitHub search API before hitting the rate limit</p>
+
+**Descriptions:**
+
+- _repo-updater: less than 5 remaining calls to GitHub search API before hitting the rate limit_
+
+**Possible solutions:**
+
+- Try restarting the pod to get a different public IP.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_github_search_rate_limit_remaining"
+]
+```
+
+<br />
+
 ## repo-updater: container_cpu_usage
 
 <p class="subtitle">cloud: container cpu usage total (1m average) across all cores by instance</p>
