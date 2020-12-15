@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -459,15 +459,15 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 		return "", err
 	}
 
-	rstore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
-	es, err := rstore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{IDs: []int64{extSvcID}})
+	esStore := db.NewExternalServicesStoreWith(s.store)
+	externalService, err := esStore.GetByID(ctx, extSvcID)
 	if err != nil {
+		if errcode.IsNotFound(err) {
+			return "", errors.New("no external service found for repo")
+		}
+
 		return "", err
 	}
-	if len(es) == 0 {
-		return "", errors.New("no external service found for repo")
-	}
-	externalService := es[0]
 
 	sources, err := s.sourcer(externalService)
 	if err != nil {

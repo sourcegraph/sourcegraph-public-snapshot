@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 	"time"
@@ -20,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -37,10 +35,10 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(dbconn.Global, clock)
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	repoStore := db.NewRepoStoreWith(cstore)
+	esStore := db.NewExternalServicesStoreWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-event-connection-test", newGitHubExternalService(t, rstore))
+	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-event-connection-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}

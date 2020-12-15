@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -21,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
 func TestCampaignSpecResolver(t *testing.T) {
@@ -33,10 +31,10 @@ func TestCampaignSpecResolver(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	cstore := store.New(dbconn.Global)
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-
 	repoStore := db.NewRepoStoreWith(cstore)
-	repo := newGitHubTestRepo("github.com/sourcegraph/campaign-spec-test", newGitHubExternalService(t, rstore))
+	esStore := db.NewExternalServicesStoreWith(cstore)
+
+	repo := newGitHubTestRepo("github.com/sourcegraph/campaign-spec-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}

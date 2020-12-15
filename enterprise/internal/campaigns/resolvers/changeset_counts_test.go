@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"os"
 	"reflect"
 	"testing"
@@ -80,8 +79,8 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, false).ID
 
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	repoStore := db.NewRepoStoreWithDB(dbconn.Global)
+	esStore := db.NewExternalServicesStoreWithDB(dbconn.Global)
 
 	githubExtSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
@@ -93,7 +92,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}),
 	}
 
-	err := rstore.UpsertExternalServices(ctx, githubExtSvc)
+	err := esStore.Upsert(ctx, githubExtSvc)
 	if err != nil {
 		t.Fatal(t)
 	}

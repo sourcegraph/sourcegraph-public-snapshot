@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
@@ -25,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -39,7 +37,6 @@ func TestPermissionLevels(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	cstore := store.New(dbconn.Global)
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	sr := &Resolver{store: cstore}
 	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
 	if err != nil {
@@ -59,7 +56,9 @@ func TestPermissionLevels(t *testing.T) {
 	userID := ct.CreateTestUser(t, false).ID
 
 	repoStore := db.NewRepoStoreWith(cstore)
-	repo := newGitHubTestRepo("github.com/sourcegraph/permission-levels-test", newGitHubExternalService(t, rstore))
+	esStore := db.NewExternalServicesStoreWith(cstore)
+
+	repo := newGitHubTestRepo("github.com/sourcegraph/permission-levels-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -772,14 +771,14 @@ func TestRepositoryPermissions(t *testing.T) {
 	// Global test data that we reuse in every test
 	userID := ct.CreateTestUser(t, false).ID
 
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	repoStore := db.NewRepoStoreWith(cstore)
+	esStore := db.NewExternalServicesStoreWith(cstore)
 
 	// Create 2 repositories
 	repos := make([]*types.Repo, 0, 2)
 	for i := 0; i < cap(repos); i++ {
 		name := fmt.Sprintf("github.com/sourcegraph/test-repository-permissions-repo-%d", i)
-		r := newGitHubTestRepo(name, newGitHubExternalService(t, reposStore))
+		r := newGitHubTestRepo(name, newGitHubExternalService(t, esStore))
 		if err := repoStore.Create(ctx, r); err != nil {
 			t.Fatal(err)
 		}

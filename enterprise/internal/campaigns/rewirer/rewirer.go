@@ -9,21 +9,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type ChangesetRewirer struct {
 	mappings store.RewirerMappings
 	campaign *campaigns.Campaign
-	rstore   repos.Store
 }
 
-func New(mappings store.RewirerMappings, campaign *campaigns.Campaign, rstore repos.Store) *ChangesetRewirer {
+func New(mappings store.RewirerMappings, campaign *campaigns.Campaign) *ChangesetRewirer {
 	return &ChangesetRewirer{
 		mappings: mappings,
 		campaign: campaign,
-		rstore:   rstore,
 	}
 }
 
