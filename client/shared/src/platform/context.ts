@@ -2,7 +2,6 @@ import { Endpoint } from 'comlink'
 import { NextObserver, Observable, Subscribable, Subscription } from 'rxjs'
 import { SettingsEdit } from '../api/client/services/settings'
 import { GraphQLResult } from '../graphql/graphql'
-import * as GQL from '../graphql/schema'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryService } from '../telemetry/telemetryService'
 import { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevisionSpec, ViewStateSpec } from '../util/url'
@@ -11,6 +10,7 @@ import { isObject } from 'lodash'
 import { hasProperty } from '../util/types'
 import { IExtensionsService } from '../api/client/services/extensionsService'
 import { ModelService } from '../api/client/services/modelService'
+import { Scalars } from '../graphql-operations'
 
 export interface EndpointPair {
     /** The endpoint to proxy the API of the other thread from */
@@ -87,7 +87,7 @@ export interface PlatformContext {
      * @returns A promise that resolves after the update succeeds and {@link PlatformContext#settings} reflects the
      * update.
      */
-    updateSettings: (subject: GQL.ID, edit: SettingsEdit | string) => Promise<void>
+    updateSettings: (subject: Scalars['ID'], edit: SettingsEdit | string) => Promise<void>
 
     /**
      * Sends a request to the Sourcegraph GraphQL API and returns the response.

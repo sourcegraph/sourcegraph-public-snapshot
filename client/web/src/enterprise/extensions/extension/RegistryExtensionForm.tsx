@@ -1,5 +1,4 @@
 import * as React from 'react'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import {
     EXTENSION_NAME_MAX_LENGTH,
@@ -9,12 +8,13 @@ import {
 } from '../../../extensions/extension/extension'
 import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
+import { Scalars } from '../../../../../shared/src/graphql-operations'
 
 export const RegistryPublisherFormGroup: React.FunctionComponent<{
     className?: string
 
     /** The current publisher value. */
-    value?: GQL.ID
+    value?: Scalars['ID']
 
     /** The viewer's authorized publishers, undefined while loading, or an error. */
     publishersOrError: 'loading' | RegistryPublisher[] | ErrorLike
