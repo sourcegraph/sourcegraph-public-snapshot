@@ -1,13 +1,13 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { ChangesetSpecList } from './ChangesetSpecList'
+import { PreviewList } from './PreviewList'
 import { of, Observable } from 'rxjs'
 import { CampaignSpecChangesetSpecsResult, ChangesetApplyPreviewFields } from '../../../../graphql-operations'
-import { visibleChangesetSpecStories } from './VisibleChangesetSpecNode.story'
-import { hiddenChangesetSpecStories } from './HiddenChangesetSpecNode.story'
+import { visibleChangesetApplyPreviewNodeStories } from './VisibleChangesetApplyPreviewNode.story'
+import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/apply/ChangesetSpecList', module)
+const { add } = storiesOf('web/campaigns/apply/PreviewList', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
     .addParameters({
         chromatic: {
@@ -16,8 +16,8 @@ const { add } = storiesOf('web/campaigns/apply/ChangesetSpecList', module)
     })
 
 const nodes: ChangesetApplyPreviewFields[] = [
-    ...Object.values(visibleChangesetSpecStories),
-    ...Object.values(hiddenChangesetSpecStories),
+    ...Object.values(visibleChangesetApplyPreviewNodeStories),
+    ...Object.values(hiddenChangesetApplyPreviewStories),
 ]
 
 const queryChangesetSpecs = (): Observable<
@@ -38,7 +38,7 @@ const queryEmptyFileDiffs = () =>
 add('List view', () => (
     <EnterpriseWebStory>
         {props => (
-            <ChangesetSpecList
+            <PreviewList
                 {...props}
                 campaignSpecID="123123"
                 queryChangesetSpecs={queryChangesetSpecs}

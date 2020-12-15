@@ -11,105 +11,100 @@ import BeakerQuestionIcon from 'mdi-react/BeakerQuestionIcon'
 import classNames from 'classnames'
 import CloseCircleOutlineIcon from 'mdi-react/CloseCircleOutlineIcon'
 
-export interface ChangesetSpecActionProps {
+export interface PreviewActionProps {
     node: ChangesetApplyPreviewFields
     className?: string
 }
 
-export const ChangesetSpecAction: React.FunctionComponent<ChangesetSpecActionProps> = ({ node, className }) => {
+export const PreviewAction: React.FunctionComponent<PreviewActionProps> = ({ node, className }) => {
     if (node.__typename === 'HiddenChangesetApplyPreview') {
-        return (
-            <ChangesetSpecActionNoAction
-                reason={NoActionReasonStrings[NoActionReason.NO_ACCESS]}
-                className={className}
-            />
-        )
+        return <PreviewActionNoAction reason={NoActionReasonStrings[NoActionReason.NO_ACCESS]} className={className} />
     }
     if (node.operations.length === 0) {
         if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
-            return <ChangesetSpecActionDetach className={className} />
+            return <PreviewActionDetach className={className} />
         }
-        return <ChangesetSpecActionNoAction className={className} />
+        return <PreviewActionNoAction className={className} />
     }
     if (node.operations.includes(ChangesetSpecOperation.IMPORT)) {
-        return <ChangesetSpecActionImport className={className} />
+        return <PreviewActionImport className={className} />
     }
     if (node.operations.includes(ChangesetSpecOperation.PUBLISH)) {
-        return <ChangesetSpecActionPublish className={className} />
+        return <PreviewActionPublish className={className} />
     }
     if (node.operations.includes(ChangesetSpecOperation.PUBLISH_DRAFT)) {
-        return <ChangesetSpecActionPublishDraft className={className} />
+        return <PreviewActionPublishDraft className={className} />
     }
     if (node.operations.includes(ChangesetSpecOperation.CLOSE)) {
-        return <ChangesetSpecActionClose className={className} />
+        return <PreviewActionClose className={className} />
     }
     if (node.operations.includes(ChangesetSpecOperation.REOPEN)) {
-        return <ChangesetSpecActionReopen className={className} />
+        return <PreviewActionReopen className={className} />
     }
     if (node.operations.includes(ChangesetSpecOperation.UNDRAFT)) {
-        return <ChangesetSpecActionUndraft className={className} />
+        return <PreviewActionUndraft className={className} />
     }
     if (
         node.operations.includes(ChangesetSpecOperation.UPDATE) ||
         node.operations.includes(ChangesetSpecOperation.PUSH)
     ) {
-        return <ChangesetSpecActionUpdate className={className} />
+        return <PreviewActionUpdate className={className} />
     }
-    return <ChangesetSpecActionUnknown operations={node.operations.join(' => ')} className={className} />
+    return <PreviewActionUnknown operations={node.operations.join(' => ')} className={className} />
 }
 
 const iconClassNames = 'm-0 text-nowrap d-block d-sm-flex flex-column align-items-center justify-content-center'
 
-export const ChangesetSpecActionPublish: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const PreviewActionPublish: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <div className={classNames(className, iconClassNames)}>
         <UploadIcon data-tooltip="This changeset will be published to its code host" />
         <span>Publish</span>
     </div>
 )
-export const ChangesetSpecActionPublishDraft: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const PreviewActionPublishDraft: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <div className={classNames(className, iconClassNames)}>
         <UploadIcon className="text-muted" data-tooltip="This changeset will be published as draft to its code host" />
         <span>Publish draft</span>
     </div>
 )
-export const ChangesetSpecActionImport: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const PreviewActionImport: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <div className={classNames(className, iconClassNames)}>
         <ImportIcon data-tooltip="This changeset will be imported and tracked in this campaign" />
         <span>Import</span>
     </div>
 )
 // TODO: This is currently correct, but as soon as we have a detach reconciler operation, that should be taken into account.
-export const ChangesetSpecActionClose: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const PreviewActionClose: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <div className={classNames(className, iconClassNames)}>
         <CloseCircleOutlineIcon className="text-danger" data-tooltip="This changeset will be closed on the codehost" />
         <span>Close &amp; Detach</span>
     </div>
 )
-export const ChangesetSpecActionDetach: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const PreviewActionDetach: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <div className={classNames(className, iconClassNames)}>
         <TrashIcon className="text-danger" data-tooltip="This changeset will be removed from the campaign" />
         <span>Detach</span>
     </div>
 )
-export const ChangesetSpecActionReopen: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const PreviewActionReopen: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <div className={classNames(className, iconClassNames)}>
         <SourceBranchRefreshIcon data-tooltip="This changeset will be reopened on the codehost" />
         <span>Reopen</span>
     </div>
 )
-export const ChangesetSpecActionUndraft: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const PreviewActionUndraft: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <div className={classNames(className, iconClassNames)}>
         <SourceBranchCheckIcon data-tooltip="This changeset will be marked as ready for review on the codehost" />
         <span>Undraft</span>
     </div>
 )
-export const ChangesetSpecActionUpdate: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+export const PreviewActionUpdate: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <div className={classNames(className, iconClassNames)}>
         <SourceBranchSyncIcon data-tooltip="This changeset will be updated on the codehost" />
         <span>Update</span>
     </div>
 )
-export const ChangesetSpecActionUnknown: React.FunctionComponent<{ className?: string; operations: string }> = ({
+export const PreviewActionUnknown: React.FunctionComponent<{ className?: string; operations: string }> = ({
     operations,
     className,
 }) => (
@@ -124,7 +119,7 @@ export enum NoActionReason {
 export const NoActionReasonStrings: Record<NoActionReason, string> = {
     [NoActionReason.NO_ACCESS]: "You don't have access to the repository this changeset spec targets.",
 }
-export const ChangesetSpecActionNoAction: React.FunctionComponent<{ className?: string; reason?: string }> = ({
+export const PreviewActionNoAction: React.FunctionComponent<{ className?: string; reason?: string }> = ({
     className,
     reason,
 }) => (

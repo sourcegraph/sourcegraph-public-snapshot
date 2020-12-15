@@ -19,8 +19,8 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> =
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(isExpandedInitially)
 
     const toggleShowCommitMessageBody = useCallback((): void => {
-        setShowCommitMessageBody(!showCommitMessageBody)
-    }, [showCommitMessageBody])
+        setShowCommitMessageBody(previousState => !previousState)
+    }, [])
 
     return (
         <>

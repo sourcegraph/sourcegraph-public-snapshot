@@ -5,7 +5,7 @@ import { ThemeProps } from '../../../../../../shared/src/theme'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
 import { Link } from '../../../../../../shared/src/components/Link'
 import { DiffStat } from '../../../../components/diff/DiffStat'
-import { ChangesetSpecAction } from './ChangesetSpecAction'
+import { PreviewAction } from './PreviewAction'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
@@ -14,7 +14,7 @@ import { FilteredConnectionQueryArguments } from '../../../../components/Filtere
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
 import { map } from 'rxjs/operators'
 
-export interface VisibleChangesetSpecNodeProps extends ThemeProps {
+export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
     node: VisibleChangesetApplyPreviewFields
     history: H.History
     location: H.Location
@@ -25,11 +25,12 @@ export interface VisibleChangesetSpecNodeProps extends ThemeProps {
     expandChangesetDescriptions?: boolean
 }
 
-export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetSpecNodeProps> = ({
+export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleChangesetApplyPreviewNodeProps> = ({
     node,
     isLightTheme,
     history,
     location,
+
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions = false,
 }) => {
@@ -56,8 +57,8 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
             </button>
-            <ChangesetSpecAction node={node} className="visible-changeset-spec-node__action" />
-            <div className="visible-changeset-spec-node__information">
+            <PreviewAction node={node} className="visible-changeset-apply-preview-node__action" />
+            <div className="visible-changeset-apply-preview-node__information">
                 <div className="d-flex flex-column">
                     <ChangesetSpecTitle spec={node} />
                     <div className="mr-2">
@@ -73,7 +74,7 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
                 type="button"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
-                className="visible-changeset-spec-node__show-details btn btn-outline-secondary d-block d-sm-none test-campaigns-expand-changeset-spec"
+                className="visible-changeset-apply-preview-node__show-details btn btn-outline-secondary d-block d-sm-none test-campaigns-expand-changeset-spec"
             >
                 {isExpanded ? (
                     <ChevronDownIcon className="icon-inline" aria-label="Close section" />
@@ -85,7 +86,7 @@ export const VisibleChangesetSpecNode: React.FunctionComponent<VisibleChangesetS
             {isExpanded && (
                 <>
                     <div />
-                    <div className="visible-changeset-spec-node__expanded-section p-2">
+                    <div className="visible-changeset-apply-preview-node__expanded-section p-2">
                         <ExpandedSection
                             node={node}
                             history={history}

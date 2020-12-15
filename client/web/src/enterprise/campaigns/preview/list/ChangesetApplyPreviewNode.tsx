@@ -1,12 +1,12 @@
 import * as H from 'history'
 import React from 'react'
 import { ChangesetApplyPreviewFields } from '../../../../graphql-operations'
-import { HiddenChangesetSpecNode } from './HiddenChangesetSpecNode'
-import { VisibleChangesetSpecNode } from './VisibleChangesetSpecNode'
+import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNode'
+import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { queryChangesetSpecFileDiffs } from './backend'
 
-export interface ChangesetSpecNodeProps extends ThemeProps {
+export interface ChangesetApplyPreviewNodeProps extends ThemeProps {
     node: ChangesetApplyPreviewFields
     history: H.History
     location: H.Location
@@ -17,7 +17,7 @@ export interface ChangesetSpecNodeProps extends ThemeProps {
     expandChangesetDescriptions?: boolean
 }
 
-export const ChangesetSpecNode: React.FunctionComponent<ChangesetSpecNodeProps> = ({
+export const ChangesetApplyPreviewNode: React.FunctionComponent<ChangesetApplyPreviewNodeProps> = ({
     node,
     history,
     location,
@@ -28,15 +28,15 @@ export const ChangesetSpecNode: React.FunctionComponent<ChangesetSpecNodeProps> 
     if (node.__typename === 'HiddenChangesetApplyPreview') {
         return (
             <>
-                <span className="changeset-spec-node__separator" />
-                <HiddenChangesetSpecNode node={node} />
+                <span className="changeset-apply-preview-node__separator" />
+                <HiddenChangesetApplyPreviewNode node={node} />
             </>
         )
     }
     return (
         <>
-            <span className="changeset-spec-node__separator" />
-            <VisibleChangesetSpecNode
+            <span className="changeset-apply-preview-node__separator" />
+            <VisibleChangesetApplyPreviewNode
                 node={node}
                 history={history}
                 location={location}

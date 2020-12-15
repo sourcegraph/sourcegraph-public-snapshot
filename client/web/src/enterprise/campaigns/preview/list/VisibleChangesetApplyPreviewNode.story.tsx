@@ -1,6 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { VisibleChangesetSpecNode } from './VisibleChangesetSpecNode'
+import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
 import { addDays } from 'date-fns'
 import {
     VisibleChangesetSpecFields,
@@ -12,8 +12,8 @@ import { of } from 'rxjs'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 import { ChangesetSpecOperation } from '../../../../../../shared/src/graphql-operations'
 
-const { add } = storiesOf('web/campaigns/apply/VisibleChangesetSpecNode', module).addDecorator(story => (
-    <div className="p-3 container web-content changeset-spec-list__grid">{story()}</div>
+const { add } = storiesOf('web/campaigns/apply/VisibleChangesetApplyPreviewNode', module).addDecorator(story => (
+    <div className="p-3 container web-content preview-list__grid">{story()}</div>
 ))
 
 const testRepo = { name: 'github.com/sourcegraph/testrepo', url: 'https://test.test/repo' }
@@ -61,7 +61,7 @@ And the more explanatory body. And the more explanatory body. And the more expla
     }
 }
 
-export const visibleChangesetSpecStories: Record<string, VisibleChangesetApplyPreviewFields> = {
+export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChangesetApplyPreviewFields> = {
     'Import changeset': {
         __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.IMPORT],
@@ -186,13 +186,13 @@ export const visibleChangesetSpecStories: Record<string, VisibleChangesetApplyPr
 const queryEmptyFileDiffs = () =>
     of({ fileDiffs: { totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] } })
 
-for (const storyName of Object.keys(visibleChangesetSpecStories)) {
+for (const storyName of Object.keys(visibleChangesetApplyPreviewNodeStories)) {
     add(storyName, () => (
         <EnterpriseWebStory>
             {props => (
-                <VisibleChangesetSpecNode
+                <VisibleChangesetApplyPreviewNode
                     {...props}
-                    node={visibleChangesetSpecStories[storyName]}
+                    node={visibleChangesetApplyPreviewNodeStories[storyName]}
                     queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 />
             )}

@@ -4,9 +4,9 @@ import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { ChangesetApplyPreviewFields, Scalars } from '../../../../graphql-operations'
 import { queryChangesetSpecs as _queryChangesetSpecs, queryChangesetSpecFileDiffs } from './backend'
-import { ChangesetSpecNode, ChangesetSpecNodeProps } from './ChangesetSpecNode'
-import { ChangesetSpecListHeader } from './ChangesetSpecListHeader'
-import { EmptyChangesetSpecListElement } from './EmptyChangesetSpecListElement'
+import { ChangesetApplyPreviewNode, ChangesetApplyPreviewNodeProps } from './ChangesetApplyPreviewNode'
+import { PreviewListHeader } from './PreviewListHeader'
+import { EmptyPreviewListElement } from './EmptyPreviewListElement'
 
 interface Props extends ThemeProps {
     campaignSpecID: Scalars['ID']
@@ -22,13 +22,14 @@ interface Props extends ThemeProps {
 }
 
 /**
- * A list of a campaign spec's changeset specs.
+ * A list of a campaign spec's preview nodes.
  */
-export const ChangesetSpecList: React.FunctionComponent<Props> = ({
+export const PreviewList: React.FunctionComponent<Props> = ({
     campaignSpecID,
     history,
     location,
     isLightTheme,
+
     queryChangesetSpecs = _queryChangesetSpecs,
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
@@ -45,11 +46,11 @@ export const ChangesetSpecList: React.FunctionComponent<Props> = ({
 
     return (
         <>
-            <h3>Changesets</h3>
+            <h3>Preview</h3>
             <hr className="mb-3" />
-            <FilteredConnection<ChangesetApplyPreviewFields, Omit<ChangesetSpecNodeProps, 'node'>>
+            <FilteredConnection<ChangesetApplyPreviewFields, Omit<ChangesetApplyPreviewNodeProps, 'node'>>
                 className="mt-2"
-                nodeComponent={ChangesetSpecNode}
+                nodeComponent={ChangesetApplyPreviewNode}
                 nodeComponentProps={{
                     isLightTheme,
                     history,
@@ -66,11 +67,11 @@ export const ChangesetSpecList: React.FunctionComponent<Props> = ({
                 location={location}
                 useURLQuery={true}
                 listComponent="div"
-                listClassName="changeset-spec-list__grid mb-3"
-                headComponent={ChangesetSpecListHeader}
+                listClassName="preview-list__grid mb-3"
+                headComponent={PreviewListHeader}
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}
-                emptyElement={<EmptyChangesetSpecListElement />}
+                emptyElement={<EmptyPreviewListElement />}
             />
         </>
     )

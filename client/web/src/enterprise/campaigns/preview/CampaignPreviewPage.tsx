@@ -7,7 +7,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { fetchCampaignSpecById as _fetchCampaignSpecById } from './backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CampaignHeader } from '../detail/CampaignHeader'
-import { ChangesetSpecList } from './list/ChangesetSpecList'
+import { PreviewList } from './list/PreviewList'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -96,7 +96,7 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
                 telemetryService={telemetryService}
             />
             <CampaignDescription history={history} description={spec.description.description} />
-            <ChangesetSpecList
+            <PreviewList
                 campaignSpecID={specID}
                 history={history}
                 location={location}

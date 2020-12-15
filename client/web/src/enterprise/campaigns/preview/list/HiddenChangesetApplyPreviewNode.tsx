@@ -1,17 +1,19 @@
 import React from 'react'
 import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
-import { ChangesetSpecAction } from './ChangesetSpecAction'
+import { PreviewAction } from './PreviewAction'
 
-export interface HiddenChangesetSpecNodeProps {
+export interface HiddenChangesetApplyPreviewNodeProps {
     node: HiddenChangesetApplyPreviewFields
 }
 
-export const HiddenChangesetSpecNode: React.FunctionComponent<HiddenChangesetSpecNodeProps> = ({ node }) => (
+export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChangesetApplyPreviewNodeProps> = ({
+    node,
+}) => (
     <>
         <span className="d-none d-sm-block" />
-        <ChangesetSpecAction node={node} className="hidden-changeset-spec-node__action" />
-        <div className="d-flex flex-column hidden-changeset-spec-node__information">
+        <PreviewAction node={node} className="hidden-changeset-apply-preview-node__action" />
+        <div className="d-flex flex-column hidden-changeset-apply-preview-node__information">
             <h3 className="text-muted">
                 {node.targets.__typename === 'HiddenApplyPreviewTargetsAttach' ||
                 node.targets.__typename === 'HiddenApplyPreviewTargetsUpdate' ? (

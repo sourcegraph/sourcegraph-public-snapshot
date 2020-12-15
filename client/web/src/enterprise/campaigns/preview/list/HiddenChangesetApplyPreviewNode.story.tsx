@@ -1,15 +1,15 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { HiddenChangesetSpecNode } from './HiddenChangesetSpecNode'
+import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNode'
 import { addDays } from 'date-fns'
 import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/apply/HiddenChangesetSpecNode', module).addDecorator(story => (
+const { add } = storiesOf('web/campaigns/apply/HiddenChangesetApplyPreviewNode', module).addDecorator(story => (
     <div className="p-3 container web-content changeset-spec-list__grid">{story()}</div>
 ))
 
-export const hiddenChangesetSpecStories: Record<string, HiddenChangesetApplyPreviewFields> = {
+export const hiddenChangesetApplyPreviewStories: Record<string, HiddenChangesetApplyPreviewFields> = {
     'Import changeset': {
         __typename: 'HiddenChangesetApplyPreview',
         targets: {
@@ -36,10 +36,12 @@ export const hiddenChangesetSpecStories: Record<string, HiddenChangesetApplyPrev
     },
 }
 
-for (const storyName of Object.keys(hiddenChangesetSpecStories)) {
+for (const storyName of Object.keys(hiddenChangesetApplyPreviewStories)) {
     add(storyName, () => (
         <EnterpriseWebStory>
-            {props => <HiddenChangesetSpecNode {...props} node={hiddenChangesetSpecStories[storyName]} />}
+            {props => (
+                <HiddenChangesetApplyPreviewNode {...props} node={hiddenChangesetApplyPreviewStories[storyName]} />
+            )}
         </EnterpriseWebStory>
     ))
 }

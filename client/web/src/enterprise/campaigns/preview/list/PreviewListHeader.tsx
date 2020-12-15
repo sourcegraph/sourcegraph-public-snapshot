@@ -1,10 +1,10 @@
 import React from 'react'
 
-export interface ChangesetSpecListHeaderProps {
+export interface PreviewListHeaderProps {
     // Nothing for now.
 }
 
-export const ChangesetSpecListHeader: React.FunctionComponent<ChangesetSpecListHeaderProps> = () => (
+export const PreviewListHeader: React.FunctionComponent<PreviewListHeaderProps> = () => (
     <>
         <span className="d-none d-sm-block" />
         <h5 className="d-none d-sm-block text-uppercase text-center text-nowrap">Action</h5>

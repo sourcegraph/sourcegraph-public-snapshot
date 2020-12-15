@@ -9,8 +9,8 @@ import {
     ChangesetApplyPreviewFields,
     ExternalServiceKind,
 } from '../../../graphql-operations'
-import { visibleChangesetSpecStories } from './list/VisibleChangesetSpecNode.story'
-import { hiddenChangesetSpecStories } from './list/HiddenChangesetSpecNode.story'
+import { visibleChangesetApplyPreviewNodeStories } from './list/VisibleChangesetApplyPreviewNode.story'
+import { hiddenChangesetApplyPreviewStories } from './list/HiddenChangesetApplyPreviewNode.story'
 import { fetchCampaignSpecById } from './backend'
 import { addDays, subDays } from 'date-fns'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
@@ -24,8 +24,8 @@ const { add } = storiesOf('web/campaigns/apply/CampaignPreviewPage', module)
     })
 
 const nodes: ChangesetApplyPreviewFields[] = [
-    ...Object.values(visibleChangesetSpecStories),
-    ...Object.values(hiddenChangesetSpecStories),
+    ...Object.values(visibleChangesetApplyPreviewNodeStories),
+    ...Object.values(hiddenChangesetApplyPreviewStories),
 ]
 
 const campaignSpec = (): CampaignSpecFields => ({

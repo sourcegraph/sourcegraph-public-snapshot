@@ -1,26 +1,29 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { ChangesetSpecNode } from './ChangesetSpecNode'
-import { visibleChangesetSpecStories } from './VisibleChangesetSpecNode.story'
-import { hiddenChangesetSpecStories } from './HiddenChangesetSpecNode.story'
+import { ChangesetApplyPreviewNode } from './ChangesetApplyPreviewNode'
+import { visibleChangesetApplyPreviewNodeStories } from './VisibleChangesetApplyPreviewNode.story'
+import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
 import { of } from 'rxjs'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/apply/ChangesetSpecNode', module).addDecorator(story => (
-    <div className="p-3 container web-content changeset-spec-list__grid">{story()}</div>
+const { add } = storiesOf('web/campaigns/apply/ChangesetApplyPreviewNode', module).addDecorator(story => (
+    <div className="p-3 container web-content preview-list__grid">{story()}</div>
 ))
 
 const queryEmptyFileDiffs = () =>
     of({ fileDiffs: { totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] } })
 
 add('Overview', () => {
-    const nodes = [...Object.values(visibleChangesetSpecStories), ...Object.values(hiddenChangesetSpecStories)]
+    const nodes = [
+        ...Object.values(visibleChangesetApplyPreviewNodeStories),
+        ...Object.values(hiddenChangesetApplyPreviewStories),
+    ]
     return (
         <EnterpriseWebStory>
             {props => (
                 <>
                     {nodes.map((node, index) => (
-                        <ChangesetSpecNode
+                        <ChangesetApplyPreviewNode
                             {...props}
                             key={index}
                             node={node}
