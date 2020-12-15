@@ -3,6 +3,8 @@ package repos
 import (
 	"container/heap"
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"reflect"
 	"testing"
 	"time"
@@ -1488,6 +1490,78 @@ func Test_updateQueue_Less(t *testing.T) {
 			got := q.Less(0, 1)
 			if test.expVal != got {
 				t.Fatalf("want %v but got: %v", test.expVal, got)
+			}
+		})
+	}
+}
+
+func TestGetCustomInterval(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		c        *conf.Unified
+		repoName string
+		want     time.Duration
+	}{
+		{
+			name:     "Nil config",
+			c:        nil,
+			repoName: "github.com/sourcegraph/sourcegraph",
+			want:     0,
+		},
+		{
+			name: "Single match",
+			c: &conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					GitUpdateInterval: []*schema.UpdateIntervalRule{
+						{
+							Pattern:  "github.com",
+							Interval: 1,
+						},
+					},
+				},
+			},
+			repoName: "github.com/sourcegraph/sourcegraph",
+			want:     1 * time.Minute,
+		},
+		{
+			name: "No match",
+			c: &conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					GitUpdateInterval: []*schema.UpdateIntervalRule{
+						{
+							Pattern:  "gitlab.com",
+							Interval: 1,
+						},
+					},
+				},
+			},
+			repoName: "github.com/sourcegraph/sourcegraph",
+			want:     0 * time.Minute,
+		},
+		{
+			name: "Second match",
+			c: &conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					GitUpdateInterval: []*schema.UpdateIntervalRule{
+						{
+							Pattern:  "gitlab.com",
+							Interval: 1,
+						},
+						{
+							Pattern:  "github.com",
+							Interval: 2,
+						},
+					},
+				},
+			},
+			repoName: "github.com/sourcegraph/sourcegraph",
+			want:     2 * time.Minute,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			interval := getCustomInterval(tc.c, tc.repoName)
+			if tc.want != interval {
+				t.Fatalf("Want %v, got %v", tc.want, interval)
 			}
 		})
 	}
