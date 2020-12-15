@@ -29,4 +29,4 @@ A user creates a code monitor, which consists of:
   * a trigger, which consists of a search query to run periodically,
   * and an action, which is sending an email to the user when new results appear
 
-Sourcegraph runs the query perioidcally. When new results are detected, an email will be sent to the user that created the monitor. The email contains a link to the newly detected search results.
+Sourcegraph runs the query perioidcally. When new results are detected, an email is sent to the user that created the monitor. The email contains a link to the newly detected search results.
