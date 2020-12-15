@@ -127,11 +127,6 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 		}
 	}
 
-	// Info message
-	if opts.LiveReload && opts.GrafanaDir != "" && opts.PrometheusDir != "" {
-		logger.Info("Reloaded Prometheus rules & Grafana dashboards")
-	}
-
 	// Generate documentation
 	if opts.DocsDir != "" {
 		logger.Debug("Rendering docs")
