@@ -1,7 +1,6 @@
 import * as H from 'history'
 import classnames from 'classnames'
 import React, { useCallback, useMemo, useState } from 'react'
-import VideoInputAntennaIcon from 'mdi-react/VideoInputAntennaIcon'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../../components/Breadcrumbs'
 import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
@@ -81,7 +80,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         </sup>
                     </>
                 }
-                icon={VideoInputAntennaIcon}
+                icon={TowerIcon}
                 actions={
                     userHasCodeMonitors &&
                     userHasCodeMonitors !== 'loading' &&
@@ -247,3 +246,5 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         </div>
     )
 }
+
+const TowerIcon: React.FunctionComponent = () => <span>🗼</span>
