@@ -137,11 +137,7 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 	dotcomMode := envvar.SourcegraphDotComMode()
 	if !dotcomMode || (dotcomMode && c.CloudGlobal) {
 		setCollector := func(resource string, getter func() *ratelimit.Monitor) {
-			rlm := getter()
-			if rlm == nil {
-				return
-			}
-			rlm.SetCollector(func(remaining float64) {
+			getter().SetCollector(func(remaining float64) {
 				githubRemainingGauge.WithLabelValues(resource, svc.DisplayName).Set(remaining)
 			})
 		}
