@@ -6,14 +6,16 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command"
 )
 
 func TestHandle(t *testing.T) {
-	oldenv := os.Getenv("TMPDIR")
-	defer os.Setenv("TMPDIR", oldenv)
-	os.Setenv("TMPDIR", os.TempDir()+"/codeintel")
+	makeTempDir = func() (string, error) {
+		return "/tmp/codeintel", nil
+	}
+	os.Mkdir("/tmp/codeintel", os.ModePerm)
 
 	store := NewMockStore()
 	runner := NewMockRunner()

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command"
 )
 
@@ -75,17 +76,19 @@ func makeRelativeURL(base string, path ...string) (*url.URL, error) {
 	return baseURL.ResolveReference(&url.URL{Path: filepath.Join(path...)}), nil
 }
 
+// makeTempDir defaults to makeTemporaryDirectory and can be replaced for testing
+// with determinstic workspace/scripts directories.
 var makeTempDir = makeTemporaryDirectory
 
 func makeTemporaryDirectory() (string, error) {
 	// TMPDIR is set in the dev Procfile to avoid requiring developers to explicitly
 	// allow bind mounts of the host's /tmp. If this directory doesn't exist,
 	// ioutil.TempDir below will fail.
-	if tmpdir := os.Getenv("TMPDIR"); tmpdir != "" {
-		if err := os.MkdirAll(tmpdir, os.ModePerm); err != nil {
+	if tempdir := os.Getenv("TMPDIR"); tempdir != "" {
+		if err := os.MkdirAll(tempdir, os.ModePerm); err != nil {
 			return "", err
 		}
-		return tmpdir, nil
+		return ioutil.TempDir(tempdir, "")
 	}
 
 	return ioutil.TempDir("", "")

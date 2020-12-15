@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -90,7 +91,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 		ResourceOptions:    h.options.ResourceOptions,
 	})
 
-	// Dedup images we need to load in. Sorted for ease of testing
+	// Deduplicate and sort (for testing)
 	imageMap := map[string]struct{}{}
 	for _, dockerStep := range job.DockerSteps {
 		imageMap[dockerStep.Image] = struct{}{}
@@ -109,16 +110,14 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 		return err
 	}
 	defer func() {
-		if err != nil {
-			_ = os.RemoveAll(scriptsDir)
-		}
+		_ = os.RemoveAll(scriptsDir)
 	}()
 
 	scriptPaths := make([]string, 0, len(job.DockerSteps))
 	for i, dockerStep := range job.DockerSteps {
-		scriptPath := filepath.Join(scriptsDir, fmt.Sprintf("%d.%d_%s@%s.sh", job.ID, i, job.RepositoryName, job.Commit))
+		scriptPath := filepath.Join(scriptsDir, scriptNameFromJobStep(job, i))
 
-		if err := ioutil.WriteFile(scriptPath, []byte(buildScript(dockerStep)), os.ModePerm); err != nil {
+		if err := ioutil.WriteFile(scriptPath, buildScript(dockerStep), os.ModePerm); err != nil {
 			return err
 		}
 
@@ -182,4 +181,8 @@ func union(a, b map[string]string) map[string]string {
 	}
 
 	return c
+}
+
+func scriptNameFromJobStep(job apiclient.Job, i int) string {
+	return fmt.Sprintf("%d.%d_%s@%s.sh", job.ID, i, strings.Replace(job.RepositoryName, "/", "_", -1), job.Commit)
 }

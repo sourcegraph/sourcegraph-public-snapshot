@@ -50,6 +50,7 @@ func TestFormatRawOrDockerCommandDockerScript(t *testing.T) {
 			"--cpus", "4",
 			"--memory", "20G",
 			"-v", "/proj/src:/data",
+			"-v", "myscript.sh:myscript.sh",
 			"-w", "/data/subdir",
 			"-e", "TEST=true",
 			"--entrypoint",

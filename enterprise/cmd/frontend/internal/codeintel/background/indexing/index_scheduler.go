@@ -259,6 +259,7 @@ func convertIndexConfiguration(repositoryID int, commit string, indexConfigurati
 				Commands: dockerStep.Commands,
 			})
 		}
+
 		indexes = append(indexes, store.Index{
 			Commit:       commit,
 			RepositoryID: repositoryID,

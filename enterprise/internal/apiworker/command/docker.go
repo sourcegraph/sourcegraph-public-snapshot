@@ -1,7 +1,6 @@
 package command
 
 import (
-	"fmt"
 	"path/filepath"
 	"strconv"
 )
@@ -27,7 +26,7 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) com
 		Command: flatten(
 			"docker", "run", "--rm",
 			dockerResourceFlags(options.ResourceOptions),
-			dockerVolumeFlags(dir),
+			dockerVolumeFlags(dir, spec.ScriptPath),
 			dockerWorkingdirectoryFlags(spec.Dir),
 			dockerEnvFlags(spec.Env),
 			dockerEntrypointFlags(),
@@ -44,9 +43,8 @@ func dockerResourceFlags(options ResourceOptions) []string {
 	}
 }
 
-func dockerVolumeFlags(wd string) []string {
-	// TODO - need to mount script as well
-	return []string{"-v", fmt.Sprintf("%s:/data", wd)}
+func dockerVolumeFlags(wd, scriptPath string) []string {
+	return []string{"-v", wd + ":/data", "-v", scriptPath + ":" + scriptPath}
 }
 
 func dockerWorkingdirectoryFlags(dir string) []string {

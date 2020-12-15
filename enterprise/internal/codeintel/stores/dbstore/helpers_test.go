@@ -12,6 +12,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
@@ -126,6 +127,9 @@ func insertIndexes(t testing.TB, db *sql.DB, indexes ...Index) {
 		}
 		if index.IndexerArgs == nil {
 			index.IndexerArgs = []string{}
+		}
+		if index.LocalSteps == nil {
+			index.LocalSteps = []string{}
 		}
 
 		// Ensure we have a repo for the inner join in select queries

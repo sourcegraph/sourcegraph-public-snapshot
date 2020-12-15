@@ -23,8 +23,8 @@ type Runner interface {
 type CommandSpec struct {
 	Key        string
 	Image      string
-	ScriptPath string   // set when Image != "" // TODO - redefine types
-	Command    []string // set when Image == "" // TODO - redefine types
+	ScriptPath string
+	Command    []string
 	Dir        string
 	Env        []string
 }

@@ -76,7 +76,7 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 			&index.Outfile,
 			pq.Array(&executionLogs),
 			&index.Rank,
-			pq.Array(index.LocalSteps),
+			pq.Array(&index.LocalSteps),
 		); err != nil {
 			return nil, err
 		}
@@ -290,6 +290,9 @@ func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error)
 	}
 	if index.IndexerArgs == nil {
 		index.IndexerArgs = []string{}
+	}
+	if index.LocalSteps == nil {
+		index.LocalSteps = []string{}
 	}
 
 	id, _, err := basestore.ScanFirstInt(s.Store.Query(
