@@ -81,7 +81,7 @@ action.
     2. cm_queries (1 entry)
     3. cm_actions (at least 1 entry)
     4. cm_recipients (at least 1 entry)
-3. Enqueue trigger: Periodically, a background job enqueues queries, IE for each
+3. Enqueue trigger: Periodically, a background job enqueues queries, i.e. for each
    active query (column `enabled=true` in `cm_queries`), we create an entry in
    `cm_trigger_jobs`.
 4. Dequeue trigger/enqueue actions: Periodically, a background worker dequeues
