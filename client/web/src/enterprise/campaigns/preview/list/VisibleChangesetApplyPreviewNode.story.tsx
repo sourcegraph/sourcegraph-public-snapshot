@@ -1,7 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
-import { addDays } from 'date-fns'
 import {
     VisibleChangesetSpecFields,
     ChangesetSpecType,
@@ -25,7 +24,6 @@ function baseChangesetSpec(
     return {
         __typename: 'VisibleChangesetSpec',
         id: 'someidv2' + String(published) + JSON.stringify(overrides),
-        expiresAt: addDays(new Date(), 7).toISOString(),
         type: ChangesetSpecType.EXISTING,
         description: {
             __typename: 'GitBranchChangesetDescription',
@@ -73,7 +71,6 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             changesetSpec: {
                 __typename: 'VisibleChangesetSpec',
                 id: 'someidv1',
-                expiresAt: addDays(new Date(), 7).toISOString(),
                 type: ChangesetSpecType.EXISTING,
                 description: {
                     __typename: 'ExistingChangesetReference',
@@ -183,8 +180,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
     },
 }
 
-const queryEmptyFileDiffs = () =>
-    of({ fileDiffs: { totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] } })
+const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
 for (const storyName of Object.keys(visibleChangesetApplyPreviewNodeStories)) {
     add(storyName, () => (

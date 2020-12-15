@@ -113,8 +113,7 @@ const queryEmptyChangesetApplyPreview = (): Observable<CampaignSpecApplyPreviewC
         nodes: [],
     })
 
-const queryEmptyFileDiffs = () =>
-    of({ fileDiffs: { totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] } })
+const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
 add('Create', () => (
     <EnterpriseWebStory>

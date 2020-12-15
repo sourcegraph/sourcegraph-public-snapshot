@@ -1,7 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNode'
-import { addDays } from 'date-fns'
 import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
@@ -17,7 +16,6 @@ export const hiddenChangesetApplyPreviewStories: Record<string, HiddenChangesetA
             changesetSpec: {
                 __typename: 'HiddenChangesetSpec',
                 id: 'someidh1',
-                expiresAt: addDays(new Date(), 7).toISOString(),
                 type: ChangesetSpecType.EXISTING,
             },
         },
@@ -29,7 +27,6 @@ export const hiddenChangesetApplyPreviewStories: Record<string, HiddenChangesetA
             changesetSpec: {
                 __typename: 'HiddenChangesetSpec',
                 id: 'someidh2',
-                expiresAt: addDays(new Date(), 7).toISOString(),
                 type: ChangesetSpecType.BRANCH,
             },
         },

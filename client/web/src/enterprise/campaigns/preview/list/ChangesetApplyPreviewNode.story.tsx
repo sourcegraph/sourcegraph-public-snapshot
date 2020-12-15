@@ -10,8 +10,7 @@ const { add } = storiesOf('web/campaigns/apply/ChangesetApplyPreviewNode', modul
     <div className="p-3 container web-content preview-list__grid">{story()}</div>
 ))
 
-const queryEmptyFileDiffs = () =>
-    of({ fileDiffs: { totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] } })
+const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
 add('Overview', () => {
     const nodes = [

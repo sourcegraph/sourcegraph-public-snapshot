@@ -12,7 +12,6 @@ import { FileDiffConnection } from '../../../../components/diff/FileDiffConnecti
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
-import { map } from 'rxjs/operators'
 
 export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
     node: VisibleChangesetApplyPreviewFields
@@ -167,7 +166,7 @@ const ChangesetSpecFileDiffConnection: React.FunctionComponent<
                 first: args.first ?? null,
                 changesetSpec: spec.id,
                 isLightTheme,
-            }).pipe(map(diff => diff.fileDiffs)),
+            }),
         [spec.id, isLightTheme, queryChangesetSpecFileDiffs]
     )
     return (

@@ -3,16 +3,16 @@ import { gql, dataOrThrowErrors } from '../../../../../../shared/src/graphql/gra
 import {
     ChangesetSpecFileDiffsVariables,
     ChangesetSpecFileDiffsResult,
-    ChangesetSpecFileDiffsFields,
     CampaignSpecApplyPreviewConnectionFields,
     CampaignSpecApplyPreviewResult,
     CampaignSpecApplyPreviewVariables,
+    ChangesetSpecFileDiffConnectionFields,
 } from '../../../../graphql-operations'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { requestGraphQL } from '../../../../backend/graphql'
 
-export const changesetSpecFieldsFragment = gql`
+const changesetSpecFieldsFragment = gql`
     fragment CommonChangesetSpecFields on ChangesetSpec {
         type
     }
@@ -74,6 +74,96 @@ export const changesetSpecFieldsFragment = gql`
     ${diffStatFields}
 `
 
+const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
+    fragment CampaignSpecApplyPreviewConnectionFields on ChangesetApplyPreviewConnection {
+        totalCount
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+        nodes {
+            ...ChangesetApplyPreviewFields
+        }
+    }
+
+    fragment ChangesetApplyPreviewFields on ChangesetApplyPreview {
+        __typename
+        ... on HiddenChangesetApplyPreview {
+            ...HiddenChangesetApplyPreviewFields
+        }
+        ... on VisibleChangesetApplyPreview {
+            ...VisibleChangesetApplyPreviewFields
+        }
+    }
+
+    fragment HiddenChangesetApplyPreviewFields on HiddenChangesetApplyPreview {
+        __typename
+        targets {
+            __typename
+            ... on HiddenApplyPreviewTargetsAttach {
+                changesetSpec {
+                    ...HiddenChangesetSpecFields
+                }
+            }
+            ... on HiddenApplyPreviewTargetsUpdate {
+                changesetSpec {
+                    ...HiddenChangesetSpecFields
+                }
+                changeset {
+                    id
+                }
+            }
+            ... on HiddenApplyPreviewTargetsDetach {
+                changeset {
+                    id
+                }
+            }
+        }
+    }
+
+    fragment VisibleChangesetApplyPreviewFields on VisibleChangesetApplyPreview {
+        __typename
+        operations
+        delta {
+            titleChanged
+        }
+        targets {
+            __typename
+            ... on VisibleApplyPreviewTargetsAttach {
+                changesetSpec {
+                    ...VisibleChangesetSpecFields
+                }
+            }
+            ... on VisibleApplyPreviewTargetsUpdate {
+                changesetSpec {
+                    ...VisibleChangesetSpecFields
+                }
+                changeset {
+                    id
+                    title
+                }
+            }
+            ... on VisibleApplyPreviewTargetsDetach {
+                changeset {
+                    id
+                    title
+                    repository {
+                        url
+                        name
+                    }
+                    diffStat {
+                        added
+                        changed
+                        deleted
+                    }
+                }
+            }
+        }
+    }
+
+    ${changesetSpecFieldsFragment}
+`
+
 export const queryChangesetApplyPreview = ({
     campaignSpec,
     first,
@@ -92,93 +182,7 @@ export const queryChangesetApplyPreview = ({
                 }
             }
 
-            fragment CampaignSpecApplyPreviewConnectionFields on ChangesetApplyPreviewConnection {
-                totalCount
-                pageInfo {
-                    endCursor
-                    hasNextPage
-                }
-                nodes {
-                    ...ChangesetApplyPreviewFields
-                }
-            }
-
-            fragment ChangesetApplyPreviewFields on ChangesetApplyPreview {
-                __typename
-                ... on HiddenChangesetApplyPreview {
-                    ...HiddenChangesetApplyPreviewFields
-                }
-                ... on VisibleChangesetApplyPreview {
-                    ...VisibleChangesetApplyPreviewFields
-                }
-            }
-
-            fragment HiddenChangesetApplyPreviewFields on HiddenChangesetApplyPreview {
-                __typename
-                targets {
-                    __typename
-                    ... on HiddenApplyPreviewTargetsAttach {
-                        changesetSpec {
-                            ...HiddenChangesetSpecFields
-                        }
-                    }
-                    ... on HiddenApplyPreviewTargetsUpdate {
-                        changesetSpec {
-                            ...HiddenChangesetSpecFields
-                        }
-                        changeset {
-                            id
-                        }
-                    }
-                    ... on HiddenApplyPreviewTargetsDetach {
-                        changeset {
-                            id
-                        }
-                    }
-                }
-            }
-
-            fragment VisibleChangesetApplyPreviewFields on VisibleChangesetApplyPreview {
-                __typename
-                operations
-                delta {
-                    titleChanged
-                }
-                targets {
-                    __typename
-                    ... on VisibleApplyPreviewTargetsAttach {
-                        changesetSpec {
-                            ...VisibleChangesetSpecFields
-                        }
-                    }
-                    ... on VisibleApplyPreviewTargetsUpdate {
-                        changesetSpec {
-                            ...VisibleChangesetSpecFields
-                        }
-                        changeset {
-                            id
-                            title
-                        }
-                    }
-                    ... on VisibleApplyPreviewTargetsDetach {
-                        changeset {
-                            id
-                            title
-                            repository {
-                                url
-                                name
-                            }
-                            diffStat {
-                                added
-                                changed
-                                deleted
-                            }
-                        }
-                    }
-                }
-            }
-
-            ${changesetSpecFieldsFragment}
+            ${campaignSpecApplyPreviewConnectionFieldsFragment}
         `,
         { campaignSpec, first, after }
     ).pipe(
@@ -201,17 +205,21 @@ const changesetSpecFileDiffsFields = gql`
             ... on GitBranchChangesetDescription {
                 diff {
                     fileDiffs(first: $first, after: $after) {
-                        nodes {
-                            ...FileDiffFields
-                        }
-                        totalCount
-                        pageInfo {
-                            hasNextPage
-                            endCursor
-                        }
+                        ...ChangesetSpecFileDiffConnectionFields
                     }
                 }
             }
+        }
+    }
+
+    fragment ChangesetSpecFileDiffConnectionFields on FileDiffConnection {
+        nodes {
+            ...FileDiffFields
+        }
+        totalCount
+        pageInfo {
+            hasNextPage
+            endCursor
         }
     }
 
@@ -223,9 +231,7 @@ export const queryChangesetSpecFileDiffs = ({
     first,
     after,
     isLightTheme,
-}: ChangesetSpecFileDiffsVariables): Observable<
-    (ChangesetSpecFileDiffsFields['description'] & { __typename: 'GitBranchChangesetDescription' })['diff']
-> =>
+}: ChangesetSpecFileDiffsVariables): Observable<ChangesetSpecFileDiffConnectionFields> =>
     requestGraphQL<ChangesetSpecFileDiffsResult, ChangesetSpecFileDiffsVariables>(
         gql`
             query ChangesetSpecFileDiffs($changesetSpec: ID!, $first: Int, $after: String, $isLightTheme: Boolean!) {
@@ -250,6 +256,6 @@ export const queryChangesetSpecFileDiffs = ({
             if (node.description.__typename !== 'GitBranchChangesetDescription') {
                 throw new Error('The given ChangesetSpec is no GitBranchChangesetDescription')
             }
-            return node.description.diff
+            return node.description.diff.fileDiffs
         })
     )
