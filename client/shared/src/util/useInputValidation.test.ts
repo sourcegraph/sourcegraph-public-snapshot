@@ -12,7 +12,7 @@ import {
     VALIDATION_DEBOUNCE_TIME,
 } from './useInputValidation'
 
-describe('useInputValidation()', () => {
+describe('input validation', () => {
     let clock: sinon.SinonFakeTimers
     let subscriptions: Subscription
 
@@ -147,207 +147,213 @@ describe('useInputValidation()', () => {
         return "Email must end with '.co'"
     }
 
-    it('works without initial value', () => {
-        const executeUserInputScript = setupValidationPipelineTest({
-            synchronousValidators: [isDotCo],
-        })
-
-        const inputs: (string | number)[] = [
-            'source',
-            'sourcegraph',
-            // Advance less than `VALIDATION_DEBOUNCE_TIME` to ensure value isn't validated in this case
-            min([VALIDATION_DEBOUNCE_TIME - 100, 200]) ?? 200,
-            'sourcegraph@',
-            VALIDATION_DEBOUNCE_TIME,
-            'sourcegraph@sg.co',
-        ]
-
-        const expectedStates: InputValidationState[] = [
-            {
-                kind: 'LOADING',
-                value: 'source',
-            },
-            {
-                kind: 'LOADING',
-                value: 'sourcegraph',
-            },
-            {
-                kind: 'LOADING',
-                value: 'sourcegraph@',
-            },
-            {
-                kind: 'INVALID',
-                value: 'sourcegraph@',
-                reason: "Email must end with '.co'",
-            },
-            {
-                kind: 'LOADING',
-                value: 'sourcegraph@sg.co',
-            },
-            {
-                kind: 'VALID',
-                value: 'sourcegraph@sg.co',
-            },
-        ]
-
-        expect(executeUserInputScript(inputs)).toStrictEqual(expectedStates)
-    })
-
-    it('works with initial value', () => {
-        const executeUserInputScript = setupValidationPipelineTest({
-            synchronousValidators: [isDotCo],
-            initialValue: 'so',
-        })
-
-        const inputs: (string | number)[] = [
-            VALIDATION_DEBOUNCE_TIME,
-            'source',
-            'sourcegraph',
-            // Advance less than `VALIDATION_DEBOUNCE_TIME` to ensure value isn't validated in this case
-            min([VALIDATION_DEBOUNCE_TIME - 100, 200]) ?? 200,
-            'sourcegraph@',
-            VALIDATION_DEBOUNCE_TIME,
-            'sourcegraph@sg.co',
-        ]
-
-        const expectedStates: InputValidationState[] = [
-            {
-                kind: 'LOADING',
-                value: 'so',
-            },
-            {
-                kind: 'INVALID',
-                reason: "Email must include '@'",
-                value: 'so',
-            },
-            {
-                kind: 'LOADING',
-                value: 'source',
-            },
-            {
-                kind: 'LOADING',
-                value: 'sourcegraph',
-            },
-            {
-                kind: 'LOADING',
-                value: 'sourcegraph@',
-            },
-            {
-                kind: 'INVALID',
-                value: 'sourcegraph@',
-                reason: "Email must end with '.co'",
-            },
-            {
-                kind: 'LOADING',
-                value: 'sourcegraph@sg.co',
-            },
-            {
-                kind: 'VALID',
-                value: 'sourcegraph@sg.co',
-            },
-        ]
-
-        expect(executeUserInputScript(inputs)).toStrictEqual(expectedStates)
-    })
-
-    it('works with async validators', () => {
-        function isEmailUnique(email: string): Observable<string | undefined> {
-            return of(email === 'test@sg.co' ? 'Email is taken' : undefined).pipe(delay(200))
-        }
-
-        const executeUserInputScript = setupValidationPipelineTest({
-            synchronousValidators: [isDotCo],
-            asynchronousValidators: [isEmailUnique],
-        })
-
-        const inputs: (string | number)[] = [
-            'test',
-            VALIDATION_DEBOUNCE_TIME,
-            'test@sg.c',
-            'test@sg.co',
-            // Advance 200 more ms due to delay from `isEmailUnique`
-            VALIDATION_DEBOUNCE_TIME + 200,
-            '@sg.co',
-            // Advance less than `VALIDATION_DEBOUNCE_TIME` to ensure value isn't validated in this case
-            min([VALIDATION_DEBOUNCE_TIME - 100, 200]) ?? 200,
-            'sourcegraph@sg.co',
-            // Advance 200 more ms due to delay from `isEmailUnique`
-            200,
-        ]
-
-        const expectedStates: InputValidationState[] = [
-            {
-                kind: 'LOADING',
-                value: 'test',
-            },
-            {
-                kind: 'INVALID',
-                reason: "Email must include '@'",
-                value: 'test',
-            },
-            {
-                kind: 'LOADING',
-                value: 'test@sg.c',
-            },
-            {
-                kind: 'LOADING',
-                value: 'test@sg.co',
-            },
-            {
-                kind: 'INVALID',
-                value: 'test@sg.co',
-                reason: 'Email is taken',
-            },
-            {
-                kind: 'LOADING',
-                value: '@sg.co',
-            },
-            {
-                kind: 'LOADING',
-                value: 'sourcegraph@sg.co',
-            },
-            {
-                kind: 'VALID',
-                value: 'sourcegraph@sg.co',
-            },
-        ]
-
-        expect(executeUserInputScript(inputs)).toStrictEqual(expectedStates)
-    })
-
-    it('works with the state override', () => {
-        const { result } = renderHook(() =>
-            useInputValidation({
+    describe('createValidationPipeline()', () => {
+        it('works without initial value', () => {
+            const executeUserInputScript = setupValidationPipelineTest({
                 synchronousValidators: [isDotCo],
             })
-        )
 
-        act(() => {
-            const [, nextEmailFieldChange, emailInputReference] = result.current
+            const inputs: (string | number)[] = [
+                'source',
+                'sourcegraph',
+                // Advance less than `VALIDATION_DEBOUNCE_TIME` to ensure value isn't validated in this case
+                min([VALIDATION_DEBOUNCE_TIME - 100, 200]) ?? 200,
+                'sourcegraph@',
+                VALIDATION_DEBOUNCE_TIME,
+                'sourcegraph@sg.co',
+            ]
+
+            const expectedStates: InputValidationState[] = [
+                {
+                    kind: 'LOADING',
+                    value: 'source',
+                },
+                {
+                    kind: 'LOADING',
+                    value: 'sourcegraph',
+                },
+                {
+                    kind: 'LOADING',
+                    value: 'sourcegraph@',
+                },
+                {
+                    kind: 'INVALID',
+                    value: 'sourcegraph@',
+                    reason: "Email must end with '.co'",
+                },
+                {
+                    kind: 'LOADING',
+                    value: 'sourcegraph@sg.co',
+                },
+                {
+                    kind: 'VALID',
+                    value: 'sourcegraph@sg.co',
+                },
+            ]
+
+            expect(executeUserInputScript(inputs)).toStrictEqual(expectedStates)
+        })
+
+        it('works with initial value', () => {
+            const executeUserInputScript = setupValidationPipelineTest({
+                synchronousValidators: [isDotCo],
+                initialValue: 'so',
+            })
+
+            const inputs: (string | number)[] = [
+                VALIDATION_DEBOUNCE_TIME,
+                'source',
+                'sourcegraph',
+                // Advance less than `VALIDATION_DEBOUNCE_TIME` to ensure value isn't validated in this case
+                min([VALIDATION_DEBOUNCE_TIME - 100, 200]) ?? 200,
+                'sourcegraph@',
+                VALIDATION_DEBOUNCE_TIME,
+                'sourcegraph@sg.co',
+            ]
+
+            const expectedStates: InputValidationState[] = [
+                {
+                    kind: 'LOADING',
+                    value: 'so',
+                },
+                {
+                    kind: 'INVALID',
+                    reason: "Email must include '@'",
+                    value: 'so',
+                },
+                {
+                    kind: 'LOADING',
+                    value: 'source',
+                },
+                {
+                    kind: 'LOADING',
+                    value: 'sourcegraph',
+                },
+                {
+                    kind: 'LOADING',
+                    value: 'sourcegraph@',
+                },
+                {
+                    kind: 'INVALID',
+                    value: 'sourcegraph@',
+                    reason: "Email must end with '.co'",
+                },
+                {
+                    kind: 'LOADING',
+                    value: 'sourcegraph@sg.co',
+                },
+                {
+                    kind: 'VALID',
+                    value: 'sourcegraph@sg.co',
+                },
+            ]
+
+            expect(executeUserInputScript(inputs)).toStrictEqual(expectedStates)
+        })
+
+        it('works with async validators', () => {
+            function isEmailUnique(email: string): Observable<string | undefined> {
+                return of(email === 'test@sg.co' ? 'Email is taken' : undefined).pipe(delay(200))
+            }
+
+            const executeUserInputScript = setupValidationPipelineTest({
+                synchronousValidators: [isDotCo],
+                asynchronousValidators: [isEmailUnique],
+            })
+
+            const inputs: (string | number)[] = [
+                'test',
+                VALIDATION_DEBOUNCE_TIME,
+                'test@sg.c',
+                'test@sg.co',
+                // Advance 200 more ms due to delay from `isEmailUnique`
+                VALIDATION_DEBOUNCE_TIME + 200,
+                '@sg.co',
+                // Advance less than `VALIDATION_DEBOUNCE_TIME` to ensure value isn't validated in this case
+                min([VALIDATION_DEBOUNCE_TIME - 100, 200]) ?? 200,
+                'sourcegraph@sg.co',
+                // Advance 200 more ms due to delay from `isEmailUnique`
+                200,
+            ]
+
+            const expectedStates: InputValidationState[] = [
+                {
+                    kind: 'LOADING',
+                    value: 'test',
+                },
+                {
+                    kind: 'INVALID',
+                    reason: "Email must include '@'",
+                    value: 'test',
+                },
+                {
+                    kind: 'LOADING',
+                    value: 'test@sg.c',
+                },
+                {
+                    kind: 'LOADING',
+                    value: 'test@sg.co',
+                },
+                {
+                    kind: 'INVALID',
+                    value: 'test@sg.co',
+                    reason: 'Email is taken',
+                },
+                {
+                    kind: 'LOADING',
+                    value: '@sg.co',
+                },
+                {
+                    kind: 'LOADING',
+                    value: 'sourcegraph@sg.co',
+                },
+                {
+                    kind: 'VALID',
+                    value: 'sourcegraph@sg.co',
+                },
+            ]
+
+            expect(executeUserInputScript(inputs)).toStrictEqual(expectedStates)
+        })
+    })
+
+    describe('useInputValidation() hook', () => {
+        it('works with the state override', () => {
+            const { result } = renderHook(() =>
+                useInputValidation({
+                    synchronousValidators: [isDotCo],
+                })
+            )
+
             const inputElement = createEmailInputElement()
-            emailInputReference.current = (inputElement as unknown) as HTMLInputElement
 
             inputElement.changeValue('test-string')
-            nextEmailFieldChange({
-                target: emailInputReference.current,
-                preventDefault: noop,
-            } as React.ChangeEvent<HTMLInputElement>)
+
+            act(() => {
+                const [, nextEmailFieldChange, emailInputReference] = result.current
+
+                emailInputReference((inputElement as unknown) as HTMLInputElement)
+                nextEmailFieldChange({
+                    target: { value: 'test-string' },
+                    preventDefault: noop,
+                } as React.ChangeEvent<HTMLInputElement>)
+            })
+
+            expect(result.current[0]).toStrictEqual({ value: 'test-string', kind: 'LOADING' })
+
+            act(() => {
+                const overrideEmailState = result.current[3]
+                overrideEmailState({ value: 'test@sg.co', validate: false })
+            })
+
+            expect(result.current[0]).toStrictEqual({ value: 'test@sg.co', kind: 'NOT_VALIDATED' })
+
+            act(() => {
+                const overrideEmailState = result.current[3]
+                overrideEmailState({ value: '' })
+            })
+
+            expect(result.current[0]).toStrictEqual({ value: '', kind: 'NOT_VALIDATED' })
         })
-
-        expect(result.current[0]).toStrictEqual({ value: 'test-string', kind: 'LOADING' })
-
-        act(() => {
-            const overrideEmailState = result.current[3]
-            overrideEmailState({ value: 'test@sg.co', validate: false })
-        })
-
-        expect(result.current[0]).toStrictEqual({ value: 'test@sg.co', kind: 'NOT_VALIDATED' })
-
-        act(() => {
-            const overrideEmailState = result.current[3]
-            overrideEmailState({ value: '' })
-        })
-
-        expect(result.current[0]).toStrictEqual({ value: '', kind: 'NOT_VALIDATED' })
     })
 })
