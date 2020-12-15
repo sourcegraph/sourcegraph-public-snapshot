@@ -491,4 +491,103 @@ describe('getHoverResult()', () => {
             }
         `)
     })
+
+    test('smartQuery flag returns hover contents for structural syntax', () => {
+        const scannedQuery = toSuccess(scanSearchQuery(':[var~\\w+] ...', false, SearchPatternType.structural))
+
+        expect(getHoverResult(scannedQuery, { column: 1 }, true)).toMatchInlineSnapshot(`
+            {
+              "contents": [
+                {
+                  "value": "**Regular expression hole**. Match the regular expression defined inside this hole."
+                }
+              ],
+              "range": {
+                "startLineNumber": 1,
+                "endLineNumber": 1,
+                "startColumn": 1,
+                "endColumn": 11
+              }
+            }
+        `)
+
+        expect(getHoverResult(scannedQuery, { column: 3 }, true)).toMatchInlineSnapshot(`
+            {
+              "contents": [
+                {
+                  "value": "**Hole variable**. A descriptive name for the syntax matched by this hole."
+                }
+              ],
+              "range": {
+                "startLineNumber": 1,
+                "endLineNumber": 1,
+                "startColumn": 3,
+                "endColumn": 6
+              }
+            }
+        `)
+
+        expect(getHoverResult(scannedQuery, { column: 6 }, true)).toMatchInlineSnapshot(`
+            {
+              "contents": [
+                {
+                  "value": "**Regular expression separator**. Indicates the start of a regular expression that this hole should match."
+                }
+              ],
+              "range": {
+                "startLineNumber": 1,
+                "endLineNumber": 1,
+                "startColumn": 6,
+                "endColumn": 7
+              }
+            }
+        `)
+
+        expect(getHoverResult(scannedQuery, { column: 9 }, true)).toMatchInlineSnapshot(`
+            {
+              "contents": [
+                {
+                  "value": "**One or more**. Match one or more of the previous expression."
+                }
+              ],
+              "range": {
+                "startLineNumber": 1,
+                "endLineNumber": 1,
+                "startColumn": 9,
+                "endColumn": 10
+              }
+            }
+        `)
+        expect(getHoverResult(scannedQuery, { column: 10 }, true)).toMatchInlineSnapshot(`
+            {
+              "contents": [
+                {
+                  "value": "**Regular expression hole**. Match the regular expression defined inside this hole."
+                }
+              ],
+              "range": {
+                "startLineNumber": 1,
+                "endLineNumber": 1,
+                "startColumn": 1,
+                "endColumn": 11
+              }
+            }
+        `)
+
+        expect(getHoverResult(scannedQuery, { column: 12 }, true)).toMatchInlineSnapshot(`
+            {
+              "contents": [
+                {
+                  "value": "**Structural hole**. Matches code structures contextually. See the [syntax reference](https://docs.sourcegraph.com/code_search/reference/structural#syntax-reference) for a complete description."
+                }
+              ],
+              "range": {
+                "startLineNumber": 1,
+                "endLineNumber": 1,
+                "startColumn": 12,
+                "endColumn": 15
+              }
+            }
+        `)
+    })
 })
