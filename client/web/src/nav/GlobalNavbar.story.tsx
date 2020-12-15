@@ -92,20 +92,23 @@ add('Auth required', () => (
     </WebStory>
 ))
 
-add('Authenticated viewer', () => (
-    <WebStory>
-        {webProps => (
-            <GlobalNavbar
-                {...defaultProps(webProps)}
-                authRequired={false}
-                authenticatedUser={
-                    { username: 'alice', organizations: { nodes: [{ name: 'acme' }] } } as AuthenticatedUser
-                }
-                variant="default"
-                isSearchRelatedPage={false}
-            />
-        )}
-    </WebStory>),
+add(
+    'Authenticated viewer',
+    () => (
+        <WebStory>
+            {webProps => (
+                <GlobalNavbar
+                    {...defaultProps(webProps)}
+                    authRequired={false}
+                    authenticatedUser={
+                        { username: 'alice', organizations: { nodes: [{ name: 'acme' }] } } as AuthenticatedUser
+                    }
+                    variant="default"
+                    isSearchRelatedPage={false}
+                />
+            )}
+        </WebStory>
+    ),
     {
         design: {
             type: 'figma',
