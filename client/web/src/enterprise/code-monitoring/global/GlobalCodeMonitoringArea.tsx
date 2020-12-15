@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { CodeMonitoringProps } from '..'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
@@ -62,7 +62,7 @@ export const AuthenticatedCodeMonitoringArea = withAuthenticatedUser<Authenticat
         )
     )
 
-    return (
+    return outerProps.authenticatedUser ? (
         <div className="w-100">
             <Breadcrumbs breadcrumbs={outerProps.breadcrumbs} location={outerProps.location} />
             <div className="container web-content">
@@ -86,5 +86,7 @@ export const AuthenticatedCodeMonitoringArea = withAuthenticatedUser<Authenticat
                 </Switch>
             </div>
         </div>
+    ) : (
+        <Redirect to="/sign-in" />
     )
 })
