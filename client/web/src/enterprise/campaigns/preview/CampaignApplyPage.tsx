@@ -20,7 +20,7 @@ import { CampaignDescription } from '../detail/CampaignDescription'
 import { CampaignSpecInfoByline } from './CampaignSpecInfoByline'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../../auth'
-import { CampaignSpecMissingCredentialsAlert } from './CampaignSpecMissingCredentialsAlert'
+import { MissingCredentialsAlert } from './MissingCredentialsAlert'
 import { SupersedingCampaignSpecAlert } from '../detail/SupersedingCampaignSpecAlert'
 
 export interface CampaignApplyPageProps extends ThemeProps, TelemetryProps {
@@ -86,7 +86,7 @@ export const CampaignApplyPage: React.FunctionComponent<CampaignApplyPageProps> 
                 className="test-campaign-apply-page"
             />
             <CampaignSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} className="mb-3" />
-            <CampaignSpecMissingCredentialsAlert
+            <MissingCredentialsAlert
                 authenticatedUser={authenticatedUser}
                 viewerCampaignsCodeHosts={spec.viewerCampaignsCodeHosts}
             />
