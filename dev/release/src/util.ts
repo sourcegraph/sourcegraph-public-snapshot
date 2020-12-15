@@ -24,6 +24,8 @@ export function timezoneLink(date: Date, linkName: string): string {
     })}_${date.getUTCFullYear()}_in_UTC?${encodeURI(linkName)}`
 }
 
+export const cacheFolder = './.secrets'
+
 export async function readLine(prompt: string, cacheFile?: string): Promise<string> {
     if (!cacheFile) {
         return readLineNoCache(prompt)
