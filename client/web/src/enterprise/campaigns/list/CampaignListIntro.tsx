@@ -26,28 +26,40 @@ export const CampaignListIntro: React.FunctionComponent = () => (
         <div className="col-12 col-md-6 mb-2">
             <DismissibleAlert
                 className="campaign-list-intro__alert"
-                partialStorageKey="campaign-list-intro-changelog-3.22"
+                partialStorageKey="campaign-list-intro-changelog-3.23"
             >
                 <div className="campaign-list-intro__card card h-100 p-2">
                     <div className="card-body">
-                        <h4>New campaigns features in version 3.22</h4>
+                        <h4>New campaigns features in version 3.23</h4>
                         <ul className="text-muted mb-0 pl-3">
-                            <li>Users can now create campaigns</li>
+                            <li>Changesets in a campaign can be searched by title and repository name</li>
                             <li>
-                                Changeset are published using the{' '}
-                                <a href="https://docs.sourcegraph.com/campaigns/how-tos/configuring_user_credentials">
-                                    configured code host tokens
+                                Multiple changesets can be created from a single repository using the experimental{' '}
+                                <a
+                                    href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#transformchanges"
+                                    target="_blank"
+                                    rel="noopener"
+                                    className="text-monospace"
+                                >
+                                    transformChanges
                                 </a>{' '}
-                                of the user applying the campaign
+                                block in a campaign spec
                             </li>
                             <li>
-                                Template variables such as <code>search_result_paths</code> and{' '}
-                                <code>modified_files</code> are now{' '}
-                                <a href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_templating">
-                                    available in campaign specifications
-                                </a>
+                                Steps in campaign specs can now{' '}
+                                <a
+                                    href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#examples-7"
+                                    target="_blank"
+                                    rel="noopener"
+                                >
+                                    pass environment variables
+                                </a>{' '}
+                                on to containers
                             </li>
-                            <li>Handling of code host rate limits when syncing changeset data has been improved</li>
+                            <li>
+                                The preview of a campaign spec now includes detailed information about what will change,
+                                instead of only showing the desired state
+                            </li>
                         </ul>
                     </div>
                 </div>
