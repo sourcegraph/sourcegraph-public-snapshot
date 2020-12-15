@@ -319,7 +319,8 @@ const SiteSchemaJSON = `{
         "properties": {
           "pattern": {
             "description": "A regular expression matching a repo name",
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "interval": {
             "description": "An integer representing the number of minutes to wait until the next update",
