@@ -5,13 +5,19 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 )
 
 func TestEnterpriseLicenseHasFeature(t *testing.T) {
-	ctx := context.Background()
 	r := &LicenseResolver{}
+	schema, err := graphqlbackend.NewSchema(nil, nil, nil, nil, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := backend.WithAuthzBypass(context.Background())
 
 	buildMock := func(allow ...licensing.Feature) func(feature licensing.Feature) error {
 		return func(feature licensing.Feature) error {
@@ -24,49 +30,40 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 			return licensing.NewFeatureNotActivatedError("feature not allowed")
 		}
 	}
+	query := `query HasFeature($feature: String!) { enterpriseLicenseHasFeature(feature: $feature) }`
 
 	for name, tc := range map[string]struct {
-		args    *graphqlbackend.EnterpriseLicenseHasFeatureArgs
+		feature string
 		mock    func(feature licensing.Feature) error
 		want    bool
 		wantErr bool
 	}{
 		"real feature, enabled": {
-			args: &graphqlbackend.EnterpriseLicenseHasFeatureArgs{
-				Feature: string(licensing.FeatureCampaigns),
-			},
+			feature: string(licensing.FeatureCampaigns),
 			mock:    buildMock(licensing.FeatureCampaigns),
 			want:    true,
 			wantErr: false,
 		},
 		"real feature, disabled": {
-			args: &graphqlbackend.EnterpriseLicenseHasFeatureArgs{
-				Feature: string(licensing.FeatureMonitoring),
-			},
+			feature: string(licensing.FeatureMonitoring),
 			mock:    buildMock(licensing.FeatureCampaigns),
 			want:    false,
 			wantErr: false,
 		},
 		"fake feature, enabled": {
-			args: &graphqlbackend.EnterpriseLicenseHasFeatureArgs{
-				Feature: "foo",
-			},
+			feature: "foo",
 			mock:    buildMock("foo"),
 			want:    true,
 			wantErr: false,
 		},
 		"fake feature, disabled": {
-			args: &graphqlbackend.EnterpriseLicenseHasFeatureArgs{
-				Feature: "foo",
-			},
+			feature: "foo",
 			mock:    buildMock("bar"),
 			want:    false,
 			wantErr: false,
 		},
 		"error from check": {
-			args: &graphqlbackend.EnterpriseLicenseHasFeatureArgs{
-				Feature: string(licensing.FeatureMonitoring),
-			},
+			feature: string(licensing.FeatureMonitoring),
 			mock: func(feature licensing.Feature) error {
 				return errors.New("this is a different error")
 			},
@@ -84,8 +81,10 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 				licensing.MockCheckFeature = oldMock
 			}()
 
-			have, err := r.EnterpriseLicenseHasFeature(ctx, tc.args)
-			if err != nil {
+			var have struct{ EnterpriseLicenseHasFeature bool }
+			if err := apitest.Exec(ctx, t, schema, map[string]interface{}{
+				"feature": tc.feature,
+			}, &have, query); err != nil {
 				if !tc.wantErr {
 					t.Errorf("got error when no error was expected: %v", err)
 				}
@@ -93,7 +92,7 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 				t.Error("did not get expected error")
 			}
 
-			if have != tc.want {
+			if have.EnterpriseLicenseHasFeature != tc.want {
 				t.Errorf("unexpected has feature response: have=%v want=%v", have, tc.want)
 			}
 		})
@@ -103,13 +102,16 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 			licensing.EnforceTiers = false
 			defer func() { licensing.EnforceTiers = oldEnforce }()
 
-			have, err := r.EnterpriseLicenseHasFeature(ctx, tc.args)
-			if err != nil {
+			var have struct{ EnterpriseLicenseHasFeature bool }
+			if err := apitest.Exec(ctx, t, schema, map[string]interface{}{
+				"feature": tc.feature,
+			}, &have, query); err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
-			if !have {
+			if !have.EnterpriseLicenseHasFeature {
 				t.Error("unexpected disallowance when tiers aren't enforced")
 			}
+
 		})
 	}
 }
