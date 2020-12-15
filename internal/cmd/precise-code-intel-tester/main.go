@@ -29,9 +29,8 @@ var (
 
 	// Entrypoints
 	commands = map[string]func() error{
-		"upload":   uploadCommand,
-		"query":    queryCommand,
-		"addrepos": addReposCommand,
+		"upload": uploadCommand,
+		"query":  queryCommand,
 	}
 )
 
