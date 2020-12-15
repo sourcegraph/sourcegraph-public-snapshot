@@ -14,31 +14,19 @@ import { queryExternalServices } from '../../../components/externalServices/back
 export interface UserAddCodeHostsPageProps {
     history: H.History
     userID: Scalars['ID']
-
-    /**
-     * The list of code host external services to be displayed.
-     * Pick items from externalServices.codeHostExternalServices.
-     */
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
-    /**
-     * The list of non-code host external services to be displayed.
-     * Pick items from externalServices.nonCodeHostExternalServices.
-     */
-    nonCodeHostExternalServices: Record<string, AddExternalServiceOptions>
 }
 
 type Status = undefined | 'loading' | 'loaded' | ErrorLike
-type serviceIdsByKindState = Partial<Record<ExternalServiceKind, ExternalServiceFields['id'][]>>
+export type servicesByKindState = Partial<
+    Record<ExternalServiceKind, { id: ExternalServiceFields['id']; repoCount?: number; warning?: string } /* []*/>
+>
 
-/**
- * Page for choosing a service kind and variant to add, among the available options.
- */
 export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageProps> = ({
     userID,
     codeHostExternalServices,
-    nonCodeHostExternalServices,
 }) => {
-    const [serviceIdsByKind, setServiceIdsByKind] = useState<serviceIdsByKindState>({})
+    const [servicesByKind, setServicesByKind] = useState<servicesByKindState>({})
     const [statusOrError, setStatusOrError] = useState<Status>()
 
     const fetchExternalServices = useCallback(async () => {
@@ -50,18 +38,22 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             after: null,
         }).toPromise()
 
-        const servicesByKind: serviceIdsByKindState = fetchedServices.reduce((accumulator, { id, kind }) => {
-            const byKind = accumulator[kind]
-            if (!byKind) {
-                accumulator[kind] = [id]
-            } else {
-                byKind.push(id)
-            }
+        const services: servicesByKindState = fetchedServices.reduce((accumulator, { id, kind }) => {
+            // TODO: Figure out what to do when user has multiple external services of the same kind.
+            // Is it possible by design?
+
+            // const byKind = accumulator[kind]
+            // if (!byKind) {
+            //     accumulator[kind] = [id]
+            // } else {
+            //     byKind.push(id)
+            // }
+            accumulator[kind] = { id }
 
             return accumulator
-        }, {} as serviceIdsByKindState)
+        }, {} as servicesByKindState)
 
-        setServiceIdsByKind(servicesByKind)
+        setServicesByKind(services)
         setStatusOrError('loaded')
     }, [userID])
 
@@ -85,8 +77,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 Connect with providers where your source code is hosted. Then,{' '}
                 <Link to="repositories">add repositories</Link> to search with Sourcegraph.
             </p>
-            {true && (
-                <div className="alert alert-warning my-4">
+            {isErrorLike(setStatusOrError) && (
+                <div className="alert alert-danger my-4">
                     <strong>Could not connect to GitHub.</strong> Please <Link to="/">update your access token</Link> to
                     restore the connection.
                 </div>
@@ -96,38 +88,17 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                     {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) => (
                         <li key={id} className="list-group-item">
                             <CodeHostItem
+                                {...servicesByKind[kind]}
                                 kind={kind}
-                                icon={icon}
                                 name={defaultDisplayName}
-                                serviceIds={serviceIdsByKind[kind]}
-                                onDidConnect={() => {}}
-                                onDidRemove={() => {}}
-                                onDidEdit={() => {}}
+                                icon={icon}
+                                onDidConnect={fetchExternalServices}
+                                onDidRemove={fetchExternalServices}
+                                onDidError={setStatusOrError}
                             />
                         </li>
                     ))}
                 </ul>
-            )}
-
-            {Object.entries(nonCodeHostExternalServices).length > 0 && (
-                <>
-                    <br />
-                    <h2>Other connections</h2>
-                    <p className="mt-2">Add connections to non-code-host services.</p>
-                    {Object.entries(nonCodeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) => (
-                        <div className="add-external-services-page__card" key={id}>
-                            <CodeHostItem
-                                kind={kind}
-                                icon={icon}
-                                name={defaultDisplayName}
-                                serviceIds={serviceIdsByKind[kind]}
-                                onDidConnect={() => {}}
-                                onDidRemove={() => {}}
-                                onDidEdit={() => {}}
-                            />
-                        </div>
-                    ))}
-                </>
             )}
         </div>
     )

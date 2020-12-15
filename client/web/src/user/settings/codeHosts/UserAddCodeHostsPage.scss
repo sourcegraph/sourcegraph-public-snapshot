@@ -2,17 +2,21 @@
     &__button {
         display: block;
     }
-
-    &__icon_check.mdi-icon {
+    &__icon--inside {
+        position: absolute;
+        right: 2em;
+        top: calc(50% - 1.5em);
+    }
+    &__icon--success.mdi-icon {
         fill: var(--success);
     }
-    &__icon_warn.mdi-icon {
-        fill: var(--warning);
+    &__icon--danger.mdi-icon {
+        fill: var(--danger);
     }
-    &__icon_warn.mdi-icon {
-        fill: var(--warning);
-    }
-    &__icon_off.mdi-icon {
+    &__icon--outline.mdi-icon {
         fill: var(--border-color);
+    }
+    &__icon--muted.mdi-icon {
+        fill: var(--text-muted);
     }
 }

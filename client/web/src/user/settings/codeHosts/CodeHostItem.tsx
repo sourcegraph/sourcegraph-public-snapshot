@@ -1,25 +1,27 @@
 import React, { useState, useCallback } from 'react'
-import { noop } from 'lodash'
-// import * as H from 'history'
 
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CircleOutlineIcon from 'mdi-react/CircleOutlineIcon'
 
-import { Link } from '../../../../../shared/src/components/Link'
-import { ExternalServiceKind, ExternalServiceFields } from '../../../graphql-operations'
 import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
+import { Link } from '../../../../../shared/src/components/Link'
+import { ExternalServiceKind, ExternalServiceFields } from '../../../graphql-operations'
+import { ErrorLike } from '../../../../../shared/src/util/errors'
 
 interface CodeHostItemProps {
     kind: ExternalServiceKind
-    icon: React.ComponentType<{ className?: string }>
     name: string
-    serviceIds: ExternalServiceFields['id'][] | undefined
+    icon: React.ComponentType<{ className?: string }>
+    // optional service object fields when the code host connection is active
+    id?: ExternalServiceFields['id']
+    repoCount?: number
+    warning?: string
 
     onDidConnect: () => void
-    onDidEdit: () => void
     onDidRemove: () => void
+    onDidError: (error: ErrorLike) => void
 }
 
 const MODAL_HINTS: Partial<Record<ExternalServiceKind, React.ReactFragment>> = {
@@ -43,21 +45,18 @@ const MODAL_HINTS: Partial<Record<ExternalServiceKind, React.ReactFragment>> = {
             <span className="text-muted"> on GitLab.com with read_user, read_api, and read_repository scope.</span>
         </small>
     ),
-
-    // // As of now the following types of user code hosts are not supported - stubs
-    // [ExternalServiceKind.BITBUCKETSERVER]: <></>,
-    // [ExternalServiceKind.BITBUCKETCLOUD]: <></>,
-    // [ExternalServiceKind.GITOLITE]: <></>,
-    // [ExternalServiceKind.PHABRICATOR]: <></>,
-    // [ExternalServiceKind.AWSCODECOMMIT]: <></>,
-    // [ExternalServiceKind.OTHER]: <></>,
 }
 
 export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
+    id,
+    repoCount,
+    warning,
     kind,
     name,
     icon: Icon,
-    serviceIds = [],
+    onDidConnect,
+    onDidRemove,
+    onDidError,
 }) => {
     const [showAddConnectionModal, setShowAddConnectionModal] = useState(false)
     const toggleAddConnectionModal = useCallback(() => setShowAddConnectionModal(!showAddConnectionModal), [
@@ -69,12 +68,6 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
         showRemoveConnectionModal,
     ])
 
-    const onCodeHostConnect = useCallback((token: string): void => {
-        console.log(`Adding token: ${token}`)
-    }, [])
-
-    const hasServices = serviceIds.length !== 0
-
     return (
         <div className="p-2 d-flex align-items-start">
             {showAddConnectionModal && (
@@ -82,38 +75,37 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     kind={kind}
                     name={name}
                     hintFragment={MODAL_HINTS[kind]}
-                    onDidAdd={onCodeHostConnect}
+                    onDidAdd={onDidConnect}
                     onDidCancel={toggleAddConnectionModal}
+                    onDidError={onDidError}
                 />
             )}
-            {showRemoveConnectionModal && (
+            {id && showRemoveConnectionModal && (
                 <RemoveCodeHostConnectionModal
+                    id={id}
                     kind={kind}
                     name={name}
-                    servicesCount={serviceIds.length}
-                    onDidRemove={noop}
+                    repoCount={repoCount}
+                    onDidRemove={onDidRemove}
                     onDidCancel={toggleRemoveConnectionModal}
+                    onDidError={onDidError}
                 />
             )}
             <div className="align-self-center">
-                {hasServices ? (
-                    <CheckCircleIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon_check" />
+                {id ? (
+                    <CheckCircleIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon--success" />
+                ) : warning ? (
+                    <AlertCircleIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon--danger" />
                 ) : (
-                    <CircleOutlineIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon_off" />
+                    <CircleOutlineIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon--outline" />
                 )}
-                {/* <AlertCircleIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon_warn" /> */}
                 <Icon className="icon-inline mb-0 mr-2" />
             </div>
             <div className="flex-1">
                 <h3 className="mt-1 mb-0">{name}</h3>
             </div>
             <div className="align-self-center">
-                {!hasServices && (
-                    <button type="button" className="btn btn-success" onClick={toggleAddConnectionModal}>
-                        Connect
-                    </button>
-                )}
-                {hasServices && (
+                {id ? (
                     <>
                         <button
                             type="button"
@@ -132,6 +124,10 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                             Remove
                         </button>
                     </>
+                ) : (
+                    <button type="button" className="btn btn-success" onClick={toggleAddConnectionModal}>
+                        Connect
+                    </button>
                 )}
             </div>
         </div>

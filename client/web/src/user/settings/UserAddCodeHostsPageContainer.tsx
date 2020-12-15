@@ -12,6 +12,5 @@ export const UserAddCodeHostsPageContainer: React.FunctionComponent<UserAddCodeH
             github: codeHostExternalServices.github,
             gitlabcom: codeHostExternalServices.gitlabcom,
         }}
-        nonCodeHostExternalServices={{}}
     />
 )

@@ -1,39 +1,57 @@
 import React, { useState, useCallback } from 'react'
 import Dialog from '@reach/dialog'
-
 import ShieldCheckIcon from 'mdi-react/ShieldCheckIcon'
-import { Form } from '../../../../../branded/src/components/Form'
 
-/**
- * TODO:
- * 1. Add new service by kind with user's token
- * 2. input validation
- * 3. fix lock icon
- */
+import { Form } from '../../../../../branded/src/components/Form'
+import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
+import { addExternalService } from '../../../components/externalServices/backend'
+import { ExternalServiceKind } from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { defaultExternalServices } from '../../../components/externalServices/externalServices'
+
+interface CodeHostConfig {
+    url: string
+    token: string
+}
 
 export const AddCodeHostConnectionModal: React.FunctionComponent<{
     name: string
-    kind: string
-    onDidAdd: (token: string) => void
+    kind: ExternalServiceKind
+    onDidAdd: () => void
     onDidCancel: () => void
+    onDidError: (error: ErrorLike) => void
 
     hintFragment?: React.ReactFragment
-}> = ({ onDidAdd, onDidCancel, name, kind, hintFragment }) => {
-    const [token, setToken] = useState<string>()
+}> = ({ onDidAdd, onDidCancel, onDidError, name, kind, hintFragment }) => {
+    const [token, setToken] = useState<string>('')
+    const [isLoading, setIsLoading] = useState(false)
 
-    const onChangeToken = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        event => setToken(event.target.value),
-        []
-    )
+    const onChangeToken: React.ChangeEventHandler<HTMLInputElement> = event => setToken(event.target.value)
 
     const onTokenSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
-        event => {
+        async event => {
             event.preventDefault()
-            if (token) {
-                onDidAdd(token)
+            setIsLoading(true)
+            try {
+                if (token) {
+                    const { defaultConfig } = defaultExternalServices[kind]
+                    const config: CodeHostConfig = JSON.parse(defaultConfig)
+                    config.token = token
+                    const finalConfig = JSON.stringify(config)
+
+                    await addExternalService({ input: { kind, displayName: name, config: finalConfig } }, eventLogger)
+                    onDidAdd()
+                }
+            } catch (error) {
+                setIsLoading(false)
+                onDidError(asError(error))
             }
+            // } finally {
+            //     setIsLoading(false)
+            //     onDidCancel()
+            // }
         },
-        [token, onDidAdd]
+        [token, kind, name, onDidAdd, onDidError, onDidCancel]
     )
 
     return (
@@ -53,12 +71,12 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                             type="text"
                             value={token}
                             onChange={onChangeToken}
-                            className="form-control"
+                            className="form-control pr-4"
                             required={true}
                             minLength={1}
                         />
                         <ShieldCheckIcon
-                            className=""
+                            className="icon-inline add-user-code-hosts-page__icon--inside add-user-code-hosts-page__icon--muted"
                             data-tooltip="Data will be encrypted and will not be visible again."
                         />
                         {hintFragment}
@@ -72,7 +90,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                         >
                             Cancel
                         </button>
-                        <button type="submit" disabled={false} className="btn btn-primary">
+                        <button type="submit" disabled={!token || isLoading} className="btn btn-primary">
                             Add code host connection
                         </button>
                     </div>
