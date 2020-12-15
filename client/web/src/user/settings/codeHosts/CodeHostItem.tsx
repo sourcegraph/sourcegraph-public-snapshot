@@ -7,15 +7,16 @@ import CircleOutlineIcon from 'mdi-react/CircleOutlineIcon'
 import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { Link } from '../../../../../shared/src/components/Link'
-import { ExternalServiceKind, ExternalServiceFields } from '../../../graphql-operations'
+import { Scalars, ExternalServiceKind, ExternalServiceFields } from '../../../graphql-operations'
 import { ErrorLike } from '../../../../../shared/src/util/errors'
 
 interface CodeHostItemProps {
+    userID: Scalars['ID']
     kind: ExternalServiceKind
     name: string
     icon: React.ComponentType<{ className?: string }>
     // optional service object fields when the code host connection is active
-    id?: ExternalServiceFields['id']
+    serviceID?: ExternalServiceFields['id']
     repoCount?: number
     warning?: string
 
@@ -48,7 +49,8 @@ const MODAL_HINTS: Partial<Record<ExternalServiceKind, React.ReactFragment>> = {
 }
 
 export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
-    id,
+    userID,
+    serviceID,
     repoCount,
     warning,
     kind,
@@ -72,6 +74,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
         <div className="p-2 d-flex align-items-start">
             {showAddConnectionModal && (
                 <AddCodeHostConnectionModal
+                    userID={userID}
                     kind={kind}
                     name={name}
                     hintFragment={MODAL_HINTS[kind]}
@@ -80,9 +83,9 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     onDidError={onDidError}
                 />
             )}
-            {id && showRemoveConnectionModal && (
+            {serviceID && showRemoveConnectionModal && (
                 <RemoveCodeHostConnectionModal
-                    id={id}
+                    id={serviceID}
                     kind={kind}
                     name={name}
                     repoCount={repoCount}
@@ -92,7 +95,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 />
             )}
             <div className="align-self-center">
-                {id ? (
+                {serviceID ? (
                     <CheckCircleIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon--success" />
                 ) : warning ? (
                     <AlertCircleIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon--danger" />
@@ -105,7 +108,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 <h3 className="mt-1 mb-0">{name}</h3>
             </div>
             <div className="align-self-center">
-                {id ? (
+                {serviceID ? (
                     <>
                         <button
                             type="button"

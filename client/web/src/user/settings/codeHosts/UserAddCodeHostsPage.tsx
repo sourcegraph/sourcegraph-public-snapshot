@@ -19,7 +19,10 @@ export interface UserAddCodeHostsPageProps {
 
 type Status = undefined | 'loading' | 'loaded' | ErrorLike
 export type servicesByKindState = Partial<
-    Record<ExternalServiceKind, { id: ExternalServiceFields['id']; repoCount?: number; warning?: string } /* []*/>
+    Record<
+        ExternalServiceKind,
+        { serviceID: ExternalServiceFields['id']; repoCount?: number; warning?: string } /* []*/
+    >
 >
 
 export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageProps> = ({
@@ -48,7 +51,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             // } else {
             //     byKind.push(id)
             // }
-            accumulator[kind] = { id }
+            accumulator[kind] = { serviceID: id }
 
             return accumulator
         }, {} as servicesByKindState)
@@ -77,8 +80,9 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 Connect with providers where your source code is hosted. Then,{' '}
                 <Link to="repositories">add repositories</Link> to search with Sourcegraph.
             </p>
-            {isErrorLike(setStatusOrError) && (
+            {isErrorLike(statusOrError) && (
                 <div className="alert alert-danger my-4">
+                    <code>{statusOrError.message}</code>
                     <strong>Could not connect to GitHub.</strong> Please <Link to="/">update your access token</Link> to
                     restore the connection.
                 </div>
@@ -89,6 +93,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                         <li key={id} className="list-group-item">
                             <CodeHostItem
                                 {...servicesByKind[kind]}
+                                userID={userID}
                                 kind={kind}
                                 name={defaultDisplayName}
                                 icon={icon}

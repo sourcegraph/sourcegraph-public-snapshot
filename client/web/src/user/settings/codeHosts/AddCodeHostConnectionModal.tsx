@@ -5,7 +5,7 @@ import ShieldCheckIcon from 'mdi-react/ShieldCheckIcon'
 import { Form } from '../../../../../branded/src/components/Form'
 import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
 import { addExternalService } from '../../../components/externalServices/backend'
-import { ExternalServiceKind } from '../../../graphql-operations'
+import { Scalars, ExternalServiceKind } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 
@@ -15,6 +15,7 @@ interface CodeHostConfig {
 }
 
 export const AddCodeHostConnectionModal: React.FunctionComponent<{
+    userID: Scalars['ID']
     name: string
     kind: ExternalServiceKind
     onDidAdd: () => void
@@ -22,7 +23,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
     onDidError: (error: ErrorLike) => void
 
     hintFragment?: React.ReactFragment
-}> = ({ onDidAdd, onDidCancel, onDidError, name, kind, hintFragment }) => {
+}> = ({ userID, name, kind, hintFragment, onDidAdd, onDidCancel, onDidError }) => {
     const [token, setToken] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
 
@@ -39,7 +40,10 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                     config.token = token
                     const finalConfig = JSON.stringify(config)
 
-                    await addExternalService({ input: { kind, displayName: name, config: finalConfig } }, eventLogger)
+                    await addExternalService(
+                        { input: { kind, displayName: name, config: finalConfig, namespace: userID } },
+                        eventLogger
+                    )
                     onDidAdd()
                 }
             } catch (error) {
@@ -48,7 +52,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                 onDidError(asError(error))
             }
         },
-        [token, kind, name, onDidAdd, onDidError, onDidCancel]
+        [userID, token, kind, name, onDidAdd, onDidError, onDidCancel]
     )
 
     return (
