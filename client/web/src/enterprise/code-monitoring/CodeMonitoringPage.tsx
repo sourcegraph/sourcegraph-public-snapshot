@@ -120,8 +120,12 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                         Use a search query to watch for new search results, and choose how to receive
                                         notifications in response.
                                     </p>
-                                    {/* TODO: add link */}
-                                    <a className="btn btn-secondary">View in docs →</a>
+                                    <a
+                                        href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points#watch-for-potential-secrets"
+                                        className="btn btn-secondary"
+                                    >
+                                        View in docs →
+                                    </a>
                                 </div>
                             </div>
                             <div className="col-6">
@@ -131,8 +135,12 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                         Keep an eye on commits with new consumers of deprecated methods to keep your
                                         code base up-to-date.
                                     </p>
-                                    {/* TODO: add link */}
-                                    <a className="btn btn-secondary">View in docs →</a>
+                                    <a
+                                        href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points#watch-for-consumers-of-deprecated-endpoints"
+                                        className="btn btn-secondary"
+                                    >
+                                        View in docs →
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -146,8 +154,12 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                     <h4>Core concepts</h4>
                                     <p className="text-muted">
                                         Craft searches that will monitor your code and trigger actions.{' '}
-                                        {/* TODO: add link */}
-                                        <a className="link">Read the docs</a>
+                                        <a
+                                            href="https://docs.sourcegraph.com/code_monitoring/explanations/core_concepts"
+                                            className="link"
+                                        >
+                                            Read the docs
+                                        </a>
                                     </p>
                                 </div>
                             </div>
@@ -156,8 +168,13 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                     <h4>Starting points and ideas</h4>
                                     <p className="text-muted">
                                         Find specific examples of useful code monitors to keep on top of security and
-                                        consistency concerns. {/* TODO: add link */}
-                                        <a className="link">Explore starting points</a>
+                                        consistency concerns.
+                                        <a
+                                            href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
+                                            className="link"
+                                        >
+                                            Explore starting points
+                                        </a>
                                     </p>
                                 </div>
                             </div>
@@ -177,9 +194,8 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
             {userHasCodeMonitors && userHasCodeMonitors !== 'loading' && !isErrorLike(userHasCodeMonitors) && (
                 <>
                     <div className="text-muted mb-4">
-                        {/* TODO: Add link to docs */}
                         Watch your code for changes and trigger actions to get notifications, send webhooks, and more.{' '}
-                        <a href="/">Learn more.</a>
+                        <a href="https://docs.sourcegraph.com/code_monitoring">Learn more.</a>
                     </div>
                     <div className="d-flex flex-column">
                         <div className="code-monitoring-page-tabs border-bottom mb-4">

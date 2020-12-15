@@ -1,6 +1,7 @@
 # Start monitoring your code
 
 This page lists code monitors that are commonly used and can be used across most codebases.
+
 ## Watch for potential secrets
 
 Code monitors can help you react quickly to the secrets being accidentally committed to your codebase.
