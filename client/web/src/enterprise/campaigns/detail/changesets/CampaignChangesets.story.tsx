@@ -11,6 +11,7 @@ import {
     ChangesetPublicationState,
     ChangesetCheckState,
     ChangesetReviewState,
+    ChangesetSpecType,
 } from '../../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs } from '../backend'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
@@ -53,6 +54,7 @@ const nodes: ChangesetFields[] = [
             error: null,
             currentSpec: {
                 id: 'spec-rand-id-1',
+                type: ChangesetSpecType.BRANCH,
                 description: {
                     __typename: 'GitBranchChangesetDescription',
                     headRef: 'my-branch',

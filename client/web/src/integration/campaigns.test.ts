@@ -205,6 +205,7 @@ const CampaignChangesets: (variables: CampaignChangesetsVariables) => CampaignCh
                     title: 'The changeset title',
                     currentSpec: {
                         id: 'spec-rand-id-1',
+                        type: ChangesetSpecType.BRANCH,
                         description: {
                             __typename: 'GitBranchChangesetDescription',
                             headRef: 'my-branch',
