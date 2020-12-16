@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
@@ -33,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 const addr = ":3188"
@@ -67,6 +69,7 @@ func main() {
 
 	// Initialize stores
 	dbStore := store.NewWithDB(db, observationContext)
+	workerStore := dbstore.WorkerutilUploadStore(dbStore)
 	lsifStore := lsifstore.NewStore(codeIntelDB, observationContext)
 	gitserverClient := gitserver.New(dbStore, observationContext)
 
@@ -79,7 +82,7 @@ func main() {
 	}
 
 	// Initialize metrics
-	mustRegisterQueueMetric(observationContext, dbStore)
+	mustRegisterQueueMetric(observationContext, workerStore)
 
 	// Initialize worker
 	worker := worker.NewWorker(
@@ -153,12 +156,12 @@ func mustInitializeCodeIntelDB() *sql.DB {
 	return db
 }
 
-func mustRegisterQueueMetric(observationContext *observation.Context, dbStore *store.Store) {
+func mustRegisterQueueMetric(observationContext *observation.Context, workerStore dbworkerstore.Store) {
 	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_upload_queue_uploads_total",
 		Help: "Total number of uploads in the queued state.",
 	}, func() float64 {
-		count, err := dbStore.QueueSize(context.Background())
+		count, err := workerStore.QueuedCount(context.Background(), nil)
 		if err != nil {
 			log15.Error("Failed to determine queue size", "err", err)
 		}
