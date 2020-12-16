@@ -41,22 +41,6 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, err erro
 	return c.execGitCommand(ctx, repositoryID, "rev-parse", "HEAD")
 }
 
-// CommitDate returns the time that the given commit was committed.
-func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string) (_ time.Time, err error) {
-	ctx, endObservation := c.operations.commitDate.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-		log.String("commit", commit),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	out, err := c.execGitCommand(ctx, repositoryID, "show", "-s", "--format=%cI", commit)
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	return time.Parse(time.RFC3339, strings.TrimSpace(out))
-}
-
 type CommitGraph struct {
 	graph map[string][]string
 	order []string
@@ -103,6 +87,22 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitG
 	}
 
 	return ParseCommitGraph(strings.Split(out, "\n")), nil
+}
+
+// CommitDate returns the time that the given commit was committed.
+func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string) (_ time.Time, err error) {
+	ctx, endObservation := with(ctx, c.operations.commitDate, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	out, err := c.execGitCommand(ctx, repositoryID, "show", "-s", "--format=%cI", commit)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return time.Parse(time.RFC3339, strings.TrimSpace(out))
 }
 
 // ParseCommitGraph converts the output of git log into a map from commits to parent commits,
@@ -156,7 +156,7 @@ func ParseCommitGraph(pair []string) *CommitGraph {
 
 // RawContents returns the contents of a file in a particular commit of a repository.
 func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file string) (_ []byte, err error) {
-	ctx, endObservation := c.operations.rawContents.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, endObservation := with(ctx, c.operations.rawContents, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 		log.String("file", file),
@@ -175,7 +175,7 @@ func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file
 // of git ls-tree. The keys of the resulting map are the input (unsanitized) dirnames, and the value of
 // that key are the files nested under that directory.
 func (c *Client) DirectoryChildren(ctx context.Context, repositoryID int, commit string, dirnames []string) (_ map[string][]string, err error) {
-	ctx, endObservation := c.operations.directoryChildren.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, endObservation := with(ctx, c.operations.directoryChildren, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
@@ -252,7 +252,7 @@ func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
 
 // FileExists determines whether a file exists in a particular commit of a repository.
 func (c *Client) FileExists(ctx context.Context, repositoryID int, commit, file string) (_ bool, err error) {
-	ctx, endObservation := c.operations.fileExists.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, endObservation := with(ctx, c.operations.fileExists, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 		log.String("file", file),
@@ -282,7 +282,7 @@ func (c *Client) FileExists(ctx context.Context, repositoryID int, commit, file 
 // ListFiles returns a list of root-relative file paths matching the given pattern in a particular
 // commit of a repository.
 func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) (_ []string, err error) {
-	ctx, endObservation := c.operations.listFiles.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, endObservation := with(ctx, c.operations.listFiles, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 		log.String("pattern", pattern.String()),
@@ -325,4 +325,17 @@ func (c *Client) repositoryIDToRepo(ctx context.Context, repositoryID int) (api.
 	}
 
 	return api.RepoName(repoName), nil
+}
+
+// with calls With on the given operation, but masks the error pointer in the case
+// that the error is due to an unknown revision. This function should be used over
+// calling With directly in this package whenever we use a revision that was stored
+// in a code intelligence-owned data store. These commits can fall out of sync with
+// gitserver and upstream callers are expected to handle these cases appropriately.
+func with(ctx context.Context, op *observation.Operation, err *error, args observation.Args) (context.Context, observation.FinishFunc) {
+	if err != nil && gitserver.IsRevisionNotFound(*err) {
+		err = nil
+	}
+
+	return op.With(ctx, err, args)
 }
