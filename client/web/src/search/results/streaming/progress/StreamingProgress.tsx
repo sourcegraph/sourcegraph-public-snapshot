@@ -1,10 +1,10 @@
 import * as React from 'react'
-import { Progress, StreamingReultsState } from '../../../stream'
+import { Progress, StreamingResultsState } from '../../../stream'
 import { StreamingProgressCount } from './StreamingProgressCount'
 import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton'
 
 export interface StreamingProgressProps {
-    state: StreamingReultsState
+    state: StreamingResultsState
     progress: Progress
     onSearchAgain: (additionalFilters: string[]) => void
 }
