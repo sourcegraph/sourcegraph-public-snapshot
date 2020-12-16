@@ -4,33 +4,31 @@ import ShieldCheckIcon from 'mdi-react/ShieldCheckIcon'
 
 import { Form } from '../../../../../branded/src/components/Form'
 import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
-import { addExternalService } from '../../../components/externalServices/backend'
+import { updateExternalService } from '../../../components/externalServices/backend'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
-import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 
 interface CodeHostConfig {
     url: string
     token: string
 }
 
-const getServiceConfig = (kind: ExternalServiceKind, token: string): string => {
-    const { defaultConfig } = defaultExternalServices[kind]
-    const config = JSON.parse(defaultConfig) as CodeHostConfig
-    config.token = token
-    return JSON.stringify(config, null, 2)
+const updateConfigToken = (config: string, token: string): string => {
+    const updatedConfig = JSON.parse(config) as CodeHostConfig
+    updatedConfig.token = token
+    return JSON.stringify(updatedConfig, null, 2)
 }
 
-export const AddCodeHostConnectionModal: React.FunctionComponent<{
-    userID: Scalars['ID']
+export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
+    serviceId: Scalars['ID']
+    serviceConfig: string
     name: string
     kind: ExternalServiceKind
-    onDidAdd: (service: ListExternalServiceFields) => void
+    onDidUpdate: (service: ListExternalServiceFields) => void
     onDidCancel: () => void
     onDidError: (error: ErrorLike) => void
 
     hintFragment?: React.ReactFragment
-}> = ({ userID, name, kind, hintFragment, onDidAdd, onDidCancel, onDidError }) => {
+}> = ({ serviceId, serviceConfig, name, kind, hintFragment, onDidUpdate, onDidCancel, onDidError }) => {
     const [token, setToken] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
 
@@ -52,21 +50,20 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
 
             try {
                 if (token) {
-                    const config = getServiceConfig(kind, token)
+                    const config = updateConfigToken(serviceConfig, token)
 
-                    const { webhookURL, ...newService } = await addExternalService(
-                        { input: { kind, config, displayName: name, namespace: userID } },
-                        eventLogger
-                    )
+                    const { webhookURL, ...newService } = await updateExternalService({
+                        input: { id: serviceId, config },
+                    })
 
-                    onDidAdd(newService)
+                    onDidUpdate(newService)
                     onDidCancel()
                 }
             } catch (error) {
                 handleError(error)
             }
         },
-        [userID, token, kind, name, onDidCancel, handleError, onDidAdd]
+        [serviceConfig, serviceId, token, onDidCancel, handleError, onDidUpdate]
     )
 
     return (
@@ -76,7 +73,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
             onDismiss={onDidCancel}
         >
             <div className="web-content">
-                <h3 className="mb-4">Connect with {name}</h3>
+                <h3 className="mb-4">Update {name}</h3>
                 <Form onSubmit={onTokenSubmit}>
                     <div className="form-group mb-4">
                         <label htmlFor="code-host-token">Personal access token</label>
@@ -109,7 +106,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                             Cancel
                         </button>
                         <button type="submit" disabled={!token || isLoading} className="btn btn-primary">
-                            Add code host connection
+                            Update token
                         </button>
                     </div>
                 </Form>
