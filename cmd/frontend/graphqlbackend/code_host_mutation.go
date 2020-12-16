@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 )
 
@@ -29,14 +28,9 @@ func (r *schemaResolver) SetCodeHostRepos(ctx context.Context, args struct {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site admins may read all or a user's external services.
-	// Otherwise, the authenticated user can only read external services under the same namespace.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		if es.NamespaceUserID == 0 {
-			return nil, err
-		} else if actor.FromContext(ctx).UID != es.NamespaceUserID {
-			return nil, errors.New("the authenticated user does not have access to this external service")
-		}
+	// 🚨 SECURITY: make sure the user is either site admin or the same user being requested
+	if err := backend.CheckSiteAdminOrSameUser(ctx, es.NamespaceUserID); err != nil {
+		return nil, err
 	}
 
 	cfg, err := es.Configuration()

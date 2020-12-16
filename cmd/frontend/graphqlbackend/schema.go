@@ -829,11 +829,7 @@ type Mutation {
     """
     Set the repos synced by a code host
     """
-    setCodeHostRepos(
-        id: ID!
-        repos: [String!]
-        allRepos: Boolean!
-    ): EmptyResponse!
+    setCodeHostRepos(id: ID!, repos: [String!], allRepos: Boolean!): EmptyResponse!
 
     """
     Reset the timestamps of a trigger query. The query will be queued immediately and return
