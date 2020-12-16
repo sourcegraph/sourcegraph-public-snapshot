@@ -36,6 +36,7 @@ popd
 
 pushd dev/ci/test/code-intel
 init-sg initSG
+source /root/.profile
 init-sg addRepos -config repos.json
 sleep 30
 popd
