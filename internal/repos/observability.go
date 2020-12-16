@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -444,34 +445,8 @@ func (o *ObservedStore) Done(err error) error {
 	return o.store.(TxStore).Done(err)
 }
 
-// ListExternalServices calls into the inner Store and registers the observed results.
-func (o *ObservedStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (es []*types.ExternalService, err error) {
-	tr, ctx := o.trace(ctx, "Store.ListExternalServices")
-	tr.LogFields(
-		otlog.Object("args.ids", args.IDs),
-		otlog.Object("args.kinds", args.Kinds),
-	)
-
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-		count := float64(len(es))
-
-		o.metrics.ListExternalServices.Observe(secs, count, &err)
-		logging.Log(o.log, "store.list-external-services", &err,
-			"args", fmt.Sprintf("%+v", args),
-			"count", len(es),
-		)
-
-		tr.LogFields(
-			otlog.Int("count", len(es)),
-			otlog.Object("names", types.ExternalServices(es).DisplayNames()),
-			otlog.Object("urns", types.ExternalServices(es).URNs()),
-		)
-		tr.SetError(err)
-		tr.Finish()
-	}(time.Now())
-
-	return o.store.ListExternalServices(ctx, args)
+func (o *ObservedStore) ExternalServiceStore() *idb.ExternalServiceStore {
+	return o.store.ExternalServiceStore()
 }
 
 // UpsertExternalServices calls into the inner Store and registers the observed results.

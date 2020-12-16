@@ -8,7 +8,9 @@ import (
 	"github.com/goware/urlx"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -185,7 +187,7 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context, s Store) {
 	cf := httpcli.NewExternalHTTPClientFactory()
 
 	for {
-		phabs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
+		phabs, err := s.ExternalServiceStore().List(ctx, db.ExternalServicesListOptions{
 			Kinds: []string{extsvc.KindPhabricator},
 		})
 		if err != nil {

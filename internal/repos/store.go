@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -27,7 +28,8 @@ import (
 
 // A Store exposes methods to read and write repos and external services.
 type Store interface {
-	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*types.ExternalService, error)
+	ExternalServiceStore() *idb.ExternalServiceStore
+
 	UpsertExternalServices(ctx context.Context, svcs ...*types.ExternalService) error
 
 	ListRepos(context.Context, StoreListReposArgs) ([]*types.Repo, error)
@@ -202,22 +204,9 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 	return &DBStore{Store: txBase}, nil
 }
 
-// ListExternalServices lists all stored external services matching the given args.
-func (s *DBStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (svcs []*types.ExternalService, _ error) {
-	if args.PerPage <= 0 {
-		args.PerPage = DefaultListExternalServicesPerPage
-	}
-	return svcs, s.paginate(ctx, args.Limit, args.PerPage, args.Cursor, listExternalServicesQuery(args),
-		func(sc scanner) (last, count int64, err error) {
-			var svc types.ExternalService
-			err = scanExternalService(&svc, sc)
-			if err != nil {
-				return 0, 0, err
-			}
-			svcs = append(svcs, &svc)
-			return svc.ID, 1, nil
-		},
-	)
+// ExternalServiceStore returns a db.ExternalServiceStore using the same database handle.
+func (s *DBStore) ExternalServiceStore() *idb.ExternalServiceStore {
+	return idb.NewExternalServicesStoreWith(s)
 }
 
 const listExternalServicesQueryFmtstr = `

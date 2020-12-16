@@ -13,7 +13,9 @@ import (
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -111,11 +113,11 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	args := repos.StoreListExternalServicesArgs{
+	args := db.ExternalServicesListOptions{
 		IDs: svcIDs,
 	}
 
-	es, err := s.Store.ListExternalServices(r.Context(), args)
+	es, err := s.Store.ExternalServiceStore().List(r.Context(), args)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -148,11 +150,11 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	args := repos.StoreListExternalServicesArgs{
+	args := db.ExternalServicesListOptions{
 		Kinds: types.Repos(rs).Kinds(),
 	}
 
-	es, err := s.Store.ListExternalServices(r.Context(), args)
+	es, err := s.Store.ExternalServiceStore().List(r.Context(), args)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
