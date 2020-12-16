@@ -5,15 +5,10 @@
     "Config": {
       "url": "https://github.com",
       "repos": [
-        "linkerd/linkerd2",
-        "rancher/k3s",
-        "google/guava",
-        "sourcegraph/sourcegraph",
-        "src-d/go-git",
-        "chrismwendt/ctags-test",
-        "sourcegraph/zoekt",
-        "jaegertracing/jaeger",
-        "prometheus/prometheus"
+        "sourcegraph-testing/etcd",
+        "sourcegraph-testing/tidb",
+        "sourcegraph-testing/titan",
+        "sourcegraph-testing/zap"
       ]
     }
   }
