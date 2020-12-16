@@ -19,19 +19,24 @@ docker_logs() {
   chmod 744 $CONTAINER.log
 }
 
-if [[ $VAGRANT_RUN_ENV="CI" ]]; then
+if [[ $VAGRANT_RUN_ENV = "CI" ]]; then
   IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION
 else
-  IMAGE=sourcegraph/server:latest
+  IMAGE=sourcegraph/server:insiders
 fi
 
 ./dev/run-server-image.sh -d --name $CONTAINER
 trap docker_logs exit
 sleep 15
 
-pushd internal/cmd/init-server
-go build
-./init-server "$root_dir/dev/ci/test/code-intel/extsvc.json"
+pushd internal/cmd/init-sg
+go build -o /usr/local/bin/init-sg
+popd
+
+pushd dev/ci/test/code-intel
+init-sg initSG
+init-sg addRepos -config repos.json
+sleep 30
 popd
 
 # Load variables set up by init-server, disabling `-x` to avoid printing variables

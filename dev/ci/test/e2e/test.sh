@@ -19,10 +19,10 @@ trap cleanup EXIT
 # ==========================
 
 echo "TEST: Running E2E tests"
-if [[ $VAGRANT_RUN_ENV="CI" ]]; then
+if [[ $VAGRANT_RUN_ENV = "CI" ]]; then
   IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION
 else
-  IMAGE=sourcegraph/server:latest
+  IMAGE=sourcegraph/server:insiders
 fi
 
  ./dev/ci/e2e.sh
