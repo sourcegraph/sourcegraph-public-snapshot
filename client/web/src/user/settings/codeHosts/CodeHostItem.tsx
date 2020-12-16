@@ -6,6 +6,7 @@ import CircleOutlineIcon from 'mdi-react/CircleOutlineIcon'
 
 import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
+import { UpdateCodeHostConnectionModal } from './UpdateCodeHostConnectionModal'
 import { hints } from './modalHints'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { ErrorLike } from '../../../../../shared/src/util/errors'
@@ -15,11 +16,13 @@ interface CodeHostItemProps {
     kind: ExternalServiceKind
     name: string
     icon: React.ComponentType<{ className?: string }>
+    isUpdateModalOpen: boolean
+    toggleUpdateModal: () => void
     // optional service object fields when the code host connection is active
     service?: ListExternalServiceFields
     repoCount?: number
 
-    onDidConnect: (service: ListExternalServiceFields) => void
+    onDidUpsert: (service: ListExternalServiceFields) => void
     onDidRemove: () => void
     onDidError: (error: ErrorLike) => void
 }
@@ -31,34 +34,37 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     kind,
     name,
     icon: Icon,
-    onDidConnect,
+    isUpdateModalOpen,
+    toggleUpdateModal,
+    onDidUpsert,
     onDidRemove,
     onDidError,
 }) => {
-    const [showAddConnectionModal, setShowAddConnectionModal] = useState(false)
-    const toggleAddConnectionModal = useCallback(() => setShowAddConnectionModal(!showAddConnectionModal), [
-        showAddConnectionModal,
+    const [isAddConnectionModalOpen, setIsAddConnectionModalOpen] = useState(false)
+    const toggleAddConnectionModal = useCallback(() => setIsAddConnectionModalOpen(!isAddConnectionModalOpen), [
+        isAddConnectionModalOpen,
     ])
 
-    const [showRemoveConnectionModal, setShowRemoveConnectionModal] = useState(false)
-    const toggleRemoveConnectionModal = useCallback(() => setShowRemoveConnectionModal(!showRemoveConnectionModal), [
-        showRemoveConnectionModal,
-    ])
+    const [isRemoveConnectionModalOpen, setIsRemoveConnectionModalOpen] = useState(false)
+    const toggleRemoveConnectionModal = useCallback(
+        () => setIsRemoveConnectionModalOpen(!isRemoveConnectionModalOpen),
+        [isRemoveConnectionModalOpen]
+    )
 
     return (
         <div className="p-2 d-flex align-items-start">
-            {showAddConnectionModal && (
+            {isAddConnectionModalOpen && (
                 <AddCodeHostConnectionModal
                     userID={userID}
                     kind={kind}
                     name={name}
                     hintFragment={hints[kind]}
-                    onDidAdd={onDidConnect}
+                    onDidAdd={onDidUpsert}
                     onDidCancel={toggleAddConnectionModal}
                     onDidError={onDidError}
                 />
             )}
-            {service && showRemoveConnectionModal && (
+            {service && isRemoveConnectionModalOpen && (
                 <RemoveCodeHostConnectionModal
                     id={service.id}
                     kind={kind}
@@ -66,6 +72,18 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     repoCount={repoCount}
                     onDidRemove={onDidRemove}
                     onDidCancel={toggleRemoveConnectionModal}
+                    onDidError={onDidError}
+                />
+            )}
+            {service && isUpdateModalOpen && (
+                <UpdateCodeHostConnectionModal
+                    serviceId={service.id}
+                    serviceConfig={service.config}
+                    name={service.displayName}
+                    kind={kind}
+                    hintFragment={hints[kind]}
+                    onDidCancel={toggleUpdateModal}
+                    onDidUpdate={onDidUpsert}
                     onDidError={onDidError}
                 />
             )}
@@ -88,7 +106,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                         <button
                             type="button"
                             className="btn btn-link text-primary p-0 mr-2 shadow-none"
-                            onClick={() => {}}
+                            onClick={toggleUpdateModal}
                             disabled={false}
                         >
                             Edit

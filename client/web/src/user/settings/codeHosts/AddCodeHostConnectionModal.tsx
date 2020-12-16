@@ -3,11 +3,11 @@ import Dialog from '@reach/dialog'
 import ShieldCheckIcon from 'mdi-react/ShieldCheckIcon'
 
 import { Form } from '../../../../../branded/src/components/Form'
+import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
 import { addExternalService } from '../../../components/externalServices/backend'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 
 interface CodeHostConfig {
     url: string
@@ -88,8 +88,6 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                                 value={token}
                                 onChange={onChangeToken}
                                 className="form-control pr-4"
-                                required={true}
-                                minLength={1}
                             />
                             <ShieldCheckIcon
                                 size="1.25em"

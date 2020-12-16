@@ -1,18 +1,17 @@
 import React, { useCallback, useState, useEffect } from 'react'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 
 import { CodeHostItem } from './CodeHostItem'
-import { UpdateCodeHostConnectionModal } from './UpdateCodeHostConnectionModal'
-import { hints } from './modalHints'
 import { PageTitle } from '../../../components/PageTitle'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
-import { Link } from '../../../../../shared/src/components/Link'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { eventLogger } from '../../../tracking/eventLogger'
-
-import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { ErrorAlert } from '../../../components/alerts'
+import { Link } from '../../../../../shared/src/components/Link'
+
+import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
 
 export interface UserAddCodeHostsPageProps {
     userID: Scalars['ID']
@@ -30,10 +29,11 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 }) => {
     const [servicesByKind, setServicesByKind] = useState<servicesByKindState>({})
     const [statusOrError, setStatusOrError] = useState<Status>()
-    const [showUpdateConnectionModal, setShowUpdateConnectionModal] = useState(false)
-    const toggleUpdateConnectionModal = useCallback(() => setShowUpdateConnectionModal(!showUpdateConnectionModal), [
-        showUpdateConnectionModal,
-    ])
+
+    const [isUpdateModalOpen, setIssUpdateModalOpen] = useState(false)
+    const toggleUpdateModal = useCallback(() => {
+        setIssUpdateModalOpen(!isUpdateModalOpen)
+    }, [isUpdateModalOpen])
 
     const fetchExternalServices = useCallback(async () => {
         setStatusOrError('loading')
@@ -45,6 +45,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         }).toPromise()
 
         const services: servicesByKindState = fetchedServices.reduce<servicesByKindState>((accumulator, service) => {
+            // backend constrain - user have only one external service per ExternalServiceKind
             accumulator[service.kind] = service
             return accumulator
         }, {})
@@ -71,38 +72,20 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     )
 
     const getServiceWarningFragment = ({
-        displayName,
-        kind,
         id,
+        displayName,
         warning,
-        config,
     }: ListExternalServiceFields): React.ReactFragment => (
         <div className="alert alert-danger my-4" key={id}>
             <strong className="align-middle">Could not connect to {displayName}.</strong>
             <span className="align-middle"> Please </span>
-            <button
-                type="button"
-                className="btn btn-link text-primary p-0 shadow-none"
-                onClick={toggleUpdateConnectionModal}
-            >
+            <button type="button" className="btn btn-link text-primary p-0 shadow-none" onClick={toggleUpdateModal}>
                 update your access token
             </button>{' '}
             <span className="align-middle">to restore the connection.</span>
             <div className="py-2">
                 <small>{warning}</small>
             </div>
-            {showUpdateConnectionModal && (
-                <UpdateCodeHostConnectionModal
-                    serviceId={id}
-                    serviceConfig={config}
-                    name={displayName}
-                    kind={kind}
-                    hintFragment={hints[kind]}
-                    onDidCancel={toggleUpdateConnectionModal}
-                    onDidUpdate={handleServiceUpsert}
-                    onDidError={setStatusOrError}
-                />
-            )}
         </div>
     )
 
@@ -120,15 +103,17 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 to search with Sourcegraph.
             </p>
 
+            {/* display external service errors */}
             {Object.values(servicesByKind)
-                .filter(service => service?.warning)
+                .filter((service): service is ListExternalServiceFields => !!service?.warning)
                 .map(getServiceWarningFragment)}
 
+            {/* display other errors */}
             {isErrorLike(statusOrError) && (
                 <ErrorAlert error={statusOrError} history={history} prefix="Code host action error" icon={false} />
             )}
 
-            {codeHostExternalServices && statusOrError !== 'loading' && (
+            {codeHostExternalServices && statusOrError !== 'loading' ? (
                 <ul className="list-group">
                     {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) => (
                         <li key={id} className="list-group-item">
@@ -138,13 +123,19 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                 kind={kind}
                                 name={defaultDisplayName}
                                 icon={icon}
-                                onDidConnect={handleServiceUpsert}
+                                isUpdateModalOpen={isUpdateModalOpen}
+                                toggleUpdateModal={toggleUpdateModal}
+                                onDidUpsert={handleServiceUpsert}
                                 onDidRemove={fetchExternalServices}
                                 onDidError={setStatusOrError}
                             />
                         </li>
                     ))}
                 </ul>
+            ) : (
+                <div className="d-flex justify-content-center">
+                    <LoadingSpinner className="icon-inline" />
+                </div>
             )}
         </div>
     )

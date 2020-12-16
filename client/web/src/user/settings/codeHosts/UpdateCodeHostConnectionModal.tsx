@@ -85,8 +85,6 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                                 value={token}
                                 onChange={onChangeToken}
                                 className="form-control pr-4"
-                                required={true}
-                                minLength={1}
                             />
                             <ShieldCheckIcon
                                 size="1.25em"

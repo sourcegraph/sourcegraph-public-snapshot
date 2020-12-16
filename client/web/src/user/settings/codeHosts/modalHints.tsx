@@ -5,7 +5,11 @@ import { ExternalServiceKind } from '../../../graphql-operations'
 export const hints: Partial<Record<ExternalServiceKind, React.ReactFragment>> = {
     [ExternalServiceKind.GITHUB]: (
         <small>
-            <Link to="" target="_blank" rel="noopener noreferrer">
+            <Link
+                to="https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
                 Create a new access token
             </Link>
             <span className="text-muted"> on GitHub.com with repo or public_repo scope.</span>
