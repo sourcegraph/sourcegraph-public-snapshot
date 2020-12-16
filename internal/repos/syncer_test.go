@@ -45,22 +45,25 @@ func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T
 		}
 
 		for _, tc := range []struct {
-			name    string
-			sourcer repos.Sourcer
-			store   repos.Store
-			err     string
+			name       string
+			sourcer    repos.Sourcer
+			store      repos.Store
+			repoLister repos.Lister
+			err        string
 		}{
 			{
-				name:    "sourcer error aborts sync",
-				sourcer: repos.NewFakeSourcer(errors.New("boom")),
-				store:   store,
-				err:     "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
+				name:       "sourcer error aborts sync",
+				sourcer:    repos.NewFakeSourcer(errors.New("boom")),
+				store:      store,
+				repoLister: store.RepoStore(),
+				err:        "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
 			},
 			{
 				name:    "store list error aborts sync",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(&githubService, nil)),
-				store: &storeWithErrors{
-					Store:        store,
+				store:   store,
+				repoLister: &repoListerWithErrors{
+					RepoStore:    store.RepoStore(),
 					ListReposErr: errors.New("boom"),
 				},
 				err: "syncer.sync.store.list-repos: boom",
@@ -72,7 +75,8 @@ func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T
 					Store:          store,
 					UpsertReposErr: errors.New("booya"),
 				},
-				err: "syncer.sync.store.upsert-repos: booya",
+				repoLister: store.RepoStore(),
+				err:        "syncer.sync.store.upsert-repos: booya",
 			},
 		} {
 			tc := tc
@@ -85,7 +89,7 @@ func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T
 					Sourcer: tc.sourcer,
 					Now:     now,
 				}
-				err := syncer.SyncExternalService(ctx, tc.store, githubService.ID, time.Millisecond)
+				err := syncer.SyncExternalService(ctx, tc.store, tc.repoLister, githubService.ID, time.Millisecond)
 
 				if have, want := err.Error(), tc.err; have != want {
 					t.Errorf("have error %q, want %q", have, want)
@@ -106,15 +110,7 @@ func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T
 type storeWithErrors struct {
 	repos.Store
 
-	ListReposErr   error
 	UpsertReposErr error
-}
-
-func (s *storeWithErrors) ListRepos(ctx context.Context, args repos.StoreListReposArgs) ([]*types.Repo, error) {
-	if s.ListReposErr != nil {
-		return nil, s.ListReposErr
-	}
-	return s.Store.ListRepos(ctx, args)
 }
 
 func (s *storeWithErrors) UpsertRepos(ctx context.Context, repos ...*types.Repo) error {
@@ -122,6 +118,19 @@ func (s *storeWithErrors) UpsertRepos(ctx context.Context, repos ...*types.Repo)
 		return s.UpsertReposErr
 	}
 	return s.Store.UpsertRepos(ctx, repos...)
+}
+
+type repoListerWithErrors struct {
+	*idb.RepoStore
+
+	ListReposErr error
+}
+
+func (s *repoListerWithErrors) List(ctx context.Context, args idb.ReposListOptions) ([]*types.Repo, error) {
+	if s.ListReposErr != nil {
+		return nil, s.ListReposErr
+	}
+	return s.RepoStore.List(ctx, args)
 }
 
 func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
@@ -624,7 +633,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				}
 
 				for _, svc := range tc.svcs {
-					err := syncer.SyncExternalService(ctx, st, svc.ID, time.Millisecond)
+					err := syncer.SyncExternalService(ctx, st, st.RepoStore(), svc.ID, time.Millisecond)
 
 					if have, want := fmt.Sprint(err), tc.err; have != want {
 						t.Errorf("have error %q, want %q", have, want)
@@ -638,7 +647,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 				if st != nil {
 					var want, have types.Repos
 					want.Concat(tc.diff.Added, tc.diff.Modified, tc.diff.Unmodified)
-					have, _ = st.ListRepos(ctx, repos.StoreListReposArgs{})
+					have, _ = st.RepoStore().List(ctx, idb.ReposListOptions{})
 
 					want = want.With(types.Opt.RepoID(0))
 					have = have.With(types.Opt.RepoID(0))
@@ -764,7 +773,7 @@ func testSyncRepo(t *testing.T, s repos.Store) func(*testing.T) {
 					t.Fatal(err)
 				}
 
-				have, err := st.ListRepos(ctx, repos.StoreListReposArgs{})
+				have, err := st.RepoStore().List(ctx, idb.ReposListOptions{})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -1348,7 +1357,7 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1360,7 +1369,7 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), svc2.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1378,12 +1387,12 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
 			// Confirm that the repository hasn't been deleted
-			rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
+			rs, err := store.RepoStore().List(ctx, idb.ReposListOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1405,7 +1414,7 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), svc2.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1481,7 +1490,7 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1493,14 +1502,14 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), svc2.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
 			// Confirm that there are two relationships
 			assertSourceCount(ctx, t, db, 2)
 
-			fromDB, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
+			fromDB, err := store.RepoStore().List(ctx, idb.ReposListOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1537,7 +1546,7 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, tx1, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, tx1, tx1.RepoStore(), svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1556,7 +1565,7 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 				}
 				err := syncer2.SyncExternalService(ctx, &storeWrapper{Store: tx2, onUpsertRepos: func() {
 					close(upsertCalledCh)
-				}}, svc2.ID, 10*time.Second)
+				}}, tx2.RepoStore(), svc2.ID, 10*time.Second)
 				errChan <- err
 			}()
 
@@ -1569,7 +1578,7 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 			}
 			tx2.Done(nil)
 
-			fromDB, err = store.ListRepos(ctx, repos.StoreListReposArgs{})
+			fromDB, err = store.RepoStore().List(ctx, idb.ReposListOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1633,7 +1642,7 @@ func testSyncRepoMaintainsOtherSources(db *sql.DB) func(t *testing.T, store repo
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1645,7 +1654,7 @@ func testSyncRepoMaintainsOtherSources(db *sql.DB) func(t *testing.T, store repo
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), svc2.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1739,7 +1748,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, adminService.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), adminService.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1754,7 +1763,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, adminService.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), adminService.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1769,7 +1778,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), userService.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1790,7 +1799,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), userService.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1811,7 +1820,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), userService.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1831,7 +1840,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 				Now:                 time.Now,
 				UserReposMaxPerUser: 1,
 			}
-			if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err == nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), userService.ID, 10*time.Second); err == nil {
 				t.Fatal("Expected an error, got none")
 			}
 
@@ -1844,7 +1853,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 				Now:                 time.Now,
 				UserReposMaxPerSite: 1,
 			}
-			if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err == nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), userService.ID, 10*time.Second); err == nil {
 				t.Fatal("Expected an error, got none")
 			}
 		}
@@ -1912,7 +1921,7 @@ func testNameOnConflictDiscardOld(db *sql.DB) func(t *testing.T, store repos.Sto
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1924,12 +1933,12 @@ func testNameOnConflictDiscardOld(db *sql.DB) func(t *testing.T, store repos.Sto
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), svc2.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
 			// We expect repo2 to be synced since it sorts before repo1 because the ID is alphabetically first
-			fromDB, err := store.ListRepos(ctx, repos.StoreListReposArgs{
+			fromDB, err := store.RepoStore().List(ctx, idb.ReposListOptions{
 				Names: []string{"github.com/org/foo"},
 			})
 			if err != nil {
@@ -2010,7 +2019,7 @@ func testNameOnConflictDiscardNew(db *sql.DB) func(t *testing.T, store repos.Sto
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2022,12 +2031,12 @@ func testNameOnConflictDiscardNew(db *sql.DB) func(t *testing.T, store repos.Sto
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), svc2.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
 			// We expect repo1 to be synced since it sorts before repo2 because the ID is alphabetically first
-			fromDB, err := store.ListRepos(ctx, repos.StoreListReposArgs{
+			fromDB, err := store.RepoStore().List(ctx, idb.ReposListOptions{
 				Names: []string{"github.com/org/foo"},
 			})
 			if err != nil {
@@ -2108,7 +2117,7 @@ func testNameOnConflictOnRename(db *sql.DB) func(t *testing.T, store repos.Store
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2120,7 +2129,7 @@ func testNameOnConflictOnRename(db *sql.DB) func(t *testing.T, store repos.Store
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), svc2.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2137,12 +2146,12 @@ func testNameOnConflictOnRename(db *sql.DB) func(t *testing.T, store repos.Store
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
 			// We expect repo1 to be synced since it sorts before repo2 because the ID is alphabetically first
-			fromDB, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
+			fromDB, err := store.RepoStore().List(ctx, idb.ReposListOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2207,7 +2216,7 @@ func testDeleteExternalService(db *sql.DB) func(t *testing.T, store repos.Store)
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2219,7 +2228,7 @@ func testDeleteExternalService(db *sql.DB) func(t *testing.T, store repos.Store)
 				},
 				Now: time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+			if err := syncer.SyncExternalService(ctx, store, store.RepoStore(), svc2.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 

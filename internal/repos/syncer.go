@@ -139,7 +139,7 @@ func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record
 		store = ws.With(tx.Handle().DB())
 	}
 
-	return s.syncer.SyncExternalService(ctx, store, sj.ExternalServiceID, s.minSyncInterval())
+	return s.syncer.SyncExternalService(ctx, store, store.RepoStore(), sj.ExternalServiceID, s.minSyncInterval())
 }
 
 // contextWithSignalCancel will return a context which will be cancelled if
@@ -171,8 +171,12 @@ func (s *Syncer) TriggerEnqueueSyncJobs() {
 	s.enqueueSignal.Trigger()
 }
 
+type Lister interface {
+	List(ctx context.Context, opt db.ReposListOptions) (results []*types.Repo, err error)
+}
+
 // SyncExternalService syncs repos using the supplied external service.
-func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServiceID int64, minSyncInterval time.Duration) (err error) {
+func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, repoLister Lister, externalServiceID int64, minSyncInterval time.Duration) (err error) {
 	var diff Diff
 
 	if s.Logger != nil {
@@ -260,7 +264,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 
 	var storedServiceRepos types.Repos
 	// Fetch repos from our DB related to externalServiceID
-	if storedServiceRepos, err = tx.ListRepos(ctx, StoreListReposArgs{ExternalServiceID: externalServiceID}); err != nil {
+	if storedServiceRepos, err = repoLister.List(ctx, db.ReposListOptions{ExternalServiceIDs: []int64{externalServiceID}}); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
@@ -268,7 +272,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	// Repo names must be globally unique, if there's conflict we need to deterministically choose one.
 	var conflicting types.Repos
 	if len(sourced) > 0 {
-		if conflicting, err = tx.ListRepos(ctx, StoreListReposArgs{Names: sourced.Names()}); err != nil {
+		if conflicting, err = repoLister.List(ctx, db.ReposListOptions{Names: sourced.Names()}); err != nil {
 			return errors.Wrap(err, "syncer.sync.store.list-repos")
 		}
 		conflicting = conflicting.Filter(func(r *types.Repo) bool {
@@ -479,12 +483,12 @@ func (s *Syncer) syncRepo(ctx context.Context, store Store, insertOnly bool, pub
 	}
 
 	var storedSubset types.Repos
-	args := StoreListReposArgs{
+	args := db.ReposListOptions{
 		Names:         []string{string(sourcedRepo.Name)},
 		ExternalRepos: []api.ExternalRepoSpec{sourcedRepo.ExternalRepo},
 		UseOr:         true,
 	}
-	if storedSubset, err = store.ListRepos(ctx, args); err != nil {
+	if storedSubset, err = store.RepoStore().List(ctx, args); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.syncrepo.store.list-repos")
 	}
 
@@ -652,7 +656,7 @@ func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store Store
 		return
 	}
 
-	stored, err := store.ListRepos(ctx, StoreListReposArgs{})
+	stored, err := store.RepoStore().List(ctx, db.ReposListOptions{})
 	if err != nil {
 		if s.Logger != nil {
 			s.Logger.Warn("initialUnmodifiedDiffFromStore store.ListRepos", "error", err)

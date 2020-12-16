@@ -48,7 +48,7 @@ const port = "3182"
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(db *sql.DB, store repos.Store, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
+type EnterpriseInit func(db *sql.DB, lister repos.Lister, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
 
 func Main(enterpriseInit EnterpriseInit) {
 	ctx := context.Background()
@@ -121,6 +121,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	scheduler := repos.NewUpdateScheduler()
 	server := &repoupdater.Server{
 		Store:           store,
+		RepoLister:      store.RepoStore(),
 		Scheduler:       scheduler,
 		GitserverClient: gitserver.DefaultClient,
 	}
@@ -137,7 +138,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	// All dependencies ready
 	var debugDumpers []debugserver.Dumper
 	if enterpriseInit != nil {
-		debugDumpers = enterpriseInit(db, store, cf, server)
+		debugDumpers = enterpriseInit(db, store.RepoStore(), cf, server)
 	}
 
 	if envvar.SourcegraphDotComMode() {
