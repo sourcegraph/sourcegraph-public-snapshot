@@ -23,6 +23,7 @@ The [Sourcegraph extension API](https://unpkg.com/sourcegraph/dist/docs/index.ht
 - [Hello world](tutorials/hello_world.md)
 - [Buttons and custom commands](tutorials/button_custom_commands.md)
 - [Building a language specific extension](tutorials/lang_specific_extension_tutorial.md)
+- [File decorations](tutorials/file_decorations.md)
 
 ## References
 - [Extension API documentation](https://unpkg.com/sourcegraph/dist/docs/index.html) (full API is in [`sourcegraph.d.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/packages/sourcegraph-extension-api/src/sourcegraph.d.ts))
