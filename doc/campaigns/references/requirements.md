@@ -23,7 +23,7 @@ We **highly recommend** enabling webhooks: doing so removes the lag time in upda
 
 ### A note on campaigns effect on CI systems
 
-Campaigns makes it possible to create changesets in tens or thousands of repositories. These changesets may trigger many checks or continuous integration jobs that may stress the resources allotted to these systems. Campaigns supports partial publishing for changesets to help mitigate these issues. You may also consider publishing your changesets at times of low activity.  
+Campaigns makes it possible to create changesets in tens, hundreds, or thousands of repositories. Opening and updating these changesets may trigger many checks or continuous integration jobs, and in turn may stress the resources allotted to these systems. Campaigns supports [partial publishing for changesets](../how-tos/publishing_changesets.md#publishing-a-subset-of-changesets) to help mitigate these issues. You may also consider publishing your changesets at times of low activity.  
 
 ## Sourcegraph server
 
