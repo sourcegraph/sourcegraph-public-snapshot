@@ -29,7 +29,7 @@ Campaigns makes it possible to create changesets in tens, hundreds, or thousands
 
 While the latest version of Sourcegraph server is always recommended, version 3.22 is the minimum version required to run campaigns.
 
-## Requirements for developers creating campaigns
+## Requirements for campaign creators
 
 * Latest version of the [Sourcegraph CLI `src`](../../cli/index.md)
   * `src` is supported on Linux or macOS, Windows support is experimental
