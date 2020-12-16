@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
 	"net/url"
 	"strconv"
@@ -134,15 +135,18 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 	)
 
 	if !envvar.SourcegraphDotComMode() || c.CloudGlobal {
-		v3Client.RateLimitMonitor().SetCollector(func(remaining float64) {
-			githubRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(remaining)
-		})
-		v4Client.RateLimitMonitor().SetCollector(func(remaining float64) {
-			githubRemainingGauge.WithLabelValues("graphql", svc.DisplayName).Set(remaining)
-		})
-		searchClient.RateLimitMonitor().SetCollector(func(remaining float64) {
-			githubRemainingGauge.WithLabelValues("search", svc.DisplayName).Set(remaining)
-		})
+		for resource, monitor := range map[string]*ratelimit.Monitor{
+			"rest":    v3Client.RateLimitMonitor(),
+			"graphql": v4Client.RateLimitMonitor(),
+			"search":  searchClient.RateLimitMonitor(),
+		} {
+			// Need to copy the resource or func will use the last one seen while iterating
+			// the map
+			resource := resource
+			monitor.SetCollector(func(remaining float64) {
+				githubRemainingGauge.WithLabelValues(resource, svc.DisplayName).Set(remaining)
+			})
+		}
 	}
 
 	return &GithubSource{
