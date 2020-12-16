@@ -604,16 +604,21 @@ export function buildSearchURLQuery(
     }
 
     const globalPatternType = findFilter(queryParameter, 'patterntype', FilterKind.Global)
-    if (globalPatternType?.value && globalPatternType.value.type === 'literal') {
+    if (globalPatternType?.value) {
         const { start, end } = globalPatternType.range
-        patternTypeParameter = query.slice(globalPatternType.value.range.start, end)
+        patternTypeParameter =
+            globalPatternType.value.type === 'literal'
+                ? globalPatternType.value.value
+                : globalPatternType.value.quotedValue
         queryParameter = replaceRange(queryParameter, { start: Math.max(0, start - 1), end }).trim()
     }
 
     const globalCase = findFilter(queryParameter, 'case', FilterKind.Global)
-    if (globalCase?.value && globalCase.value.type === 'literal') {
+    if (globalCase?.value) {
         // When case:value is explicit in the query, override any previous value of caseParameter.
-        caseParameter = discreteValueAliases.yes.includes(globalCase.value.value) ? 'yes' : 'no'
+        const globalCaseParameterValue =
+            globalCase.value.type === 'literal' ? globalCase.value.value : globalCase.value.quotedValue
+        caseParameter = discreteValueAliases.yes.includes(globalCaseParameterValue) ? 'yes' : 'no'
         queryParameter = replaceRange(queryParameter, globalCase.range)
     }
 
