@@ -106,27 +106,27 @@ func newBackgroundRoutines(observationContext *observation.Context) ([]goroutine
 	dbStoreShim := &background.DBStoreShim{services.dbStore}
 	lsifStoreShim := services.lsifStore
 	gitserverClient := services.gitserverClient
-	metrics := background.NewMetrics(observationContext.Registerer)
+	operations := background.NewOperations(dbStoreShim, observationContext)
 
 	routines := []goroutine.BackgroundRoutine{
 		// Commit graph updater
-		background.NewCommitUpdater(dbStoreShim, gitserverClient, config.CommitGraphUpdateTaskInterval),
+		background.NewCommitUpdater(dbStoreShim, gitserverClient, config.CommitGraphUpdateTaskInterval, operations),
 
 		// Cleanup
-		background.NewAbandonedUploadJanitor(dbStoreShim, config.UploadTimeout, config.CleanupTaskInterval, metrics),
-		background.NewDeletedRepositoryJanitor(dbStoreShim, config.CleanupTaskInterval, metrics),
-		background.NewHardDeleter(dbStoreShim, lsifStoreShim, config.CleanupTaskInterval, metrics),
-		background.NewRecordExpirer(dbStoreShim, config.DataTTL, config.CleanupTaskInterval, metrics),
-		background.NewUploadResetter(dbStoreShim, config.CleanupTaskInterval, metrics),
-		background.NewIndexResetter(dbStoreShim, config.CleanupTaskInterval, metrics),
+		background.NewAbandonedUploadJanitor(dbStoreShim, config.UploadTimeout, config.CleanupTaskInterval, operations),
+		background.NewDeletedRepositoryJanitor(dbStoreShim, config.CleanupTaskInterval, operations),
+		background.NewHardDeleter(dbStoreShim, lsifStoreShim, config.CleanupTaskInterval, operations),
+		background.NewRecordExpirer(dbStoreShim, config.DataTTL, config.CleanupTaskInterval, operations),
+		background.NewUploadResetter(dbStoreShim, config.CleanupTaskInterval, operations),
+		background.NewIndexResetter(dbStoreShim, config.CleanupTaskInterval, operations),
 	}
 
 	if config.EnableAutoIndexing {
 		// Auto indexing
 		routines = append(
 			routines,
-			background.NewIndexScheduler(dbStoreShim, gitserverClient, config.IndexBatchSize, config.MinimumTimeSinceLastEnqueue, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, metrics),
-			background.NewIndexabilityUpdater(dbStoreShim, gitserverClient, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, metrics),
+			background.NewIndexScheduler(dbStoreShim, gitserverClient, config.IndexBatchSize, config.MinimumTimeSinceLastEnqueue, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, operations),
+			background.NewIndexabilityUpdater(dbStoreShim, gitserverClient, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, operations),
 		)
 	}
 

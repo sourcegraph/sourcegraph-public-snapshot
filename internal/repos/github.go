@@ -12,6 +12,10 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -19,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -49,6 +54,7 @@ var _ Source = &GithubSource{}
 var _ UserSource = &GithubSource{}
 var _ DraftChangesetSource = &GithubSource{}
 var _ ChangesetSource = &GithubSource{}
+var _ AffiliatedRepositorySource = &GithubSource{}
 
 // NewGithubSource returns a new GithubSource from the given external service.
 func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
@@ -58,6 +64,12 @@ func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSo
 	}
 	return newGithubSource(svc, &c, cf)
 }
+
+var githubRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	// _v2 since we have an older metric defined in github-proxy
+	Name: "src_github_rate_limit_remaining_v2",
+	Help: "Number of calls to GitHub's API remaining before hitting the rate limit.",
+}, []string{"resource", "name"})
 
 func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
@@ -115,6 +127,27 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 
 	token := &auth.OAuthBearerToken{Token: c.Token}
 
+	var (
+		v3Client     = github.NewV3Client(apiURL, token, cli)
+		v4Client     = github.NewV4Client(apiURL, token, cli)
+		searchClient = github.NewV3SearchClient(apiURL, token, cli)
+	)
+
+	if !envvar.SourcegraphDotComMode() || c.CloudGlobal {
+		for resource, monitor := range map[string]*ratelimit.Monitor{
+			"rest":    v3Client.RateLimitMonitor(),
+			"graphql": v4Client.RateLimitMonitor(),
+			"search":  searchClient.RateLimitMonitor(),
+		} {
+			// Need to copy the resource or func will use the last one seen while iterating
+			// the map
+			resource := resource
+			monitor.SetCollector(func(remaining float64) {
+				githubRemainingGauge.WithLabelValues(resource, svc.DisplayName).Set(remaining)
+			})
+		}
+	}
+
 	return &GithubSource{
 		svc:              svc,
 		config:           c,
@@ -123,9 +156,9 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 		excludeForks:     excludeForks,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
-		v3Client:         github.NewV3Client(apiURL, token, cli),
-		v4Client:         github.NewV4Client(apiURL, token, cli),
-		searchClient:     github.NewV3Client(apiURL, token, cli).WithSeparateRateLimitMonitor(),
+		v3Client:         v3Client,
+		v4Client:         v4Client,
+		searchClient:     searchClient,
 		originalHostname: originalHostname,
 	}, nil
 }
@@ -775,4 +808,52 @@ func exampleRepositoryQuerySplit(q string) string {
 	enc.SetEscapeHTML(false)
 	_ = enc.Encode(qs)
 	return strings.TrimSpace(b.String())
+}
+
+func (s *GithubSource) AffiliatedRepositories(ctx context.Context) ([]types.CodeHostRepository, error) {
+	var (
+		repos    []*github.Repository
+		nextPage string
+		done     bool
+		page     = 1
+		cost     int
+		err      error
+	)
+	defer func() {
+		remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
+		log15.Debug(
+			"github sync: ListAffiliated",
+			"repos", len(repos),
+			"rateLimitCost", cost,
+			"rateLimitRemaining", remaining,
+			"rateLimitReset", reset,
+			"retryAfter", retry,
+		)
+	}()
+	out := make([]types.CodeHostRepository, 0, len(repos))
+	for done == false {
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("context canceled")
+		default:
+		}
+		repos, nextPage, cost, err = s.v4Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, nextPage)
+		if err != nil {
+			return nil, err
+		}
+		if nextPage == "" {
+			done = true
+		}
+		for _, repo := range repos {
+			// the github user repositories API doesn't support query strings, so we'll have to filter here 😬
+			// this does make pagination more awkward though, as we won't paginate futher if you don't match anything
+			out = append(out, types.CodeHostRepository{
+				Name:       repo.NameWithOwner,
+				Private:    repo.IsPrivate,
+				CodeHostID: s.svc.ID,
+			})
+		}
+		page++
+	}
+	return out, nil
 }

@@ -117,13 +117,13 @@ Yarn,coa,2.0.2,MIT,http://github.com/veged/coa,Approved
 Yarn,code-point-at,1.1.0,MIT,sindresorhus.com,Approved
 Yarn,codemirror,5.58.3,MIT,https://codemirror.net/,Approved
 Yarn,codemirror-graphql,0.12.4,MIT,https://github.com/graphql/graphiql/tree/main/packages/codemirror-graphql#readme,Approved
-Yarn,color,3.1.3,MIT,Unknown,Approved
+Yarn,color,3.0.0,MIT,Unknown,Approved
 Yarn,color-convert,1.9.3,MIT,Unknown,Approved
 Yarn,color-name,1.1.3,MIT,https://github.com/dfcreative/color-name,Approved
 Yarn,color-name,1.1.4,MIT,https://github.com/colorjs/color-name,Approved
 Yarn,color-string,1.5.4,MIT,Unknown,Approved
 Yarn,colorette,1.2.1,MIT,https://github.com/jorgebucaran/colorette,Approved
-Yarn,colors,1.3.3,MIT,https://github.com/Marak/colors.js,Approved
+Yarn,colors,1.4.0,MIT,https://github.com/Marak/colors.js,Approved
 Yarn,columnify,1.5.4,MIT,https://github.com/timoxley/columnify,Approved
 Yarn,combined-stream,1.0.8,MIT,https://github.com/felixge/node-combined-stream,Approved
 Yarn,comlink,4.3.0,Apache 2.0,Unknown,Approved
@@ -419,7 +419,6 @@ Go,github.com/sourcegraph/go-jsonschema,v0.0.0-20200907102109-d14e9f2f3a28,MIT,"
 Go,github.com/sourcegraph/go-langserver,v2.0.1-0.20181108233942-4a51fa2e1238,"MIT,New BSD","",Approved
 Go,github.com/sourcegraph/go-lsp,v0.0.0-20200429204803-219e11d77f5d,MIT,"",Approved
 Go,github.com/sourcegraph/gologin,v1.0.2-0.20181110030308-c6f1b62954d8,MIT,"",Approved
-Go,github.com/sourcegraph/gonduit,v0.4.0,MIT,"",Approved
 Go,github.com/sourcegraph/gosaml2,v0.3.2-0.20200109173551-5cfddeb48b17,Apache 2.0,"",Approved
 Go,github.com/sourcegraph/gosyntect,v0.0.0-20200429204402-842ed26129d0,MIT,"",Approved
 Go,github.com/sourcegraph/graphql-go,v0.0.0-20201007040903-ec61a5417d66,Simplified BSD,"",Approved
@@ -437,6 +436,7 @@ Go,github.com/tidwall/pretty,v1.0.2,MIT,"",Approved
 Go,github.com/tinylib/msgp,v1.1.2,MIT,"",Approved
 Go,github.com/tomnomnom/linkheader,v0.0.0-20180905144013-02ca5825eb80,MIT,"",Approved
 Go,github.com/toqueteos/trie,v1.0.0,MIT,"",Approved
+Go,github.com/uber/gonduit,v0.11.0,MIT,"",Approved
 Go,github.com/uber/jaeger-client-go,v2.25.0,Apache 2.0,"",Approved
 Go,github.com/uber/jaeger-lib,v2.2.0,Apache 2.0,"",Approved
 Go,github.com/vmihailenco/msgpack/v4,v4.3.12,Simplified BSD,"",Approved
@@ -781,7 +781,7 @@ Yarn,read-installed,4.0.3,ISC,http://blog.izs.me/,Approved
 Yarn,read-package-json,2.1.1,ISC,http://blog.izs.me/,Approved
 Yarn,read-package-tree,5.3.1,ISC,https://github.com/npm/read-package-tree,Approved
 Yarn,readable-stream,1.1.14,MIT,http://blog.izs.me/,Approved
-Yarn,readable-stream,2.3.6,MIT,Unknown,Approved
+Yarn,readable-stream,2.3.7,MIT,Unknown,Approved
 Yarn,readable-stream,3.4.0,MIT,Unknown,Approved
 Yarn,readdir-scoped-modules,1.1.0,ISC,https://github.com/npm/readdir-scoped-modules,Approved
 Yarn,recharts,1.8.5,MIT,https://github.com/recharts/recharts,Approved
@@ -925,6 +925,7 @@ Yarn,warning,4.0.3,MIT,https://github.com/BerkeleyTrue/warning,Approved
 Yarn,wcwidth,1.0.1,MIT,https://github.com/timoxley/wcwidth#readme,Approved
 Yarn,webext-additional-permissions,1.0.0,MIT,bfred.it,Approved
 Yarn,webext-domain-permission-toggle,1.0.1,MIT,bfred.it,Approved
+Yarn,webext-patterns,0.9.0,MIT,bfred.it,Approved
 Yarn,webextension-polyfill,0.6.0,Mozilla Public License 2.0,https://github.com/mozilla/webextension-polyfill,Approved
 Yarn,which,1.3.1,ISC,http://blog.izs.me,Approved
 Yarn,which-module,2.0.0,ISC,https://github.com/nexdrew/which-module#readme,Approved

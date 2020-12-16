@@ -56,5 +56,5 @@ add('popover', () => {
         ],
     }
 
-    return <WebStory>{() => <StreamingProgressSkippedPopover progress={progress} />}</WebStory>
+    return <WebStory>{() => <StreamingProgressSkippedPopover progress={progress} onSearchAgain={() => {}} />}</WebStory>
 })

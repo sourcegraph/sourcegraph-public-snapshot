@@ -184,7 +184,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	defer s.setOrResetLastSyncErr(externalServiceID, &err)
 
 	ids := []int64{externalServiceID}
-	svcs, err := tx.ListExternalServices(ctx, StoreListExternalServicesArgs{IDs: ids})
+	svcs, err := tx.ExternalServiceStore().List(ctx, db.ExternalServicesListOptions{IDs: ids})
 	if err != nil {
 		return errors.Wrap(err, "fetching external services")
 	}
@@ -267,18 +267,20 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	// Now fetch any possible name conflicts.
 	// Repo names must be globally unique, if there's conflict we need to deterministically choose one.
 	var conflicting types.Repos
-	if conflicting, err = tx.ListRepos(ctx, StoreListReposArgs{Names: sourced.Names()}); err != nil {
-		return errors.Wrap(err, "syncer.sync.store.list-repos")
-	}
-	conflicting = conflicting.Filter(func(r *types.Repo) bool {
-		for _, id := range r.ExternalServiceIDs() {
-			if id == externalServiceID {
-				return false
-			}
+	if len(sourced) > 0 {
+		if conflicting, err = tx.ListRepos(ctx, StoreListReposArgs{Names: sourced.Names()}); err != nil {
+			return errors.Wrap(err, "syncer.sync.store.list-repos")
 		}
+		conflicting = conflicting.Filter(func(r *types.Repo) bool {
+			for _, id := range r.ExternalServiceIDs() {
+				if id == externalServiceID {
+					return false
+				}
+			}
 
-		return true
-	})
+			return true
+		})
+	}
 
 	// Add the conflicts to the list of repos fetched from the db.
 	// NewDiff modifies the storedServiceRepos slice so we clone it before passing it
@@ -346,7 +348,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, externalServ
 	svc.NextSyncAt = now.Add(interval)
 	svc.LastSyncAt = now
 
-	err = tx.UpsertExternalServices(ctx, svc)
+	err = tx.ExternalServiceStore().Upsert(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "upserting external service")
 	}
@@ -839,8 +841,8 @@ func (s *Syncer) setOrResetLastSyncErr(serviceID int64, perr *error) {
 	s.syncErrors[serviceID] = err
 }
 
-// SyncErrors returns all errors that was produced in the last Sync run per external sevice. If
-// no error was produced, this returns an empty slice.
+// SyncErrors returns all errors that were produced in the last Sync run per
+// external service. If no error was produced, this returns an empty slice.
 // Errors are sorted by external service id.
 func (s *Syncer) SyncErrors() []error {
 	s.syncErrorsMu.Lock()

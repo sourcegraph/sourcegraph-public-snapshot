@@ -216,54 +216,58 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                         })
                     )}
                 </div>
-                {hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError) && hoverOrError.alerts && (
-                    <div className="hover-overlay__alerts">
-                        {hoverOrError.alerts.map(({ summary, badge, type }, index) => (
-                            <div
-                                className={classNames('hover-overlay__alert', this.props.infoAlertClassName)}
-                                key={index}
-                            >
-                                {/* Show badge in the top-right if there is no "Dismiss" action */}
-                                {badge && !type && (
-                                    <BadgeAttachment
-                                        className="hover-overlay__badge test-hover-badge"
-                                        iconClassName={this.props.iconClassName}
-                                        iconButtonClassName={this.props.iconButtonClassName}
-                                        attachment={badge}
-                                        isLightTheme={this.props.isLightTheme}
-                                    />
-                                )}
+                {hoverOrError &&
+                    hoverOrError !== LOADING &&
+                    !isErrorLike(hoverOrError) &&
+                    hoverOrError.alerts &&
+                    hoverOrError.alerts.length > 0 && (
+                        <div className="hover-overlay__alerts">
+                            {hoverOrError.alerts.map(({ summary, badge, type }, index) => (
+                                <div
+                                    className={classNames('hover-overlay__alert', this.props.infoAlertClassName)}
+                                    key={index}
+                                >
+                                    {/* Show badge in the top-right if there is no "Dismiss" action */}
+                                    {badge && !type && (
+                                        <BadgeAttachment
+                                            className="hover-overlay__badge test-hover-badge"
+                                            iconClassName={this.props.iconClassName}
+                                            iconButtonClassName={this.props.iconButtonClassName}
+                                            attachment={badge}
+                                            isLightTheme={this.props.isLightTheme}
+                                        />
+                                    )}
 
-                                {summary.kind === 'plaintext' ? (
-                                    <span className="hover-overlay__content">{summary.value}</span>
-                                ) : (
-                                    <span
-                                        className="hover-overlay__content"
-                                        dangerouslySetInnerHTML={{ __html: renderMarkdown(summary.value) }}
-                                    />
-                                )}
+                                    {summary.kind === 'plaintext' ? (
+                                        <span className="hover-overlay__content">{summary.value}</span>
+                                    ) : (
+                                        <span
+                                            className="hover-overlay__content"
+                                            dangerouslySetInnerHTML={{ __html: renderMarkdown(summary.value) }}
+                                        />
+                                    )}
 
-                                {/* Show badge and "Dismiss" in the bottom-right if there is a dismiss button */}
-                                {type && (
-                                    <div className="hover-overlay__alert-actions">
-                                        {badge && (
-                                            <BadgeAttachment
-                                                className="hover-overlay__badge test-hover-badge"
-                                                iconClassName={this.props.iconClassName}
-                                                iconButtonClassName={this.props.iconButtonClassName}
-                                                attachment={badge}
-                                                isLightTheme={this.props.isLightTheme}
-                                            />
-                                        )}
-                                        <a href="" onClick={this.onAlertDismissedCallback(type)}>
-                                            <small>Dismiss</small>
-                                        </a>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                )}
+                                    {/* Show badge and "Dismiss" in the bottom-right if there is a dismiss button */}
+                                    {type && (
+                                        <div className="hover-overlay__alert-actions">
+                                            {badge && (
+                                                <BadgeAttachment
+                                                    className="hover-overlay__badge test-hover-badge"
+                                                    iconClassName={this.props.iconClassName}
+                                                    iconButtonClassName={this.props.iconButtonClassName}
+                                                    attachment={badge}
+                                                    isLightTheme={this.props.isLightTheme}
+                                                />
+                                            )}
+                                            <a href="" onClick={this.onAlertDismissedCallback(type)}>
+                                                <small>Dismiss</small>
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 {actionsOrError !== undefined &&
                     actionsOrError !== null &&
                     actionsOrError !== LOADING &&

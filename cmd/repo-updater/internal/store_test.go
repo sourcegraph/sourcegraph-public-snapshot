@@ -451,13 +451,13 @@ func testStoreUpsertSources(t *testing.T, store *internal.Store) func(*testing.T
 			svc := servicesPerKind[extsvc.KindGitHub]
 			svc.DeletedAt = now
 			if err := tx.ExternalServiceStore().Upsert(ctx, svc); err != nil {
-				t.Fatalf("UpsertExternalServices error: %s", err)
+				t.Fatalf("Upsert externalServices error: %s", err)
 			}
 
 			// un delete it
 			svc.DeletedAt = time.Time{}
 			if err := tx.ExternalServiceStore().Upsert(ctx, svc); err != nil {
-				t.Fatalf("UpsertExternalServices error: %s", err)
+				t.Fatalf("Upsert externalServices error: %s", err)
 			}
 
 			// All GitHub sources should be deleted and all orphan repositories should be excluded

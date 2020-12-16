@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
@@ -24,54 +25,59 @@ func plural(one, many string, n int) string {
 	return many
 }
 
-func repositoryCloningHandler(resultsResolver *SearchResultsResolver) (search.Skipped, bool) {
-	repos := resultsResolver.Cloning()
+func skippedReposHandler(repos []*RepositoryResolver, titleVerb, messageReason string, base search.Skipped) (search.Skipped, bool) {
 	if len(repos) == 0 {
 		return search.Skipped{}, false
 	}
 
 	amount := number(len(repos))
-	return search.Skipped{
-		Reason: search.RepositoryCloning,
-		Title:  fmt.Sprintf("%s cloning", amount),
-		// TODO sample of repos in message
-		Message:  fmt.Sprintf("%s %s could not be searched since %s still cloning. Try searching again or reducing the scope of your query with `repo:`,  `repogroup:` or other filters.", amount, plural("repository", "repositories", len(repos)), plural("it is", "they are", len(repos))),
+	base.Title = fmt.Sprintf("%s %s", amount, titleVerb)
+
+	if len(repos) == 1 {
+		base.Message = fmt.Sprintf("`%s` %s. Try searching again or reducing the scope of your query with `repo:`,  `repogroup:` or other filters.", repos[0].Name(), messageReason)
+	} else {
+		sampleSize := 10
+		if sampleSize > len(repos) {
+			sampleSize = len(repos)
+		}
+
+		var b strings.Builder
+		_, _ = fmt.Fprintf(&b, "%s repositories %s. Try searching again or reducing the scope of your query with `repo:`, `repogroup:` or other filters.", amount, messageReason)
+		for _, repo := range repos[:sampleSize] {
+			_, _ = fmt.Fprintf(&b, "\n* `%s`", repo.Name())
+		}
+		if sampleSize < len(repos) {
+			b.WriteString("\n* ...")
+		}
+		base.Message = b.String()
+	}
+
+	return base, true
+}
+
+func repositoryCloningHandler(resultsResolver *SearchResultsResolver) (search.Skipped, bool) {
+	repos := resultsResolver.Cloning()
+	messageReason := fmt.Sprintf("could not be searched since %s still cloning", plural("it is", "they are", len(repos)))
+	return skippedReposHandler(repos, "cloning", messageReason, search.Skipped{
+		Reason:   search.RepositoryCloning,
 		Severity: search.SeverityInfo,
-	}, true
+	})
 }
 
 func repositoryMissingHandler(resultsResolver *SearchResultsResolver) (search.Skipped, bool) {
-	repos := resultsResolver.Missing()
-	if len(repos) == 0 {
-		return search.Skipped{}, false
-	}
-
-	amount := number(len(repos))
-	return search.Skipped{
-		Reason: search.RepositoryMissing,
-		Title:  fmt.Sprintf("%s missing", amount),
-		// TODO sample of repos in message
-		Message:  fmt.Sprintf("%s %s could not be searched. Try reducing the scope of your query with `repo:`, `repogroup:` or other filters.", amount, plural("repository", "repositories", len(repos))),
+	return skippedReposHandler(resultsResolver.Missing(), "missing", "could not be searched", search.Skipped{
+		Reason:   search.RepositoryMissing,
 		Severity: search.SeverityInfo,
-	}, true
+	})
 }
 
 func shardTimeoutHandler(resultsResolver *SearchResultsResolver) (search.Skipped, bool) {
 	// This is not the same, but once we expose this more granular details
 	// from our backend it will be shard specific.
-	repos := resultsResolver.Timedout()
-	if len(repos) == 0 {
-		return search.Skipped{}, false
-	}
-
-	amount := number(len(repos))
-	return search.Skipped{
-		Reason: search.ShardTimeout,
-		Title:  fmt.Sprintf("%s timedout", amount),
-		// TODO sample of repos in message
-		Message:  fmt.Sprintf("%s %s could not be searched in time. Try reducing the scope of your query with `repo:`, `repogroup:` or other filters.", amount, plural("repository", "repositories", len(repos))),
+	return skippedReposHandler(resultsResolver.Timedout(), "timed out", "could not be searched in time", search.Skipped{
+		Reason:   search.ShardTimeout,
 		Severity: search.SeverityWarn,
-	}, true
+	})
 }
 
 func shardMatchLimitHandler(resultsResolver *SearchResultsResolver) (search.Skipped, bool) {

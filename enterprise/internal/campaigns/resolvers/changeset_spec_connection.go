@@ -7,21 +7,19 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var _ graphqlbackend.ChangesetSpecConnectionResolver = &changesetSpecConnectionResolver{}
 
 type changesetSpecConnectionResolver struct {
-	store       *ee.Store
-	httpFactory *httpcli.Factory
+	store *store.Store
 
-	opts           ee.ListChangesetSpecsOpts
+	opts           store.ListChangesetSpecsOpts
 	campaignSpecID int64
 
 	// Cache results because they are used by multiple fields
@@ -33,7 +31,7 @@ type changesetSpecConnectionResolver struct {
 }
 
 func (r *changesetSpecConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := r.store.CountChangesetSpecs(ctx, ee.CountChangesetSpecsOpts{
+	count, err := r.store.CountChangesetSpecs(ctx, store.CountChangesetSpecsOpts{
 		CampaignSpecID: r.campaignSpecID,
 	})
 	if err != nil {
@@ -63,12 +61,6 @@ func (r *changesetSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlb
 		return nil, err
 	}
 
-	// Create a shared previewer so the expensive operations can be cached across changeset spec resolvers.
-	previewer := &changesetSpecPreviewer{
-		store:          r.store,
-		campaignSpecID: r.campaignSpecID,
-	}
-
 	resolvers := make([]graphqlbackend.ChangesetSpecResolver, 0, len(changesetSpecs))
 	for _, c := range changesetSpecs {
 		repo := reposByID[c.RepoID]
@@ -77,7 +69,7 @@ func (r *changesetSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlb
 		// In that case we'll set it anyway to nil and changesetSpecResolver
 		// will treat it as "hidden".
 
-		resolvers = append(resolvers, NewChangesetSpecResolverWithRepo(r.store, r.httpFactory, repo, c).WithPreviewer(previewer))
+		resolvers = append(resolvers, NewChangesetSpecResolverWithRepo(r.store, repo, c))
 	}
 
 	return resolvers, nil

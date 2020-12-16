@@ -1,14 +1,17 @@
 import * as H from 'history'
 import React, { useCallback, useMemo } from 'react'
 import { Observable } from 'rxjs'
+import { CodeMonitoringProps } from '.'
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { CodeMonitorFields, MonitorEmailPriority } from '../../graphql-operations'
-import { createCodeMonitor } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-export interface CreateCodeMonitorPageProps extends BreadcrumbsProps, BreadcrumbSetters {
+export interface CreateCodeMonitorPageProps
+    extends BreadcrumbsProps,
+        BreadcrumbSetters,
+        Pick<CodeMonitoringProps, 'createCodeMonitor'> {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser
@@ -25,11 +28,12 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
         )
     )
 
+    const { authenticatedUser, createCodeMonitor } = props
     const createMonitorRequest = useCallback(
         (codeMonitor: CodeMonitorFields): Observable<Partial<CodeMonitorFields>> =>
             createCodeMonitor({
                 monitor: {
-                    namespace: props.authenticatedUser.id,
+                    namespace: authenticatedUser.id,
                     description: codeMonitor.description,
                     enabled: codeMonitor.enabled,
                 },
@@ -39,12 +43,12 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                     email: {
                         enabled: action.enabled,
                         priority: MonitorEmailPriority.NORMAL,
-                        recipients: [props.authenticatedUser.id],
+                        recipients: [authenticatedUser.id],
                         header: '',
                     },
                 })),
             }),
-        [props.authenticatedUser.id]
+        [authenticatedUser.id, createCodeMonitor]
     )
 
     return (
@@ -54,8 +58,11 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                 <h2 className="flex-grow-1">Create code monitor</h2>
             </div>
             Code monitors watch your code for specific triggers and run actions in response.{' '}
-            <a href="" target="_blank" rel="noopener">
-                {/* TODO: populate link */}
+            <a
+                href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
+                target="_blank"
+                rel="noopener"
+            >
                 Learn more
             </a>
             <CodeMonitorForm {...props} onSubmit={createMonitorRequest} submitButtonLabel="Create code monitor" />

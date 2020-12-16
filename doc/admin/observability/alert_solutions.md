@@ -693,6 +693,166 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <br />
 
+## frontend: num_dirty_repositories
+
+<p class="subtitle">code-intel: number of repositories with a stale commit graph</p>
+
+**Descriptions:**
+
+- _frontend: 100+ number of repositories with a stale commit graph_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_num_dirty_repositories"
+]
+```
+
+<br />
+
+## frontend: dirty_repositories_growth_rate
+
+<p class="subtitle">code-intel: stale commit graph growth rate rate every 5m</p>
+
+**Descriptions:**
+
+- _frontend: 5+ stale commit graph growth rate rate every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_dirty_repositories_growth_rate"
+]
+```
+
+<br />
+
+## frontend: codeintel_commit_graph_updater_99th_percentile_duration
+
+<p class="subtitle">code-intel: 99th percentile successful commit graph updater operation duration over 5m</p>
+
+**Descriptions:**
+
+- _frontend: 20s+ 99th percentile successful commit graph updater operation duration over 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_codeintel_commit_graph_updater_99th_percentile_duration"
+]
+```
+
+<br />
+
+## frontend: codeintel_commit_graph_updater_errors
+
+<p class="subtitle">code-intel: commit graph updater errors every 5m</p>
+
+**Descriptions:**
+
+- _frontend: 20+ commit graph updater errors every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_codeintel_commit_graph_updater_errors"
+]
+```
+
+<br />
+
+## frontend: codeintel_upload_records_removed
+
+<p class="subtitle">code-intel: upload records expired or deleted every 5m</p>
+
+**Descriptions:**
+
+- _frontend: 20+ upload records expired or deleted every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_codeintel_upload_records_removed"
+]
+```
+
+<br />
+
+## frontend: codeintel_index_records_removed
+
+<p class="subtitle">code-intel: index records expired or deleted every 5m</p>
+
+**Descriptions:**
+
+- _frontend: 20+ index records expired or deleted every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_codeintel_index_records_removed"
+]
+```
+
+<br />
+
+## frontend: codeintel_uploads_purged
+
+<p class="subtitle">code-intel: data for unreferenced upload records purged every 5m</p>
+
+**Descriptions:**
+
+- _frontend: 20+ data for unreferenced upload records purged every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_codeintel_uploads_purged"
+]
+```
+
+<br />
+
+## frontend: codeintel_background_errors
+
+<p class="subtitle">code-intel: codeintel-related background process errors every 5m</p>
+
+**Descriptions:**
+
+- _frontend: 20+ codeintel-related background process errors every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_codeintel_background_errors"
+]
+```
+
+<br />
+
 ## frontend: internal_indexed_search_error_responses
 
 <p class="subtitle">search: internal indexed search error responses every 5m</p>
@@ -1292,7 +1452,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ## gitserver: fs_io_operations
 
-<p class="subtitle">search: filesystem reads and writes rate by instance over 1h</p>
+<p class="subtitle">cloud: filesystem reads and writes rate by instance over 1h</p>
 
 **Descriptions:**
 
@@ -1327,30 +1487,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "warning_gitserver_provisioning_container_cpu_usage_long_term"
-]
-```
-
-<br />
-
-## gitserver: provisioning_container_memory_usage_long_term
-
-<p class="subtitle">distribution: container memory usage (1d maximum) by instance</p>
-
-**Descriptions:**
-
-- _gitserver: less than 30% container memory usage (1d maximum) by instance for 336h0m0s_
-
-**Possible solutions:**
-
-- If usage is high:
-	- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the gitserver service.
-	- **Docker Compose:** Consider increasing `memory:` of the gitserver container in `docker-compose.yml`.
-- If usage is low, consider decreasing the above values.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_gitserver_provisioning_container_memory_usage_long_term"
 ]
 ```
 
@@ -1737,6 +1873,285 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 ```json
 "observability.silenceAlerts": [
   "critical_github-proxy_pods_available_percentage"
+]
+```
+
+<br />
+
+## postgres: connections
+
+<p class="subtitle">cloud: connections</p>
+
+**Descriptions:**
+
+- _postgres: less than 5 connections for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_connections"
+]
+```
+
+<br />
+
+## postgres: transactions
+
+<p class="subtitle">cloud: transaction durations</p>
+
+**Descriptions:**
+
+- _postgres: 300ms+ transaction durations for 5m0s_
+- _postgres: 500ms+ transaction durations for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_transactions",
+  "critical_postgres_transactions"
+]
+```
+
+<br />
+
+## postgres: postgres_up
+
+<p class="subtitle">cloud: current db status</p>
+
+**Descriptions:**
+
+- _postgres: less than 0 current db status for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_postgres_postgres_up"
+]
+```
+
+<br />
+
+## postgres: pg_exporter_err
+
+<p class="subtitle">cloud: errors scraping postgres exporter</p>
+
+**Descriptions:**
+
+- _postgres: 1+ errors scraping postgres exporter for 5m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_pg_exporter_err"
+]
+```
+
+<br />
+
+## postgres: migration_in_progress
+
+<p class="subtitle">cloud: schema migration status (where 0 is no migration in progress)</p>
+
+**Descriptions:**
+
+- _postgres: 1+ schema migration status (where 0 is no migration in progress) for 5m0s_
+
+**Possible solutions:**
+
+- The database migration has been in progress for 5 or more minutes, please contact Sourcegraph if this persists
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_postgres_migration_in_progress"
+]
+```
+
+<br />
+
+## postgres: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">cloud: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+
+**Descriptions:**
+
+- _postgres: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the pgsql service.
+- **Docker Compose:** Consider increasing `cpus:` of the pgsql container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_provisioning_container_cpu_usage_long_term"
+]
+```
+
+<br />
+
+## postgres: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">cloud: container memory usage (1d maximum) by instance</p>
+
+**Descriptions:**
+
+- _postgres: 80%+ container memory usage (1d maximum) by instance for 336h0m0s_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the pgsql service.
+- **Docker Compose:** Consider increasing `memory:` of the pgsql container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_provisioning_container_memory_usage_long_term"
+]
+```
+
+<br />
+
+## postgres: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">cloud: container cpu usage total (5m maximum) across all cores by instance</p>
+
+**Descriptions:**
+
+- _postgres: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the pgsql container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_provisioning_container_cpu_usage_short_term"
+]
+```
+
+<br />
+
+## postgres: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">cloud: container memory usage (5m maximum) by instance</p>
+
+**Descriptions:**
+
+- _postgres: 90%+ container memory usage (5m maximum) by instance_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of pgsql container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_provisioning_container_memory_usage_short_term"
+]
+```
+
+<br />
+
+## postgres: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+
+**Descriptions:**
+
+- _postgres: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the codeintel-db service.
+- **Docker Compose:** Consider increasing `cpus:` of the codeintel-db container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_provisioning_container_cpu_usage_long_term"
+]
+```
+
+<br />
+
+## postgres: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>
+
+**Descriptions:**
+
+- _postgres: 80%+ container memory usage (1d maximum) by instance for 336h0m0s_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the codeintel-db service.
+- **Docker Compose:** Consider increasing `memory:` of the codeintel-db container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_provisioning_container_memory_usage_long_term"
+]
+```
+
+<br />
+
+## postgres: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">code-intel: container cpu usage total (5m maximum) across all cores by instance</p>
+
+**Descriptions:**
+
+- _postgres: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the codeintel-db container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_provisioning_container_cpu_usage_short_term"
+]
+```
+
+<br />
+
+## postgres: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">code-intel: container memory usage (5m maximum) by instance</p>
+
+**Descriptions:**
+
+- _postgres: 90%+ container memory usage (5m maximum) by instance_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of codeintel-db container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_provisioning_container_memory_usage_short_term"
 ]
 ```
 
@@ -3064,6 +3479,90 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
+## repo-updater: github_graphql_rate_limit_remaining
+
+<p class="subtitle">cloud: remaining calls to GitHub graphql API before hitting the rate limit</p>
+
+**Descriptions:**
+
+- _repo-updater: less than 250 remaining calls to GitHub graphql API before hitting the rate limit_
+
+**Possible solutions:**
+
+- Try restarting the pod to get a different public IP.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_repo-updater_github_graphql_rate_limit_remaining"
+]
+```
+
+<br />
+
+## repo-updater: github_rest_rate_limit_remaining
+
+<p class="subtitle">cloud: remaining calls to GitHub rest API before hitting the rate limit</p>
+
+**Descriptions:**
+
+- _repo-updater: less than 250 remaining calls to GitHub rest API before hitting the rate limit_
+
+**Possible solutions:**
+
+- Try restarting the pod to get a different public IP.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_repo-updater_github_rest_rate_limit_remaining"
+]
+```
+
+<br />
+
+## repo-updater: github_search_rate_limit_remaining
+
+<p class="subtitle">cloud: remaining calls to GitHub search API before hitting the rate limit</p>
+
+**Descriptions:**
+
+- _repo-updater: less than 5 remaining calls to GitHub search API before hitting the rate limit_
+
+**Possible solutions:**
+
+- Try restarting the pod to get a different public IP.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_repo-updater_github_search_rate_limit_remaining"
+]
+```
+
+<br />
+
+## repo-updater: gitlab_rest_rate_limit_remaining
+
+<p class="subtitle">cloud: remaining calls to GitLab rest API before hitting the rate limit</p>
+
+**Descriptions:**
+
+- _repo-updater: less than 30 remaining calls to GitLab rest API before hitting the rate limit_
+
+**Possible solutions:**
+
+- Try restarting the pod to get a different public IP.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_repo-updater_gitlab_rest_rate_limit_remaining"
+]
+```
+
+<br />
+
 ## repo-updater: container_cpu_usage
 
 <p class="subtitle">cloud: container cpu usage total (1m average) across all cores by instance</p>
@@ -3092,7 +3591,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions:**
 
-- _repo-updater: 99%+ container memory usage by instance_
+- _repo-updater: 90%+ container memory usage by instance_
 
 **Possible solutions:**
 
@@ -3102,7 +3601,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_container_memory_usage"
+  "critical_repo-updater_container_memory_usage"
 ]
 ```
 
@@ -3913,86 +4412,6 @@ with your code hosts connections or networking issues affecting communication wi
 ```json
 "observability.silenceAlerts": [
   "critical_symbols_pods_available_percentage"
-]
-```
-
-<br />
-
-## syntect-server: syntax_highlighting_errors
-
-<p class="subtitle">cloud: syntax highlighting errors every 5m</p>
-
-**Descriptions:**
-
-- _syntect-server: 5%+ syntax highlighting errors every 5m for 5m0s_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_syntect-server_syntax_highlighting_errors"
-]
-```
-
-<br />
-
-## syntect-server: syntax_highlighting_timeouts
-
-<p class="subtitle">cloud: syntax highlighting timeouts every 5m</p>
-
-**Descriptions:**
-
-- _syntect-server: 5%+ syntax highlighting timeouts every 5m for 5m0s_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_syntect-server_syntax_highlighting_timeouts"
-]
-```
-
-<br />
-
-## syntect-server: syntax_highlighting_panics
-
-<p class="subtitle">cloud: syntax highlighting panics every 5m</p>
-
-**Descriptions:**
-
-- _syntect-server: 5+ syntax highlighting panics every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_syntect-server_syntax_highlighting_panics"
-]
-```
-
-<br />
-
-## syntect-server: syntax_highlighting_worker_deaths
-
-<p class="subtitle">cloud: syntax highlighter worker deaths every 5m</p>
-
-**Descriptions:**
-
-- _syntect-server: 1+ syntax highlighter worker deaths every 5m_
-
-**Possible solutions:**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_syntect-server_syntax_highlighting_worker_deaths"
 ]
 ```
 

@@ -27,7 +27,7 @@ func testSyncWorkerPlumbing(db *sql.DB) func(t *testing.T, repoStore repos.Store
 			}
 
 			// Create external service
-			err := repoStore.UpsertExternalServices(ctx, testSvc)
+			err := repoStore.ExternalServiceStore().Upsert(ctx, testSvc)
 			if err != nil {
 				t.Fatal(err)
 			}

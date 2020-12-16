@@ -9,42 +9,28 @@ interface Props {
     className: string
 }
 
-interface State {
-    dismissed: boolean
-}
-
 /**
  * A global site alert that can be dismissed. Once dismissed, it is never shown
  * again.
  */
-export class DismissibleAlert extends React.PureComponent<Props, State> {
-    private key: string
+export const DismissibleAlert: React.FunctionComponent<Props> = ({ partialStorageKey, className, children }) => {
+    const key = `DismissibleAlert/${partialStorageKey}/dismissed`
+    const [dismissed, setDismissed] = React.useState<boolean>(localStorage.getItem(key) === 'true')
 
-    constructor(props: Props) {
-        super(props)
-        this.key = `DismissibleAlert/${props.partialStorageKey}/dismissed`
+    const onDismiss = React.useCallback(() => {
+        localStorage.setItem(key, 'true')
+        setDismissed(true)
+    }, [key])
 
-        this.state = {
-            dismissed: localStorage.getItem(this.key) === 'true',
-        }
+    if (dismissed) {
+        return null
     }
-
-    public render(): JSX.Element | null {
-        if (this.state.dismissed) {
-            return null
-        }
-        return (
-            <div className={`alert dismissible-alert ${this.props.className}`}>
-                <div className="dismissible-alert__content">{this.props.children}</div>
-                <button type="button" className="btn btn-icon" onClick={this.onDismiss}>
-                    <CloseIcon className="icon-inline" />
-                </button>
-            </div>
-        )
-    }
-
-    private onDismiss = (): void => {
-        localStorage.setItem(this.key, 'true')
-        this.setState({ dismissed: true })
-    }
+    return (
+        <div className={`alert dismissible-alert ${className}`}>
+            <div className="dismissible-alert__content">{children}</div>
+            <button type="button" className="btn btn-icon" onClick={onDismiss}>
+                <CloseIcon className="icon-inline" />
+            </button>
+        </div>
+    )
 }

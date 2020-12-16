@@ -8,19 +8,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type changesetsConnectionResolver struct {
-	store       *ee.Store
-	httpFactory *httpcli.Factory
+	store *store.Store
 
-	opts ee.ListChangesetsOpts
+	opts store.ListChangesetsOpts
 	// 🚨 SECURITY: If the given opts do not reveal hidden information about a
 	// changeset by including the changeset in the result set, this should be
 	// set to true.
@@ -44,24 +43,18 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 		return nil, err
 	}
 
-	syncData, err := r.store.ListChangesetSyncData(ctx, ee.ListChangesetSyncDataOpts{ChangesetIDs: changesetsPage.IDs()})
+	syncData, err := r.store.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ChangesetIDs: changesetsPage.IDs()})
 	if err != nil {
 		return nil, err
 	}
 	scheduledSyncs := make(map[int64]time.Time)
 	for _, d := range syncData {
-		scheduledSyncs[d.ChangesetID] = ee.NextSync(time.Now, d)
+		scheduledSyncs[d.ChangesetID] = syncer.NextSync(time.Now, d)
 	}
 
 	resolvers := make([]graphqlbackend.ChangesetResolver, 0, len(changesetsPage))
 	for _, c := range changesetsPage {
-		nextSyncAt, isPreloaded := scheduledSyncs[c.ID]
-		var preloadedNextSyncAt *time.Time
-		if isPreloaded {
-			preloadedNextSyncAt = &nextSyncAt
-		}
-
-		resolvers = append(resolvers, NewChangesetResolverWithNextSync(r.store, r.httpFactory, c, reposByID[c.RepoID], preloadedNextSyncAt))
+		resolvers = append(resolvers, NewChangesetResolverWithNextSync(r.store, c, reposByID[c.RepoID], scheduledSyncs[c.ID]))
 	}
 
 	return resolvers, nil

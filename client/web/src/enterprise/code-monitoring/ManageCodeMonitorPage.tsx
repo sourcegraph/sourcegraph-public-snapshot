@@ -18,7 +18,7 @@ export interface ManageCodeMonitorPageProps
     extends RouteComponentProps<{ id: Scalars['ID'] }>,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        Pick<CodeMonitoringProps, 'updateCodeMonitor' | 'fetchCodeMonitor'> {
+        Pick<CodeMonitoringProps, 'updateCodeMonitor' | 'fetchCodeMonitor' | 'deleteCodeMonitor'> {
     authenticatedUser: AuthenticatedUser
     location: H.Location
     history: H.History
@@ -97,8 +97,7 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
                 <h2 className="flex-grow-1">Manage code monitor</h2>
             </div>
             Code monitors watch your code for specific triggers and run actions in response.{' '}
-            <a href="" target="_blank" rel="noopener">
-                {/* TODO: populate link */}
+            <a href="https://docs.sourcegraph.com/code_monitoring" target="_blank" rel="noopener">
                 Learn more
             </a>
             {codeMonitorOrError === 'loading' && <LoadingSpinner className="icon-inline" />}
@@ -109,6 +108,7 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
                         onSubmit={updateMonitorRequest}
                         codeMonitor={codeMonitorState}
                         submitButtonLabel="Save"
+                        showDeleteButton={true}
                     />
                 </>
             )}

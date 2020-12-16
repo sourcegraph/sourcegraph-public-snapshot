@@ -10,10 +10,10 @@ import { FilteredConnection } from '../../components/FilteredConnection'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
-import { GitCommitFields } from '../../graphql-operations'
+import { GitCommitFields, Scalars } from '../../graphql-operations'
 
 function queryRepositoryComparisonCommits(args: {
-    repo: GQL.ID
+    repo: Scalars['ID']
     base: string | null
     head: string | null
     first?: number

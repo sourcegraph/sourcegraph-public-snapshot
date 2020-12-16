@@ -1,3 +1,5 @@
+@import './FormTriggerArea';
+
 .code-monitor-form {
     &__card {
         border-radius: 4px;
@@ -10,17 +12,25 @@
         }
 
         &--button {
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            margin: calc(16px - 1px) -1px;
+            border-radius: 4px;
+
             &:hover {
+                // stylelint-disable-next-line declaration-property-unit-whitelist
+                margin: calc(16px - 2px) -2px;
                 border: 2px solid #329af0;
             }
 
             .create-monitor-page__trigger--disabled & {
+                margin: 1rem 0;
                 &:hover {
                     border: 1px solid var(--border-color);
                 }
             }
 
             .create-monitor-page__actions--disabled & {
+                margin: 1rem 0;
                 &:hover {
                     border: 1px solid var(--border-color);
                 }

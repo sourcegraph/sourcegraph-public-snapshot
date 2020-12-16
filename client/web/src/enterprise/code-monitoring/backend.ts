@@ -1,10 +1,16 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
+import {
+    createInvalidGraphQLMutationResponseError,
+    dataOrThrowErrors,
+    gql,
+} from '../../../../shared/src/graphql/graphql'
 import { requestGraphQL } from '../../backend/graphql'
 import {
     CreateCodeMonitorResult,
     CreateCodeMonitorVariables,
+    DeleteCodeMonitorResult,
+    DeleteCodeMonitorVariables,
     FetchCodeMonitorResult,
     FetchCodeMonitorVariables,
     ListCodeMonitors,
@@ -13,38 +19,14 @@ import {
     MonitorEditActionInput,
     MonitorEditInput,
     MonitorEditTriggerInput,
+    ResetTriggerQueryTimestampsResult,
+    ResetTriggerQueryTimestampsVariables,
+    Scalars,
     ToggleCodeMonitorEnabledResult,
     ToggleCodeMonitorEnabledVariables,
     UpdateCodeMonitorResult,
     UpdateCodeMonitorVariables,
 } from '../../graphql-operations'
-
-export const createCodeMonitor = ({
-    monitor,
-    trigger,
-    actions,
-}: CreateCodeMonitorVariables): Observable<CreateCodeMonitorResult['createCodeMonitor']> => {
-    const query = gql`
-        mutation CreateCodeMonitor(
-            $monitor: MonitorInput!
-            $trigger: MonitorTriggerInput!
-            $actions: [MonitorActionInput!]!
-        ) {
-            createCodeMonitor(monitor: $monitor, trigger: $trigger, actions: $actions) {
-                description
-            }
-        }
-    `
-
-    return requestGraphQL<CreateCodeMonitorResult, CreateCodeMonitorVariables>(query, {
-        monitor,
-        trigger,
-        actions,
-    }).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.createCodeMonitor)
-    )
-}
 
 const CodeMonitorFragment = gql`
     fragment CodeMonitorFields on Monitor {
@@ -87,8 +69,31 @@ const ListCodeMonitorsFragment = gql`
     ${CodeMonitorFragment}
 `
 
-export interface ListCodeMonitorsResult {
-    monitors: ListCodeMonitors
+export const createCodeMonitor = ({
+    monitor,
+    trigger,
+    actions,
+}: CreateCodeMonitorVariables): Observable<CreateCodeMonitorResult['createCodeMonitor']> => {
+    const query = gql`
+        mutation CreateCodeMonitor(
+            $monitor: MonitorInput!
+            $trigger: MonitorTriggerInput!
+            $actions: [MonitorActionInput!]!
+        ) {
+            createCodeMonitor(monitor: $monitor, trigger: $trigger, actions: $actions) {
+                description
+            }
+        }
+    `
+
+    return requestGraphQL<CreateCodeMonitorResult, CreateCodeMonitorVariables>(query, {
+        monitor,
+        trigger,
+        actions,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.createCodeMonitor)
+    )
 }
 
 export const fetchUserCodeMonitors = ({
@@ -222,5 +227,44 @@ export const updateCodeMonitor = (
     }).pipe(
         map(dataOrThrowErrors),
         map(data => data.updateCodeMonitor)
+    )
+}
+
+export const deleteCodeMonitor = (id: Scalars['ID']): Observable<void> => {
+    const deleteCodeMonitorQuery = gql`
+        mutation DeleteCodeMonitor($id: ID!) {
+            deleteCodeMonitor(id: $id) {
+                alwaysNil
+            }
+        }
+    `
+
+    return requestGraphQL<DeleteCodeMonitorResult, DeleteCodeMonitorVariables>(deleteCodeMonitorQuery, { id }).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.deleteCodeMonitor) {
+                throw createInvalidGraphQLMutationResponseError('DeleteCodeMonitor')
+            }
+        })
+    )
+}
+
+export const sendTestEmail = (id: Scalars['ID']): Observable<void> => {
+    const query = gql`
+        mutation ResetTriggerQueryTimestamps($id: ID!) {
+            resetTriggerQueryTimestamps(id: $id) {
+                alwaysNil
+            }
+        }
+    `
+
+    return requestGraphQL<ResetTriggerQueryTimestampsResult, ResetTriggerQueryTimestampsVariables>(query, { id }).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.resetTriggerQueryTimestamps) {
+                console.log('DATA', data)
+                throw createInvalidGraphQLMutationResponseError('ResetTriggerQueryTimestamps')
+            }
+        })
     )
 }

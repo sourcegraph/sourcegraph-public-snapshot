@@ -7,10 +7,11 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -30,9 +31,9 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 
 	pruneUserCredentials(t)
 
-	userID := insertTestUser(t, dbconn.Global, "code-host-connection-resolver", false)
+	userID := ct.CreateTestUser(t, false).ID
 
-	store := ee.NewStore(dbconn.Global)
+	cstore := store.New(dbconn.Global)
 
 	ghRepos, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 	ghRepo := ghRepos[0]
@@ -51,7 +52,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: store}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

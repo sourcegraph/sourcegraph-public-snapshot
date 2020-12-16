@@ -3,6 +3,7 @@ package definitions
 import (
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -58,12 +59,12 @@ func GitHubProxy() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedContainerCPUUsage("github-proxy", monitoring.ObservableOwnerCloud),
-						sharedContainerMemoryUsage("github-proxy", monitoring.ObservableOwnerCloud),
+						shared.ContainerCPUUsage("github-proxy", monitoring.ObservableOwnerCloud),
+						shared.ContainerMemoryUsage("github-proxy", monitoring.ObservableOwnerCloud),
 					},
 					{
-						sharedContainerRestarts("github-proxy", monitoring.ObservableOwnerCloud),
-						sharedContainerFsInodes("github-proxy", monitoring.ObservableOwnerCloud),
+						shared.ContainerRestarts("github-proxy", monitoring.ObservableOwnerCloud),
+						shared.ContainerFsInodes("github-proxy", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -72,12 +73,12 @@ func GitHubProxy() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("github-proxy", monitoring.ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageLongTerm("github-proxy", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageLongTerm("github-proxy", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningMemoryUsageLongTerm("github-proxy", monitoring.ObservableOwnerCloud),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("github-proxy", monitoring.ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageShortTerm("github-proxy", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageShortTerm("github-proxy", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningMemoryUsageShortTerm("github-proxy", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -86,8 +87,8 @@ func GitHubProxy() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedGoGoroutines("github-proxy", monitoring.ObservableOwnerCloud),
-						sharedGoGcDuration("github-proxy", monitoring.ObservableOwnerCloud),
+						shared.GoGoroutines("github-proxy", monitoring.ObservableOwnerCloud),
+						shared.GoGcDuration("github-proxy", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -96,7 +97,7 @@ func GitHubProxy() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedKubernetesPodsAvailable("github-proxy", monitoring.ObservableOwnerCloud),
+						shared.KubernetesPodsAvailable("github-proxy", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},

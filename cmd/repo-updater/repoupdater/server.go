@@ -13,7 +13,9 @@ import (
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -38,7 +40,7 @@ type Server struct {
 		GetRepo(ctx context.Context, projectWithNamespace string) (*types.Repo, error)
 	}
 	Scheduler interface {
-		UpdateOnce(id api.RepoID, name api.RepoName, url string)
+		UpdateOnce(id api.RepoID, name api.RepoName)
 		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
 	}
 	GitserverClient interface {
@@ -111,11 +113,12 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	args := repos.StoreListExternalServicesArgs{
-		IDs: svcIDs,
+	args := db.ExternalServicesListOptions{
+		IDs:              svcIDs,
+		OrderByDirection: "ASC",
 	}
 
-	es, err := s.Store.ListExternalServices(r.Context(), args)
+	es, err := s.Store.ExternalServiceStore().List(r.Context(), args)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -148,11 +151,12 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	args := repos.StoreListExternalServicesArgs{
-		Kinds: types.Repos(rs).Kinds(),
+	args := db.ExternalServicesListOptions{
+		Kinds:            types.Repos(rs).Kinds(),
+		OrderByDirection: "ASC",
 	}
 
-	es, err := s.Store.ListExternalServices(r.Context(), args)
+	es, err := s.Store.ExternalServiceStore().List(r.Context(), args)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -184,7 +188,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = s.Store.UpsertExternalServices(r.Context(), es...)
+	err = s.Store.ExternalServiceStore().Upsert(r.Context(), es...)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -321,17 +325,12 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 	}
 
 	repo := rs[0]
-	if req.URL == "" {
-		if urls := repo.CloneURLs(); len(urls) > 0 {
-			req.URL = urls[0]
-		}
-	}
-	s.Scheduler.UpdateOnce(repo.ID, req.Repo, req.URL)
+
+	s.Scheduler.UpdateOnce(repo.ID, repo.Name)
 
 	return &protocol.RepoUpdateResponse{
 		ID:   repo.ID,
 		Name: string(repo.Name),
-		URL:  req.URL,
 	}, http.StatusOK, nil
 }
 

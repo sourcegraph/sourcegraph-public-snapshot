@@ -60,6 +60,9 @@ const readActionEmailEventsFmtStr = `
 SELECT id, email, trigger_event, state, failure_message, started_at, finished_at, process_after, num_resets, num_failures, log_contents
 FROM cm_action_jobs
 WHERE %s
+AND id > %s
+ORDER BY id ASC
+LIMIT %s;
 `
 
 func (s *Store) ReadActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int, args *graphqlbackend.ListEventsArgs) (js []*ActionJob, err error) {
@@ -70,7 +73,11 @@ func (s *Store) ReadActionEmailEvents(ctx context.Context, emailID int64, trigge
 		where = sqlf.Sprintf("email = %s AND trigger_event = %s", emailID, *triggerEventID)
 	}
 	var rows *sql.Rows
-	rows, err = s.Query(ctx, sqlf.Sprintf(readActionEmailEventsFmtStr, where))
+	after, err := unmarshalAfter(args.After)
+	if err != nil {
+		return nil, err
+	}
+	rows, err = s.Query(ctx, sqlf.Sprintf(readActionEmailEventsFmtStr, where, after, args.First))
 	if err != nil {
 		return nil, err
 	}

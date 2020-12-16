@@ -7,6 +7,7 @@ import { catchError, filter, switchMap, map, distinctUntilChanged } from 'rxjs/o
 import { highlightNode } from '../util/dom'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { Repo } from '../util/url'
+import * as GQL from '../graphql/schema'
 
 export interface FetchFileParameters {
     repoName: string
@@ -14,6 +15,7 @@ export interface FetchFileParameters {
     filePath: string
     disableTimeout?: boolean
     isLightTheme: boolean
+    ranges: GQL.IHighlightLineRange[]
 }
 
 interface Props extends Repo {

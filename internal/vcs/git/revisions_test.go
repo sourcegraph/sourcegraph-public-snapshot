@@ -30,7 +30,7 @@ func TestRepository_ResolveBranch(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo         gitserver.Repo
+		repo         api.RepoName
 		branch       string
 		wantCommitID api.CommitID
 	}{
@@ -61,7 +61,7 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo    gitserver.Repo
+		repo    api.RepoName
 		branch  string
 		wantErr func(error) bool
 	}{
@@ -93,7 +93,7 @@ func TestRepository_ResolveTag(t *testing.T) {
 		"git tag t",
 	}
 	tests := map[string]struct {
-		repo         gitserver.Repo
+		repo         api.RepoName
 		tag          string
 		wantCommitID api.CommitID
 	}{
@@ -124,7 +124,7 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo    gitserver.Repo
+		repo    api.RepoName
 		tag     string
 		wantErr func(error) bool
 	}{

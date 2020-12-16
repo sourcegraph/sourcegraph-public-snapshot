@@ -317,6 +317,8 @@ type CampaignSpec struct {
 	On []interface{} `json:"on,omitempty"`
 	// Steps description: The sequence of commands to run (for each repository branch matched in the `on` property) to produce the campaign's changes.
 	Steps []*Step `json:"steps,omitempty"`
+	// TransformChanges description: Optional transformations to apply to the changes produced in each repository.
+	TransformChanges *TransformChanges `json:"transformChanges,omitempty"`
 }
 
 // ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
@@ -1107,6 +1109,8 @@ type SettingsExperimentalFeatures struct {
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
 	// CopyQueryButton description: Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
+	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
+	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
 	// EnableSmartQuery description: Enables contextual syntax highlighting and hovers for search queries in the web app
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
 	// SearchStats description: Enables a new page that shows language statistics about the results for a search query.
@@ -1203,6 +1207,8 @@ type SiteConfiguration struct {
 	GitCloneURLToRepositoryName []*CloneURLToRepositoryName `json:"git.cloneURLToRepositoryName,omitempty"`
 	// GitMaxConcurrentClones description: Maximum number of git clone processes that will be run concurrently per gitserver to update repositories. Note: the global git update scheduler respects gitMaxConcurrentClones. However, we allow each gitserver to run upto gitMaxConcurrentClones to allow for urgent fetches. Urgent fetches are used when a user is browsing a PR and we do not have the commit yet.
 	GitMaxConcurrentClones int `json:"gitMaxConcurrentClones,omitempty"`
+	// GitUpdateInterval description: JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.
+	GitUpdateInterval []*UpdateIntervalRule `json:"gitUpdateInterval,omitempty"`
 	// GithubClientID description: Client ID for GitHub. (DEPRECATED)
 	GithubClientID string `json:"githubClientID,omitempty"`
 	// GithubClientSecret description: Client secret for GitHub. (DEPRECATED)
@@ -1278,6 +1284,18 @@ type TlsExternal struct {
 	// InsecureSkipVerify description: insecureSkipVerify controls whether a client verifies the server's certificate chain and host name.
 	// If InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to man-in-the-middle attacks.
 	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
+}
+
+// TransformChanges description: Optional transformations to apply to the changes produced in each repository.
+type TransformChanges struct {
+	// Group description: A list of groups of changes in a repository that each create a separate, additional changeset for this repository, with all ungrouped changes being in the default changeset.
+	Group []interface{} `json:"group,omitempty"`
+}
+type UpdateIntervalRule struct {
+	// Interval description: An integer representing the number of minutes to wait until the next update
+	Interval int `json:"interval"`
+	// Pattern description: A regular expression matching a repo name
+	Pattern string `json:"pattern"`
 }
 type UsernameIdentity struct {
 	Type string `json:"type"`

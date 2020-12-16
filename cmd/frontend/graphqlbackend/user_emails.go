@@ -206,7 +206,7 @@ func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *stru
 	if lastSent != nil &&
 		lastSent.LastVerificationSentAt != nil &&
 		timeNow().Sub(*lastSent.LastVerificationSentAt) < 1*time.Minute {
-		return nil, errors.New("Last email sent too recently")
+		return nil, errors.New("Last verification email sent too recently")
 	}
 
 	email, verified, err := db.UserEmails.Get(ctx, userID, args.Email)

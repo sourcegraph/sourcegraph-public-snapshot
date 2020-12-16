@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -37,7 +36,7 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 	mockSearchFilesInRepo = func(
 		ctx context.Context,
 		repo *types.RepoName,
-		gitserverRepo gitserver.Repo,
+		gitserverRepo api.RepoName,
 		rev string,
 		info *search.TextPatternInfo,
 		fetchTimeout time.Duration,

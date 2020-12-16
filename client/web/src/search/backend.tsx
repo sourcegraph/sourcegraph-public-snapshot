@@ -4,13 +4,24 @@ import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
-import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
+import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import { SearchSuggestion } from '../../../shared/src/search/suggestions'
 import { Remote } from 'comlink'
 import { FlatExtensionHostAPI } from '../../../shared/src/api/contract'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
 import { DeployType } from '../jscontext'
-import { SearchPatternType, EventLogsDataResult, EventLogsDataVariables } from '../graphql-operations'
+import {
+    SearchPatternType,
+    EventLogsDataResult,
+    EventLogsDataVariables,
+    CreateSavedSearchResult,
+    CreateSavedSearchVariables,
+    DeleteSavedSearchResult,
+    DeleteSavedSearchVariables,
+    UpdateSavedSearchResult,
+    UpdateSavedSearchVariables,
+    Scalars,
+} from '../graphql-operations'
 
 export function search(
     query: string,
@@ -322,7 +333,7 @@ export function fetchSavedSearches(): Observable<GQL.ISavedSearch[]> {
     )
 }
 
-export function fetchSavedSearch(id: GQL.ID): Observable<GQL.ISavedSearch> {
+export function fetchSavedSearch(id: Scalars['ID']): Observable<GQL.ISavedSearch> {
     return queryGraphQL(
         gql`
             query SavedSearch($id: ID!) {
@@ -353,10 +364,10 @@ export function createSavedSearch(
     query: string,
     notify: boolean,
     notifySlack: boolean,
-    userId: GQL.ID | null,
-    orgId: GQL.ID | null
+    userId: Scalars['ID'] | null,
+    orgId: Scalars['ID'] | null
 ): Observable<void> {
-    return mutateGraphQL(
+    return requestGraphQL<CreateSavedSearchResult, CreateSavedSearchVariables>(
         gql`
             mutation CreateSavedSearch(
                 $description: String!
@@ -394,15 +405,15 @@ export function createSavedSearch(
 }
 
 export function updateSavedSearch(
-    id: GQL.ID,
+    id: Scalars['ID'],
     description: string,
     query: string,
     notify: boolean,
     notifySlack: boolean,
-    userId: GQL.ID | null,
-    orgId: GQL.ID | null
+    userId: Scalars['ID'] | null,
+    orgId: Scalars['ID'] | null
 ): Observable<void> {
-    return mutateGraphQL(
+    return requestGraphQL<UpdateSavedSearchResult, UpdateSavedSearchVariables>(
         gql`
             mutation UpdateSavedSearch(
                 $id: ID!
@@ -442,8 +453,8 @@ export function updateSavedSearch(
     )
 }
 
-export function deleteSavedSearch(id: GQL.ID): Observable<void> {
-    return mutateGraphQL(
+export function deleteSavedSearch(id: Scalars['ID']): Observable<void> {
+    return requestGraphQL<DeleteSavedSearchResult, DeleteSavedSearchVariables>(
         gql`
             mutation DeleteSavedSearch($id: ID!) {
                 deleteSavedSearch(id: $id) {
@@ -528,7 +539,7 @@ export interface EventLogResult {
     pageInfo: { hasNextPage: boolean }
 }
 
-function fetchEvents(userId: GQL.ID, first: number, eventName: string): Observable<EventLogResult | null> {
+function fetchEvents(userId: Scalars['ID'], first: number, eventName: string): Observable<EventLogResult | null> {
     if (!userId) {
         return of(null)
     }
@@ -569,10 +580,10 @@ function fetchEvents(userId: GQL.ID, first: number, eventName: string): Observab
     )
 }
 
-export function fetchRecentSearches(userId: GQL.ID, first: number): Observable<EventLogResult | null> {
+export function fetchRecentSearches(userId: Scalars['ID'], first: number): Observable<EventLogResult | null> {
     return fetchEvents(userId, first, 'SearchResultsQueried')
 }
 
-export function fetchRecentFileViews(userId: GQL.ID, first: number): Observable<EventLogResult | null> {
+export function fetchRecentFileViews(userId: Scalars['ID'], first: number): Observable<EventLogResult | null> {
     return fetchEvents(userId, first, 'ViewBlob')
 }

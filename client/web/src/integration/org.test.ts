@@ -39,6 +39,8 @@ describe('Organizations', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
+    const settingsID = 12345
+
     describe('Site admin organizations page', () => {
         it('allows to create new organizations', async () => {
             const graphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
@@ -52,10 +54,25 @@ describe('Organizations', () => {
                         totalCount: 0,
                     },
                 }),
-                createOrganization: ({ name }) => ({
+                SettingsCascade: () => ({
+                    settingsSubject: {
+                        settingsCascade: {
+                            subjects: [
+                                {
+                                    latestSettings: {
+                                        id: settingsID,
+                                        contents: JSON.stringify({}),
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                }),
+                CreateOrganization: ({ name }) => ({
                     createOrganization: {
                         id: 'TestOrg',
                         name,
+                        settingsURL: '/organizations/test-org-1/settings',
                     },
                 }),
             }
@@ -77,7 +94,7 @@ describe('Organizations', () => {
 
             const variables = await testContext.waitForGraphQLRequest(async () => {
                 await driver.page.click('.test-create-org-submit-button')
-            }, 'createOrganization')
+            }, 'CreateOrganization')
             assert.deepStrictEqual(variables, {
                 displayName: testOrg.displayName,
                 name: testOrg.name,
@@ -95,7 +112,6 @@ describe('Organizations', () => {
     describe('Organization area', () => {
         describe('Settings tab', () => {
             it('allows to change organization-wide settings', async () => {
-                const settingsID = 12345
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
                     Organization: () => ({
@@ -172,7 +188,7 @@ describe('Organizations', () => {
                             },
                         },
                     }),
-                    removeUserFromOrganization: () => ({
+                    RemoveUserFromOrganization: () => ({
                         removeUserFromOrganization: emptyResponse,
                     }),
                 }
@@ -209,7 +225,7 @@ describe('Organizations', () => {
                         driver.acceptNextDialog(),
                         driver.page.click('[data-test-username="testmember"] .test-remove-org-member'),
                     ])
-                }, 'removeUserFromOrganization')
+                }, 'RemoveUserFromOrganization')
 
                 assert.deepStrictEqual(variables, {
                     user: testMember.id,

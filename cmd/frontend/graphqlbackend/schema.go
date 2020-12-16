@@ -691,6 +691,9 @@ type Mutation {
 
     The returned CampaignSpec is immutable and expires after a certain period of time (if not used
     in a call to applyCampaign), which can be queried on CampaignSpec.expiresAt.
+
+    If campaigns are unlicensed and the number of changesetSpecIDs is higher than what's allowed in
+    the free tier, an error with the error code ErrCampaignsUnlicensed is returned.
     """
     createCampaignSpec(
         """
@@ -822,6 +825,16 @@ type Mutation {
         """
         actions: [MonitorEditActionInput!]!
     ): Monitor!
+    """
+    Reset the timestamps of a trigger query. The query will be queued immediately and return
+    all results without a limit on the timeframe. Only site admins may perform this mutation.
+    """
+    resetTriggerQueryTimestamps(
+        """
+        The id of the trigger query.
+        """
+        id: ID!
+    ): EmptyResponse!
 }
 
 """
@@ -995,6 +1008,18 @@ create a changeset spec, use the createChangesetSpec mutation.
 """
 interface ChangesetSpec {
     """
+    The unique ID for a changeset spec.
+
+    The ID is unguessable (i.e., long and randomly generated, not sequential). This is important
+    even though repository permissions also apply to viewers of changeset specs, because being
+    allowed to view a repository should not entitle a person to view all not-yet-published
+    changesets for that repository. Consider a campaign to fix a security vulnerability: the
+    campaign author may prefer to prepare all of the changesets in private so that the window
+    between revealing the problem and merging the fixes is as short as possible.
+    """
+    id: ID!
+
+    """
     The type of changeset spec.
     """
     type: ChangesetSpecType!
@@ -1004,21 +1029,6 @@ interface ChangesetSpec {
     spec never expires (and this field is null) if its campaign spec has been applied.
     """
     expiresAt: DateTime
-
-    """
-    The operations to take to achieve the desired state of this changeset spec.
-    """
-    operations: [ChangesetSpecOperation!]!
-
-    """
-    The delta between the current changeset state and what this changeset spec envisions the changeset to look like.
-    """
-    delta: ChangesetSpecDelta!
-
-    """
-    The changeset that this changeset spec will modify. Null, if the changeset spec will create a new changeset.
-    """
-    changeset: Changeset
 }
 
 """
@@ -1048,21 +1058,6 @@ type HiddenChangesetSpec implements ChangesetSpec & Node {
     spec never expires (and this field is null) if its campaign spec has been applied.
     """
     expiresAt: DateTime
-
-    """
-    The operations to take to achieve the desired state of this changeset spec.
-    """
-    operations: [ChangesetSpecOperation!]!
-
-    """
-    The delta between the current changeset state and what this changeset spec envisions the changeset to look like.
-    """
-    delta: ChangesetSpecDelta!
-
-    """
-    The changeset that this changeset spec will modify. Null, if the changeset spec will create a new changeset.
-    """
-    changeset: Changeset
 }
 
 """
@@ -1097,21 +1092,6 @@ type VisibleChangesetSpec implements ChangesetSpec & Node {
     spec never expires (and this field is null) if its campaign spec has been applied.
     """
     expiresAt: DateTime
-
-    """
-    The operations to take to achieve the desired state of this changeset spec.
-    """
-    operations: [ChangesetSpecOperation!]!
-
-    """
-    The delta between the current changeset state and what this changeset spec envisions the changeset to look like.
-    """
-    delta: ChangesetSpecDelta!
-
-    """
-    The changeset that this changeset spec will modify. Null, if the changeset spec will create a new changeset.
-    """
-    changeset: Changeset
 }
 
 """
@@ -1280,6 +1260,165 @@ type ChangesetSpecConnection {
 }
 
 """
+A preview for which actions applyCampaign would result in when called at the point of time this preview was created at.
+"""
+union ChangesetApplyPreview = VisibleChangesetApplyPreview | HiddenChangesetApplyPreview
+
+"""
+A preview entry to a repository to which the user has access.
+"""
+union VisibleApplyPreviewTargets =
+      VisibleApplyPreviewTargetsAttach
+    | VisibleApplyPreviewTargetsUpdate
+    | VisibleApplyPreviewTargetsDetach
+
+"""
+A preview entry where no changeset existed before matching the changeset spec.
+"""
+type VisibleApplyPreviewTargetsAttach {
+    """
+    The changeset spec from this entry.
+    """
+    changesetSpec: VisibleChangesetSpec!
+}
+
+"""
+A preview entry where a changeset matches the changeset spec.
+"""
+type VisibleApplyPreviewTargetsUpdate {
+    """
+    The changeset spec from this entry.
+    """
+    changesetSpec: VisibleChangesetSpec!
+    """
+    The changeset from this entry.
+    """
+    changeset: ExternalChangeset!
+}
+
+"""
+A preview entry where no changeset spec exists for the changeset currently in
+the target campaign.
+"""
+type VisibleApplyPreviewTargetsDetach {
+    """
+    The changeset from this entry.
+    """
+    changeset: ExternalChangeset!
+}
+
+"""
+A preview entry to a repository to which the user has no access.
+"""
+union HiddenApplyPreviewTargets =
+      HiddenApplyPreviewTargetsAttach
+    | HiddenApplyPreviewTargetsUpdate
+    | HiddenApplyPreviewTargetsDetach
+
+"""
+A preview entry where no changeset existed before matching the changeset spec.
+"""
+type HiddenApplyPreviewTargetsAttach {
+    """
+    The changeset spec from this entry.
+    """
+    changesetSpec: HiddenChangesetSpec!
+}
+
+"""
+A preview entry where a changeset matches the changeset spec.
+"""
+type HiddenApplyPreviewTargetsUpdate {
+    """
+    The changeset spec from this entry.
+    """
+    changesetSpec: HiddenChangesetSpec!
+    """
+    The changeset from this entry.
+    """
+    changeset: HiddenExternalChangeset!
+}
+
+"""
+A preview entry where no changeset spec exists for the changeset currently in
+the target campaign.
+"""
+type HiddenApplyPreviewTargetsDetach {
+    """
+    The changeset from this entry.
+    """
+    changeset: HiddenExternalChangeset!
+}
+
+"""
+One preview entry in the list of all previews against a campaign spec. Each mapping
+between changeset specs and current changesets yields one of these. It describes
+which operations are taken against which changeset spec and changeset to ensure the
+desired state is met.
+"""
+type HiddenChangesetApplyPreview {
+    """
+    The operations to take to achieve the desired state.
+    """
+    operations: [ChangesetSpecOperation!]!
+
+    """
+    The delta between the current changeset state and what the new changeset spec
+    envisions the changeset to look like.
+    """
+    delta: ChangesetSpecDelta!
+
+    """
+    The target entities in this preview entry.
+    """
+    targets: HiddenApplyPreviewTargets!
+}
+
+"""
+One preview entry in the list of all previews against a campaign spec. Each mapping
+between changeset specs and current changesets yields one of these. It describes
+which operations are taken against which changeset spec and changeset to ensure the
+desired state is met.
+"""
+type VisibleChangesetApplyPreview {
+    """
+    The operations to take to achieve the desired state.
+    """
+    operations: [ChangesetSpecOperation!]!
+
+    """
+    The delta between the current changeset state and what the new changeset spec
+    envisions the changeset to look like.
+    """
+    delta: ChangesetSpecDelta!
+
+    """
+    The target entities in this preview entry.
+    """
+    targets: VisibleApplyPreviewTargets!
+}
+
+"""
+A list of preview entries.
+"""
+type ChangesetApplyPreviewConnection {
+    """
+    The total number of entries in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+
+    """
+    A list of preview entries.
+    """
+    nodes: [ChangesetApplyPreview!]!
+}
+
+"""
 A CampaignDescription describes a campaign.
 """
 type CampaignDescription {
@@ -1324,6 +1463,22 @@ type CampaignSpec implements Node {
     The CampaignDescription that describes this campaign.
     """
     description: CampaignDescription!
+
+    """
+    Generates a preview what operations would be performed if the campaign spec would be applied.
+    This preview is not a guarantee, since the state of the changesets can change between the time
+    the preview is generated and when the campaign spec is applied.
+    """
+    applyPreview(
+        """
+        Returns the first n entries from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): ChangesetApplyPreviewConnection!
 
     """
     The specs for changesets associated with this campaign.
@@ -2809,6 +2964,18 @@ type Query {
         """
         after: String
     ): LSIFIndexConnection!
+
+    """
+    Repos affiliated with the user & code hosts, these repos are not necessarily synced, but ones that
+    the configured code hosts are able to see.
+    """
+    affiliatedRepositories(user: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
+
+    """
+    Checks whether the given feature is enabled on Sourcegraph. Open source
+    installations will always return false for any feature.
+    """
+    enterpriseLicenseHasFeature(feature: String!): Boolean!
 }
 
 """
@@ -4618,6 +4785,22 @@ type HighlightedDiffHunkBody {
 }
 
 """
+A specific highlighted line range to fetch.
+"""
+input HighlightLineRange {
+    """
+    The first line to fetch (0-indexed, inclusive). Values outside the bounds of the file will
+    automatically be clamped within the valid range.
+    """
+    startLine: Int!
+    """
+    The last line to fetch (0-indexed, inclusive). Values outside the bounds of the file will
+    automatically be clamped within the valid range.
+    """
+    endLine: Int!
+}
+
+"""
 A changed region ("hunk") in a file diff.
 """
 type FileDiffHunk {
@@ -6003,9 +6186,15 @@ type HighlightedFile {
     """
     aborted: Boolean!
     """
-    The HTML.
+    The HTML table that can be used to display the highlighted file.
     """
     html: String!
+    """
+    A list of the desired line ranges. Each list is a list of lines, where each element is an HTML
+    table row '<tr>...</tr>' string. This is useful if you only need to display specific subsets of
+    the file.
+    """
+    lineRanges(ranges: [HighlightLineRange!]!): [[String!]!]!
 }
 
 """
@@ -8927,5 +9116,33 @@ type EventLogsConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+"""
+A list of code host repositories
+"""
+type CodeHostRepositoryConnection {
+    """
+    A list of repositories affiliated with a code host.
+    """
+    nodes: [CodeHostRepository!]!
+}
+
+"""
+A repository returned directly from a code host
+"""
+type CodeHostRepository {
+    """
+    The Name "owner/reponame" of the repo
+    """
+    name: String!
+    """
+    The code host the repo came from
+    """
+    codeHost: ExternalService
+    """
+    Is the repo private
+    """
+    private: Boolean!
 }
 `

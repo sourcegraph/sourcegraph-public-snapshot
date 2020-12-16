@@ -6,7 +6,10 @@ import (
 	"errors"
 	"log"
 	"os"
+	"sort"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -14,29 +17,37 @@ import (
 	"github.com/graph-gophers/graphql-go/introspection"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graph-gophers/graphql-go/trace"
-	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_graphql_field_seconds",
-	Help:    "GraphQL field resolver latencies in seconds.",
-	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-}, []string{"type", "field", "error", "source", "request_name"})
+var (
+	graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_graphql_field_seconds",
+		Help:    "GraphQL field resolver latencies in seconds.",
+		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	}, []string{"type", "field", "error", "source", "request_name"})
 
-var codeIntelSearchHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_graphql_code_intel_search_seconds",
-	Help:    "Code intel search latencies in seconds.",
-	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-}, []string{"exact", "error"})
+	codeIntelSearchHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_graphql_code_intel_search_seconds",
+		Help:    "Code intel search latencies in seconds.",
+		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	}, []string{"exact", "error"})
+
+	cf = httpcli.NewExternalHTTPClientFactory()
+)
 
 func init() {
 	prometheus.MustRegister(graphqlFieldHistogram)
@@ -327,11 +338,12 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
+func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver) (*graphql.Schema, error) {
 	resolver := &schemaResolver{
 		CampaignsResolver: defaultCampaignsResolver{},
 		AuthzResolver:     defaultAuthzResolver{},
 		CodeIntelResolver: defaultCodeIntelResolver{},
+		LicenseResolver:   defaultLicenseResolver{},
 	}
 	if campaigns != nil {
 		EnterpriseResolvers.campaignsResolver = campaigns
@@ -348,6 +360,10 @@ func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz A
 	if codeMonitors != nil {
 		EnterpriseResolvers.codeMonitorsResolver = codeMonitors
 		resolver.CodeMonitorsResolver = codeMonitors
+	}
+	if license != nil {
+		EnterpriseResolvers.licenseResolver = license
+		resolver.LicenseResolver = license
 	}
 	return graphql.ParseSchema(
 		Schema,
@@ -542,6 +558,7 @@ type schemaResolver struct {
 	AuthzResolver
 	CodeIntelResolver
 	CodeMonitorsResolver
+	LicenseResolver
 }
 
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
@@ -551,11 +568,13 @@ var EnterpriseResolvers = struct {
 	authzResolver        AuthzResolver
 	campaignsResolver    CampaignsResolver
 	codeMonitorsResolver CodeMonitorsResolver
+	licenseResolver      LicenseResolver
 }{
 	codeIntelResolver:    defaultCodeIntelResolver{},
 	authzResolver:        defaultAuthzResolver{},
 	campaignsResolver:    defaultCampaignsResolver{},
 	codeMonitorsResolver: defaultCodeMonitorsResolver{},
+	licenseResolver:      defaultLicenseResolver{},
 }
 
 // DEPRECATED
@@ -708,7 +727,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 		}
 		return nil, err
 	}
-	return &repositoryRedirect{repo: &RepositoryResolver{repo: repo}}, nil
+	return &repositoryRedirect{repo: &RepositoryResolver{innerRepo: repo}}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
@@ -729,4 +748,150 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 
 func (r *schemaResolver) CurrentUser(ctx context.Context) (*UserResolver, error) {
 	return CurrentUser(ctx)
+}
+
+func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struct {
+	User     graphql.ID
+	CodeHost *graphql.ID
+	Query    *string
+}) (*codeHostRepositoryConnectionResolver, error) {
+	userID, err := UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+	// 🚨 SECURITY: make sure the user is either site admin or the same user being requested
+	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+		return nil, err
+	}
+	var codeHost int64
+	if args.CodeHost != nil {
+		codeHost, err = unmarshalExternalServiceID(*args.CodeHost)
+		if err != nil {
+			return nil, err
+		}
+	}
+	var query string
+	if args.Query != nil {
+		query = *args.Query
+	}
+
+	return &codeHostRepositoryConnectionResolver{
+		userID:   userID,
+		codeHost: codeHost,
+		query:    query,
+	}, nil
+}
+
+type codeHostRepositoryConnectionResolver struct {
+	userID   int32
+	codeHost int64
+	query    string
+
+	once  sync.Once
+	nodes []*codeHostRepositoryResolver
+	err   error
+}
+
+func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*codeHostRepositoryResolver, error) {
+	r.once.Do(func() {
+		var (
+			svcs []*types.ExternalService
+			err  error
+		)
+		// get all external services for user, or for the specified external service
+		if r.codeHost == 0 {
+			svcs, err = db.ExternalServices.List(ctx, db.ExternalServicesListOptions{NamespaceUserID: r.userID})
+			if err != nil {
+				r.err = err
+				return
+			}
+		} else {
+			svc, err := db.ExternalServices.GetByID(ctx, r.codeHost)
+			if err != nil {
+				r.err = err
+				return
+			}
+			// 🚨 SECURITY: if the user doesn't own this service, check they're site admin
+			if err := backend.CheckUserIsSiteAdmin(ctx, r.userID); svc.NamespaceUserID != r.userID && err != nil {
+				r.err = err
+				return
+			}
+			svcs = []*types.ExternalService{svc}
+		}
+		// get Source for all external services
+		var (
+			results  = make(chan []types.CodeHostRepository)
+			g, ctx   = errgroup.WithContext(ctx)
+			svcsByID = make(map[int64]*types.ExternalService)
+		)
+		for _, svc := range svcs {
+			svcsByID[svc.ID] = svc
+			src, err := repos.NewSource(svc, cf)
+			if err != nil {
+				r.err = err
+				return
+			}
+			if af, ok := src.(repos.AffiliatedRepositorySource); ok {
+				g.Go(func() error {
+					repos, err := af.AffiliatedRepositories(ctx)
+					if err != nil {
+						return err
+					}
+					select {
+					case results <- repos:
+					case <-ctx.Done():
+						return ctx.Err()
+					}
+					return nil
+				})
+			}
+		}
+		go func() {
+			// wait for all sources to return their repos
+			err = g.Wait()
+			// signal the collector to finish
+			close(results)
+		}()
+		// collect all results
+		r.nodes = []*codeHostRepositoryResolver{}
+		for repos := range results {
+			for _, repo := range repos {
+				repo := repo
+				if r.query != "" && !strings.Contains(strings.ToLower(repo.Name), r.query) {
+					continue
+				}
+				r.nodes = append(r.nodes, &codeHostRepositoryResolver{
+					codeHost: svcsByID[repo.CodeHostID],
+					repo:     &repo,
+				})
+			}
+		}
+		if err != nil {
+			r.err = err
+			return
+		}
+		sort.Slice(r.nodes, func(i, j int) bool {
+			return r.nodes[i].repo.Name < r.nodes[j].repo.Name
+		})
+	})
+	return r.nodes, r.err
+}
+
+type codeHostRepositoryResolver struct {
+	repo     *types.CodeHostRepository
+	codeHost *types.ExternalService
+}
+
+func (r *codeHostRepositoryResolver) Name() string {
+	return r.repo.Name
+}
+
+func (r *codeHostRepositoryResolver) Private() bool {
+	return r.repo.Private
+}
+
+func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) *externalServiceResolver {
+	return &externalServiceResolver{
+		externalService: r.codeHost,
+	}
 }

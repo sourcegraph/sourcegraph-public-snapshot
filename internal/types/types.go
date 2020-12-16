@@ -388,7 +388,7 @@ func (rs RepoNames) Len() int           { return len(rs) }
 func (rs RepoNames) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
 func (rs RepoNames) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
 
-type AffiliatedRepository struct {
+type CodeHostRepository struct {
 	Name       string
 	CodeHostID int64
 	Private    bool

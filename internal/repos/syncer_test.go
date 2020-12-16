@@ -40,7 +40,7 @@ func testSyncerSyncWithErrors(t *testing.T, store repos.Store) func(t *testing.T
 			Config: `{}`,
 		}
 
-		if err := store.UpsertExternalServices(ctx, &githubService); err != nil {
+		if err := store.ExternalServiceStore().Upsert(ctx, &githubService); err != nil {
 			t.Fatal(err)
 		}
 
@@ -235,7 +235,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 	}
 
 	// create a few external services
-	if err := s.UpsertExternalServices(context.Background(), &svcdup); err != nil {
+	if err := s.ExternalServiceStore().Upsert(context.Background(), &svcdup); err != nil {
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 
@@ -1053,7 +1053,7 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testi
 				Kind:   extsvc.KindGitHub,
 			}
 
-			if err := store.UpsertExternalServices(ctx, svc); err != nil {
+			if err := store.ExternalServiceStore().Upsert(ctx, svc); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1154,7 +1154,7 @@ func testSyncer(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testin
 			}
 
 			// setup services
-			if err := store.UpsertExternalServices(ctx, services...); err != nil {
+			if err := store.ExternalServiceStore().Upsert(ctx, services...); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1324,7 +1324,7 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store repos.Store) func(t *
 			}
 
 			// setup services
-			if err := store.UpsertExternalServices(ctx, svc1, svc2); err != nil {
+			if err := store.ExternalServiceStore().Upsert(ctx, svc1, svc2); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1457,7 +1457,7 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store repos.Store) fu
 			}
 
 			// setup services
-			if err := store.UpsertExternalServices(ctx, svc1, svc2); err != nil {
+			if err := store.ExternalServiceStore().Upsert(ctx, svc1, svc2); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1609,7 +1609,7 @@ func testSyncRepoMaintainsOtherSources(db *sql.DB) func(t *testing.T, store repo
 			}
 
 			// setup services
-			if err := store.UpsertExternalServices(ctx, svc1, svc2); err != nil {
+			if err := store.ExternalServiceStore().Upsert(ctx, svc1, svc2); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1696,7 +1696,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store repos
 			}
 
 			// setup services
-			if err := store.UpsertExternalServices(ctx, userService, adminService); err != nil {
+			if err := store.ExternalServiceStore().Upsert(ctx, userService, adminService); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1878,7 +1878,7 @@ func testNameOnConflictDiscardOld(db *sql.DB) func(t *testing.T, store repos.Sto
 			}
 
 			// setup services
-			if err := store.UpsertExternalServices(ctx, svc1, svc2); err != nil {
+			if err := store.ExternalServiceStore().Upsert(ctx, svc1, svc2); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1976,7 +1976,7 @@ func testNameOnConflictDiscardNew(db *sql.DB) func(t *testing.T, store repos.Sto
 			}
 
 			// setup services
-			if err := store.UpsertExternalServices(ctx, svc1, svc2); err != nil {
+			if err := store.ExternalServiceStore().Upsert(ctx, svc1, svc2); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2074,7 +2074,7 @@ func testNameOnConflictOnRename(db *sql.DB) func(t *testing.T, store repos.Store
 			}
 
 			// setup services
-			if err := store.UpsertExternalServices(ctx, svc1, svc2); err != nil {
+			if err := store.ExternalServiceStore().Upsert(ctx, svc1, svc2); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2183,7 +2183,7 @@ func testDeleteExternalService(db *sql.DB) func(t *testing.T, store repos.Store)
 			}
 
 			// setup services
-			if err := store.UpsertExternalServices(ctx, svc1, svc2); err != nil {
+			if err := store.ExternalServiceStore().Upsert(ctx, svc1, svc2); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2225,7 +2225,7 @@ func testDeleteExternalService(db *sql.DB) func(t *testing.T, store repos.Store)
 
 			// Delete the first service
 			svc1.DeletedAt = now
-			if err := store.UpsertExternalServices(ctx, svc1); err != nil {
+			if err := store.ExternalServiceStore().Upsert(ctx, svc1); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2237,7 +2237,7 @@ func testDeleteExternalService(db *sql.DB) func(t *testing.T, store repos.Store)
 
 			// Delete the second service
 			svc2.DeletedAt = now
-			if err := store.UpsertExternalServices(ctx, svc2); err != nil {
+			if err := store.ExternalServiceStore().Upsert(ctx, svc2); err != nil {
 				t.Fatal(err)
 			}
 

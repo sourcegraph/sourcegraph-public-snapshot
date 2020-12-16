@@ -263,6 +263,10 @@ func TestQueryMonitor(t *testing.T) {
 	postHookOpt := WithPostHooks([]hook{
 		func() error { return r.store.EnqueueTriggerQueries(ctx) },
 		func() error { return r.store.EnqueueActionEmailsForQueryIDInt64(ctx, 1, 1) },
+		func() error {
+			return (&storetest.TestStore{Store: r.store}).SetJobStatus(ctx, storetest.ActionJobs, storetest.Completed, 1)
+		},
+		func() error { return r.store.EnqueueActionEmailsForQueryIDInt64(ctx, 1, 1) },
 		// Set the job status of trigger job with id = 1 to "completed". Since we already
 		// created another monitor, there is still a second trigger job (id = 2) which
 		// remains in status queued.
@@ -292,7 +296,7 @@ func TestQueryMonitor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r)
+	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -315,6 +319,9 @@ func TestQueryMonitor(t *testing.T) {
 	t.Run("trigger events paging", func(t *testing.T) {
 		triggerEventPaging(ctx, t, schema, user1)
 	})
+	t.Run("action events paging", func(t *testing.T) {
+		actionEventPaging(ctx, t, schema, user1)
+	})
 }
 
 func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Resolver, user1 *testUser, user2 *testUser) {
@@ -326,7 +333,7 @@ func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *R
 	campaignApitest.MustExec(ctx, t, schema, input, &response, queryByUserFmtStr)
 
 	triggerEventEndCursor := string(relay.MarshalID(monitorTriggerEventKind, 1))
-	actionEventEndCursor := string(relay.MarshalID(monitorActionEventKind, 1))
+	actionEventEndCursor := string(relay.MarshalID(monitorActionEventKind, 2))
 	want := apitest.Response{
 		User: apitest.User{
 			Monitors: apitest.MonitorConnection{
@@ -374,13 +381,21 @@ func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *R
 									},
 									Header: "test header 2",
 									Events: apitest.ActionEventConnection{
-										Nodes: []apitest.ActionEvent{{
-											Id:        string(relay.MarshalID(monitorActionEventKind, 1)),
-											Status:    "PENDING",
-											Timestamp: r.Now().UTC().Format(time.RFC3339),
-											Message:   nil,
-										}},
-										TotalCount: 1,
+										Nodes: []apitest.ActionEvent{
+											{
+												Id:        string(relay.MarshalID(monitorActionEventKind, 1)),
+												Status:    "SUCCESS",
+												Timestamp: r.Now().UTC().Format(time.RFC3339),
+												Message:   nil,
+											},
+											{
+												Id:        string(relay.MarshalID(monitorActionEventKind, 2)),
+												Status:    "PENDING",
+												Timestamp: r.Now().UTC().Format(time.RFC3339),
+												Message:   nil,
+											},
+										},
+										TotalCount: 2,
 										PageInfo: apitest.PageInfo{
 											HasNextPage: true,
 											EndCursor:   &actionEventEndCursor,
@@ -517,7 +532,7 @@ func TestEditCodeMonitor(t *testing.T) {
 
 	// Update the code monitor.
 	// We update all fields, delete one action, and add a new action.
-	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r)
+	schema, err := graphqlbackend.NewSchema(nil, nil, nil, r, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -970,6 +985,72 @@ query($userName: String!, $triggerEventCursor: String!){
 							totalCount
 							nodes {
 									id
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+`
+
+func actionEventPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, user1 *testUser) {
+	queryInput := map[string]interface{}{
+		"userName":          user1.name,
+		"actionCursor":      string(relay.MarshalID(monitorActionEmailKind, 1)),
+		"actionEventCursor": relay.MarshalID(monitorActionEventKind, 1),
+	}
+	got := apitest.Response{}
+	campaignApitest.MustExec(ctx, t, schema, queryInput, &got, actionEventPagingFmtStr)
+
+	want := apitest.Response{
+		User: apitest.User{
+			Monitors: apitest.MonitorConnection{
+				Nodes: []apitest.Monitor{{
+					Actions: apitest.ActionConnection{
+						TotalCount: 2,
+						Nodes: []apitest.Action{
+							{
+								ActionEmail: apitest.ActionEmail{
+									Id: string(relay.MarshalID(monitorActionEmailKind, 2)),
+									Events: apitest.ActionEventConnection{
+										TotalCount: 2,
+										Nodes: []apitest.ActionEvent{
+											{
+												Id: string(relay.MarshalID(monitorActionEventKind, 2)),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				}},
+			},
+		},
+	}
+
+	if diff := cmp.Diff(&got, &want); diff != "" {
+		t.Fatalf("diff: %s", diff)
+	}
+}
+
+const actionEventPagingFmtStr = `
+query($userName: String!, $actionCursor:String!, $actionEventCursor:String!){
+	user(username:$userName){
+		monitors(first:1){
+			nodes{
+				actions(first:1, after:$actionCursor) {
+					totalCount
+					nodes {
+						... on MonitorEmail {
+							id
+							events(first:1, after:$actionEventCursor) {
+								totalCount
+								nodes {
+									id
+								}
 							}
 						}
 					}

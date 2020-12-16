@@ -52,10 +52,10 @@ func main() {
 
 	service := &search.Service{
 		Store: &store.Store{
-			FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
+			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 				return gitserver.DefaultClient.Archive(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: "tar"})
 			},
-			FilterTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (store.FilterFunc, error) {
+			FilterTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (store.FilterFunc, error) {
 				return search.NewFilter(ctx, repo, commit)
 			},
 			Path:              filepath.Join(cacheDir, "searcher-archives"),

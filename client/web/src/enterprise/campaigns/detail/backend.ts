@@ -156,6 +156,13 @@ export const externalChangesetFieldsFragment = gql`
         nextSyncAt
         currentSpec {
             id
+            type
+            description {
+                __typename
+                ... on GitBranchChangesetDescription {
+                    headRef
+                }
+            }
         }
     }
 

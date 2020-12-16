@@ -33,6 +33,7 @@ func NewWorker(
 	}
 
 	return dbworker.NewWorker(rootContext, store.WorkerutilUploadStore(dbStore), handler, workerutil.WorkerOptions{
+		Name:        "precise_code_intel_upload_worker",
 		NumHandlers: numProcessorRoutines,
 		Interval:    pollInterval,
 		Metrics:     workerMetrics,

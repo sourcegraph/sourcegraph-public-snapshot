@@ -61,6 +61,11 @@ func NewRepoStoreWithDB(db dbutil.DB) *RepoStore {
 	return &RepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
+// NewRepoStoreWithDB instantiates and returns a new RepoStore using the other store handle.
+func NewRepoStoreWith(other basestore.ShareableStore) *RepoStore {
+	return &RepoStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
 func (s *RepoStore) With(other basestore.ShareableStore) *RepoStore {
 	return &RepoStore{Store: s.Store.With(other)}
 }
@@ -459,6 +464,9 @@ type ReposListOptions struct {
 	// ExternalServiceIDs, if non empty, will only return repos added by the given external services.
 	// The id is that of the external_services table NOT the external_service_id in the repo table
 	ExternalServiceIDs []int64
+
+	// ExternalRepos of repos to list. When zero-valued, this is omitted from the predicate set.
+	ExternalRepos []api.ExternalRepoSpec
 
 	// PatternQuery is an expression tree of patterns to query. The atoms of
 	// the query are strings which are regular expression patterns.
@@ -1034,6 +1042,14 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 		}
 		conds = append(conds,
 			sqlf.Sprintf("LOWER(external_service_type) IN (%s)", sqlf.Join(ks, ",")))
+	}
+
+	if len(opt.ExternalRepos) > 0 {
+		er := make([]*sqlf.Query, 0, len(opt.ExternalRepos))
+		for _, spec := range opt.ExternalRepos {
+			er = append(er, sqlf.Sprintf("(external_id = %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
+		}
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
 	}
 
 	if opt.NoForks {

@@ -108,12 +108,12 @@ func TestClient_Archive(t *testing.T) {
 	for name, test := range tests {
 		t.Run(string(name), func(t *testing.T) {
 			if test.remote != "" {
-				if _, err := cli.RequestRepoUpdate(ctx, gitserver.Repo{Name: name}, 0); err != nil {
+				if _, err := cli.RequestRepoUpdate(ctx, name, 0); err != nil {
 					t.Fatal(err)
 				}
 			}
 
-			rc, err := cli.Archive(ctx, gitserver.Repo{Name: name}, gitserver.ArchiveOptions{Treeish: "HEAD", Format: "zip"})
+			rc, err := cli.Archive(ctx, name, gitserver.ArchiveOptions{Treeish: "HEAD", Format: "zip"})
 			if have, want := fmt.Sprint(err), fmt.Sprint(test.err); have != want {
 				t.Errorf("archive: have err %v, want %v", have, want)
 			}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp/syntax"
+	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -199,12 +200,12 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 	return s.repos.repoRevs
 }
 
-func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func (s *indexedSearchRequest) Search(ctx context.Context) (searchResultsCommon, []*FileMatchResolver, error) {
 	if s.args == nil {
-		return nil, false, nil, nil
+		return searchResultsCommon{}, nil, nil
 	}
 	if len(s.Repos()) == 0 && s.args.Mode != search.ZoektGlobalSearch {
-		return nil, false, nil, nil
+		return searchResultsCommon{}, nil, nil
 	}
 
 	since := time.Since
@@ -212,16 +213,52 @@ func (s *indexedSearchRequest) Search(ctx context.Context) (fm []*FileMatchResol
 		since = s.since
 	}
 
+	var (
+		fm            []*FileMatchResolver
+		limitHit      bool
+		reposLimitHit map[api.RepoID]struct{}
+		err           error
+	)
+
 	switch s.typ {
 	case textRequest:
-		return zoektSearch(ctx, s.args, s.repos, s.typ, since)
+		fm, limitHit, reposLimitHit, err = zoektSearch(ctx, s.args, s.repos, s.typ, since)
 	case symbolRequest:
-		return zoektSearch(ctx, s.args, s.repos, s.typ, since)
+		fm, limitHit, reposLimitHit, err = zoektSearch(ctx, s.args, s.repos, s.typ, since)
 	case fileRequest:
-		return zoektSearchHEADOnlyFiles(ctx, s.args, s.repos, since)
+		fm, limitHit, reposLimitHit, err = zoektSearchHEADOnlyFiles(ctx, s.args, s.repos, since)
 	default:
-		return nil, false, nil, fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
+		return searchResultsCommon{}, nil, fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
 	}
+
+	noResultsInTimeout := false
+	if err == errNoResultsInTimeout {
+		noResultsInTimeout = true
+		err = nil
+	}
+
+	if err != nil {
+		return searchResultsCommon{}, nil, err
+	}
+
+	repos := make([]*types.RepoName, 0, len(s.Repos()))
+	for _, r := range s.Repos() {
+		repos = append(repos, r.Repo)
+	}
+	sort.Sort(types.RepoNames(repos))
+
+	var timedout []*types.RepoName
+	if noResultsInTimeout {
+		timedout = repos
+	}
+
+	return searchResultsCommon{
+		limitHit: limitHit,
+		searched: repos,
+		indexed:  repos,
+		partial:  reposLimitHit,
+		timedout: timedout,
+	}, fm, nil
 }
 
 func zoektResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k int) {
@@ -305,7 +342,7 @@ var errNoResultsInTimeout = errors.New("no results found in specified timeout")
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, partial map[api.RepoID]struct{}, err error) {
 	if args == nil {
 		return nil, false, nil, nil
 	}
@@ -355,18 +392,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		return nil, false, nil, errNoResultsInTimeout
 	}
 	limitHit = resp.FilesSkipped+resp.ShardsSkipped > 0
-	// Repositories that weren't fully evaluated because they hit the Zoekt or Sourcegraph file match limits.
-	reposLimitHit = make(map[string]struct{})
-	if limitHit {
-		// Zoekt either did not evaluate some files in repositories, or ignored some repositories altogether.
-		// In this case, we can't be sure that we have exhaustive results for _any_ repository. So, all file
-		// matches are from repos with potentially skipped matches.
-		for _, file := range resp.Files {
-			if _, ok := reposLimitHit[file.Repository]; !ok {
-				reposLimitHit[file.Repository] = struct{}{}
-			}
-		}
-	}
 
 	if len(resp.Files) == 0 {
 		return nil, false, nil, nil
@@ -374,26 +399,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 
 	maxLineMatches := 25 + k
 	maxLineFragmentMatches := 3 + k
-	if limit := int(args.PatternInfo.FileMatchLimit); len(resp.Files) > limit {
-		// List of files we cut out from the Zoekt response because they exceed the file match limit on the Sourcegraph end.
-		// We use this to get a list of repositories that do not have complete results.
-		fileMatchesInSkippedRepos := resp.Files[limit:]
-		resp.Files = resp.Files[:limit]
-
-		if !limitHit {
-			// Zoekt evaluated all files and repositories, but Zoekt returned more file matches
-			// than the limit we set on Sourcegraph, so we cut out more results.
-
-			// Generate a list of repositories that had results cut because they exceeded the file match limit set on Sourcegraph.
-			for _, file := range fileMatchesInSkippedRepos {
-				if _, ok := reposLimitHit[file.Repository]; !ok {
-					reposLimitHit[file.Repository] = struct{}{}
-				}
-			}
-		}
-
-		limitHit = true
-	}
 
 	var getRepoInputRev func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool)
 
@@ -427,6 +432,9 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		}
 	}
 
+	limitHit, files, partial := zoektLimitMatches(limitHit, int(args.PatternInfo.FileMatchLimit), resp.Files, getRepoInputRev)
+	resp.Files = files
+
 	matches := make([]*FileMatchResolver, 0, len(resp.Files))
 	repoResolvers := make(RepositoryResolverCache)
 	for _, file := range resp.Files {
@@ -442,7 +450,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		}
 		repoResolver := repoResolvers[repo.Name]
 		if repoResolver == nil {
-			repoResolver = &RepositoryResolver{repo: repo.ToRepo()}
+			repoResolver = &RepositoryResolver{innerRepo: repo.ToRepo()}
 			repoResolvers[repo.Name] = repoResolver
 		}
 
@@ -474,7 +482,49 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		}
 	}
 
-	return matches, limitHit, reposLimitHit, nil
+	return matches, limitHit, partial, nil
+}
+
+// zoektLimitMatches is the logic which limits files based on
+// limit. Additionally it calculates the set of repos with partial
+// results. This information is not returned by zoekt, so if zoekt indicates a
+// limit has been hit, we include all repos in partial.
+func zoektLimitMatches(limitHit bool, limit int, files []zoekt.FileMatch, getRepoInputRev func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool)) (bool, []zoekt.FileMatch, map[api.RepoID]struct{}) {
+	var resultFiles []zoekt.FileMatch
+	var partialFiles []zoekt.FileMatch
+
+	resultFiles = files
+	if limitHit {
+		partialFiles = files
+	}
+
+	if len(files) > limit {
+		resultFiles = files[:limit]
+		if !limitHit {
+			limitHit = true
+			partialFiles = files[limit:]
+		}
+	}
+
+	if len(partialFiles) == 0 {
+		return limitHit, resultFiles, nil
+	}
+
+	partial := make(map[api.RepoID]struct{})
+	last := ""
+	for _, file := range partialFiles {
+		// PERF: skip lookup if it is the same repo as the last result
+		if file.Repository == last {
+			continue
+		}
+		last = file.Repository
+
+		if repo, _, ok := getRepoInputRev(&file); ok {
+			partial[repo.ID] = struct{}{}
+		}
+	}
+
+	return limitHit, resultFiles, partial
 }
 
 func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMatch) ([]*lineMatch, int) {

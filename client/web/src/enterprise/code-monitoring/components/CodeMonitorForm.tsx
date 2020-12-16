@@ -7,13 +7,15 @@ import * as H from 'history'
 import { Toggle } from '../../../../../branded/src/components/Toggle'
 import { FormActionArea } from './FormActionArea'
 import { FormTriggerArea } from './FormTriggerArea'
-import { mergeMap, startWith, catchError, tap } from 'rxjs/operators'
+import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 import { Form } from '../../../../../branded/src/components/Form'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
 import { CodeMonitorFields } from '../../../graphql-operations'
 import { isEqual } from 'lodash'
+import { CodeMonitoringProps } from '..'
+import { DeleteMonitorModal } from './DeleteMonitorModal'
 
-export interface CodeMonitorFormProps {
+export interface CodeMonitorFormProps extends Partial<Pick<CodeMonitoringProps, 'deleteCodeMonitor'>> {
     history: H.History
     location: H.Location
     authenticatedUser: AuthenticatedUser
@@ -22,10 +24,12 @@ export interface CodeMonitorFormProps {
      * of the CodeMonitorFields when the form is submitted.
      */
     onSubmit: (codeMonitor: CodeMonitorFields) => Observable<Partial<CodeMonitorFields>>
-    /** The text for the submit button. */
+    /* The text for the submit button. */
     submitButtonLabel: string
-    /** A code monitor to initialize the form with. */
+    /* A code monitor to initialize the form with. */
     codeMonitor?: CodeMonitorFields
+    /* Whether to show the delete button */
+    showDeleteButton?: boolean
 }
 
 interface FormCompletionSteps {
@@ -39,6 +43,8 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     history,
     submitButtonLabel,
     codeMonitor,
+    showDeleteButton,
+    deleteCodeMonitor,
 }) => {
     const LOADING = 'loading' as const
 
@@ -88,6 +94,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
             (submit: Observable<React.FormEvent<HTMLFormElement>>) =>
                 submit.pipe(
                     tap(event => event.preventDefault()),
+                    filter(() => formCompletion.actionCompleted && formCompletion.triggerCompleted),
                     mergeMap(() =>
                         onSubmit(currentCodeMonitorState).pipe(
                             startWith(LOADING),
@@ -100,7 +107,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         )
                     )
                 ),
-            [onSubmit, currentCodeMonitorState, history]
+            [onSubmit, currentCodeMonitorState, history, formCompletion]
         )
     )
 
@@ -118,105 +125,145 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
             if (window.confirm('Leave page? All unsaved changes will be lost.')) {
                 history.push('/code-monitoring')
             }
+        } else {
+            history.push('/code-monitoring')
         }
     }, [history, hasChangedFields])
 
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
+
+    const toggleDeleteModal = useCallback(() => setShowDeleteModal(show => !show), [setShowDeleteModal])
+
     return (
-        <Form className="my-4" onSubmit={requestOnSubmit}>
-            <div className="flex mb-4">
-                Name
-                <div>
-                    <input
-                        type="text"
-                        className="form-control my-2 test-name-input"
-                        required={true}
-                        onChange={event => {
-                            onNameChange(event.target.value)
-                        }}
-                        value={currentCodeMonitorState.description}
-                        autoFocus={true}
+        <>
+            <Form className="my-4 pb-5 test-monitor-form" onSubmit={requestOnSubmit}>
+                <div className="flex mb-4">
+                    Name
+                    <div>
+                        <input
+                            type="text"
+                            className="form-control my-2 test-name-input"
+                            required={true}
+                            onChange={event => {
+                                onNameChange(event.target.value)
+                            }}
+                            value={currentCodeMonitorState.description}
+                            autoFocus={true}
+                            spellCheck={false}
+                        />
+                    </div>
+                    <small className="text-muted">
+                        Give it a short, descriptive name to reference events on Sourcegraph and in notifications. Do
+                        not include:{' '}
+                        <a
+                            href="https://docs.sourcegraph.com/code_monitoring/explanations/best_practices#do-not-include-confidential-information-in-monitor-names"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            confidential information
+                        </a>
+                        .
+                    </small>
+                </div>
+                <div className="flex">
+                    Owner
+                    <select className="form-control my-2 code-monitor-form__owner-dropdown w-auto" disabled={true}>
+                        <option value={authenticatedUser.displayName || authenticatedUser.username}>
+                            {authenticatedUser.username}
+                        </option>
+                    </select>
+                    <small className="text-muted">
+                        Event history and configuration will not be shared. Code monitoring currently only supports
+                        individual owners.
+                    </small>
+                </div>
+                <hr className="code-monitor-form__horizontal-rule" />
+                <div className="create-monitor-page__triggers mb-4">
+                    <FormTriggerArea
+                        query={currentCodeMonitorState.trigger.query}
+                        onQueryChange={onQueryChange}
+                        triggerCompleted={formCompletion.triggerCompleted}
+                        setTriggerCompleted={setTriggerCompleted}
                     />
                 </div>
-                <small className="text-muted">
-                    Give it a short, descriptive name to reference events on Sourcegraph and in notifications. Do not
-                    include:{' '}
-                    <a href="" target="_blank" rel="noopener">
-                        {/* TODO: populate link */}
-                        confidential information
-                    </a>
-                    .
-                </small>
-            </div>
-            <div className="flex">
-                Owner
-                <select className="form-control my-2 code-monitor-form__owner-dropdown w-auto" disabled={true}>
-                    <option value={authenticatedUser.displayName || authenticatedUser.username}>
-                        {authenticatedUser.username}
-                    </option>
-                </select>
-                <small className="text-muted">Event history and configuration will not be shared.</small>
-            </div>
-            <hr className="code-monitor-form__horizontal-rule" />
-            <div className="create-monitor-page__triggers mb-4">
-                <FormTriggerArea
-                    query={currentCodeMonitorState.trigger.query}
-                    onQueryChange={onQueryChange}
-                    triggerCompleted={formCompletion.triggerCompleted}
-                    setTriggerCompleted={setTriggerCompleted}
-                />
-            </div>
-            <div
-                className={classnames({
-                    'create-monitor-page__actions--disabled': !formCompletion.triggerCompleted,
-                })}
-            >
-                <FormActionArea
-                    actions={currentCodeMonitorState.actions}
-                    setActionsCompleted={setActionsCompleted}
-                    actionsCompleted={formCompletion.actionCompleted}
-                    authenticatedUser={authenticatedUser}
-                    disabled={!formCompletion.triggerCompleted}
-                    onActionsChange={onActionsChange}
-                />
-            </div>
-            <hr className="code-monitor-form__horizontal-rule" />
-            <div>
-                <div className="d-flex my-4">
-                    <div>
-                        <Toggle
-                            title="Active"
-                            value={currentCodeMonitorState.enabled}
-                            onToggle={onEnabledChange}
-                            className="mr-2"
-                        />{' '}
-                    </div>
-                    <div className="flex-column">
-                        <div>Active</div>
-                        <div className="text-muted">We will watch for the trigger and run actions in response</div>
-                    </div>
+                <div
+                    className={classnames({
+                        'create-monitor-page__actions--disabled': !formCompletion.triggerCompleted,
+                    })}
+                >
+                    <FormActionArea
+                        actions={currentCodeMonitorState.actions}
+                        setActionsCompleted={setActionsCompleted}
+                        actionsCompleted={formCompletion.actionCompleted}
+                        authenticatedUser={authenticatedUser}
+                        disabled={!formCompletion.triggerCompleted}
+                        onActionsChange={onActionsChange}
+                    />
                 </div>
-                <div className="flex my-4">
-                    <button
-                        type="submit"
-                        disabled={
-                            !formCompletion.actionCompleted ||
-                            !formCompletion.triggerCompleted ||
-                            codeMonitorOrError === LOADING ||
-                            !hasChangedFields
-                        }
-                        className="btn btn-primary mr-2 test-submit-monitor"
-                    >
-                        {submitButtonLabel}
-                    </button>
-                    <button type="button" className="btn btn-outline-secondary test-cancel-monitor" onClick={onCancel}>
-                        {/* TODO: this should link somewhere */}
-                        Cancel
-                    </button>
+                <hr className="code-monitor-form__horizontal-rule" />
+                <div>
+                    <div className="d-flex my-4">
+                        <div>
+                            <Toggle
+                                title="Active"
+                                value={currentCodeMonitorState.enabled}
+                                onToggle={onEnabledChange}
+                                className="mr-2"
+                            />{' '}
+                        </div>
+                        <div className="flex-column">
+                            <div>Active</div>
+                            <div className="text-muted">We will watch for the trigger and run actions in response</div>
+                        </div>
+                    </div>
+                    <div className="d-flex justify-content-between my-4">
+                        <div>
+                            <button
+                                type="submit"
+                                disabled={
+                                    !formCompletion.actionCompleted ||
+                                    !formCompletion.triggerCompleted ||
+                                    codeMonitorOrError === LOADING ||
+                                    !hasChangedFields
+                                }
+                                className="btn btn-primary mr-2 test-submit-monitor"
+                            >
+                                {submitButtonLabel}
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-outline-secondary test-cancel-monitor"
+                                onClick={onCancel}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                        {showDeleteButton && (
+                            <div>
+                                <button
+                                    type="button"
+                                    className="btn btn-outline-secondary text-danger test-delete-monitor"
+                                    onClick={toggleDeleteModal}
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    {isErrorLike(codeMonitorOrError) && (
+                        <div className="alert alert-danger">Failed to create monitor: {codeMonitorOrError.message}</div>
+                    )}
                 </div>
-                {isErrorLike(codeMonitorOrError) && (
-                    <div className="alert alert-danger">Failed to create monitor: {codeMonitorOrError.message}</div>
-                )}
-            </div>
-        </Form>
+            </Form>
+            {showDeleteButton && deleteCodeMonitor && (
+                <DeleteMonitorModal
+                    isOpen={showDeleteModal}
+                    deleteCodeMonitor={deleteCodeMonitor}
+                    history={history}
+                    codeMonitor={codeMonitor}
+                    toggleDeleteModal={toggleDeleteModal}
+                />
+            )}
+        </>
     )
 }

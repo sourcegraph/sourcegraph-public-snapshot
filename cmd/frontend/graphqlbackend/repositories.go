@@ -199,7 +199,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 			break
 		}
 
-		resolvers = append(resolvers, &RepositoryResolver{repo: repo})
+		resolvers = append(resolvers, &RepositoryResolver{innerRepo: repo})
 	}
 	return resolvers, nil
 }
@@ -289,7 +289,7 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 	}
 
 	if !args.Enabled {
-		_, err := repoupdater.DefaultClient.ExcludeRepo(ctx, repo.repo.ID)
+		_, err := repoupdater.DefaultClient.ExcludeRepo(ctx, repo.IDInt32())
 		if err != nil {
 			return nil, errors.Wrapf(err, "repo-updater.exclude-repos")
 		}
@@ -297,11 +297,7 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 
 	// Trigger update when enabling.
 	if args.Enabled {
-		gitserverRepo, err := backend.GitRepo(ctx, repo.repo)
-		if err != nil {
-			return nil, err
-		}
-		if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
+		if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repo.innerRepo.Name); err != nil {
 			return nil, err
 		}
 	}
@@ -324,7 +320,7 @@ func toRepositoryResolvers(repos []*types.RepoName) []*RepositoryResolver {
 
 	resolvers := make([]*RepositoryResolver, len(repos))
 	for i := range repos {
-		resolvers[i] = &RepositoryResolver{repo: repos[i].ToRepo()}
+		resolvers[i] = &RepositoryResolver{innerRepo: repos[i].ToRepo()}
 	}
 
 	return resolvers

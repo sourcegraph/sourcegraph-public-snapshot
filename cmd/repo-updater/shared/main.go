@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -34,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -52,6 +54,11 @@ func Main(enterpriseInit EnterpriseInit) {
 	ctx := context.Background()
 	env.Lock()
 	env.HandleHelpFlag()
+
+	if err := profiler.Init(); err != nil {
+		log.Fatalf("failed to start profiler: %v", err)
+	}
+
 	logging.Init()
 	tracer.Init()
 	trace.Init(true)
@@ -118,7 +125,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		GitserverClient: gitserver.DefaultClient,
 	}
 
-	rateLimitSyncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store)
+	rateLimitSyncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore())
 	server.RateLimitSyncer = rateLimitSyncer
 	// Attempt to perform an initial sync with all external services
 	if err := rateLimitSyncer.SyncRateLimiters(ctx); err != nil {
@@ -136,7 +143,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	if envvar.SourcegraphDotComMode() {
 		server.SourcegraphDotComMode = true
 
-		es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+		es, err := store.ExternalServiceStore().List(ctx, idb.ExternalServicesListOptions{
 			// On Cloud we want to fetch only site level external services here
 			NamespaceUserID: -1,
 			Kinds:           []string{extsvc.KindGitHub, extsvc.KindGitLab},
