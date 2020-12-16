@@ -144,7 +144,6 @@ type StoreMetrics struct {
 	ListExternalRepoSpecs  *metrics.OperationMetrics
 	GetExternalService     *metrics.OperationMetrics
 	UpsertExternalServices *metrics.OperationMetrics
-	ListExternalServices   *metrics.OperationMetrics
 	SetClonedRepos         *metrics.OperationMetrics
 	CountNotClonedRepos    *metrics.OperationMetrics
 	CountUserAddedRepos    *metrics.OperationMetrics
@@ -164,7 +163,6 @@ func (sm StoreMetrics) MustRegister(r prometheus.Registerer) {
 		sm.UpsertRepos,
 		sm.UpsertSources,
 		sm.GetExternalService,
-		sm.ListExternalServices,
 		sm.UpsertExternalServices,
 		sm.SetClonedRepos,
 	} {
@@ -316,20 +314,6 @@ func NewStoreMetrics() StoreMetrics {
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Name: "src_external_serviceupdater_store_upsert_external_services_errors_total",
 				Help: "Total number of errors when upserting external_services",
-			}, []string{}),
-		},
-		ListExternalServices: &metrics.OperationMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_list_external_services_duration_seconds",
-				Help: "Time spent listing external_services",
-			}, []string{}),
-			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_list_external_services_total",
-				Help: "Total number of listed external_servicesitories",
-			}, []string{}),
-			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_list_external_services_errors_total",
-				Help: "Total number of errors when listing external_services",
 			}, []string{}),
 		},
 		SetClonedRepos: &metrics.OperationMetrics{
