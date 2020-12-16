@@ -69,11 +69,68 @@ File decoration providers don't have to synchronously return an array of file de
 
 **If you need to perform asynchronous operations before resolving your file decorations:**
 
-you can return a `Promise`. 
+You provider function (`provideFileDecorations`) can return a `Promise`.
 
 **If you need to update your file decorations over time (streaming):**
 
-you can return an `AsyncIterable` or a [`Subscribable`](https://unpkg.com/sourcegraph/dist/docs/interfaces/_sourcegraph_.subscribable.html) (e.g. RxJS Observable)
+Your provider function can be an [async generator function](https://javascript.info/async-iterators-generators#async-generators-finally), or any function that returns an [`AsyncIterable`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/asyncIterator#User-defined_Async_Iterables):
+
+```ts
+import * as sourcegraph from 'sourcegraph'
+import { getDescription, getMeters } from './utils'
+
+export function activate(context: sourcegraph.ExtensionContext): void {
+  context.subscriptions.add(
+    sourcegraph.app.registerFileDecorationProvider({
+      async *provideFileDecorations({ files }) {
+                // The file decorations will be re-rendered each time `yield` keyword is called 
+                // with an array of file decorations 
+                yield files.map(file => ({ uri: file.uri, contentText: getDescription(file.path) }))
+                // `getMeters` returns a Promise for an object of meter objects keyed by file path
+                const meters = await getMeters(files)
+                yield files.map(file => ({
+                    uri: file.uri,
+                    contentText: getDescription(file.path),
+                    meter: meters[file.path],
+                }))
+            },
+        })
+    )
+}
+```
+
+Your provider function can also return a [`Subscribable`](https://unpkg.com/sourcegraph/dist/docs/interfaces/_sourcegraph_.subscribable.html), like an RxJS Observable:
+
+```ts
+import * as sourcegraph from 'sourcegraph'
+import { getDescription, getMeters } from './utils'
+import { concat, Observable, of } from 'rxjs'
+import { map } from 'rxjs/operators'
+
+export function activate(context: sourcegraph.ExtensionContext): void {
+    context.subscriptions.add(
+        sourcegraph.app.registerFileDecorationProvider({
+          // The file decorations will be re-rendered each time the `Subscribable`
+          // emits an array of file decorations 
+            provideFileDecorations: ({ files }) =>
+                concat(
+                    of(files.map(file => ({ uri: file.uri, contentText: getDescription(file.path) }))),
+                    // `getMeters` returns an Observable that emits objects of meter objects keyed by file path
+                    getMeters(files).pipe(
+                        map(meters =>
+                            files.map(file => ({
+                                uri: file.uri,
+                                contentText: getDescription(file.path),
+                                meter: meters[file.path],
+                            }))
+                        )
+                    )
+                ),
+        })
+    )
+}
+
+```
 
 [See the types of supported provider results](https://unpkg.com/sourcegraph/dist/docs/index.html#providerresult)
 
