@@ -14,6 +14,8 @@ import { resetAllMemoizationCaches } from '../../../shared/src/util/memoizeObser
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
 import { Settings } from '../../../shared/src/settings/settings'
 import {
+    AffiliatedRepositoriesResult,
+    AffiliatedRepositoriesVariables,
     UserRepositoriesResult,
     UserRepositoriesVariables,
     RepositoriesVariables,
@@ -214,6 +216,40 @@ export function listUserRepositories(
     )
 }
 
+export function listAffiliatedRepositories(args: Partial<AffiliatedRepositoriesVariables>): Observable<NonNullable<AffiliatedRepositoriesResult>> {
+    return requestGraphQL<AffiliatedRepositoriesResult, AffiliatedRepositoriesVariables>(
+        gql`
+            query AffiliatedRepositories(
+                $user: ID!
+                $codeHost: ID
+                $query: String
+            ) {
+                affiliatedRepositories(
+                    user: $user
+                    codeHost: $codeHost
+                    query: $query
+                ) {
+                    nodes {
+                        name
+                        codeHost {
+                            kind
+                            id
+                            displayName
+                        }
+                        private
+                    }
+                }
+            }
+        `,
+        {
+            user: args.user!,
+            codeHost: args.codeHost ?? null,
+            query: args.query ?? null,
+        }
+    ).pipe(
+        map(dataOrThrowErrors)
+    )
+}
 /**
  * Fetches all repositories.
  *
