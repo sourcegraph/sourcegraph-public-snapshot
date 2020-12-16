@@ -19,7 +19,7 @@ func mustMarshalJSONString(v interface{}) string {
 	return str
 }
 
-func addRepos() {
+func addReposCommand() {
 
 	if len(*githubToken) == 0 {
 		log.Fatal("Environment variable GITHUB_TOKEN is not set")
@@ -29,10 +29,10 @@ func addRepos() {
 	if err != nil {
 		log.Fatal("Failed to sign in:", err)
 	}
-	log.Println("Site admin authenticated:", username)
+	log.Println("Site admin authenticated:", *username)
 
 	// Open our jsonFile
-	jsonFile, err := os.Open(*extsvcConfig)
+	jsonFile, err := os.Open(*addReposConfig)
 	// if we os.Open returns an error then handle it
 	if err != nil {
 		fmt.Println(err)
@@ -78,6 +78,6 @@ func addRepos() {
 		} else {
 			log.Print(esID)
 		}
+		// TODO: use WaitForReposToBeCloned with list from json file
 	}
-
 }

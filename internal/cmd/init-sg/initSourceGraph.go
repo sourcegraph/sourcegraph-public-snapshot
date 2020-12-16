@@ -1,29 +1,15 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
 
-var client *gqltestutil.Client
-
-var (
-	baseURL      = flag.String("base-url", os.Getenv("SOURCEGRAPH_BASE_URL"), "The base URL of the Sourcegraph instance")
-	email        = flag.String("email", os.Getenv("TEST_USER_EMAIL"), "The email of the admin user")
-	username     = flag.String("username", os.Getenv("SOURCEGRAPH_SUDO_USER"), "The username of the admin user")
-	password     = flag.String("password", os.Getenv("TEST_USER_PASSWORD"), "The password of the admin user")
-	githubToken  = flag.String("githubtoken", os.Getenv("GITHUB_TOKEN"), "The github access token that will be used to authenticate an external service")
-	home         = os.Getenv("HOME")
-	profile      = home + "/.profile"
-	extsvcConfig = flag.String("extsvcConfig", "", "Path to json file containing the external service config")
-)
-
-func main() {
+func initSourceGraph() {
 	log.Println("Running initializer")
-	flag.Parse()
+
 	needsSiteInit, err := gqltestutil.NeedsSiteInit(*baseURL)
 	if err != nil {
 		log.Fatal("Failed to check if site needs init: ", err)
@@ -75,6 +61,4 @@ func main() {
 	}
 
 	log.Println("Instance initialized, SOURCEGRAPH_SUDO_TOKEN set in", profile)
-
-	addRepos()
 }
