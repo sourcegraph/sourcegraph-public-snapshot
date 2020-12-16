@@ -9,7 +9,7 @@ Campaigns is compatible with the following code hosts:
 * Github.com
 * Github Enterprise 2.20 and later
 * GitLab 12.7 and later (burndown charts are only supported with 13.2 and later)
-* Bitbucket server 5.7 and later
+* Bitbucket Server 5.7 and later
 
 ### Campaigns effect on code host rate limits
 
