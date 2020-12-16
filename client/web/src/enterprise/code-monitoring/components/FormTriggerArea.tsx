@@ -50,7 +50,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                             filter.value &&
                                             isDiffOrCommit(filter.value.quotedValue)))
                             )
-                            const hasPattern = tokens.term.filter(term => term.type === 'pattern').length > 0
+                            const hasPattern = tokens.term.some(term => term.type === 'pattern')
                             const hasPatternTypeFilter = filters.some(
                                 filter =>
                                     filter.type === 'filter' &&
