@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
@@ -73,11 +74,20 @@ func addReposCommand() {
 				Repos: externalsvcs[i].Config.Repos,
 			}),
 		})
+
+		if err != nil {
+			log.Fatal(err)
+		}
+		for _, r := range externalsvcs[i].Config.Repos {
+			split := strings.Split(externalsvcs[i].Config.URL, "https://")
+			repo := split[1] + "/" + r
+			log.Print(repo)
+			err = client.WaitForReposToBeCloned(repo)
+		}
 		if err != nil {
 			log.Fatal(err)
 		} else {
 			log.Print(esID)
 		}
-		// TODO: use WaitForReposToBeCloned with list from json file
 	}
 }
