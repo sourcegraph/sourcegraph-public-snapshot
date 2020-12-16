@@ -39,6 +39,6 @@ While the latest version of Sourcegraph server is always recommended, version 3.
     * In 3.x versions, the gRPC setting must be disabled
 * Disk space
   * The required disk space is equal to each campaign's largest repository plus any dependencies or requirements specified by the run steps, times the number of parallel jobs.
-    * The default number of parallel jobs is equivalent to the number of cores in the system running src-cli. This setting is configurable.
+    * The default number of parallel jobs defaults to the number of CPU cores on the system running src-cli. This setting can be configured with the [`-j` flag when running `src campaign apply` or `src campaign preview`](../../cli/references/campaigns/apply.md).
   * Disk space is also required for the generated patches. This requirement *is* cumulative across each repository altered.
 * Git
