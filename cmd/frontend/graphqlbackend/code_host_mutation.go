@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 
@@ -17,7 +16,6 @@ func (r *schemaResolver) SetCodeHostRepos(ctx context.Context, args struct {
 	Repos    *[]string
 	AllRepos bool
 }) (*EmptyResponse, error) {
-	log15.Warn("SETTING REPOS")
 	id, err := unmarshalExternalServiceID(args.ID)
 	if err != nil {
 		return nil, err
