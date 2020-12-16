@@ -211,7 +211,13 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         allExpanded={allExpanded}
                         onExpandAllResultsToggle={onExpandAllResultsToggle}
                         onSaveQueryClick={onSaveQueryClick}
-                        stats={<StreamingProgress progress={results?.progress} onSearchAgain={onSearchAgain} />}
+                        stats={
+                            <StreamingProgress
+                                progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
+                                state={results?.state || 'loading'}
+                                onSearchAgain={onSearchAgain}
+                            />
+                        }
                     />
                 </div>
 
@@ -248,13 +254,13 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     items={results?.results.map(result => renderResult(result)).filter(isDefined) || []}
                 />
 
-                {!results?.progress.done && (
+                {(!results || results?.state === 'loading') && (
                     <div className="text-center my-4" data-testid="loading-container">
                         <LoadingSpinner className="icon-inline" />
                     </div>
                 )}
 
-                {results?.progress.done && !results?.alert && results?.results.length === 0 && (
+                {results?.state === 'complete' && !results?.alert && results?.results.length === 0 && (
                     <div className="alert alert-info d-flex m-2">
                         <h3 className="m-0">
                             <SearchIcon className="icon-inline" /> No results
@@ -262,7 +268,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     </div>
                 )}
 
-                {results?.progress.done && results?.results.length > 0 && (
+                {results?.state === 'complete' && results?.results.length > 0 && (
                     <small className="d-block my-4 text-center">Showing {results?.results.length} results</small>
                 )}
             </div>

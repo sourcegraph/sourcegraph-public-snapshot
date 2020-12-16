@@ -20,10 +20,10 @@ const history = createBrowserHistory()
 history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
 
 const streamingSearchResult: AggregateStreamingSearchResults = {
+    state: 'complete',
     results: [...MULTIPLE_SEARCH_RESULT.results, REPO_MATCH_RESULT] as GQL.SearchResult[],
     filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
     progress: {
-        done: true,
         durationMs: 500,
         matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
         skipped: [],
@@ -69,10 +69,10 @@ add('standard render', () => <WebStory>{() => <StreamingSearchResults {...defaul
 
 add('no results', () => {
     const result: AggregateStreamingSearchResults = {
+        state: 'complete',
         results: [],
         filters: [],
         progress: {
-            done: true,
             durationMs: 500,
             matchCount: 0,
             skipped: [],
@@ -106,10 +106,10 @@ add('search with quotes', () => {
 
 add('progress with warnings', () => {
     const result: AggregateStreamingSearchResults = {
+        state: 'complete',
         results: MULTIPLE_SEARCH_RESULT.results,
         filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
         progress: {
-            done: true,
             durationMs: 500,
             matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
             skipped: [
@@ -178,10 +178,10 @@ add('loading with no results', () => (
 
 add('loading with some results', () => {
     const result: AggregateStreamingSearchResults = {
+        state: 'loading',
         results: MULTIPLE_SEARCH_RESULT.results,
         filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
         progress: {
-            done: false,
             durationMs: 500,
             matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
             skipped: [],
@@ -193,10 +193,10 @@ add('loading with some results', () => {
 
 add('server-side alert', () => {
     const result: AggregateStreamingSearchResults = {
+        state: 'complete',
         results: MULTIPLE_SEARCH_RESULT.results,
         filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
         progress: {
-            done: true,
             durationMs: 500,
             matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
             skipped: [],
@@ -213,10 +213,10 @@ add('server-side alert', () => {
 
 add('server-side alert with no results', () => {
     const result: AggregateStreamingSearchResults = {
+        state: 'complete',
         results: [],
         filters: [],
         progress: {
-            done: true,
             durationMs: 500,
             matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
             skipped: [],

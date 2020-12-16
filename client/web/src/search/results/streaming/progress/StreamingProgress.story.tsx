@@ -17,30 +17,35 @@ const onSearchAgain = sinon.spy()
 
 add('0 results, in progress', () => {
     const progress: Progress = {
-        done: false,
         durationMs: 0,
         matchCount: 0,
         skipped: [],
     }
 
-    return <WebStory>{() => <StreamingProgress progress={progress} onSearchAgain={onSearchAgain} />}</WebStory>
+    return (
+        <WebStory>
+            {() => <StreamingProgress progress={progress} state="loading" onSearchAgain={onSearchAgain} />}
+        </WebStory>
+    )
 })
 
 add('1 result from 1 repository, in progress', () => {
     const progress: Progress = {
-        done: false,
         durationMs: 500,
         matchCount: 1,
         repositoriesCount: 1,
         skipped: [],
     }
 
-    return <WebStory>{() => <StreamingProgress progress={progress} onSearchAgain={onSearchAgain} />}</WebStory>
+    return (
+        <WebStory>
+            {() => <StreamingProgress progress={progress} state="loading" onSearchAgain={onSearchAgain} />}
+        </WebStory>
+    )
 })
 
 add('2 results from 2 repositories, complete, skipped with info', () => {
     const progress: Progress = {
-        done: true,
         durationMs: 1500,
         matchCount: 2,
         repositoriesCount: 2,
@@ -68,12 +73,15 @@ add('2 results from 2 repositories, complete, skipped with info', () => {
         ],
     }
 
-    return <WebStory>{() => <StreamingProgress progress={progress} onSearchAgain={onSearchAgain} />}</WebStory>
+    return (
+        <WebStory>
+            {() => <StreamingProgress progress={progress} state="complete" onSearchAgain={onSearchAgain} />}
+        </WebStory>
+    )
 })
 
 add('2 results from 2 repositories, loading, skipped with info', () => {
     const progress: Progress = {
-        done: false,
         durationMs: 1500,
         matchCount: 2,
         repositoriesCount: 2,
@@ -101,12 +109,15 @@ add('2 results from 2 repositories, loading, skipped with info', () => {
         ],
     }
 
-    return <WebStory>{() => <StreamingProgress progress={progress} onSearchAgain={onSearchAgain} />}</WebStory>
+    return (
+        <WebStory>
+            {() => <StreamingProgress progress={progress} state="loading" onSearchAgain={onSearchAgain} />}
+        </WebStory>
+    )
 })
 
 add('2 results from 2 repositories, complete, skipped with warning', () => {
     const progress: Progress = {
-        done: true,
         durationMs: 1500,
         matchCount: 2,
         repositoriesCount: 2,
@@ -144,12 +155,15 @@ add('2 results from 2 repositories, complete, skipped with warning', () => {
         ],
     }
 
-    return <WebStory>{() => <StreamingProgress progress={progress} onSearchAgain={onSearchAgain} />}</WebStory>
+    return (
+        <WebStory>
+            {() => <StreamingProgress progress={progress} state="complete" onSearchAgain={onSearchAgain} />}
+        </WebStory>
+    )
 })
 
 add('2 results from 2 repositories, loading, skipped with warning', () => {
     const progress: Progress = {
-        done: false,
         durationMs: 1500,
         matchCount: 2,
         repositoriesCount: 2,
@@ -187,5 +201,9 @@ add('2 results from 2 repositories, loading, skipped with warning', () => {
         ],
     }
 
-    return <WebStory>{() => <StreamingProgress progress={progress} onSearchAgain={onSearchAgain} />}</WebStory>
+    return (
+        <WebStory>
+            {() => <StreamingProgress progress={progress} state="loading" onSearchAgain={onSearchAgain} />}
+        </WebStory>
+    )
 })
