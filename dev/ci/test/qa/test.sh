@@ -26,12 +26,21 @@ docker_logs() {
   chmod 744 $CONTAINER.log
 }
 
-IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION ./dev/run-server-image.sh -d --name $CONTAINER
+if [[ $VAGRANT_RUN_ENV = "CI" ]]; then
+  IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION
+else
+  # shellcheck disable=SC2034
+  IMAGE=sourcegraph/server:insiders
+fi
+
+./dev/run-server-image.sh -d --name $CONTAINER
 trap docker_logs exit
 sleep 15
 
-go run dev/ci/test/init-server.go
-
+pushd internal/cmd/init-sg
+go build
+./init-sg initSG
+popd
 # Load variables set up by init-server, disabling `-x` to avoid printing variables
 set +x
 # shellcheck disable=SC1091
