@@ -10,29 +10,6 @@ Caveat: file decorations are only displayed on Sourcegraph, not on code hosts.
 
 This tutorial presumes you have created and published an extension. If not, complete the [Hello world tutorial](hello_world.md) first.
 
-## Set up
-
-You can skip this section if you have already set up an extension.
-
-Create the extension you'll use for this tutorial:
-
-```
-mkdir file-decorator
-cd file-decorator
-npm init sourcegraph-extension
-```
-
-Then publish your extension:
-
-```
-src extension publish
-```
-
-Confirm your extension is enabled and working by:
-
-- Opening the extension detail page.
-- Viewing a file on Sourcegraph.com and confirming the hover for your extension appears.
-
 ## Register a file decoration provider
 
 On [activation](../activation.md), register a [file decoration provider](https://unpkg.com/sourcegraph/dist/docs/interfaces/_sourcegraph_.filedecorationprovider.html): 
@@ -72,14 +49,31 @@ As we've seen in the previous section, file decorations can add text content aft
 
 ### `meter`
 
-A file decoration can render a [`<meter/>`](https://unpkg.com/sourcegraph/dist/docs/interfaces/_sourcegraph_.filedecoration.html#meter) element after filenames as well. Read through the [Codecov Sourcegraph extension](https://sourcegraph.com/github.com/codecov/sourcegraph-codecov/-/blob/src/extension.ts#L227-309) to see how `meter` is used in real-world extensions.
+A file decoration can render a [`<meter/>`](https://unpkg.com/sourcegraph/dist/docs/interfaces/_sourcegraph_.filedecoration.html#meter) element after filenames as well.
+
+The `<meter/>` element represents a scalar measurement within a known range, or a fractional value, such as [code coverage](https://docs.codecov.io/docs/about-code-coverage#what-is-code-coverage). They can represent optimum, suboptimum, and bad values with different colors based on the following attributes:
+
+- `min`: Lower bound of the range
+- `max`: Upper bound of the range
+- `low`: Upper bound of the low end of the range
+- `high`: Lower bound of the high end of the range
+- `optimum`: Optimal numeric value. If `optimum` is between `min` and `low`, then the low end of the range is considered preferable. If `optimum` is between `high` and `max`, then the high end of the range is considered preferable.
+
+File decorations `meter` objects must specify a `value` between `min` and `max`, and can optionally specify a `hoverMessage` string to display in a hover tooltip.
+
+Read through the [Codecov Sourcegraph extension](https://sourcegraph.com/github.com/codecov/sourcegraph-codecov/-/blob/src/extension.ts#L227-309) to see how `meter` is used in real-world extensions.
 
 ### Asynchronous or streaming file decorations
 
 File decoration providers don't have to synchronously return an array of file decorations. 
 
-- If you need to perform asynchronous operations before resolving your file decorations, you can return a `Promise`. 
-- If you need to update your file decorations over time (streaming), you can return an `AsyncIterable` or a [`Subscribable`](https://unpkg.com/sourcegraph/dist/docs/interfaces/_sourcegraph_.subscribable.html) (e.g. RxJS Observable)
+**If you need to perform asynchronous operations before resolving your file decorations:**
+
+you can return a `Promise`. 
+
+**If you need to update your file decorations over time (streaming):**
+
+you can return an `AsyncIterable` or a [`Subscribable`](https://unpkg.com/sourcegraph/dist/docs/interfaces/_sourcegraph_.subscribable.html) (e.g. RxJS Observable)
 
 [See the types of supported provider results](https://unpkg.com/sourcegraph/dist/docs/index.html#providerresult)
 
