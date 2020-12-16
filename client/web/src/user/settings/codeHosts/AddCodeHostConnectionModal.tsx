@@ -92,7 +92,8 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                                 minLength={1}
                             />
                             <ShieldCheckIcon
-                                className="icon-inline add-user-code-hosts-page__icon--inside add-user-code-hosts-page__icon--muted"
+                                size="1.25em"
+                                className="add-user-code-hosts-page__icon--inside add-user-code-hosts-page__icon--muted"
                                 data-tooltip="Data will be encrypted and will not be visible again."
                             />
                         </div>

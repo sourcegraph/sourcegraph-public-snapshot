@@ -6,7 +6,7 @@ import CircleOutlineIcon from 'mdi-react/CircleOutlineIcon'
 
 import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
-import { Link } from '../../../../../shared/src/components/Link'
+import { hints } from './modalHints'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { ErrorLike } from '../../../../../shared/src/util/errors'
 
@@ -22,29 +22,6 @@ interface CodeHostItemProps {
     onDidConnect: (service: ListExternalServiceFields) => void
     onDidRemove: () => void
     onDidError: (error: ErrorLike) => void
-}
-
-const MODAL_HINTS: Partial<Record<ExternalServiceKind, React.ReactFragment>> = {
-    [ExternalServiceKind.GITHUB]: (
-        <small>
-            <Link to="" target="_blank" rel="noopener noreferrer">
-                Create a new access token
-            </Link>
-            <span className="text-muted"> on GitHub.com with repo or public_repo scope.</span>
-        </small>
-    ),
-    [ExternalServiceKind.GITLAB]: (
-        <small>
-            <Link
-                to="https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#creating-a-personal-access-token"
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                Create a new access token
-            </Link>
-            <span className="text-muted"> on GitLab.com with read_user, read_api, and read_repository scope.</span>
-        </small>
-    ),
 }
 
 export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
@@ -75,7 +52,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     userID={userID}
                     kind={kind}
                     name={name}
-                    hintFragment={MODAL_HINTS[kind]}
+                    hintFragment={hints[kind]}
                     onDidAdd={onDidConnect}
                     onDidCancel={toggleAddConnectionModal}
                     onDidError={onDidError}
@@ -110,7 +87,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     <>
                         <button
                             type="button"
-                            className="btn btn-link text-primary p-0 mr-2"
+                            className="btn btn-link text-primary p-0 mr-2 shadow-none"
                             onClick={() => {}}
                             disabled={false}
                         >
@@ -118,7 +95,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                         </button>
                         <button
                             type="button"
-                            className="btn btn-link text-danger p-0"
+                            className="btn btn-link text-danger p-0 shadow-none"
                             onClick={toggleRemoveConnectionModal}
                             disabled={false}
                         >

@@ -3,28 +3,30 @@ import * as H from 'history'
 
 import { CodeHostItem } from './CodeHostItem'
 import { UpdateCodeHostConnectionModal } from './UpdateCodeHostConnectionModal'
+import { hints } from './modalHints'
 import { PageTitle } from '../../../components/PageTitle'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
 import { Link } from '../../../../../shared/src/components/Link'
-import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { queryExternalServices } from '../../../components/externalServices/backend'
-import { config } from 'process'
+import { ErrorAlert } from '../../../components/alerts'
 
 export interface UserAddCodeHostsPageProps {
-    history: H.History
     userID: Scalars['ID']
-    codeHostExternalServices: Record<string, AddExternalServiceOptions>
+    codeHostExternalServices: Record<ExternalServiceKind, AddExternalServiceOptions>
+    history: H.History
 }
 
-type Status = undefined | 'loading' | 'loaded' | ErrorLike
+type Status = undefined | 'loading' | ErrorLike
 export type servicesByKindState = Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
 
 export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageProps> = ({
     userID,
     codeHostExternalServices,
+    history,
 }) => {
     const [servicesByKind, setServicesByKind] = useState<servicesByKindState>({})
     const [statusOrError, setStatusOrError] = useState<Status>()
@@ -42,14 +44,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             after: null,
         }).toPromise()
 
-        const services: servicesByKindState = fetchedServices.reduce((accumulator, service) => {
+        const services: servicesByKindState = fetchedServices.reduce<servicesByKindState>((accumulator, service) => {
             accumulator[service.kind] = service
-
             return accumulator
-        }, {} as servicesByKindState)
+        }, {})
 
         setServicesByKind(services)
-        setStatusOrError('loaded')
+        setStatusOrError(undefined)
     }, [userID])
 
     useEffect(() => {
@@ -75,19 +76,18 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         id,
         warning,
         config,
-    }: {
-        kind: ExternalServiceKind
-        id: Scalars['ID']
-        displayName: string
-        warning: string
-        config: string
-    }): React.ReactFragment => (
-        <div className="alert alert-danger my-4">
-            <strong>Could not connect to {displayName}.</strong> Please{' '}
-            <button type="button" className="btn btn-link text-danger p-0" onClick={toggleUpdateConnectionModal}>
+    }: ListExternalServiceFields): React.ReactFragment => (
+        <div className="alert alert-danger my-4" key={id}>
+            <strong className="align-middle">Could not connect to {displayName}.</strong>
+            <span className="align-middle"> Please </span>
+            <button
+                type="button"
+                className="btn btn-link text-primary p-0 shadow-none"
+                onClick={toggleUpdateConnectionModal}
+            >
                 update your access token
             </button>{' '}
-            to restore the connection.
+            <span className="align-middle">to restore the connection.</span>
             <div className="py-2">
                 <small>{warning}</small>
             </div>
@@ -97,6 +97,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                     serviceConfig={config}
                     name={displayName}
                     kind={kind}
+                    hintFragment={hints[kind]}
                     onDidCancel={toggleUpdateConnectionModal}
                     onDidUpdate={handleServiceUpsert}
                     onDidError={setStatusOrError}
@@ -113,12 +114,19 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             </div>
             <p className="text-muted mt-2">
                 Connect with providers where your source code is hosted. Then,{' '}
-                <Link to="repositories">add repositories</Link> to search with Sourcegraph.
+                <Link className="text-primary" to="repositories">
+                    add repositories
+                </Link>{' '}
+                to search with Sourcegraph.
             </p>
 
             {Object.values(servicesByKind)
                 .filter(service => service?.warning)
                 .map(getServiceWarningFragment)}
+
+            {isErrorLike(statusOrError) && (
+                <ErrorAlert error={statusOrError} history={history} prefix="Code host action error" icon={false} />
+            )}
 
             {codeHostExternalServices && statusOrError !== 'loading' && (
                 <ul className="list-group">

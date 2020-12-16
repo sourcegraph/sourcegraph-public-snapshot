@@ -69,11 +69,11 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
     return (
         <Dialog
             className="modal-body modal-body--top-third p-4 rounded border"
-            aria-labelledby={`label--add-${kind}-token`}
+            aria-labelledby={`label--update-${kind}-token`}
             onDismiss={onDidCancel}
         >
             <div className="web-content">
-                <h3 className="mb-4">Update {name}</h3>
+                <h3 className="mb-4">Update {name} token</h3>
                 <Form onSubmit={onTokenSubmit}>
                     <div className="form-group mb-4">
                         <label htmlFor="code-host-token">Personal access token</label>
@@ -89,7 +89,8 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                                 minLength={1}
                             />
                             <ShieldCheckIcon
-                                className="icon-inline add-user-code-hosts-page__icon--inside add-user-code-hosts-page__icon--muted"
+                                size="1.25em"
+                                className="add-user-code-hosts-page__icon--inside add-user-code-hosts-page__icon--muted"
                                 data-tooltip="Data will be encrypted and will not be visible again."
                             />
                         </div>
