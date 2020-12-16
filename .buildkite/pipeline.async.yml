@@ -1,5 +1,6 @@
 env:
   ENTERPRISE: "1"
+  CHROMATIC: "1"
   FORCE_COLOR: "3"
 
 steps:
