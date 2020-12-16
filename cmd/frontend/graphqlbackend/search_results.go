@@ -1802,8 +1802,8 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 		return
 	}
 
-	commitResults, commitCommon, err := searchCommitLogInRepos(ctx, args)
-	a.report(ctx, commitResults, commitCommon, errors.Wrap(err, "commit search failed"))
+	commitResults, commitCommon, err := searchCommitLogInRepos(ctx, args, a.resultChannel)
+	a.collect(ctx, commitResults, commitCommon, errors.Wrap(err, "commit search failed"))
 }
 
 // isGlobalSearch returns true if the query does not contain repo, repogroup, or
