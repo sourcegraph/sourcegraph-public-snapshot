@@ -182,10 +182,9 @@ type Changeset struct {
 	DiffStatDeleted     *int32
 	SyncState           ChangesetSyncState
 
-	// The campaign that "owns" this changeset: it can create/close it on code host.
+	// The campaign that "owns" this changeset: it can create/close
+	// it on code host. If this is 0, it is imported/tracked by a campaign.
 	OwnedByCampaignID int64
-	// Whether it was imported/tracked by a campaign.
-	AddedToCampaign bool
 
 	// This is 0 if the Changeset isn't owned by Sourcegraph.
 	CurrentSpecID  int64

@@ -131,9 +131,8 @@ func (r *ChangesetRewirer) createTrackingChangeset(repo *types.Repo, externalID 
 		RepoID:              repo.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 
-		CampaignIDs:     []int64{r.campaignID},
-		ExternalID:      externalID,
-		AddedToCampaign: true,
+		CampaignIDs: []int64{r.campaignID},
+		ExternalID:  externalID,
 		// Note: no CurrentSpecID, because we merely track this one
 
 		PublicationState: campaigns.ChangesetPublicationStatePublished,
@@ -149,7 +148,6 @@ func (r *ChangesetRewirer) createTrackingChangeset(repo *types.Repo, externalID 
 func (r *ChangesetRewirer) attachTrackingChangeset(changeset *campaigns.Changeset) {
 	// We already have a changeset with the given repoID and
 	// externalID, so we can track it.
-	changeset.AddedToCampaign = true
 	changeset.CampaignIDs = append(changeset.CampaignIDs, r.campaignID)
 
 	// If it's errored and not created by another campaign, we re-enqueue it.
