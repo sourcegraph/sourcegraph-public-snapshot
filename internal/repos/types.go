@@ -93,7 +93,6 @@ func NewRateLimitSyncer(registry *ratelimit.Registry, serviceLister externalServ
 // We sync them all as we need to pick the most restrictive configured limit per code host
 // and rate limits can be defined in multiple external services for the same host.
 func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
-
 	byURL := make(map[string]extsvc.RateLimitConfig)
 
 	cursor := db.LimitOffset{

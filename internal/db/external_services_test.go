@@ -617,6 +617,32 @@ func TestExternalServicesStore_List(t *testing.T) {
 		}
 	})
 
+	t.Run("list all external services in ascending order", func(t *testing.T) {
+		got, err := (&ExternalServiceStore{}).List(ctx, ExternalServicesListOptions{OrderByDirection: "ASC"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []*types.ExternalService(types.ExternalServices(ess).Clone())
+		sort.Slice(want, func(i, j int) bool { return want[i].ID < want[j].ID })
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("list all external services in descending order", func(t *testing.T) {
+		got, err := (&ExternalServiceStore{}).List(ctx, ExternalServicesListOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []*types.ExternalService(types.ExternalServices(ess).Clone())
+		sort.Slice(want, func(i, j int) bool { return want[i].ID > want[j].ID })
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
+
 	t.Run("list external services with certain IDs", func(t *testing.T) {
 		got, err := (&ExternalServiceStore{}).List(ctx, ExternalServicesListOptions{
 			IDs: []int64{ess[1].ID},

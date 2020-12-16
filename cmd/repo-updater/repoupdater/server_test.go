@@ -385,7 +385,8 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 				}
 
 				svcs, err := store.ExternalServiceStore().List(ctx, db.ExternalServicesListOptions{
-					IDs: ids,
+					IDs:              ids,
+					OrderByDirection: "ASC",
 				})
 				if err != nil {
 					t.Fatalf("failed to read from store: %v", err)

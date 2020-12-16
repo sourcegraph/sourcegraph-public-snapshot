@@ -114,7 +114,8 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 	}
 
 	args := db.ExternalServicesListOptions{
-		IDs: svcIDs,
+		IDs:              svcIDs,
+		OrderByDirection: "ASC",
 	}
 
 	es, err := s.Store.ExternalServiceStore().List(r.Context(), args)
@@ -151,7 +152,8 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	args := db.ExternalServicesListOptions{
-		Kinds: types.Repos(rs).Kinds(),
+		Kinds:            types.Repos(rs).Kinds(),
+		OrderByDirection: "ASC",
 	}
 
 	es, err := s.Store.ExternalServiceStore().List(r.Context(), args)
