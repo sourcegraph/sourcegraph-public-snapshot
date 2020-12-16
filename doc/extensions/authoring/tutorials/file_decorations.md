@@ -69,7 +69,30 @@ File decoration providers don't have to synchronously return an array of file de
 
 **If you need to perform asynchronous operations before resolving your file decorations:**
 
-You provider function (`provideFileDecorations`) can return a `Promise`.
+You provider function (`provideFileDecorations`) can return a `Promise` for an array of file decorations.
+
+```ts
+import * as sourcegraph from 'sourcegraph'
+import { getMeters, getDescription } from 'utils'
+
+export function activate(context: sourcegraph.ExtensionContext): void {
+    context.subscriptions.add(
+        sourcegraph.app.registerFileDecorationProvider({
+            async provideFileDecorations({ files }) {
+                // `getMeters` returns a Promise for an object of meter objects keyed by file path
+                const meters = await getMeters(files)
+                return files.map(file => ({
+                    uri: file.uri,
+                    after: {
+                        contentText: getDescription(file.path),
+                    },
+                    meter: meters[file.path],
+                }))
+            },
+        })
+    )
+}
+```
 
 **If you need to update your file decorations over time (streaming):**
 
@@ -85,12 +108,14 @@ export function activate(context: sourcegraph.ExtensionContext): void {
       async *provideFileDecorations({ files }) {
                 // The file decorations will be re-rendered each time `yield` keyword is called 
                 // with an array of file decorations 
-                yield files.map(file => ({ uri: file.uri, contentText: getDescription(file.path) }))
+                yield files.map(file => ({ uri: file.uri, after: { contentText: getDescription(file.path) } }))
                 // `getMeters` returns a Promise for an object of meter objects keyed by file path
                 const meters = await getMeters(files)
                 yield files.map(file => ({
                     uri: file.uri,
-                    contentText: getDescription(file.path),
+                    after: {
+                      contentText: getDescription(file.path),
+                    },
                     meter: meters[file.path],
                 }))
             },
@@ -120,7 +145,9 @@ export function activate(context: sourcegraph.ExtensionContext): void {
                         map(meters =>
                             files.map(file => ({
                                 uri: file.uri,
-                                contentText: getDescription(file.path),
+                                after: {
+                                  contentText: getDescription(file.path),
+                                },
                                 meter: meters[file.path],
                             }))
                         )
