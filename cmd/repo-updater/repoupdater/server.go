@@ -188,7 +188,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = s.Store.UpsertExternalServices(r.Context(), es...)
+	err = s.Store.ExternalServiceStore().Upsert(r.Context(), es...)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
