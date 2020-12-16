@@ -28,7 +28,9 @@ type Worker struct {
 }
 
 type WorkerOptions struct {
-	// Name denotes the name of the worker used to distinguish log messages.
+	// Name denotes the name of the worker used to distinguish log messages and
+	// emitted metrics. The worker constructor will fail if this field is not
+	// supplied.
 	Name string
 
 	// NumHandlers is the maximum number of handlers that can be invoked
@@ -52,6 +54,10 @@ func NewWorker(ctx context.Context, store Store, handler Handler, options Worker
 }
 
 func newWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions, clock glock.Clock) *Worker {
+	if options.Name == "" {
+		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/workerutil:newWorker")
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 
 	handlerSemaphore := make(chan struct{}, options.NumHandlers)

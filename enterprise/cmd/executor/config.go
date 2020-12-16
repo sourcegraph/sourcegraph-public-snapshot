@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command"
@@ -67,6 +68,7 @@ func (c *Config) APIWorkerOptions(transport http.RoundTripper) apiworker.Options
 
 func (c *Config) WorkerOptions() workerutil.WorkerOptions {
 	return workerutil.WorkerOptions{
+		Name:        "precise_code_intel_index_worker",
 		NumHandlers: c.MaximumNumJobs,
 		Interval:    c.QueuePollInterval,
 		Metrics:     makeWorkerMetrics(),

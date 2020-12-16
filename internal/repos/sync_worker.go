@@ -54,6 +54,7 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 	}...)
 
 	store := store.New(dbHandle, store.Options{
+		Name:              "repo_sync_worker_store",
 		TableName:         "external_service_sync_jobs",
 		ViewName:          "external_service_sync_jobs_with_next_sync_at",
 		Scan:              scanSingleJob,
@@ -74,7 +75,7 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 	})
 
 	resetter := dbworker.NewResetter(store, dbworker.ResetterOptions{
-		Name:     "sync-worker",
+		Name:     "repo_sync_worker_resetter",
 		Interval: 5 * time.Minute,
 		Metrics:  newResetterMetrics(opts.PrometheusRegisterer),
 	})

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/efritz/glock"
+
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -25,6 +26,7 @@ func TestWorkerHandlerSuccess(t *testing.T) {
 	handler := NewMockHandler()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
+		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
 		Metrics: WorkerMetrics{
@@ -65,6 +67,7 @@ func TestWorkerHandlerFailure(t *testing.T) {
 	handler := NewMockHandler()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
+		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
 		Metrics: WorkerMetrics{
@@ -113,6 +116,7 @@ func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
 	handler := NewMockHandler()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
+		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
 		Metrics: WorkerMetrics{
@@ -164,6 +168,7 @@ func TestWorkerConcurrent(t *testing.T) {
 			handler := NewMockHandlerWithHooks()
 			clock := glock.NewMockClock()
 			options := WorkerOptions{
+				Name:        "test",
 				NumHandlers: numHandlers,
 				Interval:    time.Second,
 				Metrics: WorkerMetrics{
@@ -250,6 +255,7 @@ func TestWorkerBlockingPreDequeueHook(t *testing.T) {
 	handler := NewMockHandlerWithPreDequeue()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
+		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
 		Metrics: WorkerMetrics{
@@ -278,6 +284,7 @@ func TestWorkerConditionalPreDequeueHook(t *testing.T) {
 	handler := NewMockHandlerWithPreDequeue()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
+		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
 		Metrics: WorkerMetrics{

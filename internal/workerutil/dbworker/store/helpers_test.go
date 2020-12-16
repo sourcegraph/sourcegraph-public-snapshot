@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -140,6 +141,7 @@ func setupStoreTest(t *testing.T) {
 }
 
 var defaultTestStoreOptions = Options{
+	Name:              "test",
 	TableName:         "workerutil_test w",
 	Scan:              testScanFirstRecord,
 	OrderByExpression: sqlf.Sprintf("w.uploaded_at"),
