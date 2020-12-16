@@ -135,8 +135,6 @@ type ObservedStore struct {
 type StoreMetrics struct {
 	Transact              *metrics.OperationMetrics
 	Done                  *metrics.OperationMetrics
-	InsertRepos           *metrics.OperationMetrics
-	DeleteRepos           *metrics.OperationMetrics
 	UpsertRepos           *metrics.OperationMetrics
 	UpsertSources         *metrics.OperationMetrics
 	ListExternalRepoSpecs *metrics.OperationMetrics
@@ -154,8 +152,6 @@ func (sm StoreMetrics) MustRegister(r prometheus.Registerer) {
 		sm.Transact,
 		sm.Done,
 		sm.ListExternalRepoSpecs,
-		sm.InsertRepos,
-		sm.DeleteRepos,
 		sm.UpsertRepos,
 		sm.UpsertSources,
 		sm.GetExternalService,
@@ -197,34 +193,6 @@ func NewStoreMetrics() StoreMetrics {
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Name: "src_repoupdater_store_done_errors_total",
 				Help: "Total number of errors when closing a transaction",
-			}, []string{}),
-		},
-		InsertRepos: &metrics.OperationMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_insert_repos_duration_seconds",
-				Help: "Time spent inserting repos",
-			}, []string{}),
-			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_insert_repos_total",
-				Help: "Total number of inserting repositories",
-			}, []string{}),
-			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_insert_repos_errors_total",
-				Help: "Total number of errors when inserting repos",
-			}, []string{}),
-		},
-		DeleteRepos: &metrics.OperationMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_delete_repos_duration_seconds",
-				Help: "Time spent deleting repos",
-			}, []string{}),
-			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_delete_repos_total",
-				Help: "Total number of deleting repositories",
-			}, []string{}),
-			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_delete_repos_errors_total",
-				Help: "Total number of errors when deleting repos",
 			}, []string{}),
 		},
 		UpsertRepos: &metrics.OperationMetrics{
@@ -402,44 +370,6 @@ func (o *ObservedStore) RepoStore() *idb.RepoStore {
 
 func (o *ObservedStore) ExternalServiceStore() *idb.ExternalServiceStore {
 	return o.store.ExternalServiceStore()
-}
-
-// InsertRepos calls into the inner Store and registers the observed results.
-func (o *ObservedStore) InsertRepos(ctx context.Context, repos ...*types.Repo) (err error) {
-	tr, ctx := o.trace(ctx, "Store.InsertRepos")
-	tr.LogFields(otlog.Int("count", len(repos)))
-
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-		count := float64(len(repos))
-
-		o.metrics.InsertRepos.Observe(secs, count, &err)
-		logging.Log(o.log, "store.insert-repos", &err, "count", len(repos))
-
-		tr.SetError(err)
-		tr.Finish()
-	}(time.Now())
-
-	return o.store.InsertRepos(ctx, repos...)
-}
-
-// DeleteRepos calls into the inner Store and registers the observed results.
-func (o *ObservedStore) DeleteRepos(ctx context.Context, ids ...api.RepoID) (err error) {
-	tr, ctx := o.trace(ctx, "Store.DeleteRepos")
-	tr.LogFields(otlog.Int("count", len(ids)))
-
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-		count := float64(len(ids))
-
-		o.metrics.InsertRepos.Observe(secs, count, &err)
-		logging.Log(o.log, "store.delete-repos", &err, "count", len(ids))
-
-		tr.SetError(err)
-		tr.Finish()
-	}(time.Now())
-
-	return o.store.DeleteRepos(ctx, ids...)
 }
 
 // ListExternalRepoSpecs calls into the inner Store and registers the observed results.
