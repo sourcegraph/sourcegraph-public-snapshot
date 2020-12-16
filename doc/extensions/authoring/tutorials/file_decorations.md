@@ -35,7 +35,7 @@ Confirm your extension is enabled and working by:
 
 ## Register a file decoration provider
 
-On [activation](../activation.md), register a [file decoration provider](https://unpkg.com/sourcegraph@24.8.0/dist/docs/interfaces/_sourcegraph_.filedecorationprovider.html): 
+On [activation](../activation.md), register a [file decoration provider](https://unpkg.com/sourcegraph/dist/docs/interfaces/_sourcegraph_.filedecorationprovider.html): 
 
 ```ts
 import * as sourcegraph from 'sourcegraph'
@@ -68,24 +68,24 @@ File decoration providers are called with a new list of files whenever a user ex
 
 ### `after`
 
-As we've seen in the previous section, file decorations can add text content after filenames with the [`after`](https://unpkg.com/sourcegraph@24.8.0/dist/docs/interfaces/_sourcegraph_.filedecoration.html#after) property. File decorations can [customize text color](https://unpkg.com/sourcegraph@24.8.0/dist/docs/interfaces/_sourcegraph_.filedecorationattachmentrenderoptions.html) and specify color overrides for dark and/or light themes.
+As we've seen in the previous section, file decorations can add text content after filenames with the [`after`](https://unpkg.com/sourcegraph/dist/docs/interfaces/_sourcegraph_.filedecoration.html#after) property. File decorations can [customize text color](https://unpkg.com/sourcegraph/dist/docs/interfaces/_sourcegraph_.filedecorationattachmentrenderoptions.html) and specify color overrides for dark and/or light themes.
 
 ### `meter`
 
-A file decoration can render a [`<meter/>`](https://unpkg.com/sourcegraph@24.8.0/dist/docs/interfaces/_sourcegraph_.filedecoration.html#meter) element after filenames as well. Read through the [Codecov Sourcegraph extension](https://sourcegraph.com/github.com/codecov/sourcegraph-codecov/-/blob/src/extension.ts#L227-309) to see how `meter` is used in real-world extensions.
+A file decoration can render a [`<meter/>`](https://unpkg.com/sourcegraph/dist/docs/interfaces/_sourcegraph_.filedecoration.html#meter) element after filenames as well. Read through the [Codecov Sourcegraph extension](https://sourcegraph.com/github.com/codecov/sourcegraph-codecov/-/blob/src/extension.ts#L227-309) to see how `meter` is used in real-world extensions.
 
 ### Asynchronous or streaming file decorations
 
 File decoration providers don't have to synchronously return an array of file decorations. 
 
 - If you need to perform asynchronous operations before resolving your file decorations, you can return a `Promise`. 
-- If you need to update your file decorations over time (streaming), you can return an `AsyncIterable` or a [`Subscribable`](https://unpkg.com/sourcegraph@24.8.0/dist/docs/interfaces/_sourcegraph_.subscribable.html) (e.g. RxJS Observable)
+- If you need to update your file decorations over time (streaming), you can return an `AsyncIterable` or a [`Subscribable`](https://unpkg.com/sourcegraph/dist/docs/interfaces/_sourcegraph_.subscribable.html) (e.g. RxJS Observable)
 
-[See the types of supported provider results](https://unpkg.com/sourcegraph@24.8.0/dist/docs/index.html#providerresult)
+[See the types of supported provider results](https://unpkg.com/sourcegraph/dist/docs/index.html#providerresult)
 
 ## Decoration location
 
-You can restrict where an individual file decoration is displayed by setting the [`where`](https://unpkg.com/sourcegraph@24.8.0/dist/docs/interfaces/_sourcegraph_.filedecoration.html#where) property:
+You can restrict where an individual file decoration is displayed by setting the [`where`](https://unpkg.com/sourcegraph/dist/docs/interfaces/_sourcegraph_.filedecoration.html#where) property:
 
 - `"sidebar"`: Only display the decoration on the file tree sidebar
 - `"page"`:  Only display the decoration on the directory page
