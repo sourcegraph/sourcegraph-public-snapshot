@@ -2,7 +2,7 @@
 
 ## Usage
 
-You can read about how to use the tracking-issue tool in its [handbook page](https://about.sourcegraph.com/handbook/product/tracking_issues).
+You can read about how to use the tracking-issue tool in its [handbook page](https://about.sourcegraph.com/handbook/engineering/tracking_issues).
 
 ## Running
 
