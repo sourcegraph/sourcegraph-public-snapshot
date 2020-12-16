@@ -22,7 +22,8 @@ echo "TEST: Running E2E tests"
 if [[ $VAGRANT_RUN_ENV = "CI" ]]; then
   IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION
 else
+  # shellcheck disable=SC2034
   IMAGE=sourcegraph/server:insiders
 fi
 
- ./dev/ci/e2e.sh
+./dev/ci/e2e.sh
