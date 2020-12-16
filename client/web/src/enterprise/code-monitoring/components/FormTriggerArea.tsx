@@ -50,6 +50,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                             filter.value &&
                                             isDiffOrCommit(filter.value.quotedValue)))
                             )
+                            const hasPattern = tokens.term.some(term => term.type === 'pattern')
                             const hasPatternTypeFilter = filters.some(
                                 filter =>
                                     filter.type === 'filter' &&
@@ -63,8 +64,8 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             if (!hasTypeDiffOrCommitFilter) {
                                 return 'Code monitors require queries to specify either `type:commit` or `type:diff`.'
                             }
-                            if (!hasPatternTypeFilter) {
-                                return 'Code monitors require queries to specify a `patternType:` of literal, regexp, or structural.'
+                            if (!hasPatternTypeFilter && hasPattern) {
+                                return 'Code monitors require queries to specify a `patternType:` of literal or regexp.'
                             }
                         }
                         return 'Failed to parse query'
