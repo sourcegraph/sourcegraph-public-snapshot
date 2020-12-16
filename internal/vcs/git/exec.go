@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -28,7 +29,7 @@ func checkSpecArgSafety(spec string) error {
 // An error is only returned when there is a failure unrelated to the actual command being
 // executed. If the executed command exits with a nonzero exit code, err == nil. This is similar to
 // how http.Get returns a nil error for HTTP non-2xx responses.
-func ExecSafe(ctx context.Context, repo gitserver.Repo, params []string) (stdout, stderr []byte, exitCode int, err error) {
+func ExecSafe(ctx context.Context, repo api.RepoName, params []string) (stdout, stderr []byte, exitCode int, err error) {
 	if Mocks.ExecSafe != nil {
 		return Mocks.ExecSafe(params)
 	}
@@ -56,7 +57,7 @@ func ExecSafe(ctx context.Context, repo gitserver.Repo, params []string) (stdout
 
 // ExecReader executes an arbitrary `git` command (`git [args...]`) and returns a reader connected
 // to its stdout.
-func ExecReader(ctx context.Context, repo gitserver.Repo, args []string) (io.ReadCloser, error) {
+func ExecReader(ctx context.Context, repo api.RepoName, args []string) (io.ReadCloser, error) {
 	if Mocks.ExecReader != nil {
 		return Mocks.ExecReader(args)
 	}
@@ -175,10 +176,10 @@ func isAllowedGitCmd(args []string) bool {
 	return true
 }
 
-func gitserverCmdFunc(repo gitserver.Repo) cmdFunc {
+func gitserverCmdFunc(repo api.RepoName) cmdFunc {
 	return func(args []string) cmd {
 		cmd := gitserver.DefaultClient.Command("git", args...)
-		cmd.Repo = gitserver.Repo(repo)
+		cmd.Repo = repo
 		return cmd
 	}
 }

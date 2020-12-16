@@ -13,6 +13,8 @@ import {
     Quantifier,
 } from 'regexpp/ast'
 
+/* eslint-disable unicorn/better-regex */
+
 /**
  * A DecoratedToken is a type of token used for syntax highlighting, hovers, and diagnostics. All
  * standard Token types are compatible where DecoratedTokens are used. A DecoratedToken extends
@@ -54,6 +56,7 @@ export enum MetaRegexpKind {
     EscapedCharacter = 'EscapedCharacter', // like \(
     CharacterSet = 'CharacterSet', // like \s
     CharacterClass = 'CharacterClass', // like [a-z]
+    CharacterClassMember = 'CharacterClassMember', // a character inside a charcter class like [abcd]
     LazyQuantifier = 'LazyQuantifier', // the ? after a range quantifier
     RangeQuantifier = 'RangeQuantifier', // like +
 }
@@ -63,6 +66,7 @@ export enum MetaRegexpKind {
  */
 export interface MetaStructural extends BaseMetaToken {
     type: 'metaStructural'
+    groupRange?: CharacterRange
     kind: MetaStructuralKind
 }
 
@@ -71,6 +75,9 @@ export interface MetaStructural extends BaseMetaToken {
  */
 export enum MetaStructuralKind {
     Hole = 'Hole',
+    RegexpHole = 'RegexpHole',
+    Variable = 'Variable',
+    RegexpSeparator = 'RegexpSeparator',
 }
 
 /**
@@ -123,8 +130,6 @@ export interface MetaRepoRevisionSeparator extends BaseMetaToken {
  * Coalesces consecutive pattern tokens. Used, for example, when parsing
  * literal characters like 'f', 'o', 'o' in regular expressions, which are
  * coalesced to 'foo' for hovers.
- *
- * @param tokens
  */
 const coalescePatterns = (tokens: DecoratedToken[]): DecoratedToken[] => {
     let previous: Pattern | undefined
@@ -304,6 +309,16 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                     })
                     return
                 }
+                if (node.parent.type === 'CharacterClass') {
+                    // This character is inside a character class like [abcd] and is contextually special for hover tooltips.
+                    tokens.push({
+                        type: 'metaRegexp',
+                        range: { start: offset + node.start, end: offset + node.end },
+                        value: node.raw,
+                        kind: MetaRegexpKind.CharacterClassMember,
+                    })
+                    return
+                }
                 tokens.push({
                     type: 'pattern',
                     range: { start: offset + node.start, end: offset + node.end },
@@ -418,11 +433,54 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
     }
 
     // Appends a decorated token to the list of tokens, and resets the current token to be empty.
-    const appendDecoratedToken = (endIndex: number, kind: PatternKind.Literal | MetaStructuralKind): void => {
+    const appendDecoratedToken = (endIndex: number, kind: PatternKind.Literal | MetaStructuralKind.Hole): void => {
         const value = token.join('')
         const range = { start: offset + endIndex - value.length, end: offset + endIndex }
         if (kind === PatternKind.Literal) {
             decorated.push({ type: 'pattern', kind, value, range })
+        } else if (value.match(/^:\[(\w*)~(.*)\]$/)) {
+            // Handle regexp hole.
+            const [, variable, pattern] = value.match(/^:\[(\w*)~(.*)\]$/)!
+            const variableStart = range.start + 2 /* :[ */
+            const variableRange = { start: variableStart, end: variableStart + variable.length }
+            const patternStart = variableRange.end + 1 /* ~ */
+            const patternRange = { start: patternStart, end: patternStart + pattern.length }
+            decorated.push(
+                ...([
+                    {
+                        type: 'metaStructural',
+                        kind: MetaStructuralKind.RegexpHole,
+                        range: { start: range.start, end: variableStart },
+                        groupRange: range,
+                        value: ':[',
+                    },
+                    {
+                        type: 'metaStructural',
+                        kind: MetaStructuralKind.Variable,
+                        range: variableRange,
+                        value: variable,
+                    },
+                    {
+                        type: 'metaStructural',
+                        kind: MetaStructuralKind.RegexpSeparator,
+                        range: { start: variableRange.end, end: variableRange.end + 1 },
+                        value: '~',
+                    },
+                    ...mapRegexpMeta({
+                        type: 'pattern',
+                        kind: PatternKind.Regexp,
+                        range: patternRange,
+                        value: pattern,
+                    }),
+                    {
+                        type: 'metaStructural',
+                        kind: MetaStructuralKind.RegexpHole,
+                        range: { start: patternRange.end, end: patternRange.end + 1 },
+                        groupRange: range,
+                        value: ']',
+                    },
+                ] as DecoratedToken[])
+            )
         } else {
             decorated.push({ type: 'metaStructural', kind, value, range })
         }
@@ -442,7 +500,8 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                     }
                     start = start + 2
                     // Append the value of '...' after advancing.
-                    appendDecoratedToken(start - 3, MetaStructuralKind.Hole)
+                    token.push('...')
+                    appendDecoratedToken(start, MetaStructuralKind.Hole)
                     continue
                 }
                 token.push('.')

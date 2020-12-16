@@ -2,13 +2,13 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
 func TestCampaignSpecResolver(t *testing.T) {
@@ -32,20 +31,18 @@ func TestCampaignSpecResolver(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	cstore := store.New(dbconn.Global)
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-
 	repoStore := db.NewRepoStoreWith(cstore)
+	esStore := db.NewExternalServicesStoreWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, rstore))
+	repo := newGitHubTestRepo("github.com/sourcegraph/campaign-spec-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
-	username := "campaign-spec-by-id-user-name"
 	orgname := "test-org"
-	userID := insertTestUser(t, dbconn.Global, username, false)
-	adminID := insertTestUser(t, dbconn.Global, "alice", true)
+	userID := ct.CreateTestUser(t, false).ID
+	adminID := ct.CreateTestUser(t, true).ID
 	org, err := db.Orgs.Create(ctx, orgname, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -86,7 +83,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

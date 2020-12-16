@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
@@ -30,7 +31,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 
 	pruneUserCredentials(t)
 
-	userID := insertTestUser(t, dbconn.Global, "code-host-connection-resolver", false)
+	userID := ct.CreateTestUser(t, false).ID
 
 	cstore := store.New(dbconn.Global)
 
@@ -51,7 +52,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

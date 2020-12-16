@@ -7,11 +7,10 @@ import (
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-type storeTestFunc func(*testing.T, context.Context, *Store, repos.Store, ct.Clock)
+type storeTestFunc func(*testing.T, context.Context, *Store, ct.Clock)
 
 // storeTest converts a storeTestFunc into a func(*testing.T) in which all
 // dependencies are set up and injected into the storeTestFunc.
@@ -26,8 +25,6 @@ func storeTest(db *sql.DB, f storeTestFunc) func(*testing.T) {
 		tx := dbtest.NewTx(t, db)
 		s := NewWithClock(tx, c.Now)
 
-		rs := repos.NewDBStore(db, sql.TxOptions{})
-
-		f(t, context.Background(), s, rs, c)
+		f(t, context.Background(), s, c)
 	}
 }

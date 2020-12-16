@@ -27,7 +27,6 @@ import (
 
 // A Store exposes methods to read and write repos and external services.
 type Store interface {
-	GetExternalService(ctx context.Context, id int64) (*types.ExternalService, error)
 	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*types.ExternalService, error)
 	UpsertExternalServices(ctx context.Context, svcs ...*types.ExternalService) error
 
@@ -202,35 +201,6 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 	}
 	return &DBStore{Store: txBase}, nil
 }
-
-func (s *DBStore) GetExternalService(ctx context.Context, id int64) (*types.ExternalService, error) {
-	query := sqlf.Sprintf(
-		getExternalServiceQueryFmtstr,
-		id,
-	)
-	svc := types.ExternalService{}
-	err := scanExternalService(&svc, s.QueryRow(ctx, query))
-	return &svc, err
-}
-
-const getExternalServiceQueryFmtstr = `
--- source: cmd/repo-updated/repos/store.go:DBStore.GetExternalService
-SELECT
-  id,
-  kind,
-  display_name,
-  config,
-  created_at,
-  updated_at,
-  deleted_at,
-  last_sync_at,
-  next_sync_at,
-  namespace_user_id,
-  unrestricted
-FROM external_services
-WHERE id = %s
-AND deleted_at IS NULL
-`
 
 // ListExternalServices lists all stored external services matching the given args.
 func (s *DBStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (svcs []*types.ExternalService, _ error) {

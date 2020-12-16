@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -68,12 +67,6 @@ func (r *CommitSearchResultResolver) ToRepository() (*RepositoryResolver, bool) 
 func (r *CommitSearchResultResolver) ToFileMatch() (*FileMatchResolver, bool)   { return nil, false }
 func (r *CommitSearchResultResolver) ToCommitSearchResult() (*CommitSearchResultResolver, bool) {
 	return r, true
-}
-
-func (r *CommitSearchResultResolver) searchResultURIs() (string, string) {
-	// Diffs aren't going to be returned with other types of results
-	// and are already ordered in the desired order, so we'll just leave them in place.
-	return "~", "~" // lexicographically last in ASCII
 }
 
 func (r *CommitSearchResultResolver) resultCount() int32 {
@@ -307,7 +300,7 @@ func doSearchCommitsInRepoStream(ctx context.Context, op search.CommitParameters
 		}
 	}()
 
-	repoResolver := &RepositoryResolver{repo: op.RepoRevs.Repo}
+	repoResolver := &RepositoryResolver{innerRepo: op.RepoRevs.Repo}
 	for event := range events {
 		// if the result is incomplete, git log timed out and the client
 		// should be notified of that.
@@ -570,10 +563,6 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 		unflattened [][]*CommitSearchResultResolver
 		common      = &searchResultsCommon{}
 	)
-	common.repos = make([]*types.Repo, len(args.Repos))
-	for i, repo := range args.Repos {
-		common.repos[i] = repo.Repo
-	}
 	for _, repoRev := range args.Repos {
 		wg.Add(1)
 		go func(repoRev *search.RepositoryRevisions) {

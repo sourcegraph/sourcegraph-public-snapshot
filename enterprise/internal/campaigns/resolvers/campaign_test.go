@@ -28,9 +28,8 @@ func TestCampaignResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	username := "campaign-resolver-username"
-	userID := insertTestUser(t, dbconn.Global, username, true)
-	org, err := db.Orgs.Create(ctx, "test-org", nil)
+	userID := ct.CreateTestUser(t, true).ID
+	org, err := db.Orgs.Create(ctx, "test-campaign-resolver-org", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +60,7 @@ func TestCampaignResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/efritz/glock"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
@@ -43,6 +44,10 @@ func NewResetter(store store.Store, options ResetterOptions) *Resetter {
 }
 
 func newResetter(store store.Store, options ResetterOptions, clock glock.Clock) *Resetter {
+	if options.Name == "" {
+		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/dbworker/newResetter")
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &Resetter{

@@ -4,7 +4,7 @@ import * as React from 'react'
 import { pluralize } from '../../../../../../shared/src/util/strings'
 import { defaultProgress, StreamingProgressProps } from './StreamingProgress'
 
-export const StreamingProgressCount: React.FunctionComponent<StreamingProgressProps> = ({
+export const StreamingProgressCount: React.FunctionComponent<Pick<StreamingProgressProps, 'progress'>> = ({
     progress = defaultProgress,
 }) => (
     <div

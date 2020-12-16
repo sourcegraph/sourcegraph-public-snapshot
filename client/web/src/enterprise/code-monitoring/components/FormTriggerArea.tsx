@@ -125,29 +125,37 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         This trigger will fire when new search results are found for a given search query.
                     </span>
                     <span className="mt-4">Search query</span>
-                    <div className="create-monitor-page__query-input">
-                        <input
-                            type="text"
-                            className={classnames(
-                                'create-monitor-page__query-input-field form-control my-2 test-trigger-input',
-                                deriveInputClassName(queryState)
-                            )}
-                            onChange={nextQueryFieldChange}
-                            value={queryState.value}
-                            required={true}
-                            autoFocus={true}
-                            ref={queryInputReference}
-                        />
-                        {queryState.kind === 'VALID' && (
-                            <Link
-                                to={`/search?${buildSearchURLQuery(query, SearchPatternType.literal, false)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="create-monitor-page__query-input-preview-link test-preview-link"
-                            >
-                                Preview results <OpenInNewIcon className="icon-inline" />
-                            </Link>
-                        )}
+                    <div>
+                        <div className="trigger-area__query-input">
+                            <input
+                                type="text"
+                                className={classnames(
+                                    'trigger-area__query-input-field form-control my-2 test-trigger-input',
+                                    deriveInputClassName(queryState)
+                                )}
+                                onChange={nextQueryFieldChange}
+                                value={queryState.value}
+                                required={true}
+                                autoFocus={true}
+                                ref={queryInputReference}
+                                spellCheck={false}
+                            />
+                            <div className="trigger-area__query-input-preview-link p-2">
+                                <Link
+                                    to={`/search?${buildSearchURLQuery(
+                                        queryState.value,
+                                        SearchPatternType.literal,
+                                        false
+                                    )}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="trigger-area__query-input-preview-link-text test-preview-link"
+                                >
+                                    Preview results{' '}
+                                    <OpenInNewIcon className="trigger-area__query-input-preview-link-icon ml-1 icon-inline" />
+                                </Link>
+                            </div>
+                        </div>
                         {queryState.kind === 'INVALID' && (
                             <small className="invalid-feedback mb-4 test-trigger-error">{queryState.reason}</small>
                         )}
@@ -196,9 +204,8 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
             )}
             <small className="text-muted">
                 {' '}
-                What other events would you like to monitor? {/* TODO: populate link */}
-                <a href="" target="_blank" rel="noopener">
-                    {/* TODO: populate link */}
+                What other events would you like to monitor?{' '}
+                <a href="mailto:feedback@sourcegraph.com" target="_blank" rel="noopener">
                     Share feedback.
                 </a>
             </small>

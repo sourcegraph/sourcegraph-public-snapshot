@@ -57,6 +57,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -122,16 +123,32 @@ type Args struct {
 	LogFields []log.Field
 }
 
-// With prepares the necessary timers, loggers, and metrics to observe the invocation of
-// an operation.
+// With prepares the necessary timers, loggers, and metrics to observe the invocation  of an
+// operation. This method returns a modified context and a function to be deferred until the
+// end of the operation.
 func (op *Operation) With(ctx context.Context, err *error, args Args) (context.Context, FinishFunc) {
+	ctx, _, endObservation := op.WithAndLogger(ctx, err, args)
+	return ctx, endObservation
+}
+
+// WithAndLogger prepares the necessary timers, loggers, and metrics to observe the invocation
+// of an operation. This method returns a modified context, a function that will add a log field
+// to the active trace, and a function to be deferred until the end of the operation.
+func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (context.Context, func(fields ...log.Field), FinishFunc) {
 	start := time.Now()
 	tr, ctx := op.trace(ctx, args)
 
-	return ctx, func(count float64, finishArgs Args) {
+	var logFields func(fields ...log.Field)
+	if tr != nil {
+		logFields = tr.LogFields
+	} else {
+		logFields = func(fields ...log.Field) {}
+	}
+
+	return ctx, logFields, func(count float64, finishArgs Args) {
 		elapsed := time.Since(start).Seconds()
 		defaultFinishFields := []log.Field{log.Float64("count", count), log.Float64("elapsed", elapsed)}
-		logFields := mergeLogFields(op.logFields, args.LogFields, defaultFinishFields, finishArgs.LogFields)
+		logFields := mergeLogFields(defaultFinishFields, finishArgs.LogFields)
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabels, finishArgs.MetricLabels)
 
 		op.emitErrorLogs(err, logFields)

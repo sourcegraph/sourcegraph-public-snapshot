@@ -64,17 +64,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     },
     {
         path: '/tokens',
-        exact: true,
-        render: lazyComponent(() => import('./accessTokens/UserSettingsTokensPage'), 'UserSettingsTokensPage'),
-        condition: () => window.context.accessTokensAllow !== 'none',
-    },
-    {
-        path: '/tokens/new',
-        exact: true,
-        render: lazyComponent(
-            () => import('./accessTokens/UserSettingsCreateAccessTokenPage'),
-            'UserSettingsCreateAccessTokenPage'
-        ),
+        render: lazyComponent(() => import('./accessTokens/UserSettingsTokensArea'), 'UserSettingsTokensArea'),
         condition: () => window.context.accessTokensAllow !== 'none',
     },
     {

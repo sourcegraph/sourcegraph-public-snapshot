@@ -3,36 +3,39 @@ package store
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
-	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs repos.Store, clock ct.Clock) {
-	repo := ct.TestRepo(t, rs, extsvc.KindGitHub)
-	deletedRepo := ct.TestRepo(t, rs, extsvc.KindGitHub).With(types.Opt.RepoDeletedAt(clock.Now()))
+func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+	repoStore := db.NewRepoStoreWith(s)
+	esStore := db.NewExternalServicesStoreWith(s)
 
-	repoStore := db.NewRepoStoreWith(s.Store)
+	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(types.Opt.RepoDeletedAt(clock.Now()))
 
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
-	if err := rs.DeleteRepos(ctx, deletedRepo.ID); err != nil {
+	if err := repoStore.Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
 
-	changesetSpecs := make(cmpgn.ChangesetSpecs, 0, 3)
+	changesetSpecs := make(campaigns.ChangesetSpecs, 0, 3)
 	for i := 0; i < cap(changesetSpecs); i++ {
-		c := &cmpgn.ChangesetSpec{
+		c := &campaigns.ChangesetSpec{
 			RawSpec: `{"externalID":"12345"}`,
-			Spec: &cmpgn.ChangesetSpecDescription{
+			Spec: &campaigns.ChangesetSpecDescription{
 				ExternalID: "123456",
 			},
 			UserID:         int32(i + 1234),
@@ -53,16 +56,16 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 	// We create this ChangesetSpec to make sure that it's not returned when
 	// listing or getting ChangesetSpecs, since we don't want to load
 	// ChangesetSpecs whose repository has been (soft-)deleted.
-	changesetSpecDeletedRepo := &cmpgn.ChangesetSpec{
+	changesetSpecDeletedRepo := &campaigns.ChangesetSpec{
 		UserID:         int32(424242),
-		Spec:           &cmpgn.ChangesetSpecDescription{},
+		Spec:           &campaigns.ChangesetSpecDescription{},
 		CampaignSpecID: int64(424242),
 		RawSpec:        `{}`,
 		RepoID:         deletedRepo.ID,
 	}
 
 	t.Run("Create", func(t *testing.T) {
-		toCreate := make(cmpgn.ChangesetSpecs, 0, len(changesetSpecs)+1)
+		toCreate := make(campaigns.ChangesetSpecs, 0, len(changesetSpecs)+1)
 		toCreate = append(toCreate, changesetSpecDeletedRepo)
 		toCreate = append(toCreate, changesetSpecs...)
 
@@ -212,7 +215,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 					t.Fatal(err)
 				}
 
-				want := cmpgn.ChangesetSpecs{c}
+				want := campaigns.ChangesetSpecs{c}
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
@@ -227,7 +230,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 					t.Fatal(err)
 				}
 
-				want := cmpgn.ChangesetSpecs{c}
+				want := campaigns.ChangesetSpecs{c}
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
@@ -258,7 +261,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 					t.Fatal(err)
 				}
 
-				want := cmpgn.ChangesetSpecs{c}
+				want := campaigns.ChangesetSpecs{c}
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
@@ -357,8 +360,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 	})
 
 	t.Run("DeleteExpiredChangesetSpecs", func(t *testing.T) {
-		underTTL := clock.Now().Add(-cmpgn.ChangesetSpecTTL + 24*time.Hour)
-		overTTL := clock.Now().Add(-cmpgn.ChangesetSpecTTL - 24*time.Hour)
+		underTTL := clock.Now().Add(-campaigns.ChangesetSpecTTL + 24*time.Hour)
+		overTTL := clock.Now().Add(-campaigns.ChangesetSpecTTL - 24*time.Hour)
 
 		type testCase struct {
 			createdAt time.Time
@@ -406,7 +409,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 		}
 
 		for _, tc := range tests {
-			campaignSpec := &cmpgn.CampaignSpec{UserID: 4567, NamespaceUserID: 4567}
+			campaignSpec := &campaigns.CampaignSpec{UserID: 4567, NamespaceUserID: 4567}
 
 			if tc.hasCampaignSpec {
 				if err := s.CreateCampaignSpec(ctx, campaignSpec); err != nil {
@@ -414,7 +417,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 				}
 
 				if tc.campaignSpecApplied {
-					campaign := &cmpgn.Campaign{
+					campaign := &campaigns.Campaign{
 						Name:             fmt.Sprintf("campaign for spec %d", campaignSpec.ID),
 						CampaignSpecID:   campaignSpec.ID,
 						InitialApplierID: campaignSpec.UserID,
@@ -428,7 +431,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 				}
 			}
 
-			changesetSpec := &cmpgn.ChangesetSpec{
+			changesetSpec := &campaigns.ChangesetSpec{
 				CampaignSpecID: campaignSpec.ID,
 				// Need to set a RepoID otherwise GetChangesetSpec filters it out.
 				RepoID:    repo.ID,
@@ -440,7 +443,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 			}
 
 			if tc.isCurrentSpec {
-				changeset := &cmpgn.Changeset{
+				changeset := &campaigns.Changeset{
 					ExternalServiceType: "github",
 					RepoID:              1,
 					CurrentSpecID:       changesetSpec.ID,
@@ -451,7 +454,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 			}
 
 			if tc.isPreviousSpec {
-				changeset := &cmpgn.Changeset{
+				changeset := &campaigns.Changeset{
 					ExternalServiceType: "github",
 					RepoID:              1,
 					PreviousSpecID:      changesetSpec.ID,
@@ -478,5 +481,197 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, rs rep
 				t.Fatalf("tc=%s\n\t want changeset spec NOT to be deleted, but got deleted", printTestCase(tc))
 			}
 		}
+	})
+
+	t.Run("GetRewirerMappings", func(t *testing.T) {
+		// Create some test data
+		user := ct.CreateTestUser(t, true)
+		campaignSpec := ct.CreateCampaignSpec(t, ctx, s, "get-rewirer-mappings", user.ID)
+		var mappings RewirerMappings = make(RewirerMappings, 3)
+		changesetSpecIDs := make([]int64, 0, cap(mappings))
+		for i := 0; i < cap(mappings); i++ {
+			spec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+				HeadRef:      fmt.Sprintf("refs/heads/test-get-rewirer-mappings-%d", i),
+				Repo:         repo.ID,
+				CampaignSpec: campaignSpec.ID,
+			})
+			changesetSpecIDs = append(changesetSpecIDs, spec.ID)
+			mappings[i] = &RewirerMapping{
+				ChangesetSpecID: spec.ID,
+				RepoID:          repo.ID,
+			}
+		}
+
+		t.Run("NoLimit", func(t *testing.T) {
+			// Empty limit should return all entries.
+			opts := GetRewirerMappingsOpts{
+				CampaignSpecID: campaignSpec.ID,
+			}
+			ts, err := s.GetRewirerMappings(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			{
+				have, want := ts.RepoIDs(), []api.RepoID{repo.ID}
+				if len(have) != len(want) {
+					t.Fatalf("listed %d repo ids, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+
+			{
+				have, want := ts.ChangesetIDs(), []int64{}
+				if len(have) != len(want) {
+					t.Fatalf("listed %d changeset ids, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+
+			{
+				have, want := ts.ChangesetSpecIDs(), changesetSpecIDs
+				if len(have) != len(want) {
+					t.Fatalf("listed %d changeset spec ids, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+
+			{
+				have, want := ts, mappings
+				if len(have) != len(want) {
+					t.Fatalf("listed %d mappings, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+		})
+
+		t.Run("WithLimit", func(t *testing.T) {
+			for i := 1; i <= len(mappings); i++ {
+				t.Run(strconv.Itoa(i), func(t *testing.T) {
+					opts := GetRewirerMappingsOpts{
+						CampaignSpecID: campaignSpec.ID,
+						LimitOffset:    &db.LimitOffset{Limit: i},
+					}
+					ts, err := s.GetRewirerMappings(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					{
+						have, want := ts.RepoIDs(), []api.RepoID{repo.ID}
+						if len(have) != len(want) {
+							t.Fatalf("listed %d repo ids, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+
+					{
+						have, want := ts.ChangesetIDs(), []int64{}
+						if len(have) != len(want) {
+							t.Fatalf("listed %d changeset ids, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+
+					{
+						have, want := ts.ChangesetSpecIDs(), changesetSpecIDs[:i]
+						if len(have) != len(want) {
+							t.Fatalf("listed %d changeset spec ids, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+
+					{
+						have, want := ts, mappings[:i]
+						if len(have) != len(want) {
+							t.Fatalf("listed %d mappings, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatal(diff)
+						}
+					}
+				})
+			}
+		})
+
+		t.Run("WithLimitAndOffset", func(t *testing.T) {
+			offset := 0
+			for i := 1; i <= len(mappings); i++ {
+				t.Run(strconv.Itoa(i), func(t *testing.T) {
+					opts := GetRewirerMappingsOpts{
+						CampaignSpecID: campaignSpec.ID,
+						LimitOffset:    &db.LimitOffset{Limit: 1, Offset: offset},
+					}
+					ts, err := s.GetRewirerMappings(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					{
+						have, want := ts.RepoIDs(), []api.RepoID{repo.ID}
+						if len(have) != len(want) {
+							t.Fatalf("listed %d repo ids, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+
+					{
+						have, want := ts.ChangesetIDs(), []int64{}
+						if len(have) != len(want) {
+							t.Fatalf("listed %d changeset ids, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+
+					{
+						have, want := ts.ChangesetSpecIDs(), changesetSpecIDs[i-1:i]
+						if len(have) != len(want) {
+							t.Fatalf("listed %d changeset spec ids, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+
+					{
+						have, want := ts, mappings[i-1:i]
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+
+					offset++
+				})
+			}
+		})
 	})
 }

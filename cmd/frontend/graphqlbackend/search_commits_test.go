@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+
 	// "github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -66,7 +67,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 
 	wantCommit := toGitCommitResolver(
-		&RepositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
+		&RepositoryResolver{innerRepo: &types.Repo{ID: 1, Name: "repo"}},
 		"c1",
 		&git.Commit{ID: "c1", Author: gitSignatureWithDate},
 	)

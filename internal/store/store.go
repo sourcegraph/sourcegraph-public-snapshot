@@ -54,10 +54,10 @@ type Store struct {
 	// FetchTar returns an io.ReadCloser to a tar archive of a repository at the specified Git
 	// remote URL and commit ID. If the error implements "BadRequest() bool", it will be used to
 	// determine if the error is a bad request (eg invalid repo).
-	FetchTar func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error)
+	FetchTar func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error)
 
 	// FilterTar returns a FilterFunc that filters out files we don't want to write to disk
-	FilterTar func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (FilterFunc, error)
+	FilterTar func(ctx context.Context, repo api.RepoName, commit api.CommitID) (FilterFunc, error)
 
 	// Path is the directory to store the cache
 	Path string
@@ -107,7 +107,7 @@ func (s *Store) Start() {
 
 // PrepareZip returns the path to a local zip archive of repo at commit.
 // It will first consult the local cache, otherwise will fetch from the network.
-func (s *Store) PrepareZip(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (path string, err error) {
+func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.CommitID) (path string, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Store.prepareZip")
 	ext.Component.Set(span, "store")
 	defer func() {
@@ -124,13 +124,13 @@ func (s *Store) PrepareZip(ctx context.Context, repo gitserver.Repo, commit api.
 	// We already validate commit is absolute in ServeHTTP, but since we
 	// rely on it for caching we check again.
 	if len(commit) != 40 {
-		return "", errors.Errorf("commit must be resolved (repo=%q, commit=%q)", repo.Name, commit)
+		return "", errors.Errorf("commit must be resolved (repo=%q, commit=%q)", repo, commit)
 	}
 
 	largeFilePatterns := conf.Get().SearchLargeFiles
 
 	// key is a sha256 hash since we want to use it for the disk name
-	h := sha256.Sum256([]byte(fmt.Sprintf("%q %q %q", repo.Name, commit, largeFilePatterns)))
+	h := sha256.Sum256([]byte(fmt.Sprintf("%q %q %q", repo, commit, largeFilePatterns)))
 	key := hex.EncodeToString(h[:])
 	span.LogKV("key", key)
 
@@ -157,7 +157,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo gitserver.Repo, commit api.
 			}
 		}
 		if err != nil {
-			log15.Error("failed to fetch archive", "repo", repo.Name, "commit", commit, "duration", time.Since(start), "error", err)
+			log15.Error("failed to fetch archive", "repo", repo, "commit", commit, "duration", time.Since(start), "error", err)
 		}
 		resC <- result{path, err}
 	}()
@@ -177,7 +177,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo gitserver.Repo, commit api.
 // fetch fetches an archive from the network and stores it on disk. It does
 // not populate the in-memory cache. You should probably be calling
 // prepareZip.
-func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, largeFilePatterns []string) (rc io.ReadCloser, err error) {
+func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitID, largeFilePatterns []string) (rc io.ReadCloser, err error) {
 	fetchQueueSize.Inc()
 	ctx, releaseFetchLimiter, err := s.fetchLimiter.Acquire(ctx) // Acquire concurrent fetches semaphore
 	if err != nil {
@@ -192,8 +192,7 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 	fetching.Inc()
 	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch")
 	ext.Component.Set(span, "store")
-	span.SetTag("repo", repo.Name)
-	span.SetTag("repoURL", repo.URL)
+	span.SetTag("repo", repo)
 	span.SetTag("commit", commit)
 
 	// Done is called when the returned reader is closed, or if this function

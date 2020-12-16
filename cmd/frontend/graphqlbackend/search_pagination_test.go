@@ -5,11 +5,11 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sort"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-cmp/cmp"
-	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -41,7 +41,9 @@ func TestSearchPagination_unmarshalSearchCursor(t *testing.T) {
 
 func TestSearchPagination_sliceSearchResults(t *testing.T) {
 	repo := func(name string) *types.Repo {
-		return &types.Repo{Name: api.RepoName(name)}
+		// Backcompat extract ID from name.
+		id := name[len(name)-1] - '0'
+		return &types.Repo{ID: api.RepoID(id), Name: api.RepoName(name)}
 	}
 	result := mkFileMatch
 	format := func(r slicedSearchResults) string {
@@ -49,11 +51,16 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 		fmt.Fprintln(&b, "results:")
 		for i, result := range r.results {
 			fm, _ := result.ToFileMatch()
-			fmt.Fprintf(&b, "	[%d] %s %s\n", i, fm.Repo.repo.Name, fm.JPath)
+			fmt.Fprintf(&b, "	[%d] %s %s\n", i, fm.Repo.innerRepo.Name, fm.JPath)
 		}
 		fmt.Fprintln(&b, "common.repos:")
-		for i, r := range r.common.repos {
-			fmt.Fprintf(&b, "	[%d] %s\n", i, r.Name)
+		var repos []string
+		for _, r := range r.common.repos {
+			repos = append(repos, string(r.Name))
+		}
+		sort.Strings(repos)
+		for _, r := range repos {
+			fmt.Fprintf(&b, "	%s\n", r)
 		}
 		fmt.Fprintf(&b, "common.resultCount: %v\n", r.common.resultCount)
 		fmt.Fprintf(&b, "resultOffset: %d\n", r.resultOffset)
@@ -80,7 +87,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 		// Note: this is an intentionally unordered list to ensure we do not
 		// rely on the order of lists in common (which is not guaranteed by
 		// tests).
-		repos: []*types.Repo{repo("org/repo1"), repo("org/repo3"), repo("org/repo2")},
+		repos: reposMap(repo("org/repo1"), repo("org/repo3"), repo("org/repo2")),
 	}
 	tests := []struct {
 		name          string
@@ -100,7 +107,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				common: &searchResultsCommon{
 					resultCount: 0,
 					repos:       nil,
-					partial:     make(map[api.RepoName]struct{}),
+					partial:     make(map[api.RepoID]struct{}),
 				},
 				resultOffset: 0,
 				limitHit:     false,
@@ -120,8 +127,8 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				},
 				common: &searchResultsCommon{
 					resultCount: 3,
-					repos:       []*types.Repo{repo("org/repo1")},
-					partial:     make(map[api.RepoName]struct{}),
+					repos:       reposMap(repo("org/repo1")),
+					partial:     make(map[api.RepoID]struct{}),
 				},
 				resultOffset: 0,
 				limitHit:     true,
@@ -140,8 +147,8 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				},
 				common: &searchResultsCommon{
 					resultCount: 2,
-					repos:       []*types.Repo{repo("org/repo1")},
-					partial:     make(map[api.RepoName]struct{}),
+					repos:       reposMap(repo("org/repo1")),
+					partial:     make(map[api.RepoID]struct{}),
 				},
 				resultOffset: 2,
 				limitHit:     true,
@@ -161,8 +168,8 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				},
 				common: &searchResultsCommon{
 					resultCount: 3,
-					repos:       []*types.Repo{repo("org/repo2"), repo("org/repo3")},
-					partial:     make(map[api.RepoName]struct{}),
+					repos:       reposMap(repo("org/repo2"), repo("org/repo3")),
+					partial:     make(map[api.RepoID]struct{}),
 				},
 				resultOffset: 0,
 				limitHit:     true,
@@ -182,8 +189,8 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				},
 				common: &searchResultsCommon{
 					resultCount: 3,
-					repos:       []*types.Repo{repo("org/repo1"), repo("org/repo2")},
-					partial:     make(map[api.RepoName]struct{}),
+					repos:       reposMap(repo("org/repo1"), repo("org/repo2")),
+					partial:     make(map[api.RepoID]struct{}),
 				},
 				resultOffset: 0,
 				limitHit:     true,
@@ -200,7 +207,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				result(repo("org/repo2"), "c.go"),
 			},
 			common: &searchResultsCommon{
-				repos:       []*types.Repo{repo("org/repo1"), repo("org/repo2")},
+				repos:       reposMap(repo("org/repo1"), repo("org/repo2")),
 				resultCount: 3,
 			},
 			offset: 3,
@@ -213,8 +220,8 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				},
 				common: &searchResultsCommon{
 					resultCount: 3,
-					repos:       []*types.Repo{repo("org/repo2")},
-					partial:     make(map[api.RepoName]struct{}),
+					repos:       reposMap(repo("org/repo2")),
+					partial:     make(map[api.RepoID]struct{}),
 				},
 				resultOffset: 0,
 				limitHit:     false,
@@ -232,8 +239,8 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				},
 				common: &searchResultsCommon{
 					resultCount: 1,
-					repos:       []*types.Repo{repo("org/repo1")},
-					partial:     make(map[api.RepoName]struct{}),
+					repos:       reposMap(repo("org/repo1")),
+					partial:     make(map[api.RepoID]struct{}),
 				},
 				resultOffset: 2,
 				limitHit:     true,
@@ -243,19 +250,8 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got := sliceSearchResults(test.results, test.common, test.offset, test.limit)
-			if !reflect.DeepEqual(got, test.want) {
-				t.Logf("got != want")
-				gotFormatted := format(got)
-				wantFormatted := format(test.want)
-				t.Logf("got:\n%s\n", gotFormatted)
-				t.Logf("want:\n%s\n", wantFormatted)
-				dmp := diffmatchpatch.New()
-				t.Error("diff(got, want):\n", dmp.DiffPrettyText(dmp.DiffMain(wantFormatted, gotFormatted, true)))
-
-				if wantFormatted == gotFormatted {
-					dmp = diffmatchpatch.New()
-					t.Error("diff(got, want):\n", dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(test.want), spew.Sdump(got), true)))
-				}
+			if diff := cmp.Diff(format(test.want), format(got)); diff != "" {
+				t.Errorf("mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
@@ -269,7 +265,9 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		return revs
 	}
 	repo := func(name string) *types.Repo {
-		return &types.Repo{Name: api.RepoName(name)}
+		// Backcompat extract ID from name.
+		id := name[len(name)-1] - '0'
+		return &types.Repo{ID: api.RepoID(id), Name: api.RepoName(name)}
 	}
 	result := func(repo *types.Repo, path, rev string) *FileMatchResolver {
 		fm := mkFileMatch(repo, path)
@@ -292,7 +290,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 	var searchedBatches [][]*search.RepositoryRevisions
 	resultsExecutor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *searchResultsCommon, err error) {
 		searchedBatches = append(searchedBatches, batch)
-		common = &searchResultsCommon{}
+		common = &searchResultsCommon{repos: reposMap()}
 		for _, repoRev := range batch {
 			for _, rev := range repoRev.Revs {
 				rev := rev.RevSpec
@@ -300,7 +298,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 					results = append(results, result(repoRev.Repo, fmt.Sprintf("some/file%d.go", i), rev))
 				}
 			}
-			common.repos = append(common.repos, repoRev.Repo)
+			common.repos[repoRev.Repo.ID] = repoRev.Repo
 		}
 		return
 	}
@@ -347,8 +345,8 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				result(repo("3"), "some/file0.go", "feature"),
 			},
 			wantCommon: &searchResultsCommon{
-				repos:       []*types.Repo{repo("1"), repo("2"), repo("3")},
-				partial:     map[api.RepoName]struct{}{},
+				repos:       reposMap(repo("1"), repo("2"), repo("3")),
+				partial:     map[api.RepoID]struct{}{},
 				resultCount: 10,
 			},
 		},
@@ -377,8 +375,8 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				result(repo("5"), "some/file2.go", "master"),
 			},
 			wantCommon: &searchResultsCommon{
-				repos:   []*types.Repo{repo("3"), repo("4"), repo("5")},
-				partial: map[api.RepoName]struct{}{},
+				repos:   reposMap(repo("3"), repo("4"), repo("5")),
+				partial: map[api.RepoID]struct{}{},
 			},
 		},
 		{
@@ -400,8 +398,8 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				result(repo("1"), "some/file0.go", "master"),
 			},
 			wantCommon: &searchResultsCommon{
-				repos:       []*types.Repo{repo("1")},
-				partial:     map[api.RepoName]struct{}{},
+				repos:       reposMap(repo("1")),
+				partial:     map[api.RepoID]struct{}{},
 				resultCount: 1,
 			},
 		},
@@ -424,8 +422,8 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				result(repo("1"), "some/file1.go", "master"),
 			},
 			wantCommon: &searchResultsCommon{
-				repos:       []*types.Repo{repo("1")},
-				partial:     map[api.RepoName]struct{}{},
+				repos:       reposMap(repo("1")),
+				partial:     map[api.RepoID]struct{}{},
 				resultCount: 1,
 			},
 		},
@@ -438,7 +436,8 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 0, Finished: true},
 			wantCommon: &searchResultsCommon{
-				partial: map[api.RepoName]struct{}{},
+				repos:   reposMap(),
+				partial: map[api.RepoID]struct{}{},
 			},
 		},
 	}
@@ -464,8 +463,8 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 			if !cmp.Equal(test.wantResults, results) {
 				t.Error("wantResults != results", cmp.Diff(test.wantResults, results))
 			}
-			if !cmp.Equal(test.wantCommon, common) {
-				t.Error("wantCommon != common", cmp.Diff(test.wantCommon, common))
+			if diff := cmp.Diff(test.wantCommon, common, cmpopts.EquateEmpty()); diff != "" {
+				t.Error("wantCommon != common", diff)
 			}
 			if !cmp.Equal(test.wantErr, err) {
 				t.Error("wantErr != err", cmp.Diff(test.wantErr, err))
@@ -485,7 +484,9 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 		return revs
 	}
 	repo := func(name string) *types.Repo {
-		return &types.Repo{Name: api.RepoName(name)}
+		// Backcompat extract ID from name.
+		id := name[len(name)-1] - '0'
+		return &types.Repo{ID: api.RepoID(id), Name: api.RepoName(name)}
 	}
 	result := mkFileMatch
 	repoRevs := func(name string, rev ...string) *search.RepositoryRevisions {
@@ -512,10 +513,10 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 		repoRevs("2", "master"),
 	}
 	executor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *searchResultsCommon, err error) {
-		common = &searchResultsCommon{}
+		common = &searchResultsCommon{repos: reposMap()}
 		for _, repoRev := range batch {
 			results = append(results, repoResults[string(repoRev.Repo.Name)]...)
-			common.repos = append(common.repos, repoRev.Repo)
+			common.repos[repoRev.Repo.ID] = repoRev.Repo
 		}
 		return
 	}
@@ -601,7 +602,9 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 		return revs
 	}
 	repo := func(name string) *types.Repo {
-		return &types.Repo{Name: api.RepoName(name)}
+		// Backcompat extract ID from name.
+		id := name[len(name)-1] - 'a' + 1
+		return &types.Repo{ID: api.RepoID(id), Name: api.RepoName(name)}
 	}
 	result := mkFileMatch
 	repoRevs := func(name string, rev ...string) *search.RepositoryRevisions {
@@ -637,11 +640,11 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 		repoRevs("f", "master"),
 	}
 	executor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *searchResultsCommon, err error) {
-		common = &searchResultsCommon{}
+		common = &searchResultsCommon{repos: reposMap()}
 		for _, repoRev := range batch {
 			if res, ok := repoResults[string(repoRev.Repo.Name)]; ok {
 				results = append(results, res...)
-				common.repos = append(common.repos, repoRev.Repo)
+				common.repos[repoRev.Repo.ID] = repoRev.Repo
 			}
 			if missing, ok := repoMissing[string(repoRev.Repo.Name)]; ok {
 				common.missing = append(common.missing, missing)
@@ -674,8 +677,8 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 				result(repo("a"), "a.go"),
 			},
 			wantCommon: &searchResultsCommon{
-				partial:     map[api.RepoName]struct{}{},
-				repos:       []*types.Repo{repo("a")},
+				partial:     map[api.RepoID]struct{}{},
+				repos:       reposMap(repo("a")),
 				resultCount: 1,
 			},
 		},
@@ -690,8 +693,8 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 				result(repo("c"), "a.go"),
 			},
 			wantCommon: &searchResultsCommon{
-				partial: map[api.RepoName]struct{}{},
-				repos:   []*types.Repo{repo("c")},
+				partial: map[api.RepoID]struct{}{},
+				repos:   reposMap(repo("b"), repo("c")),
 				missing: []*types.Repo{repo("b")},
 			},
 		},
@@ -707,8 +710,8 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 				result(repo("c"), "a.go"),
 			},
 			wantCommon: &searchResultsCommon{
-				partial: map[api.RepoName]struct{}{},
-				repos:   []*types.Repo{repo("a"), repo("c")},
+				partial: map[api.RepoID]struct{}{},
+				repos:   reposMap(repo("a"), repo("b"), repo("c")),
 				missing: []*types.Repo{repo("b")},
 			},
 		},
@@ -725,8 +728,8 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 				result(repo("f"), "a.go"),
 			},
 			wantCommon: &searchResultsCommon{
-				partial: map[api.RepoName]struct{}{},
-				repos:   []*types.Repo{repo("a"), repo("c"), repo("f")},
+				partial: map[api.RepoID]struct{}{},
+				repos:   reposMap(repo("a"), repo("b"), repo("c"), repo("d"), repo("e"), repo("f")),
 				cloning: []*types.Repo{repo("d")},
 				missing: []*types.Repo{repo("b"), repo("e")},
 			},
@@ -757,4 +760,12 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 			}
 		})
 	}
+}
+
+func reposMap(repos ...*types.Repo) map[api.RepoID]*types.Repo {
+	m := make(map[api.RepoID]*types.Repo, len(repos))
+	for _, r := range repos {
+		m[r.ID] = r
+	}
+	return m
 }

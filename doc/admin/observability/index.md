@@ -24,6 +24,8 @@ If you are investigating a specific production issue, consult the [troubleshooti
 
 ## Logs
 
+### Log levels
+
 A Sourcegraph service's log level is configured via the environment variable `SRC_LOG_LEVEL`. The valid values (from most to least verbose) are:
 
 * `dbug`: Debug. Output all logs. Default in cluster deployments.
@@ -32,7 +34,13 @@ A Sourcegraph service's log level is configured via the environment variable `SR
 * `eror`: Error.
 * `crit`: Critical.
 
-If you are having issues with repository syncing, view the output of `repo-updater`'s logs.
+### Log format
+
+A Sourcegraph service's log output format is configured via the environment variable `SRC_LOG_FORMAT`. The valid values are:
+
+* `condensed`: Optimized for human readability.
+* `json`: Machine-readable JSON format.
+* `logfmt`: The [logfmt](https://github.com/kr/logfmt) format.
 
 ## Health checks
 

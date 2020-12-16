@@ -17,7 +17,7 @@ import {
 } from '../../../graphql-operations'
 import { lsifIndexFieldsFragment, lsifUploadFieldsFragment } from '../shared/backend'
 
-interface UploadConnection {
+export interface UploadConnection {
     nodes: LsifUploadFields[]
     totalCount: number | null
     pageInfo: { endCursor: string | null; hasNextPage: boolean }
@@ -63,16 +63,20 @@ export function fetchLsifUploads({
                             first: $first
                             after: $after
                         ) {
-                            nodes {
-                                ...LsifUploadFields
-                            }
-                            totalCount
-                            pageInfo {
-                                endCursor
-                                hasNextPage
-                            }
+                            ...LsifUploadConnectionFields
                         }
                     }
+                }
+            }
+
+            fragment LsifUploadConnectionFields on LSIFUploadConnection {
+                nodes {
+                    ...LsifUploadFields
+                }
+                totalCount
+                pageInfo {
+                    endCursor
+                    hasNextPage
                 }
             }
 
@@ -126,7 +130,7 @@ export function fetchLsifUploads({
     )
 }
 
-interface IndexConnection {
+export interface IndexConnection {
     nodes: LsifIndexFields[]
     totalCount: number | null
     pageInfo: { endCursor: string | null; hasNextPage: boolean }

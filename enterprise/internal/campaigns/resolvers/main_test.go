@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"flag"
 	"fmt"
 	"io"
@@ -13,7 +12,6 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -24,8 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -124,20 +120,7 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 	return timestamp
 }
 
-func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID int32) {
-	t.Helper()
-
-	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)
-
-	err := db.QueryRow(q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return userID
-}
-
-func newGitHubExternalService(t *testing.T, store repos.Store) *types.ExternalService {
+func newGitHubExternalService(t *testing.T, store *db.ExternalServiceStore) *types.ExternalService {
 	t.Helper()
 
 	clock := dbtesting.NewFakeClock(time.Now(), 0)
@@ -146,13 +129,13 @@ func newGitHubExternalService(t *testing.T, store repos.Store) *types.ExternalSe
 	svc := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
-		Config:      `{"url": "https://github.com"}`,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		// The authorization field is needed to enforce permissions
+		Config:    `{"url": "https://github.com", "authorization": {}}`,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 
-	// create a few external services
-	if err := store.UpsertExternalServices(context.Background(), &svc); err != nil {
+	if err := store.Upsert(context.Background(), &svc); err != nil {
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 
@@ -227,7 +210,7 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 	}
 	t.Cleanup(func() { git.Mocks.ExecReader = nil })
 
-	git.Mocks.MergeBase = func(repo gitserver.Repo, a, b api.CommitID) (api.CommitID, error) {
+	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
 		if string(a) != baseRev && string(b) != headRev {
 			t.Fatalf("git.Mocks.MergeBase received unknown commit ids: %s %s", a, b)
 		}
@@ -243,82 +226,6 @@ func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *campaign
 	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatal(err)
 	}
-}
-
-type testSpecOpts struct {
-	user         int32
-	repo         api.RepoID
-	campaignSpec int64
-
-	// If this is non-blank, the changesetSpec will be an import/track spec for
-	// the changeset with the given externalID in the given repo.
-	externalID string
-
-	// If this is set, the changesetSpec will be a "create commit on this
-	// branch" changeset spec.
-	headRef string
-
-	// If this is set along with headRef, the changesetSpec will have published
-	// set.
-	published interface{}
-
-	title         string
-	body          string
-	commitMessage string
-	commitDiff    string
-
-	baseRev string
-	baseRef string
-}
-
-func createChangesetSpec(
-	t *testing.T,
-	ctx context.Context,
-	s *store.Store,
-	opts testSpecOpts,
-) *campaigns.ChangesetSpec {
-	t.Helper()
-
-	published := campaigns.PublishedValue{Val: opts.published}
-	if opts.published == nil {
-		// Set false as the default.
-		published.Val = false
-	}
-	if !published.Valid() {
-		t.Fatalf("invalid value for published passed, got %v (%T)", opts.published, opts.published)
-	}
-
-	spec := &campaigns.ChangesetSpec{
-		UserID:         opts.user,
-		RepoID:         opts.repo,
-		CampaignSpecID: opts.campaignSpec,
-		Spec: &campaigns.ChangesetSpecDescription{
-			BaseRepository: graphqlbackend.MarshalRepositoryID(opts.repo),
-
-			BaseRev: opts.baseRev,
-			BaseRef: opts.baseRef,
-
-			ExternalID: opts.externalID,
-			HeadRef:    opts.headRef,
-			Published:  published,
-
-			Title: opts.title,
-			Body:  opts.body,
-
-			Commits: []campaigns.GitCommitDescription{
-				{
-					Message: opts.commitMessage,
-					Diff:    opts.commitDiff,
-				},
-			},
-		},
-	}
-
-	if err := s.CreateChangesetSpec(ctx, spec); err != nil {
-		t.Fatal(err)
-	}
-
-	return spec
 }
 
 func pruneUserCredentials(t *testing.T) {

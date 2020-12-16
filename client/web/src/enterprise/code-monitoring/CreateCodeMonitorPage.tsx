@@ -58,8 +58,11 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                 <h2 className="flex-grow-1">Create code monitor</h2>
             </div>
             Code monitors watch your code for specific triggers and run actions in response.{' '}
-            <a href="" target="_blank" rel="noopener">
-                {/* TODO: populate link */}
+            <a
+                href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
+                target="_blank"
+                rel="noopener"
+            >
                 Learn more
             </a>
             <CodeMonitorForm {...props} onSubmit={createMonitorRequest} submitButtonLabel="Create code monitor" />

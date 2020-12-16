@@ -166,6 +166,10 @@
 // 1528395765_changeset_rewirer_views.up.sql (1.43kB)
 // 1528395766_drop_old_gitlab_events.down.sql (40B)
 // 1528395766_drop_old_gitlab_events.up.sql (413B)
+// 1528395767_split_nearest_uploads.down.sql (419B)
+// 1528395767_split_nearest_uploads.up.sql (681B)
+// 1528395768_compress_nearest_uploads.down.sql (246B)
+// 1528395768_compress_nearest_uploads.up.sql (228B)
 
 package migrations
 
@@ -3554,6 +3558,86 @@ func _1528395766_drop_old_gitlab_eventsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395767_split_nearest_uploadsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\xd0\xc1\x4a\xc4\x30\x10\x80\xe1\xfb\x3c\xc5\x1c\xf5\x19\x72\xea\xb6\x51\x02\x69\x22\xdd\x14\xf6\x36\x64\x6d\x84\xc1\x90\x94\x24\xae\xf8\xf6\x22\x76\x0f\x42\x11\x7a\x9e\x7f\x3e\x86\x39\xc9\x67\x65\x04\x80\x9b\x66\xd3\x77\x4e\x62\xac\xfc\x46\x29\xf8\x12\x6a\xa3\x8f\x35\x66\xbf\x54\x01\xd0\x69\x27\x27\x74\xdd\x49\xef\x27\xd8\x0d\x03\xf6\x56\xcf\xa3\x41\x9f\x5e\x43\x6d\xb9\xd0\x8d\x2b\x5f\x63\xc0\x6b\xce\x31\xf8\x84\xc6\x3a\x34\xb3\xd6\xe2\x10\x97\x6f\xa1\x7c\x16\x6e\x2d\xa4\x1d\x09\x86\xc9\xbe\x6c\x92\x7a\x42\x79\x51\x67\x77\xde\x35\x29\x72\x7a\xaf\xf7\x0d\x65\x06\x79\xf9\xed\xee\xf3\xed\x5c\xf2\x8d\x1a\xaf\x54\xc2\x9a\x2b\xb7\x5c\xbe\x88\x97\x2d\x22\x5e\x04\xf4\x93\xfc\xf9\xd4\x41\x01\xad\xf9\x2f\x7e\xf8\x13\x3f\x0a\x80\xde\x8e\xa3\x72\x02\xbe\x03\x00\x00\xff\xff\xd8\x64\xe6\xe7\xa3\x01\x00\x00")
+
+func _1528395767_split_nearest_uploadsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395767_split_nearest_uploadsDownSql,
+		"1528395767_split_nearest_uploads.down.sql",
+	)
+}
+
+func _1528395767_split_nearest_uploadsDownSql() (*asset, error) {
+	bytes, err := _1528395767_split_nearest_uploadsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395767_split_nearest_uploads.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xde, 0x6a, 0x14, 0x8f, 0xb2, 0x88, 0x8d, 0x65, 0x90, 0x4a, 0xce, 0xc, 0x8c, 0xe7, 0xa3, 0x68, 0xf8, 0xd7, 0x92, 0xe3, 0xa4, 0x1d, 0xe8, 0x2f, 0x95, 0x1c, 0xa, 0x73, 0x5b, 0x3c, 0x4d, 0x48}}
+	return a, nil
+}
+
+var __1528395767_split_nearest_uploadsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x91\x41\x6e\x83\x30\x10\x45\xf7\x3e\xc5\x2c\x13\x29\x37\xf0\x2a\x21\x6e\x64\x09\x4c\x05\x46\xca\xce\x82\xe0\x4a\xa3\x12\x8c\xec\x69\xaa\xdc\xbe\x82\x84\xa8\xae\x50\xda\x6e\xd8\xf0\xdf\xcc\xfb\xe3\x9d\x38\x48\xc5\x19\xd3\x45\xa5\x92\xad\x16\xd0\x05\x7c\x33\xbd\xad\xbd\x0d\x64\x3e\x86\xce\xd5\x6d\xe0\x8c\x6d\x53\x2d\x0a\xd0\xdb\x5d\xba\x1c\x81\x7d\x91\xbf\x42\x92\xa7\x55\xa6\xa0\xee\x4f\x36\x90\xf3\xe6\x82\x01\x9b\xce\xf2\xff\xe1\xee\x62\xfd\xa7\x47\x22\xdb\x73\xc6\x92\x42\x8c\x5e\x37\x56\xbe\x80\xca\x35\x88\xa3\x2c\x75\xb9\x38\xc9\x74\xd8\xbf\x07\x58\x31\x00\x00\x6f\x07\x17\x90\x9c\xbf\x1a\x6c\x01\x7b\x9a\x68\x55\xa5\xe9\x66\xfa\x7f\x72\xe7\x33\x92\x69\xae\x64\x6b\xb8\x7d\xe3\xc0\xa3\xc9\xaf\xc9\x16\x03\x8d\xe9\x68\x0b\x5b\xf3\xd9\x5f\xaa\xbd\x38\x3e\x31\x36\x91\x6b\xbc\x2f\x57\xcf\xaa\x56\xa5\x54\x07\x68\xc8\x5b\x0b\xab\x68\xca\x26\x2a\xb8\xe6\x8c\x4d\x67\xfe\xa6\x32\x4f\xba\x3f\x94\xa9\xc9\x10\x0e\xb1\xcb\x52\x85\xbf\x70\xf7\xd0\x78\xf9\xb9\xc0\x32\xf6\x53\xfa\xc1\x8d\xc6\x49\x9e\x65\x52\x73\xf6\x15\x00\x00\xff\xff\xf5\xcf\x52\xaf\xa9\x02\x00\x00")
+
+func _1528395767_split_nearest_uploadsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395767_split_nearest_uploadsUpSql,
+		"1528395767_split_nearest_uploads.up.sql",
+	)
+}
+
+func _1528395767_split_nearest_uploadsUpSql() (*asset, error) {
+	bytes, err := _1528395767_split_nearest_uploadsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395767_split_nearest_uploads.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x5b, 0xe3, 0xc8, 0x26, 0xf3, 0x91, 0xfe, 0xc3, 0x36, 0xe5, 0x20, 0xa5, 0xbd, 0xd8, 0xb5, 0x16, 0xf5, 0x94, 0x6e, 0x4c, 0x7a, 0xc3, 0x6c, 0x44, 0xc3, 0xf1, 0xa, 0x62, 0x15, 0x2a, 0xc3, 0x1a}}
+	return a, nil
+}
+
+var __1528395768_compress_nearest_uploadsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\xcc\x4d\x0a\xc3\x20\x10\x40\xe1\xfd\x9c\x62\xee\xe1\xca\xa8\x94\x80\x3f\x45\xc6\xb5\x48\x9d\x16\x21\xd8\x12\xed\xfd\xbb\x2b\x14\x02\x25\xfb\xf7\xbd\xc5\x5c\x56\x2f\x00\x28\x26\xaf\x24\x19\xdc\x46\xbb\xe7\xce\x65\xe7\x31\xf3\xfb\xb5\x3d\x4b\x1d\x02\x40\x5a\x32\x11\x49\x2e\xf6\x38\x41\x1d\xc3\x15\x55\xb0\xc9\x79\xfc\xb2\xbf\x4a\x6a\xfd\x8b\x72\xab\xd8\xfa\xe4\x07\xef\xe8\x03\xa1\x4f\xd6\x9e\xfb\xd4\x36\x66\xe9\x37\x3e\xd8\x80\x0a\xce\xad\x24\xe0\x13\x00\x00\xff\xff\x8b\x5d\xd7\xc3\xf6\x00\x00\x00")
+
+func _1528395768_compress_nearest_uploadsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395768_compress_nearest_uploadsDownSql,
+		"1528395768_compress_nearest_uploads.down.sql",
+	)
+}
+
+func _1528395768_compress_nearest_uploadsDownSql() (*asset, error) {
+	bytes, err := _1528395768_compress_nearest_uploadsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395768_compress_nearest_uploads.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6a, 0x60, 0x1, 0xd8, 0xba, 0xd9, 0x63, 0x21, 0x87, 0xdd, 0xe7, 0xfd, 0xce, 0x83, 0x49, 0xdd, 0x3a, 0x5a, 0xe7, 0x64, 0x6, 0x5c, 0x35, 0x58, 0x7c, 0xbe, 0xdf, 0x77, 0x58, 0x57, 0xcd, 0xd0}}
+	return a, nil
+}
+
+var __1528395768_compress_nearest_uploadsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\xcc\xb1\xaa\x03\x21\x10\x85\xe1\x7e\x9e\x62\xde\xc3\xca\x55\xb9\x2c\xe8\x78\x91\xb1\x16\x13\x0d\x18\x16\x37\x64\x36\xef\x9f\x2a\x45\x20\x10\xd2\x1e\xce\xff\x2d\xee\x6f\x25\x05\xc0\x29\x93\xd1\xec\x70\x93\x71\x29\xb3\xd7\x7b\x97\xa3\x3c\x6e\xdb\x5e\x9b\x28\x00\xed\xd9\x25\x64\xbd\xf8\xcf\x17\xd4\xd6\xa2\x89\x3e\x07\xc2\xd7\x74\x95\x7d\x9e\x90\x22\x23\x65\xef\xd5\x77\xc3\xa6\xf8\xff\x8e\x94\xd1\x7e\xec\xda\x90\xa3\xce\x73\x57\x00\x26\x86\xb0\xb2\x82\x67\x00\x00\x00\xff\xff\x7e\xf4\x7c\x34\xe4\x00\x00\x00")
+
+func _1528395768_compress_nearest_uploadsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395768_compress_nearest_uploadsUpSql,
+		"1528395768_compress_nearest_uploads.up.sql",
+	)
+}
+
+func _1528395768_compress_nearest_uploadsUpSql() (*asset, error) {
+	bytes, err := _1528395768_compress_nearest_uploadsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395768_compress_nearest_uploads.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x51, 0xd4, 0x8b, 0x28, 0xca, 0xa6, 0x9d, 0x8e, 0x92, 0x59, 0xd7, 0x85, 0x4d, 0x8a, 0xc2, 0x49, 0x7c, 0x17, 0x77, 0x7b, 0xb8, 0x4b, 0xed, 0x4, 0xa4, 0xa, 0xff, 0x59, 0x33, 0xae, 0xd5, 0x65}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3811,6 +3895,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395765_changeset_rewirer_views.up.sql":                                              _1528395765_changeset_rewirer_viewsUpSql,
 	"1528395766_drop_old_gitlab_events.down.sql":                                             _1528395766_drop_old_gitlab_eventsDownSql,
 	"1528395766_drop_old_gitlab_events.up.sql":                                               _1528395766_drop_old_gitlab_eventsUpSql,
+	"1528395767_split_nearest_uploads.down.sql":                                              _1528395767_split_nearest_uploadsDownSql,
+	"1528395767_split_nearest_uploads.up.sql":                                                _1528395767_split_nearest_uploadsUpSql,
+	"1528395768_compress_nearest_uploads.down.sql":                                           _1528395768_compress_nearest_uploadsDownSql,
+	"1528395768_compress_nearest_uploads.up.sql":                                             _1528395768_compress_nearest_uploadsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -4023,6 +4111,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395765_changeset_rewirer_views.up.sql":                                              {_1528395765_changeset_rewirer_viewsUpSql, map[string]*bintree{}},
 	"1528395766_drop_old_gitlab_events.down.sql":                                             {_1528395766_drop_old_gitlab_eventsDownSql, map[string]*bintree{}},
 	"1528395766_drop_old_gitlab_events.up.sql":                                               {_1528395766_drop_old_gitlab_eventsUpSql, map[string]*bintree{}},
+	"1528395767_split_nearest_uploads.down.sql":                                              {_1528395767_split_nearest_uploadsDownSql, map[string]*bintree{}},
+	"1528395767_split_nearest_uploads.up.sql":                                                {_1528395767_split_nearest_uploadsUpSql, map[string]*bintree{}},
+	"1528395768_compress_nearest_uploads.down.sql":                                           {_1528395768_compress_nearest_uploadsDownSql, map[string]*bintree{}},
+	"1528395768_compress_nearest_uploads.up.sql":                                             {_1528395768_compress_nearest_uploadsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

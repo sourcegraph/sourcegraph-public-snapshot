@@ -50,7 +50,7 @@ func TestSearchResults(t *testing.T) {
 			// just remove that assumption in the following line of code.
 			switch m := result.(type) {
 			case *RepositoryResolver:
-				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.repo.Name)
+				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.innerRepo.Name)
 			case *FileMatchResolver:
 				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.JPath, m.JLineMatches[0].JLineNumber)
 			default:
@@ -89,7 +89,7 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.Count = mockCount
 
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
-			return nil, &searchResultsCommon{repos: []*types.Repo{{ID: 1, Name: "repo"}}}, nil
+			return nil, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -148,7 +148,7 @@ func TestSearchResults(t *testing.T) {
 			}
 			repo := &types.Repo{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
-			return []*FileMatchResolver{fm}, &searchResultsCommon{repos: []*types.Repo{repo}}, nil
+			return []*FileMatchResolver{fm}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -213,7 +213,7 @@ func TestSearchResults(t *testing.T) {
 			}
 			repo := &types.Repo{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
-			return []*FileMatchResolver{fm}, &searchResultsCommon{repos: []*types.Repo{repo}}, nil
+			return []*FileMatchResolver{fm}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -522,7 +522,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 func TestSearchResolver_DynamicFilters(t *testing.T) {
 	repo := &types.Repo{Name: "testRepo"}
 	repoMatch := &RepositoryResolver{
-		repo: repo,
+		innerRepo: repo,
 	}
 	fileMatch := func(path string) *FileMatchResolver {
 		return mkFileMatch(repo, path)
@@ -1246,125 +1246,123 @@ func TestGetExactFilePatterns(t *testing.T) {
 	}
 }
 
-type mockSearchResultURIGetter struct {
-	repo string
-	file string
-}
-
-func (m mockSearchResultURIGetter) searchResultURIs() (string, string) {
-	return m.repo, m.file
-}
-
 func TestCompareSearchResults(t *testing.T) {
+	makeResult := func(repo, file string) *FileMatchResolver {
+		return &FileMatchResolver{
+			Repo:  &RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName(repo)}},
+			JPath: file,
+		}
+	}
+
 	tests := []struct {
 		name              string
-		a                 searchResultURIGetter
-		b                 searchResultURIGetter
+		a                 *FileMatchResolver
+		b                 *FileMatchResolver
 		exactFilePatterns map[string]struct{}
 		aIsLess           bool
 	}{
 		{
 			name:              "prefer exact match",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
+			a:                 makeResult("arepo", "afile"),
+			b:                 makeResult("arepo", "file"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           false,
 		},
 		{
 			name:              "reverse a and b",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			a:                 makeResult("arepo", "file"),
+			b:                 makeResult("arepo", "afile"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           true,
 		},
 		{
 			name:              "alphabetical order if exactFilePatterns is empty",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
+			a:                 makeResult("arepo", "afile"),
+			b:                 makeResult("arepo", "file"),
 			exactFilePatterns: map[string]struct{}{},
 			aIsLess:           true,
 		},
 		{
 			name:              "alphabetical order if exactFilePatterns is nil",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "bfile"},
+			a:                 makeResult("arepo", "afile"),
+			b:                 makeResult("arepo", "bfile"),
 			exactFilePatterns: nil,
 			aIsLess:           true,
 		},
 		{
 			name:              "same length, different files",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "bfile"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			a:                 makeResult("arepo", "bfile"),
+			b:                 makeResult("arepo", "afile"),
 			exactFilePatterns: nil,
 			aIsLess:           false,
 		},
 		{
 			name:              "exact matches with different length",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "adir1/file"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "dir1/file"},
+			a:                 makeResult("arepo", "adir1/file"),
+			b:                 makeResult("arepo", "dir1/file"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           false,
 		},
 		{
 			name:              "exact matches with same length",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "dir2/file"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "dir1/file"},
+			a:                 makeResult("arepo", "dir2/file"),
+			b:                 makeResult("arepo", "dir1/file"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           false,
 		},
 		{
 			name:              "no match",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "bfile"},
+			a:                 makeResult("arepo", "afile"),
+			b:                 makeResult("arepo", "bfile"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           true,
 		},
 		{
 			name:              "different repo, 1 exact match",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
-			b:                 mockSearchResultURIGetter{repo: "brepo", file: "afile"},
+			a:                 makeResult("arepo", "file"),
+			b:                 makeResult("brepo", "afile"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           true,
 		},
 		{
 			name:              "different repo, no exact patterns",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
-			b:                 mockSearchResultURIGetter{repo: "brepo", file: "afile"},
+			a:                 makeResult("arepo", "file"),
+			b:                 makeResult("brepo", "afile"),
 			exactFilePatterns: nil,
 			aIsLess:           true,
 		},
 		{
 			name:              "different repo, 2 exact matches",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
-			b:                 mockSearchResultURIGetter{repo: "brepo", file: "file"},
+			a:                 makeResult("arepo", "file"),
+			b:                 makeResult("brepo", "file"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           true,
 		},
 		{
 			name:              "repo matches only",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: ""},
-			b:                 mockSearchResultURIGetter{repo: "brepo", file: ""},
+			a:                 makeResult("arepo", ""),
+			b:                 makeResult("brepo", ""),
 			exactFilePatterns: nil,
 			aIsLess:           true,
 		},
 		{
 			name:              "repo match and file match, same repo",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: ""},
+			a:                 makeResult("arepo", "file"),
+			b:                 makeResult("arepo", ""),
 			exactFilePatterns: nil,
 			aIsLess:           false,
 		},
 		{
 			name:              "repo match and file match, different repos",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: ""},
-			b:                 mockSearchResultURIGetter{repo: "brepo", file: "file"},
+			a:                 makeResult("arepo", ""),
+			b:                 makeResult("brepo", "file"),
 			exactFilePatterns: nil,
 			aIsLess:           true,
 		},
 		{
 			name:              "prefer repo matches",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: ""},
-			b:                 mockSearchResultURIGetter{repo: "brepo", file: "file"},
+			a:                 makeResult("arepo", ""),
+			b:                 makeResult("brepo", "file"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           true,
 		},

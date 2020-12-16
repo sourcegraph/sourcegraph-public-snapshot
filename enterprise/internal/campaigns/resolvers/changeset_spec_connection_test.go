@@ -2,11 +2,11 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -28,7 +27,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "changeset-spec-connection-resolver", false)
+	userID := ct.CreateTestUser(t, false).ID
 
 	cstore := store.New(dbconn.Global)
 
@@ -40,13 +39,13 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	repoStore := db.NewRepoStoreWith(cstore)
+	esStore := db.NewExternalServicesStoreWith(cstore)
 
 	rs := make([]*types.Repo, 0, 3)
 	for i := 0; i < cap(rs); i++ {
-		name := fmt.Sprintf("github.com/sourcegraph/repo-%d", i)
-		r := newGitHubTestRepo(name, newGitHubExternalService(t, rstore))
+		name := fmt.Sprintf("github.com/sourcegraph/test-changeset-spec-connection-repo-%d", i)
+		r := newGitHubTestRepo(name, newGitHubExternalService(t, esStore))
 		if err := repoStore.Create(ctx, r); err != nil {
 			t.Fatal(err)
 		}
@@ -71,7 +70,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 		changesetSpecs = append(changesetSpecs, s)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

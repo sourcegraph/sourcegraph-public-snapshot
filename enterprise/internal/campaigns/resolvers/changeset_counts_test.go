@@ -2,18 +2,19 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"os"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -30,7 +31,7 @@ import (
 )
 
 func TestChangesetCountsOverTimeResolver(t *testing.T) {
-	counts := &ee.ChangesetCounts{
+	counts := &state.ChangesetCounts{
 		Time:                 time.Now(),
 		Total:                10,
 		Merged:               9,
@@ -76,10 +77,10 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "test-changeset-counts-over-time")
 	defer save()
 
-	userID := insertTestUser(t, dbconn.Global, "changeset-counts-over-time", false)
+	userID := ct.CreateTestUser(t, false).ID
 
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	repoStore := db.NewRepoStoreWithDB(dbconn.Global)
+	esStore := db.NewExternalServicesStoreWithDB(dbconn.Global)
 
 	githubExtSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
@@ -91,7 +92,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}),
 	}
 
-	err := rstore.UpsertExternalServices(ctx, githubExtSvc)
+	err := esStore.Upsert(ctx, githubExtSvc)
 	if err != nil {
 		t.Fatal(t)
 	}
@@ -164,12 +165,12 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := ee.SyncChangeset(ctx, rstore, cstore, githubSrc, githubRepo, c); err != nil {
+		if err := syncer.SyncChangeset(ctx, cstore, githubSrc, githubRepo, c); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

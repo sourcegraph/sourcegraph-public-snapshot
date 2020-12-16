@@ -19,6 +19,8 @@ import {
     MonitorEditActionInput,
     MonitorEditInput,
     MonitorEditTriggerInput,
+    ResetTriggerQueryTimestampsResult,
+    ResetTriggerQueryTimestampsVariables,
     Scalars,
     ToggleCodeMonitorEnabledResult,
     ToggleCodeMonitorEnabledVariables,
@@ -242,6 +244,26 @@ export const deleteCodeMonitor = (id: Scalars['ID']): Observable<void> => {
         map(data => {
             if (!data.deleteCodeMonitor) {
                 throw createInvalidGraphQLMutationResponseError('DeleteCodeMonitor')
+            }
+        })
+    )
+}
+
+export const sendTestEmail = (id: Scalars['ID']): Observable<void> => {
+    const query = gql`
+        mutation ResetTriggerQueryTimestamps($id: ID!) {
+            resetTriggerQueryTimestamps(id: $id) {
+                alwaysNil
+            }
+        }
+    `
+
+    return requestGraphQL<ResetTriggerQueryTimestampsResult, ResetTriggerQueryTimestampsVariables>(query, { id }).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.resetTriggerQueryTimestamps) {
+                console.log('DATA', data)
+                throw createInvalidGraphQLMutationResponseError('ResetTriggerQueryTimestamps')
             }
         })
     )

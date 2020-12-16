@@ -2,11 +2,11 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -29,10 +28,10 @@ func TestChangesetSpecResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	userID := insertTestUser(t, dbconn.Global, "changeset-spec-by-id", false)
+	userID := ct.CreateTestUser(t, false).ID
 
 	cstore := store.New(dbconn.Global)
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	esStore := db.NewExternalServicesStoreWith(cstore)
 
 	// Creating user with matching email to the changeset spec author.
 	user, err := db.Users.Create(ctx, db.NewUser{
@@ -45,9 +44,8 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", newGitHubExternalService(t, reposStore))
 	repoStore := db.NewRepoStoreWith(cstore)
-
+	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-spec-resolver-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +63,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,9 +78,8 @@ func TestChangesetSpecResolver(t *testing.T) {
 			rawSpec: ct.NewRawChangesetSpecGitBranch(repoID, string(testRev)),
 			want: func(spec *campaigns.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
-					Typename:   "VisibleChangesetSpec",
-					ID:         string(marshalChangesetSpecRandID(spec.RandID)),
-					Operations: []campaigns.ReconcilerOperation{},
+					Typename: "VisibleChangesetSpec",
+					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
 					Description: apitest.ChangesetSpecDescription{
 						Typename: "GitBranchChangesetDescription",
 						BaseRepository: apitest.Repository{
@@ -136,9 +133,8 @@ func TestChangesetSpecResolver(t *testing.T) {
 			rawSpec: ct.NewPublishedRawChangesetSpecGitBranch(repoID, string(testRev), campaigns.PublishedValue{Val: "draft"}),
 			want: func(spec *campaigns.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
-					Typename:   "VisibleChangesetSpec",
-					ID:         string(marshalChangesetSpecRandID(spec.RandID)),
-					Operations: []campaigns.ReconcilerOperation{campaigns.ReconcilerOperationPush, campaigns.ReconcilerOperationPublishDraft},
+					Typename: "VisibleChangesetSpec",
+					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
 					Description: apitest.ChangesetSpecDescription{
 						Typename: "GitBranchChangesetDescription",
 						BaseRepository: apitest.Repository{
@@ -192,9 +188,8 @@ func TestChangesetSpecResolver(t *testing.T) {
 			rawSpec: ct.NewRawChangesetSpecExisting(repoID, "9999"),
 			want: func(spec *campaigns.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
-					Typename:   "VisibleChangesetSpec",
-					ID:         string(marshalChangesetSpecRandID(spec.RandID)),
-					Operations: []campaigns.ReconcilerOperation{campaigns.ReconcilerOperationImport},
+					Typename: "VisibleChangesetSpec",
+					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
 					Description: apitest.ChangesetSpecDescription{
 						Typename: "ExistingChangesetReference",
 						BaseRepository: apitest.Repository{
@@ -241,20 +236,6 @@ query($id: ID!) {
 
     ... on VisibleChangesetSpec {
       id
-
-      operations
-      changeset { id }
-      delta {
-          titleChanged
-          bodyChanged
-          undraft
-          baseRefChanged
-          diffChanged
-          commitMessageChanged
-          authorNameChanged
-          authorEmailChanged
-      }
-
       description {
         __typename
 

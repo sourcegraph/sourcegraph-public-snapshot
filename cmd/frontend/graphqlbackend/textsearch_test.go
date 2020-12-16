@@ -29,7 +29,7 @@ import (
 )
 
 func TestSearchFilesInRepos(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -116,7 +116,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 }
 
 func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo":
@@ -154,7 +154,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 	repos, _ := getRepos(context.Background(), args.RepoPromise)
-	repos[0].ListRefs = func(context.Context, gitserver.Repo) ([]git.Ref, error) {
+	repos[0].ListRefs = func(context.Context, api.RepoName) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
 	results, _, err := searchFilesInRepos(context.Background(), args)
@@ -180,8 +180,8 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 }
 
 func TestRepoShouldBeSearched(t *testing.T) {
-	searcher.MockSearch = func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*protocol.FileMatch, limitHit bool, err error) {
-		repoName := repo.Name
+	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*protocol.FileMatch, limitHit bool, err error) {
+		repoName := repo
 		switch repoName {
 		case "foo/one":
 			return []*protocol.FileMatch{{Path: "main.go"}}, false, nil
@@ -198,7 +198,7 @@ func TestRepoShouldBeSearched(t *testing.T) {
 		FilePatternsReposMustInclude: []string{"main"},
 	}
 
-	shouldBeSearched, err := repoShouldBeSearched(context.Background(), nil, info, gitserver.Repo{Name: "foo/one", URL: "http://example.com/foo/one"}, "1a2b3c", time.Minute)
+	shouldBeSearched, err := repoShouldBeSearched(context.Background(), nil, info, "foo/one", "1a2b3c", time.Minute)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -206,7 +206,7 @@ func TestRepoShouldBeSearched(t *testing.T) {
 		t.Errorf("expected repo to be searched, got shouldn't be searched")
 	}
 
-	shouldBeSearched, err = repoShouldBeSearched(context.Background(), nil, info, gitserver.Repo{Name: "foo/no-filematch", URL: "http://example.com/foo/no-filematch"}, "1a2b3c", time.Minute)
+	shouldBeSearched, err = repoShouldBeSearched(context.Background(), nil, info, "foo/no-filematch", "1a2b3c", time.Minute)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -223,7 +223,7 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 			// treat empty list as preferring master
 			revs = []search.RevisionSpecifier{{RevSpec: ""}}
 		}
-		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{Name: api.RepoName(repoName)}, Revs: revs}
+		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoName)[0], Revs: revs}
 	}
 	return r
 }
@@ -233,6 +233,12 @@ func mkRepos(names ...string) []*types.Repo {
 	for _, name := range names {
 		sum := md5.Sum([]byte(name))
 		id := api.RepoID(binary.BigEndian.Uint64(sum[:]))
+		if id < 0 {
+			id = -(id / 2)
+		}
+		if id == 0 {
+			id++
+		}
 		repos = append(repos, &types.Repo{ID: id, Name: api.RepoName(name)})
 	}
 	return repos

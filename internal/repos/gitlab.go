@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"fmt"
+
 	"net/url"
 	"strconv"
 	"strings"
@@ -11,6 +12,10 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -48,6 +53,11 @@ func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSo
 	}
 	return newGitLabSource(svc, &c, cf)
 }
+
+var gitlabRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	Name: "src_gitlab_rate_limit_remaining",
+	Help: "Number of calls to GitLab's API remaining before hitting the rate limit.",
+}, []string{"resource", "name"})
 
 func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
 	baseURL, err := url.Parse(c.Url)
@@ -88,6 +98,14 @@ func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf 
 
 	provider := gitlab.NewClientProvider(baseURL, cli)
 
+	client := provider.GetPATClient(c.Token, "")
+
+	if !envvar.SourcegraphDotComMode() || c.CloudGlobal {
+		client.RateLimitMonitor().SetCollector(func(remaining float64) {
+			gitlabRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(remaining)
+		})
+	}
+
 	return &GitLabSource{
 		svc:                 svc,
 		config:              c,
@@ -95,7 +113,7 @@ func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf 
 		baseURL:             baseURL,
 		nameTransformations: nts,
 		provider:            provider,
-		client:              provider.GetPATClient(c.Token, ""),
+		client:              client,
 	}, nil
 }
 

@@ -1,8 +1,7 @@
 package definitions
 
 import (
-	"time"
-
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -21,7 +20,7 @@ func SyntectServer() *monitoring.Container {
 							Description:       "syntax highlighting errors every 5m",
 							Query:             `sum(increase(src_syntax_highlighting_requests{status="error"}[5m])) / sum(increase(src_syntax_highlighting_requests[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           monitoring.Alert().GreaterOrEqual(5).For(5 * time.Minute),
+							NoAlert:           true,
 							PanelOptions:      monitoring.PanelOptions().LegendFormat("error").Unit(monitoring.Percentage),
 							Owner:             monitoring.ObservableOwnerCloud,
 							PossibleSolutions: "none",
@@ -31,7 +30,7 @@ func SyntectServer() *monitoring.Container {
 							Description:       "syntax highlighting timeouts every 5m",
 							Query:             `sum(increase(src_syntax_highlighting_requests{status="timeout"}[5m])) / sum(increase(src_syntax_highlighting_requests[5m])) * 100`,
 							DataMayNotExist:   true,
-							Warning:           monitoring.Alert().GreaterOrEqual(5).For(5 * time.Minute),
+							NoAlert:           true,
 							PanelOptions:      monitoring.PanelOptions().LegendFormat("timeout").Unit(monitoring.Percentage),
 							Owner:             monitoring.ObservableOwnerCloud,
 							PossibleSolutions: "none",
@@ -43,7 +42,7 @@ func SyntectServer() *monitoring.Container {
 							Description:       "syntax highlighting panics every 5m",
 							Query:             `sum(increase(src_syntax_highlighting_requests{status="panic"}[5m]))`,
 							DataMayNotExist:   true,
-							Warning:           monitoring.Alert().GreaterOrEqual(5),
+							NoAlert:           true,
 							PanelOptions:      monitoring.PanelOptions().LegendFormat("panic"),
 							Owner:             monitoring.ObservableOwnerCloud,
 							PossibleSolutions: "none",
@@ -53,7 +52,7 @@ func SyntectServer() *monitoring.Container {
 							Description:       "syntax highlighter worker deaths every 5m",
 							Query:             `sum(increase(src_syntax_highlighting_requests{status="hss_worker_timeout"}[5m]))`,
 							DataMayNotExist:   true,
-							Warning:           monitoring.Alert().GreaterOrEqual(1),
+							NoAlert:           true,
 							PanelOptions:      monitoring.PanelOptions().LegendFormat("worker death"),
 							Owner:             monitoring.ObservableOwnerCloud,
 							PossibleSolutions: "none",
@@ -66,12 +65,12 @@ func SyntectServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedContainerCPUUsage("syntect-server", monitoring.ObservableOwnerCloud),
-						sharedContainerMemoryUsage("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ContainerCPUUsage("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ContainerMemoryUsage("syntect-server", monitoring.ObservableOwnerCloud),
 					},
 					{
-						sharedContainerRestarts("syntect-server", monitoring.ObservableOwnerCloud),
-						sharedContainerFsInodes("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ContainerRestarts("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ContainerFsInodes("syntect-server", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -80,12 +79,12 @@ func SyntectServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("syntect-server", monitoring.ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageLongTerm("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageLongTerm("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningMemoryUsageLongTerm("syntect-server", monitoring.ObservableOwnerCloud),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("syntect-server", monitoring.ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageShortTerm("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageShortTerm("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningMemoryUsageShortTerm("syntect-server", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -94,7 +93,7 @@ func SyntectServer() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedKubernetesPodsAvailable("syntect-server", monitoring.ObservableOwnerCloud),
+						shared.KubernetesPodsAvailable("syntect-server", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},

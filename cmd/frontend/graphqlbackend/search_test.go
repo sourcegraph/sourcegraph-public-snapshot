@@ -244,7 +244,7 @@ func testStringResult(result *searchSuggestionResolver) string {
 	var name string
 	switch r := result.result.(type) {
 	case *RepositoryResolver:
-		name = "repo:" + string(r.repo.Name)
+		name = "repo:" + r.Name()
 	case *GitTreeEntryResolver:
 		name = "file:" + r.Path()
 	case *languageResolver:
@@ -775,7 +775,7 @@ func mkFileMatch(repo *types.Repo, path string, lineNumbers ...int32) *FileMatch
 		uri:          fileMatchURI(repo.Name, "", path),
 		JPath:        path,
 		JLineMatches: lines,
-		Repo:         &RepositoryResolver{repo: repo},
+		Repo:         &RepositoryResolver{innerRepo: repo},
 	}
 }
 

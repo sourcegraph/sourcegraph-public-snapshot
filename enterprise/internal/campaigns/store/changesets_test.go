@@ -11,21 +11,20 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock ct.Clock) {
+func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
@@ -44,23 +43,24 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		HeadRefName:  "campaigns/test",
 	}
 
-	repo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
-	otherRepo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
-	gitlabRepo := ct.TestRepo(t, reposStore, extsvc.KindGitLab)
+	rs := db.NewRepoStoreWith(s)
+	es := db.NewExternalServicesStoreWith(s)
 
-	rs := db.NewRepoStoreWith(reposStore.(*repos.DBStore))
+	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
+	otherRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
+	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)
 
 	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
 	deletedRepo := otherRepo.With(types.Opt.RepoDeletedAt(clock.Now()))
-	if err := reposStore.DeleteRepos(ctx, deletedRepo.ID); err != nil {
+	if err := rs.Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
 
-	changesets := make(cmpgn.Changesets, 0, 3)
+	changesets := make(campaigns.Changesets, 0, 3)
 
-	deletedRepoChangeset := &cmpgn.Changeset{
+	deletedRepoChangeset := &campaigns.Changeset{
 		RepoID:              deletedRepo.ID,
 		ExternalID:          fmt.Sprintf("foobar-%d", cap(changesets)),
 		ExternalServiceType: extsvc.TypeGitHub,
@@ -76,7 +76,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		var i int
 		for i = 0; i < cap(changesets); i++ {
 			failureMessage := fmt.Sprintf("failure-%d", i)
-			th := &cmpgn.Changeset{
+			th := &campaigns.Changeset{
 				RepoID:              repo.ID,
 				CreatedAt:           clock.Now(),
 				UpdatedAt:           clock.Now(),
@@ -86,16 +86,16 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				ExternalServiceType: extsvc.TypeGitHub,
 				ExternalBranch:      fmt.Sprintf("refs/heads/campaigns/test/%d", i),
 				ExternalUpdatedAt:   clock.Now(),
-				ExternalState:       cmpgn.ChangesetExternalStateOpen,
-				ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
-				ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
+				ExternalState:       campaigns.ChangesetExternalStateOpen,
+				ExternalReviewState: campaigns.ChangesetReviewStateApproved,
+				ExternalCheckState:  campaigns.ChangesetCheckStatePassed,
 
 				CurrentSpecID:     int64(i) + 1,
 				PreviousSpecID:    int64(i) + 1,
 				OwnedByCampaignID: int64(i) + 1,
-				PublicationState:  cmpgn.ChangesetPublicationStatePublished,
+				PublicationState:  campaigns.ChangesetPublicationStatePublished,
 
-				ReconcilerState: cmpgn.ReconcilerStateCompleted,
+				ReconcilerState: campaigns.ReconcilerStateCompleted,
 				FailureMessage:  &failureMessage,
 				NumResets:       18,
 				NumFailures:     25,
@@ -153,7 +153,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	})
 
 	t.Run("Upsert", func(t *testing.T) {
-		changeset := &cmpgn.Changeset{
+		changeset := &campaigns.Changeset{
 			RepoID:              repo.ID,
 			CreatedAt:           clock.Now(),
 			UpdatedAt:           clock.Now(),
@@ -163,13 +163,13 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			ExternalServiceType: extsvc.TypeGitHub,
 			ExternalBranch:      "refs/heads/campaigns/test",
 			ExternalUpdatedAt:   clock.Now(),
-			ExternalState:       cmpgn.ChangesetExternalStateOpen,
-			ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
-			ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
+			ExternalState:       campaigns.ChangesetExternalStateOpen,
+			ExternalReviewState: campaigns.ChangesetReviewStateApproved,
+			ExternalCheckState:  campaigns.ChangesetCheckStatePassed,
 			PreviousSpecID:      1,
 			OwnedByCampaignID:   1,
-			PublicationState:    cmpgn.ChangesetPublicationStatePublished,
-			ReconcilerState:     cmpgn.ReconcilerStateCompleted,
+			PublicationState:    campaigns.ChangesetPublicationStatePublished,
+			ReconcilerState:     campaigns.ReconcilerStateCompleted,
 			StartedAt:           clock.Now(),
 			FinishedAt:          clock.Now(),
 			ProcessAfter:        clock.Now(),
@@ -215,7 +215,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 
 		// This test ensures that the database representation is lowercase.
 
-		queryRawReconcilerState := func(ch *cmpgn.Changeset) (string, error) {
+		queryRawReconcilerState := func(ch *campaigns.Changeset) (string, error) {
 			q := sqlf.Sprintf("SELECT reconciler_state FROM changesets WHERE id = %s", ch.ID)
 			rawState, ok, err := basestore.ScanFirstString(s.Query(ctx, q))
 			if err != nil || !ok {
@@ -476,7 +476,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				CreatedAt: gitlab.Time{Time: clock.Now()},
 				UpdatedAt: gitlab.Time{Time: clock.Now()},
 			}
-			gitlabChangeset := &cmpgn.Changeset{
+			gitlabChangeset := &campaigns.Changeset{
 				Metadata:            gitlabMR,
 				RepoID:              gitlabRepo.ID,
 				ExternalServiceType: extsvc.TypeGitLab,
@@ -514,16 +514,16 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			}
 		}
 
-		statePublished := cmpgn.ChangesetPublicationStatePublished
-		stateUnpublished := cmpgn.ChangesetPublicationStateUnpublished
-		stateQueued := cmpgn.ReconcilerStateQueued
-		stateCompleted := cmpgn.ReconcilerStateCompleted
-		stateOpen := cmpgn.ChangesetExternalStateOpen
-		stateClosed := cmpgn.ChangesetExternalStateClosed
-		stateApproved := cmpgn.ChangesetReviewStateApproved
-		stateChangesRequested := cmpgn.ChangesetReviewStateChangesRequested
-		statePassed := cmpgn.ChangesetCheckStatePassed
-		stateFailed := cmpgn.ChangesetCheckStateFailed
+		statePublished := campaigns.ChangesetPublicationStatePublished
+		stateUnpublished := campaigns.ChangesetPublicationStateUnpublished
+		stateQueued := campaigns.ReconcilerStateQueued
+		stateCompleted := campaigns.ReconcilerStateCompleted
+		stateOpen := campaigns.ChangesetExternalStateOpen
+		stateClosed := campaigns.ChangesetExternalStateClosed
+		stateApproved := campaigns.ChangesetReviewStateApproved
+		stateChangesRequested := campaigns.ChangesetReviewStateChangesRequested
+		statePassed := campaigns.ChangesetCheckStatePassed
+		stateFailed := campaigns.ChangesetCheckStateFailed
 
 		filterCases := []struct {
 			opts      ListChangesetsOpts
@@ -631,7 +631,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	})
 
 	t.Run("Null changeset external state", func(t *testing.T) {
-		cs := &cmpgn.Changeset{
+		cs := &campaigns.Changeset{
 			RepoID:              repo.ID,
 			Metadata:            githubPR,
 			CampaignIDs:         []int64{1},
@@ -761,8 +761,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	})
 
 	t.Run("Update", func(t *testing.T) {
-		want := make([]*cmpgn.Changeset, 0, len(changesets))
-		have := make([]*cmpgn.Changeset, 0, len(changesets))
+		want := make([]*campaigns.Changeset, 0, len(changesets))
+		have := make([]*campaigns.Changeset, 0, len(changesets))
 
 		clock.Add(1 * time.Second)
 		for _, c := range changesets {
@@ -773,8 +773,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			c.PreviousSpecID = c.PreviousSpecID + 1
 			c.OwnedByCampaignID = c.OwnedByCampaignID + 1
 
-			c.PublicationState = cmpgn.ChangesetPublicationStatePublished
-			c.ReconcilerState = cmpgn.ReconcilerStateErrored
+			c.PublicationState = campaigns.ChangesetPublicationStatePublished
+			c.ReconcilerState = campaigns.ReconcilerStateErrored
 			c.FailureMessage = nil
 			c.StartedAt = clock.Now()
 			c.FinishedAt = clock.Now()
@@ -1108,7 +1108,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	})
 }
 
-func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock ct.Clock) {
+func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
@@ -1148,10 +1148,12 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		IncludesCreatedEdit: false,
 	}
 
-	githubRepo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
-	gitlabRepo := ct.TestRepo(t, reposStore, extsvc.KindGitLab)
+	rs := db.NewRepoStoreWith(s)
+	es := db.NewExternalServicesStoreWith(s)
 
-	rs := db.NewRepoStoreWith(s.Store)
+	githubRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
+	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)
+
 	if err := rs.Create(ctx, githubRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
@@ -1354,7 +1356,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	})
 }
 
-func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock ct.Clock) {
+func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	// This is similar to the setup in testStoreChangesets(), but we need a more
 	// fine grained set of changesets to handle the different scenarios. Namely,
 	// we need to cover:
@@ -1366,9 +1368,9 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	// 4. Negation of all of the above.
 
 	// Let's define some helpers.
-	createChangesetSpec := func(title string) *cmpgn.ChangesetSpec {
-		spec := &cmpgn.ChangesetSpec{
-			Spec: &cmpgn.ChangesetSpecDescription{
+	createChangesetSpec := func(title string) *campaigns.ChangesetSpec {
+		spec := &campaigns.ChangesetSpec{
+			Spec: &campaigns.ChangesetSpecDescription{
 				Title: title,
 			},
 		}
@@ -1383,14 +1385,14 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		repo *types.Repo,
 		externalID string,
 		metadata interface{},
-		spec *cmpgn.ChangesetSpec,
-	) *cmpgn.Changeset {
+		spec *campaigns.ChangesetSpec,
+	) *campaigns.Changeset {
 		var specID int64
 		if spec != nil {
 			specID = spec.ID
 		}
 
-		cs := &cmpgn.Changeset{
+		cs := &campaigns.Changeset{
 			RepoID:              repo.ID,
 			CreatedAt:           clock.Now(),
 			UpdatedAt:           clock.Now(),
@@ -1399,12 +1401,12 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			ExternalServiceType: esType,
 			ExternalBranch:      "refs/heads/campaigns/test",
 			ExternalUpdatedAt:   clock.Now(),
-			ExternalState:       cmpgn.ChangesetExternalStateOpen,
-			ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
-			ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
+			ExternalState:       campaigns.ChangesetExternalStateOpen,
+			ExternalReviewState: campaigns.ChangesetReviewStateApproved,
+			ExternalCheckState:  campaigns.ChangesetCheckStatePassed,
 
 			CurrentSpecID:    specID,
-			PublicationState: cmpgn.ChangesetPublicationStatePublished,
+			PublicationState: campaigns.ChangesetPublicationStatePublished,
 		}
 
 		if err := s.CreateChangeset(ctx, cs); err != nil {
@@ -1413,13 +1415,15 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		return cs
 	}
 
+	rs := db.NewRepoStoreWith(s)
+	es := db.NewExternalServicesStoreWith(s)
+
 	// Set up repositories for each code host type we want to test.
 	var (
-		githubRepo = ct.TestRepo(t, reposStore, extsvc.KindGitHub)
-		bbsRepo    = ct.TestRepo(t, reposStore, extsvc.KindBitbucketServer)
-		gitlabRepo = ct.TestRepo(t, reposStore, extsvc.KindGitLab)
+		githubRepo = ct.TestRepo(t, es, extsvc.KindGitHub)
+		bbsRepo    = ct.TestRepo(t, es, extsvc.KindBitbucketServer)
+		gitlabRepo = ct.TestRepo(t, es, extsvc.KindGitLab)
 	)
-	rs := db.NewRepoStoreWith(reposStore.(*repos.DBStore))
 	if err := rs.Create(ctx, githubRepo, bbsRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
@@ -1514,31 +1518,31 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	// All right, let's run some searches!
 	for name, tc := range map[string]struct {
 		textSearch []ListChangesetsTextSearchExpr
-		want       cmpgn.Changesets
+		want       campaigns.Changesets
 	}{
 		"single changeset based on GitHub metadata title": {
 			textSearch: []ListChangesetsTextSearchExpr{
 				{Term: "on GitHub"},
 			},
-			want: cmpgn.Changesets{githubChangeset},
+			want: campaigns.Changesets{githubChangeset},
 		},
 		"single changeset based on GitLab metadata title": {
 			textSearch: []ListChangesetsTextSearchExpr{
 				{Term: "on GitLab"},
 			},
-			want: cmpgn.Changesets{gitlabChangeset},
+			want: campaigns.Changesets{gitlabChangeset},
 		},
 		"single changeset based on Bitbucket Server metadata title": {
 			textSearch: []ListChangesetsTextSearchExpr{
 				{Term: "on Bitbucket Server"},
 			},
-			want: cmpgn.Changesets{bbsChangeset},
+			want: campaigns.Changesets{bbsChangeset},
 		},
 		"all published changesets based on metadata title": {
 			textSearch: []ListChangesetsTextSearchExpr{
 				{Term: "Fix a bunch of bugs"},
 			},
-			want: cmpgn.Changesets{
+			want: campaigns.Changesets{
 				githubChangeset,
 				gitlabChangeset,
 				bbsChangeset,
@@ -1548,19 +1552,19 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			textSearch: []ListChangesetsTextSearchExpr{
 				{Term: "Do some stuff"},
 			},
-			want: cmpgn.Changesets{importedChangeset},
+			want: campaigns.Changesets{importedChangeset},
 		},
 		"unpublished changeset based on spec title": {
 			textSearch: []ListChangesetsTextSearchExpr{
 				{Term: "Eventually"},
 			},
-			want: cmpgn.Changesets{unpublishedChangeset},
+			want: campaigns.Changesets{unpublishedChangeset},
 		},
 		"negated metadata title": {
 			textSearch: []ListChangesetsTextSearchExpr{
 				{Term: "bunch of bugs", Not: true},
 			},
-			want: cmpgn.Changesets{
+			want: campaigns.Changesets{
 				unpublishedChangeset,
 				importedChangeset,
 			},
@@ -1569,7 +1573,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			textSearch: []ListChangesetsTextSearchExpr{
 				{Term: "Eventually", Not: true},
 			},
-			want: cmpgn.Changesets{
+			want: campaigns.Changesets{
 				githubChangeset,
 				gitlabChangeset,
 				bbsChangeset,
@@ -1580,7 +1584,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			textSearch: []ListChangesetsTextSearchExpr{
 				{Term: string(githubRepo.Name)},
 			},
-			want: cmpgn.Changesets{
+			want: campaigns.Changesets{
 				githubChangeset,
 				unpublishedChangeset,
 				importedChangeset,
@@ -1591,7 +1595,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 				{Term: string(githubRepo.Name)},
 				{Term: "Eventually"},
 			},
-			want: cmpgn.Changesets{
+			want: campaigns.Changesets{
 				unpublishedChangeset,
 			},
 		},
@@ -1600,7 +1604,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 				{Term: "Eventually"},
 				{Term: "fix"},
 			},
-			want: cmpgn.Changesets{
+			want: campaigns.Changesets{
 				unpublishedChangeset,
 			},
 		},
@@ -1608,7 +1612,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			textSearch: []ListChangesetsTextSearchExpr{
 				{Term: string(githubRepo.Name), Not: true},
 			},
-			want: cmpgn.Changesets{
+			want: campaigns.Changesets{
 				gitlabChangeset,
 				bbsChangeset,
 			},
@@ -1618,26 +1622,26 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 				{Term: string(githubRepo.Name), Not: true},
 				{Term: string(gitlabRepo.Name), Not: true},
 			},
-			want: cmpgn.Changesets{bbsChangeset},
+			want: campaigns.Changesets{bbsChangeset},
 		},
 		"no results due to conflicting requirements": {
 			textSearch: []ListChangesetsTextSearchExpr{
 				{Term: string(githubRepo.Name)},
 				{Term: string(gitlabRepo.Name)},
 			},
-			want: cmpgn.Changesets{},
+			want: campaigns.Changesets{},
 		},
 		"no results due to a subset of a word": {
 			textSearch: []ListChangesetsTextSearchExpr{
 				{Term: "unch"},
 			},
-			want: cmpgn.Changesets{},
+			want: campaigns.Changesets{},
 		},
 		"no results due to text that doesn't exist in the search scope": {
 			textSearch: []ListChangesetsTextSearchExpr{
 				{Term: "she dreamt she was a bulldozer, she dreamt she was in an empty field"},
 			},
-			want: cmpgn.Changesets{},
+			want: campaigns.Changesets{},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

@@ -7,10 +7,11 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"golang.org/x/time/rate"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/inference"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"golang.org/x/time/rate"
 )
 
 const MaxGitserverRequestsPerSecond = 20
@@ -18,7 +19,7 @@ const MaxGitserverRequestsPerSecond = 20
 type IndexabilityUpdater struct {
 	dbStore             DBStore
 	gitserverClient     GitserverClient
-	metrics             Metrics
+	operations          *operations
 	minimumSearchCount  int
 	minimumSearchRatio  float64
 	minimumPreciseCount int
@@ -35,12 +36,12 @@ func NewIndexabilityUpdater(
 	minimumSearchRatio float64,
 	minimumPreciseCount int,
 	interval time.Duration,
-	metrics Metrics,
+	operations *operations,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &IndexabilityUpdater{
 		dbStore:             dbStore,
 		gitserverClient:     gitserverClient,
-		metrics:             metrics,
+		operations:          operations,
 		minimumSearchCount:  minimumSearchCount,
 		minimumSearchRatio:  minimumSearchRatio,
 		minimumPreciseCount: minimumPreciseCount,
@@ -82,7 +83,7 @@ func (u *IndexabilityUpdater) Handle(ctx context.Context) error {
 }
 
 func (u *IndexabilityUpdater) HandleError(err error) {
-	u.metrics.Errors.Inc()
+	u.operations.numErrors.Inc()
 	log15.Error("Failed to update index queue", "err", err)
 }
 
