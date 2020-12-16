@@ -1694,7 +1694,7 @@ func (a *aggregator) report(ctx context.Context, results []SearchResultResolver,
 }
 
 // collect the results. This doesn't send down resultChannel. Should only be
-// used by non-streaming supported backends.
+// used by streaming supported backends.
 func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver, common *searchResultsCommon, err error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
