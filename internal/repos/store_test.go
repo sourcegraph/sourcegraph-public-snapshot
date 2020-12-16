@@ -639,14 +639,14 @@ func testStoreUpsertSources(t *testing.T, store repos.Store) func(*testing.T) {
 			// delete an external service
 			svc := servicesPerKind[extsvc.KindGitHub]
 			svc.DeletedAt = now
-			if err := tx.UpsertExternalServices(ctx, svc); err != nil {
-				t.Fatalf("UpsertExternalServices error: %s", err)
+			if err := tx.ExternalServiceStore().Upsert(ctx, svc); err != nil {
+				t.Fatalf("Upsert externalServices error: %s", err)
 			}
 
 			// un delete it
 			svc.DeletedAt = time.Time{}
-			if err := tx.UpsertExternalServices(ctx, svc); err != nil {
-				t.Fatalf("UpsertExternalServices error: %s", err)
+			if err := tx.ExternalServiceStore().Upsert(ctx, svc); err != nil {
+				t.Fatalf("Upsert externalServices error: %s", err)
 			}
 
 			// All GitHub sources should be deleted and all orphan repositories should be excluded
@@ -1416,7 +1416,7 @@ func testSyncRateLimiters(t *testing.T, store repos.Store) func(*testing.T) {
 				services = append(services, svc)
 			}
 
-			if err := tx.UpsertExternalServices(ctx, services...); err != nil {
+			if err := tx.ExternalServiceStore().Upsert(ctx, services...); err != nil {
 				t.Fatalf("failed to setup store: %v", err)
 			}
 
@@ -1516,7 +1516,7 @@ func testStoreEnqueueSyncJobs(db *sql.DB, store *repos.DBStore) func(t *testing.
 					})
 					stored := tc.stored.Clone()
 
-					if err := store.UpsertExternalServices(ctx, stored...); err != nil {
+					if err := store.ExternalServiceStore().Upsert(ctx, stored...); err != nil {
 						t.Fatalf("failed to setup store: %v", err)
 					}
 
@@ -1637,7 +1637,7 @@ func createExternalServices(t *testing.T, store repos.Store) map[string]*types.E
 	svcs := mkExternalServices(now)
 
 	// create a few external services
-	if err := store.UpsertExternalServices(context.Background(), svcs...); err != nil {
+	if err := store.ExternalServiceStore().Upsert(context.Background(), svcs...); err != nil {
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 

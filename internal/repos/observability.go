@@ -134,20 +134,19 @@ type ObservedStore struct {
 
 // StoreMetrics encapsulates the Prometheus metrics of a Store.
 type StoreMetrics struct {
-	Transact               *metrics.OperationMetrics
-	Done                   *metrics.OperationMetrics
-	InsertRepos            *metrics.OperationMetrics
-	DeleteRepos            *metrics.OperationMetrics
-	UpsertRepos            *metrics.OperationMetrics
-	UpsertSources          *metrics.OperationMetrics
-	ListRepos              *metrics.OperationMetrics
-	ListExternalRepoSpecs  *metrics.OperationMetrics
-	GetExternalService     *metrics.OperationMetrics
-	UpsertExternalServices *metrics.OperationMetrics
-	SetClonedRepos         *metrics.OperationMetrics
-	CountNotClonedRepos    *metrics.OperationMetrics
-	CountUserAddedRepos    *metrics.OperationMetrics
-	EnqueueSyncJobs        *metrics.OperationMetrics
+	Transact              *metrics.OperationMetrics
+	Done                  *metrics.OperationMetrics
+	InsertRepos           *metrics.OperationMetrics
+	DeleteRepos           *metrics.OperationMetrics
+	UpsertRepos           *metrics.OperationMetrics
+	UpsertSources         *metrics.OperationMetrics
+	ListRepos             *metrics.OperationMetrics
+	ListExternalRepoSpecs *metrics.OperationMetrics
+	GetExternalService    *metrics.OperationMetrics
+	SetClonedRepos        *metrics.OperationMetrics
+	CountNotClonedRepos   *metrics.OperationMetrics
+	CountUserAddedRepos   *metrics.OperationMetrics
+	EnqueueSyncJobs       *metrics.OperationMetrics
 }
 
 // MustRegister registers all metrics in StoreMetrics in the given
@@ -163,7 +162,6 @@ func (sm StoreMetrics) MustRegister(r prometheus.Registerer) {
 		sm.UpsertRepos,
 		sm.UpsertSources,
 		sm.GetExternalService,
-		sm.UpsertExternalServices,
 		sm.SetClonedRepos,
 	} {
 		r.MustRegister(om.Count)
@@ -302,20 +300,6 @@ func NewStoreMetrics() StoreMetrics {
 				Help: "Total number of errors when getting external_services",
 			}, []string{}),
 		},
-		UpsertExternalServices: &metrics.OperationMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_external_serviceupdater_store_upsert_external_services_duration_seconds",
-				Help: "Time spent upserting external_services",
-			}, []string{}),
-			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_external_serviceupdater_store_upsert_external_services_total",
-				Help: "Total number of upserted external_servicesitories",
-			}, []string{}),
-			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_external_serviceupdater_store_upsert_external_services_errors_total",
-				Help: "Total number of errors when upserting external_services",
-			}, []string{}),
-		},
 		SetClonedRepos: &metrics.OperationMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 				Name: "src_repoupdater_store_set_cloned_repos_duration_seconds",
@@ -431,32 +415,6 @@ func (o *ObservedStore) Done(err error) error {
 
 func (o *ObservedStore) ExternalServiceStore() *idb.ExternalServiceStore {
 	return o.store.ExternalServiceStore()
-}
-
-// UpsertExternalServices calls into the inner Store and registers the observed results.
-func (o *ObservedStore) UpsertExternalServices(ctx context.Context, svcs ...*types.ExternalService) (err error) {
-	tr, ctx := o.trace(ctx, "Store.UpsertExternalServices")
-	tr.LogFields(
-		otlog.Int("count", len(svcs)),
-		otlog.Object("names", types.ExternalServices(svcs).DisplayNames()),
-		otlog.Object("urns", types.ExternalServices(svcs).URNs()),
-	)
-
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-		count := float64(len(svcs))
-
-		o.metrics.UpsertExternalServices.Observe(secs, count, &err)
-		logging.Log(o.log, "store.upsert-external-services", &err,
-			"count", len(svcs),
-			"names", types.ExternalServices(svcs).DisplayNames(),
-		)
-
-		tr.SetError(err)
-		tr.Finish()
-	}(time.Now())
-
-	return o.store.UpsertExternalServices(ctx, svcs...)
 }
 
 // InsertRepos calls into the inner Store and registers the observed results.

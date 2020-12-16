@@ -30,8 +30,6 @@ import (
 type Store interface {
 	ExternalServiceStore() *idb.ExternalServiceStore
 
-	UpsertExternalServices(ctx context.Context, svcs ...*types.ExternalService) error
-
 	ListRepos(context.Context, StoreListReposArgs) ([]*types.Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*types.Repo) error
 	ListExternalRepoSpecs(context.Context) (map[api.ExternalRepoSpec]struct{}, error)
@@ -179,85 +177,6 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 func (s *DBStore) ExternalServiceStore() *idb.ExternalServiceStore {
 	return idb.NewExternalServicesStoreWith(s)
 }
-
-// UpsertExternalServices updates or inserts the given ExternalServices.
-func (s *DBStore) UpsertExternalServices(ctx context.Context, svcs ...*types.ExternalService) error {
-	if len(svcs) == 0 {
-		return nil
-	}
-
-	q := upsertExternalServicesQuery(svcs)
-	rows, err := s.Query(ctx, q)
-	if err != nil {
-		return err
-	}
-
-	i := -1
-	_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
-		i++
-		err = scanExternalService(svcs[i], sc)
-		return svcs[i].ID, 1, err
-	})
-
-	return err
-}
-
-func upsertExternalServicesQuery(svcs []*types.ExternalService) *sqlf.Query {
-	vals := make([]*sqlf.Query, 0, len(svcs))
-	for _, s := range svcs {
-		vals = append(vals, sqlf.Sprintf(
-			upsertExternalServicesQueryValueFmtstr,
-			s.ID,
-			s.Kind,
-			s.DisplayName,
-			s.Config,
-			s.CreatedAt.UTC(),
-			s.UpdatedAt.UTC(),
-			nullTimeColumn(s.DeletedAt.UTC()),
-			nullTimeColumn(s.LastSyncAt.UTC()),
-			nullTimeColumn(s.NextSyncAt.UTC()),
-			nullInt32Column(s.NamespaceUserID),
-		))
-	}
-
-	return sqlf.Sprintf(
-		upsertExternalServicesQueryFmtstr,
-		sqlf.Join(vals, ",\n"),
-	)
-}
-
-const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s)
-`
-
-const upsertExternalServicesQueryFmtstr = `
--- source: internal/repos/store.go:DBStore.UpsertExternalServices
-INSERT INTO external_services (
-  id,
-  kind,
-  display_name,
-  config,
-  created_at,
-  updated_at,
-  deleted_at,
-  last_sync_at,
-  next_sync_at,
-  namespace_user_id
-)
-VALUES %s
-ON CONFLICT(id) DO UPDATE
-SET
-  kind         = UPPER(excluded.kind),
-  display_name = excluded.display_name,
-  config       = excluded.config,
-  created_at   = excluded.created_at,
-  updated_at   = excluded.updated_at,
-  deleted_at   = excluded.deleted_at,
-  last_sync_at = excluded.last_sync_at,
-  next_sync_at = excluded.next_sync_at,
-  namespace_user_id = excluded.namespace_user_id
-RETURNING *
-`
 
 // InsertRepos inserts the given repos and their associated sources.
 // It sets the ID field of each given repo to the value of its corresponding row.
