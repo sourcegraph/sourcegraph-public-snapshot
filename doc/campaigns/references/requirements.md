@@ -13,7 +13,7 @@ Campaigns is compatible with the following code hosts:
 
 ### Campaigns effect on code host rate limits
 
-Each changeset makes multiple API requests to its code host so that its status and other information is current. Sourcegraph intelligently schedules these requests to avoid overwhelming the code host's rate limits. In environments with many open campaigns, this can result in outdated changesets as they await their turn in the update queue.
+For each changeset, Sourcegraph periodically makes API requests to its code host to update its status. Sourcegraph intelligently schedules these requests to avoid overwhelming the code host's rate limits. In environments with many open campaigns, this can result in outdated changesets as they await their turn in the update queue.
 
 We **highly recommend** enabling webhooks to increase performance and reduce api requests accociated with large campaigns:
 
