@@ -35,7 +35,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	var branches []*git.Branch
 	if args.Type == nil || *args.Type == gitRefTypeBranch {
 		var err error
-		branches, err = git.ListBranches(ctx, r.repo.Name, git.BranchesOptions{
+		branches, err = git.ListBranches(ctx, r.innerRepo.Name, git.BranchesOptions{
 			// We intentionally do not ask for commits here since it requires
 			// a separate git call per branch. We only need the git commits to
 			// sort by author/commit date and there are few enough branches to
@@ -63,7 +63,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 		if args.OrderBy != nil && *args.OrderBy == gitRefOrderAuthoredOrCommittedAt {
 			// Sort branches by most recently committed.
 
-			ok, err := hydrateBranchCommits(ctx, r.repo.Name, args.Interactive, branches)
+			ok, err := hydrateBranchCommits(ctx, r.innerRepo.Name, args.Interactive, branches)
 			if err != nil {
 				return nil, err
 			}
@@ -102,7 +102,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	var tags []*git.Tag
 	if args.Type == nil || *args.Type == gitRefTypeTag {
 		var err error
-		tags, err = git.ListTags(ctx, r.repo.Name)
+		tags, err = git.ListTags(ctx, r.innerRepo.Name)
 		if err != nil {
 			return nil, err
 		}

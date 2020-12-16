@@ -8,10 +8,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	ossDB "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -20,7 +20,6 @@ import (
 func InitBackgroundJobs(
 	ctx context.Context,
 	db *sql.DB,
-	rstore repos.Store,
 	cf *httpcli.Factory,
 	// TODO(eseliger): Remove this parameter as the sunset of repo-updater is approaching.
 	// We should switch to our own polling mechanism instead of using repo-updaters.
@@ -31,10 +30,17 @@ func InitBackgroundJobs(
 	repoStore := ossDB.NewRepoStoreWith(cstore)
 	esStore := ossDB.NewExternalServicesStoreWith(cstore)
 
+	// We use an internal actor so that we can freely load dependencies from
+	// the database without repository permissions being enforced.
+	// We do check for repository permissions conciously in the Rewirer when
+	// creating new changesets and in the executor, when talking to the code
+	// host, we manually check for CampaignsCredentials.
+	ctx = actor.WithInternalActor(ctx)
+
 	syncRegistry := syncer.NewSyncRegistry(ctx, cstore, repoStore, esStore, cf)
 	if server != nil {
 		server.ChangesetSyncRegistry = syncRegistry
 	}
 
-	go goroutine.MonitorBackgroundRoutines(ctx, background.Routines(ctx, db, cstore, rstore, cf)...)
+	go goroutine.MonitorBackgroundRoutines(ctx, background.Routines(ctx, db, cstore, cf)...)
 }

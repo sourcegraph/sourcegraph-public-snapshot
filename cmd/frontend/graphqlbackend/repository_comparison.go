@@ -88,14 +88,14 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 		return toGitCommitResolver(r, commitID, nil), nil
 	}
 
-	head, err := getCommit(ctx, r.repo.Name, headRevspec)
+	head, err := getCommit(ctx, r.innerRepo.Name, headRevspec)
 	if err != nil {
 		return nil, err
 	}
 
 	// Find the common merge-base for the diff. That's the revision the diff applies to,
 	// not the baseRevspec.
-	mergeBaseCommit, err := git.MergeBase(ctx, r.repo.Name, api.CommitID(baseRevspec), api.CommitID(headRevspec))
+	mergeBaseCommit, err := git.MergeBase(ctx, r.innerRepo.Name, api.CommitID(baseRevspec), api.CommitID(headRevspec))
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 	// We use the merge-base as the base commit here, as the diff will only be guaranteed to be
 	// applicable to the file from that revision.
 	commitString := strings.TrimSpace(string(mergeBaseCommit))
-	base, err := getCommit(ctx, r.repo.Name, commitString)
+	base, err := getCommit(ctx, r.innerRepo.Name, commitString)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +214,7 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 
 			var iter *git.DiffFileIterator
 			iter, err = git.Diff(ctx, git.DiffOptions{
-				Repo: cmp.repo.repo.Name,
+				Repo: cmp.repo.innerRepo.Name,
 				Base: base,
 				Head: string(cmp.head.OID()),
 			})

@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -301,7 +300,7 @@ func doSearchCommitsInRepoStream(ctx context.Context, op search.CommitParameters
 		}
 	}()
 
-	repoResolver := &RepositoryResolver{repo: op.RepoRevs.Repo}
+	repoResolver := &RepositoryResolver{innerRepo: op.RepoRevs.Repo.ToRepo()}
 	for event := range events {
 		// if the result is incomplete, git log timed out and the client
 		// should be notified of that.
@@ -564,10 +563,6 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 		unflattened [][]*CommitSearchResultResolver
 		common      = &searchResultsCommon{}
 	)
-	common.repos = make([]*types.Repo, len(args.Repos))
-	for i, repo := range args.Repos {
-		common.repos[i] = repo.Repo
-	}
 	for _, repoRev := range args.Repos {
 		wg.Add(1)
 		go func(repoRev *search.RepositoryRevisions) {
@@ -584,10 +579,12 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, repoTimedOut, searchErr); fatalErr != nil {
+			repoCommon, fatalErr := handleRepoSearchResult(repoRev, repoLimitHit, repoTimedOut, searchErr)
+			if fatalErr != nil {
 				err = errors.Wrapf(searchErr, "failed to search commit %s %s", params.ErrorName, repoRev.String())
 				cancel()
 			}
+			common.update(&repoCommon)
 			if len(results) > 0 {
 				unflattened = append(unflattened, results)
 			}

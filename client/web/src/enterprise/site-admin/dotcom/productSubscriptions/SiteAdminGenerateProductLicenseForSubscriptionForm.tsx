@@ -12,9 +12,10 @@ import { ExpirationDate } from '../../../productSubscription/ExpirationDate'
 import { ErrorAlert } from '../../../../components/alerts'
 import { useEventObservable } from '../../../../../../shared/src/util/useObservable'
 import * as H from 'history'
+import { Scalars } from '../../../../../../shared/src/graphql-operations'
 
 interface Props {
-    subscriptionID: GQL.ID
+    subscriptionID: Scalars['ID']
     onGenerate: () => void
     history: H.History
 }

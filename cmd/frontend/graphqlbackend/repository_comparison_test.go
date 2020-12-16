@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
@@ -29,8 +30,9 @@ func TestRepositoryComparison(t *testing.T) {
 	wantHeadRevision := "b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec"
 
 	repo := &types.Repo{
-		ID:   api.RepoID(1),
-		Name: api.RepoName("github.com/sourcegraph/sourcegraph"),
+		ID:        api.RepoID(1),
+		Name:      api.RepoName("github.com/sourcegraph/sourcegraph"),
+		CreatedAt: time.Now(),
 	}
 
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {

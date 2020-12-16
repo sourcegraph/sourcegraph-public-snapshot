@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -40,6 +41,7 @@ func QueueOptions(db dbutil.DB, config *Config) apiserver.QueueOptions {
 func newWorkerStore(db dbutil.DB) dbworkerstore.Store {
 	handle := basestore.NewHandleWithDB(db, sql.TxOptions{})
 	options := dbworkerstore.Options{
+		Name:              "precise_code_intel_index_worker_store",
 		TableName:         "lsif_indexes",
 		ViewName:          "lsif_indexes_with_repository_name u",
 		ColumnExpressions: store.IndexColumnsWithNullRank,

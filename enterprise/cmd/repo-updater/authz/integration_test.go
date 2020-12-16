@@ -77,7 +77,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		CreatedAt: timeutil.Now(),
 		Config:    `{"url": "https://github.com", "authorization": {}}`,
 	}
-	err = reposStore.UpsertExternalServices(ctx, &svc)
+	err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 	if err != nil {
 		t.Fatal(err)
 	}

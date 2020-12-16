@@ -19,6 +19,7 @@ import { quoteIfNeeded, searchQueryForRepoRevision, PatternTypeProps } from '../
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 import { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
+import { Scalars } from '../../../../shared/src/graphql-operations'
 
 interface QuerySpec {
     revisionRange: string | null
@@ -93,7 +94,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
 
 const queryRepositoryContributors = memoizeObservable(
     (args: {
-        repo: GQL.ID
+        repo: Scalars['ID']
         first?: number
         revisionRange?: string
         after?: string

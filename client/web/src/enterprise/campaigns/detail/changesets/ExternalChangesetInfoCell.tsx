@@ -3,7 +3,6 @@ import {
     ExternalChangesetFields,
     ChangesetExternalState,
     ChangesetPublicationState,
-    ChangesetSpecFields,
     GitBranchChangesetDescriptionFields,
 } from '../../../../graphql-operations'
 import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
@@ -106,7 +105,7 @@ function headReference(node: ExternalChangesetFields): string | undefined {
 function hasHeadReference(
     node: ExternalChangesetFields
 ): node is ExternalChangesetFields & {
-    currentSpec: ChangesetSpecFields & { description: GitBranchChangesetDescriptionFields }
+    currentSpec: ExternalChangesetFields & { description: GitBranchChangesetDescriptionFields }
 } {
     return node.currentSpec?.description.__typename === 'GitBranchChangesetDescription'
 }

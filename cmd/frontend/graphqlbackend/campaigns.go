@@ -63,6 +63,11 @@ type ChangesetSpecsConnectionArgs struct {
 	After *string
 }
 
+type ChangesetApplyPreviewConnectionArgs struct {
+	First int32
+	After *string
+}
+
 type CampaignArgs struct {
 	Namespace string
 	Name      string
@@ -128,6 +133,7 @@ type CampaignSpecResolver interface {
 	OriginalInput() (string, error)
 	ParsedInput() (JSONValue, error)
 	ChangesetSpecs(ctx context.Context, args *ChangesetSpecsConnectionArgs) (ChangesetSpecConnectionResolver, error)
+	ApplyPreview(ctx context.Context, args *ChangesetApplyPreviewConnectionArgs) (ChangesetApplyPreviewConnectionResolver, error)
 
 	Description() CampaignDescriptionResolver
 
@@ -155,6 +161,63 @@ type CampaignDescriptionResolver interface {
 	Description() string
 }
 
+type ChangesetApplyPreviewResolver interface {
+	ToVisibleChangesetApplyPreview() (VisibleChangesetApplyPreviewResolver, bool)
+	ToHiddenChangesetApplyPreview() (HiddenChangesetApplyPreviewResolver, bool)
+}
+
+type VisibleChangesetApplyPreviewResolver interface {
+	Operations(ctx context.Context) ([]campaigns.ReconcilerOperation, error)
+	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
+	Targets() VisibleApplyPreviewTargetsResolver
+}
+
+type HiddenChangesetApplyPreviewResolver interface {
+	Operations(ctx context.Context) ([]campaigns.ReconcilerOperation, error)
+	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
+	Targets() HiddenApplyPreviewTargetsResolver
+}
+
+type VisibleApplyPreviewTargetsResolver interface {
+	ToVisibleApplyPreviewTargetsAttach() (VisibleApplyPreviewTargetsAttachResolver, bool)
+	ToVisibleApplyPreviewTargetsUpdate() (VisibleApplyPreviewTargetsUpdateResolver, bool)
+	ToVisibleApplyPreviewTargetsDetach() (VisibleApplyPreviewTargetsDetachResolver, bool)
+}
+
+type VisibleApplyPreviewTargetsAttachResolver interface {
+	ChangesetSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
+}
+type VisibleApplyPreviewTargetsUpdateResolver interface {
+	ChangesetSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
+	Changeset(ctx context.Context) (ExternalChangesetResolver, error)
+}
+type VisibleApplyPreviewTargetsDetachResolver interface {
+	Changeset(ctx context.Context) (ExternalChangesetResolver, error)
+}
+
+type HiddenApplyPreviewTargetsResolver interface {
+	ToHiddenApplyPreviewTargetsAttach() (HiddenApplyPreviewTargetsAttachResolver, bool)
+	ToHiddenApplyPreviewTargetsUpdate() (HiddenApplyPreviewTargetsUpdateResolver, bool)
+	ToHiddenApplyPreviewTargetsDetach() (HiddenApplyPreviewTargetsDetachResolver, bool)
+}
+
+type HiddenApplyPreviewTargetsAttachResolver interface {
+	ChangesetSpec(ctx context.Context) (HiddenChangesetSpecResolver, error)
+}
+type HiddenApplyPreviewTargetsUpdateResolver interface {
+	ChangesetSpec(ctx context.Context) (HiddenChangesetSpecResolver, error)
+	Changeset(ctx context.Context) (HiddenExternalChangesetResolver, error)
+}
+type HiddenApplyPreviewTargetsDetachResolver interface {
+	Changeset(ctx context.Context) (HiddenExternalChangesetResolver, error)
+}
+
+type ChangesetApplyPreviewConnectionResolver interface {
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Nodes(ctx context.Context) ([]ChangesetApplyPreviewResolver, error)
+}
+
 type ChangesetSpecConnectionResolver interface {
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
@@ -163,14 +226,8 @@ type ChangesetSpecConnectionResolver interface {
 
 type ChangesetSpecResolver interface {
 	ID() graphql.ID
-
 	Type() campaigns.ChangesetSpecDescriptionType
-
 	ExpiresAt() *DateTime
-
-	Operations(ctx context.Context) ([]campaigns.ReconcilerOperation, error)
-	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
-	Changeset(ctx context.Context) (ChangesetResolver, error)
 
 	ToHiddenChangesetSpec() (HiddenChangesetSpecResolver, bool)
 	ToVisibleChangesetSpec() (VisibleChangesetSpecResolver, bool)

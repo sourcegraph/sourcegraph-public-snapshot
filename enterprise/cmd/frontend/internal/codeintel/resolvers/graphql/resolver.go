@@ -215,10 +215,10 @@ func resolveRepositoryID(ctx context.Context, id graphql.ID) (int, error) {
 		return 0, nil
 	}
 
-	repositoryResolver, err := gql.RepositoryByID(ctx, id)
+	repoID, err := gql.UnmarshalRepositoryID(id)
 	if err != nil {
 		return 0, err
 	}
 
-	return int(repositoryResolver.Type().ID), nil
+	return int(repoID), nil
 }

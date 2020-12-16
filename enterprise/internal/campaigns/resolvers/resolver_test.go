@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
@@ -32,7 +33,7 @@ import (
 func TestNullIDResilience(t *testing.T) {
 	sr := &Resolver{store: store.New(dbconn.Global)}
 
-	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,66 +101,124 @@ func TestCreateCampaignSpec(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changesetSpec := &campaigns.ChangesetSpec{
-		Spec: &campaigns.ChangesetSpecDescription{
-			BaseRepository: graphqlbackend.MarshalRepositoryID(repo.ID),
-		},
-		RepoID: repo.ID,
-		UserID: userID,
-	}
-	if err := cstore.CreateChangesetSpec(ctx, changesetSpec); err != nil {
-		t.Fatal(err)
+	// Create enough changeset specs to hit the licence check.
+	changesetSpecs := make([]*campaigns.ChangesetSpec, maxUnlicensedChangesets+1)
+	for i := range changesetSpecs {
+		changesetSpecs[i] = &campaigns.ChangesetSpec{
+			Spec: &campaigns.ChangesetSpecDescription{
+				BaseRepository: graphqlbackend.MarshalRepositoryID(repo.ID),
+			},
+			RepoID: repo.ID,
+			UserID: userID,
+		}
+		if err := cstore.CreateChangesetSpec(ctx, changesetSpecs[i]); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
-	changesetSpecID := marshalChangesetSpecRandID(changesetSpec.RandID)
 	rawSpec := ct.TestRawCampaignSpec
 
-	input := map[string]interface{}{
-		"namespace":      userAPIID,
-		"campaignSpec":   rawSpec,
-		"changesetSpecs": []graphql.ID{changesetSpecID},
-	}
-
-	var response struct{ CreateCampaignSpec apitest.CampaignSpec }
-
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
-	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCampaignSpec)
-
-	var unmarshaled interface{}
-	err = json.Unmarshal([]byte(rawSpec), &unmarshaled)
-	if err != nil {
-		t.Fatal(err)
-	}
-	have := response.CreateCampaignSpec
-
-	want := apitest.CampaignSpec{
-		ID:            have.ID,
-		CreatedAt:     have.CreatedAt,
-		ExpiresAt:     have.ExpiresAt,
-		OriginalInput: rawSpec,
-		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
-		ApplyURL:      fmt.Sprintf("/users/%s/campaigns/apply/%s", user.Username, have.ID),
-		Namespace:     apitest.UserOrg{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
-		Creator:       &apitest.User{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
-		ChangesetSpecs: apitest.ChangesetSpecConnection{
-			Nodes: []apitest.ChangesetSpec{
-				{
-					Typename: "VisibleChangesetSpec",
-					ID:       string(changesetSpecID),
-				},
-			},
+	for name, tc := range map[string]struct {
+		changesetSpecs []*campaigns.ChangesetSpec
+		disableFeature bool
+		wantErr        bool
+	}{
+		"default configuration": {
+			changesetSpecs: changesetSpecs,
+			disableFeature: false,
+			wantErr:        true,
 		},
-	}
+		"no licence, but under the limit": {
+			changesetSpecs: changesetSpecs[0:maxUnlicensedChangesets],
+			disableFeature: true,
+			wantErr:        false,
+		},
+		"no licence, over the limit": {
+			changesetSpecs: changesetSpecs,
+			disableFeature: true,
+			wantErr:        true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if tc.disableFeature {
+				oldMock := licensing.MockCheckFeature
+				licensing.MockCheckFeature = func(feature licensing.Feature) error {
+					if feature == licensing.FeatureCampaigns {
+						return licensing.NewFeatureNotActivatedError("no campaigns for you!")
+					}
+					return nil
+				}
 
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Fatalf("unexpected response (-want +got):\n%s", diff)
+				defer func() {
+					licensing.MockCheckFeature = oldMock
+				}()
+			}
+
+			changesetSpecIDs := make([]graphql.ID, len(tc.changesetSpecs))
+			for i, spec := range tc.changesetSpecs {
+				changesetSpecIDs[i] = marshalChangesetSpecRandID(spec.RandID)
+			}
+
+			input := map[string]interface{}{
+				"namespace":      userAPIID,
+				"campaignSpec":   rawSpec,
+				"changesetSpecs": changesetSpecIDs,
+			}
+
+			var response struct{ CreateCampaignSpec apitest.CampaignSpec }
+
+			actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+			errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCampaignSpec)
+			if tc.wantErr {
+				if errs == nil {
+					t.Error("unexpected lack of errors")
+				}
+			} else {
+				if errs != nil {
+					t.Errorf("unexpected error(s): %+v", errs)
+				}
+
+				var unmarshaled interface{}
+				err = json.Unmarshal([]byte(rawSpec), &unmarshaled)
+				if err != nil {
+					t.Fatal(err)
+				}
+				have := response.CreateCampaignSpec
+
+				wantNodes := make([]apitest.ChangesetSpec, len(changesetSpecIDs))
+				for i, id := range changesetSpecIDs {
+					wantNodes[i] = apitest.ChangesetSpec{
+						Typename: "VisibleChangesetSpec",
+						ID:       string(id),
+					}
+				}
+
+				want := apitest.CampaignSpec{
+					ID:            have.ID,
+					CreatedAt:     have.CreatedAt,
+					ExpiresAt:     have.ExpiresAt,
+					OriginalInput: rawSpec,
+					ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
+					ApplyURL:      fmt.Sprintf("/users/%s/campaigns/apply/%s", user.Username, have.ID),
+					Namespace:     apitest.UserOrg{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
+					Creator:       &apitest.User{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
+					ChangesetSpecs: apitest.ChangesetSpecConnection{
+						Nodes: wantNodes,
+					},
+				}
+
+				if diff := cmp.Diff(want, have); diff != "" {
+					t.Fatalf("unexpected response (-want +got):\n%s", diff)
+				}
+			}
+		})
 	}
 }
 
@@ -216,7 +275,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -327,7 +386,7 @@ func TestApplyCampaign(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -458,7 +517,7 @@ func TestCreateCampaign(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -532,7 +591,7 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -783,7 +842,7 @@ func TestCreateCampaignsCredential(t *testing.T) {
 	cstore := store.New(dbconn.Global)
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -847,7 +906,7 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 	cstore := store.New(dbconn.Global)
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(r, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(r, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

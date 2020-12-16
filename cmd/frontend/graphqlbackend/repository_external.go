@@ -18,13 +18,29 @@ type externalRepositoryResolver struct {
 	repository *RepositoryResolver
 }
 
-func (r *externalRepositoryResolver) ID() string { return r.repository.repo.ExternalRepo.ID }
-func (r *externalRepositoryResolver) ServiceType() string {
-	return r.repository.repo.ExternalRepo.ServiceType
+func (r *externalRepositoryResolver) ID(ctx context.Context) (string, error) {
+	repo, err := r.repository.repo(ctx)
+	if err != nil {
+		return "", err
+	}
+	return repo.ExternalRepo.ID, nil
+}
+func (r *externalRepositoryResolver) ServiceType(ctx context.Context) (string, error) {
+	repo, err := r.repository.repo(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return repo.ExternalRepo.ServiceType, nil
 }
 
-func (r *externalRepositoryResolver) ServiceID() string {
-	return r.repository.repo.ExternalRepo.ServiceID
+func (r *externalRepositoryResolver) ServiceID(ctx context.Context) (string, error) {
+	repo, err := r.repository.repo(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return repo.ExternalRepo.ServiceID, nil
 }
 
 func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct {
@@ -35,7 +51,7 @@ func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct 
 		return nil, err
 	}
 
-	svcs, err := repoupdater.DefaultClient.RepoExternalServices(ctx, r.repo.ID)
+	svcs, err := repoupdater.DefaultClient.RepoExternalServices(ctx, r.IDInt32())
 	if err != nil {
 		return nil, err
 	}

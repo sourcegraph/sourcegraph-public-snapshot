@@ -8,9 +8,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"golang.org/x/time/rate"
+
+	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestIndexabilityUpdater(t *testing.T) {
@@ -36,7 +37,7 @@ func TestIndexabilityUpdater(t *testing.T) {
 	updater := &IndexabilityUpdater{
 		dbStore:            mockDBStore,
 		gitserverClient:    mockGitserverClient,
-		metrics:            NewMetrics(metrics.TestRegisterer),
+		operations:         newOperations(mockDBStore, &observation.TestContext),
 		limiter:            rate.NewLimiter(MaxGitserverRequestsPerSecond, 1),
 		enableIndexingCNCF: false,
 	}

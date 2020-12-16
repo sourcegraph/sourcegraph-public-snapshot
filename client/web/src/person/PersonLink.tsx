@@ -1,15 +1,25 @@
 import * as React from 'react'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
+import { gql } from '../../../shared/src/graphql/graphql'
+import { PersonLinkFields } from '../graphql-operations'
 
-interface Person extends Pick<GQL.IPerson, 'email' | 'displayName'> {
-    user: Pick<GQL.IUser, 'username' | 'displayName' | 'url'> | null
-}
+export const personLinkFieldsFragment = gql`
+    fragment PersonLinkFields on Person {
+        email
+        displayName
+        user {
+            username
+            displayName
+            url
+        }
+    }
+`
 
 /**
  * Formats a person name to: "username (Display Name)" or "Display Name"
  */
-export const formatPersonName = ({ user, displayName }: Person): string => (user ? user.username : displayName)
+export const formatPersonName = ({ user, displayName }: PersonLinkFields): string =>
+    user ? user.username : displayName
 
 /**
  * A person's name, with a link to their Sourcegraph user profile if an associated user account is
@@ -17,7 +27,7 @@ export const formatPersonName = ({ user, displayName }: Person): string => (user
  */
 export const PersonLink: React.FunctionComponent<{
     /** The person to link to. */
-    person: Person
+    person: PersonLinkFields
 
     /** A class name that is always applied. */
     className?: string

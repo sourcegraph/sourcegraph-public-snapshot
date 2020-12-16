@@ -7,6 +7,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
@@ -92,6 +93,8 @@ func LogEntryLevelString(l log15.Lvl) string {
 	}
 }
 
+// Init initializes log15's root logger based on Sourcegraph-wide logging configuration
+// variables. See https://docs.sourcegraph.com/admin/observability#logs
 func Init(options ...Option) {
 	opts := &Options{}
 	for _, setter := range options {

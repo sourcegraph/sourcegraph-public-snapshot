@@ -88,12 +88,6 @@ type Repo struct {
 	Metadata interface{}
 }
 
-// RepoName represents a source code repository name and its ID.
-type RepoName struct {
-	ID   api.RepoID
-	Name api.RepoName
-}
-
 // CloneURLs returns all the clone URLs this repo is clonable from.
 func (r *Repo) CloneURLs() []string {
 	urls := make([]string, 0, len(r.Sources))
@@ -373,6 +367,26 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	}
 	return fs
 }
+
+// RepoName represents a source code repository name and its ID.
+type RepoName struct {
+	ID   api.RepoID
+	Name api.RepoName
+}
+
+func (r *RepoName) ToRepo() *Repo {
+	return &Repo{
+		ID:   r.ID,
+		Name: r.Name,
+	}
+}
+
+// RepoNames is an utility type with convenience methods for operating on lists of repo names
+type RepoNames []*RepoName
+
+func (rs RepoNames) Len() int           { return len(rs) }
+func (rs RepoNames) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
+func (rs RepoNames) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
 
 type CodeHostRepository struct {
 	Name       string

@@ -46,7 +46,7 @@ func enterpriseInit(
 
 	codemonitorsBackground.StartBackgroundJobs(ctx, db)
 
-	campaigns.InitBackgroundJobs(ctx, db, repoStore, cf, server)
+	campaigns.InitBackgroundJobs(ctx, db, cf, server)
 
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db

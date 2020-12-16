@@ -46,9 +46,9 @@
     # executor-queue
     - 127.0.0.1:6091
 - labels:
-    job: executor
+    job: sourcegraph-code-intel-indexers
   targets:
-    # executor
+    # sourcegraph-code-intel-indexers
     - 127.0.0.1:6092
 - labels:
     job: postgres_exporter

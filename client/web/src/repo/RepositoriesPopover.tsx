@@ -5,6 +5,7 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { CircleChevronLeftIcon } from '../../../shared/src/components/icons'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
+import { Scalars } from '../../../shared/src/graphql-operations'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
@@ -41,7 +42,7 @@ function fetchRepositories(args: { first?: number; query?: string }): Observable
 
 interface RepositoryNodeProps {
     node: GQL.IRepository
-    currentRepo?: GQL.ID
+    currentRepo?: Scalars['ID']
 }
 
 const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node, currentRepo }) => (
@@ -64,7 +65,7 @@ interface Props {
     /**
      * The current repository (shown as selected in the list), if any.
      */
-    currentRepo?: GQL.ID
+    currentRepo?: Scalars['ID']
 
     history: H.History
     location: H.Location

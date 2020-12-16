@@ -6,6 +6,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/inference"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -21,7 +22,7 @@ type IndexScheduler struct {
 	minimumSearchCount          int
 	minimumSearchRatio          float64
 	minimumPreciseCount         int
-	metrics                     Metrics
+	operations                  *operations
 }
 
 var _ goroutine.Handler = &IndexScheduler{}
@@ -35,7 +36,7 @@ func NewIndexScheduler(
 	minimumSearchRatio float64,
 	minimumPreciseCount int,
 	interval time.Duration,
-	metrics Metrics,
+	operations *operations,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &IndexScheduler{
 		dbStore:                     dbStore,
@@ -45,7 +46,7 @@ func NewIndexScheduler(
 		minimumSearchCount:          minimumSearchCount,
 		minimumSearchRatio:          minimumSearchRatio,
 		minimumPreciseCount:         minimumPreciseCount,
-		metrics:                     metrics,
+		operations:                  operations,
 	})
 }
 
@@ -85,7 +86,7 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 }
 
 func (s *IndexScheduler) HandleError(err error) {
-	s.metrics.Errors.Inc()
+	s.operations.numErrors.Inc()
 	log15.Error("Failed to update indexable repositories", "err", err)
 }
 

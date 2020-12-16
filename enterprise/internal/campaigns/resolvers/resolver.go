@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -67,6 +68,23 @@ func campaignsCreateAccess(ctx context.Context) error {
 	}
 	return nil
 }
+
+// checkLicense returns a user-facing error if the campaigns feature is not purchased
+// with the current license or any error occurred while validating the license.
+func checkLicense() error {
+	if err := licensing.Check(licensing.FeatureCampaigns); err != nil {
+		if licensing.IsFeatureNotActivated(err) {
+			return err
+		}
+		return errors.New("Unable to check license feature, please refer to logs for actual error message.")
+	}
+	return nil
+}
+
+// maxUnlicensedChangesets is the maximum number of changesets that can be
+// attached to a campaign when Sourcegraph is unlicensed or the campaign feature
+// is disabled.
+const maxUnlicensedChangesets = 5
 
 func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
 	if err := campaignsEnabled(ctx); err != nil {
@@ -333,6 +351,16 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 
 	if err := campaignsCreateAccess(ctx); err != nil {
 		return nil, err
+	}
+
+	if err := checkLicense(); err != nil {
+		if licensing.IsFeatureNotActivated(err) {
+			if len(args.ChangesetSpecs) > maxUnlicensedChangesets {
+				return nil, ErrCampaignsUnlicensed{err}
+			}
+		} else {
+			return nil, err
+		}
 	}
 
 	opts := service.CreateCampaignSpecOpts{RawSpec: args.CampaignSpec}

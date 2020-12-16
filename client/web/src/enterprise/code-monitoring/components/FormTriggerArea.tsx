@@ -138,6 +138,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 required={true}
                                 autoFocus={true}
                                 ref={queryInputReference}
+                                spellCheck={false}
                             />
                             <div className="trigger-area__query-input-preview-link p-2">
                                 <Link
@@ -203,9 +204,8 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
             )}
             <small className="text-muted">
                 {' '}
-                What other events would you like to monitor? {/* TODO: populate link */}
-                <a href="" target="_blank" rel="noopener">
-                    {/* TODO: populate link */}
+                What other events would you like to monitor?{' '}
+                <a href="mailto:feedback@sourcegraph.com" target="_blank" rel="noopener">
                     Share feedback.
                 </a>
             </small>
