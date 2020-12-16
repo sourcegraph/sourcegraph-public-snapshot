@@ -8,6 +8,7 @@ import { AddExternalServiceOptions } from '../../../components/externalServices/
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { ErrorAlert } from '../../../components/alerts'
 import { Link } from '../../../../../shared/src/components/Link'
+import { isDefined } from '../../../../../shared/src/util/types'
 
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
@@ -98,7 +99,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
             {/* display external service errors */}
             {Object.values(servicesByKind)
-                .filter((service): service is ListExternalServiceFields => !!service?.warning)
+                .filter(isDefined)
+                .filter(service => service.warning)
                 .map(getServiceWarningFragment)}
 
             {/* display other errors */}
