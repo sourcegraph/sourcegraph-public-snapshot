@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -135,15 +134,15 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 	)
 
 	if !envvar.SourcegraphDotComMode() || c.CloudGlobal {
-		for resource, client := range map[string]*ratelimit.Monitor{
-			"rest":    v3Client.RateLimitMonitor(),
-			"graphql": v4Client.RateLimitMonitor(),
-			"search":  searchClient.RateLimitMonitor(),
-		} {
-			client.SetCollector(func(remaining float64) {
-				githubRemainingGauge.WithLabelValues(resource, svc.DisplayName).Set(remaining)
-			})
-		}
+		v3Client.RateLimitMonitor().SetCollector(func(remaining float64) {
+			githubRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(remaining)
+		})
+		v4Client.RateLimitMonitor().SetCollector(func(remaining float64) {
+			githubRemainingGauge.WithLabelValues("graphql", svc.DisplayName).Set(remaining)
+		})
+		searchClient.RateLimitMonitor().SetCollector(func(remaining float64) {
+			githubRemainingGauge.WithLabelValues("search", svc.DisplayName).Set(remaining)
+		})
 	}
 
 	return &GithubSource{
