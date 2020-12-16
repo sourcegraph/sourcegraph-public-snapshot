@@ -13,7 +13,6 @@ type DBStore interface {
 	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
 	DirtyRepositories(ctx context.Context) (map[int]int, error)
 	CalculateVisibleUploads(ctx context.Context, repositoryID int, graph *gitserver.CommitGraph, tipCommit string, dirtyToken int) error
-	OldestDumpForRepository(ctx context.Context, repositoryID int) (dbstore.Dump, bool, error)
 }
 
 type GitserverClient interface {

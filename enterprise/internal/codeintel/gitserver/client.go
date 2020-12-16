@@ -43,6 +43,10 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, err erro
 
 // CommitDate returns the time that the given commit was committed.
 func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string) (_ time.Time, err error) {
+	//
+	// TODO - if rev not found then do not track error
+	//
+
 	ctx, endObservation := c.operations.commitDate.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),

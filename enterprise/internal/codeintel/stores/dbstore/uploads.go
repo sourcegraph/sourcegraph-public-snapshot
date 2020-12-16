@@ -174,6 +174,7 @@ type GetUploadsOptions struct {
 	Term           string
 	VisibleAtTip   bool
 	UploadedBefore *time.Time
+	OldestFirst    bool
 	Limit          int
 	Offset         int
 }
@@ -247,6 +248,13 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		return nil, 0, err
 	}
 
+	var orderExpression *sqlf.Query
+	if opts.OldestFirst {
+		orderExpression = sqlf.Sprintf("uploaded_at")
+	} else {
+		orderExpression = sqlf.Sprintf("uploaded_at DESC")
+	}
+
 	uploads, err := scanUploads(tx.Store.Query(
 		ctx,
 		sqlf.Sprintf(`
@@ -277,8 +285,8 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 				WHERE r.state = 'queued'
 			) s
 			ON u.id = s.id
-			WHERE %s ORDER BY uploaded_at DESC LIMIT %d OFFSET %d
-		`, sqlf.Join(conds, " AND "), opts.Limit, opts.Offset),
+			WHERE %s ORDER BY %s LIMIT %d OFFSET %d
+		`, sqlf.Join(conds, " AND "), orderExpression, opts.Limit, opts.Offset),
 	))
 	if err != nil {
 		return nil, 0, err
