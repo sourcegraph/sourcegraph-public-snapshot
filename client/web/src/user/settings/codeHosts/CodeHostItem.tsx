@@ -95,10 +95,10 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 ) : (
                     <CircleOutlineIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon--outline" />
                 )}
-                <Icon className="icon-inline mb-0 mr-2" />
+                <Icon className="icon-inline mb-0 mr-1" />
             </div>
-            <div className="flex-1">
-                <h3 className="mt-1 mb-0">{name}</h3>
+            <div className="flex-1 align-self-center">
+                <h3 className="m-0">{name}</h3>
             </div>
             <div className="align-self-center">
                 {service?.id ? (

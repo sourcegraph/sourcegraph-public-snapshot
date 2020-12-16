@@ -71,11 +71,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         [servicesByKind]
     )
 
-    const getServiceWarningFragment = ({
-        id,
-        displayName,
-        warning,
-    }: ListExternalServiceFields): React.ReactFragment => (
+    const getServiceWarningFragment = ({ id, displayName }: ListExternalServiceFields): React.ReactFragment => (
         <div className="alert alert-danger my-4" key={id}>
             <strong className="align-middle">Could not connect to {displayName}.</strong>
             <span className="align-middle"> Please </span>
@@ -83,9 +79,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 update your access token
             </button>{' '}
             <span className="align-middle">to restore the connection.</span>
-            <div className="py-2">
-                <small>{warning}</small>
-            </div>
         </div>
     )
 
