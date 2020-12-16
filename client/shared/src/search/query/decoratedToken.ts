@@ -252,32 +252,30 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                 // Push the min and max characters of the range to associate them with the
                 // same groupRange for hovers.
                 tokens.push(
-                    ...([
-                        {
-                            type: 'metaRegexp',
-                            range: { start: offset + node.min.start, end: offset + node.min.end },
-                            groupRange: { start: offset + node.start, end: offset + node.end },
-                            value: node.raw,
-                            kind: MetaRegexpKind.CharacterClassRange,
-                        },
-                        // Highlight the '-' in [a-z]. Take care to use node.min.end, because we
-                        // don't want to highlight the first '-' in [--z], nor an escaped '-' with a
-                        // two-character offset as in [\--z].
-                        {
-                            type: 'metaRegexp',
-                            range: { start: offset + node.min.end, end: offset + node.min.end + 1 },
-                            groupRange: { start: offset + node.start, end: offset + node.end },
-                            value: node.raw,
-                            kind: MetaRegexpKind.CharacterClassRangeHyphen,
-                        },
-                        {
-                            type: 'metaRegexp',
-                            range: { start: offset + node.max.start, end: offset + node.max.end },
-                            groupRange: { start: offset + node.start, end: offset + node.end },
-                            value: node.raw,
-                            kind: MetaRegexpKind.CharacterClassRange,
-                        },
-                    ] as DecoratedToken[])
+                    {
+                        type: 'metaRegexp',
+                        range: { start: offset + node.min.start, end: offset + node.min.end },
+                        groupRange: { start: offset + node.start, end: offset + node.end },
+                        value: node.raw,
+                        kind: MetaRegexpKind.CharacterClassRange,
+                    },
+                    // Highlight the '-' in [a-z]. Take care to use node.min.end, because we
+                    // don't want to highlight the first '-' in [--z], nor an escaped '-' with a
+                    // two-character offset as in [\--z].
+                    {
+                        type: 'metaRegexp',
+                        range: { start: offset + node.min.end, end: offset + node.min.end + 1 },
+                        groupRange: { start: offset + node.start, end: offset + node.end },
+                        value: node.raw,
+                        kind: MetaRegexpKind.CharacterClassRangeHyphen,
+                    },
+                    {
+                        type: 'metaRegexp',
+                        range: { start: offset + node.max.start, end: offset + node.max.end },
+                        groupRange: { start: offset + node.start, end: offset + node.end },
+                        value: node.raw,
+                        kind: MetaRegexpKind.CharacterClassRange,
+                    }
                 )
             },
             onQuantifierEnter(node: Quantifier) {
