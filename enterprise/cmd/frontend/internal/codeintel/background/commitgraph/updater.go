@@ -29,8 +29,8 @@ type Updater struct {
 
 var _ goroutine.Handler = &Updater{}
 
-// NewUpdater returns a background routine that periodically updates the commit graph and visible
-// uploads for each repository marked as dirty.
+// NewUpdater returns a background routine that periodically updates the commit graph
+// and visible uploads for each repository marked as dirty.
 func NewUpdater(
 	dbStore DBStore,
 	gitserverClient GitserverClient,

@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -48,9 +49,9 @@ type Options struct {
 // as a heartbeat routine that will periodically hit the remote API with the work that is
 // currently being performed, which is necessary so the job queue API doesn't hand out jobs
 // it thinks may have been dropped.
-func NewWorker(options Options) goroutine.BackgroundRoutine {
+func NewWorker(options Options, observationContext *observation.Context) goroutine.BackgroundRoutine {
 	idSet := newIDSet()
-	queueStore := apiclient.New(options.ClientOptions)
+	queueStore := apiclient.New(options.ClientOptions, observationContext)
 	store := &storeShim{queueName: options.QueueName, queueStore: queueStore}
 	handler := &handler{idSet: idSet, options: options, runnerFactory: command.NewRunner}
 	indexer := workerutil.NewWorker(context.Background(), store, handler, options.WorkerOptions)

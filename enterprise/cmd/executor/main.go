@@ -9,6 +9,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -37,10 +38,18 @@ func main() {
 		log.Fatalf("failed to read config: %s", err)
 	}
 
+	// Initialize tracing/metrics
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
+	// Start debug server
 	go debugserver.NewServerRoutine().Start()
 
 	routines := []goroutine.BackgroundRoutine{
-		apiworker.NewWorker(config.APIWorkerOptions(nil)),
+		apiworker.NewWorker(config.APIWorkerOptions(nil), observationContext),
 	}
 	if !config.DisableHealthServer {
 		routines = append(routines, httpserver.NewFromAddr(addr, &http.Server{

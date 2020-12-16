@@ -528,8 +528,12 @@ type searchCommitsInReposParameters struct {
 
 	ErrorName string
 
-	// Search does a commit search for repoRev.
-	Search func(ctx context.Context, repoRev *search.RepositoryRevisions, args *search.TextParametersForCommitParameters) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error)
+	// CommitParams are the base commit parameters passed to
+	// searchCommitsInRepoStream. For each repository revision this is copied
+	// with the RepoRevs field set.
+	CommitParams search.CommitParameters
+
+	ResultChannel chan<- []SearchResultResolver
 }
 
 func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, params searchCommitsInReposParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
@@ -539,6 +543,25 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
+	repoSearch := func(ctx context.Context, repoRev *search.RepositoryRevisions) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
+		commitParams := params.CommitParams
+		commitParams.RepoRevs = repoRev
+
+		// We use the stream so we can optionally send down resultChannel.
+		for event := range searchCommitsInRepoStream(ctx, commitParams) {
+			if len(event.Results) > 0 && params.ResultChannel != nil {
+				params.ResultChannel <- commitSearchResultsToSearchResults(event.Results)
+			}
+
+			results = append(results, event.Results...)
+			limitHit = event.LimitHit
+			timedOut = event.TimedOut
+			err = event.Error
+		}
+
+		return
+	}
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -553,7 +576,7 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 		wg.Add(1)
 		go func(repoRev *search.RepositoryRevisions) {
 			defer wg.Done()
-			results, repoLimitHit, repoTimedOut, searchErr := params.Search(ctx, repoRev, args)
+			results, repoLimitHit, repoTimedOut, searchErr := repoSearch(ctx, repoRev)
 			if ctx.Err() == context.Canceled {
 				// Our request has been canceled (either because another one of args.repos had a
 				// fatal error, or otherwise), so we can just ignore these results.
@@ -590,70 +613,35 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 
 // searchCommitDiffsInRepos searches a set of repos for matching commit diffs.
 func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, resultChannel chan<- []SearchResultResolver) ([]SearchResultResolver, *searchResultsCommon, error) {
-	commitDiffSearcher := func(ctx context.Context, repoRev *search.RepositoryRevisions, args *search.TextParametersForCommitParameters) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
-		commitParams := search.CommitParameters{
-			RepoRevs:    repoRev,
+	return searchCommitsInRepos(ctx, args, searchCommitsInReposParameters{
+		TraceName:     "searchCommitDiffsInRepos",
+		ErrorName:     "diffs",
+		ResultChannel: resultChannel,
+		CommitParams: search.CommitParameters{
 			PatternInfo: args.PatternInfo,
 			Query:       args.Query,
 			Diff:        true,
-		}
-
-		// We use the stream so we can optionally send down resultChannel.
-		for event := range searchCommitsInRepoStream(ctx, commitParams) {
-			if len(event.Results) > 0 && resultChannel != nil {
-				resultChannel <- commitSearchResultsToSearchResults(event.Results)
-			}
-
-			results = append(results, event.Results...)
-			limitHit = event.LimitHit
-			timedOut = event.TimedOut
-			err = event.Error
-		}
-
-		return
-	}
-
-	return searchCommitsInRepos(ctx, args, searchCommitsInReposParameters{
-		TraceName: "searchCommitDiffsInRepos",
-		ErrorName: "diffs",
-		Search:    commitDiffSearcher,
+		},
 	})
 }
 
 // searchCommitLogInRepos searches a set of repos for matching commits.
 func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForCommitParameters, resultChannel chan<- []SearchResultResolver) ([]SearchResultResolver, *searchResultsCommon, error) {
-	commitLogSearcher := func(ctx context.Context, repoRev *search.RepositoryRevisions, args *search.TextParametersForCommitParameters) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
-		var terms []string
-		if args.PatternInfo.Pattern != "" {
-			terms = append(terms, args.PatternInfo.Pattern)
-		}
-		commitParams := search.CommitParameters{
-			RepoRevs:           repoRev,
+	var terms []string
+	if args.PatternInfo.Pattern != "" {
+		terms = append(terms, args.PatternInfo.Pattern)
+	}
+
+	return searchCommitsInRepos(ctx, args, searchCommitsInReposParameters{
+		TraceName:     "searchCommitLogsInRepos",
+		ErrorName:     "commits",
+		ResultChannel: resultChannel,
+		CommitParams: search.CommitParameters{
 			PatternInfo:        args.PatternInfo,
 			Query:              args.Query,
 			Diff:               false,
 			ExtraMessageValues: terms,
-		}
-
-		// We use the stream so we can optionally send down resultChannel.
-		for event := range searchCommitsInRepoStream(ctx, commitParams) {
-			if len(event.Results) > 0 && resultChannel != nil {
-				resultChannel <- commitSearchResultsToSearchResults(event.Results)
-			}
-
-			results = append(results, event.Results...)
-			limitHit = event.LimitHit
-			timedOut = event.TimedOut
-			err = event.Error
-		}
-
-		return
-	}
-
-	return searchCommitsInRepos(ctx, args, searchCommitsInReposParameters{
-		TraceName: "searchCommitLogsInRepos",
-		ErrorName: "commits",
-		Search:    commitLogSearcher,
+		},
 	})
 }
 
