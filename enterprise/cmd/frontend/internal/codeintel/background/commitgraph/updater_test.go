@@ -1,4 +1,4 @@
-package background
+package commitgraph
 
 import (
 	"context"
@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func TestCommitUpdater(t *testing.T) {
+func TestUpdater(t *testing.T) {
 	graph := gitserver.ParseCommitGraph([]string{
 		"a",
 		"b a",
@@ -19,7 +19,7 @@ func TestCommitUpdater(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockDBStore.DirtyRepositoriesFunc.SetDefaultReturn(map[int]int{42: 15}, nil)
 	mockDBStore.LockFunc.SetDefaultReturn(true, func(err error) error { return err }, nil)
-	mockDBStore.OldestDumpForRepositoryFunc.SetDefaultReturn(store.Dump{Commit: "deadbeef"}, true, nil)
+	mockDBStore.OldestDumpForRepositoryFunc.SetDefaultReturn(dbstore.Dump{Commit: "deadbeef"}, true, nil)
 
 	commitTime := time.Unix(1587396557, 0).UTC()
 	mockGitserverClient := NewMockGitserverClient()
@@ -27,7 +27,7 @@ func TestCommitUpdater(t *testing.T) {
 	mockGitserverClient.CommitDateFunc.SetDefaultReturn(commitTime, nil)
 	mockGitserverClient.HeadFunc.SetDefaultReturn("b", nil)
 
-	updater := &CommitUpdater{
+	updater := &Updater{
 		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
 		operations:      newOperations(mockDBStore, &observation.TestContext),
@@ -59,14 +59,14 @@ func TestCommitUpdater(t *testing.T) {
 	}
 }
 
-func TestCommitUpdaterNoOldDump(t *testing.T) {
+func TestUpdaterNoOldDump(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockDBStore.DirtyRepositoriesFunc.SetDefaultReturn(map[int]int{42: 15}, nil)
 	mockDBStore.LockFunc.SetDefaultReturn(true, func(err error) error { return err }, nil)
-	mockDBStore.OldestDumpForRepositoryFunc.SetDefaultReturn(store.Dump{}, false, nil)
+	mockDBStore.OldestDumpForRepositoryFunc.SetDefaultReturn(dbstore.Dump{}, false, nil)
 	mockGitserverClient := NewMockGitserverClient()
 
-	updater := &CommitUpdater{
+	updater := &Updater{
 		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
 		operations:      newOperations(mockDBStore, &observation.TestContext),
@@ -86,13 +86,13 @@ func TestCommitUpdaterNoOldDump(t *testing.T) {
 	}
 }
 
-func TestCommitUpdaterLocked(t *testing.T) {
+func TestUpdaterLocked(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockDBStore.DirtyRepositoriesFunc.SetDefaultReturn(map[int]int{42: 15}, nil)
 	mockDBStore.LockFunc.SetDefaultReturn(false, nil, nil)
 	mockGitserverClient := NewMockGitserverClient()
 
-	updater := &CommitUpdater{
+	updater := &Updater{
 		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
 		operations:      newOperations(mockDBStore, &observation.TestContext),

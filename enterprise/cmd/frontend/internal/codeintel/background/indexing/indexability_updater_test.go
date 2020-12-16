@@ -1,4 +1,4 @@
-package background
+package indexing
 
 import (
 	"context"
@@ -37,7 +37,7 @@ func TestIndexabilityUpdater(t *testing.T) {
 	updater := &IndexabilityUpdater{
 		dbStore:            mockDBStore,
 		gitserverClient:    mockGitserverClient,
-		operations:         newOperations(mockDBStore, &observation.TestContext),
+		operations:         newOperations(&observation.TestContext),
 		limiter:            rate.NewLimiter(MaxGitserverRequestsPerSecond, 1),
 		enableIndexingCNCF: false,
 	}

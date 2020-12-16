@@ -1,4 +1,4 @@
-package background
+package commitgraph
 
 import (
 	"context"
@@ -19,23 +19,23 @@ import (
 // the upload processing as it is likely that we are processing multiple uploads concurrently
 // for the same repository and should not repeat the work since the last calculation performed
 // will always be the one we want.
-type CommitUpdater struct {
+type Updater struct {
 	dbStore         DBStore
 	gitserverClient GitserverClient
 	operations      *operations
 }
 
-var _ goroutine.Handler = &CommitUpdater{}
+var _ goroutine.Handler = &Updater{}
 
-// NewCommitUpdater returns a background routine that periodically updates the commit graph
+// NewUpdater returns a background routine that periodically updates the commit graph
 // and visible uploads for each repository marked as dirty.
-func NewCommitUpdater(
+func NewUpdater(
 	dbStore DBStore,
 	gitserverClient GitserverClient,
 	interval time.Duration,
 	operations *operations,
 ) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &CommitUpdater{
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &Updater{
 		dbStore:         dbStore,
 		gitserverClient: gitserverClient,
 		operations:      operations,
@@ -43,7 +43,7 @@ func NewCommitUpdater(
 }
 
 // Handle checks for dirty repositories and invokes the underlying updater on each one.
-func (u *CommitUpdater) Handle(ctx context.Context) error {
+func (u *Updater) Handle(ctx context.Context) error {
 	repositoryIDs, err := u.dbStore.DirtyRepositories(ctx)
 	if err != nil {
 		return errors.Wrap(err, "store.DirtyRepositories")
@@ -58,14 +58,14 @@ func (u *CommitUpdater) Handle(ctx context.Context) error {
 	return nil
 }
 
-func (u *CommitUpdater) HandleError(err error) {
+func (u *Updater) HandleError(err error) {
 	log15.Error("Failed to run update process", "err", err)
 }
 
 // tryUpdate will call update while holding an advisory lock to give exclusive access to the
 // update procedure for this repository. If the lock is already held, this method will simply
 // do nothing.
-func (u *CommitUpdater) tryUpdate(ctx context.Context, repositoryID, dirtyToken int) (err error) {
+func (u *Updater) tryUpdate(ctx context.Context, repositoryID, dirtyToken int) (err error) {
 	ok, unlock, err := u.dbStore.Lock(ctx, repositoryID, false)
 	if err != nil || !ok {
 		return errors.Wrap(err, "store.Lock")
@@ -84,7 +84,7 @@ func (u *CommitUpdater) tryUpdate(ctx context.Context, repositoryID, dirtyToken 
 // The user should supply a dirty token that is associated with the given repository so that
 // the repository can be unmarked as long as the repository is not marked as dirty again before
 // the update completes.
-func (u *CommitUpdater) update(ctx context.Context, repositoryID, dirtyToken int) (err error) {
+func (u *Updater) update(ctx context.Context, repositoryID, dirtyToken int) (err error) {
 	// Enable tracing on the context and trace the operation
 	ctx = ot.WithShouldTrace(ctx, true)
 
@@ -94,10 +94,7 @@ func (u *CommitUpdater) update(ctx context.Context, repositoryID, dirtyToken int
 			log.Int("dirtyToken", dirtyToken),
 		},
 	})
-	var fields []log.Field
-	defer func() {
-		endObservation(1, observation.Args{LogFields: fields})
-	}()
+	defer endObservation(1, observation.Args{})
 
 	// Construct a view of the git graph that we will later decorate with upload information.
 	// We will only fetch commits that are newer than the oldest commit with LSIF data. This

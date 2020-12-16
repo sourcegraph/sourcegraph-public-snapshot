@@ -1,4 +1,4 @@
-package background
+package janitor
 
 import (
 	"context"
@@ -11,9 +11,9 @@ import (
 )
 
 type RecordExpirer struct {
-	dbStore    DBStore
-	ttl        time.Duration
-	operations *operations
+	dbStore DBStore
+	ttl     time.Duration
+	metrics *metrics
 }
 
 var _ goroutine.Handler = &RecordExpirer{}
@@ -22,11 +22,11 @@ var _ goroutine.Handler = &RecordExpirer{}
 // and index records that are older than the given TTL. Upload records which have
 // valid LSIF data (not just a historic upload failure record) will only be deleted
 // if it is not visible at the tip of its repository's default branch.
-func NewRecordExpirer(dbStore DBStore, ttl, interval time.Duration, operations *operations) goroutine.BackgroundRoutine {
+func NewRecordExpirer(dbStore DBStore, ttl, interval time.Duration, metrics *metrics) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &RecordExpirer{
-		dbStore:    dbStore,
-		ttl:        ttl,
-		operations: operations,
+		dbStore: dbStore,
+		ttl:     ttl,
+		metrics: metrics,
 	})
 }
 
@@ -43,7 +43,7 @@ func (e *RecordExpirer) Handle(ctx context.Context) error {
 	}
 	if count > 0 {
 		log15.Debug("Deleted old dump records", "count", count)
-		e.operations.numUploadRecordsRemoved.Add(float64(count))
+		e.metrics.numUploadRecordsRemoved.Add(float64(count))
 	}
 
 	// TODO (efritz)- expire old upload (non-dump) records
@@ -52,6 +52,6 @@ func (e *RecordExpirer) Handle(ctx context.Context) error {
 }
 
 func (e *RecordExpirer) HandleError(err error) {
-	e.operations.numErrors.Inc()
+	e.metrics.numErrors.Inc()
 	log15.Error("Failed to delete old codeintel records", "error", err)
 }

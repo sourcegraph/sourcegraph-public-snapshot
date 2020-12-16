@@ -11,7 +11,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/commitgraph"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/indexing"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
@@ -41,10 +43,7 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		return err
 	}
 
-	routines, err := newBackgroundRoutines(observationContext)
-	if err != nil {
-		return err
-	}
+	routines := newBackgroundRoutines(observationContext)
 
 	enterpriseServices.CodeIntelResolver = resolver
 	enterpriseServices.NewCodeIntelUploadHandler = uploadHandler
@@ -102,33 +101,49 @@ func newUploadHandler(ctx context.Context) (func(internal bool) http.Handler, er
 	return uploadHandler, nil
 }
 
-func newBackgroundRoutines(observationContext *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	dbStoreShim := &background.DBStoreShim{services.dbStore}
-	lsifStoreShim := services.lsifStore
+func newBackgroundRoutines(observationContext *observation.Context) (routines []goroutine.BackgroundRoutine) {
+	routines = append(routines, newCommitGraphRoutines(observationContext)...)
+	routines = append(routines, newIndexingRoutines(observationContext)...)
+	routines = append(routines, newJanitorRoutines(observationContext)...)
+	return routines
+}
+
+func newCommitGraphRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
+	dbStore := services.dbStore
 	gitserverClient := services.gitserverClient
-	operations := background.NewOperations(dbStoreShim, observationContext)
+	operations := commitgraph.NewOperations(dbStore, observationContext)
 
-	routines := []goroutine.BackgroundRoutine{
-		// Commit graph updater
-		background.NewCommitUpdater(dbStoreShim, gitserverClient, config.CommitGraphUpdateTaskInterval, operations),
+	return []goroutine.BackgroundRoutine{
+		commitgraph.NewUpdater(dbStore, gitserverClient, config.CommitGraphUpdateTaskInterval, operations),
+	}
+}
 
-		// Cleanup
-		background.NewAbandonedUploadJanitor(dbStoreShim, config.UploadTimeout, config.CleanupTaskInterval, operations),
-		background.NewDeletedRepositoryJanitor(dbStoreShim, config.CleanupTaskInterval, operations),
-		background.NewHardDeleter(dbStoreShim, lsifStoreShim, config.CleanupTaskInterval, operations),
-		background.NewRecordExpirer(dbStoreShim, config.DataTTL, config.CleanupTaskInterval, operations),
-		background.NewUploadResetter(dbStoreShim, config.CleanupTaskInterval, operations),
-		background.NewIndexResetter(dbStoreShim, config.CleanupTaskInterval, operations),
+func newIndexingRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
+	if !config.EnableAutoIndexing {
+		return nil
 	}
 
-	if config.EnableAutoIndexing {
-		// Auto indexing
-		routines = append(
-			routines,
-			background.NewIndexScheduler(dbStoreShim, gitserverClient, config.IndexBatchSize, config.MinimumTimeSinceLastEnqueue, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, operations),
-			background.NewIndexabilityUpdater(dbStoreShim, gitserverClient, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, operations),
-		)
-	}
+	dbStore := &indexing.DBStoreShim{services.dbStore}
+	gitserverClient := services.gitserverClient
+	operations := indexing.NewOperations(observationContext)
 
-	return routines, nil
+	return []goroutine.BackgroundRoutine{
+		indexing.NewIndexScheduler(dbStore, gitserverClient, config.IndexBatchSize, config.MinimumTimeSinceLastEnqueue, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, operations),
+		indexing.NewIndexabilityUpdater(dbStore, gitserverClient, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.AutoIndexingTaskInterval, operations),
+	}
+}
+
+func newJanitorRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
+	dbStore := &janitor.DBStoreShim{services.dbStore}
+	lsifStore := services.lsifStore
+	metrics := janitor.NewMetrics(observationContext)
+
+	return []goroutine.BackgroundRoutine{
+		janitor.NewAbandonedUploadJanitor(dbStore, config.UploadTimeout, config.CleanupTaskInterval, metrics),
+		janitor.NewDeletedRepositoryJanitor(dbStore, config.CleanupTaskInterval, metrics),
+		janitor.NewHardDeleter(dbStore, lsifStore, config.CleanupTaskInterval, metrics),
+		janitor.NewRecordExpirer(dbStore, config.DataTTL, config.CleanupTaskInterval, metrics),
+		janitor.NewUploadResetter(dbStore, config.CleanupTaskInterval, metrics),
+		janitor.NewIndexResetter(dbStore, config.CleanupTaskInterval, metrics),
+	}
 }
