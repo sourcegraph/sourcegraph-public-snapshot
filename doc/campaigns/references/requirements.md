@@ -13,7 +13,7 @@ Campaigns is compatible with the following code hosts and versions:
 
 ### Rate limits
 
-Each open campaign requires multiple api requests to update the changesets with the latest information to the code host. Sourcegraph intellegently schedules the requests requried to update changesets to avoid overwheling the code host's rate limits. In environments with many open campaigns, this can result in outdated changesets as they await their turn in the update queue.
+Each open campaign requires multiple API requests to update the changesets with the latest information to the code host. Sourcegraph intelligently schedules the requests required to update changesets to avoid overwhelming the code host's rate limits. In environments with many open campaigns, this can result in outdated changesets as they await their turn in the update queue.
 
 We **highly recommend** enabling webhooks to increase performance and reduce api requests accociated with large campaigns:
 
@@ -23,7 +23,7 @@ We **highly recommend** enabling webhooks to increase performance and reduce api
 
 ### A note on campaigns effect on CI systems
 
-Campaigns makes it possible to create changeset in tens or thousands of repositories. These changesets may trigger many checks or continuous integration jobs that may stress the resources allotted to these systems. Campaigns supports partial publishing for changesets to help mitigate these issues. You may also consider publishing your changesets at times of low activitity.  
+Campaigns makes it possible to changesets in tens or thousands of repositories. These changesets may trigger many checks or continuous integration jobs that may stress the resources allotted to these systems. Campaigns supports partial publishing for changesets to help mitigate these issues. You may also consider publishing your changesets at times of low activity.  
 
 ## Sourcegraph server
 
@@ -38,7 +38,7 @@ While the latest version of Sourcegraph server is always recommended, version 3.
     * If using Docker 3.x, ensure your version is at least 3.0.1
     * In 3.x versions, the gRPC setting must be disabled
 * Disk space
-  * Disk equal to each campaign's largest repository plus any dependancies or requirements required by the run steps, times the number of parallel jobs is required.
+  * Disk equal to each campaign's largest repository plus any dependencies or requirements required by the run steps, times the number of parallel jobs is required.
     * The number of parallel jobs is equivalent to the number of cores in the system running src-cli.
-* Disk space is also required for the generated patches. This requirement *is* cumulative across each repostiory altered.
+* Disk space is also required for the generated patches. This requirement *is* cumulative across each repository altered.
 * Git
