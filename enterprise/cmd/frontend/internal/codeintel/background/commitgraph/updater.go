@@ -9,6 +9,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	basegitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -97,53 +99,11 @@ func (u *Updater) update(ctx context.Context, repositoryID, dirtyToken int) (err
 	defer endObservation(1, observation.Args{})
 
 	// Construct a view of the git graph that we will later decorate with upload information.
-	// We will only fetch commits that are newer than the oldest commit with LSIF data. This
-	// will pull back the smaller set of _relevant_ commits which we need denormalized data
-	// for in the query path.
-	//
-	// Decorating the graph (below) is an operation that scales _multiplicatively_ with the
-	// size of the git graph and the number of uploads. This is a necessary optimization for
-	// repositories with very large number of commits. The number of commits pulled back here
-	// should not grow (unless the repo is growing at an accelerating rate) as we routinely
-	// expire old information for active repositories in a janitor process.
-	dump, ok, err := u.dbStore.OldestDumpForRepository(ctx, repositoryID)
+	commitGraph, err := u.getCommitGraph(ctx, repositoryID)
 	if err != nil {
-		return errors.Wrap(err, "store.OldestDumpForRepository")
+		return err
 	}
-
-	var commitGraph *gitserver.CommitGraph
-	if ok {
-		traceLog(log.Int("dumpID", dump.ID))
-
-		oldestCommitDateWithUpload, err := u.gitserverClient.CommitDate(ctx, repositoryID, dump.Commit)
-		if err != nil {
-			// TODO(efritz) - handle missing commit error condition. This is probably an extremely
-			// unlikely edge case, but it's possible that the oldest commit was force-pushed out of
-			// existence in the code host (then subsequently gitserver) before the janitor process
-			// removes the orphaned commits. This will cause tryUpdate to fail here and the repo
-			// will remain dirty until one of the conditions above changes.
-			//
-			// It's a bit nasty but self-correcting.
-			return errors.Wrap(err, "gitserver.CommitDate")
-		}
-
-		// The --since flag for git log is exclusive, but we want to include the commit where the
-		// oldest dump is defined. This flag only has second resolution, so we shouldn't be pulling
-		// back any more data than we wanted.
-		oldestCommitDateWithUpload = oldestCommitDateWithUpload.Add(-time.Second)
-		traceLog(log.String("since", oldestCommitDateWithUpload.String()))
-
-		commitGraph, err = u.gitserverClient.CommitGraph(ctx, repositoryID, gitserver.CommitGraphOptions{
-			AllRefs: true,
-			Since:   &oldestCommitDateWithUpload,
-		})
-		if err != nil {
-			return errors.Wrap(err, "gitserver.CommitGraph")
-		}
-		traceLog(log.Int("numCommitGraphKeys", len(commitGraph.Order())))
-	} else {
-		commitGraph = gitserver.ParseCommitGraph(nil)
-	}
+	traceLog(log.Int("numCommitGraphKeys", len(commitGraph.Order())))
 
 	tipCommit, err := u.gitserverClient.Head(ctx, repositoryID)
 	if err != nil {
@@ -159,4 +119,71 @@ func (u *Updater) update(ctx context.Context, repositoryID, dirtyToken int) (err
 	}
 
 	return nil
+}
+
+// getCommitGraph builds a partial commit graph that includes the most recent commits on each branch
+// extending back as as the date of the commit of the oldest upload processed for this repository.
+//i
+// This optimization is necessary as decorating the commit graph is an operation that scales with
+// the size of both the git graph and the number of uploads (multiplicatively). For repositories with
+// a very large number of commits or distinct roots (most monorepos) this is a necessary optimization.
+//
+// The number of commits pulled back here should not grow over time unless the repo is growing at an
+// accelerating rate, as we routinely expire old information for active repositories in a janitor
+// process.
+func (u *Updater) getCommitGraph(ctx context.Context, repositoryID int) (*gitserver.CommitGraph, error) {
+	commitDate, ok, err := u.getOldestCommitDate(ctx, repositoryID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return gitserver.ParseCommitGraph(nil), nil
+	}
+
+	// The --since flag for git log is exclusive, but we want to include the commit where the
+	// oldest dump is defined. This flag only has second resolution, so we shouldn't be pulling
+	// back any more data than we wanted.
+	commitDate = commitDate.Add(-time.Second)
+
+	commitGraph, err := u.gitserverClient.CommitGraph(ctx, repositoryID, gitserver.CommitGraphOptions{
+		AllRefs: true,
+		Since:   &commitDate,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "gitserver.CommitGraph")
+	}
+
+	return commitGraph, nil
+}
+
+// TODO(efritz) - make adjustable
+const commitDateBatchSize = 100
+
+// getOldestCommitDate returns the commit date of the oldest processed upload for the given repository.
+func (u *Updater) getOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error) {
+	uploads, _, err := u.dbStore.GetUploads(ctx, dbstore.GetUploadsOptions{
+		RepositoryID: repositoryID,
+		State:        "completed",
+		OldestFirst:  true,
+		Limit:        commitDateBatchSize,
+	})
+	if err != nil {
+		return time.Time{}, false, errors.Wrap(err, "store.GetUploads")
+	}
+
+	for _, upload := range uploads {
+		commitDate, err := u.gitserverClient.CommitDate(ctx, repositoryID, upload.Commit)
+		if err != nil {
+			if basegitserver.IsRevisionNotFound(err) {
+				log15.Warn("Unknown commit", "commit", upload.Commit)
+				continue
+			}
+
+			return time.Time{}, false, errors.Wrap(err, "gitserver.CommitDate")
+		}
+
+		return commitDate, true, nil
+	}
+
+	return time.Time{}, false, nil
 }
