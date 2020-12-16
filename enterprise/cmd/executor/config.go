@@ -102,8 +102,7 @@ func (c *Config) ClientOptions(transport http.RoundTripper) apiclient.Options {
 
 func (c *Config) BaseClientOptions(transport http.RoundTripper) apiclient.BaseClientOptions {
 	return apiclient.BaseClientOptions{
-		TraceOperationName: "Executor Queue Client",
-		Transport:          transport,
+		Transport: transport,
 	}
 }
 
