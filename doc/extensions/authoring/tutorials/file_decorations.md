@@ -93,7 +93,7 @@ You can restrict where an individual file decoration is displayed by setting the
 
 ## Summary
 
-You've now learned how to decorate filenames on Sourcegraph with Sourcegraph extensions!
+You've now learned how to decorate files on Sourcegraph with Sourcegraph extensions!
 
 ## Next Steps
 
