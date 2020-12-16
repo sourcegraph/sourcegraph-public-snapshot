@@ -29,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -171,20 +170,7 @@ func mustRegisterQueueMetric(observationContext *observation.Context, workerStor
 }
 
 func makeWorkerMetrics(observationContext *observation.Context) workerutil.WorkerMetrics {
-	metrics := metrics.NewOperationMetrics(
-		observationContext.Registerer,
-		"upload_queue_processor",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of records processed"),
-	)
-
-	return workerutil.WorkerMetrics{
-		HandleOperation: observationContext.Operation(observation.Op{
-			Name:         "Processor.Process",
-			MetricLabels: []string{"process"},
-			Metrics:      metrics,
-		}),
-	}
+	return workerutil.NewMetrics(observationContext, "codeintel_upload_queue_processor", nil)
 }
 
 func initializeUploadStore(ctx context.Context, uploadStore uploadstore.Store) error {

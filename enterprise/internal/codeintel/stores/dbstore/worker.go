@@ -20,7 +20,7 @@ const StalledUploadMaxAge = time.Second * 5
 // "queued" on its next reset.
 const UploadMaxNumResets = 3
 
-var uploadWorkerStore = dbworkerstore.Options{
+var uploadWorkerStoreOptions = dbworkerstore.Options{
 	Name:              "precise_code_intel_upload_worker_store",
 	TableName:         "lsif_uploads",
 	ViewName:          "lsif_uploads_with_repository_name u",
@@ -32,7 +32,7 @@ var uploadWorkerStore = dbworkerstore.Options{
 }
 
 func WorkerutilUploadStore(s basestore.ShareableStore) dbworkerstore.Store {
-	return dbworkerstore.New(s.Handle(), uploadWorkerStore)
+	return dbworkerstore.New(s.Handle(), uploadWorkerStoreOptions)
 }
 
 // StalledIndexMaxAge is the maximum allowable duration between updating the state of an
@@ -46,7 +46,7 @@ const StalledIndexMaxAge = time.Second * 5
 // "queued" on its next reset.
 const IndexMaxNumResets = 3
 
-var indexWorkerStore = dbworkerstore.Options{
+var indexWorkerStoreOptions = dbworkerstore.Options{
 	Name:              "precise_code_intel_index_worker_store",
 	TableName:         "lsif_indexes",
 	ViewName:          "lsif_indexes_with_repository_name u",
@@ -58,5 +58,5 @@ var indexWorkerStore = dbworkerstore.Options{
 }
 
 func WorkerutilIndexStore(s basestore.ShareableStore) dbworkerstore.Store {
-	return dbworkerstore.New(s.Handle(), indexWorkerStore)
+	return dbworkerstore.New(s.Handle(), indexWorkerStoreOptions)
 }
