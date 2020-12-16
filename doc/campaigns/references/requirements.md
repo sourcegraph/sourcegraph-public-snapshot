@@ -1,19 +1,19 @@
 # Requirements
 
-Campaigns has requirements for the Sourcegraph server version, its connected code hosts and developer environments. 
+Campaigns has requirements for the Sourcegraph server version, its connected code hosts and developer environments.
 
 ## Code hosts
 
-Campaigns is compatible with the following code hosts and versions:
+Campaigns is compatible with the following code hosts:
 
 * Github.com
 * Github Enterprise 2.20 and later
 * GitLab 12.7 and later (burndown charts are only supported with 13.2 and later)
 * Bitbucket server 5.7 and later
 
-### Rate limits
+### Campaigns effect on code host rate limits
 
-Each open campaign requires multiple API requests to update the changesets with the latest information to the code host. Sourcegraph intelligently schedules the requests required to update changesets to avoid overwhelming the code host's rate limits. In environments with many open campaigns, this can result in outdated changesets as they await their turn in the update queue.
+Each changeset makes multiple API requests to it's code host so that it's status and other information is current. Sourcegraph intelligently schedules these requests to avoid overwhelming the code host's rate limits. In environments with many open campaigns, this can result in outdated changesets as they await their turn in the update queue.
 
 We **highly recommend** enabling webhooks to increase performance and reduce api requests accociated with large campaigns:
 
@@ -23,7 +23,7 @@ We **highly recommend** enabling webhooks to increase performance and reduce api
 
 ### A note on campaigns effect on CI systems
 
-Campaigns makes it possible to changesets in tens or thousands of repositories. These changesets may trigger many checks or continuous integration jobs that may stress the resources allotted to these systems. Campaigns supports partial publishing for changesets to help mitigate these issues. You may also consider publishing your changesets at times of low activity.  
+Campaigns makes it possible to create changesets in tens or thousands of repositories. These changesets may trigger many checks or continuous integration jobs that may stress the resources allotted to these systems. Campaigns supports partial publishing for changesets to help mitigate these issues. You may also consider publishing your changesets at times of low activity.  
 
 ## Sourcegraph server
 
