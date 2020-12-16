@@ -80,7 +80,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 	var searcherRepos []*search.RepositoryRevisions
 	if indexed.DisableUnindexedSearch {
 		tr.LazyPrintf("disabling unindexed search")
-		common.missing = make([]*types.Repo, len(indexed.Unindexed))
+		common.missing = make([]*types.RepoName, len(indexed.Unindexed))
 		for i, r := range indexed.Unindexed {
 			common.missing[i] = r.Repo
 		}
@@ -154,16 +154,14 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int) 
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			limitHit := symbolCount(res) > limit
-			repoErr = handleRepoSearchResult(common, repoRevs, limitHit, false, repoErr)
-			if repoErr != nil {
+			repoCommon, fatalErr := handleRepoSearchResult(repoRevs, len(repoSymbols) > limit, false, repoErr)
+			if fatalErr != nil {
 				if ctx.Err() == nil || errors.Cause(repoErr) != ctx.Err() {
 					// Only record error if it's not directly caused by a context error.
 					run.Error(repoErr)
 				}
-			} else {
-				common.searched = append(common.searched, repoRevs.Repo)
 			}
+			common.update(&repoCommon)
 			if repoSymbols != nil {
 				addMatches(repoSymbols)
 			}
@@ -232,7 +230,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		return nil, err
 	}
 
-	repoResolver := NewRepositoryResolver(repoRevs.Repo)
+	repoResolver := NewRepositoryResolver(repoRevs.Repo.ToRepo())
 	commitResolver := &GitCommitResolver{
 		repoResolver: repoResolver,
 		oid:          GitObjectID(commitID),

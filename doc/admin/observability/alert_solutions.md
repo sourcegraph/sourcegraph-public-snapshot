@@ -3789,7 +3789,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions:**
 
-- _repo-updater: less than 90% percentage pods available for 1m0s_
+- _repo-updater: less than 90% percentage pods available for 10m0s_
 
 **Possible solutions:**
 

@@ -12,7 +12,7 @@ import (
 var updateGolden = flag.Bool("update", false, "Update testdata goldens")
 
 func TestSearchProgress(t *testing.T) {
-	var timedout100 []*types.Repo
+	var timedout100 []*types.RepoName
 	for i := 0; i < 100; i++ {
 		timedout100 = append(timedout100, mkRepos(fmt.Sprintf("timedout-%d", i))...)
 	}
@@ -25,7 +25,7 @@ func TestSearchProgress(t *testing.T) {
 			},
 		},
 		"all": {
-			SearchResults: []SearchResultResolver{mkFileMatch(&types.Repo{Name: "found-1"}, "dir/file", 123)},
+			SearchResults: []SearchResultResolver{mkFileMatch(&types.RepoName{Name: "found-1"}, "dir/file", 123)},
 			searchResultsCommon: searchResultsCommon{
 				limitHit: true,
 				repos:    reposMap(mkRepos("found-1", "missing-1", "missing-2", "cloning-1", "timedout-1")...),

@@ -241,13 +241,13 @@ func (s *indexedSearchRequest) Search(ctx context.Context) (searchResultsCommon,
 		return searchResultsCommon{}, nil, err
 	}
 
-	repos := make([]*types.Repo, 0, len(s.Repos()))
+	repos := make([]*types.RepoName, 0, len(s.Repos()))
 	for _, r := range s.Repos() {
 		repos = append(repos, r.Repo)
 	}
-	sort.Sort(types.Repos(repos))
+	sort.Sort(types.RepoNames(repos))
 
-	var timedout []*types.Repo
+	var timedout []*types.RepoName
 	if noResultsInTimeout {
 		timedout = repos
 	}
@@ -400,7 +400,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	maxLineMatches := 25 + k
 	maxLineFragmentMatches := 3 + k
 
-	var getRepoInputRev func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool)
+	var getRepoInputRev func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool)
 
 	if args.Mode == search.ZoektGlobalSearch {
 		m := map[string]*search.RepositoryRevisions{}
@@ -418,7 +418,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			}
 			m[string(repo.Repo.Name)] = repo
 		}
-		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool) {
+		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
 			repoRev := m[file.Repository]
 			if repoRev == nil {
 				return nil, nil, false
@@ -426,7 +426,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			return repoRev.Repo, repoRev.RevSpecs(), true
 		}
 	} else {
-		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool) {
+		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
 			repo, inputRevs := repos.GetRepoInputRev(file)
 			return repo, inputRevs, true
 		}
@@ -450,7 +450,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		}
 		repoResolver := repoResolvers[repo.Name]
 		if repoResolver == nil {
-			repoResolver = &RepositoryResolver{innerRepo: repo}
+			repoResolver = &RepositoryResolver{innerRepo: repo.ToRepo()}
 			repoResolvers[repo.Name] = repoResolver
 		}
 
@@ -489,7 +489,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 // limit. Additionally it calculates the set of repos with partial
 // results. This information is not returned by zoekt, so if zoekt indicates a
 // limit has been hit, we include all repos in partial.
-func zoektLimitMatches(limitHit bool, limit int, files []zoekt.FileMatch, getRepoInputRev func(file *zoekt.FileMatch) (repo *types.Repo, revs []string, ok bool)) (bool, []zoekt.FileMatch, map[api.RepoID]struct{}) {
+func zoektLimitMatches(limitHit bool, limit int, files []zoekt.FileMatch, getRepoInputRev func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool)) (bool, []zoekt.FileMatch, map[api.RepoID]struct{}) {
 	var resultFiles []zoekt.FileMatch
 	var partialFiles []zoekt.FileMatch
 
@@ -868,7 +868,7 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 }
 
 // GetRepoInputRev returns the repo and inputRev associated with file.
-func (rb *indexedRepoRevs) GetRepoInputRev(file *zoekt.FileMatch) (repo *types.Repo, inputRevs []string) {
+func (rb *indexedRepoRevs) GetRepoInputRev(file *zoekt.FileMatch) (repo *types.RepoName, inputRevs []string) {
 	repoRev := rb.repoRevs[file.Repository]
 
 	inputRevs = make([]string, 0, len(file.Branches))
