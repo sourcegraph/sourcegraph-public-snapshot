@@ -1,17 +1,12 @@
-package background
+package janitor
 
 import (
-	"context"
-
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type operations struct {
-	commitUpdate            *observation.Operation
+type metrics struct {
 	numUploadRecordsRemoved prometheus.Counter
 	numIndexRecordsRemoved  prometheus.Counter
 	numUploadsPurged        prometheus.Counter
@@ -22,24 +17,9 @@ type operations struct {
 	numErrors               prometheus.Counter
 }
 
-var NewOperations = newOperations
+var NewMetrics = newMetrics
 
-func newOperations(dbStore DBStore, observationContext *observation.Context) *operations {
-	//
-	// Operations
-
-	commitUpdate := observationContext.Operation(observation.Op{
-		Name: "codeintel.commitUpdater",
-		Metrics: metrics.NewOperationMetrics(
-			observationContext.Registerer,
-			"codeintel_commit_graph_updater",
-			metrics.WithCountHelp("Total number of method invocations."),
-		),
-	})
-
-	//
-	// Counters
-
+func newMetrics(observationContext *observation.Context) *metrics {
 	counter := func(name, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,
@@ -83,26 +63,7 @@ func newOperations(dbStore DBStore, observationContext *observation.Context) *op
 		"The number of errors that occur during a codeintel background job.",
 	)
 
-	//
-	// Periodic metrics
-
-	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_dirty_repositories_total",
-		Help: "Total number of repositories with stale commit graphs.",
-	}, func() float64 {
-		dirtyRepositories, err := dbStore.DirtyRepositories(context.Background())
-		if err != nil {
-			log15.Error("Failed to determine number of dirty repositories", "err", err)
-		}
-
-		return float64(len(dirtyRepositories))
-	}))
-
-	//
-	//
-
-	return &operations{
-		commitUpdate:            commitUpdate,
+	return &metrics{
 		numUploadRecordsRemoved: numUploadRecordsRemoved,
 		numIndexRecordsRemoved:  numIndexRecordsRemoved,
 		numUploadsPurged:        numUploadsPurged,
