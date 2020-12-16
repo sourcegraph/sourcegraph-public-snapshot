@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 // buildTag is the git tag at the time of build and is used to
@@ -25,10 +27,13 @@ Examples:
 
 	flagSet := flag.NewFlagSet("version", flag.ExitOnError)
 
+	var apiFlags = api.NewFlags(flagSet)
+
 	handler := func(args []string) error {
 		fmt.Printf("Current version: %s\n", buildTag)
 
-		recommendedVersion, err := getRecommendedVersion()
+		client := cfg.apiClient(apiFlags, flagSet.Output())
+		recommendedVersion, err := getRecommendedVersion(context.Background(), client)
 		if err != nil {
 			return err
 		}
@@ -53,18 +58,10 @@ Examples:
 	})
 }
 
-func getRecommendedVersion() (string, error) {
-	url, err := url.Parse(cfg.Endpoint + "/.api/src-cli/version")
+func getRecommendedVersion(ctx context.Context, client api.Client) (string, error) {
+	req, err := client.NewHTTPRequest(ctx, "GET", ".api/src-cli/version", nil)
 	if err != nil {
 		return "", err
-	}
-
-	req, err := http.NewRequest("GET", url.String(), nil)
-	if err != nil {
-		return "", err
-	}
-	for k, v := range cfg.AdditionalHeaders {
-		req.Header.Set(k, v)
 	}
 
 	resp, err := http.DefaultClient.Do(req)

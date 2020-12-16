@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- The src version command didn't send any authentication headers before, which could have failed for some instance configurations. The authentication header is now properly set for the request done in this command. [#411](https://github.com/sourcegraph/src-cli/pull/411)
+
 ### Removed
 
 ## 3.23.0
