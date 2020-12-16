@@ -458,8 +458,7 @@ func RepoUpdater() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						shared.KubernetesPodsAvailable("repo-updater", monitoring.ObservableOwnerCloud).
-							WithCritical(monitoring.Alert().LessOrEqual(90).For(1 * time.Minute)),
+						shared.KubernetesPodsAvailable("repo-updater", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
