@@ -55,13 +55,13 @@ type searchResultsCommon struct {
 	//
 	// TODO All other fields are sets of repo IDs. They can only contain repos
 	// that are in this map.
-	repos map[api.RepoID]*types.Repo
+	repos map[api.RepoID]*types.RepoName
 
-	searched []*types.Repo // repos that were searched
-	indexed  []*types.Repo // repos that were searched using an index
-	cloning  []*types.Repo // repos that could not be searched because they were still being cloned
-	missing  []*types.Repo // repos that could not be searched because they do not exist
-	excluded excludedRepos // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
+	searched []*types.RepoName // repos that were searched
+	indexed  []*types.RepoName // repos that were searched using an index
+	cloning  []*types.RepoName // repos that could not be searched because they were still being cloned
+	missing  []*types.RepoName // repos that could not be searched because they do not exist
+	excluded excludedRepos     // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
 
 	partial map[api.RepoID]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
 
@@ -70,7 +70,7 @@ type searchResultsCommon struct {
 	// timedout usually contains repos that haven't finished being fetched yet.
 	// This should only happen for large repos and the searcher caches are
 	// purged.
-	timedout []*types.Repo
+	timedout []*types.RepoName
 
 	indexUnavailable bool // True if indexed search is enabled but was not available during this search.
 }
@@ -83,7 +83,7 @@ func (c *searchResultsCommon) Repositories() []*RepositoryResolver {
 	repos := c.repos
 	resolvers := make([]*RepositoryResolver, 0, len(repos))
 	for _, r := range repos {
-		resolvers = append(resolvers, &RepositoryResolver{innerRepo: r})
+		resolvers = append(resolvers, &RepositoryResolver{innerRepo: r.ToRepo()})
 	}
 	sort.Slice(resolvers, func(a, b int) bool {
 		return resolvers[a].innerRepo.ID < resolvers[b].innerRepo.ID
@@ -123,7 +123,7 @@ func (c *searchResultsCommon) Equal(other *searchResultsCommon) bool {
 	return reflect.DeepEqual(c, other)
 }
 
-func RepositoryResolvers(repos types.Repos) []*RepositoryResolver {
+func RepositoryResolvers(repos types.RepoNames) []*RepositoryResolver {
 	dedupSort(&repos)
 	return toRepositoryResolvers(repos)
 }
@@ -165,7 +165,7 @@ func (c *searchResultsCommon) update(other *searchResultsCommon) {
 
 // dedupSort sorts (by ID in ascending order) and deduplicates
 // the given repos in-place.
-func dedupSort(repos *types.Repos) {
+func dedupSort(repos *types.RepoNames) {
 	if len(*repos) == 0 {
 		return
 	}
@@ -1949,7 +1949,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	// Send down our first bit of progress.
 	{
-		repos := make(map[api.RepoID]*types.Repo, len(resolved.repoRevs))
+		repos := make(map[api.RepoID]*types.RepoName, len(resolved.repoRevs))
 		for _, repoRev := range resolved.repoRevs {
 			repos[repoRev.Repo.ID] = repoRev.Repo
 		}

@@ -83,7 +83,7 @@ func TestIndexedSearch(t *testing.T) {
 	reposHEAD := makeRepositoryRevisions("foo/bar", "foo/foobar")
 	repoBar := reposHEAD[0].Repo
 	repoFooBar := reposHEAD[1].Repo
-	repos := []*types.Repo{repoBar, repoFooBar}
+	repos := []*types.RepoName{repoBar, repoFooBar}
 	zoektRepos := []*zoekt.RepoListEntry{{
 		Repository: zoekt.Repository{
 			Name:     "foo/bar",
@@ -234,8 +234,8 @@ func TestIndexedSearch(t *testing.T) {
 				since: func(time.Time) time.Duration { return 0 },
 			},
 			wantCommon: searchResultsCommon{
-				searched: []*types.Repo{repoBar},
-				indexed:  []*types.Repo{repoBar},
+				searched: []*types.RepoName{repoBar},
+				indexed:  []*types.RepoName{repoBar},
 			},
 			wantMatchURLs: []string{
 				"git://foo/bar?HEAD#baz.go",
@@ -268,8 +268,8 @@ func TestIndexedSearch(t *testing.T) {
 				},
 			},
 			wantCommon: searchResultsCommon{
-				searched: []*types.Repo{repoBar},
-				indexed:  []*types.Repo{repoBar},
+				searched: []*types.RepoName{repoBar},
+				indexed:  []*types.RepoName{repoBar},
 			},
 			wantUnindexed: makeRepositoryRevisions("foo/bar@unindexed"),
 			wantMatchURLs: []string{
@@ -864,7 +864,7 @@ func zoektRPC(s zoekt.Searcher) (zoekt.Searcher, func()) {
 func TestZoektIndexedRepos_single(t *testing.T) {
 	repoRev := func(revSpec string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
-			Repo: &types.Repo{ID: api.RepoID(0), Name: "test/repo"},
+			Repo: &types.RepoName{ID: api.RepoID(0), Name: "test/repo"},
 			Revs: []search.RevisionSpecifier{
 				{RevSpec: revSpec},
 			},

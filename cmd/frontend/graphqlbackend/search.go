@@ -907,7 +907,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 		}
 	}
 
-	var defaultRepos []*types.Repo
+	var defaultRepos []*types.RepoName
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 {
 		start := time.Now()
 		defaultRepos, err = defaultRepositories(ctx, db.DefaultRepos.List, search.Indexed(), excludePatterns)
@@ -922,7 +922,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 		}
 	}
 
-	var repos []*types.Repo
+	var repos []*types.RepoName
 	var excluded excludedRepos
 	if len(defaultRepos) > 0 {
 		repos = defaultRepos
@@ -952,7 +952,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 			excludedC <- computeExcludedRepositories(ctx, op.query, options)
 		}()
 
-		repos, err = db.Repos.List(ctx, options)
+		repos, err = db.Repos.ListRepoNames(ctx, options)
 		tr.LazyPrintf("Repos.List - done")
 
 		excluded = <-excludedC
@@ -1065,9 +1065,9 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 	}, err
 }
 
-type defaultReposFunc func(ctx context.Context) ([]*types.Repo, error)
+type defaultReposFunc func(ctx context.Context) ([]*types.RepoName, error)
 
-func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, z *searchbackend.Zoekt, excludePatterns []string) ([]*types.Repo, error) {
+func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, z *searchbackend.Zoekt, excludePatterns []string) ([]*types.RepoName, error) {
 	// Get the list of default repos from the db.
 	defaultRepos, err := getRawDefaultRepos(ctx)
 	if err != nil {
@@ -1340,9 +1340,9 @@ func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 	}
 	if vcs.IsRepoNotExist(searchErr) {
 		if vcs.IsCloneInProgress(searchErr) {
-			common.cloning = []*types.Repo{repoRev.Repo}
+			common.cloning = []*types.RepoName{repoRev.Repo}
 		} else {
-			common.missing = []*types.Repo{repoRev.Repo}
+			common.missing = []*types.RepoName{repoRev.Repo}
 		}
 	} else if gitserver.IsRevisionNotFound(searchErr) {
 		if len(repoRev.Revs) == 0 || len(repoRev.Revs) == 1 && repoRev.Revs[0].RevSpec == "" {
@@ -1351,13 +1351,13 @@ func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 			return common, searchErr
 		}
 	} else if errcode.IsNotFound(searchErr) {
-		common.missing = []*types.Repo{repoRev.Repo}
+		common.missing = []*types.RepoName{repoRev.Repo}
 	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
-		common.timedout = []*types.Repo{repoRev.Repo}
+		common.timedout = []*types.RepoName{repoRev.Repo}
 	} else if searchErr != nil {
 		return common, searchErr
 	} else {
-		common.searched = []*types.Repo{repoRev.Repo}
+		common.searched = []*types.RepoName{repoRev.Repo}
 	}
 	return common, nil
 }
