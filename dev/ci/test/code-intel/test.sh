@@ -36,16 +36,13 @@ popd
 
 pushd dev/ci/test/code-intel
 init-sg initSG
+# # Load variables set up by init-server, disabling `-x` to avoid printing variables
+set +x
 source /root/.profile
+set -x
 init-sg addRepos -config repos.json
 sleep 30
 popd
-
-# Load variables set up by init-server, disabling `-x` to avoid printing variables
-set +x
-# shellcheck disable=SC1091
-source /root/.profile
-set -x
 
 echo "TEST: Checking Sourcegraph instance is accessible"
 curl -f http://localhost:7080
