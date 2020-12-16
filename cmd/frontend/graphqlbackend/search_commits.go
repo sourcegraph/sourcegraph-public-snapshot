@@ -73,20 +73,6 @@ func (r *CommitSearchResultResolver) resultCount() int32 {
 	return 1
 }
 
-func searchCommitLogInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.CommitPatternInfo, query query.QueryInfo) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
-	var terms []string
-	if info.Pattern != "" {
-		terms = append(terms, info.Pattern)
-	}
-	return searchCommitsInRepo(ctx, search.CommitParameters{
-		RepoRevs:           repoRevs,
-		PatternInfo:        info,
-		Query:              query,
-		Diff:               false,
-		ExtraMessageValues: terms,
-	})
-}
-
 func commitParametersToDiffParameters(ctx context.Context, op *search.CommitParameters) (*search.DiffParameters, error) {
 	args := []string{
 		"--no-prefix",
@@ -635,7 +621,17 @@ func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersFo
 }
 
 func commitLogSearcher(ctx context.Context, repoRev *search.RepositoryRevisions, args *search.TextParametersForCommitParameters) ([]*CommitSearchResultResolver, bool, bool, error) {
-	return searchCommitLogInRepo(ctx, repoRev, args.PatternInfo, args.Query)
+	var terms []string
+	if args.PatternInfo.Pattern != "" {
+		terms = append(terms, args.PatternInfo.Pattern)
+	}
+	return searchCommitsInRepo(ctx, search.CommitParameters{
+		RepoRevs:           repoRev,
+		PatternInfo:        args.PatternInfo,
+		Query:              args.Query,
+		Diff:               false,
+		ExtraMessageValues: terms,
+	})
 }
 
 // searchCommitLogInRepos searches a set of repos for matching commits.
