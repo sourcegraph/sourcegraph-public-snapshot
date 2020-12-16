@@ -1,6 +1,6 @@
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import classnames from 'classnames'
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useRef } from 'react'
 import { Link } from '../../../../../shared/src/components/Link'
 import { FilterType } from '../../../../../shared/src/search/interactive/util'
 import { buildSearchURLQuery } from '../../../../../shared/src/util/url'
@@ -50,6 +50,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                             filter.value &&
                                             isDiffOrCommit(filter.value.quotedValue)))
                             )
+                            const hasPattern = tokens.term.filter(term => term.type === 'pattern').length > 0
                             const hasPatternTypeFilter = filters.some(
                                 filter =>
                                     filter.type === 'filter' &&
@@ -63,8 +64,8 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             if (!hasTypeDiffOrCommitFilter) {
                                 return 'Code monitors require queries to specify either `type:commit` or `type:diff`.'
                             }
-                            if (!hasPatternTypeFilter) {
-                                return 'Code monitors require queries to specify a `patternType:` of literal, regexp, or structural.'
+                            if (!hasPatternTypeFilter && hasPattern) {
+                                return 'Code monitors require queries to specify a `patternType:` of literal or regexp.'
                             }
                         }
                         return 'Failed to parse query'
