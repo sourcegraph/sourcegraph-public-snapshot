@@ -12,7 +12,7 @@ import (
 // transaction.
 func NewUploadResetter(s DBStore, interval time.Duration, operations *operations) *dbworker.Resetter {
 	return dbworker.NewResetter(store.WorkerutilUploadStore(s), dbworker.ResetterOptions{
-		Name:     "upload resetter",
+		Name:     "precise_code_intel_upload_worker_resetter",
 		Interval: interval,
 		Metrics: dbworker.ResetterMetrics{
 			RecordResets:        operations.numUploadResets,
@@ -27,7 +27,7 @@ func NewUploadResetter(s DBStore, interval time.Duration, operations *operations
 // transaction.
 func NewIndexResetter(s DBStore, interval time.Duration, operations *operations) *dbworker.Resetter {
 	return dbworker.NewResetter(store.WorkerutilIndexStore(s), dbworker.ResetterOptions{
-		Name:     "index resetter",
+		Name:     "precise_code_intel_index_worker_resetter",
 		Interval: interval,
 		Metrics: dbworker.ResetterMetrics{
 			RecordResets:        operations.numIndexResets,

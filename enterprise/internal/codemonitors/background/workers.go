@@ -23,6 +23,7 @@ const (
 
 func newTriggerQueryRunner(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
+		Name:        "code_monitors_trigger_jobs_worker",
 		NumHandlers: 1,
 		Interval:    5 * time.Second,
 		Metrics:     workerutil.WorkerMetrics{HandleOperation: metrics.handleOperation},
@@ -44,7 +45,7 @@ func newTriggerQueryResetter(ctx context.Context, s *cm.Store, metrics codeMonit
 	workerStore := createDBWorkerStoreForTriggerJobs(s)
 
 	options := dbworker.ResetterOptions{
-		Name:     "code_monitors_query_resetter",
+		Name:     "code_monitors_trigger_jobs_worker_resetter",
 		Interval: 1 * time.Minute,
 		Metrics: dbworker.ResetterMetrics{
 			Errors:              metrics.errors,
@@ -76,6 +77,7 @@ func newTriggerJobsLogDeleter(ctx context.Context, store *cm.Store) goroutine.Ba
 
 func newActionRunner(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
+		Name:        "code_monitors_action_jobs_worker",
 		NumHandlers: 1,
 		Interval:    5 * time.Second,
 		Metrics:     workerutil.WorkerMetrics{HandleOperation: metrics.handleOperation},
@@ -88,7 +90,7 @@ func newActionJobResetter(ctx context.Context, s *cm.Store, metrics codeMonitors
 	workerStore := createDBWorkerStoreForActionJobs(s)
 
 	options := dbworker.ResetterOptions{
-		Name:     "code_monitors_action_resetter",
+		Name:     "code_monitors_action_jobs_worker_resetter",
 		Interval: 1 * time.Minute,
 		Metrics: dbworker.ResetterMetrics{
 			Errors:              metrics.errors,
@@ -101,6 +103,7 @@ func newActionJobResetter(ctx context.Context, s *cm.Store, metrics codeMonitors
 
 func createDBWorkerStoreForTriggerJobs(s *cm.Store) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
+		Name:              "code_monitors_trigger_jobs_worker_store",
 		TableName:         "cm_trigger_jobs",
 		ColumnExpressions: cm.TriggerJobsColumns,
 		Scan:              cm.ScanTriggerJobs,
@@ -113,6 +116,7 @@ func createDBWorkerStoreForTriggerJobs(s *cm.Store) dbworkerstore.Store {
 
 func createDBWorkerStoreForActionJobs(s *cm.Store) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
+		Name:              "code_monitors_action_jobs_worker_store",
 		TableName:         "cm_action_jobs",
 		ColumnExpressions: cm.ActionJobsColumns,
 		Scan:              cm.ScanActionJobs,
