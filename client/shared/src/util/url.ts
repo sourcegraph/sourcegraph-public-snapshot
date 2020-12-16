@@ -608,7 +608,7 @@ export function buildSearchURLQuery(
         const { start, end } = globalPatternType.range
         patternTypeParameter =
             globalPatternType.value.type === 'literal'
-                ? query.slice(globalPatternType.value.range.start, end)
+                ? globalPatternType.value.value
                 : globalPatternType.value.quotedValue
         queryParameter = replaceRange(queryParameter, { start: Math.max(0, start - 1), end }).trim()
     }
