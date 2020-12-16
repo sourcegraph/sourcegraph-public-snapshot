@@ -16,7 +16,7 @@ import { ErrorAlert } from '../../../components/alerts'
 
 export interface UserAddCodeHostsPageProps {
     userID: Scalars['ID']
-    codeHostExternalServices: Record<ExternalServiceKind, AddExternalServiceOptions>
+    codeHostExternalServices: Record<string, AddExternalServiceOptions>
     history: H.History
 }
 

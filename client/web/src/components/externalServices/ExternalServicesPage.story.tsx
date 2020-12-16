@@ -24,6 +24,7 @@ const queryExternalServices: typeof _queryExternalServices = () =>
                 kind: ExternalServiceKind.GITHUB,
                 displayName: 'GitHub.com',
                 config: '{"githubconfig":true}',
+                warning: null,
             },
         ],
     })
