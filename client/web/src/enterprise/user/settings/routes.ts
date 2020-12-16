@@ -3,9 +3,7 @@ import { UserSettingsAreaRoute } from '../../../user/settings/UserSettingsArea'
 import { lazyComponent } from '../../../util/lazyComponent'
 import { SHOW_BUSINESS_FEATURES } from '../../dotcom/productSubscriptions/features'
 import { authExp } from '../../site-admin/SiteAdminAuthenticationProvidersPage'
-import React from 'react'
-
-const UserEventLogsPage = lazyComponent(() => import('../../../user/UserEventLogsPage'), 'UserEventLogsPage')
+import { UserEventLogsPageProps } from './UserEventLogsPage'
 
 export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     ...userSettingsAreaRoutes,
@@ -18,7 +16,10 @@ export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] 
     {
         path: '/event-log',
         exact: true,
-        render: props => <UserEventLogsPage {...props} />,
+        render: lazyComponent<UserEventLogsPageProps, 'UserEventLogsPage'>(
+            () => import('./UserEventLogsPage'),
+            'UserEventLogsPage'
+        ),
     },
     {
         path: '/external-accounts',

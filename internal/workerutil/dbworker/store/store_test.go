@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -182,6 +183,7 @@ func TestStoreDequeueView(t *testing.T) {
 	}
 
 	options := Options{
+		Name:              "test",
 		TableName:         "workerutil_test w",
 		ViewName:          "workerutil_test_view v",
 		Scan:              testScanFirstRecordView,
@@ -266,6 +268,7 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 	}
 
 	options := Options{
+		Name:          "test",
 		TableName:     defaultTestStoreOptions.TableName,
 		StalledMaxAge: defaultTestStoreOptions.StalledMaxAge,
 
@@ -311,6 +314,7 @@ func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
 	}
 
 	options := Options{
+		Name:          "test",
 		TableName:     defaultTestStoreOptions.TableName,
 		StalledMaxAge: defaultTestStoreOptions.StalledMaxAge,
 

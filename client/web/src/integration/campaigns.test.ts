@@ -205,6 +205,7 @@ const CampaignChangesets: (variables: CampaignChangesetsVariables) => CampaignCh
                     title: 'The changeset title',
                     currentSpec: {
                         id: 'spec-rand-id-1',
+                        type: ChangesetSpecType.BRANCH,
                         description: {
                             __typename: 'GitBranchChangesetDescription',
                             headRef: 'my-branch',
@@ -351,10 +352,17 @@ describe('Campaigns', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
+    const campaignLicenseGraphQlResults = {
+        AreCampaignsLicensed: () => ({
+            enterpriseLicenseHasFeature: true,
+        }),
+    }
+
     describe('Campaigns list', () => {
         it('lists global campaigns', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
+                ...campaignLicenseGraphQlResults,
                 Campaigns: () => ({
                     campaigns: {
                         nodes: [campaignListNode],
@@ -390,6 +398,7 @@ describe('Campaigns', () => {
         it('lists user campaigns', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
+                ...campaignLicenseGraphQlResults,
                 ...mockCommonGraphQLResponses('user'),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/users/alice/campaigns')
@@ -408,6 +417,7 @@ describe('Campaigns', () => {
         it('lists org campaigns', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
+                ...campaignLicenseGraphQlResults,
                 ...mockCommonGraphQLResponses('org'),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/campaigns')
@@ -430,6 +440,7 @@ describe('Campaigns', () => {
             it(`displays a single campaign for ${entityType}`, async () => {
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
+                    ...campaignLicenseGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType),
                     CampaignChangesets,
                     ChangesetCountsOverTime,
@@ -464,6 +475,7 @@ describe('Campaigns', () => {
                 // Change overrides to make campaign appear closed.
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
+                    ...campaignLicenseGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType, { closedAt: subDays(new Date(), 1).toISOString() }),
                     CampaignChangesets,
                     ChangesetCountsOverTime,

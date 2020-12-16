@@ -19,6 +19,7 @@ type CodeMonitorsResolver interface {
 	ToggleCodeMonitor(ctx context.Context, args *ToggleCodeMonitorArgs) (MonitorResolver, error)
 	DeleteCodeMonitor(ctx context.Context, args *DeleteCodeMonitorArgs) (*EmptyResponse, error)
 	UpdateCodeMonitor(ctx context.Context, args *UpdateCodeMonitorArgs) (MonitorResolver, error)
+	ResetTriggerQueryTimestamps(ctx context.Context, args *ResetTriggerQueryTimestampsArgs) (*EmptyResponse, error)
 }
 
 type MonitorConnectionResolver interface {
@@ -154,6 +155,10 @@ type DeleteCodeMonitorArgs struct {
 	Id graphql.ID
 }
 
+type ResetTriggerQueryTimestampsArgs struct {
+	Id graphql.ID
+}
+
 type CreateMonitorArgs struct {
 	Namespace   graphql.ID
 	Description string
@@ -213,5 +218,9 @@ func (d defaultCodeMonitorsResolver) DeleteCodeMonitor(ctx context.Context, args
 }
 
 func (d defaultCodeMonitorsResolver) UpdateCodeMonitor(ctx context.Context, args *UpdateCodeMonitorArgs) (MonitorResolver, error) {
+	return nil, codeMonitorsOnlyInEnterprise
+}
+
+func (d defaultCodeMonitorsResolver) ResetTriggerQueryTimestamps(ctx context.Context, args *ResetTriggerQueryTimestampsArgs) (*EmptyResponse, error) {
 	return nil, codeMonitorsOnlyInEnterprise
 }

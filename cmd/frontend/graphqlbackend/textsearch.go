@@ -473,15 +473,9 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 					}
 					mu.Lock()
 					defer mu.Unlock()
-					if ctx.Err() == nil {
-						common.searched = append(common.searched, repoRev.Repo)
-					}
-					if repoLimitHit {
-						// We did not return all results in this repository.
-						common.partial[repoRev.Repo.ID] = struct{}{}
-					}
 					// non-diff search reports timeout through err, so pass false for timedOut
-					if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, false, err); fatalErr != nil {
+					repoCommon, fatalErr := handleRepoSearchResult(repoRev, repoLimitHit, false, err)
+					if fatalErr != nil {
 						if ctx.Err() == context.Canceled {
 							// Our request has been canceled (either because another one of searcherRepos
 							// had a fatal error, or otherwise), so we can just ignore these results. We
@@ -496,6 +490,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 							cancel()
 						}
 					}
+					common.update(&repoCommon)
 					addMatches(matches)
 				}(limitCtx, limitDone) // ends the Go routine for a call to searcher for a repo
 			} // ends the for loop iterating over repo's revs

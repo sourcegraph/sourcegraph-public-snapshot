@@ -7,14 +7,15 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
 type HardDeleter struct {
-	dbStore   DBStore
-	lsifStore LSIFStore
-	metrics   Metrics
+	dbStore    DBStore
+	lsifStore  LSIFStore
+	operations *operations
 }
 
 var _ goroutine.Handler = &HardDeleter{}
@@ -28,11 +29,11 @@ var _ goroutine.Handler = &HardDeleter{}
 // did not have an associated upload record. Doing a soft-delete and a transactional
 // cleanup routine instead ensures we delete unreachable data as soon as it's no longer
 // referenceable.
-func NewHardDeleter(dbStore DBStore, lsifStore LSIFStore, interval time.Duration, metrics Metrics) goroutine.BackgroundRoutine {
+func NewHardDeleter(dbStore DBStore, lsifStore LSIFStore, interval time.Duration, operations *operations) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &HardDeleter{
-		dbStore:   dbStore,
-		lsifStore: lsifStore,
-		metrics:   metrics,
+		dbStore:    dbStore,
+		lsifStore:  lsifStore,
+		operations: operations,
 	})
 }
 
@@ -60,7 +61,7 @@ func (d *HardDeleter) Handle(ctx context.Context) error {
 
 		count := len(uploads)
 		log15.Debug("Deleted data associated with uploads", "upload_count", count)
-		d.metrics.UploadDataRemoved.Add(float64(count))
+		d.operations.numUploadsPurged.Add(float64(count))
 
 		if count >= totalCount {
 			break
@@ -71,7 +72,7 @@ func (d *HardDeleter) Handle(ctx context.Context) error {
 }
 
 func (d *HardDeleter) HandleError(err error) {
-	d.metrics.Errors.Inc()
+	d.operations.numErrors.Inc()
 	log15.Error("Failed to hard delete upload records", "error", err)
 }
 

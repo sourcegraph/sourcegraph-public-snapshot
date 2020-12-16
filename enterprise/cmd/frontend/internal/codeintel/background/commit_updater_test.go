@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestCommitUpdater(t *testing.T) {
@@ -29,6 +30,7 @@ func TestCommitUpdater(t *testing.T) {
 	updater := &CommitUpdater{
 		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
+		operations:      newOperations(mockDBStore, &observation.TestContext),
 	}
 
 	if err := updater.Handle(context.Background()); err != nil {
@@ -67,6 +69,7 @@ func TestCommitUpdaterNoOldDump(t *testing.T) {
 	updater := &CommitUpdater{
 		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
+		operations:      newOperations(mockDBStore, &observation.TestContext),
 	}
 
 	if err := updater.Handle(context.Background()); err != nil {
@@ -92,6 +95,7 @@ func TestCommitUpdaterLocked(t *testing.T) {
 	updater := &CommitUpdater{
 		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
+		operations:      newOperations(mockDBStore, &observation.TestContext),
 	}
 
 	if err := updater.Handle(context.Background()); err != nil {

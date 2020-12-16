@@ -6,6 +6,9 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
@@ -13,7 +16,7 @@ import (
 func optsFromEnv() monitoring.GenerateOptions {
 	return monitoring.GenerateOptions{
 		DisablePrune: getEnvBool("NO_PRUNE", false),
-		LiveReload:   getEnvBool("RELOAD", false),
+		Reload:       getEnvBool("RELOAD", false),
 
 		GrafanaDir:    getEnvStr("GRAFANA_DIR", "../docker-images/grafana/config/provisioning/dashboards/sourcegraph/"),
 		PrometheusDir: getEnvStr("PROMETHEUS_DIR", "../docker-images/prometheus/config/"),
@@ -22,9 +25,13 @@ func optsFromEnv() monitoring.GenerateOptions {
 }
 
 func main() {
+	// Use standard Sourcegraph logging options and flags.
+	logging.Init()
+	logger := log15.Root()
+
 	// Runs the monitoring generator. Ensure that any dashboards created or removed are
 	// updated in the arguments here as required.
-	monitoring.Generate(optsFromEnv(),
+	if err := monitoring.Generate(logger, optsFromEnv(),
 		definitions.Frontend(),
 		definitions.GitServer(),
 		definitions.GitHubProxy(),
@@ -39,7 +46,11 @@ func main() {
 		definitions.ZoektWebServer(),
 		definitions.Prometheus(),
 		definitions.ExecutorAndExecutorQueue(),
-	)
+	); err != nil {
+		// Rely on the Generate function doing logging, so just exit with an appropriate
+		// error code here.
+		os.Exit(1)
+	}
 }
 
 func getEnvStr(key, defaultValue string) string {

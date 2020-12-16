@@ -579,10 +579,12 @@ func searchCommitsInRepos(ctx context.Context, args *search.TextParametersForCom
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, repoTimedOut, searchErr); fatalErr != nil {
+			repoCommon, fatalErr := handleRepoSearchResult(repoRev, repoLimitHit, repoTimedOut, searchErr)
+			if fatalErr != nil {
 				err = errors.Wrapf(searchErr, "failed to search commit %s %s", params.ErrorName, repoRev.String())
 				cancel()
 			}
+			common.update(&repoCommon)
 			if len(results) > 0 {
 				unflattened = append(unflattened, results)
 			}

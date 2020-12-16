@@ -338,11 +338,12 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
+func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver) (*graphql.Schema, error) {
 	resolver := &schemaResolver{
 		CampaignsResolver: defaultCampaignsResolver{},
 		AuthzResolver:     defaultAuthzResolver{},
 		CodeIntelResolver: defaultCodeIntelResolver{},
+		LicenseResolver:   defaultLicenseResolver{},
 	}
 	if campaigns != nil {
 		EnterpriseResolvers.campaignsResolver = campaigns
@@ -359,6 +360,10 @@ func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz A
 	if codeMonitors != nil {
 		EnterpriseResolvers.codeMonitorsResolver = codeMonitors
 		resolver.CodeMonitorsResolver = codeMonitors
+	}
+	if license != nil {
+		EnterpriseResolvers.licenseResolver = license
+		resolver.LicenseResolver = license
 	}
 	return graphql.ParseSchema(
 		Schema,
@@ -553,6 +558,7 @@ type schemaResolver struct {
 	AuthzResolver
 	CodeIntelResolver
 	CodeMonitorsResolver
+	LicenseResolver
 }
 
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
@@ -562,11 +568,13 @@ var EnterpriseResolvers = struct {
 	authzResolver        AuthzResolver
 	campaignsResolver    CampaignsResolver
 	codeMonitorsResolver CodeMonitorsResolver
+	licenseResolver      LicenseResolver
 }{
 	codeIntelResolver:    defaultCodeIntelResolver{},
 	authzResolver:        defaultAuthzResolver{},
 	campaignsResolver:    defaultCampaignsResolver{},
 	codeMonitorsResolver: defaultCodeMonitorsResolver{},
+	licenseResolver:      defaultLicenseResolver{},
 }
 
 // DEPRECATED

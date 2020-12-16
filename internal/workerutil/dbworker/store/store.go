@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -103,6 +104,10 @@ var _ Store = &store{}
 
 // Options configure the behavior of Store over a particular set of tables, columns, and expressions.
 type Options struct {
+	// Name denotes the name of the store used to distinguish log messages and emitted metrics. The
+	// store constructor will fail if this field is not supplied.
+	Name string
+
 	// TableName is the name of the table containing work records.
 	//
 	// The target table (and the target view referenced by `ViewName`) must have the following columns
@@ -199,6 +204,10 @@ func New(handle *basestore.TransactableHandle, options Options) Store {
 
 // newStore creates a new store with the given database handle and options.
 func newStore(handle *basestore.TransactableHandle, options Options) *store {
+	if options.Name == "" {
+		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/dbworker/store:newStore")
+	}
+
 	if options.ViewName == "" {
 		options.ViewName = options.TableName
 	}

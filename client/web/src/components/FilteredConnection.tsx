@@ -18,15 +18,15 @@ import {
     scan,
     share,
 } from 'rxjs/operators'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { pluralize } from '../../../shared/src/util/strings'
 import { Form } from '../../../branded/src/components/Form'
 import { ErrorMessage } from './alerts'
 import { hasProperty } from '../../../shared/src/util/types'
+import { Scalars } from '../../../shared/src/graphql-operations'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
-const hasID = (value: unknown): value is { id: GQL.ID } =>
+const hasID = (value: unknown): value is { id: Scalars['ID'] } =>
     typeof value === 'object' && value !== null && hasProperty('id')(value) && typeof value.id === 'string'
 
 interface FilterProps {
