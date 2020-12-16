@@ -38,7 +38,7 @@ While the latest version of Sourcegraph server is always recommended, version 3.
     * If using Docker 3.x, ensure your version is at least 3.0.1
     * In 3.x versions, the gRPC setting must be disabled
 * Disk space
-  * Disk equal to each campaign's largest repository plus any dependencies or requirements required by the run steps, times the number of parallel jobs is required.
+  * The required disk space is equal to each campaign's largest repository plus any dependencies or requirements specified by the run steps, times the number of parallel jobs.
     * The default number of parallel jobs is equivalent to the number of cores in the system running src-cli. This setting is configurable.
 * Disk space is also required for the generated patches. This requirement *is* cumulative across each repository altered.
 * Git
