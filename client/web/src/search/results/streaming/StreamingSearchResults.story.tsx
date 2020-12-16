@@ -230,3 +230,35 @@ add('server-side alert with no results', () => {
 
     return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
 })
+
+add('error with no results', () => {
+    const result: AggregateStreamingSearchResults = {
+        state: 'error',
+        results: [],
+        filters: [],
+        progress: {
+            durationMs: 500,
+            matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
+            skipped: [],
+        },
+        error: new Error('test error'),
+    }
+
+    return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
+})
+
+add('error with some results', () => {
+    const result: AggregateStreamingSearchResults = {
+        state: 'error',
+        results: MULTIPLE_SEARCH_RESULT.results,
+        filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
+        progress: {
+            durationMs: 500,
+            matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
+            skipped: [],
+        },
+        error: new Error('test error'),
+    }
+
+    return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
+})
