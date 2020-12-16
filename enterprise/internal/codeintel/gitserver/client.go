@@ -41,6 +41,22 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, err erro
 	return c.execGitCommand(ctx, repositoryID, "rev-parse", "HEAD")
 }
 
+// CommitDate returns the time that the given commit was committed.
+func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string) (_ time.Time, err error) {
+	ctx, endObservation := with(ctx, c.operations.commitDate, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	out, err := c.execGitCommand(ctx, repositoryID, "show", "-s", "--format=%cI", commit)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return time.Parse(time.RFC3339, strings.TrimSpace(out))
+}
+
 type CommitGraph struct {
 	graph map[string][]string
 	order []string
@@ -87,22 +103,6 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitG
 	}
 
 	return ParseCommitGraph(strings.Split(out, "\n")), nil
-}
-
-// CommitDate returns the time that the given commit was committed.
-func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string) (_ time.Time, err error) {
-	ctx, endObservation := with(ctx, c.operations.commitDate, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-		log.String("commit", commit),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	out, err := c.execGitCommand(ctx, repositoryID, "show", "-s", "--format=%cI", commit)
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	return time.Parse(time.RFC3339, strings.TrimSpace(out))
 }
 
 // ParseCommitGraph converts the output of git log into a map from commits to parent commits,
