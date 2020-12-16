@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	cloneurls "github.com/sourcegraph/sourcegraph/internal/cloneurls"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 func editorRev(ctx context.Context, repoName api.RepoName, rev string, beExplicit bool) (string, error) {
@@ -119,7 +118,10 @@ func (r *editorRequest) searchRedirect(ctx context.Context) (string, error) {
 	var repoFilter string
 	if s.remoteURL != "" {
 		// Search in this repository.
-		repoName := cloneurls.ReposourceCloneURLToRepoName(ctx, s.remoteURL)
+		repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, s.remoteURL)
+		if err != nil {
+			return "", err
+		}
 		if repoName == "" {
 			// Any error here is a problem with the user's configured git remote
 			// URL. We want them to actually read this error message.
