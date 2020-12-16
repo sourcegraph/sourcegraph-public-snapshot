@@ -620,22 +620,22 @@ func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersFo
 	})
 }
 
-func commitLogSearcher(ctx context.Context, repoRev *search.RepositoryRevisions, args *search.TextParametersForCommitParameters) ([]*CommitSearchResultResolver, bool, bool, error) {
-	var terms []string
-	if args.PatternInfo.Pattern != "" {
-		terms = append(terms, args.PatternInfo.Pattern)
-	}
-	return searchCommitsInRepo(ctx, search.CommitParameters{
-		RepoRevs:           repoRev,
-		PatternInfo:        args.PatternInfo,
-		Query:              args.Query,
-		Diff:               false,
-		ExtraMessageValues: terms,
-	})
-}
-
 // searchCommitLogInRepos searches a set of repos for matching commits.
 func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForCommitParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
+	commitLogSearcher := func(ctx context.Context, repoRev *search.RepositoryRevisions, args *search.TextParametersForCommitParameters) ([]*CommitSearchResultResolver, bool, bool, error) {
+		var terms []string
+		if args.PatternInfo.Pattern != "" {
+			terms = append(terms, args.PatternInfo.Pattern)
+		}
+		return searchCommitsInRepo(ctx, search.CommitParameters{
+			RepoRevs:           repoRev,
+			PatternInfo:        args.PatternInfo,
+			Query:              args.Query,
+			Diff:               false,
+			ExtraMessageValues: terms,
+		})
+	}
+
 	return searchCommitsInRepos(ctx, args, searchCommitsInReposParameters{
 		TraceName: "searchCommitLogsInRepos",
 		ErrorName: "commits",
