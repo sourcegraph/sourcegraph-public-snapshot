@@ -8,6 +8,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -55,10 +56,7 @@ func TestIntegration(t *testing.T) {
 		name string
 		test func(*testing.T, repos.Store) func(*testing.T)
 	}{
-		{"DBStore/ListExternalServices", testStoreListExternalServices(userID)},
 		{"DBStore/SyncRateLimiters", testSyncRateLimiters},
-		{"DBStore/ListExternalServices/ByRepo", testStoreListExternalServicesByRepos},
-		{"DBStore/UpsertExternalServices", testStoreUpsertExternalServices},
 		{"DBStore/InsertRepos", testStoreInsertRepos},
 		{"DBStore/DeleteRepos", testStoreDeleteRepos},
 		{"DBStore/UpsertRepos", testStoreUpsertRepos},

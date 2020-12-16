@@ -5,19 +5,20 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/semaphore"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"golang.org/x/sync/semaphore"
 )
 
 // A GitoliteSource yields repositories from a single Gitolite connection configured
@@ -172,7 +173,7 @@ func (s *GitolitePhabricatorMetadataSyncer) Sync(ctx context.Context, repos []*t
 		return nil
 	}
 
-	es, err := s.store.ListExternalServices(ctx, StoreListExternalServicesArgs{IDs: ids})
+	es, err := s.store.ExternalServiceStore().List(ctx, db.ExternalServicesListOptions{IDs: ids})
 	if err != nil {
 		return errors.Wrap(err, "gitolite-phabricator-metadata-syncer.store.list-external-services")
 	}

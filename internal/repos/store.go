@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -27,7 +28,8 @@ import (
 
 // A Store exposes methods to read and write repos and external services.
 type Store interface {
-	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*types.ExternalService, error)
+	ExternalServiceStore() *idb.ExternalServiceStore
+
 	UpsertExternalServices(ctx context.Context, svcs ...*types.ExternalService) error
 
 	ListRepos(context.Context, StoreListReposArgs) ([]*types.Repo, error)
@@ -73,35 +75,6 @@ type StoreListReposArgs struct {
 
 	// UseOr decides between ANDing or ORing the predicates together.
 	UseOr bool
-}
-
-const DefaultListExternalServicesPerPage = 500
-
-// StoreListExternalServicesArgs is a query arguments type used by
-// the ListExternalServices method of Store implementations.
-//
-// Each defined argument must map to a disjunct (i.e. AND) filter predicate.
-type StoreListExternalServicesArgs struct {
-	// IDs of external services to list. When zero-valued, this is omitted from the predicate set.
-	IDs []int64
-	// RepoIDs that the listed external services own.
-	RepoIDs []api.RepoID
-	// Kinds of external services to list. When zero-valued, this is omitted from the predicate set.
-	Kinds []string
-
-	// NamespaceUserID limits to only fetch external service owned by the given user. When zero-valued
-	// this is omitted from the predicate set.
-	// The special value -1 should be passed to return only service owned by NO user. ie, owned by site admin.
-	NamespaceUserID int32
-
-	// Limit is the total number of items to list. The zero value means no limit.
-	Limit int64
-	// Cursor will limit the query to external services that have an id greater than Cursor.
-	Cursor int64
-
-	// PerPage defines how many external services to fetch per page when listing all services. If zero-valued
-	// DefaultListExternalServicePageSize will be used.
-	PerPage int64
 }
 
 // ErrNoResults is returned by Store method invocations that yield no result set.
@@ -202,106 +175,9 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 	return &DBStore{Store: txBase}, nil
 }
 
-// ListExternalServices lists all stored external services matching the given args.
-func (s *DBStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (svcs []*types.ExternalService, _ error) {
-	if args.PerPage <= 0 {
-		args.PerPage = DefaultListExternalServicesPerPage
-	}
-	return svcs, s.paginate(ctx, args.Limit, args.PerPage, args.Cursor, listExternalServicesQuery(args),
-		func(sc scanner) (last, count int64, err error) {
-			var svc types.ExternalService
-			err = scanExternalService(&svc, sc)
-			if err != nil {
-				return 0, 0, err
-			}
-			svcs = append(svcs, &svc)
-			return svc.ID, 1, nil
-		},
-	)
-}
-
-const listExternalServicesQueryFmtstr = `
--- source: internal/repos/store.go:DBStore.ListExternalServices
-SELECT
-  id,
-  kind,
-  display_name,
-  config,
-  created_at,
-  updated_at,
-  deleted_at,
-  last_sync_at,
-  next_sync_at,
-  namespace_user_id,
-  unrestricted
-FROM external_services
-WHERE id > %s
-AND %s
-ORDER BY id ASC LIMIT %s
-`
-
-const listRepoExternalServiceIDsSubquery = `
-SELECT DISTINCT(external_service_id) repo_external_service_ids
-FROM external_service_repos
-WHERE repo_id IN (%s)
-`
-
-func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuery {
-	var preds []*sqlf.Query
-
-	if len(args.IDs) > 0 {
-		ids := make([]*sqlf.Query, 0, len(args.IDs))
-		for _, id := range args.IDs {
-			if id != 0 {
-				ids = append(ids, sqlf.Sprintf("%d", id))
-			}
-		}
-		preds = append(preds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
-	} else if len(args.RepoIDs) > 0 {
-		ids := make([]*sqlf.Query, 0, len(args.RepoIDs))
-		for _, id := range args.RepoIDs {
-			if id != 0 {
-				ids = append(ids, sqlf.Sprintf("%d", id))
-			}
-		}
-		preds = append(preds, sqlf.Sprintf(
-			"id IN ("+listRepoExternalServiceIDsSubquery+")",
-			sqlf.Join(ids, ","),
-		))
-	}
-
-	if len(args.Kinds) > 0 {
-		ks := make([]*sqlf.Query, 0, len(args.Kinds))
-		for _, kind := range args.Kinds {
-			ks = append(ks, sqlf.Sprintf("%s", strings.ToLower(kind)))
-		}
-		preds = append(preds,
-			sqlf.Sprintf("LOWER(kind) IN (%s)", sqlf.Join(ks, ",")))
-	} else {
-		// HACK(tsenart): The syncer and all other places that load all external
-		// services do not want phabricator instances. These are handled separately
-		// by RunPhabricatorRepositorySyncWorker.
-		preds = append(preds,
-			sqlf.Sprintf("LOWER(kind) != 'phabricator'"))
-	}
-
-	switch {
-	case args.NamespaceUserID > 0:
-		preds = append(preds, sqlf.Sprintf("namespace_user_id = %d", args.NamespaceUserID))
-	case args.NamespaceUserID == -1:
-		preds = append(preds, sqlf.Sprintf("namespace_user_id IS NULL"))
-	}
-
-	preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
-
-	return func(cursor, limit int64) *sqlf.Query {
-		return sqlf.Sprintf(
-			listExternalServicesQueryFmtstr,
-			cursor,
-			sqlf.Join(preds, "\n AND "),
-			limit,
-		)
-	}
+// ExternalServiceStore returns a db.ExternalServiceStore using the same database handle.
+func (s *DBStore) ExternalServiceStore() *idb.ExternalServiceStore {
+	return idb.NewExternalServicesStoreWith(s)
 }
 
 // UpsertExternalServices updates or inserts the given ExternalServices.

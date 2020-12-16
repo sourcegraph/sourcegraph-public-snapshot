@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -143,7 +144,6 @@ type StoreMetrics struct {
 	ListExternalRepoSpecs  *metrics.OperationMetrics
 	GetExternalService     *metrics.OperationMetrics
 	UpsertExternalServices *metrics.OperationMetrics
-	ListExternalServices   *metrics.OperationMetrics
 	SetClonedRepos         *metrics.OperationMetrics
 	CountNotClonedRepos    *metrics.OperationMetrics
 	CountUserAddedRepos    *metrics.OperationMetrics
@@ -163,7 +163,6 @@ func (sm StoreMetrics) MustRegister(r prometheus.Registerer) {
 		sm.UpsertRepos,
 		sm.UpsertSources,
 		sm.GetExternalService,
-		sm.ListExternalServices,
 		sm.UpsertExternalServices,
 		sm.SetClonedRepos,
 	} {
@@ -317,20 +316,6 @@ func NewStoreMetrics() StoreMetrics {
 				Help: "Total number of errors when upserting external_services",
 			}, []string{}),
 		},
-		ListExternalServices: &metrics.OperationMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_list_external_services_duration_seconds",
-				Help: "Time spent listing external_services",
-			}, []string{}),
-			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_list_external_services_total",
-				Help: "Total number of listed external_servicesitories",
-			}, []string{}),
-			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_list_external_services_errors_total",
-				Help: "Total number of errors when listing external_services",
-			}, []string{}),
-		},
 		SetClonedRepos: &metrics.OperationMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 				Name: "src_repoupdater_store_set_cloned_repos_duration_seconds",
@@ -444,34 +429,8 @@ func (o *ObservedStore) Done(err error) error {
 	return o.store.(TxStore).Done(err)
 }
 
-// ListExternalServices calls into the inner Store and registers the observed results.
-func (o *ObservedStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (es []*types.ExternalService, err error) {
-	tr, ctx := o.trace(ctx, "Store.ListExternalServices")
-	tr.LogFields(
-		otlog.Object("args.ids", args.IDs),
-		otlog.Object("args.kinds", args.Kinds),
-	)
-
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-		count := float64(len(es))
-
-		o.metrics.ListExternalServices.Observe(secs, count, &err)
-		logging.Log(o.log, "store.list-external-services", &err,
-			"args", fmt.Sprintf("%+v", args),
-			"count", len(es),
-		)
-
-		tr.LogFields(
-			otlog.Int("count", len(es)),
-			otlog.Object("names", types.ExternalServices(es).DisplayNames()),
-			otlog.Object("urns", types.ExternalServices(es).URNs()),
-		)
-		tr.SetError(err)
-		tr.Finish()
-	}(time.Now())
-
-	return o.store.ListExternalServices(ctx, args)
+func (o *ObservedStore) ExternalServiceStore() *idb.ExternalServiceStore {
+	return o.store.ExternalServiceStore()
 }
 
 // UpsertExternalServices calls into the inner Store and registers the observed results.

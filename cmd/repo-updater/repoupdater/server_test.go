@@ -21,6 +21,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -383,8 +384,9 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 					ids = append(ids, s.ID)
 				}
 
-				svcs, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
-					IDs: ids,
+				svcs, err := store.ExternalServiceStore().List(ctx, db.ExternalServicesListOptions{
+					IDs:              ids,
+					OrderByDirection: "ASC",
 				})
 				if err != nil {
 					t.Fatalf("failed to read from store: %v", err)
