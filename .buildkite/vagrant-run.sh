@@ -32,7 +32,7 @@ for i in "${plugins[@]}"; do
   fi
 done
 
-# trap cleanup EXIT
+trap cleanup EXIT
 
 (vagrant up "$box" --provider=google | remove_log_prefix) || exit_code=$?
 
