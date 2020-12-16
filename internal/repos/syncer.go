@@ -841,8 +841,8 @@ func (s *Syncer) setOrResetLastSyncErr(serviceID int64, perr *error) {
 	s.syncErrors[serviceID] = err
 }
 
-// SyncErrors returns all errors that was produced in the last Sync run per external sevice. If
-// no error was produced, this returns an empty slice.
+// SyncErrors returns all errors that were produced in the last Sync run per
+// external service. If no error was produced, this returns an empty slice.
 // Errors are sorted by external service id.
 func (s *Syncer) SyncErrors() []error {
 	s.syncErrorsMu.Lock()
