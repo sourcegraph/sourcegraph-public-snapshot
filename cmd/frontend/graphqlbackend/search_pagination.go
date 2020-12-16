@@ -187,14 +187,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	}
 	common.update(fileCommon)
 
-	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d excludedFork=%d excludedArchived=%d timedout=%d",
-		len(results),
-		common.limitHit,
-		len(common.cloning),
-		len(common.missing),
-		common.excluded.Forks,
-		common.excluded.Archived,
-		len(common.timedout))
+	tr.LazyPrintf("results=%d %s", len(results), &common)
 
 	// Alert is a potential alert shown to the user.
 	var alert *searchAlert
@@ -275,9 +268,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameter
 		if fileCommon == nil {
 			// searchFilesInRepos can return a nil structure, but the executor
 			// requires a non-nil one always (which is more sane).
-			fileCommon = &searchResultsCommon{
-				partial: map[api.RepoID]struct{}{},
-			}
+			fileCommon = &searchResultsCommon{}
 		}
 		// fileResults is not sorted so we must sort it now. fileCommon may or
 		// may not be sorted, but we do not rely on its order.
@@ -423,8 +414,9 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 		// first in the results and we need to know the position for the cursor
 		// RepositoryOffset.
 		potentialLastRepos := []*types.RepoName{lastRepoConsumed}
-		potentialLastRepos = append(potentialLastRepos, sliced.common.cloning...)
-		potentialLastRepos = append(potentialLastRepos, sliced.common.missing...)
+		sliced.common.status.Filter(search.RepoStatusCloning|search.RepoStatusMissing, func(id api.RepoID) {
+			potentialLastRepos = append(potentialLastRepos, sliced.common.repos[id])
+		})
 		sort.Slice(potentialLastRepos, func(i, j int) bool {
 			return repoIsLess(potentialLastRepos[i], potentialLastRepos[j])
 		})
@@ -556,14 +548,13 @@ func sliceSearchResults(results []SearchResultResolver, common *searchResultsCom
 }
 
 func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, lastResultRepo string) *searchResultsCommon {
-	if len(common.partial) > 0 {
+	if common.status.Any(search.RepoStatusLimitHit) {
 		panic("never here: partial results should never be present in paginated search")
 	}
 	final := &searchResultsCommon{
 		limitHit:         false, // irrelevant in paginated search
 		indexUnavailable: common.indexUnavailable,
 		repos:            make(map[api.RepoID]*types.RepoName),
-		partial:          make(map[api.RepoID]struct{}),
 		resultCount:      common.resultCount,
 	}
 
@@ -597,13 +588,15 @@ func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, last
 		final.repos[r.ID] = r
 	}
 
-	final.searched = doAppend(final.searched, common.searched)
-	final.indexed = doAppend(final.indexed, common.indexed)
-	final.cloning = doAppend(final.cloning, common.cloning)
-	final.missing = doAppend(final.missing, common.missing)
+	common.status.Iterate(func(id api.RepoID, status search.RepoStatus) {
+		if _, ok := final.repos[id]; ok {
+			final.status.Update(id, status)
+		}
+	})
+
 	final.excluded.Forks = final.excluded.Forks + common.excluded.Forks
 	final.excluded.Archived = final.excluded.Archived + common.excluded.Archived
-	final.timedout = doAppend(final.timedout, common.timedout)
+
 	return final
 }
 
