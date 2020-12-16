@@ -16,6 +16,8 @@ import {
     DeleteExternalServiceResult,
     ExternalServicesVariables,
     ExternalServicesResult,
+    SetCodeHostReposVariables,
+    SetCodeHostReposResult,
 } from '../../graphql-operations'
 import { requestGraphQL } from '../../backend/graphql'
 
@@ -84,6 +86,22 @@ export function updateExternalService(
             map(data => data.updateExternalService)
         )
         .toPromise()
+}
+
+export function setCodeHostRepos(variables: SetCodeHostReposVariables): Promise<SetCodeHostReposResult['setCodeHostRepos']>{
+    return requestGraphQL<SetCodeHostReposResult, SetCodeHostReposVariables>(
+        gql`
+            mutation SetCodeHostRepos($id: ID!, $allRepos: Boolean!, $repos: [String!]) {
+                setCodeHostRepos(id: $id, allRepos: $allRepos, repos: $repos) {
+                    alwaysNil
+                }
+            }
+        `,
+        variables
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.setCodeHostRepos)
+    ).toPromise()
 }
 
 export function fetchExternalService(id: Scalars['ID']): Observable<ExternalServiceFields> {
