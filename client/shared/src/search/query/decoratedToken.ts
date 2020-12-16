@@ -56,6 +56,8 @@ export enum MetaRegexpKind {
     EscapedCharacter = 'EscapedCharacter', // like \(
     CharacterSet = 'CharacterSet', // like \s
     CharacterClass = 'CharacterClass', // like [a-z]
+    CharacterClassRange = 'CharacterClassRange', // the a-z part in [a-z]
+    CharacterClassRangeHyphen = 'CharacterClassRangeHyphen', // the - part in [a-z]
     CharacterClassMember = 'CharacterClassMember', // a character inside a charcter class like [abcd]
     LazyQuantifier = 'LazyQuantifier', // the ? after a range quantifier
     RangeQuantifier = 'RangeQuantifier', // like +
@@ -247,15 +249,34 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
                 })
             },
             onCharacterClassRangeEnter(node: CharacterClassRange) {
-                // highlight the '-' in [a-z]. Take care to use node.min.end, because we
-                // don't want to highlight the first '-' in [--z], nor an escaped '-' with a
-                // two-character offset as in [\--z].
-                tokens.push({
-                    type: 'metaRegexp',
-                    range: { start: offset + node.min.end, end: offset + node.min.end + 1 },
-                    value: '-',
-                    kind: MetaRegexpKind.CharacterClass,
-                })
+                // Push the min and max characters of the range to associate them with the
+                // same groupRange for hovers.
+                tokens.push(
+                    {
+                        type: 'metaRegexp',
+                        range: { start: offset + node.min.start, end: offset + node.min.end },
+                        groupRange: { start: offset + node.start, end: offset + node.end },
+                        value: node.raw,
+                        kind: MetaRegexpKind.CharacterClassRange,
+                    },
+                    // Highlight the '-' in [a-z]. Take care to use node.min.end, because we
+                    // don't want to highlight the first '-' in [--z], nor an escaped '-' with a
+                    // two-character offset as in [\--z].
+                    {
+                        type: 'metaRegexp',
+                        range: { start: offset + node.min.end, end: offset + node.min.end + 1 },
+                        groupRange: { start: offset + node.start, end: offset + node.end },
+                        value: node.raw,
+                        kind: MetaRegexpKind.CharacterClassRangeHyphen,
+                    },
+                    {
+                        type: 'metaRegexp',
+                        range: { start: offset + node.max.start, end: offset + node.max.end },
+                        groupRange: { start: offset + node.start, end: offset + node.end },
+                        value: node.raw,
+                        kind: MetaRegexpKind.CharacterClassRange,
+                    }
+                )
             },
             onQuantifierEnter(node: Quantifier) {
                 // the lazy quantifier ? adds one
@@ -301,13 +322,23 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
             onCharacterEnter(node: Character) {
                 if (node.end - node.start > 1 && node.raw.startsWith('\\')) {
                     // This is an escaped value like `\.`, `\u0065`, `\x65`.
+                    // If this escaped value is part of a range, like [a-\\],
+                    // set the group range to associate it with hovers.
+                    const groupRange =
+                        node.parent.type === 'CharacterClassRange'
+                            ? { start: offset + node.parent.start, end: offset + node.parent.end }
+                            : undefined
                     tokens.push({
                         type: 'metaRegexp',
                         range: { start: offset + node.start, end: offset + node.end },
+                        groupRange,
                         value: node.raw,
                         kind: MetaRegexpKind.EscapedCharacter,
                     })
                     return
+                }
+                if (node.parent.type === 'CharacterClassRange') {
+                    return // This unescaped character is handled by onCharacterClassRangeEnter.
                 }
                 if (node.parent.type === 'CharacterClass') {
                     // This character is inside a character class like [abcd] and is contextually special for hover tooltips.
