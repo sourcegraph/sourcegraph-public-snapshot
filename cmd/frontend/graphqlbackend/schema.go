@@ -822,6 +822,12 @@ type Mutation {
         """
         actions: [MonitorEditActionInput!]!
     ): Monitor!
+
+    setCodeHostRepos(
+        id: ID!
+        repos: [String!]
+        allRepos: Boolean!
+    ): EmptyResponse!
 }
 
 """
