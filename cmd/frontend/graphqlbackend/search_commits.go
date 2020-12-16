@@ -627,13 +627,15 @@ func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForC
 		if args.PatternInfo.Pattern != "" {
 			terms = append(terms, args.PatternInfo.Pattern)
 		}
-		return searchCommitsInRepo(ctx, search.CommitParameters{
+		commitParams := search.CommitParameters{
 			RepoRevs:           repoRev,
 			PatternInfo:        args.PatternInfo,
 			Query:              args.Query,
 			Diff:               false,
 			ExtraMessageValues: terms,
-		})
+		}
+
+		return searchCommitsInRepo(ctx, commitParams)
 	}
 
 	return searchCommitsInRepos(ctx, args, searchCommitsInReposParameters{
