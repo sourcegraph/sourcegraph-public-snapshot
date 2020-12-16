@@ -12,11 +12,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/hashicorp/go-multierror"
 	ioaux "github.com/jig/teereadcloser"
 	"github.com/kballard/go-shellquote"
 	"github.com/mattn/go-isatty"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/codeintelutils"
 )
 
@@ -257,6 +255,10 @@ func (r *request) do(ctx context.Context, result interface{}) (bool, error) {
 	return true, nil
 }
 
+// Do executes the request. Successful requests will be unmarshalled into the
+// given result. If GraphQL errors are returned, then the returned error will be
+// an instance of GraphQlErrors. Other errors (such as HTTP or network errors)
+// will be returned as-is.
 func (r *request) Do(ctx context.Context, result interface{}) (bool, error) {
 	raw := rawResult{Data: result}
 	ok, err := r.do(ctx, &raw)
@@ -268,11 +270,11 @@ func (r *request) Do(ctx context.Context, result interface{}) (bool, error) {
 
 	// Handle the case of unpacking errors.
 	if raw.Errors != nil {
-		var errs *multierror.Error
+		errs := GraphQlErrors{}
 		for _, err := range raw.Errors {
-			errs = multierror.Append(errs, &graphqlError{err})
+			errs = append(errs, &GraphQlError{err})
 		}
-		return false, errors.Wrap(errs, "GraphQL errors")
+		return false, errs
 	}
 	return true, nil
 }

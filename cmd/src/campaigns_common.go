@@ -242,7 +242,6 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 	specs, err := svc.ExecuteCampaignSpec(ctx, repos, executor, campaignSpec, p.PrintStatuses, flags.skipErrors)
 	if err != nil && !flags.skipErrors {
 		return "", "", err
-
 	}
 	p.Complete()
 	if err != nil && flags.skipErrors {
@@ -292,10 +291,10 @@ func campaignsExecute(ctx context.Context, out *output.Output, svc *campaigns.Se
 
 	pending = campaignsCreatePending(out, "Creating campaign spec on Sourcegraph")
 	id, url, err := svc.CreateCampaignSpec(ctx, namespace, rawSpec, ids)
-	if err != nil {
-		return "", "", err
-	}
 	campaignsCompletePending(pending, "Creating campaign spec on Sourcegraph")
+	if err != nil {
+		return "", "", prettyPrintCampaignsUnlicensedError(out, err)
+	}
 
 	return id, url, nil
 }
@@ -331,6 +330,12 @@ func campaignsParseSpec(out *output.Output, svc *campaigns.Service, input io.Rea
 // printExecutionError is used to print the possible error returned by
 // campaignsExecute.
 func printExecutionError(out *output.Output, err error) {
+	// exitCodeError shouldn't generate any specific output, since it indicates
+	// that this was done deeper in the call stack.
+	if _, ok := err.(*exitCodeError); ok {
+		return
+	}
+
 	out.Write("")
 
 	writeErrs := func(errs []error) {
@@ -356,7 +361,7 @@ func printExecutionError(out *output.Output, err error) {
 	}
 
 	switch err := err.(type) {
-	case parallel.Errors, *multierror.Error:
+	case parallel.Errors, *multierror.Error, api.GraphQlErrors:
 		writeErrs(flattenErrs(err))
 
 	default:
@@ -376,6 +381,12 @@ func flattenErrs(err error) (result []error) {
 		for _, e := range errs.Errors {
 			result = append(result, flattenErrs(e)...)
 		}
+
+	case api.GraphQlErrors:
+		for _, e := range errs {
+			result = append(result, flattenErrs(e)...)
+		}
+
 	default:
 		result = append(result, errs)
 	}
@@ -401,6 +412,48 @@ func formatTaskExecutionErr(err campaigns.TaskExecutionErr) string {
 		err.Err,
 		err.Logfile,
 	)
+}
+
+// prettyPrintCampaignsUnlicensedError introspects the given error returned when
+// creating a campaign spec and ascertains whether it's a licensing error. If it
+// is, then a better message is output. Regardless, the return value of this
+// function should be used to replace the original error passed in to ensure
+// that the displayed output is sensible.
+func prettyPrintCampaignsUnlicensedError(out *output.Output, err error) error {
+	// Pull apart the error to see if it's a licensing error: if so, we should
+	// display a friendlier and more actionable message than the usual GraphQL
+	// error output.
+	if gerrs, ok := err.(api.GraphQlErrors); ok {
+		// A licensing error should be the sole error returned, so we'll only
+		// pretty print if there's one error.
+		if len(gerrs) == 1 {
+			if code, cerr := gerrs[0].Code(); cerr != nil {
+				// We got a malformed value in the error extensions; at this
+				// point, there's not much sensible we can do. Let's log this in
+				// verbose mode, but let the original error bubble up rather
+				// than this one.
+				out.Verbosef("Unexpected error parsing the GraphQL error: %v", cerr)
+			} else if code == "ErrCampaignsUnlicensed" {
+				// OK, let's print a better message, then return an
+				// exitCodeError to suppress the normal automatic error block.
+				// Note that we have hand wrapped the output at 80 (printable)
+				// characters: having automatic wrapping some day would be nice,
+				// but this should be sufficient for now.
+				block := out.Block(output.Line("🪙", output.StyleWarning, "Campaigns is a paid feature of Sourcegraph. All users can create sample"))
+				block.WriteLine(output.Linef("", output.StyleWarning, "campaigns with up to 5 changesets without a license. Contact Sourcegraph sales"))
+				block.WriteLine(output.Linef("", output.StyleWarning, "at %shttps://about.sourcegraph.com/contact/sales/%s to obtain a trial license.", output.StyleSearchLink, output.StyleWarning))
+				block.Write("")
+				block.WriteLine(output.Linef("", output.StyleWarning, "To proceed with this campaign, you will need to create 5 or fewer changesets."))
+				block.WriteLine(output.Linef("", output.StyleWarning, "To do so, you could try adding %scount:5%s to your %srepositoriesMatchingQuery%s search,", output.StyleSearchAlertProposedQuery, output.StyleWarning, output.StyleReset, output.StyleWarning))
+				block.WriteLine(output.Linef("", output.StyleWarning, "or reduce the number of changesets in %simportChangesets%s.", output.StyleReset, output.StyleWarning))
+				block.Close()
+				return &exitCodeError{exitCode: graphqlErrorsExitCode}
+			}
+		}
+	}
+
+	// In all other cases, we'll just return the original error.
+	return err
 }
 
 func sumDiffStats(fileDiffs []*diff.FileDiff) diff.Stat {
