@@ -156,9 +156,6 @@ func (u *Updater) getCommitGraph(ctx context.Context, repositoryID int) (*gitser
 	return commitGraph, nil
 }
 
-
-
-
 // TODO(efritz) - make adjustable
 const commitDateBatchSize = 100
 
