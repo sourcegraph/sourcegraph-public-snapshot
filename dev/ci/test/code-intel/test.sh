@@ -41,7 +41,6 @@ set +x
 source /root/.profile
 set -x
 init-sg addRepos -config repos.json
-sleep 30
 popd
 
 echo "TEST: Checking Sourcegraph instance is accessible"
