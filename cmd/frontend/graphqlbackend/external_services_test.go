@@ -609,7 +609,7 @@ func TestExternalServices(t *testing.T) {
 
 		return 2, nil
 	}
-	db.Mocks.ExternalServices.GetLatestSyncError = func(id int64) (string, error) {
+	db.Mocks.ExternalServices.GetLastSyncError = func(id int64) (string, error) {
 		return "Oops", nil
 	}
 	defer func() {
@@ -666,7 +666,7 @@ func TestExternalServices(t *testing.T) {
 				externalServices(namespace: "VXNlcjoy") {
 					nodes {
 						id
-						latestSyncError
+						lastSyncError
 					}
 				}
 			}

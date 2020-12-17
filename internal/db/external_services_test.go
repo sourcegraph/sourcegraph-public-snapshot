@@ -563,7 +563,7 @@ func TestExternalServicesStore_GetByID(t *testing.T) {
 	}
 }
 
-func TestGetLatestSyncError(t *testing.T) {
+func TestGetLastSyncError(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -590,12 +590,12 @@ func TestGetLatestSyncError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	latestSyncError, err := (&ExternalServiceStore{}).GetLastSyncError(ctx, es.ID)
+	lastSyncError, err := (&ExternalServiceStore{}).GetLastSyncError(ctx, es.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if latestSyncError != "" {
-		t.Fatalf("Expected empty error, have %q", latestSyncError)
+	if lastSyncError != "" {
+		t.Fatalf("Expected empty error, have %q", lastSyncError)
 	}
 
 	// Add sync error
@@ -609,12 +609,12 @@ VALUES ($1,$2,'errored')
 		t.Fatal(err)
 	}
 
-	latestSyncError, err = (&ExternalServiceStore{}).GetLastSyncError(ctx, es.ID)
+	lastSyncError, err = (&ExternalServiceStore{}).GetLastSyncError(ctx, es.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if latestSyncError != expectedError {
-		t.Fatalf("Expected %q, have %q", expectedError, latestSyncError)
+	if lastSyncError != expectedError {
+		t.Fatalf("Expected %q, have %q", expectedError, lastSyncError)
 	}
 }
 
