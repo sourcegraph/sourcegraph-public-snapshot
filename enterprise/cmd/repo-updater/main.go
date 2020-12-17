@@ -38,7 +38,7 @@ func main() {
 
 func enterpriseInit(
 	db *sql.DB,
-	repoStore repos.Store,
+	repoLister repos.Lister,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
 ) (debugDumpers []debugserver.Dumper) {
@@ -51,7 +51,7 @@ func enterpriseInit(
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db
 	permsStore := edb.NewPermsStore(db, timeutil.Now)
-	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
+	permsSyncer := authz.NewPermsSyncer(repoLister, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
 	go startBackgroundPermsSync(ctx, permsSyncer, db)
 	debugDumpers = append(debugDumpers, permsSyncer)
 	if server != nil {

@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -140,7 +139,6 @@ type StoreMetrics struct {
 	DeleteRepos           *metrics.OperationMetrics
 	UpsertRepos           *metrics.OperationMetrics
 	UpsertSources         *metrics.OperationMetrics
-	ListRepos             *metrics.OperationMetrics
 	ListExternalRepoSpecs *metrics.OperationMetrics
 	GetExternalService    *metrics.OperationMetrics
 	SetClonedRepos        *metrics.OperationMetrics
@@ -155,7 +153,6 @@ func (sm StoreMetrics) MustRegister(r prometheus.Registerer) {
 	for _, om := range []*metrics.OperationMetrics{
 		sm.Transact,
 		sm.Done,
-		sm.ListRepos,
 		sm.ListExternalRepoSpecs,
 		sm.InsertRepos,
 		sm.DeleteRepos,
@@ -256,20 +253,6 @@ func NewStoreMetrics() StoreMetrics {
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Name: "src_repoupdater_store_upsert_sources_errors_total",
 				Help: "Total number of errors when upserting sources",
-			}, []string{}),
-		},
-		ListRepos: &metrics.OperationMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_list_repos_duration_seconds",
-				Help: "Time spent listing repos",
-			}, []string{}),
-			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_list_repos_total",
-				Help: "Total number of listed repositories",
-			}, []string{}),
-			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_list_repos_errors_total",
-				Help: "Total number of errors when listing repos",
 			}, []string{}),
 		},
 		ListExternalRepoSpecs: &metrics.OperationMetrics{
@@ -413,6 +396,10 @@ func (o *ObservedStore) Done(err error) error {
 	return o.store.(TxStore).Done(err)
 }
 
+func (o *ObservedStore) RepoStore() *idb.RepoStore {
+	return o.store.RepoStore()
+}
+
 func (o *ObservedStore) ExternalServiceStore() *idb.ExternalServiceStore {
 	return o.store.ExternalServiceStore()
 }
@@ -453,33 +440,6 @@ func (o *ObservedStore) DeleteRepos(ctx context.Context, ids ...api.RepoID) (err
 	}(time.Now())
 
 	return o.store.DeleteRepos(ctx, ids...)
-}
-
-// ListRepos calls into the inner Store and registers the observed results.
-func (o *ObservedStore) ListRepos(ctx context.Context, args StoreListReposArgs) (rs []*types.Repo, err error) {
-	tr, ctx := o.trace(ctx, "Store.ListRepos")
-	tr.LogFields(
-		otlog.Object("args.names", args.Names),
-		otlog.Object("args.ids", args.IDs),
-		otlog.Object("args.kinds", args.Kinds),
-	)
-
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-		count := float64(len(rs))
-
-		o.metrics.ListRepos.Observe(secs, count, &err)
-		logging.Log(o.log, "store.list-repos", &err,
-			"args", fmt.Sprintf("%+v", args),
-			"count", len(rs),
-		)
-
-		tr.LogFields(otlog.Int("count", len(rs)))
-		tr.SetError(err)
-		tr.Finish()
-	}(time.Now())
-
-	return o.store.ListRepos(ctx, args)
 }
 
 // ListExternalRepoSpecs calls into the inner Store and registers the observed results.

@@ -36,7 +36,7 @@ type PermsSyncer struct {
 	// The priority queue to maintain the permissions syncing requests.
 	queue *requestQueue
 	// The database interface for any repos and external services operations.
-	reposStore repos.Store
+	reposStore repos.Lister
 	// The database interface for any permissions operations.
 	permsStore *edb.PermsStore
 	// The mockable function to return the current time.
@@ -49,14 +49,14 @@ type PermsSyncer struct {
 
 // NewPermsSyncer returns a new permissions syncing manager.
 func NewPermsSyncer(
-	reposStore repos.Store,
+	reposLister repos.Lister,
 	permsStore *edb.PermsStore,
 	clock func() time.Time,
 	rateLimiterRegistry *ratelimit.Registry,
 ) *PermsSyncer {
 	return &PermsSyncer{
 		queue:               newRequestQueue(),
-		reposStore:          reposStore,
+		reposStore:          reposLister,
 		permsStore:          permsStore,
 		clock:               clock,
 		rateLimiterRegistry: rateLimiterRegistry,
@@ -284,9 +284,9 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	var rs []*types.Repo
 	if len(repoSpecs) > 0 {
 		// Get corresponding internal database IDs
-		rs, err = s.reposStore.ListRepos(ctx, repos.StoreListReposArgs{
+		rs, err = s.reposStore.List(ctx, db.ReposListOptions{
 			ExternalRepos: repoSpecs,
-			PrivateOnly:   true,
+			OnlyPrivate:   true,
 		})
 		if err != nil {
 			return errors.Wrap(err, "list external repositories")
@@ -320,7 +320,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms", "")
 	defer save(requestTypeRepo, int32(repoID), &err)
 
-	rs, err := s.reposStore.ListRepos(ctx, repos.StoreListReposArgs{
+	rs, err := s.reposStore.List(ctx, db.ReposListOptions{
 		IDs: []api.RepoID{repoID},
 	})
 	if err != nil {

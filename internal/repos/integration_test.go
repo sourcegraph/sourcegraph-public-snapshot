@@ -62,8 +62,6 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/UpsertRepos", testStoreUpsertRepos},
 		{"DBStore/UpsertSources", testStoreUpsertSources},
 		{"DBStore/EnqueueSyncJobs", testStoreEnqueueSyncJobs(db, dbstore)},
-		{"DBStore/ListRepos", testStoreListRepos},
-		{"DBStore/ListRepos/Pagination", testStoreListReposPagination},
 		{"DBStore/ListExternalRepoSpecs", testStoreListExternalRepoSpecs(db)},
 		{"DBStore/SetClonedRepos", testStoreSetClonedRepos},
 		{"DBStore/CountNotClonedRepos", testStoreCountNotClonedRepos},

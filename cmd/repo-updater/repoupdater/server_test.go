@@ -21,7 +21,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -348,7 +348,7 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 					t.Fatalf("failed to prepare store: %v", err)
 				}
 
-				s := &Server{Store: store}
+				s := &Server{Store: store, RepoLister: store.RepoStore()}
 				srv := httptest.NewServer(s.Handler())
 				defer srv.Close()
 				cli := repoupdater.Client{URL: srv.URL}
@@ -384,7 +384,7 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 					ids = append(ids, s.ID)
 				}
 
-				svcs, err := store.ExternalServiceStore().List(ctx, db.ExternalServicesListOptions{
+				svcs, err := store.ExternalServiceStore().List(ctx, idb.ExternalServicesListOptions{
 					IDs:              ids,
 					OrderByDirection: "ASC",
 				})
@@ -432,11 +432,12 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 		}
 
 		type testCase struct {
-			name  string
-			store repos.Store
-			repo  api.RepoName
-			res   *protocol.RepoUpdateResponse
-			err   string
+			name       string
+			store      repos.Store
+			repoLister repos.Lister
+			repo       api.RepoName
+			res        *protocol.RepoUpdateResponse
+			err        string
 		}
 
 		var testCases []testCase
@@ -444,26 +445,29 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 			func() testCase {
 				err := errors.New("boom")
 				return testCase{
-					name: "returns an error on store failure",
-					store: &storeWithErrors{
-						Store:        store,
+					name:  "returns an error on store failure",
+					store: store,
+					repoLister: &repoListerWithErrors{
+						RepoStore:    store.RepoStore(),
 						ListReposErr: err,
 					},
 					err: `store.list-repos: boom`,
 				}
 			}(),
 			testCase{
-				name:  "missing repo",
-				store: store, // empty store
-				repo:  "foo",
-				err:   `repo "foo" not found in store`,
+				name:       "missing repo",
+				store:      store,
+				repoLister: store.RepoStore(), // empty store
+				repo:       "foo",
+				err:        `repo "foo" not found in store`,
 			},
 			func() testCase {
 				repo := repo.Clone()
 				return testCase{
-					name:  "existing repo",
-					store: store,
-					repo:  repo.Name,
+					name:       "existing repo",
+					store:      store,
+					repoLister: store.RepoStore(),
+					repo:       repo.Name,
 					res: &protocol.RepoUpdateResponse{
 						ID:   repo.ID,
 						Name: string(repo.Name),
@@ -477,7 +481,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 			ctx := context.Background()
 
 			t.Run(tc.name, func(t *testing.T) {
-				s := &Server{Store: tc.store, Scheduler: &fakeScheduler{}}
+				s := &Server{Store: tc.store, RepoLister: tc.repoLister, Scheduler: &fakeScheduler{}}
 				srv := httptest.NewServer(s.Handler())
 				defer srv.Close()
 				cli := repoupdater.Client{URL: srv.URL}
@@ -578,7 +582,7 @@ func testServerRepoExternalServices(t *testing.T, store repos.Store) func(t *tes
 			err:    "repository with ID 42 does not exist",
 		}}
 
-		s := &Server{Store: store}
+		s := &Server{Store: store, RepoLister: store.RepoStore()}
 		srv := httptest.NewServer(s.Handler())
 		defer srv.Close()
 		cli := repoupdater.Client{URL: srv.URL}
@@ -773,19 +777,21 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 				}
 
 				if tc.sourcerErr != nil || tc.listRepoErr != nil {
-					store = &storeWithErrors{
-						Store:        store,
+					repoLister := &repoListerWithErrors{
+						RepoStore:    store.RepoStore(),
 						ListReposErr: tc.listRepoErr,
 					}
+
 					sourcer := repos.NewFakeSourcer(tc.sourcerErr, repos.NewFakeSource(githubService, nil))
 					// Run Sync so that possibly `LastSyncErrors` is set
 					syncer.Sourcer = sourcer
-					_ = syncer.SyncExternalService(ctx, store, githubService.ID, time.Millisecond)
+					_ = syncer.SyncExternalService(ctx, store, repoLister, githubService.ID, time.Millisecond)
 				}
 
 				s := &Server{
 					Syncer:          syncer,
 					Store:           store,
+					RepoLister:      store.RepoStore(),
 					GitserverClient: gitserverClient,
 				}
 
@@ -1240,7 +1246,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 					syncer := &repos.Syncer{
 						Now: clock.Now,
 					}
-					s := &Server{Syncer: syncer, Store: store}
+					s := &Server{Syncer: syncer, Store: store, RepoLister: store.RepoStore()}
 					if tc.githubDotComSource != nil {
 						s.SourcegraphDotComMode = true
 						s.GithubDotComSource = tc.githubDotComSource
@@ -1277,7 +1283,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 						if tc.assertDelay != 0 {
 							time.Sleep(tc.assertDelay)
 						}
-						rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
+						rs, err := store.RepoStore().List(ctx, idb.ReposListOptions{})
 						if err != nil {
 							t.Fatal(err)
 						}
@@ -1401,23 +1407,15 @@ func formatJSON(s string) string {
 	return formatted
 }
 
-type storeWithErrors struct {
-	repos.Store
+type repoListerWithErrors struct {
+	*idb.RepoStore
 
-	ListReposErr   error
-	UpsertReposErr error
+	ListReposErr error
 }
 
-func (s *storeWithErrors) ListRepos(ctx context.Context, args repos.StoreListReposArgs) ([]*types.Repo, error) {
+func (s *repoListerWithErrors) List(ctx context.Context, args idb.ReposListOptions) ([]*types.Repo, error) {
 	if s.ListReposErr != nil {
 		return nil, s.ListReposErr
 	}
-	return s.Store.ListRepos(ctx, args)
-}
-
-func (s *storeWithErrors) UpsertRepos(ctx context.Context, repos ...*types.Repo) error {
-	if s.UpsertReposErr != nil {
-		return s.UpsertReposErr
-	}
-	return s.Store.UpsertRepos(ctx, repos...)
+	return s.RepoStore.List(ctx, args)
 }

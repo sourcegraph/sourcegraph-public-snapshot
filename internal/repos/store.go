@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"io"
-	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -16,21 +15,14 @@ import (
 	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // A Store exposes methods to read and write repos and external services.
 type Store interface {
+	RepoStore() *idb.RepoStore
 	ExternalServiceStore() *idb.ExternalServiceStore
 
-	ListRepos(context.Context, StoreListReposArgs) ([]*types.Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*types.Repo) error
 	ListExternalRepoSpecs(context.Context) (map[api.ExternalRepoSpec]struct{}, error)
 	UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]types.SourceInfo) error
@@ -47,36 +39,6 @@ type Store interface {
 	InsertRepos(context.Context, ...*types.Repo) error
 	DeleteRepos(ctx context.Context, ids ...api.RepoID) error
 }
-
-// StoreListReposArgs is a query arguments type used by
-// the ListRepos method of Store implementations.
-type StoreListReposArgs struct {
-	// Names of repos to list. When zero-valued, this is omitted from the predicate set.
-	Names []string
-	// IDs of repos to list. When zero-valued, this is omitted from the predicate set.
-	IDs []api.RepoID
-	// Kinds of repos to list. When zero-valued, this is omitted from the predicate set.
-	Kinds []string
-	// ExternalRepos of repos to list. When zero-valued, this is omitted from the predicate set.
-	ExternalRepos []api.ExternalRepoSpec
-	// ExternalServiceID, if non zero, will only return repos added by the given external service.
-	// The id is that of the external_services table NOT the external_service_id in the repo table
-	ExternalServiceID int64
-	// Limit the total number of repos returned. Zero means no limit
-	Limit int64
-	// PerPage determines the number of repos returned on each page. Zero means it defaults to 10000.
-	PerPage int64
-	// Only include private repositories.
-	PrivateOnly bool
-	// Only include cloned repositories.
-	ClonedOnly bool
-
-	// UseOr decides between ANDing or ORing the predicates together.
-	UseOr bool
-}
-
-// ErrNoResults is returned by Store method invocations that yield no result set.
-var ErrNoResults = errors.New("store: no results")
 
 // A Transactor can initialize and return a TxStore which operates
 // within the context of a transaction.
@@ -171,6 +133,11 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 		return nil, errors.Wrap(err, "starting transaction")
 	}
 	return &DBStore{Store: txBase}, nil
+}
+
+// RepoStore returns a db.RepoStore using the same database handle.
+func (s *DBStore) RepoStore() *idb.RepoStore {
+	return idb.NewRepoStoreWith(s)
 }
 
 // ExternalServiceStore returns a db.ExternalServiceStore using the same database handle.
@@ -355,145 +322,6 @@ FROM repo_ids
 WHERE deleted_at IS NULL
 AND repo.id = repo_ids.id::int
 `
-
-// ListRepos lists all stored repos that match the given arguments.
-func (s *DBStore) ListRepos(ctx context.Context, args StoreListReposArgs) (repos []*types.Repo, _ error) {
-	listQuery, err := listReposQuery(args)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating list repos query function")
-	}
-	return repos, s.paginate(ctx, args.Limit, args.PerPage, 0, listQuery,
-		func(sc scanner) (last, count int64, err error) {
-			var r types.Repo
-			if err := scanRepo(&r, sc); err != nil {
-				return 0, 0, err
-			}
-			repos = append(repos, &r)
-			return int64(r.ID), 1, nil
-		},
-	)
-}
-
-const listReposQueryFmtstr = `
--- source: internal/repos/store.go:DBStore.ListRepos
-SELECT
-  id,
-  name,
-  uri,
-  description,
-  created_at,
-  updated_at,
-  deleted_at,
-  external_service_type,
-  repo.external_service_id,
-  external_id,
-  archived,
-  cloned,
-  fork,
-  private,
-  (
-	SELECT
-	  json_agg(
-	    json_build_object(
-          'CloneURL', esr.clone_url,
-          'ID', esr.external_service_id,
-          'Kind', LOWER(svcs.kind)
-	    )
-	  )
-	FROM external_service_repos AS esr
-	JOIN external_services AS svcs ON esr.external_service_id = svcs.id
-	WHERE
-	    esr.repo_id = repo.id
-	  AND
-	    svcs.deleted_at IS NULL
-  ),
-  metadata
--- repo or repo joined with external_service_repos
-FROM %s
-WHERE id > %s
--- preds
-AND %s
-AND deleted_at IS NULL
--- join filters
-AND %s
-ORDER BY id ASC LIMIT %s
-`
-
-func listReposQuery(args StoreListReposArgs) (paginatedQuery, error) {
-	var preds []*sqlf.Query
-
-	if len(args.Names) > 0 {
-		encodedNames, err := json.Marshal(args.Names)
-		if err != nil {
-			return nil, errors.Wrap(err, "marshalling name args")
-		}
-		preds = append(preds, sqlf.Sprintf("name = ANY(ARRAY(SELECT jsonb_array_elements_text(%s))::citext[])", encodedNames))
-	}
-
-	if len(args.IDs) > 0 {
-		ids := make([]*sqlf.Query, 0, len(args.IDs))
-		for _, id := range args.IDs {
-			if id != 0 {
-				ids = append(ids, sqlf.Sprintf("%d", id))
-			}
-		}
-		preds = append(preds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
-	}
-
-	if len(args.Kinds) > 0 {
-		ks := make([]*sqlf.Query, 0, len(args.Kinds))
-		for _, kind := range args.Kinds {
-			ks = append(ks, sqlf.Sprintf("%s", strings.ToLower(kind)))
-		}
-		preds = append(preds,
-			sqlf.Sprintf("LOWER(external_service_type) IN (%s)", sqlf.Join(ks, ",")))
-	}
-
-	if len(args.ExternalRepos) > 0 {
-		er := make([]*sqlf.Query, 0, len(args.ExternalRepos))
-		for _, spec := range args.ExternalRepos {
-			er = append(er, sqlf.Sprintf("(external_id = %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
-		}
-		preds = append(preds, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
-	}
-
-	fromClause := sqlf.Sprintf("repo")
-	joinFilter := sqlf.Sprintf("TRUE")
-	if args.ExternalServiceID != 0 {
-		fromClause = sqlf.Sprintf("repo JOIN external_service_repos e ON repo.id = e.repo_id")
-		joinFilter = sqlf.Sprintf("e.external_service_id = %d", args.ExternalServiceID)
-	}
-
-	if args.PrivateOnly {
-		preds = append(preds, sqlf.Sprintf("private = TRUE"))
-	}
-
-	if args.ClonedOnly {
-		preds = append(preds, sqlf.Sprintf("cloned = TRUE"))
-	}
-
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
-	}
-
-	var predQ *sqlf.Query
-	if args.UseOr {
-		predQ = sqlf.Join(preds, "\n OR ")
-	} else {
-		predQ = sqlf.Join(preds, "\n AND ")
-	}
-
-	return func(cursor, limit int64) *sqlf.Query {
-		return sqlf.Sprintf(
-			listReposQueryFmtstr,
-			fromClause,
-			cursor,
-			sqlf.Sprintf("(%s)", predQ),
-			joinFilter,
-			limit,
-		)
-	}, nil
-}
 
 func (s *DBStore) ListExternalRepoSpecs(ctx context.Context) (map[api.ExternalRepoSpec]struct{}, error) {
 	const ListExternalRepoSpecsQueryFmtstr = `
@@ -1104,13 +932,6 @@ func nullStringColumn(s string) *string {
 	return &s
 }
 
-func nullInt32Column(i int32) *int32 {
-	if i == 0 {
-		return nil
-	}
-	return &i
-}
-
 func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
 	switch m := metadata.(type) {
 	case nil:
@@ -1168,94 +989,4 @@ func closeErr(c io.Closer, err *error) {
 	if e := c.Close(); err != nil && *err == nil {
 		*err = e
 	}
-}
-
-func scanExternalService(svc *types.ExternalService, s scanner) error {
-	return s.Scan(
-		&svc.ID,
-		&svc.Kind,
-		&svc.DisplayName,
-		&svc.Config,
-		&svc.CreatedAt,
-		&dbutil.NullTime{Time: &svc.UpdatedAt},
-		&dbutil.NullTime{Time: &svc.DeletedAt},
-		&dbutil.NullTime{Time: &svc.LastSyncAt},
-		&dbutil.NullTime{Time: &svc.NextSyncAt},
-		&dbutil.NullInt32{N: &svc.NamespaceUserID},
-		&svc.Unrestricted,
-	)
-}
-
-func scanRepo(r *types.Repo, s scanner) error {
-	var sources dbutil.NullJSONRawMessage
-	var metadata json.RawMessage
-	err := s.Scan(
-		&r.ID,
-		&r.Name,
-		&dbutil.NullString{S: &r.URI},
-		&r.Description,
-		&r.CreatedAt,
-		&dbutil.NullTime{Time: &r.UpdatedAt},
-		&dbutil.NullTime{Time: &r.DeletedAt},
-		&dbutil.NullString{S: &r.ExternalRepo.ServiceType},
-		&dbutil.NullString{S: &r.ExternalRepo.ServiceID},
-		&dbutil.NullString{S: &r.ExternalRepo.ID},
-		&r.Archived,
-		&r.Cloned,
-		&r.Fork,
-		&r.Private,
-		&sources,
-		&metadata,
-	)
-	if err != nil {
-		return err
-	}
-
-	type sourceInfo struct {
-		ID       int64
-		CloneURL string
-		Kind     string
-	}
-	r.Sources = make(map[string]*types.SourceInfo)
-
-	if sources.Raw != nil {
-		var srcs []sourceInfo
-		if err = json.Unmarshal(sources.Raw, &srcs); err != nil {
-			return errors.Wrap(err, "scanRepo: failed to unmarshal sources")
-		}
-		for _, src := range srcs {
-			urn := extsvc.URN(src.Kind, src.ID)
-			r.Sources[urn] = &types.SourceInfo{
-				ID:       urn,
-				CloneURL: src.CloneURL,
-			}
-		}
-	}
-
-	typ, ok := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
-	if !ok {
-		return nil
-	}
-	switch typ {
-	case extsvc.TypeGitHub:
-		r.Metadata = new(github.Repository)
-	case extsvc.TypeGitLab:
-		r.Metadata = new(gitlab.Project)
-	case extsvc.TypeBitbucketServer:
-		r.Metadata = new(bitbucketserver.Repo)
-	case extsvc.TypeBitbucketCloud:
-		r.Metadata = new(bitbucketcloud.Repo)
-	case extsvc.TypeAWSCodeCommit:
-		r.Metadata = new(awscodecommit.Repository)
-	case extsvc.TypeGitolite:
-		r.Metadata = new(gitolite.Repo)
-	default:
-		return nil
-	}
-
-	if err = json.Unmarshal(metadata, r.Metadata); err != nil {
-		return errors.Wrapf(err, "scanRepo: failed to unmarshal %q metadata", typ)
-	}
-
-	return nil
 }

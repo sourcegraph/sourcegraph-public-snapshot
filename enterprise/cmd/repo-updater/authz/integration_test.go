@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	authzGitHub "github.com/sourcegraph/sourcegraph/internal/authz/github"
@@ -68,7 +69,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
 
 	testDB := dbtest.NewDB(t, *dsn)
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 
 	reposStore := repos.NewDBStore(testDB, sql.TxOptions{})
 
@@ -123,7 +124,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	}
 
 	permsStore := edb.NewPermsStore(testDB, timeutil.Now)
-	syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
+	syncer := NewPermsSyncer(reposStore.RepoStore(), permsStore, timeutil.Now, nil)
 
 	err = syncer.syncRepoPerms(ctx, repo.ID, false)
 	if err != nil {
