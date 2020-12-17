@@ -753,6 +753,15 @@ var searchEventNames = []string{
 	"'search.latencies.diff'",
 	"'search.latencies.commit'",
 	"'search.latencies.symbol'",
+	"'search.latencies.frontend.code-load'",
+	"'search.latencies.frontend.first-result.literal'",
+	"'search.latencies.frontend.first-result.regexp'",
+	"'search.latencies.frontend.first-result.structural'",
+	"'search.latencies.frontend.first-result.file'",
+	"'search.latencies.frontend.first-result.repo'",
+	"'search.latencies.frontend.first-result.diff'",
+	"'search.latencies.frontend.first-result.commit'",
+	"'search.latencies.frontend.first-result.symbol'",
 }
 
 var aggregatedSearchEventsQuery = `
