@@ -15,7 +15,7 @@ Campaigns is compatible with the following code hosts:
 
 For each changeset, Sourcegraph periodically makes API requests to its code host to update its status. Sourcegraph intelligently schedules these requests to avoid overwhelming the code host's rate limits. In environments with many open campaigns, this can result in outdated changesets as they await their turn in the update queue.
 
-We **highly recommend** enabling webhooks: doing so removes the lag time in updating the status of a changeset, and reduces the API requests associated with large campaigns. We have instructions for each supported code host:
+We **highly recommend** enabling webhooks on code hosts where campaigns changesets are created. Doing so removes the lag time in updating the status of a changeset and reduces the API requests associated with large campaigns. We have instructions for each supported code host:
 
 * [GitHub](../../admin/external_service/github.md#webhooks)
 * [Bitbucket Server](../../admin/external_service/bitbucket_server.md#webhooks)
