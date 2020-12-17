@@ -68,10 +68,8 @@ export class CdpAdapter extends PollyAdapter {
     public readonly errors: Observable<unknown> = this._errors.asObservable()
 
     /**
-     * The puppeteer Page this adapter is attached to, obtained from
+     * The puppeteer Browser this adapter is attached to, obtained from
      * options passed to the Polly constructor.
-     *
-     * TODO(tj): update comment
      */
     private browser: Puppeteer.Browser
 
@@ -82,9 +80,8 @@ export class CdpAdapter extends PollyAdapter {
     private pendingRequests = new Map<string, PollyPromise>()
 
     /**
-     * The CDP session used to control request interception in the browser.
-     *
-     * TODO(tj): update comment.
+     * A map of CDPSessions keyed by their associated Targets.
+     * Each CDP session is used to control request interception for a Target.
      */
     private cdpSessions = new Map<Puppeteer.Target, Puppeteer.CDPSession>()
 
@@ -118,7 +115,6 @@ export class CdpAdapter extends PollyAdapter {
         // Create CDP sessions for all existing targets
         const targets = await this.browser.targets()
 
-        // TODO(tj): test 100 times w try catch to see which cases in which this could cause error
         await Promise.all(
             targets.map(async target => {
                 await this.setupCDPSessionForTarget(target)
@@ -288,7 +284,6 @@ export class CdpAdapter extends PollyAdapter {
             return '' // CDP doesn't let us obtain the body of redirect requests, so we don't attempt it.
         }
         if (!cdpSession) {
-            // TODO(tj): this message doesn't make sense anymore?
             throw new Error('Fetch.getResponseBody called before CDP session created')
         }
 
