@@ -28,7 +28,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 						{
 							Name:            "upload_queue_growth_rate",
 							Description:     "upload queue growth rate every 5m",
-							Query:           `sum(increase(src_upload_queue_uploads_total[30m])) / sum(increase(src_upload_queue_processor_total[30m]))`,
+							Query:           `sum(increase(src_upload_queue_uploads_total[30m])) / sum(increase(src_codeintel_upload_queue_processor_total[30m]))`,
 							DataMayNotExist: true,
 
 							Warning:           monitoring.Alert().GreaterOrEqual(5),
@@ -39,7 +39,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 						{
 							Name:              "upload_process_errors",
 							Description:       "upload process errors every 5m",
-							Query:             `sum(increase(src_upload_queue_processor_errors_total[5m]))`,
+							Query:             `sum(increase(src_codeintel_upload_queue_processor_errors_total[5m]))`,
 							DataMayNotExist:   true,
 							Warning:           monitoring.Alert().GreaterOrEqual(20),
 							PanelOptions:      monitoring.PanelOptions().LegendFormat("errors"),

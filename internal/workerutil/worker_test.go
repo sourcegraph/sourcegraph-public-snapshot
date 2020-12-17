@@ -29,9 +29,7 @@ func TestWorkerHandlerSuccess(t *testing.T) {
 		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
-		Metrics: WorkerMetrics{
-			HandleOperation: observation.TestContext.Operation(observation.Op{}),
-		},
+		Metrics:     NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
@@ -70,9 +68,7 @@ func TestWorkerHandlerFailure(t *testing.T) {
 		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
-		Metrics: WorkerMetrics{
-			HandleOperation: observation.TestContext.Operation(observation.Op{}),
-		},
+		Metrics:     NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
@@ -119,9 +115,7 @@ func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
 		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
-		Metrics: WorkerMetrics{
-			HandleOperation: observation.TestContext.Operation(observation.Op{}),
-		},
+		Metrics:     NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
@@ -171,9 +165,7 @@ func TestWorkerConcurrent(t *testing.T) {
 				Name:        "test",
 				NumHandlers: numHandlers,
 				Interval:    time.Second,
-				Metrics: WorkerMetrics{
-					HandleOperation: observation.TestContext.Operation(observation.Op{}),
-				},
+				Metrics:     NewMetrics(&observation.TestContext, "", nil),
 			}
 
 			for i := 0; i < NumTestRecords; i++ {
@@ -258,9 +250,7 @@ func TestWorkerBlockingPreDequeueHook(t *testing.T) {
 		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
-		Metrics: WorkerMetrics{
-			HandleOperation: observation.TestContext.Operation(observation.Op{}),
-		},
+		Metrics:     NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
@@ -287,9 +277,7 @@ func TestWorkerConditionalPreDequeueHook(t *testing.T) {
 		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
-		Metrics: WorkerMetrics{
-			HandleOperation: observation.TestContext.Operation(observation.Op{}),
-		},
+		Metrics:     NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)

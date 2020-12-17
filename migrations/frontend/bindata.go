@@ -170,6 +170,8 @@
 // 1528395767_split_nearest_uploads.up.sql (681B)
 // 1528395768_compress_nearest_uploads.down.sql (246B)
 // 1528395768_compress_nearest_uploads.up.sql (228B)
+// 1528395769_drop_added_to_campaign.down.sql (115B)
+// 1528395769_drop_added_to_campaign.up.sql (81B)
 
 package migrations
 
@@ -3638,6 +3640,46 @@ func _1528395768_compress_nearest_uploadsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395769_drop_added_to_campaignDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x1c\xca\x41\xaa\xc3\x20\x10\x06\xe0\xbd\xa7\xf8\xef\xe1\xca\x44\xf3\x10\x46\x85\x97\x11\xba\x0b\xd3\x68\xd3\x42\xaa\x05\x73\x7f\x0a\xdd\x7f\x93\xfb\xf3\x51\x2b\x65\x88\xdd\x3f\xd8\x4c\xe4\xb0\x3f\xa5\x1d\x75\xd4\x6b\xc0\x58\x8b\x39\x51\x0e\x11\x7e\x41\x4c\x0c\x77\xf3\x2b\xaf\x90\x52\x6a\xd9\xae\xbe\xed\xf2\xfe\xc8\xeb\x68\xb8\xf7\x7e\x56\x69\x3f\x14\x33\x11\xac\x5b\x4c\x26\xc6\x43\xce\x51\xb5\x52\x73\x0a\xc1\xb3\x56\xdf\x00\x00\x00\xff\xff\x93\x71\x09\x50\x73\x00\x00\x00")
+
+func _1528395769_drop_added_to_campaignDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395769_drop_added_to_campaignDownSql,
+		"1528395769_drop_added_to_campaign.down.sql",
+	)
+}
+
+func _1528395769_drop_added_to_campaignDownSql() (*asset, error) {
+	bytes, err := _1528395769_drop_added_to_campaignDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395769_drop_added_to_campaign.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa7, 0x9a, 0x17, 0x3d, 0xae, 0xdc, 0x46, 0xeb, 0x84, 0x4a, 0xc8, 0xe5, 0x96, 0x24, 0x97, 0x2e, 0xa2, 0xea, 0x60, 0x90, 0x2d, 0x39, 0x4c, 0xda, 0x9d, 0xfd, 0x4, 0x3f, 0x5e, 0xd5, 0x42, 0x31}}
+	return a, nil
+}
+
+var __1528395769_drop_added_to_campaignUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x4c\x49\x49\x4d\x89\x2f\xc9\x8f\x4f\x4e\xcc\x2d\x48\xcc\x4c\xcf\xb3\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x71\x22\x0c\xa6\x51\x00\x00\x00")
+
+func _1528395769_drop_added_to_campaignUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395769_drop_added_to_campaignUpSql,
+		"1528395769_drop_added_to_campaign.up.sql",
+	)
+}
+
+func _1528395769_drop_added_to_campaignUpSql() (*asset, error) {
+	bytes, err := _1528395769_drop_added_to_campaignUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395769_drop_added_to_campaign.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf5, 0x98, 0xdb, 0xf2, 0x1d, 0xd1, 0xee, 0xd1, 0xb, 0x6a, 0x4d, 0xed, 0xba, 0xe7, 0x5c, 0xd9, 0xf4, 0x5c, 0xa6, 0x21, 0x23, 0xe, 0xe8, 0x67, 0x35, 0x94, 0x1d, 0x7c, 0x82, 0xa9, 0x99, 0xa1}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3899,6 +3941,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395767_split_nearest_uploads.up.sql":                                                _1528395767_split_nearest_uploadsUpSql,
 	"1528395768_compress_nearest_uploads.down.sql":                                           _1528395768_compress_nearest_uploadsDownSql,
 	"1528395768_compress_nearest_uploads.up.sql":                                             _1528395768_compress_nearest_uploadsUpSql,
+	"1528395769_drop_added_to_campaign.down.sql":                                             _1528395769_drop_added_to_campaignDownSql,
+	"1528395769_drop_added_to_campaign.up.sql":                                               _1528395769_drop_added_to_campaignUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -4115,6 +4159,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395767_split_nearest_uploads.up.sql":                                                {_1528395767_split_nearest_uploadsUpSql, map[string]*bintree{}},
 	"1528395768_compress_nearest_uploads.down.sql":                                           {_1528395768_compress_nearest_uploadsDownSql, map[string]*bintree{}},
 	"1528395768_compress_nearest_uploads.up.sql":                                             {_1528395768_compress_nearest_uploadsUpSql, map[string]*bintree{}},
+	"1528395769_drop_added_to_campaign.down.sql":                                             {_1528395769_drop_added_to_campaignDownSql, map[string]*bintree{}},
+	"1528395769_drop_added_to_campaign.up.sql":                                               {_1528395769_drop_added_to_campaignUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

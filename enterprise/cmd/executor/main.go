@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -62,25 +61,14 @@ func main() {
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 }
 
-func makeWorkerMetrics() workerutil.WorkerMetrics {
+func makeWorkerMetrics(queueName string) workerutil.WorkerMetrics {
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	metrics := metrics.NewOperationMetrics(
-		observationContext.Registerer,
-		"executor_queue_processor",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of records processed"),
-	)
-
-	return workerutil.WorkerMetrics{
-		HandleOperation: observationContext.Operation(observation.Op{
-			Name:         "Processor.Process",
-			MetricLabels: []string{"process"},
-			Metrics:      metrics,
-		}),
-	}
+	return workerutil.NewMetrics(observationContext, "executor_queue_processor", map[string]string{
+		"queue": queueName,
+	})
 }
