@@ -6,6 +6,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
@@ -31,8 +32,8 @@ var uploadWorkerStoreOptions = dbworkerstore.Options{
 	MaxNumResets:      UploadMaxNumResets,
 }
 
-func WorkerutilUploadStore(s basestore.ShareableStore) dbworkerstore.Store {
-	return dbworkerstore.New(s.Handle(), uploadWorkerStoreOptions)
+func WorkerutilUploadStore(s basestore.ShareableStore, observationContext *observation.Context) dbworkerstore.Store {
+	return dbworkerstore.NewWithMetrics(s.Handle(), uploadWorkerStoreOptions, observationContext)
 }
 
 // StalledIndexMaxAge is the maximum allowable duration between updating the state of an
@@ -57,6 +58,6 @@ var indexWorkerStoreOptions = dbworkerstore.Options{
 	MaxNumResets:      IndexMaxNumResets,
 }
 
-func WorkerutilIndexStore(s basestore.ShareableStore) dbworkerstore.Store {
-	return dbworkerstore.New(s.Handle(), indexWorkerStoreOptions)
+func WorkerutilIndexStore(s basestore.ShareableStore, observationContext *observation.Context) dbworkerstore.Store {
+	return dbworkerstore.NewWithMetrics(s.Handle(), indexWorkerStoreOptions, observationContext)
 }

@@ -68,7 +68,7 @@ func main() {
 
 	// Initialize stores
 	dbStore := store.NewWithDB(db, observationContext)
-	workerStore := dbstore.WorkerutilUploadStore(dbStore)
+	workerStore := dbstore.WorkerutilUploadStore(dbStore, observationContext)
 	lsifStore := lsifstore.NewStore(codeIntelDB, observationContext)
 	gitserverClient := gitserver.New(dbStore, observationContext)
 
@@ -86,6 +86,7 @@ func main() {
 	// Initialize worker
 	worker := worker.NewWorker(
 		&worker.DBStoreShim{dbStore},
+		workerStore,
 		&worker.LSIFStoreShim{lsifStore},
 		uploadStore,
 		gitserverClient,

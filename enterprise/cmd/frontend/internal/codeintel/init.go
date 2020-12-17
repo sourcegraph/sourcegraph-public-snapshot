@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -135,6 +136,8 @@ func newIndexingRoutines(observationContext *observation.Context) []goroutine.Ba
 
 func newJanitorRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
 	dbStore := &janitor.DBStoreShim{services.dbStore}
+	uploadWorkerStore := dbstore.WorkerutilUploadStore(services.dbStore, observationContext)
+	indexWorkerStore := dbstore.WorkerutilIndexStore(services.dbStore, observationContext)
 	lsifStore := services.lsifStore
 	metrics := janitor.NewMetrics(observationContext)
 
@@ -143,7 +146,7 @@ func newJanitorRoutines(observationContext *observation.Context) []goroutine.Bac
 		janitor.NewDeletedRepositoryJanitor(dbStore, config.CleanupTaskInterval, metrics),
 		janitor.NewHardDeleter(dbStore, lsifStore, config.CleanupTaskInterval, metrics),
 		janitor.NewRecordExpirer(dbStore, config.DataTTL, config.CleanupTaskInterval, metrics),
-		janitor.NewUploadResetter(dbStore, config.CleanupTaskInterval, metrics),
-		janitor.NewIndexResetter(dbStore, config.CleanupTaskInterval, metrics),
+		janitor.NewUploadResetter(uploadWorkerStore, config.CleanupTaskInterval, metrics, observationContext),
+		janitor.NewIndexResetter(indexWorkerStore, config.CleanupTaskInterval, metrics, observationContext),
 	}
 }
