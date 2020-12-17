@@ -2,24 +2,23 @@ package command
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type Operations struct {
-	GitInit           *observation.Operation
-	GitFetch          *observation.Operation
-	GitCheckout       *observation.Operation
-	DockerPull        *observation.Operation
-	DockerSave        *observation.Operation
-	DockerLoad        *observation.Operation
-	FirecrackerStart  *observation.Operation
-	SetupRm           *observation.Operation
-	FirecrackerStop   *observation.Operation
-	FirecrackerRemove *observation.Operation
-	Exec              *observation.Operation
+	SetupGitInit              *observation.Operation
+	SetupGitFetch             *observation.Operation
+	SetupGitCheckout          *observation.Operation
+	SetupDockerPull           *observation.Operation
+	SetupDockerSave           *observation.Operation
+	SetupDockerLoad           *observation.Operation
+	SetupFirecrackerStart     *observation.Operation
+	SetupRm                   *observation.Operation
+	TeardownFirecrackerStop   *observation.Operation
+	TeardownFirecrackerRemove *observation.Operation
+	Exec                      *observation.Operation
 }
 
 func MakeOperations(observationContext *observation.Context) *Operations {
@@ -33,22 +32,22 @@ func MakeOperations(observationContext *observation.Context) *Operations {
 	op := func(opName string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
 			Name:         fmt.Sprintf("apiworker.%s", opName),
-			MetricLabels: []string{strings.Replace(opName, ".", "_", -1)},
+			MetricLabels: []string{opName},
 			Metrics:      metrics,
 		})
 	}
 
 	return &Operations{
-		GitInit:           op("setup.git.init"),
-		GitFetch:          op("setup.git.fetch"),
-		GitCheckout:       op("setup.git.checkout"),
-		DockerPull:        op("setup.docker.pull"),
-		DockerSave:        op("setup.docker.save"),
-		DockerLoad:        op("setup.docker.load"),
-		SetupRm:           op("setup.rm"),
-		FirecrackerStart:  op("setup.firecracker.start"),
-		FirecrackerStop:   op("teardown.firecracker.stop"),
-		FirecrackerRemove: op("teardown.firecracker.remove"),
-		Exec:              op("exec"),
+		SetupGitInit:              op("setup.git.init"),
+		SetupGitFetch:             op("setup.git.fetch"),
+		SetupGitCheckout:          op("setup.git.checkout"),
+		SetupDockerPull:           op("setup.docker.pull"),
+		SetupDockerSave:           op("setup.docker.save"),
+		SetupDockerLoad:           op("setup.docker.load"),
+		SetupRm:                   op("setup.rm"),
+		SetupFirecrackerStart:     op("setup.firecracker.start"),
+		TeardownFirecrackerStop:   op("teardown.firecracker.stop"),
+		TeardownFirecrackerRemove: op("teardown.firecracker.remove"),
+		Exec:                      op("exec"),
 	}
 }
