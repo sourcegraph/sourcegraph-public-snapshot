@@ -777,6 +777,9 @@ func (e *ExternalServiceStore) GetByID(ctx context.Context, id int64) (*types.Ex
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service
 func (e *ExternalServiceStore) GetLatestSyncError(ctx context.Context, id int64) (string, error) {
+	if Mocks.ExternalServices.GetLatestSyncError != nil {
+		return Mocks.ExternalServices.GetLatestSyncError(id)
+	}
 	e.ensureStore()
 
 	q := sqlf.Sprintf(`
@@ -905,10 +908,11 @@ func (e *ExternalServiceStore) Count(ctx context.Context, opt ExternalServicesLi
 
 // MockExternalServices mocks the external services store.
 type MockExternalServices struct {
-	Create  func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error
-	Delete  func(ctx context.Context, id int64) error
-	GetByID func(id int64) (*types.ExternalService, error)
-	List    func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
-	Update  func(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error
-	Count   func(ctx context.Context, opt ExternalServicesListOptions) (int, error)
+	Create             func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error
+	Delete             func(ctx context.Context, id int64) error
+	GetByID            func(id int64) (*types.ExternalService, error)
+	GetLatestSyncError func(id int64) (string, error)
+	List               func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
+	Update             func(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error
+	Count              func(ctx context.Context, opt ExternalServicesListOptions) (int, error)
 }
