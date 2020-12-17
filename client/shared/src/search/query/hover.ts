@@ -50,6 +50,9 @@ const toRegexpHover = (token: MetaRegexp): string => {
                 case '\\S':
                     return '**Negated whitespace**. Match any character that is **not** a whitespace character like a space, line break, or tab.'
             }
+        case MetaRegexpKind.CharacterClassRange:
+        case MetaRegexpKind.CharacterClassRangeHyphen:
+            return `**Character range**. Match a character in the range \`${token.value}\`.`
         case MetaRegexpKind.CharacterClassMember:
             return `**Character**. This character class matches the character \`${token.value}\`.`
         case MetaRegexpKind.Delimited:

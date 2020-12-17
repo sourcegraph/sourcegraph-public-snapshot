@@ -105,16 +105,16 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 	// missing diffstat shouldn't happen anymore (due to migration), but it's still a nullable field.
 	_, err = dbconn.Global.Exec(`
 		INSERT INTO changesets
-			(id, repo_id, external_service_type, added_to_campaign, owned_by_campaign_id, external_state, publication_state, diff_stat_added, diff_stat_changed, diff_stat_deleted)
+			(id, repo_id, external_service_type, owned_by_campaign_id, external_state, publication_state, diff_stat_added, diff_stat_changed, diff_stat_deleted)
 		VALUES
 		    -- tracked
-			(1, $1, 'github', true, NULL, 'OPEN',   'PUBLISHED', 9, 7, 5),
-			(2, $1, 'github', true, NULL, 'MERGED', 'PUBLISHED', 7, 9, 5),
+			(1, $1, 'github', NULL, 'OPEN',   'PUBLISHED', 9, 7, 5),
+			(2, $1, 'github', NULL, 'MERGED', 'PUBLISHED', 7, 9, 5),
 			-- created by campaign
-			(4, $1, 'github', false, 1, 'OPEN',   'PUBLISHED', 5, 7, 9),
-			(5, $1, 'github', false, 1, 'OPEN',   'PUBLISHED', NULL, NULL, NULL),
-			(6, $1, 'github', false, 2, 'MERGED', 'PUBLISHED', 9, 7, 5),
-			(7, $1, 'github', false, 2, 'MERGED', 'PUBLISHED', NULL, NULL, NULL)
+			(4, $1, 'github', 1, 'OPEN',   'PUBLISHED', 5, 7, 9),
+			(5, $1, 'github', 1, 'OPEN',   'PUBLISHED', NULL, NULL, NULL),
+			(6, $1, 'github', 2, 'MERGED', 'PUBLISHED', 9, 7, 5),
+			(7, $1, 'github', 2, 'MERGED', 'PUBLISHED', NULL, NULL, NULL)
 	`, repo.ID)
 	if err != nil {
 		t.Fatal(err)
