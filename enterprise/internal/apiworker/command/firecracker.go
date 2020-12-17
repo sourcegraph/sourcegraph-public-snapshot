@@ -47,8 +47,9 @@ func formatFirecrackerCommand(spec CommandSpec, name, repoDir string, options Op
 	}
 
 	return command{
-		Key:      spec.Key,
-		Commands: []string{"ignite", "exec", name, "--", innerCommand},
+		Key:       spec.Key,
+		Commands:  []string{"ignite", "exec", name, "--", innerCommand},
+		Operation: spec.Operation,
 	}
 }
 

@@ -62,21 +62,3 @@ func TestFormatRawOrDockerCommandDocker(t *testing.T) {
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
 	}
 }
-
-var commandComparer = cmp.Comparer(func(x, y command) bool {
-	return x.Key == y.Key && x.Dir == y.Dir && compareStrings(x.Env, y.Env) && compareStrings(x.Commands, y.Commands)
-})
-
-func compareStrings(x, y []string) bool {
-	if len(x) != len(y) {
-		return false
-	}
-
-	for i, v1 := range x {
-		if y[i] != v1 {
-			return false
-		}
-	}
-
-	return true
-}

@@ -14,9 +14,10 @@ import (
 func TestFormatFirecrackerCommandRaw(t *testing.T) {
 	actual := formatFirecrackerCommand(
 		CommandSpec{
-			Commands: []string{"ls", "-a"},
-			Dir:      "subdir",
-			Env:      []string{"TEST=true"},
+			Commands:  []string{"ls", "-a"},
+			Dir:       "subdir",
+			Env:       []string{"TEST=true"},
+			Operation: makeTestOperation(),
 		},
 		"deadbeef",
 		"/proj/src",
@@ -29,7 +30,7 @@ func TestFormatFirecrackerCommandRaw(t *testing.T) {
 			"cd /work/subdir && TEST=true ls -a",
 		},
 	}
-	if diff := cmp.Diff(expected, actual); diff != "" {
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
 	}
 }
@@ -37,10 +38,11 @@ func TestFormatFirecrackerCommandRaw(t *testing.T) {
 func TestFormatFirecrackerCommandDocker(t *testing.T) {
 	actual := formatFirecrackerCommand(
 		CommandSpec{
-			Image:    "alpine:latest",
-			Commands: []string{"ls", "-a"},
-			Dir:      "subdir",
-			Env:      []string{"TEST=true"},
+			Image:     "alpine:latest",
+			Commands:  []string{"ls", "-a"},
+			Dir:       "subdir",
+			Env:       []string{"TEST=true"},
+			Operation: makeTestOperation(),
 		},
 		"deadbeef",
 		"/proj/src",
@@ -67,7 +69,7 @@ func TestFormatFirecrackerCommandDocker(t *testing.T) {
 			}, " "),
 		},
 	}
-	if diff := cmp.Diff(expected, actual); diff != "" {
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
 	}
 }

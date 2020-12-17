@@ -122,7 +122,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 			Commands:  dockerStep.Commands,
 			Dir:       dockerStep.Dir,
 			Env:       dockerStep.Env,
-			Operation: h.operations.IgniteExec, // TODO
+			Operation: h.operations.Exec,
 		}
 
 		if err := runner.Run(ctx, dockerStepCommand); err != nil {
@@ -137,7 +137,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 			Commands:  append([]string{"src"}, cliStep.Commands...),
 			Dir:       cliStep.Dir,
 			Env:       cliStep.Env,
-			Operation: h.operations.IgniteExec, // TODO
+			Operation: h.operations.Exec,
 		}
 
 		if err := runner.Run(ctx, cliStepCommand); err != nil {
