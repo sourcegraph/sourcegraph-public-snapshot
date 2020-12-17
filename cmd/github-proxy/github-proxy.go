@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -36,21 +35,10 @@ const port = "3180"
 // requestMu ensures we only do one request at a time to prevent tripping abuse detection.
 var requestMu sync.Mutex
 
-var metricsRateLimitRemainingGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-	Name: "src_github_rate_limit_remaining",
-	Help: "Number of calls to GitHub's API remaining before hitting the rate limit.",
-}, []string{"resource"})
-
 var metricWaitingRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
 	Name: "github_proxy_waiting_requests",
 	Help: "Number of proxy requests waiting on the mutex",
 })
-
-func init() {
-	metricsRateLimitRemainingGauge.WithLabelValues("core").Set(5000)
-	metricsRateLimitRemainingGauge.WithLabelValues("search").Set(30)
-	prometheus.MustRegister(metricsRateLimitRemainingGauge)
-}
 
 // list obtained from httputil of headers not to forward.
 var hopHeaders = map[string]struct{}{
@@ -121,18 +109,6 @@ func main() {
 			return
 		}
 		defer resp.Body.Close()
-
-		if limit := resp.Header.Get("X-Ratelimit-Remaining"); limit != "" {
-			limit, _ := strconv.Atoi(limit)
-
-			resource := "core"
-			if strings.HasPrefix(r.URL.Path, "/search/") {
-				resource = "search"
-			} else if r.URL.Path == "/graphql" {
-				resource = "graphql"
-			}
-			metricsRateLimitRemainingGauge.WithLabelValues(resource).Set(float64(limit))
-		}
 
 		for k, v := range resp.Header {
 			w.Header()[k] = v

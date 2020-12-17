@@ -1574,48 +1574,6 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <br />
 
-## github-proxy: github_core_rate_limit_remaining
-
-<p class="subtitle">cloud: remaining calls to GitHub before hitting the rate limit</p>
-
-**Descriptions:**
-
-- _github-proxy: less than 500 remaining calls to GitHub before hitting the rate limit for 5m0s_
-
-**Possible solutions:**
-
-- Try restarting the pod to get a different public IP.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_github-proxy_github_core_rate_limit_remaining"
-]
-```
-
-<br />
-
-## github-proxy: github_search_rate_limit_remaining
-
-<p class="subtitle">cloud: remaining calls to GitHub search before hitting the rate limit</p>
-
-**Descriptions:**
-
-- _github-proxy: less than 5 remaining calls to GitHub search before hitting the rate limit_
-
-**Possible solutions:**
-
-- Try restarting the pod to get a different public IP.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_github_search_rate_limit_remaining"
-]
-```
-
-<br />
-
 ## github-proxy: github_proxy_waiting_requests
 
 <p class="subtitle">cloud: number of requests waiting on the global mutex</p>
