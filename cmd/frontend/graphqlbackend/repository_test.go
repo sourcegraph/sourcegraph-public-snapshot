@@ -62,19 +62,17 @@ func TestRepositoryHydration(t *testing.T) {
 		minimal := types.Repo{
 			ID:   api.RepoID(id),
 			Name: api.RepoName(name),
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          name,
-				ServiceType: extsvc.TypeGitHub,
-				ServiceID:   "https://github.com",
-			},
 		}
 
 		hydrated := minimal
-		hydrated.RepoFields = &types.RepoFields{
-			URI:         fmt.Sprintf("github.com/foobar/%s", name),
-			Description: "This is a description of a repository",
-			Fork:        false,
+		hydrated.ExternalRepo = api.ExternalRepoSpec{
+			ID:          name,
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com",
 		}
+		hydrated.URI = fmt.Sprintf("github.com/foobar/%s", name)
+		hydrated.Description = "This is a description of a repository"
+		hydrated.Fork = false
 
 		return &minimal, &hydrated
 	}
@@ -88,7 +86,7 @@ func TestRepositoryHydration(t *testing.T) {
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 
-		repoResolver := &RepositoryResolver{repo: minimalRepo}
+		repoResolver := &RepositoryResolver{innerRepo: minimalRepo}
 		assertRepoResolverHydrated(ctx, t, repoResolver, hydratedRepo)
 	})
 
@@ -102,7 +100,7 @@ func TestRepositoryHydration(t *testing.T) {
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 
-		repoResolver := &RepositoryResolver{repo: minimalRepo}
+		repoResolver := &RepositoryResolver{innerRepo: minimalRepo}
 		_, err := repoResolver.Description(ctx)
 		if err == nil {
 			t.Fatal("err is unexpected nil")

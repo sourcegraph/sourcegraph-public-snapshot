@@ -1,6 +1,9 @@
 package definitions
 
-import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+import (
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
+	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+)
 
 func QueryRunner() *monitoring.Container {
 	return &monitoring.Container{
@@ -12,7 +15,7 @@ func QueryRunner() *monitoring.Container {
 				Title: "General",
 				Rows: []monitoring.Row{
 					{
-						sharedFrontendInternalAPIErrorResponses("query-runner", monitoring.ObservableOwnerSearch),
+						shared.FrontendInternalAPIErrorResponses("query-runner", monitoring.ObservableOwnerSearch),
 					},
 				},
 			},
@@ -21,12 +24,12 @@ func QueryRunner() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedContainerMemoryUsage("query-runner", monitoring.ObservableOwnerSearch),
-						sharedContainerCPUUsage("query-runner", monitoring.ObservableOwnerSearch),
+						shared.ContainerMemoryUsage("query-runner", monitoring.ObservableOwnerSearch),
+						shared.ContainerCPUUsage("query-runner", monitoring.ObservableOwnerSearch),
 					},
 					{
-						sharedContainerRestarts("query-runner", monitoring.ObservableOwnerSearch),
-						sharedContainerFsInodes("query-runner", monitoring.ObservableOwnerSearch),
+						shared.ContainerRestarts("query-runner", monitoring.ObservableOwnerSearch),
+						shared.ContainerFsInodes("query-runner", monitoring.ObservableOwnerSearch),
 					},
 				},
 			},
@@ -35,12 +38,12 @@ func QueryRunner() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("query-runner", monitoring.ObservableOwnerSearch),
-						sharedProvisioningMemoryUsageLongTerm("query-runner", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningCPUUsageLongTerm("query-runner", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningMemoryUsageLongTerm("query-runner", monitoring.ObservableOwnerSearch),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("query-runner", monitoring.ObservableOwnerSearch),
-						sharedProvisioningMemoryUsageShortTerm("query-runner", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningCPUUsageShortTerm("query-runner", monitoring.ObservableOwnerSearch),
+						shared.ProvisioningMemoryUsageShortTerm("query-runner", monitoring.ObservableOwnerSearch),
 					},
 				},
 			},
@@ -49,8 +52,8 @@ func QueryRunner() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedGoGoroutines("query-runner", monitoring.ObservableOwnerSearch),
-						sharedGoGcDuration("query-runner", monitoring.ObservableOwnerSearch),
+						shared.GoGoroutines("query-runner", monitoring.ObservableOwnerSearch),
+						shared.GoGcDuration("query-runner", monitoring.ObservableOwnerSearch),
 					},
 				},
 			},
@@ -59,7 +62,7 @@ func QueryRunner() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedKubernetesPodsAvailable("query-runner", monitoring.ObservableOwnerSearch),
+						shared.KubernetesPodsAvailable("query-runner", monitoring.ObservableOwnerSearch),
 					},
 				},
 			},

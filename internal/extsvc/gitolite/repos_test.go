@@ -1,6 +1,7 @@
 package gitolite
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -58,5 +59,24 @@ func TestDecodeRepos(t *testing.T) {
 				t.Error(diff)
 			}
 		})
+	}
+}
+
+func TestMaybeUnauthorized(t *testing.T) {
+	assertUnauthorized := func(err error) bool {
+		if ue, ok := err.(interface{ Unauthorized() bool }); ok {
+			return ue.Unauthorized()
+		}
+		return false
+	}
+
+	err := errors.New("random")
+	if assertUnauthorized(maybeUnauthorized(err)) {
+		t.Errorf("Should not be unauthorized")
+	}
+
+	err = errors.New("permission denied (public key)")
+	if !assertUnauthorized(maybeUnauthorized(err)) {
+		t.Errorf("Should be unauthorized")
 	}
 }

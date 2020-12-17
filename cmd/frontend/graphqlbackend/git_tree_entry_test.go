@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -17,7 +18,7 @@ func TestGitTreeEntry_RawZipArchiveURL(t *testing.T) {
 	got := (&GitTreeEntryResolver{
 		commit: &GitCommitResolver{
 			repoResolver: &RepositoryResolver{
-				repo: &types.Repo{Name: "my/repo"},
+				innerRepo: &types.Repo{Name: "my/repo"},
 			},
 		},
 		stat: CreateFileInfo("a/b", true),
@@ -40,10 +41,19 @@ func TestGitTreeEntry_Content(t *testing.T) {
 	}
 	t.Cleanup(func() { git.Mocks.ReadFile = nil })
 
+	db.Mocks.Repos.Get = func(ctx context.Context, repo api.RepoID) (*types.Repo, error) {
+		return &types.Repo{
+			ID:        1,
+			Name:      "github.com/foo/bar",
+			CreatedAt: time.Now(),
+		}, nil
+	}
+	defer func() { db.Mocks.Repos = db.MockRepos{} }()
+
 	gitTree := &GitTreeEntryResolver{
 		commit: &GitCommitResolver{
 			repoResolver: &RepositoryResolver{
-				repo: &types.Repo{Name: "my/repo"},
+				innerRepo: &types.Repo{Name: "my/repo"},
 			},
 		},
 		stat: CreateFileInfo(wantPath, true),

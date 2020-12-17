@@ -195,7 +195,7 @@ func (s *Store) ListExternalRepoSpecs(ctx context.Context) (ids map[api.External
 	}(time.Now())
 
 	const ListExternalRepoSpecsQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.ListExternalRepoSpecs
+-- source: internal/repos/store.go:DBStore.ListExternalRepoSpecs
 SELECT
 	id,
 	external_id,
@@ -586,7 +586,7 @@ var upsertSourcesQueryFmtstr = upsertSourcesFmtstrPrefix + upsertSourcesFmtstrSu
 var upsertSourcesWithDeletesQueryFmtstr = upsertSourcesFmtstrPrefix + upsertSourcesFmtstrDeletes + upsertSourcesFmtstrSuffix
 
 const upsertSourcesFmtstrPrefix = `
--- source: cmd/repo-updater/repos/store.go:DBStore.UpsertSources
+-- source: internal/repos/store.go:DBStore.UpsertSources
 WITH updated_sources_list AS (
   SELECT * FROM
   unnest(%s::bigint[], %s::integer[], %s::text[]) AS
@@ -666,7 +666,7 @@ func (s *Store) SetClonedRepos(ctx context.Context, repoNames ...string) (err er
 }
 
 const setClonedReposQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.SetClonedRepos
+-- source: internal/repos/store.go:DBStore.SetClonedRepos
 WITH repo_names AS (
   SELECT unnest(%s::citext[])::citext AS name
 ),
@@ -704,7 +704,7 @@ func (s *Store) CountNotClonedRepos(ctx context.Context) (count uint64, err erro
 }
 
 const CountNotClonedReposQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.CountNotClonedRepos
+-- source: internal/repos/store.go:DBStore.CountNotClonedRepos
 SELECT COUNT(*) FROM repo WHERE deleted_at IS NULL AND NOT cloned
 `
 
@@ -730,7 +730,7 @@ func (s *Store) CountUserAddedRepos(ctx context.Context) (count uint64, err erro
 }
 
 const CountTotalUserAddedReposQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.CountUserAddedRepos
+-- source: internal/repos/store.go:DBStore.CountUserAddedRepos
 SELECT COUNT(*)
 FROM
     repo r

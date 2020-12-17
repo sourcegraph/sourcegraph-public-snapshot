@@ -7,16 +7,16 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { merge, of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons' // TODO: Switch mdi icon
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { fetchFileExternalLinks } from '../backend'
 import { RevisionSpec, FileSpec } from '../../../../shared/src/util/url'
-import { ExternalLinkFields } from '../../graphql-operations'
+import { ExternalLinkFields, RepositoryFields } from '../../graphql-operations'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import { eventLogger } from '../../tracking/eventLogger'
 import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
 import { useLocalStorage } from '../../util/useLocalStorage'
+import * as GQL from '../../../../shared/src/graphql/schema'
 
 interface GoToCodeHostPopoverProps {
     /**
@@ -32,7 +32,7 @@ interface GoToCodeHostPopoverProps {
 }
 
 interface Props extends RevisionSpec, Partial<FileSpec>, GoToCodeHostPopoverProps {
-    repo?: Pick<GQL.IRepository, 'name' | 'defaultBranch' | 'externalURLs'> | null
+    repo?: Pick<RepositoryFields, 'name' | 'defaultBranch' | 'externalURLs'> | null
     filePath?: string
     commitRange?: string
     position?: Position

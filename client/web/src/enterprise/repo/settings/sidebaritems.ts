@@ -10,6 +10,11 @@ const codeIntelSettingsGroup = {
             label: 'Uploads',
         },
         {
+            to: '/code-intelligence/index-configuration',
+            label: 'Index configuration',
+            condition: () => Boolean(window.context?.sourcegraphDotComMode),
+        },
+        {
             to: '/code-intelligence/indexes',
             label: 'Auto indexing',
             condition: () => Boolean(window.context?.sourcegraphDotComMode),

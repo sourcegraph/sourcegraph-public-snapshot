@@ -3,10 +3,10 @@ import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceServi
 import { FiltersToTypeAndValue } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
 import { replaceRange } from './strings'
-import { discreteValueAliases } from '../search/parser/filters'
+import { discreteValueAliases } from '../search/query/filters'
 import { tryCatch } from './errors'
 import { SearchPatternType } from '../graphql-operations'
-import { findFilter, FilterKind } from '../search/parser/validate'
+import { findFilter, FilterKind } from '../search/query/validate'
 
 export interface RepoSpec {
     /**
@@ -604,16 +604,21 @@ export function buildSearchURLQuery(
     }
 
     const globalPatternType = findFilter(queryParameter, 'patterntype', FilterKind.Global)
-    if (globalPatternType?.value && globalPatternType.value.type === 'literal') {
+    if (globalPatternType?.value) {
         const { start, end } = globalPatternType.range
-        patternTypeParameter = query.slice(globalPatternType.value.range.start, end)
+        patternTypeParameter =
+            globalPatternType.value.type === 'literal'
+                ? globalPatternType.value.value
+                : globalPatternType.value.quotedValue
         queryParameter = replaceRange(queryParameter, { start: Math.max(0, start - 1), end }).trim()
     }
 
     const globalCase = findFilter(queryParameter, 'case', FilterKind.Global)
-    if (globalCase?.value && globalCase.value.type === 'literal') {
+    if (globalCase?.value) {
         // When case:value is explicit in the query, override any previous value of caseParameter.
-        caseParameter = discreteValueAliases.yes.includes(globalCase.value.value) ? 'yes' : 'no'
+        const globalCaseParameterValue =
+            globalCase.value.type === 'literal' ? globalCase.value.value : globalCase.value.quotedValue
+        caseParameter = discreteValueAliases.yes.includes(globalCaseParameterValue) ? 'yes' : 'no'
         queryParameter = replaceRange(queryParameter, globalCase.range)
     }
 

@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
@@ -250,9 +250,11 @@ func TestGetUploads(t *testing.T) {
 		term           string
 		visibleAtTip   bool
 		uploadedBefore *time.Time
+		oldestFirst    bool
 		expectedIDs    []int
 	}{
 		{expectedIDs: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}},
+		{oldestFirst: true, expectedIDs: []int{10, 9, 8, 7, 6, 5, 4, 3, 2, 1}},
 		{repositoryID: 50, expectedIDs: []int{1, 2, 3, 5, 7, 8, 9, 10}},
 		{state: "completed", expectedIDs: []int{7, 8, 10}},
 		{term: "sub", expectedIDs: []int{1, 3, 5, 6, 7, 10}}, // searches root
@@ -288,6 +290,7 @@ func TestGetUploads(t *testing.T) {
 					Term:           testCase.term,
 					VisibleAtTip:   testCase.visibleAtTip,
 					UploadedBefore: testCase.uploadedBefore,
+					OldestFirst:    testCase.oldestFirst,
 					Limit:          3,
 					Offset:         lo,
 				})
@@ -308,35 +311,6 @@ func TestGetUploads(t *testing.T) {
 				}
 			})
 		}
-	}
-}
-
-func TestQueueSize(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	insertUploads(t, dbconn.Global,
-		Upload{ID: 1, State: "queued"},
-		Upload{ID: 2, State: "errored"},
-		Upload{ID: 3, State: "processing"},
-		Upload{ID: 4, State: "completed"},
-		Upload{ID: 5, State: "completed"},
-		Upload{ID: 6, State: "queued"},
-		Upload{ID: 7, State: "processing"},
-		Upload{ID: 8, State: "completed"},
-		Upload{ID: 9, State: "processing"},
-		Upload{ID: 10, State: "queued"},
-	)
-
-	count, err := store.QueueSize(context.Background())
-	if err != nil {
-		t.Fatalf("unexpected error getting queue size: %s", err)
-	}
-	if count != 3 {
-		t.Errorf("unexpected count. want=%d have=%d", 3, count)
 	}
 }
 
@@ -498,320 +472,6 @@ func TestAddUploadPart(t *testing.T) {
 	}
 }
 
-func TestMarkComplete(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
-
-	if err := store.MarkComplete(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error marking upload as completed: %s", err)
-	}
-
-	if upload, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting upload: %s", err)
-	} else if !exists {
-		t.Fatal("expected record to exist")
-	} else if upload.State != "completed" {
-		t.Errorf("unexpected state. want=%q have=%q", "completed", upload.State)
-	}
-}
-
-func TestMarkErrored(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
-
-	if err := store.MarkErrored(context.Background(), 1, "oops"); err != nil {
-		t.Fatalf("unexpected error marking upload as errored: %s", err)
-	}
-
-	if upload, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting upload: %s", err)
-	} else if !exists {
-		t.Fatal("expected record to exist")
-	} else if upload.State != "errored" {
-		t.Errorf("unexpected state. want=%q have=%q", "errored", upload.State)
-	}
-}
-
-func TestDequeueConversionSuccess(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	// Add dequeueable upload
-	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
-
-	upload, tx, ok, err := store.Dequeue(context.Background(), 0)
-	if err != nil {
-		t.Fatalf("unexpected error dequeueing upload: %s", err)
-	}
-	if !ok {
-		t.Fatalf("expected something to be dequeueable")
-	}
-
-	if upload.ID != 1 {
-		t.Errorf("unexpected upload id. want=%d have=%d", 1, upload.ID)
-	}
-	if upload.State != "processing" {
-		t.Errorf("unexpected state. want=%s have=%s", "processing", upload.State)
-	}
-
-	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
-		t.Errorf("unexpected error getting state: %s", err)
-	} else if state != "processing" {
-		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
-	}
-
-	if err := tx.MarkComplete(context.Background(), upload.ID); err != nil {
-		t.Fatalf("unexpected error marking upload complete: %s", err)
-	}
-	_ = tx.Done(nil)
-
-	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
-		t.Errorf("unexpected error getting state: %s", err)
-	} else if state != "completed" {
-		t.Errorf("unexpected state outside of txn. want=%s have=%s", "completed", state)
-	}
-}
-
-func TestDequeueConversionError(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	// Add dequeueable upload
-	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "queued"})
-
-	upload, tx, ok, err := store.Dequeue(context.Background(), 0)
-	if err != nil {
-		t.Fatalf("unexpected error dequeueing upload: %s", err)
-	}
-	if !ok {
-		t.Fatalf("expected something to be dequeueable")
-	}
-
-	if upload.ID != 1 {
-		t.Errorf("unexpected upload id. want=%d have=%d", 1, upload.ID)
-	}
-	if upload.State != "processing" {
-		t.Errorf("unexpected state. want=%s have=%s", "processing", upload.State)
-	}
-
-	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
-		t.Errorf("unexpected error getting state: %s", err)
-	} else if state != "processing" {
-		t.Errorf("unexpected state outside of txn. want=%s have=%s", "processing", state)
-	}
-
-	if err := tx.MarkErrored(context.Background(), upload.ID, "test message"); err != nil {
-		t.Fatalf("unexpected error marking upload complete: %s", err)
-	}
-	_ = tx.Done(nil)
-
-	if state, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT state FROM lsif_uploads WHERE id = 1")); err != nil {
-		t.Errorf("unexpected error getting state: %s", err)
-	} else if state != "errored" {
-		t.Errorf("unexpected state outside of txn. want=%s have=%s", "errored", state)
-	}
-
-	if message, _, err := basestore.ScanFirstString(dbconn.Global.Query("SELECT failure_message FROM lsif_uploads WHERE id = 1")); err != nil {
-		t.Errorf("unexpected error getting failure_message: %s", err)
-	} else if message != "test message" {
-		t.Errorf("unexpected failure message outside of txn. want=%s have=%s", "test message", message)
-	}
-}
-
-func TestDequeueSkipsLocked(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	t1 := time.Unix(1587396557, 0).UTC()
-	t2 := t1.Add(time.Minute)
-	t3 := t2.Add(time.Minute)
-	insertUploads(
-		t,
-		dbconn.Global,
-		Upload{ID: 1, State: "queued", UploadedAt: t1},
-		Upload{ID: 2, State: "processing", UploadedAt: t2},
-		Upload{ID: 3, State: "queued", UploadedAt: t3},
-	)
-
-	tx1, err := dbconn.Global.BeginTx(context.Background(), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = tx1.Rollback() }()
-
-	// Row lock upload 1 in a transaction which should be skipped by ResetStalled
-	if _, err := tx1.Query(`SELECT * FROM lsif_uploads WHERE id = 1 FOR UPDATE`); err != nil {
-		t.Fatal(err)
-	}
-
-	upload, tx2, ok, err := store.Dequeue(context.Background(), 0)
-	if err != nil {
-		t.Fatalf("unexpected error dequeueing upload: %s", err)
-	}
-	if !ok {
-		t.Fatalf("expected something to be dequeueable")
-	}
-	defer func() { _ = tx2.Done(nil) }()
-
-	if upload.ID != 3 {
-		t.Errorf("unexpected upload id. want=%d have=%d", 3, upload.ID)
-	}
-	if upload.State != "processing" {
-		t.Errorf("unexpected state. want=%s have=%s", "processing", upload.State)
-	}
-}
-
-func TestDequeueSkipsDelayed(t *testing.T) {
-	t.Skip()
-
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	t1 := time.Unix(1587396557, 0).UTC()
-	t2 := t1.Add(time.Minute)
-	t3 := t2.Add(time.Minute)
-	insertUploads(
-		t,
-		dbconn.Global,
-		Upload{ID: 1, State: "queued", UploadedAt: t1, ProcessAfter: &t2},
-		Upload{ID: 2, State: "processing", UploadedAt: t2},
-		Upload{ID: 3, State: "queued", UploadedAt: t3},
-	)
-
-	tx1, err := dbconn.Global.BeginTx(context.Background(), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = tx1.Rollback() }()
-
-	upload, tx2, ok, err := store.Dequeue(context.Background(), 0)
-	if err != nil {
-		t.Fatalf("unexpected error dequeueing upload: %s", err)
-	}
-	if !ok {
-		t.Fatalf("expected something to be dequeueable")
-	}
-	defer func() { _ = tx2.Done(nil) }()
-
-	if upload.ID != 3 {
-		t.Errorf("unexpected upload id. want=%d have=%d", 3, upload.ID)
-	}
-	if upload.State != "processing" {
-		t.Errorf("unexpected state. want=%s have=%s", "processing", upload.State)
-	}
-}
-
-func TestDequeueSkipsOversizedUploads(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	t1 := time.Unix(1587396557, 0).UTC()
-	t2 := t1.Add(time.Minute)
-	t3 := t2.Add(time.Minute)
-
-	s1 := int64(90)
-	s2 := int64(45)
-	s3 := int64(50)
-
-	insertUploads(
-		t,
-		dbconn.Global,
-		Upload{ID: 1, State: "queued", UploadedAt: t1, UploadSize: &s1},
-		Upload{ID: 2, State: "queued", UploadedAt: t2, UploadSize: &s2},
-		Upload{ID: 3, State: "queued", UploadedAt: t3, UploadSize: &s3},
-	)
-
-	tx1, err := dbconn.Global.BeginTx(context.Background(), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = tx1.Rollback() }()
-
-	upload, tx2, ok, err := store.Dequeue(context.Background(), 50)
-	if err != nil {
-		t.Fatalf("unexpected error dequeueing upload: %s", err)
-	}
-	if !ok {
-		t.Fatalf("expected something to be dequeueable")
-	}
-	defer func() { _ = tx2.Done(nil) }()
-
-	if upload.ID != 2 {
-		t.Errorf("unexpected upload id. want=%d have=%d", 2, upload.ID)
-	}
-	if upload.State != "processing" {
-		t.Errorf("unexpected state. want=%s have=%s", "processing", upload.State)
-	}
-}
-
-func TestDequeueEmpty(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	_, tx, ok, err := store.Dequeue(context.Background(), 0)
-	if err != nil {
-		t.Fatalf("unexpected error dequeueing upload: %s", err)
-	}
-	if ok {
-		_ = tx.Done(nil)
-		t.Fatalf("unexpected dequeue")
-	}
-}
-
-func TestRequeue(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "processing"})
-
-	after := time.Unix(1587396557, 0).UTC().Add(time.Hour)
-
-	if err := store.Requeue(context.Background(), 1, after); err != nil {
-		t.Fatalf("unexpected error requeueing index: %s", err)
-	}
-
-	if upload, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting index: %s", err)
-	} else if !exists {
-		t.Fatal("expected record to exist")
-	} else if upload.State != "queued" {
-		t.Errorf("unexpected state. want=%q have=%q", "queued", upload.State)
-	} else if upload.ProcessAfter == nil || *upload.ProcessAfter != after {
-		t.Errorf("unexpected process after. want=%s have=%s", after, upload.ProcessAfter)
-	}
-}
-
 func TestDeleteUploadByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -957,68 +617,5 @@ func TestHardDeleteUploadByID(t *testing.T) {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else if len(states) != 0 {
 		t.Fatalf("unexpected record")
-	}
-}
-
-func TestResetStalled(t *testing.T) {
-	t.Skip()
-
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	now := time.Unix(1587396557, 0).UTC()
-	t1 := now.Add(-time.Second * 6) // old
-	t2 := now.Add(-time.Second * 2) // new enough
-	t3 := now.Add(-time.Second * 3) // new enough
-	t4 := now.Add(-time.Second * 8) // old
-	t5 := now.Add(-time.Second * 8) // old
-
-	insertUploads(t, dbconn.Global,
-		Upload{ID: 1, State: "processing", StartedAt: &t1, NumResets: 1},
-		Upload{ID: 2, State: "processing", StartedAt: &t2},
-		Upload{ID: 3, State: "processing", StartedAt: &t3},
-		Upload{ID: 4, State: "processing", StartedAt: &t4},
-		Upload{ID: 5, State: "processing", StartedAt: &t5},
-		Upload{ID: 6, State: "processing", StartedAt: &t1, NumResets: UploadMaxNumResets},
-		Upload{ID: 7, State: "processing", StartedAt: &t4, NumResets: UploadMaxNumResets},
-	)
-
-	tx, err := dbconn.Global.BeginTx(context.Background(), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = tx.Rollback() }()
-
-	// Row lock upload 5 in a transaction which should be skipped by ResetStalled
-	if _, err := tx.Query(`SELECT * FROM lsif_uploads WHERE id = 5 FOR UPDATE`); err != nil {
-		t.Fatal(err)
-	}
-
-	resetIDs, erroredIDs, err := store.ResetStalled(context.Background(), now)
-	if err != nil {
-		t.Fatalf("unexpected error resetting stalled uploads: %s", err)
-	}
-	sort.Ints(resetIDs)
-	sort.Ints(erroredIDs)
-
-	expectedReset := []int{1, 4}
-	if diff := cmp.Diff(expectedReset, resetIDs); diff != "" {
-		t.Errorf("unexpected reset ids (-want +got):\n%s", diff)
-	}
-
-	expectedErrored := []int{6, 7}
-	if diff := cmp.Diff(expectedErrored, erroredIDs); diff != "" {
-		t.Errorf("unexpected errored ids (-want +got):\n%s", diff)
-	}
-
-	upload, _, err := store.GetUploadByID(context.Background(), 1)
-	if err != nil {
-		t.Fatalf("unexpected error getting upload: %s", err)
-	}
-	if upload.NumResets != 2 {
-		t.Errorf("unexpected num resets. want=%d have=%d", 2, upload.NumResets)
 	}
 }

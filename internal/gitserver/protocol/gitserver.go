@@ -14,11 +14,6 @@ import (
 type ExecRequest struct {
 	Repo api.RepoName `json:"repo"`
 
-	// URL is the repository's Git remote URL. If the gitserver already has cloned the repository,
-	// this field is optional (it will use the last-used Git remote URL). If the repository is not
-	// cloned on the gitserver, the request will fail.
-	URL string `json:"url,omitempty"`
-
 	EnsureRevision string      `json:"ensureRevision"`
 	Args           []string    `json:"args"`
 	Opt            *RemoteOpts `json:"opt"`
@@ -46,7 +41,6 @@ type HTTPSConfig struct {
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
 type RepoUpdateRequest struct {
 	Repo  api.RepoName  `json:"repo"`  // identifying URL for repo
-	URL   string        `json:"url"`   // repo's remote URL
 	Since time.Duration `json:"since"` // debounce interval for queries, used only with request-repo-update
 }
 
@@ -79,9 +73,6 @@ type NotFoundPayload struct {
 type IsRepoCloneableRequest struct {
 	// Repo is the repository to check.
 	Repo api.RepoName `json:"Repo"`
-
-	// URL is the repository's Git remote URL.
-	URL string `json:"url"`
 }
 
 // IsRepoCloneableResponse is the response type for the IsRepoCloneableRequest.

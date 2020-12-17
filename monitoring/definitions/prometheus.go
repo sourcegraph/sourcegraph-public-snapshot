@@ -1,6 +1,9 @@
 package definitions
 
-import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+import (
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
+	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+)
 
 func Prometheus() *monitoring.Container {
 	return &monitoring.Container{
@@ -47,12 +50,12 @@ func Prometheus() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedContainerCPUUsage("prometheus", monitoring.ObservableOwnerDistribution),
-						sharedContainerMemoryUsage("prometheus", monitoring.ObservableOwnerDistribution),
+						shared.ContainerCPUUsage("prometheus", monitoring.ObservableOwnerDistribution),
+						shared.ContainerMemoryUsage("prometheus", monitoring.ObservableOwnerDistribution),
 					},
 					{
-						sharedContainerRestarts("prometheus", monitoring.ObservableOwnerDistribution),
-						sharedContainerFsInodes("prometheus", monitoring.ObservableOwnerDistribution),
+						shared.ContainerRestarts("prometheus", monitoring.ObservableOwnerDistribution),
+						shared.ContainerFsInodes("prometheus", monitoring.ObservableOwnerDistribution),
 					},
 				},
 			},
@@ -61,12 +64,12 @@ func Prometheus() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("prometheus", monitoring.ObservableOwnerDistribution),
-						sharedProvisioningMemoryUsageLongTerm("prometheus", monitoring.ObservableOwnerDistribution),
+						shared.ProvisioningCPUUsageLongTerm("prometheus", monitoring.ObservableOwnerDistribution),
+						shared.ProvisioningMemoryUsageLongTerm("prometheus", monitoring.ObservableOwnerDistribution),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("prometheus", monitoring.ObservableOwnerDistribution),
-						sharedProvisioningMemoryUsageShortTerm("prometheus", monitoring.ObservableOwnerDistribution),
+						shared.ProvisioningCPUUsageShortTerm("prometheus", monitoring.ObservableOwnerDistribution),
+						shared.ProvisioningMemoryUsageShortTerm("prometheus", monitoring.ObservableOwnerDistribution),
 					},
 				},
 			},
@@ -75,7 +78,7 @@ func Prometheus() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedKubernetesPodsAvailable("prometheus", monitoring.ObservableOwnerDistribution),
+						shared.KubernetesPodsAvailable("prometheus", monitoring.ObservableOwnerDistribution),
 					},
 				},
 			},

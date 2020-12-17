@@ -21,6 +21,7 @@ import { ErrorMessage } from '../components/alerts'
 import * as H from 'history'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../auth'
+import { Scalars } from '../../../shared/src/graphql-operations'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -197,7 +198,7 @@ export class SettingsArea extends React.Component<Props, State> {
     }
 }
 
-function fetchSettingsCascade(subject: GQL.ID): Observable<Pick<GQL.ISettingsCascade, 'subjects'>> {
+function fetchSettingsCascade(subject: Scalars['ID']): Observable<Pick<GQL.ISettingsCascade, 'subjects'>> {
     return queryGraphQL(
         gql`
             query SettingsCascade($subject: ID!) {

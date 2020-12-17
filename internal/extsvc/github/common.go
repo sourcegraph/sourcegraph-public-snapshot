@@ -78,7 +78,14 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 	}
 
 	defer resp.Body.Close()
-	rateLimitMonitor.Update(resp.Header)
+
+	// For 401 responses we receive a remaining limit of 0. This will cause the next
+	// call to block for up to an hour because it believes we have run out of tokens.
+	// Instead, we should fail fast.
+	if resp.StatusCode != 401 {
+		rateLimitMonitor.Update(resp.Header)
+	}
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		var err APIError
 		if body, readErr := ioutil.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
@@ -137,6 +144,9 @@ func IsNotFound(err error) bool {
 // IsRateLimitExceeded reports whether err is a GitHub API error reporting that the GitHub API rate
 // limit was exceeded.
 func IsRateLimitExceeded(err error) bool {
+	if err == errInternalRateLimitExceeded {
+		return true
+	}
 	if e, ok := errors.Cause(err).(*APIError); ok {
 		return strings.Contains(e.Message, "API rate limit exceeded") || strings.Contains(e.DocumentationURL, "#rate-limiting")
 	}
@@ -154,6 +164,8 @@ func IsRateLimitExceeded(err error) bool {
 	}
 	return false
 }
+
+var errInternalRateLimitExceeded = errors.New("internal rate limit exceeded")
 
 // ErrIncompleteResults is returned when the GitHub Search API returns an `incomplete_results: true` field in their response
 var ErrIncompleteResults = errors.New("github repository search returned incomplete results. This is an ephemeral error from GitHub, so does not indicate a problem with your configuration. See https://developer.github.com/changes/2014-04-07-understanding-search-results-and-potential-timeouts/ for more information")

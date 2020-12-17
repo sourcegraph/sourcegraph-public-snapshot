@@ -1,3 +1,25 @@
+@mixin github-dark-theme {
+    [data-color-mode='dark'] {
+        @content;
+    }
+    [data-color-mode='auto'] {
+        @media (prefers-color-scheme: dark) {
+            @content;
+        }
+    }
+}
+
+:root {
+    // Map out CSS variables to the theme-aware GitHub ones
+    --body-bg: var(--color-bg-canvas);
+    --border-color: var(--color-border-primary);
+    --secondary: var(--color-auto-gray-2);
+}
+
+@include github-dark-theme {
+    --mark-bg: #{$mark-bg-dark};
+}
+
 .command-palette-action-item--github {
     // Reset GitHub's 44px min-height
     min-height: initial;

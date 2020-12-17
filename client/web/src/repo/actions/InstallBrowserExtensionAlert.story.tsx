@@ -32,7 +32,6 @@ for (const serviceKind of services) {
                         codeHostIntegrationMessaging="browser-extension"
                         externalURLs={[
                             {
-                                __typename: 'ExternalLink',
                                 url: '',
                                 serviceKind,
                             },
@@ -59,7 +58,6 @@ for (const serviceKind of services) {
                         codeHostIntegrationMessaging="browser-extension"
                         externalURLs={[
                             {
-                                __typename: 'ExternalLink',
                                 url: '',
                                 serviceKind,
                             },
@@ -86,7 +84,6 @@ for (const serviceKind of services) {
                         codeHostIntegrationMessaging="native-integration"
                         externalURLs={[
                             {
-                                __typename: 'ExternalLink',
                                 url: '',
                                 serviceKind,
                             },

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/efritz/glock"
+
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -25,11 +26,10 @@ func TestWorkerHandlerSuccess(t *testing.T) {
 	handler := NewMockHandler()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
+		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
-		Metrics: WorkerMetrics{
-			HandleOperation: observation.TestContext.Operation(observation.Op{}),
-		},
+		Metrics:     NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
@@ -65,11 +65,10 @@ func TestWorkerHandlerFailure(t *testing.T) {
 	handler := NewMockHandler()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
+		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
-		Metrics: WorkerMetrics{
-			HandleOperation: observation.TestContext.Operation(observation.Op{}),
-		},
+		Metrics:     NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
@@ -113,11 +112,10 @@ func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
 	handler := NewMockHandler()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
+		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
-		Metrics: WorkerMetrics{
-			HandleOperation: observation.TestContext.Operation(observation.Op{}),
-		},
+		Metrics:     NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
@@ -164,11 +162,10 @@ func TestWorkerConcurrent(t *testing.T) {
 			handler := NewMockHandlerWithHooks()
 			clock := glock.NewMockClock()
 			options := WorkerOptions{
+				Name:        "test",
 				NumHandlers: numHandlers,
 				Interval:    time.Second,
-				Metrics: WorkerMetrics{
-					HandleOperation: observation.TestContext.Operation(observation.Op{}),
-				},
+				Metrics:     NewMetrics(&observation.TestContext, "", nil),
 			}
 
 			for i := 0; i < NumTestRecords; i++ {
@@ -250,11 +247,10 @@ func TestWorkerBlockingPreDequeueHook(t *testing.T) {
 	handler := NewMockHandlerWithPreDequeue()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
+		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
-		Metrics: WorkerMetrics{
-			HandleOperation: observation.TestContext.Operation(observation.Op{}),
-		},
+		Metrics:     NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
@@ -278,11 +274,10 @@ func TestWorkerConditionalPreDequeueHook(t *testing.T) {
 	handler := NewMockHandlerWithPreDequeue()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
+		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
-		Metrics: WorkerMetrics{
-			HandleOperation: observation.TestContext.Operation(observation.Op{}),
-		},
+		Metrics:     NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)

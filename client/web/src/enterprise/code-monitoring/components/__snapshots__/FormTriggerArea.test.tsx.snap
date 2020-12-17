@@ -1,0 +1,111 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`FormTriggerArea Error message is shown when query is invalid 1`] = `
+<FormTriggerArea
+  onQueryChange={[Function]}
+  query="test"
+  setTriggerCompleted={[Function]}
+  triggerCompleted={false}
+>
+  <h3>
+    Trigger
+  </h3>
+  <div
+    className="code-monitor-form__card card p-3 my-3"
+  >
+    <div
+      className="font-weight-bold"
+    >
+      When there are new search results
+    </div>
+    <span
+      className="text-muted"
+    >
+      This trigger will fire when new search results are found for a given search query.
+    </span>
+    <span
+      className="mt-4"
+    >
+      Search query
+    </span>
+    <div>
+      <div
+        className="trigger-area__query-input mb-4"
+      >
+        <div
+          className="d-flex flex-column flex-grow-1"
+        >
+          <input
+            autoFocus={true}
+            className="trigger-area__query-input-field form-control my-2 test-trigger-input is-invalid"
+            onChange={[Function]}
+            required={true}
+            spellCheck={false}
+            type="text"
+            value="test"
+          />
+          <small
+            className="trigger-area__query-input-error-message invalid-feedback test-trigger-error"
+          >
+            Code monitors require queries to specify either \`type:commit\` or \`type:diff\`.
+          </small>
+        </div>
+        <div
+          className="trigger-area__query-input-preview-link p-2 my-2"
+        >
+          <AnchorLink
+            className="trigger-area__query-input-preview-link-text test-preview-link"
+            rel="noopener noreferrer"
+            target="_blank"
+            to="/search?q=test&patternType=literal"
+          >
+            <a
+              className="trigger-area__query-input-preview-link-text test-preview-link"
+              href="/search?q=test&patternType=literal"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              Preview results
+               
+              <Memo(OpenInNewIcon)
+                className="trigger-area__query-input-preview-link-icon ml-1 icon-inline"
+              />
+            </a>
+          </AnchorLink>
+        </div>
+      </div>
+    </div>
+    <div>
+      <button
+        className="btn btn-secondary mr-1 test-submit-trigger"
+        disabled={true}
+        onClick={[Function]}
+        type="submit"
+      >
+        Continue
+      </button>
+      <button
+        className="btn btn-outline-secondary"
+        onClick={[Function]}
+        type="button"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+  <small
+    className="text-muted"
+  >
+     
+    What other events would you like to monitor?
+     
+    <a
+      href="mailto:feedback@sourcegraph.com"
+      rel="noopener"
+      target="_blank"
+    >
+      Share feedback.
+    </a>
+  </small>
+</FormTriggerArea>
+`;

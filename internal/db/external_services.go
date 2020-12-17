@@ -3,13 +3,13 @@ package db
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
@@ -49,6 +49,11 @@ type ExternalServiceStore struct {
 // NewExternalServicesStoreWithDB instantiates and returns a new ExternalServicesStore with prepared statements.
 func NewExternalServicesStoreWithDB(db dbutil.DB) *ExternalServiceStore {
 	return &ExternalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+}
+
+// NewExternalServicesStoreWithDB instantiates and returns a new ExternalServicesStore with prepared statements.
+func NewExternalServicesStoreWith(other basestore.ShareableStore) *ExternalServiceStore {
+	return &ExternalServiceStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
 func (e *ExternalServiceStore) With(other basestore.ShareableStore) *ExternalServiceStore {
@@ -107,6 +112,8 @@ type ExternalServicesListOptions struct {
 	// When specified, only include external services with ID below this number
 	// (because we're sorting results by ID in descending order).
 	AfterID int64
+	// Possible values are ASC or DESC. Defaults to DESC.
+	OrderByDirection string
 	*LimitOffset
 }
 
@@ -149,6 +156,8 @@ type ValidateExternalServiceConfigOptions struct {
 	// When true, indicates this is a user-added the external service.
 	HasNamespace bool
 }
+
+var errAuthorizationRequired = errors.New("authorization required")
 
 // ValidateConfig validates the given external service configuration, and returns a normalized
 // version of the configuration (i.e. valid JSON without comments).
@@ -215,35 +224,35 @@ func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 	switch opt.Kind {
 	case extsvc.KindGitHub:
 		var c schema.GitHubConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
 		}
 		err = e.validateGitHubConnection(ctx, opt.ID, &c)
 
 	case extsvc.KindGitLab:
 		var c schema.GitLabConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
 		}
 		err = e.validateGitLabConnection(ctx, opt.ID, &c, opt.AuthProviders)
 
 	case extsvc.KindBitbucketServer:
 		var c schema.BitbucketServerConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
 		}
 		err = e.validateBitbucketServerConnection(ctx, opt.ID, &c)
 
 	case extsvc.KindBitbucketCloud:
 		var c schema.BitbucketCloudConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
 		}
 		err = e.validateBitbucketCloudConnection(ctx, opt.ID, &c)
 
 	case extsvc.KindOther:
 		var c schema.OtherExternalServiceConnection
-		if err = json.Unmarshal(normalized, &c); err != nil {
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 			return nil, err
 		}
 		err = validateOtherExternalServiceConnection(&c)
@@ -460,6 +469,53 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		return err
 	}
 
+	// NOTE: For GitHub and GitLab user code host connections on Sourcegraph Cloud,
+	//  we always want to enforce repository permissions using OAuth to prevent
+	//  unexpected resource leaking.
+	if envvar.SourcegraphDotComMode() && es.NamespaceUserID != 0 {
+		switch es.Kind {
+		case extsvc.KindGitHub:
+			var c schema.GitHubConnection
+			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+				return err
+			}
+
+			if c.Authorization == nil {
+				c.Authorization = &schema.GitHubAuthorization{}
+
+				normalized, err = jsoniter.Marshal(c)
+				if err != nil {
+					return err
+				}
+			}
+
+		case extsvc.KindGitLab:
+			var c schema.GitLabConnection
+			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+				return err
+			}
+
+			if c.Authorization == nil {
+				c.Authorization = &schema.GitLabAuthorization{
+					IdentityProvider: schema.IdentityProvider{
+						Oauth: &schema.OAuthIdentity{
+							Type: "oauth",
+						},
+					},
+				}
+
+				normalized, err = jsoniter.Marshal(c)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		// We expect users to edit code host connections via our UI so no JSON with
+		// comments should appear, thus OK to set config as normalized.
+		es.Config = string(normalized)
+	}
+
 	es.CreatedAt = timeutil.Now()
 	es.UpdatedAt = es.CreatedAt
 
@@ -555,7 +611,7 @@ const upsertExternalServicesQueryValueFmtstr = `
 `
 
 const upsertExternalServicesQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.UpsertExternalServices
+-- source: internal/db/external_services.go:ExternalServiceStore.Upsert
 INSERT INTO external_services (
   id,
   kind,
@@ -706,7 +762,7 @@ func (e *ExternalServiceStore) GetByID(ctx context.Context, id int64) (*types.Ex
 		sqlf.Sprintf("deleted_at IS NULL"),
 		sqlf.Sprintf("id=%d", id),
 	}
-	ess, err := e.list(ctx, conds, nil)
+	ess, err := e.list(ctx, conds, "", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -728,7 +784,7 @@ func (e *ExternalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 	}
 	e.ensureStore()
 
-	return e.list(ctx, opt.sqlConditions(), opt.LimitOffset)
+	return e.list(ctx, opt.sqlConditions(), opt.OrderByDirection, opt.LimitOffset)
 }
 
 // DistinctKinds returns the distinct list of external services kinds that are stored in the database.
@@ -753,12 +809,16 @@ WHERE deleted_at IS NULL
 	return kinds, nil
 }
 
-func (e *ExternalServiceStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
+func (e *ExternalServiceStore) list(ctx context.Context, conds []*sqlf.Query, orderByDirection string, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
+	if orderByDirection != "ASC" {
+		orderByDirection = "DESC"
+	}
+
 	q := sqlf.Sprintf(`
 		SELECT id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted
 		FROM external_services
 		WHERE (%s)
-		ORDER BY id DESC
+		ORDER BY id `+orderByDirection+`
 		%s`,
 		sqlf.Join(conds, ") AND ("),
 		limitOffset.SQL(),

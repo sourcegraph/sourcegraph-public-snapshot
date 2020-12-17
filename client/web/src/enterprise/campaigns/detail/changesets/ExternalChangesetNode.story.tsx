@@ -9,6 +9,7 @@ import {
     ChangesetPublicationState,
     ChangesetCheckState,
     ChangesetReviewState,
+    ChangesetSpecType,
 } from '../../../../graphql-operations'
 import { of } from 'rxjs'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
@@ -56,7 +57,14 @@ add('All external states', () => {
                                     url: 'http://test.test/sourcegraph/sourcegraph',
                                 },
                                 reviewState: ChangesetReviewState.COMMENTED,
-                                currentSpec: { id: 'spec-rand-id-1' },
+                                currentSpec: {
+                                    id: 'spec-rand-id-1',
+                                    type: ChangesetSpecType.BRANCH,
+                                    description: {
+                                        __typename: 'GitBranchChangesetDescription',
+                                        headRef: 'my-branch',
+                                    },
+                                },
                             }}
                             viewerCanAdminister={boolean('viewerCanAdminister', true)}
                             queryExternalChangesetWithFileDiffs={() =>
@@ -116,7 +124,14 @@ add('Unpublished', () => {
                             url: 'http://test.test/sourcegraph/sourcegraph',
                         },
                         reviewState: null,
-                        currentSpec: { id: 'spec-rand-id-1' },
+                        currentSpec: {
+                            id: 'spec-rand-id-1',
+                            type: ChangesetSpecType.BRANCH,
+                            description: {
+                                __typename: 'GitBranchChangesetDescription',
+                                headRef: 'my-branch',
+                            },
+                        },
                     }}
                     viewerCanAdminister={boolean('viewerCanAdminister', true)}
                     queryExternalChangesetWithFileDiffs={() =>
@@ -172,7 +187,14 @@ add('Importing', () => {
                                 url: 'http://test.test/sourcegraph/sourcegraph',
                             },
                             reviewState: null,
-                            currentSpec: null,
+                            currentSpec: {
+                                id: 'spec-rand-id-1',
+                                type: ChangesetSpecType.EXISTING,
+                                description: {
+                                    __typename: 'GitBranchChangesetDescription',
+                                    headRef: 'my-branch',
+                                },
+                            },
                         }}
                         viewerCanAdminister={boolean('viewerCanAdminister', true)}
                         queryExternalChangesetWithFileDiffs={() =>
@@ -217,7 +239,14 @@ add('Importing', () => {
                                 url: 'http://test.test/sourcegraph/sourcegraph',
                             },
                             reviewState: null,
-                            currentSpec: null,
+                            currentSpec: {
+                                id: 'spec-rand-id-2',
+                                type: ChangesetSpecType.EXISTING,
+                                description: {
+                                    __typename: 'GitBranchChangesetDescription',
+                                    headRef: 'my-branch',
+                                },
+                            },
                         }}
                         viewerCanAdminister={boolean('viewerCanAdminister', true)}
                         queryExternalChangesetWithFileDiffs={() =>

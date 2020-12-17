@@ -15,7 +15,7 @@ RUN ./build.sh
 FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d AS monitoring_builder
 RUN mkdir -p '/generated/grafana'
 COPY ./.bin/monitoring-generator /bin/monitoring-generator
-RUN GRAFANA_DIR='/generated/grafana' PROMETHEUS_DIR='' DOC_SOLUTIONS_FILE='' NO_PRUNE=true /bin/monitoring-generator
+RUN GRAFANA_DIR='/generated/grafana' PROMETHEUS_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator
 RUN ls '/generated/grafana'
 
 # Prepare final image

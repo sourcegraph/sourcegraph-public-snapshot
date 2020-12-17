@@ -2,17 +2,17 @@ import { google, calendar_v3 } from 'googleapis'
 import { OAuth2Client } from 'googleapis-common'
 import open from 'open'
 import { Credentials } from 'google-auth-library'
-import { readLine } from './util'
+import { readLine, cacheFolder } from './util'
 import { readFile, writeFile } from 'mz/fs'
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.events']
-const TOKEN_PATH = '.secrets/google-calendar-token.json'
+const TOKEN_PATH = `${cacheFolder}/google-calendar-token.json`
 
 export async function getClient(): Promise<OAuth2Client> {
     const credentials = JSON.parse(
         await readLine(
             'Paste Google Calendar credentials (1Password "Release automation Google Calendar API App credentials"): ',
-            '.secrets/google-calendar-credentials.json'
+            `${cacheFolder}/google-calendar-credentials.json`
         )
     )
     const { client_secret, client_id, redirect_uris } = credentials.installed

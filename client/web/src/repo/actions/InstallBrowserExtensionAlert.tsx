@@ -1,12 +1,14 @@
 import React from 'react'
 import CloseIcon from 'mdi-react/CloseIcon'
 import ExportIcon from 'mdi-react/ExportIcon'
+
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { serviceKindDisplayNameAndIcon } from './GoToCodeHostAction'
+import { ExternalLinkFields } from '../../graphql-operations'
 
 interface Props {
     onAlertDismissed: () => void
-    externalURLs: GQL.IExternalLink[]
+    externalURLs: ExternalLinkFields[]
     isChrome: boolean
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
 }

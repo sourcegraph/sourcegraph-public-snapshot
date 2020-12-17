@@ -8,6 +8,7 @@ import (
 	"github.com/efritz/glock"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -27,7 +28,9 @@ type Worker struct {
 }
 
 type WorkerOptions struct {
-	// Name denotes the name of the worker used to distinguish log messages.
+	// Name denotes the name of the worker used to distinguish log messages and
+	// emitted metrics. The worker constructor will fail if this field is not
+	// supplied.
 	Name string
 
 	// NumHandlers is the maximum number of handlers that can be invoked
@@ -42,15 +45,15 @@ type WorkerOptions struct {
 	Metrics WorkerMetrics
 }
 
-type WorkerMetrics struct {
-	HandleOperation *observation.Operation
-}
-
 func NewWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions) *Worker {
 	return newWorker(ctx, store, handler, options, glock.NewRealClock())
 }
 
 func newWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions, clock glock.Clock) *Worker {
+	if options.Name == "" {
+		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/workerutil:newWorker")
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 
 	handlerSemaphore := make(chan struct{}, options.NumHandlers)
@@ -154,6 +157,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		return false, nil
 	}
 
+	w.options.Metrics.numJobs.Inc()
 	log15.Debug("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID())
 
 	if hook, ok := w.handler.(WithHooks); ok {
@@ -168,6 +172,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 				hook.PostHandle(w.ctx, record)
 			}
 
+			w.options.Metrics.numJobs.Dec()
 			w.handlerSemaphore <- struct{}{}
 			w.wg.Done()
 		}()
@@ -186,10 +191,8 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 func (w *Worker) handle(tx Store, record Record) (err error) {
 	// Enable tracing on the context and trace the remainder of the operation including the
 	// transaction commit call in the following deferred function.
-	ctx, endOperation := w.options.Metrics.HandleOperation.With(ot.WithShouldTrace(w.ctx, true), &err, observation.Args{})
-	defer func() {
-		endOperation(1, observation.Args{})
-	}()
+	ctx, endOperation := w.options.Metrics.operations.handle.With(ot.WithShouldTrace(w.ctx, true), &err, observation.Args{})
+	defer endOperation(1, observation.Args{})
 
 	defer func() {
 		// Notice that we will commit the transaction even on error from the handler

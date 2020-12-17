@@ -87,6 +87,12 @@
         "enableSmartQuery": {
           "description": "Enables contextual syntax highlighting and hovers for search queries in the web app",
           "type": "boolean",
+          "default": true,
+          "!go": { "pointer": true }
+        },
+        "enableFastResultLoading": {
+          "description": "Enables optimized search result loading (syntax highlighting / file contents fetching)",
+          "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
         }

@@ -1,0 +1,14 @@
+{
+  "done": false,
+  "repositoriesCount": 0,
+  "matchCount": 0,
+  "durationMs": 0,
+  "skipped": [
+   {
+    "reason": "shard-timeout",
+    "title": "100 timed out",
+    "message": "100 repositories could not be searched in time. Try searching again or reducing the scope of your query with `repo:`, `repogroup:` or other filters.\n* `timedout-33`\n* `timedout-19`\n* `timedout-80`\n* `timedout-34`\n* `timedout-69`\n* `timedout-28`\n* `timedout-0`\n* `timedout-86`\n* `timedout-78`\n* `timedout-52`\n* ...",
+    "severity": "warn"
+   }
+  ]
+ }

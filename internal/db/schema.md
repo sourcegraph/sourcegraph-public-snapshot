@@ -83,26 +83,6 @@ Triggers:
 
 ```
 
-# Table "public.campaigns_old"
-```
-       Column       |           Type           | Modifiers 
---------------------+--------------------------+-----------
- id                 | bigint                   | 
- name               | text                     | 
- description        | text                     | 
- initial_applier_id | integer                  | 
- namespace_user_id  | integer                  | 
- namespace_org_id   | integer                  | 
- created_at         | timestamp with time zone | 
- updated_at         | timestamp with time zone | 
- changeset_ids      | jsonb                    | 
- closed_at          | timestamp with time zone | 
- campaign_spec_id   | bigint                   | 
- last_applier_id    | bigint                   | 
- last_applied_at    | timestamp with time zone | 
-
-```
-
 # Table "public.changeset_events"
 ```
     Column    |           Type           |                           Modifiers                           
@@ -173,7 +153,6 @@ Referenced by:
  external_state        | text                     | 
  external_review_state | text                     | 
  external_check_state  | text                     | 
- added_to_campaign     | boolean                  | not null default false
  diff_stat_added       | integer                  | 
  diff_stat_changed     | integer                  | 
  diff_stat_deleted     | integer                  | 
@@ -212,43 +191,6 @@ Referenced by:
 
 ```
 
-# Table "public.changesets_old"
-```
-        Column         |           Type           | Modifiers 
------------------------+--------------------------+-----------
- id                    | bigint                   | 
- campaign_ids          | jsonb                    | 
- repo_id               | integer                  | 
- created_at            | timestamp with time zone | 
- updated_at            | timestamp with time zone | 
- metadata              | jsonb                    | 
- external_id           | text                     | 
- external_service_type | text                     | 
- external_deleted_at   | timestamp with time zone | 
- external_branch       | text                     | 
- external_updated_at   | timestamp with time zone | 
- external_state        | text                     | 
- external_review_state | text                     | 
- external_check_state  | text                     | 
- created_by_campaign   | boolean                  | 
- added_to_campaign     | boolean                  | 
- diff_stat_added       | integer                  | 
- diff_stat_changed     | integer                  | 
- diff_stat_deleted     | integer                  | 
- sync_state            | jsonb                    | 
- current_spec_id       | bigint                   | 
- previous_spec_id      | bigint                   | 
- publication_state     | text                     | 
- owned_by_campaign_id  | bigint                   | 
- reconciler_state      | text                     | 
- failure_message       | text                     | 
- started_at            | timestamp with time zone | 
- finished_at           | timestamp with time zone | 
- process_after         | timestamp with time zone | 
- num_resets            | integer                  | 
-
-```
-
 # Table "public.cm_action_jobs"
 ```
      Column      |           Type           |                          Modifiers                          
@@ -263,10 +205,12 @@ Referenced by:
  num_resets      | integer                  | not null default 0
  num_failures    | integer                  | not null default 0
  log_contents    | text                     | 
+ trigger_event   | integer                  | 
 Indexes:
     "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
     "cm_action_jobs_email_fk" FOREIGN KEY (email) REFERENCES cm_emails(id) ON DELETE CASCADE
+    "cm_action_jobs_trigger_event_fk" FOREIGN KEY (trigger_event) REFERENCES cm_trigger_jobs(id) ON DELETE CASCADE
 
 ```
 
@@ -378,10 +322,13 @@ Foreign-key constraints:
  log_contents    | text                     | 
  query_string    | text                     | 
  results         | boolean                  | 
+ num_results     | integer                  | 
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
     "cm_trigger_jobs_query_fk" FOREIGN KEY (query) REFERENCES cm_queries(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "cm_action_jobs" CONSTRAINT "cm_action_jobs_trigger_event_fk" FOREIGN KEY (trigger_event) REFERENCES cm_trigger_jobs(id) ON DELETE CASCADE
 
 ```
 
@@ -764,16 +711,26 @@ Check constraints:
 
 # Table "public.lsif_nearest_uploads"
 ```
-      Column      |  Type   | Modifiers 
-------------------+---------+-----------
- repository_id    | integer | not null
- upload_id        | integer | not null
- distance         | integer | not null
- ancestor_visible | boolean | not null
- overwritten      | boolean | not null
- commit_bytea     | bytea   | not null
+    Column     |  Type   | Modifiers 
+---------------+---------+-----------
+ repository_id | integer | not null
+ commit_bytea  | bytea   | not null
+ uploads       | jsonb   | not null
 Indexes:
     "lsif_nearest_uploads_repository_id_commit_bytea" btree (repository_id, commit_bytea)
+
+```
+
+# Table "public.lsif_nearest_uploads_links"
+```
+        Column         |  Type   | Modifiers 
+-----------------------+---------+-----------
+ repository_id         | integer | not null
+ commit_bytea          | bytea   | not null
+ ancestor_commit_bytea | bytea   | not null
+ distance              | integer | not null
+Indexes:
+    "lsif_nearest_uploads_links_repository_id_commit_bytea" btree (repository_id, commit_bytea)
 
 ```
 
@@ -852,7 +809,7 @@ Referenced by:
  repository_id | integer | not null
  upload_id     | integer | not null
 Indexes:
-    "lsif_uploads_visible_at_tip_repository_id" btree (repository_id)
+    "lsif_uploads_visible_at_tip_repository_id_upload_id" btree (repository_id, upload_id)
 
 ```
 

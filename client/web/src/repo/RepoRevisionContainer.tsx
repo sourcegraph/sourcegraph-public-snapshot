@@ -12,7 +12,6 @@ import {
 } from '../../../shared/src/backend/errors'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
@@ -37,6 +36,7 @@ import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { RepositoryFields } from '../graphql-operations'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -48,17 +48,14 @@ export interface RepoRevisionContainerContext
         TelemetryProps,
         HoverThresholdProps,
         ActivationProps,
-        Pick<
-            RepoContainerContext,
-            Exclude<keyof RepoContainerContext, 'onDidUpdateRepository' | 'onDidUpdateExternalLinks'>
-        >,
+        Omit<RepoContainerContext, 'onDidUpdateExternalLinks'>,
         PatternTypeProps,
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
         RevisionSpec,
         BreadcrumbSetters {
-    repo: GQL.IRepository
+    repo: RepositoryFields
     resolvedRev: ResolvedRevision
 
     /** The URL route match for {@link RepoRevisionContainer}. */
@@ -89,7 +86,7 @@ interface RepoRevisionContainerProps
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
-    repo: GQL.IRepository
+    repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     routePrefix: string
 

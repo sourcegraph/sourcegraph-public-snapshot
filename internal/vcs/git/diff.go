@@ -8,11 +8,11 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type DiffOptions struct {
-	Repo gitserver.Repo
+	Repo api.RepoName
 
 	// These fields must be valid <commit> inputs as defined by gitrevisions(7).
 	Base string

@@ -27,6 +27,8 @@ import (
 var mockCount = func(_ context.Context, options db.ReposListOptions) (int, error) { return 0, nil }
 
 func assertEqual(t *testing.T, got, want interface{}) {
+	t.Helper()
+
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatalf("(-want +got):\n%s", diff)
 	}
@@ -50,7 +52,7 @@ func TestSearchResults(t *testing.T) {
 			// just remove that assumption in the following line of code.
 			switch m := result.(type) {
 			case *RepositoryResolver:
-				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.repo.Name)
+				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.innerRepo.Name)
 			case *FileMatchResolver:
 				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.JPath, m.JLineMatches[0].JLineNumber)
 			default:
@@ -72,32 +74,31 @@ func TestSearchResults(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		var calledReposList bool
-		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-			calledReposList = true
+		var calledReposListRepoNames bool
+		db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+			calledReposListRepoNames = true
 
 			// Validate that the following options are invariant
-			// when calling the DB through Repos.List, no matter how
+			// when calling the DB through Repos.ListRepoNames, no matter how
 			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.OnlyRepoIDs, true)
 			assertEqual(t, op.LimitOffset, limitOffset)
 			assertEqual(t, op.IncludePatterns, []string{"r", "p"})
 
-			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
+			return []*types.RepoName{{ID: 1, Name: "repo"}}, nil
 		}
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		db.Mocks.Repos.MockGet(t, 1)
 		db.Mocks.Repos.Count = mockCount
 
 		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
-			return nil, &searchResultsCommon{repos: []*types.Repo{{ID: 1, Name: "repo"}}}, nil
+			return nil, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
 		for _, v := range searchVersions {
 			testCallResults(t, `repo:r repo:p`, v, []string{"repo:repo"})
-			if !calledReposList {
-				t.Error("!calledReposList")
+			if !calledReposListRepoNames {
+				t.Error("!calledReposListRepoNames")
 			}
 		}
 
@@ -107,17 +108,16 @@ func TestSearchResults(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		var calledReposList bool
-		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-			calledReposList = true
+		var calledReposListRepoNames bool
+		db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+			calledReposListRepoNames = true
 
 			// Validate that the following options are invariant
 			// when calling the DB through Repos.List, no matter how
 			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.OnlyRepoIDs, true)
 			assertEqual(t, op.LimitOffset, limitOffset)
 
-			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
+			return []*types.RepoName{{ID: 1, Name: "repo"}}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
@@ -148,15 +148,15 @@ func TestSearchResults(t *testing.T) {
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
-			repo := &types.Repo{ID: 1, Name: "repo"}
+			repo := &types.RepoName{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
-			return []*FileMatchResolver{fm}, &searchResultsCommon{repos: []*types.Repo{repo}}, nil
+			return []*FileMatchResolver{fm}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
 		testCallResults(t, `foo\d "bar*"`, "V1", []string{"dir/file:123"})
-		if !calledReposList {
-			t.Error("!calledReposList")
+		if !calledReposListRepoNames {
+			t.Error("!calledReposListRepoNames")
 		}
 		if !calledSearchRepositories {
 			t.Error("!calledSearchRepositories")
@@ -173,17 +173,16 @@ func TestSearchResults(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		var calledReposList bool
-		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-			calledReposList = true
+		var calledReposListRepoNames bool
+		db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+			calledReposListRepoNames = true
 
 			// Validate that the following options are invariant
 			// when calling the DB through Repos.List, no matter how
 			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.OnlyRepoIDs, true)
 			assertEqual(t, op.LimitOffset, limitOffset)
 
-			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
+			return []*types.RepoName{{ID: 1, Name: "repo"}}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
@@ -214,15 +213,15 @@ func TestSearchResults(t *testing.T) {
 			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
-			repo := &types.Repo{ID: 1, Name: "repo"}
+			repo := &types.RepoName{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
-			return []*FileMatchResolver{fm}, &searchResultsCommon{repos: []*types.Repo{repo}}, nil
+			return []*FileMatchResolver{fm}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
 		testCallResults(t, `foo\d "bar*"`, "V2", []string{"dir/file:123"})
-		if !calledReposList {
-			t.Error("!calledReposList")
+		if !calledReposListRepoNames {
+			t.Error("!calledReposListRepoNames")
 		}
 		if !calledSearchRepositories {
 			t.Error("!calledSearchRepositories")
@@ -523,9 +522,9 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 }
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
-	repo := &types.Repo{Name: "testRepo"}
+	repo := &types.RepoName{Name: "testRepo"}
 	repoMatch := &RepositoryResolver{
-		repo: repo,
+		innerRepo: repo.ToRepo(),
 	}
 	fileMatch := func(path string) *FileMatchResolver {
 		return mkFileMatch(repo, path)
@@ -908,19 +907,17 @@ func TestSearchResultsHydration(t *testing.T) {
 		ID:           repoWithIDs.ID,
 		ExternalRepo: repoWithIDs.ExternalRepo,
 		Name:         repoWithIDs.Name,
-
-		RepoFields: &types.RepoFields{
-			URI:         fmt.Sprintf("github.com/my-org/%s", repoWithIDs.Name),
-			Description: "This is a description of a repository",
-			Fork:        false,
-		}}
+		URI:          fmt.Sprintf("github.com/my-org/%s", repoWithIDs.Name),
+		Description:  "This is a description of a repository",
+		Fork:         false,
+	}
 
 	db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 		return hydratedRepo, nil
 	}
 
-	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-		return []*types.Repo{repoWithIDs}, nil
+	db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+		return []*types.RepoName{{ID: repoWithIDs.ID, Name: repoWithIDs.Name}}, nil
 	}
 	db.Mocks.Repos.Count = mockCount
 
@@ -983,9 +980,9 @@ func TestSearchResultsHydration(t *testing.T) {
 }
 
 func TestDedupSort(t *testing.T) {
-	repos := make(types.Repos, 512)
+	repos := make(types.RepoNames, 512)
 	for i := range repos {
-		repos[i] = &types.Repo{ID: api.RepoID(i % 256)}
+		repos[i] = &types.RepoName{ID: api.RepoID(i % 256)}
 	}
 
 	rand.Shuffle(len(repos), func(i, j int) {
@@ -1079,7 +1076,7 @@ func TestCommitAndDiffSearchLimits(t *testing.T) {
 		repoRevs := make([]*search.RepositoryRevisions, test.numRepoRevs)
 		for i := range repoRevs {
 			repoRevs[i] = &search.RepositoryRevisions{
-				Repo: &types.Repo{ID: api.RepoID(i)},
+				Repo: &types.RepoName{ID: api.RepoID(i)},
 			}
 		}
 
@@ -1251,125 +1248,123 @@ func TestGetExactFilePatterns(t *testing.T) {
 	}
 }
 
-type mockSearchResultURIGetter struct {
-	repo string
-	file string
-}
-
-func (m mockSearchResultURIGetter) searchResultURIs() (string, string) {
-	return m.repo, m.file
-}
-
 func TestCompareSearchResults(t *testing.T) {
+	makeResult := func(repo, file string) *FileMatchResolver {
+		return &FileMatchResolver{
+			Repo:  &RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName(repo)}},
+			JPath: file,
+		}
+	}
+
 	tests := []struct {
 		name              string
-		a                 searchResultURIGetter
-		b                 searchResultURIGetter
+		a                 *FileMatchResolver
+		b                 *FileMatchResolver
 		exactFilePatterns map[string]struct{}
 		aIsLess           bool
 	}{
 		{
 			name:              "prefer exact match",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
+			a:                 makeResult("arepo", "afile"),
+			b:                 makeResult("arepo", "file"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           false,
 		},
 		{
 			name:              "reverse a and b",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			a:                 makeResult("arepo", "file"),
+			b:                 makeResult("arepo", "afile"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           true,
 		},
 		{
 			name:              "alphabetical order if exactFilePatterns is empty",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
+			a:                 makeResult("arepo", "afile"),
+			b:                 makeResult("arepo", "file"),
 			exactFilePatterns: map[string]struct{}{},
 			aIsLess:           true,
 		},
 		{
 			name:              "alphabetical order if exactFilePatterns is nil",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "bfile"},
+			a:                 makeResult("arepo", "afile"),
+			b:                 makeResult("arepo", "bfile"),
 			exactFilePatterns: nil,
 			aIsLess:           true,
 		},
 		{
 			name:              "same length, different files",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "bfile"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
+			a:                 makeResult("arepo", "bfile"),
+			b:                 makeResult("arepo", "afile"),
 			exactFilePatterns: nil,
 			aIsLess:           false,
 		},
 		{
 			name:              "exact matches with different length",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "adir1/file"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "dir1/file"},
+			a:                 makeResult("arepo", "adir1/file"),
+			b:                 makeResult("arepo", "dir1/file"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           false,
 		},
 		{
 			name:              "exact matches with same length",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "dir2/file"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "dir1/file"},
+			a:                 makeResult("arepo", "dir2/file"),
+			b:                 makeResult("arepo", "dir1/file"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           false,
 		},
 		{
 			name:              "no match",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "afile"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: "bfile"},
+			a:                 makeResult("arepo", "afile"),
+			b:                 makeResult("arepo", "bfile"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           true,
 		},
 		{
 			name:              "different repo, 1 exact match",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
-			b:                 mockSearchResultURIGetter{repo: "brepo", file: "afile"},
+			a:                 makeResult("arepo", "file"),
+			b:                 makeResult("brepo", "afile"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           true,
 		},
 		{
 			name:              "different repo, no exact patterns",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
-			b:                 mockSearchResultURIGetter{repo: "brepo", file: "afile"},
+			a:                 makeResult("arepo", "file"),
+			b:                 makeResult("brepo", "afile"),
 			exactFilePatterns: nil,
 			aIsLess:           true,
 		},
 		{
 			name:              "different repo, 2 exact matches",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
-			b:                 mockSearchResultURIGetter{repo: "brepo", file: "file"},
+			a:                 makeResult("arepo", "file"),
+			b:                 makeResult("brepo", "file"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           true,
 		},
 		{
 			name:              "repo matches only",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: ""},
-			b:                 mockSearchResultURIGetter{repo: "brepo", file: ""},
+			a:                 makeResult("arepo", ""),
+			b:                 makeResult("brepo", ""),
 			exactFilePatterns: nil,
 			aIsLess:           true,
 		},
 		{
 			name:              "repo match and file match, same repo",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: "file"},
-			b:                 mockSearchResultURIGetter{repo: "arepo", file: ""},
+			a:                 makeResult("arepo", "file"),
+			b:                 makeResult("arepo", ""),
 			exactFilePatterns: nil,
 			aIsLess:           false,
 		},
 		{
 			name:              "repo match and file match, different repos",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: ""},
-			b:                 mockSearchResultURIGetter{repo: "brepo", file: "file"},
+			a:                 makeResult("arepo", ""),
+			b:                 makeResult("brepo", "file"),
 			exactFilePatterns: nil,
 			aIsLess:           true,
 		},
 		{
 			name:              "prefer repo matches",
-			a:                 mockSearchResultURIGetter{repo: "arepo", file: ""},
-			b:                 mockSearchResultURIGetter{repo: "brepo", file: "file"},
+			a:                 makeResult("arepo", ""),
+			b:                 makeResult("brepo", "file"),
 			exactFilePatterns: map[string]struct{}{"file": {}},
 			aIsLess:           true,
 		},
@@ -1429,8 +1424,12 @@ func TestEvaluateAnd(t *testing.T) {
 
 			ctx := context.Background()
 
-			db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-				return minimalRepos, nil
+			db.Mocks.Repos.ListRepoNames = func(_ context.Context, op db.ReposListOptions) ([]*types.RepoName, error) {
+				repoNames := make([]*types.RepoName, len(minimalRepos))
+				for i := range minimalRepos {
+					repoNames[i] = &types.RepoName{ID: minimalRepos[i].ID, Name: minimalRepos[i].Name}
+				}
+				return repoNames, nil
 			}
 			db.Mocks.Repos.Count = func(ctx context.Context, opt db.ReposListOptions) (int, error) {
 				return len(minimalRepos), nil

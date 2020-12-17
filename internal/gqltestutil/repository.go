@@ -181,3 +181,33 @@ query FileExternalLinks($repoName: String!, $revision: String!, $filePath: Strin
 
 	return resp.Data.Repository.Commit.File.ExternalURLs, nil
 }
+
+// Repository contains basic information of a repository from GraphQL.
+type Repository struct {
+	URL string `json:"url"`
+}
+
+// Repository returns basic information of the given repository.
+func (c *Client) Repository(name string) (*Repository, error) {
+	const query = `
+query Repository($name: String!) {
+	repository(name: $name) {
+		url
+	}
+}
+`
+	variables := map[string]interface{}{
+		"name": name,
+	}
+	var resp struct {
+		Data struct {
+			*Repository `json:"repository"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", "", query, variables, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	return resp.Data.Repository, nil
+}

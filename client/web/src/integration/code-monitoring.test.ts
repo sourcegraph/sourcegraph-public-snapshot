@@ -109,14 +109,12 @@ describe('Code monitoring', () => {
             expect(await driver.page.evaluate(() => document.querySelector('.test-trigger-error')?.textContent)).toBe(
                 'Code monitors require queries to specify either `type:commit` or `type:diff`.'
             )
-            expect(await driver.page.evaluate(() => document.querySelectorAll('.test-preview-link').length)).toBe(0)
             await driver.page.type('.test-trigger-input', ' type:diff')
             await driver.page.waitForSelector('.is-invalid')
             await driver.page.waitForSelector('.test-trigger-error')
             expect(await driver.page.evaluate(() => document.querySelector('.test-trigger-error')?.textContent)).toBe(
-                'Code monitors require queries to specify a `patternType:` of literal, regexp, or structural.'
+                'Code monitors require queries to specify a `patternType:` of literal or regexp.'
             )
-            expect(await driver.page.evaluate(() => document.querySelectorAll('.test-preview-link').length)).toBe(0)
             await driver.page.type('.test-trigger-input', ' patterntype:literal')
             await driver.page.waitForSelector('.is-valid')
             await driver.page.waitForSelector('.test-preview-link')

@@ -1,9 +1,10 @@
 package cli
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"net/http"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 
 	"github.com/NYTimes/gziphandler"
 	gcontext "github.com/gorilla/context"

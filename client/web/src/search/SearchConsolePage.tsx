@@ -26,7 +26,6 @@ interface SearchConsolePageProps
             | 'onShowMoreResultsClick'
             | 'onExpandAllResultsToggle'
             | 'onSavedQueryModalClose'
-            | 'onDidCreateSavedQuery'
             | 'onSaveQueryClick'
             | 'shouldDisplayPerformanceWarning'
         >,
@@ -168,7 +167,6 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                                 resultsOrError={resultsOrError}
                                 onExpandAllResultsToggle={onExpandAllResultsToggle}
                                 showSavedQueryButton={false}
-                                onDidCreateSavedQuery={voidCallback}
                                 onSavedQueryModalClose={voidCallback}
                                 onSaveQueryClick={voidCallback}
                                 shouldDisplayPerformanceWarning={shouldDisplayPerformanceWarning}

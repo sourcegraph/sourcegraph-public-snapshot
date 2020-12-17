@@ -1,6 +1,6 @@
-import { compact, head, noop } from 'lodash'
-import { useMemo, useState, useRef, useCallback } from 'react'
-import { concat, EMPTY, Observable, of, zip } from 'rxjs'
+import { compact, head } from 'lodash'
+import { useMemo, useState, useCallback } from 'react'
+import { combineLatest, concat, EMPTY, Observable, of, ReplaySubject, zip } from 'rxjs'
 import { catchError, map, switchMap, tap, debounceTime } from 'rxjs/operators'
 import { useEventObservable } from './useObservable'
 import { asError } from './errors'
@@ -9,6 +9,13 @@ import { asError } from './errors'
  * Configuration used by `useInputValidation`
  */
 export interface ValidationOptions {
+    /**
+     * Initial value of the input element.
+     *
+     * If an initial value is provided, it will be validated
+     * against built-in and provided validators as soon
+     * as the input element is rendered.
+     */
     initialValue?: string
 
     /**
@@ -37,10 +44,9 @@ export type InputValidationState = { value: string } & (
 )
 
 /**
- * Options for overriding input state programmatically. If `overrideState` is called without
- * these options, the input will be cleared and not validated.
+ * An event that updates input element state and (optionally) triggers validation.
  */
-interface OverrideOptions {
+interface InputValidationEvent {
     /** The value to set input state to */
     value: string
 
@@ -49,9 +55,19 @@ interface OverrideOptions {
 }
 
 /**
+ * Minimal interface of an HTMLElement that implements the Constraint validation API
+ */
+type ValidatingHTMLElement = Pick<HTMLInputElement, 'checkValidity' | 'setCustomValidity' | 'validationMessage'>
+
+/**
  * React hook to manage validation of a single form input field.
  * `useInputValidation` helps with coordinating the constraint validation API
  * and custom synchronous and asynchronous validators.
+ *
+ * ### Limitations:
+ * - If you set state when the input element is not rendered, the latest value
+ * cannot be validated, since the bulk of validation is done by calling
+ * Constrant Validation API methods on the input element.
  *
  * @param options Config object that declares sync + async validators
  */
@@ -59,46 +75,71 @@ export function useInputValidation(
     options: ValidationOptions
 ): [
     InputValidationState,
-    (change: React.ChangeEvent<HTMLInputElement>) => void,
-    React.MutableRefObject<HTMLInputElement | null>,
-    (overrideOptions: OverrideOptions) => void
+    (changeEvent: React.ChangeEvent<HTMLInputElement>) => void,
+    (inputElement: ValidatingHTMLElement | null) => void,
+    (override: InputValidationEvent) => void
 ] {
-    const inputReference = useRef<HTMLInputElement>(null)
-
     const [inputState, setInputState] = useState<InputValidationState>({
         kind: 'NOT_VALIDATED',
         value: options.initialValue ?? '',
     })
 
-    const validationPipeline = useMemo(() => createValidationPipeline(options, inputReference, setInputState), [
-        options,
-    ])
+    // We use a ref callback instead of a mutable ref object so we have a
+    // 'notifier' observable that emits when the input reference changes.
+    // This is important because the input element can be conditionally rendered,
+    // and we can only validate through the Constraint validation API when we
+    // have a reference to an HTMLElement. See this case when a consumer specifies
+    // an initial value while the input element isn't rendered yet:
+    //
+    // values:     initialValue - - - - -
+    // inputRefs:  null - - - - - - element
+    // validation: - - - - - - - - - - x
+    //
+    // With a ref object (no validation when element is rendered, false negative on initial validation):
+    // values:     initialValue - - - - -
+    // inputRefs:  null - - - - - - element
+    // validation: x - - - - - - - - - -
 
-    const [nextInputChangeEvent] = useEventObservable(validationPipeline)
-
-    // TODO(tj): Move control of state to consumer
-    const overrideState = useCallback(
-        (overrideOptions: OverrideOptions) => {
-            // clear custom validity
-            inputReference.current?.setCustomValidity('')
-
-            // clear React state
-            setInputState({
-                kind: overrideOptions?.validate ? 'LOADING' : 'NOT_VALIDATED',
-                value: overrideOptions?.value ?? '',
-            })
-
-            if (overrideOptions?.validate) {
-                nextInputChangeEvent({
-                    preventDefault: noop,
-                    target: { value: overrideOptions.value },
-                })
-            }
+    // The validation pipeline is subscribed to after initial render (`useEffect` in `useObservable`),
+    // so after the ref callback is called. Buffer 1 emission to counteract this.
+    const inputReferences = useMemo(() => new ReplaySubject<ValidatingHTMLElement | null>(1), [])
+    const nextInputReference = useCallback(
+        (input: ValidatingHTMLElement | null) => {
+            // React calls ref callbacks when the element is rendered (calls with the element)
+            // and when it leaves the DOM (calls with null). Unless this changes, we don't have to
+            // track the input reference ourselves or use `distinctUntilChanged`; `inputReferences`
+            // already only emits when the input reference changes
+            inputReferences.next(input)
         },
-        [nextInputChangeEvent]
+        [inputReferences]
     )
 
-    return [inputState, nextInputChangeEvent, inputReference, overrideState]
+    const validationPipeline = useMemo(() => createValidationPipeline(options, inputReferences, setInputState), [
+        options,
+        inputReferences,
+    ])
+
+    const [nextInputValidationEvent] = useEventObservable(validationPipeline)
+
+    // "Adapter" for React change events to input validation events
+    const nextReactChangeEvent = useCallback(
+        (event: React.ChangeEvent<HTMLInputElement>): void => {
+            event.preventDefault()
+            // Always validate on change events
+            nextInputValidationEvent({ value: event.target.value, validate: true })
+        },
+        [nextInputValidationEvent]
+    )
+
+    // "Adapter" for consumer overrides to input validation events
+    const overrideState = useCallback(
+        (inputValidationEvent: InputValidationEvent) => {
+            nextInputValidationEvent(inputValidationEvent)
+        },
+        [nextInputValidationEvent]
+    )
+
+    return [inputState, nextReactChangeEvent, nextInputReference, overrideState]
 }
 
 /**
@@ -120,76 +161,84 @@ export const VALIDATION_DEBOUNCE_TIME = 500
  */
 export function createValidationPipeline(
     { asynchronousValidators, synchronousValidators, initialValue }: ValidationOptions,
-    inputReference: React.MutableRefObject<Pick<
-        HTMLInputElement,
-        'checkValidity' | 'setCustomValidity' | 'validationMessage'
-    > | null>,
-    onValidationUpdate: (validationState: InputValidationState) => void
+    inputReferences: Observable<ValidatingHTMLElement | null>,
+    onValidationUpdate: (
+        validationState: InputValidationState | ((validationState: InputValidationState) => InputValidationState)
+    ) => void
 ) {
-    return (
-        changeEvents: Observable<
-            Pick<React.ChangeEvent<HTMLInputElement>, 'preventDefault'> & {
-                target: Pick<React.ChangeEvent<HTMLInputElement>['target'], 'value'>
-            }
-        >
-    ): Observable<ValidationResult> =>
-        concat(
-            initialValue !== undefined ? of(initialValue) : EMPTY,
-            changeEvents.pipe(
-                tap(event => event.preventDefault()),
-                map(event => event.target.value)
-            )
-        ).pipe(
-            tap(value => {
-                inputReference.current?.setCustomValidity('')
-                onValidationUpdate({ value, kind: 'LOADING' })
+    return (inputValidationEvents: Observable<InputValidationEvent>): Observable<unknown> =>
+        // Emit the latest input validation event along with the latest input element reference whenever
+        // either observable emits.
+        combineLatest([
+            // Validate immediately if the user has provided an initial input value
+            concat(
+                initialValue !== undefined ? of<InputValidationEvent>({ value: initialValue, validate: true }) : EMPTY,
+                inputValidationEvents
+            ),
+            inputReferences,
+        ]).pipe(
+            tap(([{ value, validate }, inputReference]) => {
+                inputReference?.setCustomValidity('')
+                onValidationUpdate({ value, kind: validate && inputReference ? 'LOADING' : 'NOT_VALIDATED' })
             }),
             // Debounce everything.
             // This is to allow immediate validation on type but at the same time not flag invalid input as it's being typed.
             debounceTime(VALIDATION_DEBOUNCE_TIME),
-            switchMap(value => {
+            switchMap(([{ value, validate }, inputReference]) => {
+                // if the input element isn't rendered right now, we can't/shouldn't validate input.
+                if (!inputReference || !validate) {
+                    return EMPTY
+                }
+
                 // check validity (synchronous)
-                const valid = inputReference.current?.checkValidity()
+                const valid = inputReference.checkValidity()
                 if (!valid) {
                     onValidationUpdate({
                         value,
                         kind: 'INVALID',
-                        reason: inputReference.current?.validationMessage ?? '',
+                        reason: inputReference.validationMessage ?? '',
                     })
-                    return of(inputReference.current?.validationMessage ?? '')
+                    return EMPTY
                 }
 
                 // check custom sync validators
                 const syncReason = head(compact(synchronousValidators?.map(validator => validator(value))))
                 if (syncReason) {
-                    inputReference.current?.setCustomValidity(syncReason)
+                    inputReference.setCustomValidity(syncReason)
                     onValidationUpdate({
                         value,
                         kind: 'INVALID',
                         reason: syncReason,
                     })
-                    return of(syncReason)
+                    return EMPTY
                 }
 
                 if (!asynchronousValidators || asynchronousValidators.length === 0) {
                     // clear possible custom sync validation error from previous value
-                    inputReference.current?.setCustomValidity('')
+                    inputReference.setCustomValidity('')
                     onValidationUpdate({
                         value,
                         kind: 'VALID',
                     })
-                    return of(undefined)
+                    return EMPTY
                 }
 
                 // check async validators
                 return zip(...(asynchronousValidators?.map(validator => validator(value)) ?? [])).pipe(
                     map(values => head(compact(values))),
                     tap(reason => {
-                        inputReference.current?.setCustomValidity(reason ?? '')
+                        inputReference.setCustomValidity(reason ?? '')
                         onValidationUpdate(reason ? { kind: 'INVALID', value, reason } : { kind: 'VALID', value })
                     })
                 )
             }),
-            catchError(error => of(asError(error).message || 'Unknown error'))
+            catchError(error => {
+                onValidationUpdate(({ value }) => ({
+                    value,
+                    kind: 'INVALID',
+                    reason: asError(error).message || 'Unknown error',
+                }))
+                return EMPTY
+            })
         )
 }

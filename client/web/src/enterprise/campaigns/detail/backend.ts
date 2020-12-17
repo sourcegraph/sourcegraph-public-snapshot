@@ -70,6 +70,10 @@ const campaignFragment = gql`
 
         currentSpec {
             originalInput
+            supersedingCampaignSpec {
+                createdAt
+                applyURL
+            }
         }
     }
 
@@ -152,6 +156,13 @@ export const externalChangesetFieldsFragment = gql`
         nextSyncAt
         currentSpec {
             id
+            type
+            description {
+                __typename
+                ... on GitBranchChangesetDescription {
+                    headRef
+                }
+            }
         }
     }
 
@@ -186,6 +197,7 @@ export const queryChangesets = ({
     publicationState,
     reconcilerState,
     onlyPublishedByThisCampaign,
+    search,
 }: CampaignChangesetsVariables): Observable<
     (CampaignChangesetsResult['node'] & { __typename: 'Campaign' })['changesets']
 > =>
@@ -201,6 +213,7 @@ export const queryChangesets = ({
                 $publicationState: ChangesetPublicationState
                 $reconcilerState: [ChangesetReconcilerState!]
                 $onlyPublishedByThisCampaign: Boolean
+                $search: String
             ) {
                 node(id: $campaign) {
                     __typename
@@ -214,6 +227,7 @@ export const queryChangesets = ({
                             reviewState: $reviewState
                             checkState: $checkState
                             onlyPublishedByThisCampaign: $onlyPublishedByThisCampaign
+                            search: $search
                         ) {
                             totalCount
                             pageInfo {
@@ -240,6 +254,7 @@ export const queryChangesets = ({
             publicationState,
             reconcilerState,
             onlyPublishedByThisCampaign,
+            search,
         }
     ).pipe(
         map(dataOrThrowErrors),

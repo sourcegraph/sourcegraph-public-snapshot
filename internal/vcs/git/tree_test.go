@@ -29,8 +29,16 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 	symlinks := []string{"link1", "dir1/link2"}
 
-	repo := MakeGitRepository(t, gitCommands...)
-	commitID := api.CommitID(ComputeCommitHash(repo.URL, true))
+	dir := InitGitRepository(t, gitCommands...)
+	repo := api.RepoName(filepath.Base(dir))
+
+	if resp, err := gitserver.DefaultClient.RequestRepoUpdate(context.Background(), repo, 0); err != nil {
+		t.Fatal(err)
+	} else if resp.Error != "" {
+		t.Fatal(resp.Error)
+	}
+
+	commitID := api.CommitID(ComputeCommitHash(dir, true))
 
 	ctx := context.Background()
 
@@ -129,7 +137,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2018-05-06T19:20:21Z git commit -m commit3 --author='a <a@a.com>' --date 2018-05-06T19:20:21Z",
 	}
 	tests := map[string]struct {
-		repo                 gitserver.Repo
+		repo                 api.RepoName
 		first, second, third api.CommitID
 	}{
 		"git cmd": {
@@ -320,7 +328,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo gitserver.Repo
+		repo api.RepoName
 	}{
 		"git cmd (quotepath=on)": {
 			repo: MakeGitRepository(t, append([]string{"git config core.quotepath on"}, gitCommands...)...),
@@ -382,7 +390,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m 'add submodule' --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo gitserver.Repo
+		repo api.RepoName
 	}{
 		"git cmd": {
 			repo: MakeGitRepository(t, gitCommands...),

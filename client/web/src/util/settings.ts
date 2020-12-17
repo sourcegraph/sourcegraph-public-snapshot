@@ -68,7 +68,7 @@ export function experimentalFeaturesFromSettings(
         showEnterpriseHomePanels = true, // Default to true if not set
         showMultilineSearchConsole = false,
         showQueryBuilder = false,
-        enableSmartQuery = false,
+        enableSmartQuery = true,
     } = experimentalFeatures
 
     return {

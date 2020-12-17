@@ -1,19 +1,13 @@
 package monitoring
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"log"
 	"math/rand"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/grafana-tools/sdk"
-	"github.com/prometheus/common/model"
 )
 
 // Container describes a Docker container to be observed.
@@ -50,6 +44,401 @@ func (c *Container) validate() error {
 		}
 	}
 	return nil
+}
+
+// renderDashboard generates the Grafana renderDashboard for this container.
+func (c *Container) renderDashboard() *sdk.Board {
+	board := sdk.NewBoard(c.Title)
+	board.Version = uint(rand.Uint32())
+	board.UID = c.Name
+	board.ID = 0
+	board.Timezone = "utc"
+	board.Timepicker.RefreshIntervals = []string{"5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"}
+	board.Time.From = "now-6h"
+	board.Time.To = "now"
+	board.SharedCrosshair = true
+	board.AddTags("builtin")
+	board.Templating.List = []sdk.TemplateVar{
+		{
+			Label:      "Filter alert level",
+			Name:       "alert_level",
+			AllValue:   ".*",
+			Current:    sdk.Current{Text: "all", Value: "$__all"},
+			IncludeAll: true,
+			Options: []sdk.Option{
+				{Text: "all", Value: "$__all", Selected: true},
+				{Text: "critical", Value: "critical"},
+				{Text: "warning", Value: "warning"},
+			},
+			Query: "critical,warning",
+			Type:  "custom",
+		},
+	}
+
+	description := sdk.NewText("")
+	description.Title = "" // Removes vertical space the title would otherwise take up
+	setPanelSize(description, 24, 3)
+	description.TextPanel.Mode = "html"
+	description.TextPanel.Content = fmt.Sprintf(`
+	<div style="text-align: left;">
+	  <img src="https://sourcegraphstatic.com/sourcegraph-logo-light.png" style="height:30px; margin:0.5rem"></img>
+	  <div style="margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;"><span style="color: #8e8e8e">%s:</span> %s <a style="font-size: 15px" target="_blank" href="https://docs.sourcegraph.com/dev/background-information/architecture">(⧉ architecture diagram)</a></span>
+	</div>
+	`, c.Name, c.Description)
+	board.Panels = append(board.Panels, description)
+
+	alertsDefined := sdk.NewTable("Alerts defined")
+	setPanelSize(alertsDefined, 9, 5)
+	setPanelPos(alertsDefined, 0, 3)
+	alertsDefined.TablePanel.Sort = &sdk.Sort{Desc: true, Col: 4}
+	alertsDefined.TablePanel.Styles = []sdk.ColumnStyle{
+		{
+			Pattern: "Time",
+			Type:    "hidden",
+		},
+		{
+			Pattern: "level",
+			Type:    "hidden",
+		},
+		{
+			Pattern: "_01_level",
+			Alias:   stringPtr("level"),
+		},
+		{
+			Pattern:     "Value",
+			Alias:       stringPtr("firing?"),
+			ColorMode:   stringPtr("row"),
+			Colors:      &[]string{"rgba(50, 172, 45, 0.97)", "rgba(237, 129, 40, 0.89)", "rgba(245, 54, 54, 0.9)"},
+			Thresholds:  &[]string{"0.99999", "1"},
+			Type:        "string",
+			MappingType: 1,
+			ValueMaps: []sdk.ValueMap{
+				{TextType: "false", Value: "0"},
+				{TextType: "true", Value: "1"},
+			},
+		},
+	}
+	alertsDefined.AddTarget(&sdk.Target{
+		Expr:    fmt.Sprintf(`label_replace(sum(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"})) by (level,description), "_01_level", "$1", "level", "(.*)")`, c.Name),
+		Format:  "table",
+		Instant: true,
+	})
+	board.Panels = append(board.Panels, alertsDefined)
+
+	alertsFiring := sdk.NewGraph("Alerts firing")
+	setPanelSize(alertsFiring, 15, 5)
+	setPanelPos(alertsFiring, 9, 3)
+	alertsFiring.GraphPanel.Legend.Show = true
+	alertsFiring.GraphPanel.Fill = 1
+	alertsFiring.GraphPanel.Bars = true
+	alertsFiring.GraphPanel.NullPointMode = "null"
+	alertsFiring.GraphPanel.Pointradius = 2
+	alertsFiring.GraphPanel.AliasColors = map[string]string{}
+	alertsFiring.GraphPanel.Xaxis = sdk.Axis{
+		Show: true,
+	}
+	alertsFiring.GraphPanel.Yaxes = []sdk.Axis{
+		{
+			Decimals: 0,
+			Format:   "short",
+			LogBase:  1,
+			Max:      sdk.NewFloatString(1),
+			Min:      sdk.NewFloatString(0),
+			Show:     true,
+		},
+		{
+			Format:  "short",
+			LogBase: 1,
+			Show:    true,
+		},
+	}
+	alertsFiring.AddTarget(&sdk.Target{
+		Expr:         fmt.Sprintf(`sum by (service_name,level,name)(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
+		LegendFormat: "{{level}}: {{name}}",
+	})
+	board.Panels = append(board.Panels, alertsFiring)
+
+	baseY := 8
+	offsetY := baseY
+	for _, group := range c.Groups {
+		// Non-general groups are shown as collapsible panels.
+		var rowPanel *sdk.Panel
+		if group.Title != "General" {
+			rowPanel = &sdk.Panel{RowPanel: &sdk.RowPanel{}}
+			rowPanel.OfType = sdk.RowType
+			rowPanel.Type = "row"
+			rowPanel.Title = group.Title
+			offsetY++
+			setPanelPos(rowPanel, 0, offsetY)
+			rowPanel.Collapsed = group.Hidden
+			rowPanel.Panels = []sdk.Panel{} // cannot be null
+			board.Panels = append(board.Panels, rowPanel)
+		}
+
+		// Generate a panel for displaying each observable in each row.
+		for _, row := range group.Rows {
+			panelWidth := 24 / len(row)
+			offsetY++
+			for i, o := range row {
+				panelTitle := strings.ToTitle(string([]rune(o.Description)[0])) + string([]rune(o.Description)[1:])
+				panel := sdk.NewGraph(panelTitle)
+				setPanelSize(panel, panelWidth, 5)
+				setPanelPos(panel, i*panelWidth, offsetY)
+				panel.GraphPanel.Legend.Show = true
+				panel.GraphPanel.Fill = 1
+				panel.GraphPanel.Lines = true
+				panel.GraphPanel.Linewidth = 1
+				panel.GraphPanel.NullPointMode = "connected"
+				panel.GraphPanel.Pointradius = 2
+				panel.GraphPanel.AliasColors = map[string]string{}
+				panel.GraphPanel.Xaxis = sdk.Axis{
+					Show: true,
+				}
+
+				opt := o.PanelOptions.withDefaults()
+				leftAxis := sdk.Axis{
+					Decimals: 0,
+					Format:   string(opt.unitType),
+					LogBase:  1,
+					Show:     true,
+				}
+
+				if o.Warning != nil && o.Warning.greaterOrEqual != nil {
+					// Warning threshold
+					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
+						Value:     float32(*o.Warning.greaterOrEqual),
+						Op:        "gt",
+						ColorMode: "custom",
+						Line:      true,
+						LineColor: "rgba(255, 73, 53, 0.8)",
+					})
+				}
+				if o.Critical != nil && o.Critical.greaterOrEqual != nil {
+					// Critical threshold
+					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
+						Value:     float32(*o.Critical.greaterOrEqual),
+						Op:        "gt",
+						ColorMode: "custom",
+						Line:      true,
+						LineColor: "rgba(255, 17, 36, 0.8)",
+					})
+				}
+				if o.Warning != nil && o.Warning.lessOrEqual != nil {
+					// Warning threshold
+					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
+						Value:     float32(*o.Warning.lessOrEqual),
+						Op:        "lt",
+						ColorMode: "custom",
+						Line:      true,
+						LineColor: "rgba(255, 73, 53, 0.8)",
+					})
+				}
+				if o.Critical != nil && o.Critical.lessOrEqual != nil {
+					// Critical threshold
+					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
+						Value:     float32(*o.Critical.lessOrEqual),
+						Op:        "lt",
+						ColorMode: "custom",
+						Line:      true,
+						LineColor: "rgba(255, 17, 36, 0.8)",
+					})
+				}
+
+				if opt.min != nil {
+					leftAxis.Min = sdk.NewFloatString(*opt.min)
+				}
+				if opt.max != nil {
+					leftAxis.Max = sdk.NewFloatString(*opt.max)
+				}
+				panel.GraphPanel.Yaxes = []sdk.Axis{
+					leftAxis,
+					{
+						Format:  "short",
+						LogBase: 1,
+						Show:    true,
+					},
+				}
+				panel.AddTarget(&sdk.Target{
+					Expr:         o.Query,
+					LegendFormat: opt.legendFormat,
+					Interval:     opt.interval,
+				})
+				if rowPanel != nil && group.Hidden {
+					rowPanel.RowPanel.Panels = append(rowPanel.RowPanel.Panels, *panel)
+				} else {
+					board.Panels = append(board.Panels, panel)
+				}
+			}
+		}
+	}
+	return board
+}
+
+// alertDescription generates an alert description for the specified coontainer's alert.
+func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinition) (string, error) {
+	if alert.isEmpty() {
+		return "", errors.New("cannot generate description for empty alert")
+	}
+	var description string
+
+	// description based on thresholds
+	units := o.PanelOptions.unitType.short()
+	if alert.greaterOrEqual != nil && alert.lessOrEqual != nil {
+		description = fmt.Sprintf("%s: %v%s+ or less than %v%s %s", c.Name, *alert.greaterOrEqual, units, *alert.lessOrEqual, units, o.Description)
+	} else if alert.greaterOrEqual != nil {
+		// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
+		description = fmt.Sprintf("%s: %v%s+ %s", c.Name, *alert.greaterOrEqual, units, o.Description)
+	} else if alert.lessOrEqual != nil {
+		// e.g. "zoekt-indexserver: less than 20 indexed search requests every 5m by code"
+		description = fmt.Sprintf("%s: less than %v%s %s", c.Name, *alert.lessOrEqual, units, o.Description)
+	} else {
+		return "", fmt.Errorf("unable to generate description for observable %+v", o)
+	}
+
+	// add information about "for"
+	if alert.duration > 0 {
+		return fmt.Sprintf("%s for %s", description, alert.duration), nil
+	}
+	return description, nil
+}
+
+// renderRules generates the Prometheus rules file which defines our
+// high-level alerting metrics for the container. For more information about
+// how these work, see:
+//
+// https://docs.sourcegraph.com/admin/observability/metrics_guide#high-level-alerting-metrics
+//
+func (c *Container) renderRules() (*promRulesFile, error) {
+	group := promGroup{Name: c.Name}
+	for _, g := range c.Groups {
+		for _, r := range g.Rows {
+			for _, o := range r {
+				for level, a := range map[string]*ObservableAlertDefinition{
+					"warning":  o.Warning,
+					"critical": o.Critical,
+				} {
+					if a.isEmpty() {
+						continue
+					}
+
+					// makeLabels renders labels for rules belonging to this observable and alert,
+					// bound is one of upperBound or lowerBound
+					const (
+						upperBound = "high"
+						lowerBound = "low"
+					)
+					makeLabels := func(bound string) (map[string]string, error) {
+						var name, description string
+						var err error
+						hasUpperAndLowerBounds := (a.greaterOrEqual != nil) && (a.lessOrEqual != nil)
+						if hasUpperAndLowerBounds {
+							// if both bounds are present, since we generate an alert for each bound
+							// make sure the prometheus alert description only describes one bound
+							name = fmt.Sprintf("%s_%s", o.Name, bound)
+							if bound == upperBound {
+								description, err = c.alertDescription(o, &ObservableAlertDefinition{
+									greaterOrEqual: a.greaterOrEqual,
+								})
+							} else if bound == lowerBound {
+								description, err = c.alertDescription(o, &ObservableAlertDefinition{
+									lessOrEqual: a.lessOrEqual,
+								})
+							}
+						} else {
+							name = o.Name
+							description, err = c.alertDescription(o, a)
+						}
+						if err != nil {
+							return nil, fmt.Errorf("unable to generate labels: %+v", err)
+						}
+						return map[string]string{
+							"name":         name,
+							"level":        level,
+							"service_name": c.Name,
+							"description":  description,
+							"owner":        string(o.Owner),
+						}, nil
+					}
+
+					// The alertQuery must contribute a query that returns a value < 1 when it is not
+					// firing, or a value of >= 1 when it is firing.
+					var alertQuery string
+
+					// Replace NaN values with zero (not firing) or one (firing) if they are present.
+					fireOnNan := "0"
+					if o.DataMayNotBeNaN {
+						fireOnNan = "1"
+					}
+
+					if a.greaterOrEqual != nil {
+						// By dividing the query value and the greaterOrEqual value, we produce a
+						// value of 1 when the query reaches the greaterOrEqual value and < 1
+						// otherwise. Examples:
+						//
+						// 	query_value=50 / greaterOrEqual=50 == 1.0
+						// 	query_value=25 / greaterOrEqual=50 == 0.5
+						// 	query_value=0 / greaterOrEqual=50 == 0.0
+						//
+						alertQuery = fmt.Sprintf("(%s) / %v", o.Query, *a.greaterOrEqual)
+
+						// Replace no-data with zero values, so the alert does not fire, if desired.
+						if o.DataMayNotExist {
+							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
+						}
+
+						// Set value for NaN condition
+						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
+
+						labels, err := makeLabels(upperBound)
+						if err != nil {
+							return nil, err
+						}
+
+						// Wrap the query in max() so that if there are multiple series (e.g. per-container) they
+						// get flattened into a single one (we only support per-service alerts,
+						// not per-container/replica).
+						// More context: https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953
+						group.appendRow(fmt.Sprintf("max(%s)", alertQuery), labels, a.duration)
+					}
+					if a.lessOrEqual != nil {
+						//
+						// 	lessOrEqual=50 / query_value=100 == 0.5
+						// 	lessOrEqual=50 / query_value=50 == 1.0
+						// 	lessOrEqual=50 / query_value=25 == 2.0
+						// 	lessOrEqual=50 / query_value=0 (0.0000001) == 500000000
+						// 	lessOrEqual=50 / query_value=-50 (0.0000001) == 500000000
+						//
+						alertQuery = fmt.Sprintf("%v / clamp_min(%s, 0.0000001)", *a.lessOrEqual, o.Query)
+
+						// Replace no-data with zero values, so the alert does not fire, if desired.
+						if o.DataMayNotExist {
+							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
+						}
+
+						// Set value for NaN condition
+						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
+
+						labels, err := makeLabels(lowerBound)
+						if err != nil {
+							return nil, err
+						}
+
+						// Wrap the query in min() so that if there are multiple series (e.g. per-container) they
+						// get flattened into a single one (we only support per-service alerts,
+						// not per-container/replica).
+						// More context: https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953
+						group.appendRow(fmt.Sprintf("min(%s)", alertQuery), labels, a.duration)
+					}
+				}
+			}
+		}
+	}
+	if err := group.validate(); err != nil {
+		return nil, err
+	}
+	return &promRulesFile{
+		Groups: []promGroup{group},
+	}, nil
 }
 
 // Group describes a group of observable information about a container.
@@ -218,6 +607,23 @@ type Observable struct {
 	PanelOptions ObservablePanelOptions
 }
 
+func (o Observable) WithWarning(a *ObservableAlertDefinition) Observable {
+	o.Warning = a
+	return o
+}
+
+func (o Observable) WithCritical(a *ObservableAlertDefinition) Observable {
+	o.Critical = a
+	return o
+}
+
+func (o Observable) WithNoAlerts() Observable {
+	o.Warning = nil
+	o.Critical = nil
+	o.NoAlert = true
+	return o
+}
+
 func (o Observable) validate() error {
 	if strings.Contains(o.Name, " ") || strings.ToLower(o.Name) != o.Name {
 		return fmt.Errorf("Observable.Name must be in lower_snake_case; found \"%s\"", o.Name)
@@ -236,7 +642,7 @@ func (o Observable) validate() error {
 	if o.PossibleSolutions == "" {
 		return fmt.Errorf(`PossibleSolutions: must list solutions or "none"`)
 	} else if o.PossibleSolutions != "none" {
-		if _, err := goMarkdown(o.PossibleSolutions); err != nil {
+		if _, err := toMarkdownList(o.PossibleSolutions); err != nil {
 			return fmt.Errorf("PossibleSolutions: %v", err)
 		}
 	}
@@ -330,6 +736,7 @@ const (
 	BitsPerSecond UnitType = "bps"
 )
 
+// ObservablePanelOptions declares options for visualizing an Observable.
 type ObservablePanelOptions struct {
 	min, max     *float64
 	minAuto      bool
@@ -337,6 +744,9 @@ type ObservablePanelOptions struct {
 	unitType     UnitType
 	interval     string
 }
+
+// PanelOptions provides a builder for customizing an Observable visualization.
+func PanelOptions() ObservablePanelOptions { return ObservablePanelOptions{} }
 
 // Min sets the minimum value of the Y axis on the panel. The default is zero.
 func (p ObservablePanelOptions) Min(min float64) ObservablePanelOptions {
@@ -372,6 +782,7 @@ func (p ObservablePanelOptions) Unit(t UnitType) ObservablePanelOptions {
 	return p
 }
 
+// Interval declares the panel's interval in milliseconds.
 func (p ObservablePanelOptions) Interval(ms int) ObservablePanelOptions {
 	p.interval = fmt.Sprintf("%dms", ms)
 	return p
@@ -398,642 +809,4 @@ func (p ObservablePanelOptions) withDefaults() ObservablePanelOptions {
 		p.unitType = Number
 	}
 	return p
-}
-
-// PanelOptions provides a builder for customizing an Observable.
-func PanelOptions() ObservablePanelOptions { return ObservablePanelOptions{} }
-
-// dashboard generates the Grafana dashboard for this container.
-func (c *Container) dashboard() *sdk.Board {
-	board := sdk.NewBoard(c.Title)
-	board.Version = uint(rand.Uint32())
-	board.UID = c.Name
-	board.ID = 0
-	board.Timezone = "utc"
-	board.Timepicker.RefreshIntervals = []string{"5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"}
-	board.Time.From = "now-6h"
-	board.Time.To = "now"
-	board.SharedCrosshair = true
-	board.AddTags("builtin")
-	board.Templating.List = []sdk.TemplateVar{
-		{
-			Label:      "Filter alert level",
-			Name:       "alert_level",
-			AllValue:   ".*",
-			Current:    sdk.Current{Text: "all", Value: "$__all"},
-			IncludeAll: true,
-			Options: []sdk.Option{
-				{Text: "all", Value: "$__all", Selected: true},
-				{Text: "critical", Value: "critical"},
-				{Text: "warning", Value: "warning"},
-			},
-			Query: "critical,warning",
-			Type:  "custom",
-		},
-	}
-
-	description := sdk.NewText("")
-	description.Title = "" // Removes vertical space the title would otherwise take up
-	setPanelSize(description, 24, 3)
-	description.TextPanel.Mode = "html"
-	description.TextPanel.Content = fmt.Sprintf(`
-	<div style="text-align: left;">
-	  <img src="https://sourcegraphstatic.com/sourcegraph-logo-light.png" style="height:30px; margin:0.5rem"></img>
-	  <div style="margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;"><span style="color: #8e8e8e">%s:</span> %s <a style="font-size: 15px" target="_blank" href="https://docs.sourcegraph.com/dev/background-information/architecture">(⧉ architecture diagram)</a></span>
-	</div>
-	`, c.Name, c.Description)
-	board.Panels = append(board.Panels, description)
-
-	alertsDefined := sdk.NewTable("Alerts defined")
-	setPanelSize(alertsDefined, 9, 5)
-	setPanelPos(alertsDefined, 0, 3)
-	alertsDefined.TablePanel.Sort = &sdk.Sort{Desc: true, Col: 4}
-	alertsDefined.TablePanel.Styles = []sdk.ColumnStyle{
-		{
-			Pattern: "Time",
-			Type:    "hidden",
-		},
-		{
-			Pattern: "level",
-			Type:    "hidden",
-		},
-		{
-			Pattern: "_01_level",
-			Alias:   stringPtr("level"),
-		},
-		{
-			Pattern:     "Value",
-			Alias:       stringPtr("firing?"),
-			ColorMode:   stringPtr("row"),
-			Colors:      &[]string{"rgba(50, 172, 45, 0.97)", "rgba(237, 129, 40, 0.89)", "rgba(245, 54, 54, 0.9)"},
-			Thresholds:  &[]string{"0.99999", "1"},
-			Type:        "string",
-			MappingType: 1,
-			ValueMaps: []sdk.ValueMap{
-				{TextType: "false", Value: "0"},
-				{TextType: "true", Value: "1"},
-			},
-		},
-	}
-	alertsDefined.AddTarget(&sdk.Target{
-		Expr:    fmt.Sprintf(`label_replace(sum(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"})) by (level,description), "_01_level", "$1", "level", "(.*)")`, c.Name),
-		Format:  "table",
-		Instant: true,
-	})
-	board.Panels = append(board.Panels, alertsDefined)
-
-	alertsFiring := sdk.NewGraph("Alerts firing")
-	setPanelSize(alertsFiring, 15, 5)
-	setPanelPos(alertsFiring, 9, 3)
-	alertsFiring.GraphPanel.Legend.Show = true
-	alertsFiring.GraphPanel.Fill = 1
-	alertsFiring.GraphPanel.Bars = true
-	alertsFiring.GraphPanel.NullPointMode = "null"
-	alertsFiring.GraphPanel.Pointradius = 2
-	alertsFiring.GraphPanel.AliasColors = map[string]string{}
-	alertsFiring.GraphPanel.Xaxis = sdk.Axis{
-		Show: true,
-	}
-	alertsFiring.GraphPanel.Yaxes = []sdk.Axis{
-		{
-			Decimals: 0,
-			Format:   "short",
-			LogBase:  1,
-			Max:      sdk.NewFloatString(1),
-			Min:      sdk.NewFloatString(0),
-			Show:     true,
-		},
-		{
-			Format:  "short",
-			LogBase: 1,
-			Show:    true,
-		},
-	}
-	alertsFiring.AddTarget(&sdk.Target{
-		Expr:         fmt.Sprintf(`sum by (service_name,level,name)(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
-		LegendFormat: "{{level}}: {{name}}",
-	})
-	board.Panels = append(board.Panels, alertsFiring)
-
-	baseY := 8
-	offsetY := baseY
-	for _, group := range c.Groups {
-		// Non-general groups are shown as collapsible panels.
-		var rowPanel *sdk.Panel
-		if group.Title != "General" {
-			rowPanel = &sdk.Panel{RowPanel: &sdk.RowPanel{}}
-			rowPanel.OfType = sdk.RowType
-			rowPanel.Type = "row"
-			rowPanel.Title = group.Title
-			offsetY++
-			setPanelPos(rowPanel, 0, offsetY)
-			rowPanel.Collapsed = group.Hidden
-			rowPanel.Panels = []sdk.Panel{} // cannot be null
-			board.Panels = append(board.Panels, rowPanel)
-		}
-
-		// Generate a panel for displaying each observable in each row.
-		for _, row := range group.Rows {
-			panelWidth := 24 / len(row)
-			offsetY++
-			for i, o := range row {
-				panelTitle := strings.ToTitle(string([]rune(o.Description)[0])) + string([]rune(o.Description)[1:])
-				panel := sdk.NewGraph(panelTitle)
-				setPanelSize(panel, panelWidth, 5)
-				setPanelPos(panel, i*panelWidth, offsetY)
-				panel.GraphPanel.Legend.Show = true
-				panel.GraphPanel.Fill = 1
-				panel.GraphPanel.Lines = true
-				panel.GraphPanel.Linewidth = 1
-				panel.GraphPanel.NullPointMode = "connected"
-				panel.GraphPanel.Pointradius = 2
-				panel.GraphPanel.AliasColors = map[string]string{}
-				panel.GraphPanel.Xaxis = sdk.Axis{
-					Show: true,
-				}
-
-				opt := o.PanelOptions.withDefaults()
-				leftAxis := sdk.Axis{
-					Decimals: 0,
-					Format:   string(opt.unitType),
-					LogBase:  1,
-					Show:     true,
-				}
-
-				if o.Warning != nil && o.Warning.greaterOrEqual != nil {
-					// Warning threshold
-					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(*o.Warning.greaterOrEqual),
-						Op:        "gt",
-						ColorMode: "custom",
-						Fill:      true,
-						Line:      false,
-						FillColor: "rgba(255, 73, 53, 0.8)",
-					})
-				}
-				if o.Critical != nil && o.Critical.greaterOrEqual != nil {
-					// Critical threshold
-					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(*o.Critical.greaterOrEqual),
-						Op:        "gt",
-						ColorMode: "custom",
-						Fill:      true,
-						Line:      false,
-						FillColor: "rgba(255, 17, 36, 0.8)",
-					})
-				}
-				if o.Warning != nil && o.Warning.lessOrEqual != nil {
-					// Warning threshold
-					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(*o.Warning.lessOrEqual),
-						Op:        "lt",
-						ColorMode: "custom",
-						Fill:      true,
-						Line:      false,
-						FillColor: "rgba(255, 73, 53, 0.8)",
-					})
-				}
-				if o.Critical != nil && o.Critical.lessOrEqual != nil {
-					// Critical threshold
-					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-						Value:     float32(*o.Critical.lessOrEqual),
-						Op:        "lt",
-						ColorMode: "custom",
-						Fill:      true,
-						Line:      false,
-						FillColor: "rgba(255, 17, 36, 0.8)",
-					})
-				}
-
-				if opt.min != nil {
-					leftAxis.Min = sdk.NewFloatString(*opt.min)
-				}
-				if opt.max != nil {
-					leftAxis.Max = sdk.NewFloatString(*opt.max)
-				}
-				panel.GraphPanel.Yaxes = []sdk.Axis{
-					leftAxis,
-					{
-						Format:  "short",
-						LogBase: 1,
-						Show:    true,
-					},
-				}
-				panel.AddTarget(&sdk.Target{
-					Expr:         o.Query,
-					LegendFormat: opt.legendFormat,
-					Interval:     opt.interval,
-				})
-				if rowPanel != nil && group.Hidden {
-					rowPanel.RowPanel.Panels = append(rowPanel.RowPanel.Panels, *panel)
-				} else {
-					board.Panels = append(board.Panels, panel)
-				}
-			}
-		}
-	}
-	return board
-}
-
-// alertDescription generates an alert description for the specified coontainer's alert.
-func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinition) string {
-	if alert.isEmpty() {
-		panic("never here")
-	}
-	var description string
-
-	// description based on thresholds
-	units := o.PanelOptions.unitType.short()
-	if alert.greaterOrEqual != nil && alert.lessOrEqual != nil {
-		description = fmt.Sprintf("%s: %v%s+ or less than %v%s %s", c.Name, *alert.greaterOrEqual, units, *alert.lessOrEqual, units, o.Description)
-	} else if alert.greaterOrEqual != nil {
-		// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
-		description = fmt.Sprintf("%s: %v%s+ %s", c.Name, *alert.greaterOrEqual, units, o.Description)
-	} else if alert.lessOrEqual != nil {
-		// e.g. "zoekt-indexserver: less than 20 indexed search requests every 5m by code"
-		description = fmt.Sprintf("%s: less than %v%s %s", c.Name, *alert.lessOrEqual, units, o.Description)
-	} else {
-		panic(fmt.Sprintf("unable to generate description for observable %+v", o))
-	}
-
-	// add information about "for"
-	if alert.duration > 0 {
-		return fmt.Sprintf("%s for %s", description, alert.duration)
-	}
-	return description
-}
-
-// promAlertsFile generates the Prometheus rules file which defines our
-// high-level alerting metrics for the container. For more information about
-// how these work, see:
-//
-// https://docs.sourcegraph.com/admin/observability/metrics_guide#high-level-alerting-metrics
-//
-func (c *Container) promAlertsFile() *promRulesFile {
-	f := &promRulesFile{}
-	group := promGroup{Name: c.Name}
-	for _, g := range c.Groups {
-		for _, r := range g.Rows {
-			for _, o := range r {
-				for level, a := range map[string]*ObservableAlertDefinition{
-					"warning":  o.Warning,
-					"critical": o.Critical,
-				} {
-					if a.isEmpty() {
-						continue
-					}
-
-					hasUpperAndLowerBounds := (a.greaterOrEqual != nil) && (a.lessOrEqual != nil)
-					makeLabels := func(bound string) map[string]string {
-						var name, description string
-						if hasUpperAndLowerBounds {
-							// if both bounds are present, since we generate an alert for each bound
-							// make sure the prometheus alert description only describes one bound
-							name = fmt.Sprintf("%s_%s", o.Name, bound)
-							if bound == "high" {
-								description = c.alertDescription(o, &ObservableAlertDefinition{
-									greaterOrEqual: a.greaterOrEqual,
-								})
-							} else if bound == "low" {
-								description = c.alertDescription(o, &ObservableAlertDefinition{
-									lessOrEqual: a.lessOrEqual,
-								})
-							} else {
-								panic(fmt.Sprintf("never here, bad alert bound: %s", bound))
-							}
-						} else {
-							name = o.Name
-							description = c.alertDescription(o, a)
-						}
-						return map[string]string{
-							"name":         name,
-							"level":        level,
-							"service_name": c.Name,
-							"description":  description,
-							"owner":        string(o.Owner),
-						}
-					}
-
-					// The alertQuery must contribute a query that returns a value < 1 when it is not
-					// firing, or a value of >= 1 when it is firing.
-					var alertQuery string
-
-					// Replace NaN values with zero (not firing) or one (firing) if they are present.
-					fireOnNan := "0"
-					if o.DataMayNotBeNaN {
-						fireOnNan = "1"
-					}
-
-					if a.greaterOrEqual != nil {
-						// By dividing the query value and the greaterOrEqual value, we produce a
-						// value of 1 when the query reaches the greaterOrEqual value and < 1
-						// otherwise. Examples:
-						//
-						// 	query_value=50 / greaterOrEqual=50 == 1.0
-						// 	query_value=25 / greaterOrEqual=50 == 0.5
-						// 	query_value=0 / greaterOrEqual=50 == 0.0
-						//
-						alertQuery = fmt.Sprintf("(%s) / %v", o.Query, *a.greaterOrEqual)
-
-						// Replace no-data with zero values, so the alert does not fire, if desired.
-						if o.DataMayNotExist {
-							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
-						}
-
-						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
-
-						// Wrap the query in max() so that if there are multiple series (e.g. per-container) they
-						// get flattened into a single one (we only support per-service alerts,
-						// not per-container/replica).
-						// More context: https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953
-						group.AppendRow(fmt.Sprintf("max(%s)", alertQuery), makeLabels("high"), a.duration)
-					}
-					if a.lessOrEqual != nil {
-						//
-						// 	lessOrEqual=50 / query_value=100 == 0.5
-						// 	lessOrEqual=50 / query_value=50 == 1.0
-						// 	lessOrEqual=50 / query_value=25 == 2.0
-						// 	lessOrEqual=50 / query_value=0 (0.0000001) == 500000000
-						// 	lessOrEqual=50 / query_value=-50 (0.0000001) == 500000000
-						//
-						alertQuery = fmt.Sprintf("%v / clamp_min(%s, 0.0000001)", *a.lessOrEqual, o.Query)
-
-						// Replace no-data with zero values, so the alert does not fire, if desired.
-						if o.DataMayNotExist {
-							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
-						}
-
-						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
-
-						// Wrap the query in min() so that if there are multiple series (e.g. per-container) they
-						// get flattened into a single one (we only support per-service alerts,
-						// not per-container/replica).
-						// More context: https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953
-						group.AppendRow(fmt.Sprintf("min(%s)", alertQuery), makeLabels("low"), a.duration)
-					}
-				}
-			}
-		}
-	}
-	f.Groups = append(f.Groups, group)
-	return f
-}
-
-// isValidUID checks if the given string is a valid UID for entry into a Grafana dashboard. This is
-// primarily used in the URL, e.g. /-/debug/grafana/d/syntect-server/<UID> and allows us to have
-// static URLs we can document like:
-//
-// 	Go to https://sourcegraph.example.com/-/debug/grafana/d/syntect-server/syntect-server
-//
-// Instead of having to describe all the steps to navigate there because the UID is random.
-func isValidUID(s string) bool {
-	if s != strings.ToLower(s) {
-		return false
-	}
-	for _, r := range s {
-		if !(unicode.IsLetter(r) || unicode.IsNumber(r) || r == '-') {
-			return false
-		}
-	}
-	return true
-}
-
-// upperFirst returns s with an uppercase first rune.
-func upperFirst(s string) string {
-	return strings.ToUpper(string([]rune(s)[0])) + string([]rune(s)[1:])
-}
-
-// withPeriod returns s ending with a period.
-func withPeriod(s string) string {
-	if !strings.HasSuffix(s, ".") {
-		return s + "."
-	}
-	return s
-}
-
-func deleteRemnants(filelist []string, grafanaDir, promDir string) {
-	err := filepath.Walk(grafanaDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			log.Print("Unable to access file: ", path)
-			return nil
-		}
-		if filepath.Ext(path) != ".json" || info.IsDir() {
-			return nil
-		}
-		for _, f := range filelist {
-			if filepath.Ext(f) != ".json" || filepath.Ext(path) != ".json" || info.IsDir() {
-				continue
-			}
-			if filepath.Base(path) == f {
-				return nil
-			}
-		}
-		err = os.Remove(path)
-		log.Println("Removed orphan grafana file: ", path)
-		return err
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = filepath.Walk(promDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			log.Print("Unable to access file: ", path)
-			return nil
-		}
-		if !strings.Contains(filepath.Base(path), alertSuffix) || info.IsDir() {
-			return nil
-		}
-
-		for _, f := range filelist {
-			if filepath.Ext(f) != ".yml" {
-				continue
-			}
-			if filepath.Base(path) == f {
-				return nil
-			}
-		}
-		err = os.Remove(path)
-		log.Println("Removed orphan prometheus alert file: ", path)
-		return err
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func generateDocs(containers []*Container) []byte {
-	var b bytes.Buffer
-	fmt.Fprintf(&b, `# Alert solutions
-
-This document contains possible solutions for when you find alerts are firing in Sourcegraph's monitoring.
-If your alert isn't mentioned here, or if the solution doesn't help, [contact us](mailto:support@sourcegraph.com)
-for assistance.
-
-To learn more about Sourcegraph's alerting, see [our alerting documentation](https://docs.sourcegraph.com/admin/observability/alerting).
-
-<!-- DO NOT EDIT: generated via: go generate ./monitoring -->
-
-`)
-	for _, c := range containers {
-		for _, g := range c.Groups {
-			for _, r := range g.Rows {
-				for _, o := range r {
-					if o.Warning == nil && o.Critical == nil {
-						continue
-					}
-
-					fmt.Fprintf(&b, "## %s: %s\n\n", c.Name, o.Name)
-					fmt.Fprintf(&b, `<p class="subtitle">%s: %s</p>`, o.Owner, o.Description)
-
-					// Render descriptions of various levels of this alert
-					fmt.Fprintf(&b, "\n\n**Descriptions:**\n\n")
-					var prometheusAlertNames []string
-					for _, alert := range []struct {
-						level     string
-						threshold *ObservableAlertDefinition
-					}{
-						{level: "warning", threshold: o.Warning},
-						{level: "critical", threshold: o.Critical},
-					} {
-						if alert.threshold.isEmpty() {
-							continue
-						}
-						fmt.Fprintf(&b, "- _%s_\n", c.alertDescription(o, alert.threshold))
-						prometheusAlertNames = append(prometheusAlertNames,
-							fmt.Sprintf("  \"%s\"", prometheusAlertName(alert.level, c.Name, o.Name)))
-					}
-					fmt.Fprint(&b, "\n")
-
-					// Render solutions for dealing with this alert
-					fmt.Fprintf(&b, "**Possible solutions:**\n\n")
-					if o.PossibleSolutions != "none" {
-						possibleSolutions, _ := goMarkdown(o.PossibleSolutions)
-						fmt.Fprintf(&b, "%s\n", possibleSolutions)
-					}
-					// add silencing configuration as another solution
-					fmt.Fprintf(&b, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:\n\n")
-					fmt.Fprintf(&b, "```json\n%s\n```\n\n", fmt.Sprintf(`"observability.silenceAlerts": [
-%s
-]`, strings.Join(prometheusAlertNames, ",\n")))
-
-					// Render break for readability
-					fmt.Fprint(&b, "<br />\n\n")
-				}
-			}
-		}
-	}
-	return b.Bytes()
-}
-
-func goMarkdown(m string) (string, error) {
-	m = strings.TrimPrefix(m, "\n")
-
-	// Replace single quotes with backticks.
-	// Replace escaped single quotes with single quotes.
-	m = strings.Replace(m, `\'`, `$ESCAPED_SINGLE_QUOTE`, -1)
-	m = strings.Replace(m, `'`, "`", -1)
-	m = strings.Replace(m, `$ESCAPED_SINGLE_QUOTE`, "'", -1)
-
-	// Unindent based on the indention of the last line.
-	lines := strings.Split(m, "\n")
-	baseIndention := lines[len(lines)-1]
-	if strings.TrimSpace(baseIndention) == "" {
-		if strings.Contains(baseIndention, " ") {
-			return "", errors.New("go string literal indention must be tabs")
-		}
-		indentionLevel := strings.Count(baseIndention, "\t")
-		removeIndention := strings.Repeat("\t", indentionLevel+1)
-		for i, l := range lines[:len(lines)-1] {
-			newLine := strings.TrimPrefix(l, removeIndention)
-			if l == newLine {
-				return "", fmt.Errorf("inconsistent indention (line %d %q expected to start with %q)", i, l, removeIndention)
-			}
-			lines[i] = newLine
-		}
-		m = strings.Join(lines[:len(lines)-1], "\n")
-	}
-
-	// If result is not a list, make it a list, so we can add items.
-	if !strings.HasPrefix(m, "-") && !strings.HasPrefix(m, "*") {
-		m = fmt.Sprintf("- %s", m)
-	}
-
-	return m, nil
-}
-
-// promRulesFile represents a Prometheus recording rules file (which we use for defining our alerts)
-// see:
-//
-// https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/
-//
-type promRulesFile struct {
-	Groups []promGroup
-}
-
-type promGroup struct {
-	Name  string
-	Rules []promRule
-}
-
-func (g *promGroup) AppendRow(alertQuery string, labels map[string]string, duration time.Duration) {
-	labels["alert_type"] = "builtin" // indicate alert is generated
-	var forDuration *model.Duration
-	if duration > 0 {
-		d := model.Duration(duration)
-		forDuration = &d
-	}
-
-	alertName := prometheusAlertName(labels["level"], labels["service_name"], labels["name"])
-	g.Rules = append(g.Rules,
-		// Native prometheus alert, based on alertQuery which returns 0 if not firing or 1 if firing.
-		promRule{
-			Alert:  alertName,
-			Labels: labels,
-			Expr:   fmt.Sprintf(`%s >= 1`, alertQuery),
-			For:    forDuration,
-		},
-		// Record for generated alert, useful for indicating in Grafana dashboards if this alert
-		// is defined at all. Prometheus's ALERTS metric does not track alerts with alertstate="inactive".
-		//
-		// Since ALERTS{alertname="value"} does not exist if the alert has never fired, we add set
-		// the series to vector(0) instead.
-		promRule{
-			Record: "alert_count",
-			Labels: labels,
-			Expr:   fmt.Sprintf(`max(ALERTS{alertname=%q,alertstate="firing"} OR on() vector(0))`, alertName),
-		})
-}
-
-type promRule struct {
-	// either Record or Alert
-	Record string `yaml:",omitempty"`
-	Alert  string `yaml:",omitempty"`
-
-	Labels map[string]string
-	Expr   string
-
-	// for Alert only
-	For *model.Duration `yaml:",omitempty"`
-}
-
-// setPanelSize is a helper to set a panel's size.
-func setPanelSize(p *sdk.Panel, width, height int) {
-	p.GridPos.W = &width
-	p.GridPos.H = &height
-}
-
-// setPanelSize is a helper to set a panel's position.
-func setPanelPos(p *sdk.Panel, x, y int) {
-	p.GridPos.X = &x
-	p.GridPos.Y = &y
-}
-
-func stringPtr(s string) *string {
-	return &s
-}
-
-// prometheusAlertName creates an alertname that is unique given the combination of parameters
-func prometheusAlertName(level, service, name string) string {
-	return fmt.Sprintf("%s_%s_%s", level, service, name)
 }

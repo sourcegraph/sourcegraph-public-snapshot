@@ -32,7 +32,7 @@ docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
 
 # Generate Grafana dashboards
 pushd monitoring >/dev/null || exit 1
-DEV=true RELOAD=false go generate
+RELOAD=false go generate
 popd >/dev/null || exit 1
 
 # Log file location: since we log outside of the Docker container, we should

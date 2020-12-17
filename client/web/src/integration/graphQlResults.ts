@@ -132,12 +132,12 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     savedSearches: () => ({
         savedSearches: [],
     }),
-    logEvent: () => ({
+    LogEvent: () => ({
         logEvent: {
             alwaysNil: null,
         },
     }),
-    logUserEvent: () => ({
+    LogUserEvent: () => ({
         logUserEvent: {
             alwaysNil: null,
         },
