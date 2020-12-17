@@ -1120,18 +1120,22 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 }
 
 // invalidateRepoCache returns whether resolved repos should be invalidated when
-// evaluating subexpressions. If a query contains more than one repo or repogroup
-// field, we should invalidate resolved repos, since multiple repo or repogroups
-// imply that different repos may need to be resolved.
+// evaluating subexpressions. If a query contains more than one repo, revision,
+// or repogroup field, we should invalidate resolved repos, since multiple
+// repos, revisions, or repogroups imply that different repos may need to be
+// resolved.
 func invalidateRepoCache(q []query.Node) bool {
-	var seenRepo, seenRepoGroup int
+	var seenRepo, seenRevision, seenRepoGroup int
 	query.VisitField(q, "repo", func(_ string, _ bool, _ query.Annotation) {
 		seenRepo += 1
+	})
+	query.VisitField(q, "rev", func(_ string, _ bool, _ query.Annotation) {
+		seenRevision += 1
 	})
 	query.VisitField(q, "repogroup", func(_ string, _ bool, _ query.Annotation) {
 		seenRepoGroup += 1
 	})
-	return seenRepo+seenRepoGroup > 1
+	return seenRepo+seenRepoGroup > 1 || seenRevision > 1
 }
 
 func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolver, err error) {

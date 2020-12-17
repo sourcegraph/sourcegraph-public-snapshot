@@ -786,12 +786,14 @@ func TestSearch(t *testing.T) {
 				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ (type:diff or type:commit) author:felix yarn`,
 			},
 			{
-				name:  `Or distributive property on rev`,
-				query: `repo:^github\.com/sgtest/go-diff$ (rev:garo/lsif-indexing-campaign or rev:test-already-exist-pr) file:README.md`,
+				name:            `Or distributive property on rev`,
+				query:           `repo:^github\.com/sgtest/mux$ (rev:v1.7.3 or revision:v1.7.2)`,
+				exactMatchCount: 2,
 			},
 			{
-				name:  `Or distributive property on rev`,
-				query: `repo:^github\.com/sgtest/go-diff$ (rev:garo/lsif-indexing-campaign or rev:test-already-exist-pr)`,
+				name:            `Or distributive property on rev with file`,
+				query:           `repo:^github\.com/sgtest/mux$ (rev:v1.7.3 or revision:v1.7.2) file:README.md`,
+				exactMatchCount: 2,
 			},
 			{
 				name:  `Or distributive property on repo`,
