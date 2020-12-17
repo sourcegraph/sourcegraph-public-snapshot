@@ -378,7 +378,7 @@ const switchAggregateSearchResults: OperatorFunction<SearchEvent, AggregateStrea
         },
         emptyAggregateResults
     ),
-    defaultIfEmpty(emptyAggregateResults)
+    defaultIfEmpty(emptyAggregateResults as AggregateStreamingSearchResults)
 )
 
 const observeMessages = <T extends SearchEvent>(
