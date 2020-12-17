@@ -368,15 +368,15 @@ WITH repo_names AS (
   SELECT unnest(%s::citext[])::citext AS name
 ),
 cloned_repos AS (
-  SELECT repo.id AS id FROM repo_names JOIN repo ON repo.name = repo_names.name
+  SELECT repo.id AS id FROM repo WHERE name IN (SELECT name FROM repo_names)
 ),
 not_cloned AS (
   UPDATE repo SET cloned = false
-  WHERE NOT EXISTS (SELECT FROM cloned_repos WHERE repo.id = id) AND cloned
+  WHERE repo.id NOT IN (SELECT id FROM cloned_repos) AND repo.cloned
 )
 UPDATE repo
 SET cloned = true
-WHERE repo.id IN (SELECT id FROM cloned_repos) AND NOT cloned
+WHERE repo.id IN (SELECT id FROM cloned_repos) AND NOT repo.cloned
 `
 
 // CountNotClonedRepos returns the number of repos whose cloned column is true.
