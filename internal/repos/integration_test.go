@@ -31,19 +31,16 @@ func TestIntegration(t *testing.T) {
 
 	db := dbtest.NewDB(t, *dsn)
 
-	dbstore := repos.NewDBStore(db, sql.TxOptions{
+	store := repos.NewDBStore(db, sql.TxOptions{
 		Isolation: sql.LevelReadCommitted,
 	})
 
 	lg := log15.New()
 	lg.SetHandler(log15.DiscardHandler())
 
-	store := repos.NewObservedStore(
-		dbstore,
-		lg,
-		repos.NewStoreMetrics(),
-		trace.Tracer{Tracer: opentracing.GlobalTracer()},
-	)
+	store.Log = lg
+	store.Metrics = repos.NewStoreMetrics()
+	store.Tracer = trace.Tracer{Tracer: opentracing.GlobalTracer()}
 
 	userID := insertTestUser(t, db)
 
@@ -59,7 +56,7 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/SyncRateLimiters", testSyncRateLimiters},
 		{"DBStore/UpsertRepos", testStoreUpsertRepos},
 		{"DBStore/UpsertSources", testStoreUpsertSources},
-		{"DBStore/EnqueueSyncJobs", testStoreEnqueueSyncJobs(db, dbstore)},
+		{"DBStore/EnqueueSyncJobs", testStoreEnqueueSyncJobs(db, store)},
 		{"DBStore/ListExternalRepoSpecs", testStoreListExternalRepoSpecs(db)},
 		{"DBStore/SetClonedRepos", testStoreSetClonedRepos},
 		{"DBStore/CountNotClonedRepos", testStoreCountNotClonedRepos},

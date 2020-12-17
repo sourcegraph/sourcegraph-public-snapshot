@@ -48,19 +48,15 @@ func TestIntegration(t *testing.T) {
 
 	db := dbtest.NewDB(t, *dsn)
 
-	dbstore := repos.NewDBStore(db, sql.TxOptions{
+	store := repos.NewDBStore(db, sql.TxOptions{
 		Isolation: sql.LevelSerializable,
 	})
 
 	lg := log15.New()
 	lg.SetHandler(log15.DiscardHandler())
-
-	store := repos.NewObservedStore(
-		dbstore,
-		lg,
-		repos.NewStoreMetrics(),
-		trace.Tracer{Tracer: opentracing.GlobalTracer()},
-	)
+	store.Log = lg
+	store.Metrics = repos.NewStoreMetrics()
+	store.Tracer = trace.Tracer{Tracer: opentracing.GlobalTracer()}
 
 	for _, tc := range []struct {
 		name string
