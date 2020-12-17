@@ -88,7 +88,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 />
             )}
             <div className="align-self-center">
-                {service?.warning ? (
+                {service?.warning || service?.lastSyncError ? (
                     <AlertCircleIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon--danger" />
                 ) : service?.id ? (
                     <CheckCircleIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon--success" />

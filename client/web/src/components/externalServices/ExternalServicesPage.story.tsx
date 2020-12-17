@@ -25,6 +25,7 @@ const queryExternalServices: typeof _queryExternalServices = () =>
                 displayName: 'GitHub.com',
                 config: '{"githubconfig":true}',
                 warning: null,
+                lastSyncError: null,
             },
         ],
     })
