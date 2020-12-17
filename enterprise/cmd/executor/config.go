@@ -71,7 +71,7 @@ func (c *Config) WorkerOptions() workerutil.WorkerOptions {
 		Name:        "precise_code_intel_index_worker",
 		NumHandlers: c.MaximumNumJobs,
 		Interval:    c.QueuePollInterval,
-		Metrics:     makeWorkerMetrics(),
+		Metrics:     makeWorkerMetrics(c.QueueName),
 	}
 }
 

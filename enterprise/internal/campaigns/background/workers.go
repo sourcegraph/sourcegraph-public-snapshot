@@ -39,9 +39,7 @@ func newWorker(
 		Name:        "campaigns_reconciler_worker",
 		NumHandlers: 5,
 		Interval:    5 * time.Second,
-		Metrics: workerutil.WorkerMetrics{
-			HandleOperation: metrics.handleOperation,
-		},
+		Metrics:     metrics.workerMetrics,
 	}
 
 	workerStore := createDBWorkerStore(s)
