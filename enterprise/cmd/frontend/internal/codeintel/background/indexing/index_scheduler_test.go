@@ -1,4 +1,4 @@
-package background
+package indexing
 
 import (
 	"context"
@@ -62,7 +62,7 @@ func TestIndexSchedulerUpdateIndexConfigurationInDatabase(t *testing.T) {
 	scheduler := &IndexScheduler{
 		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
-		operations:      newOperations(mockDBStore, &observation.TestContext),
+		operations:      newOperations(&observation.TestContext),
 	}
 
 	if err := scheduler.Handle(context.Background()); err != nil {
@@ -187,7 +187,7 @@ func TestIndexSchedulerUpdateIndexConfigurationInRepository(t *testing.T) {
 	scheduler := &IndexScheduler{
 		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
-		operations:      newOperations(mockDBStore, &observation.TestContext),
+		operations:      newOperations(&observation.TestContext),
 	}
 
 	if err := scheduler.Handle(context.Background()); err != nil {
@@ -289,7 +289,7 @@ func TestIndexSchedulerUpdateIndexConfigurationInferred(t *testing.T) {
 	scheduler := &IndexScheduler{
 		dbStore:         mockDBStore,
 		gitserverClient: mockGitserverClient,
-		operations:      newOperations(mockDBStore, &observation.TestContext),
+		operations:      newOperations(&observation.TestContext),
 	}
 
 	if err := scheduler.Handle(context.Background()); err != nil {

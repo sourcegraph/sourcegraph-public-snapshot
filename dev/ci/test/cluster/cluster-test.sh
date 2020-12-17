@@ -58,7 +58,10 @@ function test_setup() {
   curl "$SOURCEGRAPH_BASE_URL"
 
   # setup admin users, etc
-  go run dev/ci/test/init-server.go -base-url="$SOURCEGRAPH_BASE_URL"
+  pushd internal/cmd/init-sg
+  go build
+  ./init-sg initSG -baseurl="$SOURCEGRAPH_BASE_URL"
+  popd
 
   # Load variables set up by init-server, disabling `-x` to avoid printing variables, setting +u to avoid blowing up on ubound ones
   set +x +u

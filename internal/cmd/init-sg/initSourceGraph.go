@@ -1,25 +1,15 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
 
-var client *gqltestutil.Client
-
-var (
-	baseURL  = flag.String("base-url", "http://127.0.0.1:7080", "The base URL of the Sourcegraph instance")
-	email    = flag.String("email", "test@sourcegraph.com", "The email of the admin user")
-	username = flag.String("username", "admin", "The username of the admin user")
-	password = flag.String("password", "supersecurepassword", "The password of the admin user")
-)
-
-func main() {
+func initSourceGraph() {
 	log.Println("Running initializer")
-	flag.Parse()
+
 	needsSiteInit, err := gqltestutil.NeedsSiteInit(*baseURL)
 	if err != nil {
 		log.Fatal("Failed to check if site needs init: ", err)
@@ -61,7 +51,7 @@ func main() {
 	}
 
 	envvar := "export SOURCEGRAPH_SUDO_TOKEN=" + token
-	file, err := os.OpenFile("/root/.profile", os.O_APPEND|os.O_WRONLY, 0755)
+	file, err := os.OpenFile(profile, os.O_APPEND|os.O_WRONLY, 0755)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -70,5 +60,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println("Instance initialized, SOURCEGRAPH_SUDO_TOKEN set in /root/.profile")
+	log.Println("Instance initialized, SOURCEGRAPH_SUDO_TOKEN set in", profile)
 }

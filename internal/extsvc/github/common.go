@@ -78,7 +78,14 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 	}
 
 	defer resp.Body.Close()
-	rateLimitMonitor.Update(resp.Header)
+
+	// For 401 responses we receive a remaining limit of 0. This will cause the next
+	// call to block for up to an hour because it believes we have run out of tokens.
+	// Instead, we should fail fast.
+	if resp.StatusCode != 401 {
+		rateLimitMonitor.Update(resp.Header)
+	}
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		var err APIError
 		if body, readErr := ioutil.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb

@@ -1,4 +1,4 @@
-package background
+package janitor
 
 import (
 	"context"
@@ -11,20 +11,20 @@ import (
 )
 
 type AbandonedUploadJanitor struct {
-	dbStore    DBStore
-	ttl        time.Duration
-	operations *operations
+	dbStore DBStore
+	ttl     time.Duration
+	metrics *metrics
 }
 
 var _ goroutine.Handler = &AbandonedUploadJanitor{}
 
 // NewAbandonedUploadJanitor returns a background routine that periodically removes
 // upload records which have not left the uploading state within the given TTL.
-func NewAbandonedUploadJanitor(dbStore DBStore, ttl, interval time.Duration, operations *operations) goroutine.BackgroundRoutine {
+func NewAbandonedUploadJanitor(dbStore DBStore, ttl, interval time.Duration, metrics *metrics) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &AbandonedUploadJanitor{
-		dbStore:    dbStore,
-		ttl:        ttl,
-		operations: operations,
+		dbStore: dbStore,
+		ttl:     ttl,
+		metrics: metrics,
 	})
 }
 
@@ -35,13 +35,13 @@ func (h *AbandonedUploadJanitor) Handle(ctx context.Context) error {
 	}
 	if count > 0 {
 		log15.Debug("Deleted abandoned upload records", "count", count)
-		h.operations.numUploadRecordsRemoved.Add(float64(count))
+		h.metrics.numUploadRecordsRemoved.Add(float64(count))
 	}
 
 	return nil
 }
 
 func (h *AbandonedUploadJanitor) HandleError(err error) {
-	h.operations.numErrors.Inc()
+	h.metrics.numErrors.Inc()
 	log15.Error("Failed to delete abandoned uploads", "error", err)
 }
