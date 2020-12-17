@@ -1405,16 +1405,3 @@ func formatJSON(s string) string {
 	}
 	return formatted
 }
-
-type repoListerWithErrors struct {
-	*idb.RepoStore
-
-	ListReposErr error
-}
-
-func (s *repoListerWithErrors) List(ctx context.Context, args idb.ReposListOptions) ([]*types.Repo, error) {
-	if s.ListReposErr != nil {
-		return nil, s.ListReposErr
-	}
-	return s.RepoStore.List(ctx, args)
-}
