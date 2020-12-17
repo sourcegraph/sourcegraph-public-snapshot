@@ -124,7 +124,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	}
 
 	permsStore := edb.NewPermsStore(testDB, timeutil.Now)
-	syncer := NewPermsSyncer(reposStore.RepoStore, permsStore, timeutil.Now, nil)
+	syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
 
 	err = syncer.syncRepoPerms(ctx, repo.ID, false)
 	if err != nil {
