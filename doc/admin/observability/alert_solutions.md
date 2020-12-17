@@ -453,13 +453,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <br />
 
-## frontend: codeintel_resolvers_99th_percentile_duration
+## frontend: frontend_codeintel_resolvers_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful resolvers operation duration over 5m</p>
+<p class="subtitle">code-intel: 99th percentile successful resolver duration over 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20s+ 99th percentile successful resolvers operation duration over 5m_
+- _frontend: 20s+ 99th percentile successful resolver duration over 5m_
 
 **Possible solutions:**
 
@@ -467,19 +467,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_resolvers_99th_percentile_duration"
+  "warning_frontend_frontend_codeintel_resolvers_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## frontend: codeintel_resolvers_errors
+## frontend: frontend_codeintel_resolvers_errors
 
-<p class="subtitle">code-intel: resolvers errors every 5m</p>
+<p class="subtitle">code-intel: resolver errors every 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20+ resolvers errors every 5m_
+- _frontend: 20+ resolver errors every 5m_
 
 **Possible solutions:**
 
@@ -487,19 +487,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_resolvers_errors"
+  "warning_frontend_frontend_codeintel_resolvers_errors"
 ]
 ```
 
 <br />
 
-## frontend: codeintel_api_99th_percentile_duration
+## frontend: frontend_codeintel_api_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful api operation duration over 5m</p>
+<p class="subtitle">code-intel: 99th percentile successful codeintel API operation duration over 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20s+ 99th percentile successful api operation duration over 5m_
+- _frontend: 20s+ 99th percentile successful codeintel API operation duration over 5m_
 
 **Possible solutions:**
 
@@ -507,19 +507,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_api_99th_percentile_duration"
+  "warning_frontend_frontend_codeintel_api_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## frontend: codeintel_api_errors
+## frontend: frontend_codeintel_api_errors
 
-<p class="subtitle">code-intel: api errors every 5m</p>
+<p class="subtitle">code-intel: code intel API errors every 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20+ api errors every 5m_
+- _frontend: 20+ code intel API errors every 5m_
 
 **Possible solutions:**
 
@@ -527,19 +527,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_api_errors"
+  "warning_frontend_frontend_codeintel_api_errors"
 ]
 ```
 
 <br />
 
-## frontend: codeintel_dbstore_99th_percentile_duration
+## frontend: frontend_codeintel_dbstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful dbstore operation duration over 5m</p>
+<p class="subtitle">code-intel: 99th percentile successful database store operation duration over 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20s+ 99th percentile successful dbstore operation duration over 5m_
+- _frontend: 20s+ 99th percentile successful database store operation duration over 5m_
 
 **Possible solutions:**
 
@@ -547,19 +547,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_dbstore_99th_percentile_duration"
+  "warning_frontend_frontend_codeintel_dbstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## frontend: codeintel_dbstore_errors
+## frontend: frontend_codeintel_dbstore_errors
 
-<p class="subtitle">code-intel: dbstore errors every 5m</p>
+<p class="subtitle">code-intel: database store errors every 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20+ dbstore errors every 5m_
+- _frontend: 20+ database store errors every 5m_
 
 **Possible solutions:**
 
@@ -567,19 +567,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_dbstore_errors"
+  "warning_frontend_frontend_codeintel_dbstore_errors"
 ]
 ```
 
 <br />
 
-## frontend: codeintel_lsifstore_99th_percentile_duration
+## frontend: frontend_codeintel_upload_workerstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful lsifstore operation duration over 5m</p>
+<p class="subtitle">code-intel: 99th percentile successful upload worker store operation duration over 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20s+ 99th percentile successful lsifstore operation duration over 5m_
+- _frontend: 20s+ 99th percentile successful upload worker store operation duration over 5m_
 
 **Possible solutions:**
 
@@ -587,19 +587,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_lsifstore_99th_percentile_duration"
+  "warning_frontend_frontend_codeintel_upload_workerstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## frontend: codeintel_lsifstore_errors
+## frontend: frontend_codeintel_upload_workerstore_errors
 
-<p class="subtitle">code-intel: lsifstore errors every 5m</p>
+<p class="subtitle">code-intel: upload worker store errors every 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20+ lsifstore errors every 5m_
+- _frontend: 20+ upload worker store errors every 5m_
 
 **Possible solutions:**
 
@@ -607,19 +607,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_lsifstore_errors"
+  "warning_frontend_frontend_codeintel_upload_workerstore_errors"
 ]
 ```
 
 <br />
 
-## frontend: codeintel_uploadstore_99th_percentile_duration
+## frontend: frontend_codeintel_index_workerstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful uploadstore operation duration over 5m</p>
+<p class="subtitle">code-intel: 99th percentile successful index worker store operation duration over 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20s+ 99th percentile successful uploadstore operation duration over 5m_
+- _frontend: 20s+ 99th percentile successful index worker store operation duration over 5m_
 
 **Possible solutions:**
 
@@ -627,19 +627,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_uploadstore_99th_percentile_duration"
+  "warning_frontend_frontend_codeintel_index_workerstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## frontend: codeintel_uploadstore_errors
+## frontend: frontend_codeintel_index_workerstore_errors
 
-<p class="subtitle">code-intel: uploadstore errors every 5m</p>
+<p class="subtitle">code-intel: index worker store errors every 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20+ uploadstore errors every 5m_
+- _frontend: 20+ index worker store errors every 5m_
 
 **Possible solutions:**
 
@@ -647,19 +647,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_uploadstore_errors"
+  "warning_frontend_frontend_codeintel_index_workerstore_errors"
 ]
 ```
 
 <br />
 
-## frontend: codeintel_gitserver_99th_percentile_duration
+## frontend: frontend_codeintel_lsifstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful gitserver operation duration over 5m</p>
+<p class="subtitle">code-intel: 99th percentile successful LSIF store operation duration over 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20s+ 99th percentile successful gitserver operation duration over 5m_
+- _frontend: 20s+ 99th percentile successful LSIF store operation duration over 5m_
 
 **Possible solutions:**
 
@@ -667,19 +667,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_gitserver_99th_percentile_duration"
+  "warning_frontend_frontend_codeintel_lsifstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## frontend: codeintel_gitserver_errors
+## frontend: frontend_codeintel_lsifstore_errors
 
-<p class="subtitle">code-intel: gitserver errors every 5m</p>
+<p class="subtitle">code-intel: lSIF store errors every 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20+ gitserver errors every 5m_
+- _frontend: 20+ lSIF store errors every 5m_
 
 **Possible solutions:**
 
@@ -687,19 +687,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_gitserver_errors"
+  "warning_frontend_frontend_codeintel_lsifstore_errors"
 ]
 ```
 
 <br />
 
-## frontend: num_dirty_repositories
+## frontend: frontend_codeintel_uploadstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: number of repositories with a stale commit graph</p>
+<p class="subtitle">code-intel: 99th percentile successful upload store operation duration over 5m</p>
 
 **Descriptions:**
 
-- _frontend: 100+ number of repositories with a stale commit graph_
+- _frontend: 20s+ 99th percentile successful upload store operation duration over 5m_
 
 **Possible solutions:**
 
@@ -707,19 +707,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_num_dirty_repositories"
+  "warning_frontend_frontend_codeintel_uploadstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## frontend: dirty_repositories_growth_rate
+## frontend: frontend_codeintel_uploadstore_errors
 
-<p class="subtitle">code-intel: stale commit graph growth rate rate every 5m</p>
+<p class="subtitle">code-intel: upload store errors every 5m</p>
 
 **Descriptions:**
 
-- _frontend: 5+ stale commit graph growth rate rate every 5m_
+- _frontend: 20+ upload store errors every 5m_
 
 **Possible solutions:**
 
@@ -727,13 +727,93 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_dirty_repositories_growth_rate"
+  "warning_frontend_frontend_codeintel_uploadstore_errors"
 ]
 ```
 
 <br />
 
-## frontend: codeintel_commit_graph_updater_99th_percentile_duration
+## frontend: frontend_codeintel_gitserverclient_99th_percentile_duration
+
+<p class="subtitle">code-intel: 99th percentile successful gitserver client operation duration over 5m</p>
+
+**Descriptions:**
+
+- _frontend: 20s+ 99th percentile successful gitserver client operation duration over 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_frontend_codeintel_gitserverclient_99th_percentile_duration"
+]
+```
+
+<br />
+
+## frontend: frontend_codeintel_gitserverclient_errors
+
+<p class="subtitle">code-intel: gitserver client errors every 5m</p>
+
+**Descriptions:**
+
+- _frontend: 20+ gitserver client errors every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_frontend_codeintel_gitserverclient_errors"
+]
+```
+
+<br />
+
+## frontend: frontend_codeintel_commit_graph_queue_size
+
+<p class="subtitle">code-intel: commit graph queue size</p>
+
+**Descriptions:**
+
+- _frontend: 100+ commit graph queue size_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_frontend_codeintel_commit_graph_queue_size"
+]
+```
+
+<br />
+
+## frontend: frontend_codeintel_commit_graph_queue_growth_rate
+
+<p class="subtitle">code-intel: commit graph queue growth rate over 30m</p>
+
+**Descriptions:**
+
+- _frontend: 5+ commit graph queue growth rate over 30m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_frontend_codeintel_commit_graph_queue_growth_rate"
+]
+```
+
+<br />
+
+## frontend: frontend_codeintel_commit_graph_updater_99th_percentile_duration
 
 <p class="subtitle">code-intel: 99th percentile successful commit graph updater operation duration over 5m</p>
 
@@ -747,13 +827,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_commit_graph_updater_99th_percentile_duration"
+  "warning_frontend_frontend_codeintel_commit_graph_updater_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## frontend: codeintel_commit_graph_updater_errors
+## frontend: frontend_codeintel_commit_graph_updater_errors
 
 <p class="subtitle">code-intel: commit graph updater errors every 5m</p>
 
@@ -767,19 +847,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_commit_graph_updater_errors"
+  "warning_frontend_frontend_codeintel_commit_graph_updater_errors"
 ]
 ```
 
 <br />
 
-## frontend: codeintel_upload_records_removed
+## frontend: frontend_codeintel_janitor_errors
 
-<p class="subtitle">code-intel: upload records expired or deleted every 5m</p>
+<p class="subtitle">code-intel: janitor errors every 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20+ upload records expired or deleted every 5m_
+- _frontend: 20+ janitor errors every 5m_
 
 **Possible solutions:**
 
@@ -787,19 +867,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_upload_records_removed"
+  "warning_frontend_frontend_codeintel_janitor_errors"
 ]
 ```
 
 <br />
 
-## frontend: codeintel_index_records_removed
+## frontend: frontend_codeintel_background_upload_resets
 
-<p class="subtitle">code-intel: index records expired or deleted every 5m</p>
+<p class="subtitle">code-intel: upload records re-queued (due to unresponsive worker) every 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20+ index records expired or deleted every 5m_
+- _frontend: 20+ upload records re-queued (due to unresponsive worker) every 5m_
 
 **Possible solutions:**
 
@@ -807,19 +887,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_index_records_removed"
+  "warning_frontend_frontend_codeintel_background_upload_resets"
 ]
 ```
 
 <br />
 
-## frontend: codeintel_uploads_purged
+## frontend: frontend_codeintel_background_upload_reset_failures
 
-<p class="subtitle">code-intel: data for unreferenced upload records purged every 5m</p>
+<p class="subtitle">code-intel: upload records errored due to repeated reset every 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20+ data for unreferenced upload records purged every 5m_
+- _frontend: 20+ upload records errored due to repeated reset every 5m_
 
 **Possible solutions:**
 
@@ -827,19 +907,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_uploads_purged"
+  "warning_frontend_frontend_codeintel_background_upload_reset_failures"
 ]
 ```
 
 <br />
 
-## frontend: codeintel_background_errors
+## frontend: frontend_codeintel_background_index_resets
 
-<p class="subtitle">code-intel: codeintel-related background process errors every 5m</p>
+<p class="subtitle">code-intel: index records re-queued (due to unresponsive indexer) every 5m</p>
 
 **Descriptions:**
 
-- _frontend: 20+ codeintel-related background process errors every 5m_
+- _frontend: 20+ index records re-queued (due to unresponsive indexer) every 5m_
 
 **Possible solutions:**
 
@@ -847,7 +927,27 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_codeintel_background_errors"
+  "warning_frontend_frontend_codeintel_background_index_resets"
+]
+```
+
+<br />
+
+## frontend: frontend_codeintel_background_index_reset_failures
+
+<p class="subtitle">code-intel: index records errored due to repeated reset every 5m</p>
+
+**Descriptions:**
+
+- _frontend: 20+ index records errored due to repeated reset every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_frontend_codeintel_background_index_reset_failures"
 ]
 ```
 
@@ -2115,13 +2215,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <br />
 
-## precise-code-intel-worker: upload_queue_size
+## precise-code-intel-worker: precise_code_intel_worker_upload_queue_size
 
-<p class="subtitle">code-intel: upload queue size</p>
+<p class="subtitle">code-intel: queue size</p>
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 100+ upload queue size_
+- _precise-code-intel-worker: 100+ queue size_
 
 **Possible solutions:**
 
@@ -2129,19 +2229,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_upload_queue_size"
+  "warning_precise-code-intel-worker_precise_code_intel_worker_upload_queue_size"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: upload_queue_growth_rate
+## precise-code-intel-worker: precise_code_intel_worker_upload_queue_growth_rate
 
-<p class="subtitle">code-intel: upload queue growth rate every 5m</p>
+<p class="subtitle">code-intel: queue growth rate over 30m</p>
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 5+ upload queue growth rate every 5m_
+- _precise-code-intel-worker: 5+ queue growth rate over 30m_
 
 **Possible solutions:**
 
@@ -2149,19 +2249,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_upload_queue_growth_rate"
+  "warning_precise-code-intel-worker_precise_code_intel_worker_upload_queue_growth_rate"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: upload_process_errors
+## precise-code-intel-worker: precise_code_intel_worker_job_errors
 
-<p class="subtitle">code-intel: upload process errors every 5m</p>
+<p class="subtitle">code-intel: job errors errors every 5m</p>
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 20+ upload process errors every 5m_
+- _precise-code-intel-worker: 20+ job errors errors every 5m_
 
 **Possible solutions:**
 
@@ -2169,19 +2269,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_upload_process_errors"
+  "warning_precise-code-intel-worker_precise_code_intel_worker_job_errors"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: codeintel_dbstore_99th_percentile_duration
+## precise-code-intel-worker: precise_code_intel_worker_codeintel_dbstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful dbstore operation duration over 5m</p>
+<p class="subtitle">code-intel: 99th percentile successful database store operation duration over 5m</p>
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 20s+ 99th percentile successful dbstore operation duration over 5m_
+- _precise-code-intel-worker: 20s+ 99th percentile successful database store operation duration over 5m_
 
 **Possible solutions:**
 
@@ -2189,19 +2289,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_codeintel_dbstore_99th_percentile_duration"
+  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_dbstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: codeintel_dbstore_errors
+## precise-code-intel-worker: precise_code_intel_worker_codeintel_dbstore_errors
 
-<p class="subtitle">code-intel: dbstore errors every 5m</p>
+<p class="subtitle">code-intel: database store errors every 5m</p>
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 20+ dbstore errors every 5m_
+- _precise-code-intel-worker: 20+ database store errors every 5m_
 
 **Possible solutions:**
 
@@ -2209,19 +2309,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_codeintel_dbstore_errors"
+  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_dbstore_errors"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: codeintel_lsifstore_99th_percentile_duration
+## precise-code-intel-worker: precise_code_intel_worker_codeintel_workerstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful lsifstore operation duration over 5m</p>
+<p class="subtitle">code-intel: 99th percentile successful worker store operation duration over 5m</p>
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 20s+ 99th percentile successful lsifstore operation duration over 5m_
+- _precise-code-intel-worker: 20s+ 99th percentile successful worker store operation duration over 5m_
 
 **Possible solutions:**
 
@@ -2229,19 +2329,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_codeintel_lsifstore_99th_percentile_duration"
+  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_workerstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: codeintel_lsifstore_errors
+## precise-code-intel-worker: precise_code_intel_worker_codeintel_workerstore_errors
 
-<p class="subtitle">code-intel: lsifstore errors every 5m</p>
+<p class="subtitle">code-intel: worker store errors every 5m</p>
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 20+ lsifstore errors every 5m_
+- _precise-code-intel-worker: 20+ worker store errors every 5m_
 
 **Possible solutions:**
 
@@ -2249,19 +2349,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_codeintel_lsifstore_errors"
+  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_workerstore_errors"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: codeintel_uploadstore_99th_percentile_duration
+## precise-code-intel-worker: precise_code_intel_worker_codeintel_lsifstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful uploadstore operation duration over 5m</p>
+<p class="subtitle">code-intel: 99th percentile successful LSIF store operation duration over 5m</p>
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 20s+ 99th percentile successful uploadstore operation duration over 5m_
+- _precise-code-intel-worker: 20s+ 99th percentile successful LSIF store operation duration over 5m_
 
 **Possible solutions:**
 
@@ -2269,19 +2369,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_codeintel_uploadstore_99th_percentile_duration"
+  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_lsifstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: codeintel_uploadstore_errors
+## precise-code-intel-worker: precise_code_intel_worker_codeintel_lsifstore_errors
 
-<p class="subtitle">code-intel: uploadstore errors every 5m</p>
+<p class="subtitle">code-intel: lSIF store errors every 5m</p>
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 20+ uploadstore errors every 5m_
+- _precise-code-intel-worker: 20+ lSIF store errors every 5m_
 
 **Possible solutions:**
 
@@ -2289,19 +2389,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_codeintel_uploadstore_errors"
+  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_lsifstore_errors"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: codeintel_gitserver_99th_percentile_duration
+## precise-code-intel-worker: precise_code_intel_worker_codeintel_uploadstore_99th_percentile_duration
 
-<p class="subtitle">code-intel: 99th percentile successful gitserver operation duration over 5m</p>
+<p class="subtitle">code-intel: 99th percentile successful upload store operation duration over 5m</p>
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 20s+ 99th percentile successful gitserver operation duration over 5m_
+- _precise-code-intel-worker: 20s+ 99th percentile successful upload store operation duration over 5m_
 
 **Possible solutions:**
 
@@ -2309,19 +2409,19 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_codeintel_gitserver_99th_percentile_duration"
+  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_uploadstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: codeintel_gitserver_errors
+## precise-code-intel-worker: precise_code_intel_worker_codeintel_uploadstore_errors
 
-<p class="subtitle">code-intel: gitserver errors every 5m</p>
+<p class="subtitle">code-intel: upload store errors every 5m</p>
 
 **Descriptions:**
 
-- _precise-code-intel-worker: 20+ gitserver errors every 5m_
+- _precise-code-intel-worker: 20+ upload store errors every 5m_
 
 **Possible solutions:**
 
@@ -2329,7 +2429,47 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_codeintel_gitserver_errors"
+  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_uploadstore_errors"
+]
+```
+
+<br />
+
+## precise-code-intel-worker: precise_code_intel_worker_codeintel_gitserverclient_99th_percentile_duration
+
+<p class="subtitle">code-intel: 99th percentile successful gitserver client operation duration over 5m</p>
+
+**Descriptions:**
+
+- _precise-code-intel-worker: 20s+ 99th percentile successful gitserver client operation duration over 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_gitserverclient_99th_percentile_duration"
+]
+```
+
+<br />
+
+## precise-code-intel-worker: precise_code_intel_worker_codeintel_gitserverclient_errors
+
+<p class="subtitle">code-intel: gitserver client errors every 5m</p>
+
+**Descriptions:**
+
+- _precise-code-intel-worker: 20+ gitserver client errors every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_gitserverclient_errors"
 ]
 ```
 
@@ -5278,13 +5418,13 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## executor-queue: executor_queue_size
+## executor-queue: executor_queue_codeintel_queue_size
 
-<p class="subtitle">code-intel: executor queue size</p>
+<p class="subtitle">code-intel: queue size</p>
 
 **Descriptions:**
 
-- _executor-queue: 100+ executor queue size_
+- _executor-queue: 100+ queue size_
 
 **Possible solutions:**
 
@@ -5292,19 +5432,19 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor-queue_executor_queue_size"
+  "warning_executor-queue_executor_queue_codeintel_queue_size"
 ]
 ```
 
 <br />
 
-## executor-queue: executor_queue_growth_rate
+## executor-queue: executor_queue_codeintel_queue_growth_rate
 
-<p class="subtitle">code-intel: executor queue growth rate every 5m</p>
+<p class="subtitle">code-intel: queue growth rate over 30m</p>
 
 **Descriptions:**
 
-- _executor-queue: 5+ executor queue growth rate every 5m_
+- _executor-queue: 5+ queue growth rate over 30m_
 
 **Possible solutions:**
 
@@ -5312,19 +5452,19 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor-queue_executor_queue_growth_rate"
+  "warning_executor-queue_executor_queue_codeintel_queue_growth_rate"
 ]
 ```
 
 <br />
 
-## executor-queue: executor_process_errors
+## executor-queue: executor_queue_codeintel_job_errors
 
-<p class="subtitle">code-intel: executor process errors every 5m</p>
+<p class="subtitle">code-intel: job errors every 5m</p>
 
 **Descriptions:**
 
-- _executor-queue: 20+ executor process errors every 5m_
+- _executor-queue: 20+ job errors every 5m_
 
 **Possible solutions:**
 
@@ -5332,7 +5472,47 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor-queue_executor_process_errors"
+  "warning_executor-queue_executor_queue_codeintel_job_errors"
+]
+```
+
+<br />
+
+## executor-queue: executor_queue_codeintel_workerstore_99th_percentile_duration
+
+<p class="subtitle">code-intel: 99th percentile successful worker store operation duration over 5m</p>
+
+**Descriptions:**
+
+- _executor-queue: 20s+ 99th percentile successful worker store operation duration over 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor-queue_executor_queue_codeintel_workerstore_99th_percentile_duration"
+]
+```
+
+<br />
+
+## executor-queue: executor_queue_codeintel_workerstore_errors
+
+<p class="subtitle">code-intel: worker store errors every 5m</p>
+
+**Descriptions:**
+
+- _executor-queue: 20+ worker store errors every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_executor-queue_executor_queue_codeintel_workerstore_errors"
 ]
 ```
 
@@ -5600,6 +5780,366 @@ with your code hosts connections or networking issues affecting communication wi
 ```json
 "observability.silenceAlerts": [
   "critical_executor-queue_pods_available_percentage"
+]
+```
+
+<br />
+
+## precise-code-intel-indexer: executor_codeintel_job_errors
+
+<p class="subtitle">code-intel: job errors every 5m</p>
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 20+ job errors every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_executor_codeintel_job_errors"
+]
+```
+
+<br />
+
+## precise-code-intel-indexer: executor_apiclient_99th_percentile_duration
+
+<p class="subtitle">code-intel: 99th percentile successful API request duration over 5m</p>
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 20s+ 99th percentile successful API request duration over 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_executor_apiclient_99th_percentile_duration"
+]
+```
+
+<br />
+
+## precise-code-intel-indexer: executor_apiclient_errors
+
+<p class="subtitle">code-intel: aPI errors every 5m</p>
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 20+ aPI errors every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_executor_apiclient_errors"
+]
+```
+
+<br />
+
+## precise-code-intel-indexer: executor_setup_command_errors
+
+<p class="subtitle">code-intel: setup command errors every 5m</p>
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 20+ setup command errors every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_executor_setup_command_errors"
+]
+```
+
+<br />
+
+## precise-code-intel-indexer: executor_exec_command_errors
+
+<p class="subtitle">code-intel: exec command errors every 5m</p>
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 20+ exec command errors every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_executor_exec_command_errors"
+]
+```
+
+<br />
+
+## precise-code-intel-indexer: executor_teardown_command_errors
+
+<p class="subtitle">code-intel: teardown command errors every 5m</p>
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 20+ teardown command errors every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_executor_teardown_command_errors"
+]
+```
+
+<br />
+
+## precise-code-intel-indexer: container_cpu_usage
+
+<p class="subtitle">code-intel: container cpu usage total (1m average) across all cores by instance</p>
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 99%+ container cpu usage total (1m average) across all cores by instance_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_container_cpu_usage"
+]
+```
+
+<br />
+
+## precise-code-intel-indexer: container_memory_usage
+
+<p class="subtitle">code-intel: container memory usage by instance</p>
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 99%+ container memory usage by instance_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_container_memory_usage"
+]
+```
+
+<br />
+
+## precise-code-intel-indexer: container_restarts
+
+<p class="subtitle">code-intel: container restarts every 5m by instance</p>
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 1+ container restarts every 5m by instance_
+
+**Possible solutions:**
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod precise-code-intel-worker` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p precise-code-intel-worker`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' precise-code-intel-worker` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the precise-code-intel-worker container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs precise-code-intel-worker` (note this will include logs from the previous and currently running container).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_container_restarts"
+]
+```
+
+<br />
+
+## precise-code-intel-indexer: fs_inodes_used
+
+<p class="subtitle">code-intel: fs inodes in use by instance</p>
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 3e+06+ fs inodes in use by instance_
+
+**Possible solutions:**
+
+- 			- Refer to your OS or cloud provider`s documentation for how to increase inodes.
+			- **Kubernetes:** consider provisioning more machines with less resources.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_fs_inodes_used"
+]
+```
+
+<br />
+
+## precise-code-intel-indexer: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">code-intel: container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the precise-code-intel-worker service.
+- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_provisioning_container_cpu_usage_long_term"
+]
+```
+
+<br />
+
+## precise-code-intel-indexer: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">code-intel: container memory usage (1d maximum) by instance</p>
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 80%+ container memory usage (1d maximum) by instance for 336h0m0s_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the precise-code-intel-worker service.
+- **Docker Compose:** Consider increasing `memory:` of the precise-code-intel-worker container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_provisioning_container_memory_usage_long_term"
+]
+```
+
+<br />
+
+## precise-code-intel-indexer: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">code-intel: container cpu usage total (5m maximum) across all cores by instance</p>
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_provisioning_container_cpu_usage_short_term"
+]
+```
+
+<br />
+
+## precise-code-intel-indexer: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">code-intel: container memory usage (5m maximum) by instance</p>
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 90%+ container memory usage (5m maximum) by instance_
+
+**Possible solutions:**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_provisioning_container_memory_usage_short_term"
+]
+```
+
+<br />
+
+## precise-code-intel-indexer: go_goroutines
+
+<p class="subtitle">code-intel: maximum active goroutines</p>
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 10000+ maximum active goroutines for 10m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_go_goroutines"
+]
+```
+
+<br />
+
+## precise-code-intel-indexer: go_gc_duration_seconds
+
+<p class="subtitle">code-intel: maximum go garbage collection duration</p>
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: 2s+ maximum go garbage collection duration_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-indexer_go_gc_duration_seconds"
+]
+```
+
+<br />
+
+## precise-code-intel-indexer: pods_available_percentage
+
+<p class="subtitle">code-intel: percentage pods available</p>
+
+**Descriptions:**
+
+- _precise-code-intel-indexer: less than 90% percentage pods available for 10m0s_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_precise-code-intel-indexer_pods_available_percentage"
 ]
 ```
 
