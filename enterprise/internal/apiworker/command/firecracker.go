@@ -11,11 +11,12 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 type commandRunner interface {
-	RunCommand(ctx context.Context, logger *Logger, command command) error
+	RunCommand(ctx context.Context, command command, logger *Logger) error
 }
 
 const firecrackerContainerDir = "/work"
@@ -63,7 +64,7 @@ func formatFirecrackerCommand(spec CommandSpec, name, repoDir string, options Op
 //   - Inside of the Firecracker VM, run docker load over all of the copied tarfiles so
 //     that we do not need to pull the images from inside the VM, which has an empty
 //     docker cache and would require us to pull images on every job.
-func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger, name, repoDir string, images []string, options Options) error {
+func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger, name, repoDir string, images []string, options Options, operations *Operations) error {
 	imageMap := map[string]string{}
 	for i, image := range images {
 		imageMap[fmt.Sprintf("image%d", i)] = image
@@ -84,18 +85,20 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 		}
 
 		pullCommand := command{
-			Key:      fmt.Sprintf("setup.docker.pull.%s", key),
-			Commands: flatten("docker", "pull", imageMap[key]),
+			Key:       fmt.Sprintf("setup.docker.pull.%s", key),
+			Commands:  flatten("docker", "pull", imageMap[key]),
+			Operation: operations.DockerPull,
 		}
-		if err := runner.RunCommand(ctx, logger, pullCommand); err != nil {
+		if err := runner.RunCommand(ctx, pullCommand, logger); err != nil {
 			return errors.Wrap(err, fmt.Sprintf("failed to pull %s", imageMap[key]))
 		}
 
 		saveCommand := command{
-			Key:      fmt.Sprintf("setup.docker.save.%s", key),
-			Commands: flatten("docker", "save", "-o", tarfilePathOnHost(key, options), imageMap[key]),
+			Key:       fmt.Sprintf("setup.docker.save.%s", key),
+			Commands:  flatten("docker", "save", "-o", tarfilePathOnHost(key, options), imageMap[key]),
+			Operation: operations.DockerSave,
 		}
-		if err := runner.RunCommand(ctx, logger, saveCommand); err != nil {
+		if err := runner.RunCommand(ctx, saveCommand, logger); err != nil {
 			return errors.Wrap(err, fmt.Sprintf("failed to save %s", imageMap[key]))
 		}
 	}
@@ -112,18 +115,20 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 			"--name", name,
 			sanitizeImage(options.FirecrackerOptions.Image),
 		),
+		Operation: operations.FirecrackerStart,
 	}
-	if err := runner.RunCommand(ctx, logger, startCommand); err != nil {
+	if err := runner.RunCommand(ctx, startCommand, logger); err != nil {
 		return errors.Wrap(err, "failed to start firecracker vm")
 	}
 
 	// Load images from tar files
 	for _, key := range imageKeys {
 		loadCommand := command{
-			Key:      fmt.Sprintf("setup.docker.load.%s", key),
-			Commands: flatten("ignite", "exec", name, "--", "docker", "load", "-i", tarfilePathInVM(key)),
+			Key:       fmt.Sprintf("setup.docker.load.%s", key),
+			Commands:  flatten("ignite", "exec", name, "--", "docker", "load", "-i", tarfilePathInVM(key)),
+			Operation: operations.DockerLoad,
 		}
-		if err := runner.RunCommand(ctx, logger, loadCommand); err != nil {
+		if err := runner.RunCommand(ctx, loadCommand, logger); err != nil {
 			return errors.Wrap(err, fmt.Sprintf("failed to load %s", imageMap[key]))
 		}
 	}
@@ -136,8 +141,9 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 				"ignite", "exec", name, "--",
 				"rm", tarfilePathInVM(key),
 			),
+			Operation: operations.SetupRm,
 		}
-		if err := runner.RunCommand(ctx, logger, rmCommand); err != nil {
+		if err := runner.RunCommand(ctx, rmCommand, logger); err != nil {
 			return errors.Wrap(err, fmt.Sprintf("failed to remove tarfile for %s", imageMap[key]))
 		}
 	}
@@ -147,20 +153,22 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 
 // teardownFirecracker issues a stop and a remove request for the Firecracker VM with
 // the given name.
-func teardownFirecracker(ctx context.Context, runner commandRunner, logger *Logger, name string) error {
+func teardownFirecracker(ctx context.Context, runner commandRunner, logger *Logger, name string, options Options, operations *Operations) error {
 	stopCommand := command{
-		Key:      "teardown.firecracker.stop",
-		Commands: flatten("ignite", "stop", commonFirecrackerFlags, name),
+		Key:       "teardown.firecracker.stop",
+		Commands:  flatten("ignite", "stop", commonFirecrackerFlags, name),
+		Operation: operations.FirecrackerStop,
 	}
-	if err := runner.RunCommand(ctx, logger, stopCommand); err != nil {
+	if err := runner.RunCommand(ctx, stopCommand, logger); err != nil {
 		log15.Warn("Failed to stop firecracker vm", "name", name, "err", err)
 	}
 
 	removeCommand := command{
-		Key:      "teardown.firecracker.remove",
-		Commands: flatten("ignite", "rm", "-f", commonFirecrackerFlags, name),
+		Key:       "teardown.firecracker.remove",
+		Commands:  flatten("ignite", "rm", "-f", commonFirecrackerFlags, name),
+		Operation: operations.FirecrackerRemove,
 	}
-	if err := runner.RunCommand(ctx, logger, removeCommand); err != nil {
+	if err := runner.RunCommand(ctx, removeCommand, logger); err != nil {
 		log15.Warn("Failed to remove firecracker vm", "name", name, "err", err)
 	}
 

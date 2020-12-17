@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -21,7 +22,8 @@ import (
 type handler struct {
 	idSet         *IDSet
 	options       Options
-	runnerFactory func(dir string, logger *command.Logger, options command.Options) command.Runner
+	operations    *command.Operations
+	runnerFactory func(dir string, logger *command.Logger, options command.Options, operations *command.Operations) command.Runner
 }
 
 var _ workerutil.Handler = &handler{}
@@ -54,7 +56,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	// If a repository is supplied as part of the job configuration, it will be cloned into
 	// the working directory.
 
-	hostRunner := h.runnerFactory("", logger, command.Options{})
+	hostRunner := h.runnerFactory("", logger, command.Options{}, h.operations)
 	workingDirectory, err := h.prepareWorkspace(ctx, hostRunner, job.RepositoryName, job.Commit)
 	if err != nil {
 		return err
@@ -84,11 +86,12 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 		return err
 	}
 
-	runner := h.runnerFactory(workingDirectory, logger, command.Options{
+	options := command.Options{
 		ExecutorName:       name.String(),
 		FirecrackerOptions: h.options.FirecrackerOptions,
 		ResourceOptions:    h.options.ResourceOptions,
-	})
+	}
+	runner := h.runnerFactory(workingDirectory, logger, options, h.operations)
 
 	imageMap := map[string]struct{}{}
 	for _, dockerStep := range job.DockerSteps {
@@ -114,11 +117,12 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	// Invoke each docker step sequentially
 	for i, dockerStep := range job.DockerSteps {
 		dockerStepCommand := command.CommandSpec{
-			Key:      fmt.Sprintf("step.docker.%d", i),
-			Image:    dockerStep.Image,
-			Commands: dockerStep.Commands,
-			Dir:      dockerStep.Dir,
-			Env:      dockerStep.Env,
+			Key:       fmt.Sprintf("step.docker.%d", i),
+			Image:     dockerStep.Image,
+			Commands:  dockerStep.Commands,
+			Dir:       dockerStep.Dir,
+			Env:       dockerStep.Env,
+			Operation: h.operations.IgniteExec, // TODO
 		}
 
 		if err := runner.Run(ctx, dockerStepCommand); err != nil {
@@ -129,10 +133,11 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	// Invoke each src-cli step sequentially
 	for i, cliStep := range job.CliSteps {
 		cliStepCommand := command.CommandSpec{
-			Key:      fmt.Sprintf("step.src.%d", i),
-			Commands: append([]string{"src"}, cliStep.Commands...),
-			Dir:      cliStep.Dir,
-			Env:      cliStep.Env,
+			Key:       fmt.Sprintf("step.src.%d", i),
+			Commands:  append([]string{"src"}, cliStep.Commands...),
+			Dir:       cliStep.Dir,
+			Env:       cliStep.Env,
+			Operation: h.operations.IgniteExec, // TODO
 		}
 
 		if err := runner.Run(ctx, cliStepCommand); err != nil {

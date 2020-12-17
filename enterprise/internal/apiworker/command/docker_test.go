@@ -9,9 +9,10 @@ import (
 func TestFormatRawOrDockerCommandRaw(t *testing.T) {
 	actual := formatRawOrDockerCommand(
 		CommandSpec{
-			Commands: []string{"ls", "-a"},
-			Dir:      "subdir",
-			Env:      []string{"TEST=true"},
+			Commands:  []string{"ls", "-a"},
+			Dir:       "subdir",
+			Env:       []string{"TEST=true"},
+			Operation: makeTestOperation(),
 		},
 		"/proj/src",
 		Options{},
@@ -22,7 +23,7 @@ func TestFormatRawOrDockerCommandRaw(t *testing.T) {
 		Dir:      "/proj/src/subdir",
 		Env:      []string{"TEST=true"},
 	}
-	if diff := cmp.Diff(expected, actual); diff != "" {
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
 	}
 }
@@ -30,10 +31,11 @@ func TestFormatRawOrDockerCommandRaw(t *testing.T) {
 func TestFormatRawOrDockerCommandDocker(t *testing.T) {
 	actual := formatRawOrDockerCommand(
 		CommandSpec{
-			Image:    "alpine:latest",
-			Commands: []string{"ls", "-a"},
-			Dir:      "subdir",
-			Env:      []string{"TEST=true"},
+			Image:     "alpine:latest",
+			Commands:  []string{"ls", "-a"},
+			Dir:       "subdir",
+			Env:       []string{"TEST=true"},
+			Operation: makeTestOperation(),
 		},
 		"/proj/src",
 		Options{
@@ -56,7 +58,25 @@ func TestFormatRawOrDockerCommandDocker(t *testing.T) {
 			"ls", "-a",
 		},
 	}
-	if diff := cmp.Diff(expected, actual); diff != "" {
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
 	}
+}
+
+var commandComparer = cmp.Comparer(func(x, y command) bool {
+	return x.Key == y.Key && x.Dir == y.Dir && compareStrings(x.Env, y.Env) && compareStrings(x.Commands, y.Commands)
+})
+
+func compareStrings(x, y []string) bool {
+	if len(x) != len(y) {
+		return false
+	}
+
+	for i, v1 := range x {
+		if y[i] != v1 {
+			return false
+		}
+	}
+
+	return true
 }

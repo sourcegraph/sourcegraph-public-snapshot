@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestFormatFirecrackerCommandRaw(t *testing.T) {
@@ -72,7 +74,7 @@ func TestFormatFirecrackerCommandDocker(t *testing.T) {
 
 func TestSetupFirecracker(t *testing.T) {
 	runner := NewMockCommandRunner()
-	if err := setupFirecracker(context.Background(), runner, nil, "deadbeef", "/proj", []string{"img1", "img2", "img3"}, Options{
+	options := Options{
 		FirecrackerOptions: FirecrackerOptions{
 			Image:             "ignite-ubuntu",
 			ImageArchivesPath: "/archives",
@@ -82,13 +84,16 @@ func TestSetupFirecracker(t *testing.T) {
 			Memory:    "20G",
 			DiskSpace: "1T",
 		},
-	}); err != nil {
+	}
+	operations := MakeOperations(&observation.TestContext)
+
+	if err := setupFirecracker(context.Background(), runner, nil, "deadbeef", "/proj", []string{"img1", "img2", "img3"}, options, operations); err != nil {
 		t.Fatalf("unexpected error tearing down virtual machine: %s", err)
 	}
 
 	var actual []string
 	for _, call := range runner.RunCommandFunc.History() {
-		actual = append(actual, strings.Join(call.Arg2.Commands, " "))
+		actual = append(actual, strings.Join(call.Arg1.Commands, " "))
 	}
 
 	expected := []string{
@@ -123,13 +128,16 @@ func TestSetupFirecracker(t *testing.T) {
 
 func TestTeardownFirecracker(t *testing.T) {
 	runner := NewMockCommandRunner()
-	if err := teardownFirecracker(context.Background(), runner, nil, "deadbeef"); err != nil {
+	options := Options{}
+	operations := MakeOperations(&observation.TestContext)
+
+	if err := teardownFirecracker(context.Background(), runner, nil, "deadbeef", options, operations); err != nil {
 		t.Fatalf("unexpected error tearing down virtual machine: %s", err)
 	}
 
 	var actual []string
 	for _, call := range runner.RunCommandFunc.History() {
-		actual = append(actual, strings.Join(call.Arg2.Commands, " "))
+		actual = append(actual, strings.Join(call.Arg1.Commands, " "))
 	}
 
 	expected := []string{

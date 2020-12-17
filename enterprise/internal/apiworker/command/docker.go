@@ -14,10 +14,11 @@ import (
 func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) command {
 	if spec.Image == "" {
 		return command{
-			Key:      spec.Key,
-			Commands: spec.Commands,
-			Dir:      filepath.Join(dir, spec.Dir),
-			Env:      spec.Env,
+			Key:       spec.Key,
+			Commands:  spec.Commands,
+			Dir:       filepath.Join(dir, spec.Dir),
+			Env:       spec.Env,
+			Operation: spec.Operation,
 		}
 	}
 
@@ -32,6 +33,7 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) com
 			spec.Image,
 			spec.Commands,
 		),
+		Operation: spec.Operation,
 	}
 }
 
