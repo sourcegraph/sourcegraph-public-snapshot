@@ -139,12 +139,12 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	// Invoke each docker step sequentially
 	for i, dockerStep := range job.DockerSteps {
 		dockerStepCommand := command.CommandSpec{
-			Key:       fmt.Sprintf("step.docker.%d", i),
-			Image:     dockerStep.Image,
-			Command:   dockerStep.Commands,
-			Dir:       dockerStep.Dir,
-			Env:       dockerStep.Env,
-			Operation: h.operations.Exec,
+			Key:        fmt.Sprintf("step.docker.%d", i),
+			Image:      dockerStep.Image,
+			ScriptPath: scriptPaths[i],
+			Dir:        dockerStep.Dir,
+			Env:        dockerStep.Env,
+			Operation:  h.operations.Exec,
 		}
 
 		if err := runner.Run(ctx, dockerStepCommand); err != nil {

@@ -119,7 +119,7 @@ func TestSetupFirecracker(t *testing.T) {
 	}
 	operations := MakeOperations(&observation.TestContext)
 
-	if err := setupFirecracker(context.Background(), runner, nil, "deadbeef", "/proj", []string{"img1", "img2", "img3"}, nil, options, operations); err != nil {
+	if err := setupFirecracker(context.Background(), runner, nil, "deadbeef", "/proj", []string{"img1", "img2", "img3"}, []string{}, options, operations); err != nil {
 		t.Fatalf("unexpected error tearing down virtual machine: %s", err)
 	}
 
