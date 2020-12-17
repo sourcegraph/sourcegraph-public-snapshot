@@ -1891,10 +1891,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	resultTypes := r.determineResultTypes(args, forceOnlyResultType)
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 	var (
-		requiredWg sync.WaitGroup
-		optionalWg sync.WaitGroup
-		// Alert is a potential alert shown to the user.
-		alert           *searchAlert
+		requiredWg      sync.WaitGroup
+		optionalWg      sync.WaitGroup
 		seenResultTypes = make(map[string]struct{})
 	)
 
@@ -2050,6 +2048,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		common.excluded.forks,
 		common.excluded.archived,
 		len(common.timedout))
+
+	var alert *searchAlert
 
 	multiErr, newAlert := alertForDiffCommitSearch(multiErr)
 	if newAlert != nil {
