@@ -24,96 +24,7 @@ import (
 )
 
 // A Store exposes methods to read and write repos and external services.
-type Store interface {
-	RepoStore() *idb.RepoStore
-	ExternalServiceStore() *idb.ExternalServiceStore
-
-	UpsertRepos(ctx context.Context, repos ...*types.Repo) error
-	ListExternalRepoSpecs(context.Context) (map[api.ExternalRepoSpec]struct{}, error)
-	UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]types.SourceInfo) error
-	SetClonedRepos(ctx context.Context, repoNames ...string) error
-	CountNotClonedRepos(ctx context.Context) (uint64, error)
-	CountUserAddedRepos(ctx context.Context) (uint64, error)
-
-	// EnqueueSyncJobs enqueues sync jobs per external service where their next_sync_at is due.
-	// If ignoreSiteAdmin is true then we only sync user added external services.
-	EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) error
-}
-
-// A Transactor can initialize and return a TxStore which operates
-// within the context of a transaction.
-type Transactor interface {
-	Transact(context.Context) (TxStore, error)
-}
-
-// A TxStore is a Store that operates within the context of a transaction.
-// Done should be called to terminate the underlying transaction. Once a TxStore
-// is done, it can't be used further. Initiate a new one from its original
-// Transactor.
-type TxStore interface {
-	Store
-	Done(error) error
-}
-
-// repoRecord is the json representation of a repository as used in this package
-// Postgres CTEs.
-type repoRecord struct {
-	ID                  api.RepoID      `json:"id"`
-	Name                string          `json:"name"`
-	URI                 *string         `json:"uri,omitempty"`
-	Description         string          `json:"description"`
-	CreatedAt           time.Time       `json:"created_at"`
-	UpdatedAt           *time.Time      `json:"updated_at,omitempty"`
-	DeletedAt           *time.Time      `json:"deleted_at,omitempty"`
-	ExternalServiceType *string         `json:"external_service_type,omitempty"`
-	ExternalServiceID   *string         `json:"external_service_id,omitempty"`
-	ExternalID          *string         `json:"external_id,omitempty"`
-	Archived            bool            `json:"archived"`
-	Fork                bool            `json:"fork"`
-	Private             bool            `json:"private"`
-	Metadata            json.RawMessage `json:"metadata"`
-	Sources             json.RawMessage `json:"sources,omitempty"`
-}
-
-func newRepoRecord(r *types.Repo) (*repoRecord, error) {
-	metadata, err := metadataColumn(r.Metadata)
-	if err != nil {
-		return nil, errors.Wrapf(err, "newRecord: metadata marshalling failed")
-	}
-
-	sources, err := sourcesColumn(r.ID, r.Sources)
-	if err != nil {
-		return nil, errors.Wrapf(err, "newRecord: sources marshalling failed")
-	}
-
-	return &repoRecord{
-		ID:                  r.ID,
-		Name:                string(r.Name),
-		URI:                 nullStringColumn(r.URI),
-		Description:         r.Description,
-		CreatedAt:           r.CreatedAt.UTC(),
-		UpdatedAt:           nullTimeColumn(r.UpdatedAt.UTC()),
-		DeletedAt:           nullTimeColumn(r.DeletedAt.UTC()),
-		ExternalServiceType: nullStringColumn(r.ExternalRepo.ServiceType),
-		ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
-		ExternalID:          nullStringColumn(r.ExternalRepo.ID),
-		Archived:            r.Archived,
-		Fork:                r.Fork,
-		Private:             r.Private,
-		Metadata:            metadata,
-		Sources:             sources,
-	}, nil
-}
-
-// WithStore is a store that can take a db handle and return
-// a new Store implementation that uses it.
-type WithStore interface {
-	With(dbutil.DB) Store
-}
-
-// DBStore implements the Store interface for reading and writing repos directly
-// from the Postgres database.
-type DBStore struct {
+type Store struct {
 	*basestore.Store
 
 	// Logger used by the store. Defaults to log15.Root().
@@ -122,26 +33,43 @@ type DBStore struct {
 	Metrics StoreMetrics
 	// Used for tracing calls to store methods. Uses opentracing.GlobalTracer() by default.
 	Tracer trace.Tracer
+	// RepoStore is a db.RepoStore using the same database handle.
+	RepoStore *idb.RepoStore
+	// ExternalServiceStore is a db.ExternalServiceStore using the same database handle.
+	ExternalServiceStore *idb.ExternalServiceStore
+	// Used to mock calls to certain methods.
+	Mocks MockStore
 
 	txtrace *trace.Trace
 	txctx   context.Context
 }
 
-// NewDBStore instantiates and returns a new DBStore with prepared statements.
-func NewDBStore(db dbutil.DB, txOpts sql.TxOptions) *DBStore {
-	return &DBStore{
-		Store:  basestore.NewWithDB(db, txOpts),
-		Log:    log15.Root(),
-		Tracer: trace.Tracer{Tracer: opentracing.GlobalTracer()},
+// NewStore instantiates and returns a new DBStore with prepared statements.
+func NewStore(db dbutil.DB, txOpts sql.TxOptions) *Store {
+	s := basestore.NewWithDB(db, txOpts)
+	return &Store{
+		Store:                s,
+		RepoStore:            idb.NewRepoStoreWith(s),
+		ExternalServiceStore: idb.NewExternalServicesStoreWith(s),
+		Log:                  log15.Root(),
+		Tracer:               trace.Tracer{Tracer: opentracing.GlobalTracer()},
 	}
 }
 
-func (s *DBStore) With(other basestore.ShareableStore) *DBStore {
-	return &DBStore{Store: s.Store.With(other)}
+func (s *Store) With(other basestore.ShareableStore) *Store {
+	return &Store{
+		Store:                s.Store.With(other),
+		RepoStore:            s.RepoStore.With(other),
+		ExternalServiceStore: s.ExternalServiceStore.With(other),
+		Log:                  s.Log,
+		Metrics:              s.Metrics,
+		Tracer:               s.Tracer,
+		Mocks:                s.Mocks,
+	}
 }
 
 // Transact returns a TxStore whose methods operate within the context of a transaction.
-func (s *DBStore) Transact(ctx context.Context) (stx TxStore, err error) {
+func (s *Store) Transact(ctx context.Context) (stx *Store, err error) {
 	tr, ctx := s.trace(ctx, "Store.Transact")
 
 	defer func(began time.Time) {
@@ -159,18 +87,21 @@ func (s *DBStore) Transact(ctx context.Context) (stx TxStore, err error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "starting transaction")
 	}
-	return &DBStore{
-		Store:   txBase,
-		Log:     s.Log,
-		Metrics: s.Metrics,
-		Tracer:  s.Tracer,
-		txtrace: tr,
-		txctx:   ctx,
+	return &Store{
+		Store:                txBase,
+		RepoStore:            s.RepoStore.With(txBase),
+		ExternalServiceStore: s.ExternalServiceStore.With(txBase),
+		Log:                  s.Log,
+		Metrics:              s.Metrics,
+		Tracer:               s.Tracer,
+		Mocks:                s.Mocks,
+		txtrace:              tr,
+		txctx:                ctx,
 	}, nil
 }
 
 // Done calls into the inner Store Done method.
-func (s *DBStore) Done(err error) error {
+func (s *Store) Done(err error) error {
 	tr := s.txtrace
 	tr.LogFields(otlog.String("event", "Store.Done"))
 
@@ -195,17 +126,7 @@ func (s *DBStore) Done(err error) error {
 	return s.Store.Done(err)
 }
 
-// RepoStore returns a db.RepoStore using the same database handle.
-func (s *DBStore) RepoStore() *idb.RepoStore {
-	return idb.NewRepoStoreWith(s)
-}
-
-// ExternalServiceStore returns a db.ExternalServiceStore using the same database handle.
-func (s *DBStore) ExternalServiceStore() *idb.ExternalServiceStore {
-	return idb.NewExternalServicesStoreWith(s)
-}
-
-func (s *DBStore) trace(ctx context.Context, family string) (*trace.Trace, context.Context) {
+func (s *Store) trace(ctx context.Context, family string) (*trace.Trace, context.Context) {
 	txctx := s.txctx
 	if txctx == nil {
 		txctx = ctx
@@ -215,7 +136,7 @@ func (s *DBStore) trace(ctx context.Context, family string) (*trace.Trace, conte
 	return tr, ctx
 }
 
-func (s *DBStore) ListExternalRepoSpecs(ctx context.Context) (ids map[api.ExternalRepoSpec]struct{}, err error) {
+func (s *Store) ListExternalRepoSpecs(ctx context.Context) (ids map[api.ExternalRepoSpec]struct{}, err error) {
 	tr, ctx := s.trace(ctx, "Store.ListExternalRepoSpecs")
 
 	defer func(began time.Time) {
@@ -276,7 +197,7 @@ type externalServiceRepo struct {
 	CloneURL          string `json:"clone_url"`
 }
 
-func (s *DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]types.SourceInfo) (err error) {
+func (s *Store) UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]types.SourceInfo) (err error) {
 	tr, ctx := s.trace(ctx, "Store.UpsertSources")
 	tr.LogFields(otlog.Int("count", len(inserts)+len(deletes)))
 
@@ -417,7 +338,7 @@ delete_sources AS (
 // SetClonedRepos updates cloned status for all repositories.
 // All repositories whose name is in repoNames will have their cloned column set to true
 // and every other repository will have it set to false.
-func (s *DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) (err error) {
+func (s *Store) SetClonedRepos(ctx context.Context, repoNames ...string) (err error) {
 	tr, ctx := s.trace(ctx, "Store.SetClonedRepos")
 	tr.LogFields(otlog.Int("count", len(repoNames)))
 
@@ -459,7 +380,7 @@ WHERE repo.id IN (SELECT id FROM cloned_repos) AND NOT cloned
 `
 
 // CountNotClonedRepos returns the number of repos whose cloned column is true.
-func (s *DBStore) CountNotClonedRepos(ctx context.Context) (count uint64, err error) {
+func (s *Store) CountNotClonedRepos(ctx context.Context) (count uint64, err error) {
 	tr, ctx := s.trace(ctx, "Store.CountNotClonedRepos")
 
 	defer func(began time.Time) {
@@ -487,7 +408,7 @@ SELECT COUNT(*) FROM repo WHERE deleted_at IS NULL AND NOT cloned
 
 // CountUserAddedRepos counts the total number of repos that have been added
 // by user owned external services.
-func (s *DBStore) CountUserAddedRepos(ctx context.Context) (count uint64, err error) {
+func (s *Store) CountUserAddedRepos(ctx context.Context) (count uint64, err error) {
 	tr, ctx := s.trace(ctx, "Store.CountUserAddedRepos")
 
 	defer func(began time.Time) {
@@ -530,7 +451,7 @@ WHERE
 // parameters
 type paginatedQuery func(cursor, limit int64) *sqlf.Query
 
-func (s *DBStore) paginate(ctx context.Context, limit, perPage int64, cursor int64, q paginatedQuery, scan scanFunc) (err error) {
+func (s *Store) paginate(ctx context.Context, limit, perPage int64, cursor int64, q paginatedQuery, scan scanFunc) (err error) {
 	const defaultPerPageLimit = 10000
 
 	if perPage <= 0 {
@@ -564,7 +485,7 @@ func (s *DBStore) paginate(ctx context.Context, limit, perPage int64, cursor int
 	return err
 }
 
-func (s *DBStore) list(ctx context.Context, q *sqlf.Query, scan scanFunc) (last, count int64, err error) {
+func (s *Store) list(ctx context.Context, q *sqlf.Query, scan scanFunc) (last, count int64, err error) {
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return 0, 0, err
@@ -578,7 +499,10 @@ func (s *DBStore) list(ctx context.Context, q *sqlf.Query, scan scanFunc) (last,
 // The cloned column is not updated by this function.
 // This method does NOT update sources in the external_services_repo table.
 // Use UpsertSources for that purpose.
-func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*types.Repo) (err error) {
+func (s *Store) UpsertRepos(ctx context.Context, repos ...*types.Repo) (err error) {
+	if s.Mocks.UpsertRepos != nil {
+		return s.Mocks.UpsertRepos(ctx, repos...)
+	}
 	tr, ctx := s.trace(ctx, "Store.UpsertRepos")
 	tr.LogFields(otlog.Int("count", len(repos)))
 
@@ -673,7 +597,7 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*types.Repo) (err er
 	return nil
 }
 
-func (s *DBStore) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) (err error) {
+func (s *Store) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) (err error) {
 	tr, ctx := s.trace(ctx, "Store.EnqueueSyncJobs")
 
 	defer func(began time.Time) {
@@ -712,7 +636,7 @@ SELECT id from due EXCEPT SELECT id from busy
 `
 
 // ListSyncJobs returns all sync jobs.
-func (s *DBStore) ListSyncJobs(ctx context.Context) ([]SyncJob, error) {
+func (s *Store) ListSyncJobs(ctx context.Context) ([]SyncJob, error) {
 	q := sqlf.Sprintf(`
 		SELECT
 			id,
@@ -972,4 +896,59 @@ func closeErr(c io.Closer, err *error) {
 	if e := c.Close(); err != nil && *err == nil {
 		*err = e
 	}
+}
+
+// repoRecord is the json representation of a repository as used in this package
+// Postgres CTEs.
+type repoRecord struct {
+	ID                  api.RepoID      `json:"id"`
+	Name                string          `json:"name"`
+	URI                 *string         `json:"uri,omitempty"`
+	Description         string          `json:"description"`
+	CreatedAt           time.Time       `json:"created_at"`
+	UpdatedAt           *time.Time      `json:"updated_at,omitempty"`
+	DeletedAt           *time.Time      `json:"deleted_at,omitempty"`
+	ExternalServiceType *string         `json:"external_service_type,omitempty"`
+	ExternalServiceID   *string         `json:"external_service_id,omitempty"`
+	ExternalID          *string         `json:"external_id,omitempty"`
+	Archived            bool            `json:"archived"`
+	Fork                bool            `json:"fork"`
+	Private             bool            `json:"private"`
+	Metadata            json.RawMessage `json:"metadata"`
+	Sources             json.RawMessage `json:"sources,omitempty"`
+}
+
+func newRepoRecord(r *types.Repo) (*repoRecord, error) {
+	metadata, err := metadataColumn(r.Metadata)
+	if err != nil {
+		return nil, errors.Wrapf(err, "newRecord: metadata marshalling failed")
+	}
+
+	sources, err := sourcesColumn(r.ID, r.Sources)
+	if err != nil {
+		return nil, errors.Wrapf(err, "newRecord: sources marshalling failed")
+	}
+
+	return &repoRecord{
+		ID:                  r.ID,
+		Name:                string(r.Name),
+		URI:                 nullStringColumn(r.URI),
+		Description:         r.Description,
+		CreatedAt:           r.CreatedAt.UTC(),
+		UpdatedAt:           nullTimeColumn(r.UpdatedAt.UTC()),
+		DeletedAt:           nullTimeColumn(r.DeletedAt.UTC()),
+		ExternalServiceType: nullStringColumn(r.ExternalRepo.ServiceType),
+		ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
+		ExternalID:          nullStringColumn(r.ExternalRepo.ID),
+		Archived:            r.Archived,
+		Fork:                r.Fork,
+		Private:             r.Private,
+		Metadata:            metadata,
+		Sources:             sources,
+	}, nil
+}
+
+// MockStore is used to mock calls to certain DBStore methods.
+type MockStore struct {
+	UpsertRepos func(ctx context.Context, repos ...*types.Repo) (err error)
 }

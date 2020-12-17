@@ -95,7 +95,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	repos.MustRegisterMetrics(db)
 
-	store := repos.NewDBStore(db, sql.TxOptions{Isolation: sql.LevelDefault})
+	store := repos.NewStore(db, sql.TxOptions{Isolation: sql.LevelDefault})
 	{
 		m := repos.NewStoreMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
@@ -115,12 +115,12 @@ func Main(enterpriseInit EnterpriseInit) {
 	scheduler := repos.NewUpdateScheduler()
 	server := &repoupdater.Server{
 		Store:           store,
-		RepoLister:      store.RepoStore(),
+		RepoLister:      store.RepoStore,
 		Scheduler:       scheduler,
 		GitserverClient: gitserver.DefaultClient,
 	}
 
-	rateLimitSyncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore())
+	rateLimitSyncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore)
 	server.RateLimitSyncer = rateLimitSyncer
 	// Attempt to perform an initial sync with all external services
 	if err := rateLimitSyncer.SyncRateLimiters(ctx); err != nil {
@@ -132,13 +132,13 @@ func Main(enterpriseInit EnterpriseInit) {
 	// All dependencies ready
 	var debugDumpers []debugserver.Dumper
 	if enterpriseInit != nil {
-		debugDumpers = enterpriseInit(db, store.RepoStore(), cf, server)
+		debugDumpers = enterpriseInit(db, store.RepoStore, cf, server)
 	}
 
 	if envvar.SourcegraphDotComMode() {
 		server.SourcegraphDotComMode = true
 
-		es, err := store.ExternalServiceStore().List(ctx, idb.ExternalServicesListOptions{
+		es, err := store.ExternalServiceStore.List(ctx, idb.ExternalServicesListOptions{
 			// On Cloud we want to fetch only site level external services here
 			NamespaceUserID: -1,
 			Kinds:           []string{extsvc.KindGitHub, extsvc.KindGitLab},
@@ -378,7 +378,7 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 
 // syncCloned will periodically list the cloned repositories on gitserver and
 // update the scheduler with the list.
-func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store repos.Store) {
+func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store *repos.Store) {
 	doSync := func() {
 		cloned, err := gitserverClient.ListCloned(ctx)
 		if err != nil {

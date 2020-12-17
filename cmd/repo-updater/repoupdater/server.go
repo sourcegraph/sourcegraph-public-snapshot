@@ -30,7 +30,7 @@ import (
 
 // Server is a repoupdater server.
 type Server struct {
-	repos.Store
+	*repos.Store
 	*repos.Syncer
 	RepoLister            repos.Lister
 	SourcegraphDotComMode bool
@@ -119,7 +119,7 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 		OrderByDirection: "ASC",
 	}
 
-	es, err := s.Store.ExternalServiceStore().List(r.Context(), args)
+	es, err := s.Store.ExternalServiceStore.List(r.Context(), args)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -157,7 +157,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		OrderByDirection: "ASC",
 	}
 
-	es, err := s.Store.ExternalServiceStore().List(r.Context(), args)
+	es, err := s.Store.ExternalServiceStore.List(r.Context(), args)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -189,7 +189,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = s.Store.ExternalServiceStore().Upsert(r.Context(), es...)
+	err = s.Store.ExternalServiceStore.Upsert(r.Context(), es...)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return

@@ -125,12 +125,12 @@ func (s GitoliteSource) makeRepo(repo *gitolite.Repo) *types.Repo {
 type GitolitePhabricatorMetadataSyncer struct {
 	sem     *semaphore.Weighted // Only one sync at a time, like it was done before.
 	counter int64               // Only sync every 10th time, like it was done before.
-	store   Store               // Use to load the external services that yielded a given repo.
+	store   *Store              // Use to load the external services that yielded a given repo.
 }
 
 // NewGitolitePhabricatorMetadataSyncer returns a GitolitePhabricatorMetadataSyncer with
 // the given parameters.
-func NewGitolitePhabricatorMetadataSyncer(s Store) *GitolitePhabricatorMetadataSyncer {
+func NewGitolitePhabricatorMetadataSyncer(s *Store) *GitolitePhabricatorMetadataSyncer {
 	return &GitolitePhabricatorMetadataSyncer{
 		sem:     semaphore.NewWeighted(1),
 		counter: -1,
@@ -173,7 +173,7 @@ func (s *GitolitePhabricatorMetadataSyncer) Sync(ctx context.Context, repos []*t
 		return nil
 	}
 
-	es, err := s.store.ExternalServiceStore().List(ctx, db.ExternalServicesListOptions{IDs: ids})
+	es, err := s.store.ExternalServiceStore.List(ctx, db.ExternalServicesListOptions{IDs: ids})
 	if err != nil {
 		return errors.Wrap(err, "gitolite-phabricator-metadata-syncer.store.list-external-services")
 	}
