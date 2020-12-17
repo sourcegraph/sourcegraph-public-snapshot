@@ -280,3 +280,14 @@ func Benchmark_highlightMatches(b *testing.B) {
 		_ = highlightMatches(rx, lines)
 	}
 }
+
+// searchCommitsInRepo is a blocking version of searchCommitsInRepoStream.
+func searchCommitsInRepo(ctx context.Context, op search.CommitParameters) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
+	for event := range searchCommitsInRepoStream(ctx, op) {
+		results = append(results, event.Results...)
+		limitHit = event.LimitHit
+		timedOut = event.TimedOut
+		err = event.Error
+	}
+	return results, limitHit, timedOut, err
+}
