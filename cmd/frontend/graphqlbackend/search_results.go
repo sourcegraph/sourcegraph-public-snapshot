@@ -1624,17 +1624,21 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 	return resolved, nil, nil
 }
 
-type DiffCommitErr struct {
+type DiffCommitError struct {
 	ResultType string
 	Max        int
 }
 
-func (DiffCommitErr) Error() string {
-	return "diff commit error"
+type DiffCommitRepoLimitErr DiffCommitError
+type DiffCommitTimeLimitErr DiffCommitError
+
+func (DiffCommitRepoLimitErr) Error() string {
+	return "repo limit error"
 }
 
-type DiffCommitRepoLimitErr = DiffCommitErr
-type DiffCommitTimeLimitErr = DiffCommitErr
+func (DiffCommitTimeLimitErr) Error() string {
+	return "time limit error"
+}
 
 func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameters, resultType string) error {
 	repos, err := getRepos(ctx, args.RepoPromise)

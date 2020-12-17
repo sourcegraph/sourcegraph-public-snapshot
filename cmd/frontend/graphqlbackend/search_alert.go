@@ -515,7 +515,7 @@ func alertForDiffCommitSearch(multiErr *multierror.Error) (newMultiErr *multierr
 				}
 				continue
 			}
-			if errors.As(err, tErr) {
+			if ok := errors.As(err, tErr); ok {
 				alert = &searchAlert{
 					prometheusType: "exceeded_diff_commit_with_time_search_limit",
 					title:          fmt.Sprintf("Too many matching repositories for %s search to handle", tErr.ResultType),
