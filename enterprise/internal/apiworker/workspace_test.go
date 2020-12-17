@@ -41,7 +41,7 @@ func TestPrepareWorkspace(t *testing.T) {
 
 	var commands [][]string
 	for _, call := range runner.RunFunc.History() {
-		commands = append(commands, call.Arg1.Commands)
+		commands = append(commands, call.Arg1.Command)
 	}
 
 	expectedCommands := [][]string{

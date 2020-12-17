@@ -167,7 +167,6 @@ Referenced by:
  finished_at           | timestamp with time zone | 
  process_after         | timestamp with time zone | 
  num_resets            | integer                  | not null default 0
- unsynced              | boolean                  | not null default false
  closing               | boolean                  | not null default false
  num_failures          | integer                  | not null default 0
  log_contents          | text                     | 
@@ -702,6 +701,7 @@ Indexes:
  outfile         | text                     | not null
  log_contents    | text                     | 
  execution_logs  | json[]                   | 
+ local_steps     | text[]                   | not null
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
 Check constraints:

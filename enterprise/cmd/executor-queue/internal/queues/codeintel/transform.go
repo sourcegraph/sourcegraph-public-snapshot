@@ -3,6 +3,7 @@ package codeintel
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -25,7 +26,7 @@ func transformRecord(index store.Index, config *Config) (apiclient.Job, error) {
 	if index.Indexer != "" {
 		dockerSteps = append(dockerSteps, apiclient.DockerStep{
 			Image:    index.Indexer,
-			Commands: index.IndexerArgs,
+			Commands: append(index.LocalSteps, strings.Join(index.IndexerArgs, " ")),
 			Dir:      index.Root,
 			Env:      nil,
 		})

@@ -44,7 +44,7 @@ func TestLsifGoJobRecognizerInferIndexJobsGoModRoot(t *testing.T) {
 				{
 					Root:     "",
 					Image:    lsifGoImage,
-					Commands: []string{"go", "mod", "download"},
+					Commands: []string{"go mod download"},
 				},
 			},
 			Root:        "",
@@ -72,7 +72,7 @@ func TestLsifGoJobRecognizerInferIndexJobsGoModSubdirs(t *testing.T) {
 				{
 					Root:     "a",
 					Image:    lsifGoImage,
-					Commands: []string{"go", "mod", "download"},
+					Commands: []string{"go mod download"},
 				},
 			},
 			Root:        "a",
@@ -85,7 +85,7 @@ func TestLsifGoJobRecognizerInferIndexJobsGoModSubdirs(t *testing.T) {
 				{
 					Root:     "b",
 					Image:    lsifGoImage,
-					Commands: []string{"go", "mod", "download"},
+					Commands: []string{"go mod download"},
 				},
 			},
 			Root:        "b",
@@ -98,7 +98,7 @@ func TestLsifGoJobRecognizerInferIndexJobsGoModSubdirs(t *testing.T) {
 				{
 					Root:     "c",
 					Image:    lsifGoImage,
-					Commands: []string{"go", "mod", "download"},
+					Commands: []string{"go mod download"},
 				},
 			},
 			Root:        "c",

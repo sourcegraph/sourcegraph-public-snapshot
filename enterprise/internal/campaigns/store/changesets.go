@@ -53,7 +53,6 @@ var ChangesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.process_after"),
 	sqlf.Sprintf("changesets.num_resets"),
 	sqlf.Sprintf("changesets.num_failures"),
-	sqlf.Sprintf("changesets.unsynced"),
 	sqlf.Sprintf("changesets.closing"),
 }
 
@@ -88,7 +87,6 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("process_after"),
 	sqlf.Sprintf("num_resets"),
 	sqlf.Sprintf("num_failures"),
-	sqlf.Sprintf("unsynced"),
 	sqlf.Sprintf("closing"),
 }
 
@@ -138,7 +136,6 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *campaigns.Chang
 		nullTimeColumn(c.ProcessAfter),
 		c.NumResets,
 		c.NumFailures,
-		c.Unsynced,
 		c.Closing,
 	}
 
@@ -180,7 +177,7 @@ func (s *Store) CreateChangeset(ctx context.Context, c *campaigns.Changeset) err
 var createChangesetQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CreateChangeset
 INSERT INTO changesets (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
@@ -331,7 +328,7 @@ func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyn
 	results := make([]*campaigns.ChangesetSyncData, 0)
 	err := s.query(ctx, q, func(sc scanner) (err error) {
 		var h campaigns.ChangesetSyncData
-		if err = scanChangesetSyncData(&h, sc); err != nil {
+		if err := scanChangesetSyncData(&h, sc); err != nil {
 			return err
 		}
 		results = append(results, &h)
@@ -409,7 +406,6 @@ type ListChangesetsOpts struct {
 	ExternalReviewState *campaigns.ChangesetReviewState
 	ExternalCheckState  *campaigns.ChangesetCheckState
 	OwnedByCampaignID   int64
-	OnlySynced          bool
 	ExternalServiceID   string
 	TextSearch          []ListChangesetsTextSearchExpr
 }
@@ -541,9 +537,6 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	if opts.OwnedByCampaignID != 0 {
 		preds = append(preds, sqlf.Sprintf("changesets.owned_by_campaign_id = %s", opts.OwnedByCampaignID))
 	}
-	if opts.OnlySynced {
-		preds = append(preds, sqlf.Sprintf("changesets.unsynced IS FALSE"))
-	}
 	if opts.ExternalServiceID != "" {
 		preds = append(preds, sqlf.Sprintf("repo.external_service_id = %s", opts.ExternalServiceID))
 	}
@@ -584,7 +577,7 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) er
 var updateChangesetQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_changesets.go:UpdateChangeset
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
@@ -758,7 +751,6 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&dbutil.NullTime{Time: &t.ProcessAfter},
 		&t.NumResets,
 		&t.NumFailures,
-		&t.Unsynced,
 		&t.Closing,
 	)
 	if err != nil {
@@ -828,7 +820,8 @@ const getChangesetStatsFmtstr = `
 -- source: enterprise/internal/campaigns/store_changesets.go:GetChangesetsStats
 SELECT
 	COUNT(*) AS total,
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'UNPUBLISHED') AS unpublished,
+	-- Include all changesets that aren't published yet and are not imported.
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'UNPUBLISHED' AND current_spec_id IS NOT NULL) AS unpublished,
 	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'CLOSED') AS closed,
 	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'DRAFT') AS draft,
 	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.external_state = 'MERGED') AS merged,

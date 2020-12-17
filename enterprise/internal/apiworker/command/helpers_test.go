@@ -11,7 +11,7 @@ func makeTestOperation() *observation.Operation {
 }
 
 var commandComparer = cmp.Comparer(func(x, y command) bool {
-	return x.Key == y.Key && x.Dir == y.Dir && compareStrings(x.Env, y.Env) && compareStrings(x.Commands, y.Commands)
+	return x.Key == y.Key && x.Dir == y.Dir && compareStrings(x.Env, y.Env) && compareStrings(x.Command, y.Command)
 })
 
 func compareStrings(x, y []string) bool {

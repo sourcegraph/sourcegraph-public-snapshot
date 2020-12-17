@@ -98,9 +98,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		},
 		"import": {
 			changeset: ct.TestChangesetOpts{
-				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 				ExternalID:       githubPR.ID,
-				Unsynced:         true,
 			},
 			plan: &Plan{
 				Ops: Operations{campaigns.ReconcilerOperationImport},
@@ -113,7 +112,6 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalID:       githubPR.ID,
 				ExternalBranch:   githubHeadRef,
 				ExternalState:    campaigns.ChangesetExternalStateOpen,
-				Unsynced:         false,
 				Title:            githubPR.Title,
 				Body:             githubPR.Body,
 				DiffStat:         state.DiffStat,
@@ -121,9 +119,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		},
 		"import and not-found error": {
 			changeset: ct.TestChangesetOpts{
-				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 				ExternalID:       githubPR.ID,
-				Unsynced:         true,
 			},
 			plan: &Plan{
 				Ops: Operations{campaigns.ReconcilerOperationImport},

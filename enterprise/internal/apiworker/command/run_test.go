@@ -7,7 +7,7 @@ import (
 
 func TestRunCommandEmptyCommand(t *testing.T) {
 	command := command{
-		Commands:  []string{},
+		Command:   []string{},
 		Operation: makeTestOperation(),
 	}
 	if err := runCommand(context.Background(), command, nil); err != ErrIllegalCommand {
@@ -17,7 +17,7 @@ func TestRunCommandEmptyCommand(t *testing.T) {
 
 func TestRunCommandIllegalCommand(t *testing.T) {
 	command := command{
-		Commands:  []string{"kill"},
+		Command:   []string{"kill"},
 		Operation: makeTestOperation(),
 	}
 	if err := runCommand(context.Background(), command, nil); err != ErrIllegalCommand {

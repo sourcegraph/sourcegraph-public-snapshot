@@ -107,7 +107,7 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 				{
 					Root:     "",
 					Image:    nodeInstallImage,
-					Commands: []string{"npm", "install"},
+					Commands: []string{"npm install"},
 				},
 			},
 			Root:        "",
@@ -120,7 +120,7 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 				{
 					Root:     "",
 					Image:    nodeInstallImage,
-					Commands: []string{"npm", "install"},
+					Commands: []string{"npm install"},
 				},
 			},
 			Root:        "foo/baz",
@@ -133,12 +133,12 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 				{
 					Root:     "",
 					Image:    nodeInstallImage,
-					Commands: []string{"npm", "install"},
+					Commands: []string{"npm install"},
 				},
 				{
 					Root:     "foo/bar",
 					Image:    nodeInstallImage,
-					Commands: []string{"yarn", "--ignore-engines"},
+					Commands: []string{"yarn --ignore-engines"},
 				},
 			},
 			Root:        "foo/bar/baz",
@@ -151,17 +151,17 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 				{
 					Root:     "",
 					Image:    nodeInstallImage,
-					Commands: []string{"npm", "install"},
+					Commands: []string{"npm install"},
 				},
 				{
 					Root:     "foo/bar",
 					Image:    nodeInstallImage,
-					Commands: []string{"yarn", "--ignore-engines"},
+					Commands: []string{"yarn --ignore-engines"},
 				},
 				{
 					Root:     "foo/bar/bonk",
 					Image:    nodeInstallImage,
-					Commands: []string{"npm", "install"},
+					Commands: []string{"npm install"},
 				},
 			},
 			Root:        "foo/bar/bonk",
