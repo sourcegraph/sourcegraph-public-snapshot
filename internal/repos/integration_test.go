@@ -57,8 +57,6 @@ func TestIntegration(t *testing.T) {
 		test func(*testing.T, repos.Store) func(*testing.T)
 	}{
 		{"DBStore/SyncRateLimiters", testSyncRateLimiters},
-		{"DBStore/InsertRepos", testStoreInsertRepos},
-		{"DBStore/DeleteRepos", testStoreDeleteRepos},
 		{"DBStore/UpsertRepos", testStoreUpsertRepos},
 		{"DBStore/UpsertSources", testStoreUpsertSources},
 		{"DBStore/EnqueueSyncJobs", testStoreEnqueueSyncJobs(db, dbstore)},

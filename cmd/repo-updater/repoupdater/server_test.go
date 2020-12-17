@@ -343,7 +343,7 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 				}
 
 				storedRepos := tc.repos.Clone()
-				err = store.InsertRepos(ctx, storedRepos...)
+				err = store.RepoStore().Create(ctx, storedRepos...)
 				if err != nil {
 					t.Fatalf("failed to prepare store: %v", err)
 				}
@@ -427,7 +427,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 			Metadata: new(github.Repository),
 		}
 
-		if err := store.InsertRepos(ctx, &repo); err != nil {
+		if err := store.RepoStore().Create(ctx, &repo); err != nil {
 			t.Fatal(err)
 		}
 
@@ -556,7 +556,7 @@ func testServerRepoExternalServices(t *testing.T, store repos.Store) func(t *tes
 			Metadata: new(github.Repository),
 		}).With(types.Opt.RepoSources(service1.URN(), service2.URN()))
 
-		if err := store.InsertRepos(ctx, repoNoSources, repoSources); err != nil {
+		if err := store.RepoStore().Create(ctx, repoNoSources, repoSources); err != nil {
 			t.Fatal(err)
 		}
 
@@ -750,7 +750,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 					}
 				}
 
-				err := store.InsertRepos(ctx, stored...)
+				err := store.RepoStore().Create(ctx, stored...)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -760,7 +760,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 					for _, r := range stored {
 						ids = append(ids, r.ID)
 					}
-					err := store.DeleteRepos(ctx, ids...)
+					err := store.RepoStore().Delete(ctx, ids...)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -1220,7 +1220,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 					ctx := context.Background()
 
 					rs := tc.stored.Clone()
-					err := store.InsertRepos(ctx, rs...)
+					err := store.RepoStore().Create(ctx, rs...)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -1236,7 +1236,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 						for _, r := range tc.stored {
 							ids = append(ids, r.ID)
 						}
-						err := store.DeleteRepos(ctx, ids...)
+						err := store.RepoStore().Delete(ctx, ids...)
 						if err != nil {
 							t.Fatal(err)
 						}

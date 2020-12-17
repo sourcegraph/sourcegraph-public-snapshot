@@ -622,7 +622,7 @@ func testSyncerSync(t *testing.T, s repos.Store) func(*testing.T) {
 
 				if st != nil && len(tc.stored) > 0 {
 					cloned := tc.stored.Clone()
-					if err := st.InsertRepos(ctx, cloned...); err != nil {
+					if err := st.RepoStore().Create(ctx, cloned...); err != nil {
 						t.Fatalf("failed to prepare store: %v", err)
 					}
 				}
@@ -759,7 +759,7 @@ func testSyncRepo(t *testing.T, s repos.Store) func(*testing.T) {
 				}()
 
 				if len(tc.stored) > 0 {
-					if err := st.InsertRepos(ctx, tc.stored.Clone()...); err != nil {
+					if err := st.RepoStore().Create(ctx, tc.stored.Clone()...); err != nil {
 						t.Fatalf("failed to prepare store: %v", err)
 					}
 				}
@@ -1091,7 +1091,7 @@ func testSyncRun(db *sql.DB) func(t *testing.T, store repos.Store) func(t *testi
 			}
 
 			// Initial repos in store
-			if err := store.InsertRepos(ctx, stored...); err != nil {
+			if err := store.RepoStore().Create(ctx, stored...); err != nil {
 				t.Fatal(err)
 			}
 

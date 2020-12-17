@@ -102,7 +102,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			},
 		},
 	}
-	err = reposStore.InsertRepos(ctx, &repo)
+	err = reposStore.RepoStore().Create(ctx, &repo)
 	if err != nil {
 		t.Fatal(err)
 	}
