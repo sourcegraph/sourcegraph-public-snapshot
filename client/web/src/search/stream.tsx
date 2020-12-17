@@ -274,14 +274,24 @@ function toGQLCommitMatch(commit: CommitMatch): GQL.ICommitSearchResult {
 
 export type StreamingResultsState = 'loading' | 'error' | 'complete'
 
-export interface AggregateStreamingSearchResults {
+interface BaseAggregateResults {
     state: StreamingResultsState
     results: GQL.SearchResult[]
     alert?: Alert
     filters: Filter[]
     progress: Progress
-    error?: Error
 }
+
+interface SuccessfulAggregateResults extends BaseAggregateResults {
+    state: 'loading' | 'complete'
+}
+
+interface ErrorAggregateResults extends BaseAggregateResults {
+    state: 'error'
+    error: Error
+}
+
+export type AggregateStreamingSearchResults = SuccessfulAggregateResults | ErrorAggregateResults
 
 const emptyAggregateResults: AggregateStreamingSearchResults = {
     state: 'loading',
