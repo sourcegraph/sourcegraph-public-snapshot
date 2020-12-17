@@ -31,7 +31,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 							Query:             `sum(increase(src_upload_queue_uploads_total[30m])) / sum(increase(src_codeintel_upload_queue_processor_total[30m]))`,
 							DataMayNotExist:   true,
 							Warning:           monitoring.Alert().GreaterOrEqual(5),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("rate of (enqueues / processed)"),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("rate of (enqueued / processed)"),
 							Owner:             monitoring.ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},

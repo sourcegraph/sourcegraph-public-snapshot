@@ -522,7 +522,7 @@ func Frontend() *monitoring.Container {
 							Query:             `sum(increase(src_dirty_repositories_total[30m])) / sum(increase(src_codeintel_commit_graph_updater_total[30m]))`,
 							DataMayNotExist:   true,
 							Warning:           monitoring.Alert().GreaterOrEqual(5),
-							PanelOptions:      monitoring.PanelOptions().LegendFormat("rate of (enqueues / processed)"),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("rate of (enqueued / processed)"),
 							Owner:             monitoring.ObservableOwnerCodeIntel,
 							PossibleSolutions: "none",
 						},
