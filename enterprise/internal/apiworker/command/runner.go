@@ -1,6 +1,10 @@
 package command
 
-import "context"
+import (
+	"context"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+)
 
 // Runner is the interface between an executor and the host on which commands
 // are invoked. Having this interface at this level allows us to use the same
@@ -27,6 +31,7 @@ type CommandSpec struct {
 	Command    []string
 	Dir        string
 	Env        []string
+	Operation  *observation.Operation
 }
 
 type Options struct {
@@ -64,12 +69,12 @@ type ResourceOptions struct {
 }
 
 // NewRunner creates a new runner with the given options.
-func NewRunner(dir string, logger *Logger, options Options) Runner {
+func NewRunner(dir string, logger *Logger, options Options, operations *Operations) Runner {
 	if !options.FirecrackerOptions.Enabled {
 		return &dockerRunner{dir: dir, logger: logger, options: options}
 	}
 
-	return &firecrackerRunner{name: options.ExecutorName, dir: dir, logger: logger, options: options}
+	return &firecrackerRunner{name: options.ExecutorName, dir: dir, logger: logger, options: options, operations: operations}
 }
 
 type dockerRunner struct {
@@ -89,34 +94,35 @@ func (r *dockerRunner) Teardown(ctx context.Context) error {
 }
 
 func (r *dockerRunner) Run(ctx context.Context, command CommandSpec) error {
-	return runCommand(ctx, r.logger, formatRawOrDockerCommand(command, r.dir, r.options))
+	return runCommand(ctx, formatRawOrDockerCommand(command, r.dir, r.options), r.logger)
 }
 
 type firecrackerRunner struct {
-	name    string
-	dir     string
-	logger  *Logger
-	options Options
+	name       string
+	dir        string
+	logger     *Logger
+	options    Options
+	operations *Operations
 }
 
 var _ Runner = &firecrackerRunner{}
 
-func (r *firecrackerRunner) Setup(ctx context.Context, imageNames, scripts []string) error {
-	return setupFirecracker(ctx, defaultRunner, r.logger, r.name, r.dir, imageNames, scripts, r.options)
+func (r *firecrackerRunner) Setup(ctx context.Context, imageNames, scriptPaths []string) error {
+	return setupFirecracker(ctx, defaultRunner, r.logger, r.name, r.dir, imageNames, scriptPaths, r.options, r.operations)
 }
 
 func (r *firecrackerRunner) Teardown(ctx context.Context) error {
-	return teardownFirecracker(ctx, defaultRunner, r.logger, r.name)
+	return teardownFirecracker(ctx, defaultRunner, r.logger, r.name, r.options, r.operations)
 }
 
-func (r *firecrackerRunner) Run(ctx context.Context, cx CommandSpec) error {
-	return runCommand(ctx, r.logger, formatFirecrackerCommand(cx, r.name, r.dir, r.options))
+func (r *firecrackerRunner) Run(ctx context.Context, command CommandSpec) error {
+	return runCommand(ctx, formatFirecrackerCommand(command, r.name, r.dir, r.options), r.logger)
 }
 
 type runnerWrapper struct{}
 
 var defaultRunner = &runnerWrapper{}
 
-func (runnerWrapper) RunCommand(ctx context.Context, logger *Logger, command command) error {
-	return runCommand(ctx, logger, command)
+func (runnerWrapper) RunCommand(ctx context.Context, command command, logger *Logger) error {
+	return runCommand(ctx, command, logger)
 }

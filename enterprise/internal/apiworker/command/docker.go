@@ -14,10 +14,11 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) com
 	// TODO - make this a non-special case
 	if spec.Image == "" {
 		return command{
-			Key:     spec.Key,
-			Command: spec.Command,
-			Dir:     filepath.Join(dir, spec.Dir),
-			Env:     spec.Env,
+			Key:       spec.Key,
+			Command:   spec.Command,
+			Dir:       filepath.Join(dir, spec.Dir),
+			Env:       spec.Env,
+			Operation: spec.Operation,
 		}
 	}
 
@@ -33,6 +34,7 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) com
 			spec.Image,
 			spec.ScriptPath,
 		),
+		Operation: spec.Operation,
 	}
 }
 

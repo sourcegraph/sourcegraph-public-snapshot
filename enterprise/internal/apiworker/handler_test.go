@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestHandle(t *testing.T) {
@@ -56,9 +57,10 @@ func TestHandle(t *testing.T) {
 	}
 
 	handler := &handler{
-		idSet:   newIDSet(),
-		options: Options{},
-		runnerFactory: func(dir string, logger *command.Logger, options command.Options) command.Runner {
+		idSet:      newIDSet(),
+		options:    Options{},
+		operations: command.MakeOperations(&observation.TestContext),
+		runnerFactory: func(dir string, logger *command.Logger, options command.Options, operations *command.Operations) command.Runner {
 			if dir == "" {
 				// The handler allocates a temporary runner to invoke the git commands,
 				// which do not have a specific directory to run in. We don't need to

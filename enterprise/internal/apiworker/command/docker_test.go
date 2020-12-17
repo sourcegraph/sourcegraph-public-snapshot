@@ -9,9 +9,10 @@ import (
 func TestFormatRawOrDockerCommandRaw(t *testing.T) {
 	actual := formatRawOrDockerCommand(
 		CommandSpec{
-			Command: []string{"ls", "-a"},
-			Dir:     "subdir",
-			Env:     []string{"TEST=true"},
+			Command:   []string{"ls", "-a"},
+			Dir:       "subdir",
+			Env:       []string{"TEST=true"},
+			Operation: makeTestOperation(),
 		},
 		"/proj/src",
 		Options{},
@@ -22,7 +23,7 @@ func TestFormatRawOrDockerCommandRaw(t *testing.T) {
 		Dir:     "/proj/src/subdir",
 		Env:     []string{"TEST=true"},
 	}
-	if diff := cmp.Diff(expected, actual); diff != "" {
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
 	}
 }
@@ -34,6 +35,7 @@ func TestFormatRawOrDockerCommandDockerScript(t *testing.T) {
 			ScriptPath: "myscript.sh",
 			Dir:        "subdir",
 			Env:        []string{"TEST=true"},
+			Operation:  makeTestOperation(),
 		},
 		"/proj/src",
 		Options{
@@ -59,7 +61,7 @@ func TestFormatRawOrDockerCommandDockerScript(t *testing.T) {
 			"myscript.sh",
 		},
 	}
-	if diff := cmp.Diff(expected, actual); diff != "" {
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
 	}
 }
@@ -82,7 +84,7 @@ func TestFormatRawOrDockerCommandDockerCommand(t *testing.T) {
 		Env: []string{"TEST=true"},
 		Dir: "/proj/src/subdir",
 	}
-	if diff := cmp.Diff(expected, actual); diff != "" {
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
 	}
 }
