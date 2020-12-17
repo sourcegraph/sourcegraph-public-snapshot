@@ -598,11 +598,29 @@ func TestGetLastSyncError(t *testing.T) {
 		t.Fatalf("Expected empty error, have %q", lastSyncError)
 	}
 
+	// Could have failure message
+	_, err = dbconn.Global.Exec(`
+INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at)
+VALUES ($1,'errored', now())
+`, es.ID)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lastSyncError, err = (&ExternalServiceStore{}).GetLastSyncError(ctx, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if lastSyncError != "" {
+		t.Fatalf("Expected empty error, have %q", lastSyncError)
+	}
+
 	// Add sync error
 	expectedError := "oops"
 	_, err = dbconn.Global.Exec(`
-INSERT INTO external_service_sync_jobs (external_service_id, failure_message, state)
-VALUES ($1,$2,'errored')
+INSERT INTO external_service_sync_jobs (external_service_id, failure_message, state, finished_at)
+VALUES ($1,$2,'errored', now())
 `, es.ID, expectedError)
 
 	if err != nil {

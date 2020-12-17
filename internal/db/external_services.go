@@ -790,7 +790,7 @@ ORDER BY finished_at DESC
 LIMIT 1
 `, id)
 
-	lastError, _, err := basestore.ScanFirstString(e.Query(ctx, q))
+	lastError, _, err := basestore.ScanFirstNullString(e.Query(ctx, q))
 	return lastError, err
 }
 

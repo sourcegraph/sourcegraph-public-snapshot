@@ -49,7 +49,7 @@ func TestTransformRecord(t *testing.T) {
 			},
 			{
 				Image:    "lsif-node",
-				Commands: []string{"-p", "."},
+				Commands: []string{"-p ."},
 				Dir:      "web",
 			},
 		},
