@@ -100,8 +100,11 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				NumResets:       18,
 				NumFailures:     25,
 
-				Unsynced: i != 0,
-				Closing:  true,
+				Closing: true,
+			}
+
+			if i != 0 {
+				th.PublicationState = campaigns.ChangesetPublicationStateUnpublished
 			}
 
 			// Only set these fields on a subset to make sure that
@@ -533,13 +536,13 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				opts: ListChangesetsOpts{
 					PublicationState: &statePublished,
 				},
-				wantCount: 3,
+				wantCount: 1,
 			},
 			{
 				opts: ListChangesetsOpts{
 					PublicationState: &stateUnpublished,
 				},
-				wantCount: 0,
+				wantCount: 2,
 			},
 			{
 				opts: ListChangesetsOpts{
@@ -606,12 +609,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			{
 				opts: ListChangesetsOpts{
 					OwnedByCampaignID: int64(1),
-				},
-				wantCount: 1,
-			},
-			{
-				opts: ListChangesetsOpts{
-					OnlySynced: true,
 				},
 				wantCount: 1,
 			},
@@ -896,11 +893,11 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		})
 
 		c4 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-			Repo:            repo.ID,
-			Campaign:        campaignID,
-			OwnedByCampaign: 0,
-			Unsynced:        true,
-			ReconcilerState: campaigns.ReconcilerStateQueued,
+			Repo:             repo.ID,
+			Campaign:         campaignID,
+			OwnedByCampaign:  0,
+			PublicationState: campaigns.ChangesetPublicationStateUnpublished,
+			ReconcilerState:  campaigns.ReconcilerStateQueued,
 		})
 
 		c5 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
@@ -936,9 +933,9 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		})
 
 		ct.ReloadAndAssertChangeset(t, ctx, s, c4, ct.ChangesetAssertions{
-			Repo:            repo.ID,
-			ReconcilerState: campaigns.ReconcilerStateQueued,
-			Unsynced:        true,
+			Repo:             repo.ID,
+			ReconcilerState:  campaigns.ReconcilerStateQueued,
+			PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 		})
 
 		ct.ReloadAndAssertChangeset(t, ctx, s, c5, ct.ChangesetAssertions{
