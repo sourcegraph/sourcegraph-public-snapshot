@@ -344,7 +344,7 @@ func testServerSetRepoEnabled(t *testing.T, store *repos.Store) func(t *testing.
 					t.Fatalf("failed to prepare store: %v", err)
 				}
 
-				s := &Server{Store: store, RepoLister: store.RepoStore}
+				s := &Server{Store: store}
 				srv := httptest.NewServer(s.Handler())
 				defer srv.Close()
 				cli := repoupdater.Client{URL: srv.URL}
@@ -428,42 +428,41 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *repos.Store) func(t *testi
 		}
 
 		type testCase struct {
-			name       string
-			store      *repos.Store
-			repoLister repos.Lister
-			repo       api.RepoName
-			res        *protocol.RepoUpdateResponse
-			err        string
+			name     string
+			store    *repos.Store
+			repo     api.RepoName
+			res      *protocol.RepoUpdateResponse
+			err      string
+			teardown func()
 		}
 
 		var testCases []testCase
 		testCases = append(testCases,
 			func() testCase {
-				err := errors.New("boom")
+				idb.Mocks.Repos.List = func(v0 context.Context, v1 idb.ReposListOptions) ([]*types.Repo, error) {
+					return nil, errors.New("boom")
+				}
 				return testCase{
 					name:  "returns an error on store failure",
 					store: store,
-					repoLister: &repoListerWithErrors{
-						RepoStore:    store.RepoStore,
-						ListReposErr: err,
+					err:   `store.list-repos: boom`,
+					teardown: func() {
+						idb.Mocks.Repos = idb.MockRepos{}
 					},
-					err: `store.list-repos: boom`,
 				}
 			}(),
 			testCase{
-				name:       "missing repo",
-				store:      store,
-				repoLister: store.RepoStore, // empty store
-				repo:       "foo",
-				err:        `repo "foo" not found in store`,
+				name:  "missing repo",
+				store: store,
+				repo:  "foo",
+				err:   `repo "foo" not found in store`,
 			},
 			func() testCase {
 				repo := repo.Clone()
 				return testCase{
-					name:       "existing repo",
-					store:      store,
-					repoLister: store.RepoStore,
-					repo:       repo.Name,
+					name:  "existing repo",
+					store: store,
+					repo:  repo.Name,
 					res: &protocol.RepoUpdateResponse{
 						ID:   repo.ID,
 						Name: string(repo.Name),
@@ -477,7 +476,11 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *repos.Store) func(t *testi
 			ctx := context.Background()
 
 			t.Run(tc.name, func(t *testing.T) {
-				s := &Server{Store: tc.store, RepoLister: tc.repoLister, Scheduler: &fakeScheduler{}}
+				if tc.teardown != nil {
+					defer tc.teardown()
+				}
+
+				s := &Server{Store: tc.store, Scheduler: &fakeScheduler{}}
 				srv := httptest.NewServer(s.Handler())
 				defer srv.Close()
 				cli := repoupdater.Client{URL: srv.URL}
@@ -578,7 +581,7 @@ func testServerRepoExternalServices(t *testing.T, store *repos.Store) func(t *te
 			err:    "repository with ID 42 does not exist",
 		}}
 
-		s := &Server{Store: store, RepoLister: store.RepoStore}
+		s := &Server{Store: store}
 		srv := httptest.NewServer(s.Handler())
 		defer srv.Close()
 		cli := repoupdater.Client{URL: srv.URL}
@@ -773,21 +776,21 @@ func testServerStatusMessages(t *testing.T, store *repos.Store) func(t *testing.
 				}
 
 				if tc.sourcerErr != nil || tc.listRepoErr != nil {
-					repoLister := &repoListerWithErrors{
-						RepoStore:    store.RepoStore,
-						ListReposErr: tc.listRepoErr,
+					idb.Mocks.Repos.List = func(v0 context.Context, v1 idb.ReposListOptions) ([]*types.Repo, error) {
+						return nil, tc.listRepoErr
 					}
-
+					defer func() {
+						idb.Mocks.Repos.List = nil
+					}()
 					sourcer := repos.NewFakeSourcer(tc.sourcerErr, repos.NewFakeSource(githubService, nil))
 					// Run Sync so that possibly `LastSyncErrors` is set
 					syncer.Sourcer = sourcer
-					_ = syncer.SyncExternalService(ctx, store, repoLister, githubService.ID, time.Millisecond)
+					_ = syncer.SyncExternalService(ctx, store, githubService.ID, time.Millisecond)
 				}
 
 				s := &Server{
 					Syncer:          syncer,
 					Store:           store,
-					RepoLister:      store.RepoStore,
 					GitserverClient: gitserverClient,
 				}
 
@@ -1242,7 +1245,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(
 					syncer := &repos.Syncer{
 						Now: clock.Now,
 					}
-					s := &Server{Syncer: syncer, Store: store, RepoLister: store.RepoStore}
+					s := &Server{Syncer: syncer, Store: store}
 					if tc.githubDotComSource != nil {
 						s.SourcegraphDotComMode = true
 						s.GithubDotComSource = tc.githubDotComSource
@@ -1401,17 +1404,4 @@ func formatJSON(s string) string {
 		panic(err)
 	}
 	return formatted
-}
-
-type repoListerWithErrors struct {
-	*idb.RepoStore
-
-	ListReposErr error
-}
-
-func (s *repoListerWithErrors) List(ctx context.Context, args idb.ReposListOptions) ([]*types.Repo, error) {
-	if s.ListReposErr != nil {
-		return nil, s.ListReposErr
-	}
-	return s.RepoStore.List(ctx, args)
 }

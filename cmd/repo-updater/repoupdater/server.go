@@ -32,7 +32,6 @@ import (
 type Server struct {
 	*repos.Store
 	*repos.Syncer
-	RepoLister            repos.Lister
 	SourcegraphDotComMode bool
 	GithubDotComSource    interface {
 		GetRepo(ctx context.Context, nameWithOwner string) (*types.Repo, error)
@@ -93,7 +92,7 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	rs, err := s.RepoLister.List(r.Context(), db.ReposListOptions{
+	rs, err := s.Store.RepoStore.List(r.Context(), db.ReposListOptions{
 		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
@@ -137,7 +136,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rs, err := s.RepoLister.List(r.Context(), db.ReposListOptions{
+	rs, err := s.Store.RepoStore.List(r.Context(), db.ReposListOptions{
 		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
@@ -316,7 +315,7 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 		tr.Finish()
 	}()
 
-	rs, err := s.RepoLister.List(ctx, db.ReposListOptions{Names: []string{string(req.Repo)}})
+	rs, err := s.Store.RepoStore.List(ctx, db.ReposListOptions{Names: []string{string(req.Repo)}})
 	if err != nil {
 		return nil, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos")
 	}
@@ -449,7 +448,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	list, err := s.RepoLister.List(ctx, db.ReposListOptions{
+	list, err := s.Store.RepoStore.List(ctx, db.ReposListOptions{
 		Names: []string{string(args.Repo)},
 	})
 	if err != nil {
