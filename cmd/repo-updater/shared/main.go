@@ -95,17 +95,11 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	repos.MustRegisterMetrics(db)
 
-	var store repos.Store
+	store := repos.NewDBStore(db, sql.TxOptions{Isolation: sql.LevelDefault})
 	{
 		m := repos.NewStoreMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
-
-		store = repos.NewObservedStore(
-			repos.NewDBStore(db, sql.TxOptions{Isolation: sql.LevelDefault}),
-			log15.Root(),
-			m,
-			trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		)
+		store.Metrics = m
 	}
 
 	cf := httpcli.NewExternalHTTPClientFactory()

@@ -7,14 +7,19 @@ import (
 	"io"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/opentracing/opentracing-go"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -110,11 +115,25 @@ type WithStore interface {
 // from the Postgres database.
 type DBStore struct {
 	*basestore.Store
+
+	// Logger used by the store. Defaults to log15.Root().
+	Log logging.ErrorLogger
+	// Metrics are sent to Prometheus by default.
+	Metrics StoreMetrics
+	// Used for tracing calls to store methods. Uses opentracing.GlobalTracer() by default.
+	Tracer trace.Tracer
+
+	txtrace *trace.Trace
+	txctx   context.Context
 }
 
 // NewDBStore instantiates and returns a new DBStore with prepared statements.
 func NewDBStore(db dbutil.DB, txOpts sql.TxOptions) *DBStore {
-	return &DBStore{Store: basestore.NewWithDB(db, txOpts)}
+	return &DBStore{
+		Store:  basestore.NewWithDB(db, txOpts),
+		Log:    log15.Root(),
+		Tracer: trace.Tracer{Tracer: opentracing.GlobalTracer()},
+	}
 }
 
 func (s *DBStore) With(other basestore.ShareableStore) *DBStore {
@@ -122,12 +141,58 @@ func (s *DBStore) With(other basestore.ShareableStore) *DBStore {
 }
 
 // Transact returns a TxStore whose methods operate within the context of a transaction.
-func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
+func (s *DBStore) Transact(ctx context.Context) (stx TxStore, err error) {
+	tr, ctx := s.trace(ctx, "Store.Transact")
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		s.Metrics.Transact.Observe(secs, 1, &err)
+		logging.Log(s.Log, "store.transact", &err)
+		if err != nil {
+			tr.SetError(err)
+			// Finish is called in Done in the non-error case
+			tr.Finish()
+		}
+	}(time.Now())
+
 	txBase, err := s.Store.Transact(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "starting transaction")
 	}
-	return &DBStore{Store: txBase}, nil
+	return &DBStore{
+		Store:   txBase,
+		Log:     s.Log,
+		Metrics: s.Metrics,
+		Tracer:  s.Tracer,
+		txtrace: tr,
+		txctx:   ctx,
+	}, nil
+}
+
+// Done calls into the inner Store Done method.
+func (s *DBStore) Done(err error) error {
+	tr := s.txtrace
+	tr.LogFields(otlog.String("event", "Store.Done"))
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		done := false
+
+		if err != nil {
+			done = true
+			tr.SetError(err)
+			s.Metrics.Done.Observe(secs, 1, &err)
+			logging.Log(s.Log, "store.done", &err)
+		}
+
+		if !done {
+			s.Metrics.Done.Observe(secs, 1, nil)
+		}
+
+		tr.Finish()
+	}(time.Now())
+
+	return s.Store.Done(err)
 }
 
 // RepoStore returns a db.RepoStore using the same database handle.
@@ -140,7 +205,33 @@ func (s *DBStore) ExternalServiceStore() *idb.ExternalServiceStore {
 	return idb.NewExternalServicesStoreWith(s)
 }
 
-func (s *DBStore) ListExternalRepoSpecs(ctx context.Context) (map[api.ExternalRepoSpec]struct{}, error) {
+func (s *DBStore) trace(ctx context.Context, family string) (*trace.Trace, context.Context) {
+	txctx := s.txctx
+	if txctx == nil {
+		txctx = ctx
+	}
+	tr, txctx := s.Tracer.New(txctx, family, "")
+	ctx = trace.CopyContext(ctx, txctx)
+	return tr, ctx
+}
+
+func (s *DBStore) ListExternalRepoSpecs(ctx context.Context) (ids map[api.ExternalRepoSpec]struct{}, err error) {
+	tr, ctx := s.trace(ctx, "Store.ListExternalRepoSpecs")
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		count := float64(len(ids))
+
+		s.Metrics.ListExternalRepoSpecs.Observe(secs, count, &err)
+		logging.Log(s.Log, "store.list-external-repo-specs", &err,
+			"count", len(ids),
+		)
+
+		tr.LogFields(otlog.Int("count", len(ids)))
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
 	const ListExternalRepoSpecsQueryFmtstr = `
 -- source: internal/repos/store.go:DBStore.ListExternalRepoSpecs
 SELECT
@@ -164,7 +255,7 @@ ORDER BY id ASC LIMIT %s
 			limit,
 		)
 	}
-	ids := make(map[api.ExternalRepoSpec]struct{})
+	ids = make(map[api.ExternalRepoSpec]struct{})
 	return ids, s.paginate(ctx, 0, 0, 0, paginatedQuery,
 		func(sc scanner) (last, count int64, err error) {
 			var id int64
@@ -185,7 +276,21 @@ type externalServiceRepo struct {
 	CloneURL          string `json:"clone_url"`
 }
 
-func (s *DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]types.SourceInfo) error {
+func (s *DBStore) UpsertSources(ctx context.Context, inserts, updates, deletes map[api.RepoID][]types.SourceInfo) (err error) {
+	tr, ctx := s.trace(ctx, "Store.UpsertSources")
+	tr.LogFields(otlog.Int("count", len(inserts)+len(deletes)))
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		count := float64(len(inserts) + len(updates) + len(deletes))
+
+		s.Metrics.UpsertSources.Observe(secs, count, &err)
+		logging.Log(s.Log, "store.upsert-sources", &err, "count", count)
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
 	if len(inserts)+len(updates)+len(deletes) == 0 {
 		return nil
 	}
@@ -312,7 +417,21 @@ delete_sources AS (
 // SetClonedRepos updates cloned status for all repositories.
 // All repositories whose name is in repoNames will have their cloned column set to true
 // and every other repository will have it set to false.
-func (s *DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) error {
+func (s *DBStore) SetClonedRepos(ctx context.Context, repoNames ...string) (err error) {
+	tr, ctx := s.trace(ctx, "Store.SetClonedRepos")
+	tr.LogFields(otlog.Int("count", len(repoNames)))
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		count := float64(len(repoNames))
+
+		s.Metrics.SetClonedRepos.Observe(secs, count, &err)
+		logging.Log(s.Log, "store.set-cloned-repos", &err, "count", len(repoNames))
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
 	if len(repoNames) == 0 {
 		return nil
 	}
@@ -340,13 +459,25 @@ WHERE repo.id IN (SELECT id FROM cloned_repos) AND NOT cloned
 `
 
 // CountNotClonedRepos returns the number of repos whose cloned column is true.
-func (s *DBStore) CountNotClonedRepos(ctx context.Context) (uint64, error) {
+func (s *DBStore) CountNotClonedRepos(ctx context.Context) (count uint64, err error) {
+	tr, ctx := s.trace(ctx, "Store.CountNotClonedRepos")
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+
+		s.Metrics.CountNotClonedRepos.Observe(secs, float64(count), &err)
+		logging.Log(s.Log, "store.count-not-cloned-repos", &err, "count", count)
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
 	q := sqlf.Sprintf(CountNotClonedReposQueryFmtstr)
-	count, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
+	c, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	if err != nil || !ok {
 		return 0, err
 	}
-	return uint64(count), nil
+	return uint64(c), nil
 }
 
 const CountNotClonedReposQueryFmtstr = `
@@ -356,13 +487,25 @@ SELECT COUNT(*) FROM repo WHERE deleted_at IS NULL AND NOT cloned
 
 // CountUserAddedRepos counts the total number of repos that have been added
 // by user owned external services.
-func (s *DBStore) CountUserAddedRepos(ctx context.Context) (uint64, error) {
+func (s *DBStore) CountUserAddedRepos(ctx context.Context) (count uint64, err error) {
+	tr, ctx := s.trace(ctx, "Store.CountUserAddedRepos")
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+
+		s.Metrics.CountUserAddedRepos.Observe(secs, float64(count), &err)
+		logging.Log(s.Log, "store.count-user-added-repos", &err, "count", count)
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
 	q := sqlf.Sprintf(CountTotalUserAddedReposQueryFmtstr)
-	count, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
+	c, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	if err != nil || !ok {
 		return 0, err
 	}
-	return uint64(count), nil
+	return uint64(c), nil
 }
 
 const CountTotalUserAddedReposQueryFmtstr = `
@@ -436,6 +579,20 @@ func (s *DBStore) list(ctx context.Context, q *sqlf.Query, scan scanFunc) (last,
 // This method does NOT update sources in the external_services_repo table.
 // Use UpsertSources for that purpose.
 func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*types.Repo) (err error) {
+	tr, ctx := s.trace(ctx, "Store.UpsertRepos")
+	tr.LogFields(otlog.Int("count", len(repos)))
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		count := float64(len(repos))
+
+		s.Metrics.UpsertRepos.Observe(secs, count, &err)
+		logging.Log(s.Log, "store.upsert-repos", &err, "count", len(repos))
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
 	if len(repos) == 0 {
 		return nil
 	}
@@ -516,7 +673,16 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*types.Repo) (err er
 	return nil
 }
 
-func (s *DBStore) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) error {
+func (s *DBStore) EnqueueSyncJobs(ctx context.Context, ignoreSiteAdmin bool) (err error) {
+	tr, ctx := s.trace(ctx, "Store.EnqueueSyncJobs")
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		s.Metrics.EnqueueSyncJobs.Observe(secs, 0, &err)
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
 	filter := "TRUE"
 	if ignoreSiteAdmin {
 		filter = "namespace_user_id IS NOT NULL"
