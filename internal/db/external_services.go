@@ -758,11 +758,11 @@ func (e *ExternalServiceStore) GetByID(ctx context.Context, id int64) (*types.Ex
 	}
 	e.ensureStore()
 
-	conds := []*sqlf.Query{
-		sqlf.Sprintf("deleted_at IS NULL"),
-		sqlf.Sprintf("id=%d", id),
+	opt := ExternalServicesListOptions{
+		IDs: []int64{id},
 	}
-	ess, err := e.list(ctx, conds, "", nil)
+
+	ess, err := e.list(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -784,7 +784,7 @@ func (e *ExternalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 	}
 	e.ensureStore()
 
-	return e.list(ctx, opt.sqlConditions(), opt.OrderByDirection, opt.LimitOffset)
+	return e.list(ctx, opt)
 }
 
 // DistinctKinds returns the distinct list of external services kinds that are stored in the database.
@@ -809,19 +809,19 @@ WHERE deleted_at IS NULL
 	return kinds, nil
 }
 
-func (e *ExternalServiceStore) list(ctx context.Context, conds []*sqlf.Query, orderByDirection string, limitOffset *LimitOffset) ([]*types.ExternalService, error) {
-	if orderByDirection != "ASC" {
-		orderByDirection = "DESC"
+func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	if opt.OrderByDirection != "ASC" {
+		opt.OrderByDirection = "DESC"
 	}
 
 	q := sqlf.Sprintf(`
 		SELECT id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted
 		FROM external_services
 		WHERE (%s)
-		ORDER BY id `+orderByDirection+`
+		ORDER BY id `+opt.OrderByDirection+`
 		%s`,
-		sqlf.Join(conds, ") AND ("),
-		limitOffset.SQL(),
+		sqlf.Join(opt.sqlConditions(), ") AND ("),
+		opt.LimitOffset.SQL(),
 	)
 
 	rows, err := e.Query(ctx, q)

@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"net/url"
 	"strconv"
 	"strings"
@@ -135,12 +134,15 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 	)
 
 	if !envvar.SourcegraphDotComMode() || c.CloudGlobal {
-		for resource, client := range map[string]*ratelimit.Monitor{
+		for resource, monitor := range map[string]*ratelimit.Monitor{
 			"rest":    v3Client.RateLimitMonitor(),
 			"graphql": v4Client.RateLimitMonitor(),
 			"search":  searchClient.RateLimitMonitor(),
 		} {
-			client.SetCollector(func(remaining float64) {
+			// Need to copy the resource or func will use the last one seen while iterating
+			// the map
+			resource := resource
+			monitor.SetCollector(func(remaining float64) {
 				githubRemainingGauge.WithLabelValues(resource, svc.DisplayName).Set(remaining)
 			})
 		}

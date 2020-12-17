@@ -1403,19 +1403,6 @@ func formatJSON(s string) string {
 	return formatted
 }
 
-type storeWithErrors struct {
-	repos.Store
-
-	UpsertReposErr error
-}
-
-func (s *storeWithErrors) UpsertRepos(ctx context.Context, repos ...*types.Repo) error {
-	if s.UpsertReposErr != nil {
-		return s.UpsertReposErr
-	}
-	return s.Store.UpsertRepos(ctx, repos...)
-}
-
 type repoListerWithErrors struct {
 	*idb.RepoStore
 

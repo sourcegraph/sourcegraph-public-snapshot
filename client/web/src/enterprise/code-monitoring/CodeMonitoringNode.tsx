@@ -84,10 +84,10 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                     {node.actions.nodes.length > 0 && (
                         <div className="d-flex text-muted">
                             New search result → Sends email notifications{' '}
-                            {authentictedUser.siteAdmin && hasEnabledAction && (
+                            {authentictedUser.siteAdmin && hasEnabledAction && node.enabled && (
                                 <button
                                     type="button"
-                                    className="btn btn-link p-0 border-0 ml-2"
+                                    className="btn btn-link p-0 border-0 ml-2 test-send-test-email"
                                     onClick={sendEmailRequest}
                                 >
                                     Send test email

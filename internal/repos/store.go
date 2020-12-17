@@ -18,13 +18,6 @@ import (
 	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -922,13 +915,6 @@ func nullStringColumn(s string) *string {
 	return &s
 }
 
-func nullInt32Column(i int32) *int32 {
-	if i == 0 {
-		return nil
-	}
-	return &i
-}
-
 func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
 	switch m := metadata.(type) {
 	case nil:
@@ -986,94 +972,4 @@ func closeErr(c io.Closer, err *error) {
 	if e := c.Close(); err != nil && *err == nil {
 		*err = e
 	}
-}
-
-func scanExternalService(svc *types.ExternalService, s scanner) error {
-	return s.Scan(
-		&svc.ID,
-		&svc.Kind,
-		&svc.DisplayName,
-		&svc.Config,
-		&svc.CreatedAt,
-		&dbutil.NullTime{Time: &svc.UpdatedAt},
-		&dbutil.NullTime{Time: &svc.DeletedAt},
-		&dbutil.NullTime{Time: &svc.LastSyncAt},
-		&dbutil.NullTime{Time: &svc.NextSyncAt},
-		&dbutil.NullInt32{N: &svc.NamespaceUserID},
-		&svc.Unrestricted,
-	)
-}
-
-func scanRepo(r *types.Repo, s scanner) error {
-	var sources dbutil.NullJSONRawMessage
-	var metadata json.RawMessage
-	err := s.Scan(
-		&r.ID,
-		&r.Name,
-		&dbutil.NullString{S: &r.URI},
-		&r.Description,
-		&r.CreatedAt,
-		&dbutil.NullTime{Time: &r.UpdatedAt},
-		&dbutil.NullTime{Time: &r.DeletedAt},
-		&dbutil.NullString{S: &r.ExternalRepo.ServiceType},
-		&dbutil.NullString{S: &r.ExternalRepo.ServiceID},
-		&dbutil.NullString{S: &r.ExternalRepo.ID},
-		&r.Archived,
-		&r.Cloned,
-		&r.Fork,
-		&r.Private,
-		&sources,
-		&metadata,
-	)
-	if err != nil {
-		return err
-	}
-
-	type sourceInfo struct {
-		ID       int64
-		CloneURL string
-		Kind     string
-	}
-	r.Sources = make(map[string]*types.SourceInfo)
-
-	if sources.Raw != nil {
-		var srcs []sourceInfo
-		if err = json.Unmarshal(sources.Raw, &srcs); err != nil {
-			return errors.Wrap(err, "scanRepo: failed to unmarshal sources")
-		}
-		for _, src := range srcs {
-			urn := extsvc.URN(src.Kind, src.ID)
-			r.Sources[urn] = &types.SourceInfo{
-				ID:       urn,
-				CloneURL: src.CloneURL,
-			}
-		}
-	}
-
-	typ, ok := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
-	if !ok {
-		return nil
-	}
-	switch typ {
-	case extsvc.TypeGitHub:
-		r.Metadata = new(github.Repository)
-	case extsvc.TypeGitLab:
-		r.Metadata = new(gitlab.Project)
-	case extsvc.TypeBitbucketServer:
-		r.Metadata = new(bitbucketserver.Repo)
-	case extsvc.TypeBitbucketCloud:
-		r.Metadata = new(bitbucketcloud.Repo)
-	case extsvc.TypeAWSCodeCommit:
-		r.Metadata = new(awscodecommit.Repository)
-	case extsvc.TypeGitolite:
-		r.Metadata = new(gitolite.Repo)
-	default:
-		return nil
-	}
-
-	if err = json.Unmarshal(metadata, r.Metadata); err != nil {
-		return errors.Wrapf(err, "scanRepo: failed to unmarshal %q metadata", typ)
-	}
-
-	return nil
 }

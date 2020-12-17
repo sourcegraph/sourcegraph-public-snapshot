@@ -1,4 +1,4 @@
-package background
+package indexing
 
 import (
 	"context"

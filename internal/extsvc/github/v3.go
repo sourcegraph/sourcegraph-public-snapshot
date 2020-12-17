@@ -49,6 +49,10 @@ type V3Client struct {
 
 	// rateLimit is our self imposed rate limiter
 	rateLimit *rate.Limiter
+
+	// resource specifies which API this client is intended for.
+	// One of 'rest' or 'search'.
+	resource string
 }
 
 // NewV3Client creates a new GitHub API client with an optional default
@@ -105,6 +109,7 @@ func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli htt
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
 		repoCache:        newRepoCache(apiURL, a),
+		resource:         resource,
 	}
 }
 
@@ -112,7 +117,7 @@ func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli htt
 // the current V3Client, except authenticated as the GitHub user with the given
 // authenticator instance (most likely a token).
 func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
-	return NewV3Client(c.apiURL, a, c.httpClient)
+	return newV3Client(c.apiURL, a, c.resource, c.httpClient)
 }
 
 // RateLimitMonitor exposes the rate limit monitor.

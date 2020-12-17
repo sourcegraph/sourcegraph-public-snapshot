@@ -1694,7 +1694,7 @@ func (a *aggregator) report(ctx context.Context, results []SearchResultResolver,
 }
 
 // collect the results. This doesn't send down resultChannel. Should only be
-// used by non-streaming supported backends.
+// used by streaming supported backends.
 func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver, common *searchResultsCommon, err error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -1802,8 +1802,8 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 		return
 	}
 
-	commitResults, commitCommon, err := searchCommitLogInRepos(ctx, args)
-	a.report(ctx, commitResults, commitCommon, errors.Wrap(err, "commit search failed"))
+	commitResults, commitCommon, err := searchCommitLogInRepos(ctx, args, a.resultChannel)
+	a.collect(ctx, commitResults, commitCommon, errors.Wrap(err, "commit search failed"))
 }
 
 // isGlobalSearch returns true if the query does not contain repo, repogroup, or

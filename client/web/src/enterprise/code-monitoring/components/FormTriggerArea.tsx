@@ -50,6 +50,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                             filter.value &&
                                             isDiffOrCommit(filter.value.quotedValue)))
                             )
+                            const hasPattern = tokens.term.some(term => term.type === 'pattern')
                             const hasPatternTypeFilter = filters.some(
                                 filter =>
                                     filter.type === 'filter' &&
@@ -63,8 +64,8 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             if (!hasTypeDiffOrCommitFilter) {
                                 return 'Code monitors require queries to specify either `type:commit` or `type:diff`.'
                             }
-                            if (!hasPatternTypeFilter) {
-                                return 'Code monitors require queries to specify a `patternType:` of literal, regexp, or structural.'
+                            if (!hasPatternTypeFilter && hasPattern) {
+                                return 'Code monitors require queries to specify a `patternType:` of literal or regexp.'
                             }
                         }
                         return 'Failed to parse query'
@@ -126,21 +127,36 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                     </span>
                     <span className="mt-4">Search query</span>
                     <div>
-                        <div className="trigger-area__query-input">
-                            <input
-                                type="text"
-                                className={classnames(
-                                    'trigger-area__query-input-field form-control my-2 test-trigger-input',
-                                    deriveInputClassName(queryState)
+                        <div className="trigger-area__query-input mb-4">
+                            <div className="d-flex flex-column flex-grow-1">
+                                <input
+                                    type="text"
+                                    className={classnames(
+                                        'trigger-area__query-input-field form-control my-2 test-trigger-input',
+                                        deriveInputClassName(queryState)
+                                    )}
+                                    onChange={nextQueryFieldChange}
+                                    value={queryState.value}
+                                    required={true}
+                                    autoFocus={true}
+                                    ref={queryInputReference}
+                                    spellCheck={false}
+                                />
+                                {queryState.kind === 'INVALID' && (
+                                    <small className="trigger-area__query-input-error-message invalid-feedback test-trigger-error">
+                                        {queryState.reason}
+                                    </small>
                                 )}
-                                onChange={nextQueryFieldChange}
-                                value={queryState.value}
-                                required={true}
-                                autoFocus={true}
-                                ref={queryInputReference}
-                                spellCheck={false}
-                            />
-                            <div className="trigger-area__query-input-preview-link p-2">
+                                {(queryState.kind === 'NOT_VALIDATED' ||
+                                    queryState.kind === 'VALID' ||
+                                    queryState.kind === 'LOADING') && (
+                                    <small className="text-muted mt-1">
+                                        Code monitors only support <code className="bg-code">type:diff</code> and{' '}
+                                        <code className="bg-code">type:commit</code> search queries.
+                                    </small>
+                                )}
+                            </div>
+                            <div className="trigger-area__query-input-preview-link p-2 my-2">
                                 <Link
                                     to={`/search?${buildSearchURLQuery(
                                         queryState.value,
@@ -156,17 +172,6 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 </Link>
                             </div>
                         </div>
-                        {queryState.kind === 'INVALID' && (
-                            <small className="invalid-feedback mb-4 test-trigger-error">{queryState.reason}</small>
-                        )}
-                        {(queryState.kind === 'NOT_VALIDATED' || queryState.kind === 'VALID') && (
-                            <div className="d-flex mb-4 flex-column">
-                                <small className="text-muted">
-                                    Code monitors only support <code className="bg-code">type:diff</code> and{' '}
-                                    <code className="bg-code">type:commit</code> search queries.
-                                </small>
-                            </div>
-                        )}
                     </div>
                     <div>
                         <button

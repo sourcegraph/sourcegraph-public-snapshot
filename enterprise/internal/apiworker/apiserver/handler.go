@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"github.com/efritz/glock"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -18,6 +20,7 @@ type handler struct {
 	executors        map[string]*executorMeta
 	dequeueSemaphore chan struct{} // tracks available dequeue slots
 	m                sync.Mutex    // protects executors
+	queueMetrics     *QueueMetrics
 }
 
 type Options struct {
@@ -72,6 +75,10 @@ type jobMeta struct {
 }
 
 func newHandler(options Options, clock glock.Clock) *handler {
+	return newHandlerWithMetrics(options, clock, &observation.TestContext)
+}
+
+func newHandlerWithMetrics(options Options, clock glock.Clock, observationContext *observation.Context) *handler {
 	dequeueSemaphore := make(chan struct{}, options.MaximumNumTransactions)
 	for i := 0; i < options.MaximumNumTransactions; i++ {
 		dequeueSemaphore <- struct{}{}
@@ -82,6 +89,7 @@ func newHandler(options Options, clock glock.Clock) *handler {
 		clock:            clock,
 		dequeueSemaphore: dequeueSemaphore,
 		executors:        map[string]*executorMeta{},
+		queueMetrics:     newQueueMetrics(observationContext),
 	}
 }
 
@@ -205,6 +213,7 @@ func (m *handler) findMeta(queueName, executorName string, jobID int, remove boo
 				l := len(executor.jobs) - 1
 				executor.jobs[i] = executor.jobs[l]
 				executor.jobs = executor.jobs[:l]
+				m.updateMetrics()
 			}
 
 			return job, nil
@@ -228,4 +237,33 @@ func (m *handler) addMeta(executorName string, job jobMeta) {
 	now := m.clock.Now()
 	executor.jobs = append(executor.jobs, job)
 	executor.lastUpdate = now
+	m.updateMetrics()
+}
+
+func (m *handler) updateMetrics() {
+	type queueStat struct {
+		JobIDs        []int
+		ExecutorNames map[string]struct{}
+	}
+	queueStats := map[string]queueStat{}
+
+	for executorName, meta := range m.executors {
+		for _, job := range meta.jobs {
+			stat, ok := queueStats[job.queueName]
+			if !ok {
+				stat = queueStat{
+					ExecutorNames: map[string]struct{}{},
+				}
+			}
+
+			stat.JobIDs = append(stat.JobIDs, job.record.RecordID())
+			stat.ExecutorNames[executorName] = struct{}{}
+			queueStats[job.queueName] = stat
+		}
+	}
+
+	for queueName, temp := range queueStats {
+		m.queueMetrics.NumJobs.WithLabelValues(queueName).Set(float64(len(temp.JobIDs)))
+		m.queueMetrics.NumExecutors.WithLabelValues(queueName).Set(float64(len(temp.ExecutorNames)))
+	}
 }
