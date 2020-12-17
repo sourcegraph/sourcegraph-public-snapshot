@@ -1664,46 +1664,6 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 	return nil
 }
 
-// Surface an alert if a query exceeds limits that we place on search. Currently limits
-// diff and commit searches where more than repoLimit repos need to be searched.
-func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]string, *searchAlert) {
-	limits := searchLimits()
-	// we don't need to handle the error here, because we don't have context and the
-	// promise can only return context errors
-	repos, _ := getRepos(context.Background(), args.RepoPromise)
-
-	for _, resultType := range resultTypes {
-		if resultType != "commit" && resultType != "diff" {
-			continue
-		}
-
-		hasTimeFilter := false
-		if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
-			hasTimeFilter = true
-		}
-		if _, beforePresent := args.Query.Fields()["before"]; beforePresent {
-			hasTimeFilter = true
-		}
-
-		if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
-			return []string{}, &searchAlert{
-				prometheusType: "exceeded_diff_commit_search_limit",
-				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
-				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), max),
-			}
-		}
-		if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(repos) > max {
-			return []string{}, &searchAlert{
-				prometheusType: "exceeded_diff_commit_with_time_search_limit",
-				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
-				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), max),
-			}
-		}
-	}
-
-	return resultTypes, nil
-}
-
 type aggregator struct {
 	// resultChannel if non-nil will send all results we receive down it. See
 	// searchResolver.SetResultChannel
