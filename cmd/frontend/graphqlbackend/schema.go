@@ -3964,7 +3964,7 @@ type ExternalService implements Node {
     External services are synced with code hosts in the background. This optional field
     will contain any errors that occured during the most recent completed sync.
     """
-    latestSyncError: String
+    lastSyncError: String
 }
 
 """

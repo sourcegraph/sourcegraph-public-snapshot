@@ -772,11 +772,11 @@ func (e *ExternalServiceStore) GetByID(ctx context.Context, id int64) (*types.Ex
 	return ess[0], nil
 }
 
-// GetLatestSyncError returns the error associated with the latest sync of the
+// GetLastSyncError returns the error associated with the latest sync of the
 // supplied external service.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service
-func (e *ExternalServiceStore) GetLatestSyncError(ctx context.Context, id int64) (string, error) {
+func (e *ExternalServiceStore) GetLastSyncError(ctx context.Context, id int64) (string, error) {
 	if Mocks.ExternalServices.GetLatestSyncError != nil {
 		return Mocks.ExternalServices.GetLatestSyncError(id)
 	}
@@ -790,8 +790,8 @@ ORDER BY finished_at DESC
 LIMIT 1
 `, id)
 
-	latestError, _, err := basestore.ScanFirstString(e.Query(ctx, q))
-	return latestError, err
+	lastError, _, err := basestore.ScanFirstString(e.Query(ctx, q))
+	return lastError, err
 }
 
 // List returns external services under given namespace.

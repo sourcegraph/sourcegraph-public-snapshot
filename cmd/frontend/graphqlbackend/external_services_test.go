@@ -658,7 +658,7 @@ func TestExternalServices(t *testing.T) {
 			}
 		`,
 		},
-		// LatestSyncError included
+		// LastSyncError included
 		{
 			Schema: mustParseGraphQLSchema(t),
 			Query: `

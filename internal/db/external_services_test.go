@@ -590,7 +590,7 @@ func TestGetLatestSyncError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	latestSyncError, err := (&ExternalServiceStore{}).GetLatestSyncError(ctx, es.ID)
+	latestSyncError, err := (&ExternalServiceStore{}).GetLastSyncError(ctx, es.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -609,7 +609,7 @@ VALUES ($1,$2,'errored')
 		t.Fatal(err)
 	}
 
-	latestSyncError, err = (&ExternalServiceStore{}).GetLatestSyncError(ctx, es.ID)
+	latestSyncError, err = (&ExternalServiceStore{}).GetLastSyncError(ctx, es.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
