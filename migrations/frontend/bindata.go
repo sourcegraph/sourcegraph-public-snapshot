@@ -172,6 +172,8 @@
 // 1528395768_compress_nearest_uploads.up.sql (228B)
 // 1528395769_drop_added_to_campaign.down.sql (115B)
 // 1528395769_drop_added_to_campaign.up.sql (81B)
+// 1528395770_drop_unsynced.down.sql (279B)
+// 1528395770_drop_unsynced.up.sql (151B)
 
 package migrations
 
@@ -3680,6 +3682,46 @@ func _1528395769_drop_added_to_campaignUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395770_drop_unsyncedDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x6c\xce\xb1\x6e\xc3\x20\x14\x85\xe1\x9d\xa7\x38\x5b\x96\xbe\x81\x95\x01\x07\xd2\x20\x61\x1c\xc5\xa0\x76\x43\x18\xdf\xa6\x96\x5c\x6c\x19\xac\x2a\x6f\x5f\xb5\x1d\x9a\x4a\x99\xff\xef\x5e\x9d\x5a\x3e\x2b\x53\x31\xc6\xb5\x95\x17\x58\x5e\x6b\x89\xf8\x1e\xd2\x95\x32\x95\x0c\x2e\x04\x0e\xad\x76\x8d\x81\x3a\xc2\xb4\x16\xf2\x55\x75\xb6\xc3\x96\xf2\x2d\x45\x1a\xd0\xcf\xf3\x44\x21\xfd\x34\xe3\xb4\x86\x90\x47\xee\xb4\xc5\x5b\x98\x32\x55\xcc\x9d\x05\xb7\xff\x7e\x76\xd2\xfe\x9d\xef\x51\xd6\x8d\x9e\xb0\x6c\xfd\x34\xc6\x50\xc6\x39\xf9\x5c\x42\x21\xec\xb1\x3b\xbb\x5a\xab\xee\x24\xc5\x0e\x2f\x27\x79\x91\x8f\x95\x33\x77\x8e\x1b\x81\xb8\xad\x2b\xa5\xe2\xf3\x42\xd1\x8f\x03\x54\xf7\xbb\xec\xbb\xcd\x9f\x89\x06\xdf\xdf\x7c\x0c\x1f\x4b\x18\xaf\xe9\x0e\x54\x8c\x1d\xda\xa6\x51\xb6\x62\x5f\x01\x00\x00\xff\xff\xc8\xf8\x12\x06\x17\x01\x00\x00")
+
+func _1528395770_drop_unsyncedDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395770_drop_unsyncedDownSql,
+		"1528395770_drop_unsynced.down.sql",
+	)
+}
+
+func _1528395770_drop_unsyncedDownSql() (*asset, error) {
+	bytes, err := _1528395770_drop_unsyncedDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395770_drop_unsynced.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xda, 0x1, 0x6, 0x52, 0x65, 0x50, 0x5b, 0xcd, 0xb, 0xb9, 0xa6, 0xe7, 0xd3, 0x14, 0x15, 0x4, 0xbe, 0x2e, 0x75, 0x5e, 0x2f, 0x46, 0x28, 0x6f, 0x5a, 0xa2, 0x5d, 0x5f, 0x82, 0x3d, 0x2d, 0x4}}
+	return a, nil
+}
+
+var __1528395770_drop_unsyncedUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x54\xcc\x4b\xaa\xc2\x30\x14\x06\xe0\xf9\x59\xc5\x3f\xeb\x22\x42\x07\x7d\x9c\x7b\x1b\x48\x1f\x34\x27\xe8\x4c\x6a\x0c\x5a\x90\x28\x26\x19\xb8\x7b\x67\x82\x0b\xf8\xbe\x96\xff\xf5\xa4\x88\xdc\xd2\x37\xc2\xf0\xb7\x2d\x5e\x43\x0a\x39\xc1\xb2\xe0\x59\xce\xf7\xdd\x6f\x79\x7f\xc4\x53\xca\x5b\x0e\xa8\x51\xb9\x69\x71\xad\xd1\x76\xe0\xbe\xc2\x61\xe0\x95\x51\x62\x7a\x47\x1f\x2e\xa8\x91\x5f\x25\x28\x6a\x8c\xf0\x0a\x69\x5a\xf3\x73\xf6\xeb\xbc\xa0\x9b\x8d\x1b\x27\xe8\x3f\xf0\x51\x5b\xb1\x5f\xad\x88\xba\x79\x1c\xb5\x28\xfa\x04\x00\x00\xff\xff\x4a\x70\xa5\x2e\x97\x00\x00\x00")
+
+func _1528395770_drop_unsyncedUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395770_drop_unsyncedUpSql,
+		"1528395770_drop_unsynced.up.sql",
+	)
+}
+
+func _1528395770_drop_unsyncedUpSql() (*asset, error) {
+	bytes, err := _1528395770_drop_unsyncedUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395770_drop_unsynced.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xe8, 0xe1, 0x51, 0xa7, 0x2e, 0xf0, 0xfe, 0xba, 0x92, 0x46, 0xa5, 0x44, 0x17, 0xf0, 0x37, 0x7, 0x91, 0xbc, 0x1a, 0x9, 0x87, 0xd6, 0xee, 0xa0, 0x7e, 0x2e, 0xc0, 0x45, 0x1e, 0x8b, 0x54, 0x7b}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3943,6 +3985,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395768_compress_nearest_uploads.up.sql":                                             _1528395768_compress_nearest_uploadsUpSql,
 	"1528395769_drop_added_to_campaign.down.sql":                                             _1528395769_drop_added_to_campaignDownSql,
 	"1528395769_drop_added_to_campaign.up.sql":                                               _1528395769_drop_added_to_campaignUpSql,
+	"1528395770_drop_unsynced.down.sql":                                                      _1528395770_drop_unsyncedDownSql,
+	"1528395770_drop_unsynced.up.sql":                                                        _1528395770_drop_unsyncedUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -4161,6 +4205,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395768_compress_nearest_uploads.up.sql":                                             {_1528395768_compress_nearest_uploadsUpSql, map[string]*bintree{}},
 	"1528395769_drop_added_to_campaign.down.sql":                                             {_1528395769_drop_added_to_campaignDownSql, map[string]*bintree{}},
 	"1528395769_drop_added_to_campaign.up.sql":                                               {_1528395769_drop_added_to_campaignUpSql, map[string]*bintree{}},
+	"1528395770_drop_unsynced.down.sql":                                                      {_1528395770_drop_unsyncedDownSql, map[string]*bintree{}},
+	"1528395770_drop_unsynced.up.sql":                                                        {_1528395770_drop_unsyncedUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

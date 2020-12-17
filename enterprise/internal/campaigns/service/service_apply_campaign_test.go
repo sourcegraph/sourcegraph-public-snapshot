@@ -228,9 +228,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 			ct.AssertChangeset(t, c1, ct.ChangesetAssertions{
 				Repo:             spec1.RepoID,
 				ExternalID:       "1234",
-				Unsynced:         true,
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
-				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			})
 
 			c2 := cs.Find(campaigns.WithCurrentSpecID(spec2.ID))
@@ -359,9 +358,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 				CurrentSpec:      0,
 				PreviousSpec:     0,
 				ExternalID:       "1234",
-				Unsynced:         true,
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
-				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			})
 
 			c2 := cs.Find(campaigns.WithExternalID(spec2.Spec.ExternalID))
@@ -370,9 +368,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 				CurrentSpec:      0,
 				PreviousSpec:     0,
 				ExternalID:       "5678",
-				Unsynced:         true,
 				ReconcilerState:  campaigns.ReconcilerStateQueued,
-				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 			})
 
 			c3 := cs.Find(campaigns.WithCurrentSpecID(spec3.ID))
@@ -728,8 +725,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			ct.ReloadAndAssertChangeset(t, ctx, store, c1, ct.ChangesetAssertions{
 				Repo:             spec1Opts.Repo,
 				ExternalID:       "1234",
-				Unsynced:         true,
-				PublicationState: campaigns.ChangesetPublicationStatePublished,
+				PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 
 				ReconcilerState: campaigns.ReconcilerStateQueued,
 				FailureMessage:  nil,

@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
@@ -174,10 +175,9 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 
 	publishedState := campaigns.ChangesetPublicationStatePublished
 	opts := store.ListChangesetsOpts{
-		CampaignID:       r.Campaign.ID,
-		PublicationState: &publishedState,
+		CampaignID: r.Campaign.ID,
 		// Only load fully-synced changesets, so that the data we use for computing the changeset counts is complete.
-		OnlySynced: true,
+		PublicationState: &publishedState,
 	}
 	cs, _, err := r.store.ListChangesets(ctx, opts)
 	if err != nil {
