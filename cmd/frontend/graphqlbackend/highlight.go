@@ -45,9 +45,8 @@ type HighlightArgs struct {
 }
 
 type highlightedFileResolver struct {
-	aborted    bool
-	html       template.HTML
-	lineRanges [][]string
+	aborted bool
+	html    template.HTML
 }
 
 func (h *highlightedFileResolver) Aborted() bool { return h.aborted }

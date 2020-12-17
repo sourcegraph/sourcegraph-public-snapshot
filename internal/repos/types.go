@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -67,7 +68,7 @@ func pick(a *types.Repo, b *types.Repo) (keep, discard *types.Repo) {
 }
 
 type externalServiceLister interface {
-	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*types.ExternalService, error)
+	List(context.Context, db.ExternalServicesListOptions) ([]*types.ExternalService, error)
 }
 
 // RateLimitSyncer syncs rate limits based on external service configuration
@@ -92,13 +93,15 @@ func NewRateLimitSyncer(registry *ratelimit.Registry, serviceLister externalServ
 // We sync them all as we need to pick the most restrictive configured limit per code host
 // and rate limits can be defined in multiple external services for the same host.
 func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
-	var cursor int64
 	byURL := make(map[string]extsvc.RateLimitConfig)
 
+	cursor := db.LimitOffset{
+		Limit: int(r.limit),
+	}
+
 	for {
-		services, err := r.serviceLister.ListExternalServices(ctx, StoreListExternalServicesArgs{
-			Cursor: cursor,
-			Limit:  r.limit,
+		services, err := r.serviceLister.List(ctx, db.ExternalServicesListOptions{
+			LimitOffset: &cursor,
 		})
 		if err != nil {
 			return errors.Wrap(err, "listing external services")
@@ -108,7 +111,7 @@ func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
 			break
 		}
 
-		cursor = services[len(services)-1].ID
+		cursor.Offset += len(services)
 
 		for _, svc := range services {
 			rlc, err := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)

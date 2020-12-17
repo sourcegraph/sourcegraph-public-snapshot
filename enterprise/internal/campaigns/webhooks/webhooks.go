@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -45,9 +44,9 @@ var (
 )
 
 type Webhook struct {
-	Store *store.Store
-	Repos repos.Store
-	Now   func() time.Time
+	Store            *store.Store
+	ExternalServices *db.ExternalServiceStore
+	Now              func() time.Time
 
 	// ServiceType corresponds to api.ExternalRepoSpec.ServiceType
 	// Example values: extsvc.TypeBitbucketServer, extsvc.TypeGitHub
@@ -214,8 +213,8 @@ type BitbucketServerWebhook struct {
 	configCache map[int64]*schema.BitbucketServerConnection
 }
 
-func NewGitHubWebhook(store *store.Store, repos repos.Store, now func() time.Time) *GitHubWebhook {
-	return &GitHubWebhook{&Webhook{store, repos, now, extsvc.TypeGitHub}}
+func NewGitHubWebhook(store *store.Store, externalServices *db.ExternalServiceStore, now func() time.Time) *GitHubWebhook {
+	return &GitHubWebhook{&Webhook{store, externalServices, now, extsvc.TypeGitHub}}
 }
 
 // Register registers this webhook handler to handle events with the passed webhook router
@@ -770,9 +769,9 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 	}
 }
 
-func NewBitbucketServerWebhook(store *store.Store, repos repos.Store, now func() time.Time, name string) *BitbucketServerWebhook {
+func NewBitbucketServerWebhook(store *store.Store, externalServices *db.ExternalServiceStore, now func() time.Time, name string) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
-		Webhook:     &Webhook{store, repos, now, extsvc.TypeBitbucketServer},
+		Webhook:     &Webhook{store, externalServices, now, extsvc.TypeBitbucketServer},
 		Name:        name,
 		configCache: make(map[int64]*schema.BitbucketServerConnection),
 	}
@@ -828,11 +827,11 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *type
 		}
 	}
 
-	args := repos.StoreListExternalServicesArgs{Kinds: []string{extsvc.KindBitbucketServer}}
+	args := db.ExternalServicesListOptions{Kinds: []string{extsvc.KindBitbucketServer}}
 	if externalServiceID != 0 {
 		args.IDs = append(args.IDs, externalServiceID)
 	}
-	es, err := h.Repos.ListExternalServices(r.Context(), args)
+	es, err := h.ExternalServices.List(r.Context(), args)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
 	}

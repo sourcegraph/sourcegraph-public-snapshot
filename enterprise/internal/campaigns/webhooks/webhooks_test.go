@@ -56,8 +56,8 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		defer save()
 
 		secret := "secret"
-		rstore := repos.NewDBStore(db, sql.TxOptions{})
 		repoStore := idb.NewRepoStoreWithDB(db)
+		esStore := idb.NewExternalServicesStoreWithDB(db)
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub",
@@ -69,7 +69,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			}),
 		}
 
-		err := rstore.UpsertExternalServices(ctx, extSvc)
+		err := esStore.Upsert(ctx, extSvc)
 		if err != nil {
 			t.Fatal(t)
 		}
@@ -141,7 +141,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		hook := NewGitHubWebhook(s, rstore, clock)
+		hook := NewGitHubWebhook(s, esStore, clock)
 
 		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/github/*.json")
 		if err != nil {
@@ -160,7 +160,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
 						handler := webhooks.GitHubWebhook{
-							Repos: rstore,
+							ExternalServices: esStore,
 						}
 						hook.Register(&handler)
 
@@ -229,8 +229,8 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		defer save()
 
 		secret := "secret"
-		rstore := repos.NewDBStore(db, sql.TxOptions{})
 		repoStore := idb.NewRepoStoreWithDB(db)
+		esStore := idb.NewExternalServicesStoreWithDB(db)
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket",
@@ -244,7 +244,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			}),
 		}
 
-		err := rstore.UpsertExternalServices(ctx, extSvc)
+		err := esStore.Upsert(ctx, extSvc)
 		if err != nil {
 			t.Fatal(t)
 		}
@@ -328,7 +328,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			}
 		}
 
-		hook := NewBitbucketServerWebhook(s, rstore, clock, "testhook")
+		hook := NewBitbucketServerWebhook(s, esStore, clock, "testhook")
 
 		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/bitbucketserver/*.json")
 		if err != nil {

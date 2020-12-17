@@ -54,7 +54,7 @@ func toGitCommitResolver(repo *RepositoryResolver, id api.CommitID, commit *git.
 	return &GitCommitResolver{
 		repoResolver:    repo,
 		includeUserInfo: true,
-		gitRepo:         repo.repo.Name,
+		gitRepo:         repo.innerRepo.Name,
 		oid:             GitObjectID(id),
 		commit:          commit,
 	}
@@ -175,7 +175,12 @@ func (r *GitCommitResolver) CanonicalURL() (string, error) {
 }
 
 func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	return externallink.Commit(ctx, r.repoResolver.repo, api.CommitID(r.oid))
+	repo, err := r.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return externallink.Commit(ctx, repo, api.CommitID(r.oid))
 }
 
 func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
@@ -219,7 +224,12 @@ func (r *GitCommitResolver) File(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
-	inventory, err := backend.Repos.GetInventory(ctx, r.repoResolver.repo, api.CommitID(r.oid), false)
+	repo, err := r.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	inventory, err := backend.Repos.GetInventory(ctx, repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +242,12 @@ func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 }
 
 func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*languageStatisticsResolver, error) {
-	inventory, err := backend.Repos.GetInventory(ctx, r.repoResolver.repo, api.CommitID(r.oid), false)
+	repo, err := r.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	inventory, err := backend.Repos.GetInventory(ctx, repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}

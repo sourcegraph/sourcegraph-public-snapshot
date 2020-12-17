@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
@@ -17,9 +16,9 @@ import (
 
 	gh "github.com/google/go-github/v28/github"
 
+	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -117,7 +116,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 	ctx := context.Background()
 
 	secret := "secret"
-	repoStore := repos.NewDBStore(db, sql.TxOptions{})
+	esStore := idb.NewExternalServicesStoreWithDB(db)
 	extSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
@@ -129,13 +128,13 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 		}),
 	}
 
-	err := repoStore.UpsertExternalServices(ctx, extSvc)
+	err := esStore.Upsert(ctx, extSvc)
 	if err != nil {
 		t.Fatal(t)
 	}
 
 	hook := GitHubWebhook{
-		Repos: repoStore,
+		ExternalServices: esStore,
 	}
 
 	var called bool

@@ -21,6 +21,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	idb "github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -47,23 +48,19 @@ func TestIntegration(t *testing.T) {
 
 	db := dbtest.NewDB(t, *dsn)
 
-	dbstore := repos.NewDBStore(db, sql.TxOptions{
+	store := repos.NewStore(db, sql.TxOptions{
 		Isolation: sql.LevelSerializable,
 	})
 
 	lg := log15.New()
 	lg.SetHandler(log15.DiscardHandler())
-
-	store := repos.NewObservedStore(
-		dbstore,
-		lg,
-		repos.NewStoreMetrics(),
-		trace.Tracer{Tracer: opentracing.GlobalTracer()},
-	)
+	store.Log = lg
+	store.Metrics = repos.NewStoreMetrics()
+	store.Tracer = trace.Tracer{Tracer: opentracing.GlobalTracer()}
 
 	for _, tc := range []struct {
 		name string
-		test func(*testing.T, repos.Store) func(*testing.T)
+		test func(*testing.T, *repos.Store) func(*testing.T)
 	}{
 		{"Server/SetRepoEnabled", testServerSetRepoEnabled},
 		{"Server/EnqueueRepoUpdate", testServerEnqueueRepoUpdate},
@@ -183,7 +180,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 	})
 }
 
-func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T) {
+func testServerSetRepoEnabled(t *testing.T, store *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		githubService := &types.ExternalService{
 			ID:          1,
@@ -336,13 +333,13 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 				ctx := context.Background()
 
 				storedSvcs := tc.svcs.Clone()
-				err := store.UpsertExternalServices(ctx, storedSvcs...)
+				err := store.ExternalServiceStore.Upsert(ctx, storedSvcs...)
 				if err != nil {
 					t.Fatalf("failed to prepare store: %v", err)
 				}
 
 				storedRepos := tc.repos.Clone()
-				err = store.InsertRepos(ctx, storedRepos...)
+				err = store.RepoStore.Create(ctx, storedRepos...)
 				if err != nil {
 					t.Fatalf("failed to prepare store: %v", err)
 				}
@@ -383,8 +380,9 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 					ids = append(ids, s.ID)
 				}
 
-				svcs, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
-					IDs: ids,
+				svcs, err := store.ExternalServiceStore.List(ctx, idb.ExternalServicesListOptions{
+					IDs:              ids,
+					OrderByDirection: "ASC",
 				})
 				if err != nil {
 					t.Fatalf("failed to read from store: %v", err)
@@ -399,7 +397,7 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 	}
 }
 
-func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testing.T) {
+func testServerEnqueueRepoUpdate(t *testing.T, store *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 
@@ -411,7 +409,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 }`,
 		}
 
-		if err := store.UpsertExternalServices(ctx, &svc); err != nil {
+		if err := store.ExternalServiceStore.Upsert(ctx, &svc); err != nil {
 			t.Fatal(err)
 		}
 
@@ -425,34 +423,37 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 			Metadata: new(github.Repository),
 		}
 
-		if err := store.InsertRepos(ctx, &repo); err != nil {
+		if err := store.RepoStore.Create(ctx, &repo); err != nil {
 			t.Fatal(err)
 		}
 
 		type testCase struct {
-			name  string
-			store repos.Store
-			repo  api.RepoName
-			res   *protocol.RepoUpdateResponse
-			err   string
+			name     string
+			store    *repos.Store
+			repo     api.RepoName
+			res      *protocol.RepoUpdateResponse
+			err      string
+			teardown func()
 		}
 
 		var testCases []testCase
 		testCases = append(testCases,
 			func() testCase {
-				err := errors.New("boom")
+				idb.Mocks.Repos.List = func(v0 context.Context, v1 idb.ReposListOptions) ([]*types.Repo, error) {
+					return nil, errors.New("boom")
+				}
 				return testCase{
-					name: "returns an error on store failure",
-					store: &storeWithErrors{
-						Store:        store,
-						ListReposErr: err,
+					name:  "returns an error on store failure",
+					store: store,
+					err:   `store.list-repos: boom`,
+					teardown: func() {
+						idb.Mocks.Repos = idb.MockRepos{}
 					},
-					err: `store.list-repos: boom`,
 				}
 			}(),
 			testCase{
 				name:  "missing repo",
-				store: store, // empty store
+				store: store,
 				repo:  "foo",
 				err:   `repo "foo" not found in store`,
 			},
@@ -475,6 +476,10 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 			ctx := context.Background()
 
 			t.Run(tc.name, func(t *testing.T) {
+				if tc.teardown != nil {
+					defer tc.teardown()
+				}
+
 				s := &Server{Store: tc.store, Scheduler: &fakeScheduler{}}
 				srv := httptest.NewServer(s.Handler())
 				defer srv.Close()
@@ -497,7 +502,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 	}
 }
 
-func testServerRepoExternalServices(t *testing.T, store repos.Store) func(t *testing.T) {
+func testServerRepoExternalServices(t *testing.T, store *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 
 		service1 := &types.ExternalService{
@@ -526,7 +531,7 @@ func testServerRepoExternalServices(t *testing.T, store repos.Store) func(t *tes
 		// set for test cases.
 		ctx := context.Background()
 
-		if err := store.UpsertExternalServices(ctx, service1, service2); err != nil {
+		if err := store.ExternalServiceStore.Upsert(ctx, service1, service2); err != nil {
 			t.Fatal(err)
 		}
 
@@ -550,7 +555,7 @@ func testServerRepoExternalServices(t *testing.T, store repos.Store) func(t *tes
 			Metadata: new(github.Repository),
 		}).With(types.Opt.RepoSources(service1.URN(), service2.URN()))
 
-		if err := store.InsertRepos(ctx, repoNoSources, repoSources); err != nil {
+		if err := store.RepoStore.Create(ctx, repoNoSources, repoSources); err != nil {
 			t.Fatal(err)
 		}
 
@@ -596,7 +601,7 @@ func testServerRepoExternalServices(t *testing.T, store repos.Store) func(t *tes
 	}
 }
 
-func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T) {
+func testServerStatusMessages(t *testing.T, store *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 
@@ -607,7 +612,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 			DisplayName: "github.com - test",
 		}
 
-		err := store.UpsertExternalServices(ctx, githubService)
+		err := store.ExternalServiceStore.Upsert(ctx, githubService)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -744,7 +749,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 					}
 				}
 
-				err := store.InsertRepos(ctx, stored...)
+				err := store.RepoStore.Create(ctx, stored...)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -754,7 +759,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 					for _, r := range stored {
 						ids = append(ids, r.ID)
 					}
-					err := store.DeleteRepos(ctx, ids...)
+					err := store.RepoStore.Delete(ctx, ids...)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -771,10 +776,12 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 				}
 
 				if tc.sourcerErr != nil || tc.listRepoErr != nil {
-					store = &storeWithErrors{
-						Store:        store,
-						ListReposErr: tc.listRepoErr,
+					idb.Mocks.Repos.List = func(v0 context.Context, v1 idb.ReposListOptions) ([]*types.Repo, error) {
+						return nil, tc.listRepoErr
 					}
+					defer func() {
+						idb.Mocks.Repos.List = nil
+					}()
 					sourcer := repos.NewFakeSourcer(tc.sourcerErr, repos.NewFakeSource(githubService, nil))
 					// Run Sync so that possibly `LastSyncErrors` is set
 					syncer.Sourcer = sourcer
@@ -834,8 +841,8 @@ func apiExternalServices(es ...*types.ExternalService) []api.ExternalService {
 	return svcs
 }
 
-func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t *testing.T) {
-	return func(t *testing.T, store repos.Store) func(t *testing.T) {
+func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx := context.Background()
 			clock := dbtesting.NewFakeClock(time.Now(), 0)
@@ -854,7 +861,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 				Config: `{}`,
 			}
 
-			if err := store.UpsertExternalServices(ctx, &githubSource, &awsSource, &gitlabSource); err != nil {
+			if err := store.ExternalServiceStore.Upsert(ctx, &githubSource, &awsSource, &gitlabSource); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1212,7 +1219,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 					ctx := context.Background()
 
 					rs := tc.stored.Clone()
-					err := store.InsertRepos(ctx, rs...)
+					err := store.RepoStore.Create(ctx, rs...)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -1228,7 +1235,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 						for _, r := range tc.stored {
 							ids = append(ids, r.ID)
 						}
-						err := store.DeleteRepos(ctx, ids...)
+						err := store.RepoStore.Delete(ctx, ids...)
 						if err != nil {
 							t.Fatal(err)
 						}
@@ -1275,7 +1282,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 						if tc.assertDelay != 0 {
 							time.Sleep(tc.assertDelay)
 						}
-						rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
+						rs, err := store.RepoStore.List(ctx, idb.ReposListOptions{})
 						if err != nil {
 							t.Fatal(err)
 						}
@@ -1397,25 +1404,4 @@ func formatJSON(s string) string {
 		panic(err)
 	}
 	return formatted
-}
-
-type storeWithErrors struct {
-	repos.Store
-
-	ListReposErr   error
-	UpsertReposErr error
-}
-
-func (s *storeWithErrors) ListRepos(ctx context.Context, args repos.StoreListReposArgs) ([]*types.Repo, error) {
-	if s.ListReposErr != nil {
-		return nil, s.ListReposErr
-	}
-	return s.Store.ListRepos(ctx, args)
-}
-
-func (s *storeWithErrors) UpsertRepos(ctx context.Context, repos ...*types.Repo) error {
-	if s.UpsertReposErr != nil {
-		return s.UpsertReposErr
-	}
-	return s.Store.UpsertRepos(ctx, repos...)
 }

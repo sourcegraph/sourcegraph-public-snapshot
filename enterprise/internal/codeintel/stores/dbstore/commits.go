@@ -8,6 +8,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
@@ -132,12 +133,14 @@ func (s *Store) DirtyRepositories(ctx context.Context) (_ map[int]int, err error
 // token stored in the database, the flag will not be cleared as another request for update has come in since this
 // token has been read.
 func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, commitGraph *gitserver.CommitGraph, tipCommit string, dirtyToken int) (err error) {
-	ctx, endObservation := s.operations.calculateVisibleUploads.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-		log.Int("numKeys", len(commitGraph.Order())),
-		log.String("tipCommit", tipCommit),
-		log.Int("dirtyToken", dirtyToken),
-	}})
+	ctx, traceLog, endObservation := s.operations.calculateVisibleUploads.WithAndLogger(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", repositoryID),
+			log.Int("numCommitGraphKeys", len(commitGraph.Order())),
+			log.String("tipCommit", tipCommit),
+			log.Int("dirtyToken", dirtyToken),
+		},
+	})
 	defer endObservation(1, observation.Args{})
 
 	tx, err := s.transact(ctx)
@@ -156,6 +159,10 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, c
 	if err != nil {
 		return err
 	}
+	traceLog(
+		log.Int("numCommitGraphViewMetaKeys", len(commitGraphView.Meta)),
+		log.Int("numCommitGraphViewTokenKeys", len(commitGraphView.Tokens)),
+	)
 
 	// Determine which uploads are visible to which commits for this repository
 	graph := commitgraph.NewGraph(commitGraph, commitGraphView)
@@ -197,8 +204,13 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, c
 
 	listSerializer := NewUploadMetaListSerializer()
 
+	var numNearestUploadsRecords int
+	var numNearestUploadsLinksRecords int
+
 	for v := range graph.Stream() {
 		if v.Uploads != nil {
+			numNearestUploadsRecords++
+
 			if err := nearestUploadsInserter.Insert(
 				ctx,
 				repositoryID,
@@ -209,6 +221,8 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, c
 			}
 		}
 		if v.Links != nil {
+			numNearestUploadsLinksRecords++
+
 			if err := nearestUploadsLinksInserter.Insert(
 				ctx,
 				repositoryID,
@@ -220,13 +234,16 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, c
 			}
 		}
 	}
-
 	if err := nearestUploadsInserter.Flush(ctx); err != nil {
 		return err
 	}
 	if err := nearestUploadsLinksInserter.Flush(ctx); err != nil {
 		return err
 	}
+	traceLog(
+		log.Int("numNearestUploadsRecords", numNearestUploadsRecords),
+		log.Int("numNearestUploadsLinksRecords", numNearestUploadsLinksRecords),
+	)
 
 	// Update which repositories are visible from the tip of the default branch. This
 	// flag is used to determine which bundles for a repository we open during a global
@@ -239,7 +256,10 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, c
 		"upload_id",
 	)
 
+	var numUploadsVisibleAtTipRecords int
 	for _, uploadMeta := range graph.UploadsVisibleAtCommit(tipCommit) {
+		numUploadsVisibleAtTipRecords++
+
 		if err := uploadsVisibleAtTipInserter.Insert(ctx, repositoryID, uploadMeta.UploadID); err != nil {
 			return err
 		}
@@ -247,6 +267,7 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, c
 	if err := uploadsVisibleAtTipInserter.Flush(ctx); err != nil {
 		return err
 	}
+	traceLog(log.Int("numUploadsVisibleAtTipRecords", numUploadsVisibleAtTipRecords))
 
 	if dirtyToken != 0 {
 		// If the user requests us to clear a dirty token, set the updated_token value to

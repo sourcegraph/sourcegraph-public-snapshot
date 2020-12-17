@@ -24,8 +24,24 @@ const queryCampaigns = () =>
         totalCount: Object.values(nodes).length,
     })
 
+const campaignsNotLicensed = () => of(false)
+
+const campaignsLicensed = () => of(true)
+
 add('List of campaigns', () => (
-    <EnterpriseWebStory>{props => <CampaignListPage {...props} queryCampaigns={queryCampaigns} />}</EnterpriseWebStory>
+    <EnterpriseWebStory>
+        {props => (
+            <CampaignListPage {...props} queryCampaigns={queryCampaigns} areCampaignsLicensed={campaignsLicensed} />
+        )}
+    </EnterpriseWebStory>
+))
+
+add('Licensing not enforced', () => (
+    <EnterpriseWebStory>
+        {props => (
+            <CampaignListPage {...props} queryCampaigns={queryCampaigns} areCampaignsLicensed={campaignsNotLicensed} />
+        )}
+    </EnterpriseWebStory>
 ))
 
 add('No campaigns', () => {
@@ -46,7 +62,9 @@ add('No campaigns', () => {
     )
     return (
         <EnterpriseWebStory>
-            {props => <CampaignListPage {...props} queryCampaigns={queryCampaigns} />}
+            {props => (
+                <CampaignListPage {...props} queryCampaigns={queryCampaigns} areCampaignsLicensed={campaignsLicensed} />
+            )}
         </EnterpriseWebStory>
     )
 })
@@ -69,7 +87,14 @@ add('All campaigns tab empty', () => {
     )
     return (
         <EnterpriseWebStory>
-            {props => <CampaignListPage {...props} queryCampaigns={queryCampaigns} openTab="campaigns" />}
+            {props => (
+                <CampaignListPage
+                    {...props}
+                    queryCampaigns={queryCampaigns}
+                    areCampaignsLicensed={campaignsLicensed}
+                    openTab="campaigns"
+                />
+            )}
         </EnterpriseWebStory>
     )
 })

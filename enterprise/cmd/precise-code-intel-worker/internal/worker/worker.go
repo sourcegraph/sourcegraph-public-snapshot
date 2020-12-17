@@ -4,15 +4,16 @@ import (
 	"context"
 	"time"
 
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 func NewWorker(
 	dbStore DBStore,
+	workerStore dbworkerstore.Store,
 	lsifStore LSIFStore,
 	uploadStore uploadstore.Store,
 	gitserverClient GitserverClient,
@@ -32,7 +33,8 @@ func NewWorker(
 		budgetRemaining: budgetMax,
 	}
 
-	return dbworker.NewWorker(rootContext, store.WorkerutilUploadStore(dbStore), handler, workerutil.WorkerOptions{
+	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
+		Name:        "precise_code_intel_upload_worker",
 		NumHandlers: numProcessorRoutines,
 		Interval:    pollInterval,
 		Metrics:     workerMetrics,

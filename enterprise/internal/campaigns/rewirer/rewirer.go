@@ -1,29 +1,24 @@
 package rewirer
 
 import (
-	"context"
-
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type ChangesetRewirer struct {
-	mappings store.RewirerMappings
-	campaign *campaigns.Campaign
-	rstore   repos.Store
+	// The mappings need to be hydrated for the ChangesetRewirer to consume them.
+	mappings   store.RewirerMappings
+	campaignID int64
 }
 
-func New(mappings store.RewirerMappings, campaign *campaigns.Campaign, rstore repos.Store) *ChangesetRewirer {
+func New(mappings store.RewirerMappings, campaignID int64) *ChangesetRewirer {
 	return &ChangesetRewirer{
-		mappings: mappings,
-		campaign: campaign,
-		rstore:   rstore,
+		mappings:   mappings,
+		campaignID: campaignID,
 	}
 }
 
@@ -31,13 +26,7 @@ func New(mappings store.RewirerMappings, campaign *campaigns.Campaign, rstore re
 // for consumption by the background reconciler.
 //
 // It also updates the ChangesetIDs on the campaign.
-func (r *ChangesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.Changeset, err error) {
-	// First we need to load the associations.
-	associations, err := r.loadAssociations(ctx)
-	if err != nil {
-		return nil, err
-	}
-
+func (r *ChangesetRewirer) Rewire() (changesets []*campaigns.Changeset, err error) {
 	changesets = []*campaigns.Changeset{}
 
 	for _, m := range r.mappings {
@@ -46,13 +35,12 @@ func (r *ChangesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 			changeset := m.Changeset
 
 			// If we don't have access to a repository, we don't detach nor close the changeset.
-			_, ok := associations.accessibleReposByID[m.RepoID]
-			if !ok {
+			if m.Repo == nil {
 				continue
 			}
 
 			// If the changeset is currently not attached to this campaign, we don't want to modify it.
-			if !changeset.AttachedTo(r.campaign.ID) {
+			if !changeset.AttachedTo(r.campaignID) {
 				continue
 			}
 
@@ -68,8 +56,8 @@ func (r *ChangesetRewirer) Rewire(ctx context.Context) (changesets []*campaigns.
 		// simply skip the repository? If we skip it, the user can't reapply
 		// the same campaign spec, since it's already applied and re-applying
 		// would require a new spec.
-		repo, ok := associations.accessibleReposByID[m.RepoID]
-		if !ok {
+		repo := m.Repo
+		if repo == nil {
 			return nil, &db.RepoNotFoundErr{ID: m.RepoID}
 		}
 
@@ -104,8 +92,8 @@ func (r *ChangesetRewirer) createChangesetForSpec(repo *types.Repo, spec *campai
 		RepoID:              spec.RepoID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 
-		CampaignIDs:       []int64{r.campaign.ID},
-		OwnedByCampaignID: r.campaign.ID,
+		CampaignIDs:       []int64{r.campaignID},
+		OwnedByCampaignID: r.campaignID,
 		CurrentSpecID:     spec.ID,
 
 		PublicationState: campaigns.ChangesetPublicationStateUnpublished,
@@ -126,7 +114,7 @@ func (r *ChangesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec
 	c.CurrentSpecID = spec.ID
 
 	// Ensure that the changeset is attached to the campaign
-	c.CampaignIDs = append(c.CampaignIDs, r.campaign.ID)
+	c.CampaignIDs = append(c.CampaignIDs, r.campaignID)
 
 	// Copy over diff stat from the new spec.
 	diffStat := spec.DiffStat()
@@ -143,16 +131,14 @@ func (r *ChangesetRewirer) createTrackingChangeset(repo *types.Repo, externalID 
 		RepoID:              repo.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 
-		CampaignIDs:     []int64{r.campaign.ID},
-		ExternalID:      externalID,
-		AddedToCampaign: true,
+		CampaignIDs: []int64{r.campaignID},
+		ExternalID:  externalID,
 		// Note: no CurrentSpecID, because we merely track this one
 
-		PublicationState: campaigns.ChangesetPublicationStatePublished,
+		PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 
 		// Enqueue it so the reconciler syncs it.
 		ReconcilerState: campaigns.ReconcilerStateQueued,
-		Unsynced:        true,
 	}
 
 	return newChangeset
@@ -161,8 +147,7 @@ func (r *ChangesetRewirer) createTrackingChangeset(repo *types.Repo, externalID 
 func (r *ChangesetRewirer) attachTrackingChangeset(changeset *campaigns.Changeset) {
 	// We already have a changeset with the given repoID and
 	// externalID, so we can track it.
-	changeset.AddedToCampaign = true
-	changeset.CampaignIDs = append(changeset.CampaignIDs, r.campaign.ID)
+	changeset.CampaignIDs = append(changeset.CampaignIDs, r.campaignID)
 
 	// If it's errored and not created by another campaign, we re-enqueue it.
 	if changeset.OwnedByCampaignID == 0 && changeset.ReconcilerState == campaigns.ReconcilerStateErrored {
@@ -171,7 +156,7 @@ func (r *ChangesetRewirer) attachTrackingChangeset(changeset *campaigns.Changese
 }
 
 func (r *ChangesetRewirer) closeChangeset(changeset *campaigns.Changeset) {
-	if changeset.CurrentSpecID != 0 && changeset.OwnedByCampaignID == r.campaign.ID {
+	if changeset.CurrentSpecID != 0 && changeset.OwnedByCampaignID == r.campaignID {
 		// If we have a current spec ID and the changeset was created by
 		// _this_ campaign that means we should detach and close it.
 		if changeset.Published() {
@@ -205,26 +190,7 @@ func (r *ChangesetRewirer) closeChangeset(changeset *campaigns.Changeset) {
 	}
 
 	// Disassociate the changeset with the campaign.
-	changeset.RemoveCampaignID(r.campaign.ID)
-}
-
-type rewirerAssociations struct {
-	accessibleReposByID map[api.RepoID]*types.Repo
-}
-
-// loadAssociations retrieves all entities required to rewire the changesets in a campaign.
-func (r *ChangesetRewirer) loadAssociations(ctx context.Context) (associations *rewirerAssociations, err error) {
-	associations = &rewirerAssociations{}
-	// Fetch all repos involved. We use them later to enforce repo permissions.
-	//
-	// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
-	// filters out repositories that the user doesn't have access to.
-	associations.accessibleReposByID, err = db.Repos.GetReposSetByIDs(ctx, r.mappings.RepoIDs()...)
-	if err != nil {
-		return nil, err
-	}
-
-	return associations, nil
+	changeset.RemoveCampaignID(r.campaignID)
 }
 
 // checkRepoSupported checks whether the given repository is supported by campaigns

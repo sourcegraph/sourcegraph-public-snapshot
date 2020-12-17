@@ -1371,6 +1371,8 @@ func (s *Server) doRepoUpdate2(repo api.RepoName) error {
 			"+refs/merge-requests/*:refs/merge-requests/*",
 			// Bitbucket pull requests
 			"+refs/pull-requests/*:refs/pull-requests/*",
+			// Gerrit changesets
+			"+refs/changes/*:refs/changes/*",
 			// Possibly deprecated refs for sourcegraph zap experiment?
 			"+refs/sourcegraph/*:refs/sourcegraph/*")
 	}

@@ -396,6 +396,11 @@ describe('buildSearchURLQuery', () => {
                 buildSearchURLQuery('type:diff patternType:literal foo', SearchPatternType.regexp, false, undefined)
             ).toBe('q=type:diff+foo&patternType=literal')
         })
+        it('overrides the patternType parameter if using a quoted value', () => {
+            expect(buildSearchURLQuery('patternType:"literal" foo', SearchPatternType.regexp, false, undefined)).toBe(
+                'q=foo&patternType=literal'
+            )
+        })
     })
     it('builds the URL query with a case parameter if caseSensitive is true', () =>
         expect(buildSearchURLQuery('foo', SearchPatternType.literal, true, undefined)).toBe(
@@ -403,6 +408,10 @@ describe('buildSearchURLQuery', () => {
         ))
     it('appends the case parameter if `case:yes` exists in the query', () =>
         expect(buildSearchURLQuery('foo case:yes', SearchPatternType.literal, false, undefined)).toBe(
+            'q=foo+&patternType=literal&case=yes'
+        ))
+    it('removes the case parameter if using a quoted value', () =>
+        expect(buildSearchURLQuery('foo case:"yes"', SearchPatternType.literal, true, undefined)).toBe(
             'q=foo+&patternType=literal&case=yes'
         ))
     it('removes the case parameter case:no exists in the query and caseSensitive is true', () =>

@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
@@ -25,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -39,9 +37,8 @@ func TestPermissionLevels(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	cstore := store.New(dbconn.Global)
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	sr := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +56,9 @@ func TestPermissionLevels(t *testing.T) {
 	userID := ct.CreateTestUser(t, false).ID
 
 	repoStore := db.NewRepoStoreWith(cstore)
-	repo := newGitHubTestRepo("github.com/sourcegraph/permission-levels-test", newGitHubExternalService(t, rstore))
+	esStore := db.NewExternalServicesStoreWith(cstore)
+
+	repo := newGitHubTestRepo("github.com/sourcegraph/permission-levels-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -759,7 +758,7 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	cstore := store.New(dbconn.Global)
 	sr := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(sr, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -772,14 +771,14 @@ func TestRepositoryPermissions(t *testing.T) {
 	// Global test data that we reuse in every test
 	userID := ct.CreateTestUser(t, false).ID
 
-	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	repoStore := db.NewRepoStoreWith(cstore)
+	esStore := db.NewExternalServicesStoreWith(cstore)
 
 	// Create 2 repositories
 	repos := make([]*types.Repo, 0, 2)
 	for i := 0; i < cap(repos); i++ {
 		name := fmt.Sprintf("github.com/sourcegraph/test-repository-permissions-repo-%d", i)
-		r := newGitHubTestRepo(name, newGitHubExternalService(t, reposStore))
+		r := newGitHubTestRepo(name, newGitHubExternalService(t, esStore))
 		if err := repoStore.Create(ctx, r); err != nil {
 			t.Fatal(err)
 		}
@@ -923,6 +922,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		campaignSpec := &campaigns.CampaignSpec{
 			UserID:          userID,
 			NamespaceUserID: userID,
+			Spec:            campaigns.CampaignSpecFields{Name: "campaign-spec-and-changeset-specs"},
 		}
 		if err := cstore.CreateCampaignSpec(ctx, campaignSpec); err != nil {
 			t.Fatal(err)
@@ -947,8 +947,10 @@ func TestRepositoryPermissions(t *testing.T) {
 		// Query campaignSpec and check that we get all changesetSpecs
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
 		testCampaignSpecResponse(t, s, userCtx, campaignSpec.RandID, wantCampaignSpecResponse{
-			changesetSpecTypes:  map[string]int{"VisibleChangesetSpec": 2},
-			changesetSpecsCount: 2,
+			changesetSpecTypes:    map[string]int{"VisibleChangesetSpec": 2},
+			changesetSpecsCount:   2,
+			changesetPreviewTypes: map[string]int{"VisibleChangesetApplyPreview": 2},
+			changesetPreviewCount: 2,
 			campaignSpecDiffStat: apitest.DiffStat{
 				Added: 8, Changed: 8, Deleted: 8,
 			},
@@ -973,7 +975,9 @@ func TestRepositoryPermissions(t *testing.T) {
 				"VisibleChangesetSpec": 1,
 				"HiddenChangesetSpec":  1,
 			},
-			changesetSpecsCount: 2,
+			changesetSpecsCount:   2,
+			changesetPreviewTypes: map[string]int{"VisibleChangesetApplyPreview": 1, "HiddenChangesetApplyPreview": 1},
+			changesetPreviewCount: 2,
 			campaignSpecDiffStat: apitest.DiffStat{
 				Added: 4, Changed: 4, Deleted: 4,
 			},
@@ -1145,9 +1149,11 @@ query {
 `
 
 type wantCampaignSpecResponse struct {
-	changesetSpecTypes   map[string]int
-	changesetSpecsCount  int
-	campaignSpecDiffStat apitest.DiffStat
+	changesetPreviewTypes map[string]int
+	changesetPreviewCount int
+	changesetSpecTypes    map[string]int
+	changesetSpecsCount   int
+	campaignSpecDiffStat  apitest.DiffStat
 }
 
 func testCampaignSpecResponse(t *testing.T, s *graphql.Schema, ctx context.Context, campaignSpecRandID string, w wantCampaignSpecResponse) {
@@ -1168,12 +1174,24 @@ func testCampaignSpecResponse(t *testing.T, s *graphql.Schema, ctx context.Conte
 		t.Fatalf("unexpected changesetSpecs total count (-want +got):\n%s", diff)
 	}
 
+	if diff := cmp.Diff(w.changesetPreviewCount, response.Node.ApplyPreview.TotalCount); diff != "" {
+		t.Fatalf("unexpected applyPreview total count (-want +got):\n%s", diff)
+	}
+
 	changesetSpecTypes := map[string]int{}
 	for _, c := range response.Node.ChangesetSpecs.Nodes {
 		changesetSpecTypes[c.Typename]++
 	}
 	if diff := cmp.Diff(w.changesetSpecTypes, changesetSpecTypes); diff != "" {
 		t.Fatalf("unexpected changesetSpec types (-want +got):\n%s", diff)
+	}
+
+	changesetPreviewTypes := map[string]int{}
+	for _, c := range response.Node.ApplyPreview.Nodes {
+		changesetPreviewTypes[c.Typename]++
+	}
+	if diff := cmp.Diff(w.changesetPreviewTypes, changesetPreviewTypes); diff != "" {
+		t.Fatalf("unexpected applyPreview types (-want +got):\n%s", diff)
 	}
 }
 
@@ -1183,23 +1201,27 @@ query($campaignSpec: ID!) {
     ... on CampaignSpec {
       id
 
+      applyPreview(first: 100) {
+        totalCount
+        nodes {
+          __typename
+          ... on HiddenChangesetApplyPreview {
+              targets {
+                  __typename
+              }
+          }
+          ... on VisibleChangesetApplyPreview {
+              targets {
+                  __typename
+              }
+          }
+        }
+      }
       changesetSpecs(first: 100) {
         totalCount
         nodes {
           __typename
           type
-          operations
-          changeset { id }
-          delta {
-              titleChanged
-              bodyChanged
-              undraft
-              baseRefChanged
-              diffChanged
-              commitMessageChanged
-              authorNameChanged
-              authorEmailChanged
-          }
           ... on HiddenChangesetSpec {
             id
           }

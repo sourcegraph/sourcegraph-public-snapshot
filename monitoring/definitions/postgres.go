@@ -3,6 +3,7 @@ package definitions
 import (
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -101,20 +102,20 @@ func Postgres() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm(dbSourcegraph, monitoring.ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageLongTerm(dbSourcegraph, monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageLongTerm(dbSourcegraph, monitoring.ObservableOwnerCloud),
+						shared.ProvisioningMemoryUsageLongTerm(dbSourcegraph, monitoring.ObservableOwnerCloud),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm(dbSourcegraph, monitoring.ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageShortTerm(dbSourcegraph, monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageShortTerm(dbSourcegraph, monitoring.ObservableOwnerCloud),
+						shared.ProvisioningMemoryUsageShortTerm(dbSourcegraph, monitoring.ObservableOwnerCloud),
 					},
 					{
-						sharedProvisioningCPUUsageLongTerm(dbCodeIntel, monitoring.ObservableOwnerCodeIntel),
-						sharedProvisioningMemoryUsageLongTerm(dbCodeIntel, monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningCPUUsageLongTerm(dbCodeIntel, monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningMemoryUsageLongTerm(dbCodeIntel, monitoring.ObservableOwnerCodeIntel),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm(dbCodeIntel, monitoring.ObservableOwnerCodeIntel),
-						sharedProvisioningMemoryUsageShortTerm(dbCodeIntel, monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningCPUUsageShortTerm(dbCodeIntel, monitoring.ObservableOwnerCodeIntel),
+						shared.ProvisioningMemoryUsageShortTerm(dbCodeIntel, monitoring.ObservableOwnerCodeIntel),
 					},
 				},
 			},

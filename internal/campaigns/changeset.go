@@ -182,10 +182,9 @@ type Changeset struct {
 	DiffStatDeleted     *int32
 	SyncState           ChangesetSyncState
 
-	// The campaign that "owns" this changeset: it can create/close it on code host.
+	// The campaign that "owns" this changeset: it can create/close
+	// it on code host. If this is 0, it is imported/tracked by a campaign.
 	OwnedByCampaignID int64
-	// Whether it was imported/tracked by a campaign.
-	AddedToCampaign bool
 
 	// This is 0 if the Changeset isn't owned by Sourcegraph.
 	CurrentSpecID  int64
@@ -202,10 +201,6 @@ type Changeset struct {
 	NumResets       int64
 	NumFailures     int64
 
-	// Unsynced is true if the changeset tracks an external changeset but the
-	// data hasn't been synced yet.
-	Unsynced bool
-
 	// Closing is set to true (along with the ReocncilerState) when the
 	// reconciler should close the changeset.
 	Closing bool
@@ -219,14 +214,6 @@ func (c *Changeset) Clone() *Changeset {
 	tt := *c
 	tt.CampaignIDs = c.CampaignIDs[:len(c.CampaignIDs):len(c.CampaignIDs)]
 	return &tt
-}
-
-// PublishedAndSynced returns whether the Changeset has been published on the
-// code host and is fully synced.
-// This can be used as a check before accessing the fields based on synced
-// metadata, such as Title or Body, etc.
-func (c *Changeset) PublishedAndSynced() bool {
-	return !c.Unsynced && c.PublicationState.Published()
 }
 
 // Published returns whether the Changeset's PublicationState is Published.

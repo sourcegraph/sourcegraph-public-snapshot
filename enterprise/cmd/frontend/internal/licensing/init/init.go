@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/enforcement"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -97,6 +98,8 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 			ExpiresAtValue: info.ExpiresAt,
 		}, nil
 	}
+
+	enterpriseServices.LicenseResolver = resolvers.LicenseResolver{}
 
 	goroutine.Go(func() {
 		licensing.StartMaxUserCount(&usersStore{})

@@ -7,7 +7,7 @@
    {
     "reason": "repository-missing",
     "title": "2 missing",
-    "message": "2 repositories could not be searched. Try searching again or reducing the scope of your query with `repo:`, `repogroup:` or other filters.\n* `missing-2`\n* `missing-1`",
+    "message": "2 repositories could not be searched. Try searching again or reducing the scope of your query with `repo:`, `repogroup:` or other filters.\n* `missing-1`\n* `missing-2`",
     "severity": "info"
    },
    {

@@ -36,11 +36,10 @@ func newWorker(
 	r := &reconciler.Reconciler{GitserverClient: gitClient, Sourcer: sourcer, Store: s}
 
 	options := workerutil.WorkerOptions{
+		Name:        "campaigns_reconciler_worker",
 		NumHandlers: 5,
 		Interval:    5 * time.Second,
-		Metrics: workerutil.WorkerMetrics{
-			HandleOperation: metrics.handleOperation,
-		},
+		Metrics:     metrics.workerMetrics,
 	}
 
 	workerStore := createDBWorkerStore(s)
@@ -53,7 +52,7 @@ func newWorkerResetter(s *store.Store, metrics campaignsMetrics) *dbworker.Reset
 	workerStore := createDBWorkerStore(s)
 
 	options := dbworker.ResetterOptions{
-		Name:     "campaigns_reconciler_resetter",
+		Name:     "campaigns_reconciler_worker_resetter",
 		Interval: 1 * time.Minute,
 		Metrics: dbworker.ResetterMetrics{
 			Errors:              metrics.errors,
@@ -72,6 +71,7 @@ func scanFirstChangesetRecord(rows *sql.Rows, err error) (workerutil.Record, boo
 
 func createDBWorkerStore(s *store.Store) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
+		Name:                 "campaigns_reconciler_worker_store",
 		TableName:            "changesets",
 		AlternateColumnNames: map[string]string{"state": "reconciler_state"},
 		ColumnExpressions:    store.ChangesetColumns,

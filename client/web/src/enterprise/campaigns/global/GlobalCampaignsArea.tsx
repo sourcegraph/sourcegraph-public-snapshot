@@ -9,7 +9,7 @@ import { AuthenticatedUser } from '../../../auth'
 import { Scalars } from '../../../../../shared/src/graphql-operations'
 import { lazyComponent } from '../../../util/lazyComponent'
 import { CampaignListPageProps, NamespaceCampaignListPageProps } from '../list/CampaignListPage'
-import { CampaignApplyPageProps } from '../apply/CampaignApplyPage'
+import { CampaignPreviewPageProps } from '../preview/CampaignPreviewPage'
 import { CreateCampaignPageProps } from '../create/CreateCampaignPage'
 import { CampaignDetailsPageProps } from '../detail/CampaignDetailsPage'
 import { CampaignClosePageProps } from '../close/CampaignClosePage'
@@ -23,9 +23,9 @@ const NamespaceCampaignListPage = lazyComponent<NamespaceCampaignListPageProps, 
     () => import('../list/CampaignListPage'),
     'NamespaceCampaignListPage'
 )
-const CampaignApplyPage = lazyComponent<CampaignApplyPageProps, 'CampaignApplyPage'>(
-    () => import('../apply/CampaignApplyPage'),
-    'CampaignApplyPage'
+const CampaignApplyPage = lazyComponent<CampaignPreviewPageProps, 'CampaignPreviewPage'>(
+    () => import('../preview/CampaignPreviewPage'),
+    'CampaignPreviewPage'
 )
 const CreateCampaignPage = lazyComponent<CreateCampaignPageProps, 'CreateCampaignPage'>(
     () => import('../create/CreateCampaignPage'),
@@ -96,7 +96,7 @@ export const NamespaceCampaignsArea = withAuthenticatedUser<
             <Route
                 path={`${match.url}/apply/:specID`}
                 render={({ match, ...props }: RouteComponentProps<{ specID: string }>) => (
-                    <CampaignApplyPage {...outerProps} {...props} specID={match.params.specID} />
+                    <CampaignApplyPage {...outerProps} {...props} campaignSpecID={match.params.specID} />
                 )}
             />
             <Route path={`${match.url}/create`} render={props => <CreateCampaignPage {...outerProps} {...props} />} />

@@ -596,6 +596,9 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 		tr.SetError(err)
 		tr.Finish()
 	}()
+	if Mocks.Repos.ListRepoNames != nil {
+		return Mocks.Repos.ListRepoNames(ctx, opt)
+	}
 	s.ensureStore()
 
 	var repos []*types.RepoName

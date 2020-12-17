@@ -21,11 +21,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock ct.Clock) {
+func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
@@ -44,11 +43,12 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		HeadRefName:  "campaigns/test",
 	}
 
-	repo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
-	otherRepo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
-	gitlabRepo := ct.TestRepo(t, reposStore, extsvc.KindGitLab)
+	rs := db.NewRepoStoreWith(s)
+	es := db.NewExternalServicesStoreWith(s)
 
-	rs := db.NewRepoStoreWith(reposStore.(*repos.DBStore))
+	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
+	otherRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
+	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)
 
 	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
@@ -100,8 +100,11 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				NumResets:       18,
 				NumFailures:     25,
 
-				Unsynced: i != 0,
-				Closing:  true,
+				Closing: true,
+			}
+
+			if i != 0 {
+				th.PublicationState = campaigns.ChangesetPublicationStateUnpublished
 			}
 
 			// Only set these fields on a subset to make sure that
@@ -533,13 +536,13 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 				opts: ListChangesetsOpts{
 					PublicationState: &statePublished,
 				},
-				wantCount: 3,
+				wantCount: 1,
 			},
 			{
 				opts: ListChangesetsOpts{
 					PublicationState: &stateUnpublished,
 				},
-				wantCount: 0,
+				wantCount: 2,
 			},
 			{
 				opts: ListChangesetsOpts{
@@ -606,12 +609,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 			{
 				opts: ListChangesetsOpts{
 					OwnedByCampaignID: int64(1),
-				},
-				wantCount: 1,
-			},
-			{
-				opts: ListChangesetsOpts{
-					OnlySynced: true,
 				},
 				wantCount: 1,
 			},
@@ -896,11 +893,11 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		})
 
 		c4 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-			Repo:            repo.ID,
-			Campaign:        campaignID,
-			OwnedByCampaign: 0,
-			Unsynced:        true,
-			ReconcilerState: campaigns.ReconcilerStateQueued,
+			Repo:             repo.ID,
+			Campaign:         campaignID,
+			OwnedByCampaign:  0,
+			PublicationState: campaigns.ChangesetPublicationStateUnpublished,
+			ReconcilerState:  campaigns.ReconcilerStateQueued,
 		})
 
 		c5 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
@@ -936,9 +933,9 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 		})
 
 		ct.ReloadAndAssertChangeset(t, ctx, s, c4, ct.ChangesetAssertions{
-			Repo:            repo.ID,
-			ReconcilerState: campaigns.ReconcilerStateQueued,
-			Unsynced:        true,
+			Repo:             repo.ID,
+			ReconcilerState:  campaigns.ReconcilerStateQueued,
+			PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 		})
 
 		ct.ReloadAndAssertChangeset(t, ctx, s, c5, ct.ChangesetAssertions{
@@ -1108,7 +1105,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, reposStore
 	})
 }
 
-func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock ct.Clock) {
+func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
@@ -1148,10 +1145,12 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		IncludesCreatedEdit: false,
 	}
 
-	githubRepo := ct.TestRepo(t, reposStore, extsvc.KindGitHub)
-	gitlabRepo := ct.TestRepo(t, reposStore, extsvc.KindGitLab)
+	rs := db.NewRepoStoreWith(s)
+	es := db.NewExternalServicesStoreWith(s)
 
-	rs := db.NewRepoStoreWith(s.Store)
+	githubRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
+	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)
+
 	if err := rs.Create(ctx, githubRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
@@ -1354,7 +1353,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	})
 }
 
-func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Store, reposStore repos.Store, clock ct.Clock) {
+func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	// This is similar to the setup in testStoreChangesets(), but we need a more
 	// fine grained set of changesets to handle the different scenarios. Namely,
 	// we need to cover:
@@ -1413,13 +1412,15 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		return cs
 	}
 
+	rs := db.NewRepoStoreWith(s)
+	es := db.NewExternalServicesStoreWith(s)
+
 	// Set up repositories for each code host type we want to test.
 	var (
-		githubRepo = ct.TestRepo(t, reposStore, extsvc.KindGitHub)
-		bbsRepo    = ct.TestRepo(t, reposStore, extsvc.KindBitbucketServer)
-		gitlabRepo = ct.TestRepo(t, reposStore, extsvc.KindGitLab)
+		githubRepo = ct.TestRepo(t, es, extsvc.KindGitHub)
+		bbsRepo    = ct.TestRepo(t, es, extsvc.KindBitbucketServer)
+		gitlabRepo = ct.TestRepo(t, es, extsvc.KindGitLab)
 	)
-	rs := db.NewRepoStoreWith(reposStore.(*repos.DBStore))
 	if err := rs.Create(ctx, githubRepo, bbsRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}

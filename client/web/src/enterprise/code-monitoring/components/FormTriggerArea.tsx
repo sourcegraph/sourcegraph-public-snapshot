@@ -50,6 +50,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                             filter.value &&
                                             isDiffOrCommit(filter.value.quotedValue)))
                             )
+                            const hasPattern = tokens.term.some(term => term.type === 'pattern')
                             const hasPatternTypeFilter = filters.some(
                                 filter =>
                                     filter.type === 'filter' &&
@@ -63,8 +64,8 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             if (!hasTypeDiffOrCommitFilter) {
                                 return 'Code monitors require queries to specify either `type:commit` or `type:diff`.'
                             }
-                            if (!hasPatternTypeFilter) {
-                                return 'Code monitors require queries to specify a `patternType:` of literal, regexp, or structural.'
+                            if (!hasPatternTypeFilter && hasPattern) {
+                                return 'Code monitors require queries to specify a `patternType:` of literal or regexp.'
                             }
                         }
                         return 'Failed to parse query'
@@ -125,40 +126,52 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         This trigger will fire when new search results are found for a given search query.
                     </span>
                     <span className="mt-4">Search query</span>
-                    <div className="create-monitor-page__query-input">
-                        <input
-                            type="text"
-                            className={classnames(
-                                'create-monitor-page__query-input-field form-control my-2 test-trigger-input',
-                                deriveInputClassName(queryState)
-                            )}
-                            onChange={nextQueryFieldChange}
-                            value={queryState.value}
-                            required={true}
-                            autoFocus={true}
-                            ref={queryInputReference}
-                        />
-                        {queryState.kind === 'VALID' && (
-                            <Link
-                                to={`/search?${buildSearchURLQuery(query, SearchPatternType.literal, false)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="create-monitor-page__query-input-preview-link test-preview-link"
-                            >
-                                Preview results <OpenInNewIcon className="icon-inline" />
-                            </Link>
-                        )}
-                        {queryState.kind === 'INVALID' && (
-                            <small className="invalid-feedback mb-4 test-trigger-error">{queryState.reason}</small>
-                        )}
-                        {(queryState.kind === 'NOT_VALIDATED' || queryState.kind === 'VALID') && (
-                            <div className="d-flex mb-4 flex-column">
-                                <small className="text-muted">
-                                    Code monitors only support <code className="bg-code">type:diff</code> and{' '}
-                                    <code className="bg-code">type:commit</code> search queries.
-                                </small>
+                    <div>
+                        <div className="trigger-area__query-input mb-4">
+                            <div className="d-flex flex-column flex-grow-1">
+                                <input
+                                    type="text"
+                                    className={classnames(
+                                        'trigger-area__query-input-field form-control my-2 test-trigger-input',
+                                        deriveInputClassName(queryState)
+                                    )}
+                                    onChange={nextQueryFieldChange}
+                                    value={queryState.value}
+                                    required={true}
+                                    autoFocus={true}
+                                    ref={queryInputReference}
+                                    spellCheck={false}
+                                />
+                                {queryState.kind === 'INVALID' && (
+                                    <small className="trigger-area__query-input-error-message invalid-feedback test-trigger-error">
+                                        {queryState.reason}
+                                    </small>
+                                )}
+                                {(queryState.kind === 'NOT_VALIDATED' ||
+                                    queryState.kind === 'VALID' ||
+                                    queryState.kind === 'LOADING') && (
+                                    <small className="text-muted mt-1">
+                                        Code monitors only support <code className="bg-code">type:diff</code> and{' '}
+                                        <code className="bg-code">type:commit</code> search queries.
+                                    </small>
+                                )}
                             </div>
-                        )}
+                            <div className="trigger-area__query-input-preview-link p-2 my-2">
+                                <Link
+                                    to={`/search?${buildSearchURLQuery(
+                                        queryState.value,
+                                        SearchPatternType.literal,
+                                        false
+                                    )}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="trigger-area__query-input-preview-link-text test-preview-link"
+                                >
+                                    Preview results{' '}
+                                    <OpenInNewIcon className="trigger-area__query-input-preview-link-icon ml-1 icon-inline" />
+                                </Link>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <button
@@ -196,9 +209,8 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
             )}
             <small className="text-muted">
                 {' '}
-                What other events would you like to monitor? {/* TODO: populate link */}
-                <a href="" target="_blank" rel="noopener">
-                    {/* TODO: populate link */}
+                What other events would you like to monitor?{' '}
+                <a href="mailto:feedback@sourcegraph.com" target="_blank" rel="noopener">
                     Share feedback.
                 </a>
             </small>

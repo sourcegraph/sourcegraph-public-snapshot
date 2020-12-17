@@ -11,10 +11,9 @@ import (
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
-func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock ct.Clock) {
+func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	cs := make([]*campaigns.Campaign, 0, 3)
 
 	t.Run("Create", func(t *testing.T) {
@@ -468,7 +467,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, _ repos.Sto
 	})
 }
 
-func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, _ repos.Store, clock ct.Clock) {
+func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	orgID := ct.InsertTestOrg(t, "user-delete-cascades")
 	user := ct.CreateTestUser(t, false)
 

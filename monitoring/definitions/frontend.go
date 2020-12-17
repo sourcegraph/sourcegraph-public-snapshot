@@ -3,6 +3,7 @@ package definitions
 import (
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -448,6 +449,91 @@ func Frontend() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 					},
+					{
+						{
+							Name:              "num_dirty_repositories",
+							Description:       "number of repositories with a stale commit graph",
+							Query:             `max(src_dirty_repositories_total)`,
+							DataMayNotExist:   true,
+							Warning:           monitoring.Alert().GreaterOrEqual(100),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("number of repositories with a stale commit graph"),
+							Owner:             monitoring.ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:            "dirty_repositories_growth_rate",
+							Description:     "stale commit graph growth rate rate every 5m",
+							Query:           `sum(increase(src_dirty_repositories_total[30m])) / sum(increase(src_codeintel_commit_graph_updater_total[30m]))`,
+							DataMayNotExist: true,
+
+							Warning:           monitoring.Alert().GreaterOrEqual(5),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("stale commit graph growth rate"),
+							Owner:             monitoring.ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "codeintel_commit_graph_updater_99th_percentile_duration",
+							Description:       "99th percentile successful commit graph updater operation duration over 5m",
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_commit_graph_updater_duration_seconds_bucket{job=~"(sourcegraph-)?frontend"}[5m])))`,
+							DataMayNotExist:   true,
+							Warning:           monitoring.Alert().GreaterOrEqual(20),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("update operation").Unit(monitoring.Seconds),
+							Owner:             monitoring.ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "codeintel_commit_graph_updater_errors",
+							Description:       "commit graph updater errors every 5m",
+							Query:             `sum(increase(src_codeintel_commit_graph_updater_errors_total{job=~"(sourcegraph-)?frontend"}[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           monitoring.Alert().GreaterOrEqual(20),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("error"),
+							Owner:             monitoring.ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+					},
+					{
+						{
+							Name:              "codeintel_upload_records_removed",
+							Description:       "upload records expired or deleted every 5m",
+							Query:             `sum(increase(src_codeintel_background_upload_records_removed_total{job=~"(sourcegraph-)?frontend"}[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           monitoring.Alert().GreaterOrEqual(20),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("records removed"),
+							Owner:             monitoring.ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "codeintel_index_records_removed",
+							Description:       "index records expired or deleted every 5m",
+							Query:             `sum(increase(src_codeintel_background_index_records_removed_total{job=~"(sourcegraph-)?frontend"}[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           monitoring.Alert().GreaterOrEqual(20),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("records removed"),
+							Owner:             monitoring.ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "codeintel_uploads_purged",
+							Description:       "data for unreferenced upload records purged every 5m",
+							Query:             `sum(increase(src_codeintel_background_uploads_purged_total{job=~"(sourcegraph-)?frontend"}[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           monitoring.Alert().GreaterOrEqual(20),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("uploads purged"),
+							Owner:             monitoring.ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "codeintel_background_errors",
+							Description:       "codeintel-related background process errors every 5m",
+							Query:             `sum(increase(src_codeintel_background_errors_total{job=~"(sourcegraph-)?frontend"}[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           monitoring.Alert().GreaterOrEqual(20),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("error"),
+							Owner:             monitoring.ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+					},
 				},
 			},
 			{
@@ -543,12 +629,12 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedContainerCPUUsage("frontend", monitoring.ObservableOwnerCloud),
-						sharedContainerMemoryUsage("frontend", monitoring.ObservableOwnerCloud),
+						shared.ContainerCPUUsage("frontend", monitoring.ObservableOwnerCloud),
+						shared.ContainerMemoryUsage("frontend", monitoring.ObservableOwnerCloud),
 					},
 					{
-						sharedContainerRestarts("frontend", monitoring.ObservableOwnerCloud),
-						sharedContainerFsInodes("frontend", monitoring.ObservableOwnerCloud),
+						shared.ContainerRestarts("frontend", monitoring.ObservableOwnerCloud),
+						shared.ContainerFsInodes("frontend", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -557,12 +643,12 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedProvisioningCPUUsageLongTerm("frontend", monitoring.ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageLongTerm("frontend", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageLongTerm("frontend", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningMemoryUsageLongTerm("frontend", monitoring.ObservableOwnerCloud),
 					},
 					{
-						sharedProvisioningCPUUsageShortTerm("frontend", monitoring.ObservableOwnerCloud),
-						sharedProvisioningMemoryUsageShortTerm("frontend", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningCPUUsageShortTerm("frontend", monitoring.ObservableOwnerCloud),
+						shared.ProvisioningMemoryUsageShortTerm("frontend", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -571,8 +657,8 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedGoGoroutines("frontend", monitoring.ObservableOwnerCloud),
-						sharedGoGcDuration("frontend", monitoring.ObservableOwnerCloud),
+						shared.GoGoroutines("frontend", monitoring.ObservableOwnerCloud),
+						shared.GoGcDuration("frontend", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},
@@ -581,7 +667,7 @@ func Frontend() *monitoring.Container {
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						sharedKubernetesPodsAvailable("frontend", monitoring.ObservableOwnerCloud),
+						shared.KubernetesPodsAvailable("frontend", monitoring.ObservableOwnerCloud),
 					},
 				},
 			},

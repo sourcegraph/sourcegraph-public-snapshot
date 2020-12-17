@@ -108,7 +108,7 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch s
 
 	ands := []zoektquery.Q{
 		&zoektquery.RepoBranches{Set: map[string][]string{
-			string(commit.repoResolver.repo.Name): {branch},
+			string(commit.repoResolver.innerRepo.Name): {branch},
 		}},
 		&zoektquery.Symbol{Expr: query},
 	}
@@ -135,7 +135,7 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch s
 		return nil, err
 	}
 
-	baseURI, err := gituri.Parse("git://" + string(commit.repoResolver.repo.Name) + "?" + string(commit.oid))
+	baseURI, err := gituri.Parse("git://" + string(commit.repoResolver.innerRepo.Name) + "?" + string(commit.oid))
 	for _, file := range resp.Files {
 		for _, l := range file.LineMatches {
 			if l.FileName {
@@ -169,7 +169,7 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch s
 func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
-	if branch := indexedSymbolsBranch(ctx, string(commit.repoResolver.repo.Name), string(commit.oid)); branch != "" {
+	if branch := indexedSymbolsBranch(ctx, string(commit.repoResolver.innerRepo.Name), string(commit.oid)); branch != "" {
 		return searchZoektSymbols(ctx, commit, branch, query, first, includePatterns)
 	}
 
@@ -188,13 +188,13 @@ func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *strin
 	searchArgs := search.SymbolsParameters{
 		CommitID:        api.CommitID(commit.oid),
 		First:           limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
-		Repo:            commit.repoResolver.repo.Name,
+		Repo:            commit.repoResolver.innerRepo.Name,
 		IncludePatterns: includePatternsSlice,
 	}
 	if query != nil {
 		searchArgs.Query = *query
 	}
-	baseURI, err := gituri.Parse("git://" + string(commit.repoResolver.repo.Name) + "?" + string(commit.oid))
+	baseURI, err := gituri.Parse("git://" + string(commit.repoResolver.innerRepo.Name) + "?" + string(commit.oid))
 	if err != nil {
 		return nil, err
 	}

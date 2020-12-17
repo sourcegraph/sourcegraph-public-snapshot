@@ -39,7 +39,7 @@ type changesetResolver struct {
 
 	attemptedPreloadNextSyncAt bool
 	// When the next sync is scheduled
-	preloadedNextSyncAt *time.Time
+	preloadedNextSyncAt time.Time
 	nextSyncAtOnce      sync.Once
 	nextSyncAt          time.Time
 	nextSyncAtErr       error
@@ -50,7 +50,7 @@ type changesetResolver struct {
 	specErr  error
 }
 
-func NewChangesetResolverWithNextSync(store *store.Store, changeset *campaigns.Changeset, repo *types.Repo, nextSyncAt *time.Time) *changesetResolver {
+func NewChangesetResolverWithNextSync(store *store.Store, changeset *campaigns.Changeset, repo *types.Repo, nextSyncAt time.Time) *changesetResolver {
 	r := NewChangesetResolver(store, changeset, repo)
 	r.attemptedPreloadNextSyncAt = true
 	r.preloadedNextSyncAt = nextSyncAt
@@ -128,9 +128,7 @@ func (r *changesetResolver) computeEvents(ctx context.Context) ([]*campaigns.Cha
 func (r *changesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, error) {
 	r.nextSyncAtOnce.Do(func() {
 		if r.attemptedPreloadNextSyncAt {
-			if r.preloadedNextSyncAt != nil {
-				r.nextSyncAt = *r.preloadedNextSyncAt
-			}
+			r.nextSyncAt = r.preloadedNextSyncAt
 			return
 		}
 		syncData, err := r.store.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ChangesetIDs: []int64{r.changeset.ID}})
@@ -153,7 +151,7 @@ func (r *changesetResolver) ID() graphql.ID {
 }
 
 func (r *changesetResolver) ExternalID() *string {
-	if r.changeset.PublicationState.Unpublished() {
+	if r.changeset.ExternalID == "" {
 		return nil
 	}
 	return &r.changeset.ExternalID
@@ -220,7 +218,7 @@ func (r *changesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.Dat
 }
 
 func (r *changesetResolver) Title(ctx context.Context) (*string, error) {
-	if r.changeset.PublishedAndSynced() {
+	if r.changeset.Published() {
 		t, err := r.changeset.Title()
 		if err != nil {
 			return nil, err
@@ -228,21 +226,20 @@ func (r *changesetResolver) Title(ctx context.Context) (*string, error) {
 		return &t, nil
 	}
 
-	if r.changeset.Unpublished() {
-		desc, err := r.getBranchSpecDescription(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		return &desc.Title, nil
+	if r.changeset.CurrentSpecID == 0 {
+		// An importing changeset that hasn't finished importing yet.
+		return nil, nil
+	}
+	desc, err := r.getBranchSpecDescription(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	// Marked as published, but unsynced
-	return nil, nil
+	return &desc.Title, nil
 }
 
 func (r *changesetResolver) Body(ctx context.Context) (*string, error) {
-	if r.changeset.PublishedAndSynced() {
+	if r.changeset.Published() {
 		b, err := r.changeset.Body()
 		if err != nil {
 			return nil, err
@@ -250,17 +247,16 @@ func (r *changesetResolver) Body(ctx context.Context) (*string, error) {
 		return &b, nil
 	}
 
-	if r.changeset.Unpublished() {
-		desc, err := r.getBranchSpecDescription(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		return &desc.Body, nil
+	if r.changeset.CurrentSpecID == 0 {
+		// An importing changeset that hasn't finished importing yet.
+		return nil, nil
+	}
+	desc, err := r.getBranchSpecDescription(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	// Marked as published, but unsynced
-	return nil, nil
+	return &desc.Body, nil
 }
 
 func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*campaigns.ChangesetSpecDescription, error) {
@@ -285,14 +281,14 @@ func (r *changesetResolver) ReconcilerState() campaigns.ReconcilerState {
 }
 
 func (r *changesetResolver) ExternalState() *campaigns.ChangesetExternalState {
-	if !r.changeset.PublishedAndSynced() {
+	if !r.changeset.Published() {
 		return nil
 	}
 	return &r.changeset.ExternalState
 }
 
 func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
-	if !r.changeset.PublishedAndSynced() {
+	if !r.changeset.Published() {
 		return nil, nil
 	}
 	url, err := r.changeset.URL()
@@ -303,14 +299,14 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 }
 
 func (r *changesetResolver) ReviewState(ctx context.Context) *campaigns.ChangesetReviewState {
-	if !r.changeset.PublishedAndSynced() {
+	if !r.changeset.Published() {
 		return nil
 	}
 	return &r.changeset.ExternalReviewState
 }
 
 func (r *changesetResolver) CheckState() *campaigns.ChangesetCheckState {
-	if !r.changeset.PublishedAndSynced() {
+	if !r.changeset.Published() {
 		return nil
 	}
 
@@ -338,7 +334,7 @@ func (r *changesetResolver) CurrentSpec(ctx context.Context) (graphqlbackend.Vis
 }
 
 func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {
-	if !r.changeset.PublishedAndSynced() {
+	if !r.changeset.Published() {
 		return []graphqlbackend.ChangesetLabelResolver{}, nil
 	}
 
@@ -388,6 +384,10 @@ func (r *changesetResolver) Events(ctx context.Context, args *graphqlbackend.Cha
 
 func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.RepositoryComparisonInterface, error) {
 	if r.changeset.Unpublished() {
+		if r.changeset.CurrentSpecID == 0 {
+			// An importing changeset that hasn't finished importing yet.
+			return nil, nil
+		}
 		desc, err := r.getBranchSpecDescription(ctx)
 		if err != nil {
 			return nil, err
@@ -404,12 +404,6 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 			desc.BaseRev,
 			diff,
 		)
-	}
-
-	// If it's published but not synced, we don't have enough information to
-	// return a diff yet.
-	if !r.changeset.PublishedAndSynced() {
-		return nil, nil
 	}
 
 	if !r.changeset.HasDiff() {

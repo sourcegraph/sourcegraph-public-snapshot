@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -19,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -36,10 +34,10 @@ func TestChangesetResolver(t *testing.T) {
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(dbconn.Global, clock)
-	rstore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	esStore := db.NewExternalServicesStoreWith(cstore)
 	repoStore := db.NewRepoStoreWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-resolver-test", newGitHubExternalService(t, rstore))
+	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-resolver-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -152,8 +150,7 @@ func TestChangesetResolver(t *testing.T) {
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "9876",
-		Unsynced:            true,
-		PublicationState:    campaigns.ChangesetPublicationStatePublished,
+		PublicationState:    campaigns.ChangesetPublicationStateUnpublished,
 		ReconcilerState:     campaigns.ReconcilerStateQueued,
 	})
 
@@ -179,7 +176,7 @@ func TestChangesetResolver(t *testing.T) {
 	// Associate the changeset with a campaign, so it's considered in syncer logic.
 	addChangeset(t, ctx, cstore, syncedGitHubChangeset, campaign.ID)
 
-	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(&Resolver{store: cstore}, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -270,7 +267,7 @@ func TestChangesetResolver(t *testing.T) {
 				ExternalID:       "9876",
 				Repository:       apitest.Repository{Name: string(repo.Name)},
 				Labels:           []apitest.Label{},
-				PublicationState: string(campaigns.ChangesetPublicationStatePublished),
+				PublicationState: string(campaigns.ChangesetPublicationStateUnpublished),
 				ReconcilerState:  string(campaigns.ReconcilerStateQueued),
 			},
 		},

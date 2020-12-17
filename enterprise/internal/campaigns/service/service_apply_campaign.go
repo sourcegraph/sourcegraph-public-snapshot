@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -12,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -110,8 +108,6 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		}
 	}
 
-	rstore := repos.NewDBStore(tx.DB(), sql.TxOptions{})
-
 	// Now we need to wire up the ChangesetSpecs of the new CampaignSpec
 	// correctly with the Changesets so that the reconciler can create/update
 	// them.
@@ -129,8 +125,8 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	}
 
 	// And execute the mapping.
-	rewirer := rewirer.New(mappings, campaign, rstore)
-	changesets, err := rewirer.Rewire(ctx)
+	rewirer := rewirer.New(mappings, campaign.ID)
+	changesets, err := rewirer.Rewire()
 	if err != nil {
 		return nil, err
 	}

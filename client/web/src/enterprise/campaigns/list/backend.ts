@@ -6,6 +6,8 @@ import {
     CampaignsResult,
     CampaignsByNamespaceResult,
     CampaignsByNamespaceVariables,
+    AreCampaignsLicensedResult,
+    AreCampaignsLicensedVariables,
 } from '../../../graphql-operations'
 import { requestGraphQL } from '../../../backend/graphql'
 
@@ -151,3 +153,16 @@ export const queryCampaignsByNamespace = ({
             }
         })
     )
+
+export function areCampaignsLicensed(): Observable<boolean> {
+    return requestGraphQL<AreCampaignsLicensedResult, AreCampaignsLicensedVariables>(
+        gql`
+            query AreCampaignsLicensed {
+                enterpriseLicenseHasFeature(feature: "campaigns")
+            }
+        `
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.enterpriseLicenseHasFeature)
+    )
+}
