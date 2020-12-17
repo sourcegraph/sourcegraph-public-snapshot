@@ -136,3 +136,14 @@ func (r *externalServiceResolver) Warning() *string {
 	}
 	return &r.warning
 }
+
+func (r *externalServiceResolver) LastSyncError(ctx context.Context) (*string, error) {
+	latestError, err := db.ExternalServices.GetLastSyncError(ctx, r.externalService.ID)
+	if err != nil {
+		return nil, err
+	}
+	if latestError == "" {
+		return nil, nil
+	}
+	return &latestError, nil
+}

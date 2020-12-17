@@ -447,7 +447,7 @@ func (e *ExternalServiceStore) validateDuplicateRateLimits(ctx context.Context, 
 // started, otherwise a panic would occur once pkg/conf's deadlock detector
 // determines a deadlock occurred.
 //
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
 // Otherwise, `es.NamespaceUserID` must be specified (i.e. non-nil) for
 // a user-added external service.
 //
@@ -728,7 +728,7 @@ func (e externalServiceNotFoundError) NotFound() bool {
 
 // Delete deletes an external service.
 //
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
 func (e *ExternalServiceStore) Delete(ctx context.Context, id int64) error {
 	if Mocks.ExternalServices.Delete != nil {
 		return Mocks.ExternalServices.Delete(ctx, id)
@@ -751,7 +751,7 @@ func (e *ExternalServiceStore) Delete(ctx context.Context, id int64) error {
 
 // GetByID returns the external service for id.
 //
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
 func (e *ExternalServiceStore) GetByID(ctx context.Context, id int64) (*types.ExternalService, error) {
 	if Mocks.ExternalServices.GetByID != nil {
 		return Mocks.ExternalServices.GetByID(id)
@@ -770,6 +770,28 @@ func (e *ExternalServiceStore) GetByID(ctx context.Context, id int64) (*types.Ex
 		return nil, externalServiceNotFoundError{id: id}
 	}
 	return ess[0], nil
+}
+
+// GetLastSyncError returns the error associated with the latest sync of the
+// supplied external service.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service
+func (e *ExternalServiceStore) GetLastSyncError(ctx context.Context, id int64) (string, error) {
+	if Mocks.ExternalServices.GetLastSyncError != nil {
+		return Mocks.ExternalServices.GetLastSyncError(id)
+	}
+	e.ensureStore()
+
+	q := sqlf.Sprintf(`
+SELECT failure_message from external_service_sync_jobs
+WHERE external_service_id = %d
+AND state IN ('completed','errored')
+ORDER BY finished_at DESC
+LIMIT 1
+`, id)
+
+	lastError, _, err := basestore.ScanFirstString(e.Query(ctx, q))
+	return lastError, err
 }
 
 // List returns external services under given namespace.
@@ -866,7 +888,7 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 
 // Count counts all external services that satisfy the options (ignoring limit and offset).
 //
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
 func (e *ExternalServiceStore) Count(ctx context.Context, opt ExternalServicesListOptions) (int, error) {
 	if Mocks.ExternalServices.Count != nil {
 		return Mocks.ExternalServices.Count(ctx, opt)
@@ -883,10 +905,11 @@ func (e *ExternalServiceStore) Count(ctx context.Context, opt ExternalServicesLi
 
 // MockExternalServices mocks the external services store.
 type MockExternalServices struct {
-	Create  func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error
-	Delete  func(ctx context.Context, id int64) error
-	GetByID func(id int64) (*types.ExternalService, error)
-	List    func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
-	Update  func(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error
-	Count   func(ctx context.Context, opt ExternalServicesListOptions) (int, error)
+	Create           func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error
+	Delete           func(ctx context.Context, id int64) error
+	GetByID          func(id int64) (*types.ExternalService, error)
+	GetLastSyncError func(id int64) (string, error)
+	List             func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
+	Update           func(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error
+	Count            func(ctx context.Context, opt ExternalServicesListOptions) (int, error)
 }
