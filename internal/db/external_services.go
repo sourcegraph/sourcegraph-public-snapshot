@@ -124,7 +124,7 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 		for _, id := range o.IDs {
 			ids = append(ids, sqlf.Sprintf("%s", id))
 		}
-		conds = append(conds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
+		conds = append(conds, sqlf.Sprintf("es.id IN (%s)", sqlf.Join(ids, ",")))
 	}
 	if o.NoNamespace {
 		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL`))
@@ -139,7 +139,7 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("kind IN (%s)", sqlf.Join(kinds, ",")))
 	}
 	if o.AfterID > 0 {
-		conds = append(conds, sqlf.Sprintf(`id < %d`, o.AfterID))
+		conds = append(conds, sqlf.Sprintf(`es.id < %d`, o.AfterID))
 	}
 	return conds
 }
@@ -815,10 +815,14 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 	}
 
 	q := sqlf.Sprintf(`
-		SELECT id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted
-		FROM external_services
+		SELECT DISTINCT ON (es.id)
+			es.id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted, essj.failure_message
+		FROM external_services es
+		LEFT JOIN external_service_sync_jobs essj ON
+			es.id = essj.external_service_id
+			AND essj.state IN ('completed', 'errored')
 		WHERE (%s)
-		ORDER BY id `+opt.OrderByDirection+`
+		ORDER BY es.id `+opt.OrderByDirection+`, essj.finished_at DESC
 		%s`,
 		sqlf.Join(opt.sqlConditions(), ") AND ("),
 		opt.LimitOffset.SQL(),
@@ -838,8 +842,9 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 			lastSyncAt      sql.NullTime
 			nextSyncAt      sql.NullTime
 			namespaceUserID sql.NullInt32
+			lastSycnError   sql.NullString
 		)
-		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted); err != nil {
+		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted, &lastSycnError); err != nil {
 			return nil, err
 		}
 
@@ -854,6 +859,9 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 		}
 		if namespaceUserID.Valid {
 			h.NamespaceUserID = namespaceUserID.Int32
+		}
+		if lastSycnError.Valid {
+			h.LastSyncError = lastSycnError.String
 		}
 		results = append(results, &h)
 	}

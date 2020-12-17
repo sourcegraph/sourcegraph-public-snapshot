@@ -63,7 +63,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		{
 			name:      "has after ID",
 			afterID:   10,
-			wantQuery: "deleted_at IS NULL AND id < $1",
+			wantQuery: "deleted_at IS NULL AND es.id < $1",
 			wantArgs:  []interface{}{int64(10)},
 		},
 	}
@@ -546,6 +546,26 @@ func TestExternalServicesStore_GetByID(t *testing.T) {
 	_, err = (&ExternalServiceStore{}).GetByID(ctx, es.ID)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	// Test that sync errors are included
+	syncError := "oops"
+	_, err = dbconn.Global.Exec(`
+INSERT INTO external_service_sync_jobs (external_service_id, failure_message, state)
+VALUES ($1,$2,'errored')
+`, es.ID, syncError)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Get it again and confirm error is included
+	withError, err := (&ExternalServiceStore{}).GetByID(ctx, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if withError.LastSyncError != syncError {
+		t.Fatalf("Want %q, got %q", syncError, withError.LastSyncError)
 	}
 
 	// Delete this external service

@@ -406,7 +406,12 @@ type ExternalService struct {
 	LastSyncAt      time.Time
 	NextSyncAt      time.Time
 	NamespaceUserID int32
-	Unrestricted    bool // Whether access to repositories belong to this external service is unrestricted.
+	// Whether access to repositories belong to this external service is
+	// unrestricted.
+	Unrestricted bool
+	// A read only field populated with the error related to the most recent
+	// background sync of this external service.
+	LastSyncError string
 }
 
 // URN returns a unique resource identifier of this external service,

@@ -131,8 +131,12 @@ func (r *externalServiceResolver) WebhookURL() (*string, error) {
 }
 
 func (r *externalServiceResolver) Warning() *string {
-	if r.warning == "" {
+	warning := r.warning
+	if r.externalService != nil && len(r.externalService.LastSyncError) > 0 {
+		warning = warning + `\n` + r.externalService.LastSyncError
+	}
+	if len(warning) == 0 {
 		return nil
 	}
-	return &r.warning
+	return &warning
 }
