@@ -563,6 +563,61 @@ func TestExternalServicesStore_GetByID(t *testing.T) {
 	}
 }
 
+func TestGetLatestSyncError(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := (&ExternalServiceStore{}).Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Should be able to get back by its ID
+	_, err = (&ExternalServiceStore{}).GetByID(ctx, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	latestSyncError, err := (&ExternalServiceStore{}).GetLatestSyncError(ctx, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if latestSyncError != "" {
+		t.Fatalf("Expected empty error, have %q", latestSyncError)
+	}
+
+	// Add sync error
+	expectedError := "oops"
+	_, err = dbconn.Global.Exec(`
+INSERT INTO external_service_sync_jobs (external_service_id, failure_message, state)
+VALUES ($1,$2,'errored')
+`, es.ID, expectedError)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	latestSyncError, err = (&ExternalServiceStore{}).GetLatestSyncError(ctx, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if latestSyncError != expectedError {
+		t.Fatalf("Expected %q, have %q", expectedError, latestSyncError)
+	}
+}
+
 func TestExternalServicesStore_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
