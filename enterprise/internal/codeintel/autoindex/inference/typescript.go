@@ -35,9 +35,9 @@ func (lsifTscJobRecognizer) InferIndexJobs(paths []string) (indexes []IndexJob) 
 
 				var commands []string
 				if contains(paths, filepath.Join(dir, "yarn.lock")) {
-					commands = append(commands, "yarn", "--ignore-engines")
+					commands = append(commands, "yarn --ignore-engines")
 				} else {
-					commands = append(commands, "npm", "install")
+					commands = append(commands, "npm install")
 				}
 
 				dockerSteps = append(dockerSteps, DockerStep{

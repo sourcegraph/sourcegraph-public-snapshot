@@ -21,6 +21,7 @@ type IndexJobRecognizer interface {
 
 type IndexJob struct {
 	DockerSteps []DockerStep
+	LocalSteps  []string
 	Root        string
 	Indexer     string
 	IndexerArgs []string

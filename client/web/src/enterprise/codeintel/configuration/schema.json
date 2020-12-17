@@ -46,12 +46,19 @@
         "type": "object",
         "properties": {
           "steps": {
-            "description": "A set of steps performed before this index job.",
+            "description": "A set of steps performed before this index job. Changes are only reflected in the repository directory.",
             "type": "array",
             "items": {
               "$ref": "#/definitions/docker_step"
             },
             "additionalItems": false
+          },
+          "local_steps": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "A command to run in the docker container to perform setup with effects outside the repository root."
+            }
           },
           "root": {
             "description": "The path relative to the repository root where the indexer runs.",
@@ -76,7 +83,7 @@
           }
         },
         "additionalProperties": false,
-        "required": ["steps", "root", "indexer", "indexer_args", "outfile"]
+        "required": ["steps", "local_steps", "root", "indexer", "indexer_args", "outfile"]
       },
       "additionalItems": false
     }

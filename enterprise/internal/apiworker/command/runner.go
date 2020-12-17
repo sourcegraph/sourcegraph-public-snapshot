@@ -8,7 +8,7 @@ import "context"
 // usage (via Firecracker).
 type Runner interface {
 	// Setup prepares the runner to invoke a series of commands.
-	Setup(ctx context.Context, images []string) error
+	Setup(ctx context.Context, imageNames, scriptPaths []string) error
 
 	// Teardown disposes of any resources created in Setup.
 	Teardown(ctx context.Context) error
@@ -21,11 +21,12 @@ type Runner interface {
 // is the host, in a virtual machine, or in a docker container. If an image is
 // supplied, then the command will be run in a one-shot docker container.
 type CommandSpec struct {
-	Key      string
-	Image    string
-	Commands []string
-	Dir      string
-	Env      []string
+	Key        string
+	Image      string
+	ScriptPath string
+	Command    []string
+	Dir        string
+	Env        []string
 }
 
 type Options struct {
@@ -79,7 +80,7 @@ type dockerRunner struct {
 
 var _ Runner = &dockerRunner{}
 
-func (r *dockerRunner) Setup(ctx context.Context, images []string) error {
+func (r *dockerRunner) Setup(ctx context.Context, imageNames, scriptPaths []string) error {
 	return nil
 }
 
@@ -100,8 +101,8 @@ type firecrackerRunner struct {
 
 var _ Runner = &firecrackerRunner{}
 
-func (r *firecrackerRunner) Setup(ctx context.Context, images []string) error {
-	return setupFirecracker(ctx, defaultRunner, r.logger, r.name, r.dir, images, r.options)
+func (r *firecrackerRunner) Setup(ctx context.Context, imageNames, scripts []string) error {
+	return setupFirecracker(ctx, defaultRunner, r.logger, r.name, r.dir, imageNames, scripts, r.options)
 }
 
 func (r *firecrackerRunner) Teardown(ctx context.Context) error {

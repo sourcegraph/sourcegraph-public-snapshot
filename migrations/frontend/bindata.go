@@ -174,6 +174,8 @@
 // 1528395769_drop_added_to_campaign.up.sql (81B)
 // 1528395770_drop_unsynced.down.sql (279B)
 // 1528395770_drop_unsynced.up.sql (151B)
+// 1528395771_auto_index_add_local_steps.down.sql (301B)
+// 1528395771_auto_index_add_local_steps.up.sql (415B)
 
 package migrations
 
@@ -3722,6 +3724,46 @@ func _1528395770_drop_unsyncedUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395771_auto_index_add_local_stepsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\xce\x41\x4f\xc4\x20\x10\x05\xe0\x3b\xbf\xe2\x65\x8f\xc6\xf0\x07\x1a\x0f\xdd\x3a\x2a\x86\x82\xa1\xac\x7b\x24\x8d\x8c\x91\xa4\x6e\x37\x40\xa3\xfe\x7b\x23\x27\xd7\x93\xe7\xf9\xde\xbc\xb7\xa7\x7b\x65\x3a\x21\x6e\x9d\x7d\xc2\xb3\xa2\x23\x96\x92\x5e\x43\x3a\x45\xfe\xe4\x12\x3e\x52\x7d\x0b\x99\xcf\x6b\x49\x75\xcd\x5f\xe1\x34\xbf\x73\x27\x44\xaf\x3d\x39\xf8\x7e\xaf\xe9\xc2\xa3\xbd\x19\xac\x3e\x8c\x06\xbb\x65\x7d\x99\x97\x50\x2a\x9f\xcb\xae\x13\x62\x70\xd4\x7b\xfa\x67\x09\xfa\x49\x00\xc0\x44\x9a\x06\x8f\x4d\x5e\x5d\x23\xcb\x76\x99\x0b\xfe\xe2\x3b\x67\xc7\xcb\x21\x5b\x4b\x3f\x5a\x65\x1a\x46\x86\x35\xc8\x32\x45\xdc\x60\x93\xbf\xf2\x29\x36\x79\x7c\x20\x47\xc8\x32\xf2\xc2\x95\x63\x98\x2b\xd4\x04\x73\xd0\xfa\x67\xb9\x1d\x47\xe5\x3b\xf1\x1d\x00\x00\xff\xff\xa7\x60\x95\xad\x2d\x01\x00\x00")
+
+func _1528395771_auto_index_add_local_stepsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395771_auto_index_add_local_stepsDownSql,
+		"1528395771_auto_index_add_local_steps.down.sql",
+	)
+}
+
+func _1528395771_auto_index_add_local_stepsDownSql() (*asset, error) {
+	bytes, err := _1528395771_auto_index_add_local_stepsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395771_auto_index_add_local_steps.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xe9, 0xe5, 0x51, 0xa5, 0x6d, 0x7, 0x6, 0x70, 0x12, 0x3c, 0xfc, 0x7d, 0x5d, 0x29, 0xdd, 0x92, 0xe5, 0x87, 0x7, 0xaf, 0xf3, 0x44, 0xb2, 0x8f, 0xab, 0x3e, 0x63, 0xde, 0x6, 0xde, 0x39, 0xef}}
+	return a, nil
+}
+
+var __1528395771_auto_index_add_local_stepsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x8f\x51\x4b\xc3\x30\x14\x85\xdf\xef\xaf\x38\x6f\x03\x91\xfe\x81\xb2\x87\xae\xbd\x6a\x25\x4d\x46\x9b\xba\x07\x91\x50\x6c\xc4\x40\x5d\x47\x92\xe2\x44\xfc\xef\xb2\x82\x60\x87\xc8\x9e\xcf\xf7\xdd\x73\xcf\x86\x6f\x4b\x99\x12\x65\x42\x73\x0d\x9d\x6d\x04\x63\x08\xee\xc5\xb8\x7d\x6f\x8f\x36\x20\x2b\x0a\xe4\x4a\xb4\x95\xc4\x30\x3e\x77\x83\x09\xd1\x1e\x02\xa2\x3d\xc6\xc7\xa7\x94\xa8\xdd\x16\x99\x3e\x73\x1a\xd6\x0b\x78\x8d\xd5\xe7\xd7\xea\xdf\x96\x39\xf8\xa3\xe7\x74\x4a\x2a\x0d\xd9\x0a\x91\x12\x15\xb5\xda\xe2\xa1\xe4\xdd\x42\x37\xef\x2e\xbe\x1a\x6f\x0f\x63\x70\x71\xf4\x1f\x66\xdf\xbd\xd9\x94\x28\xaf\xf9\xf4\xdb\x65\x3c\xb2\x86\x00\xa0\x61\xc1\xb9\xc6\x94\x5c\x5d\xc3\x27\x73\xd2\x05\x9c\xc3\x37\xb5\xaa\x96\x13\xa6\xd9\xbe\x57\xa5\x9c\x61\x78\x28\x09\x9f\xb8\x1e\x6b\x4c\xc9\x2f\xdf\xf5\x33\xb9\xbb\xe3\x9a\xe1\x93\xde\x0e\x36\xda\xde\x74\x11\x65\xf3\xb3\x33\x57\x55\x55\xea\x94\xbe\x03\x00\x00\xff\xff\x2a\x2c\x60\xfa\x9f\x01\x00\x00")
+
+func _1528395771_auto_index_add_local_stepsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395771_auto_index_add_local_stepsUpSql,
+		"1528395771_auto_index_add_local_steps.up.sql",
+	)
+}
+
+func _1528395771_auto_index_add_local_stepsUpSql() (*asset, error) {
+	bytes, err := _1528395771_auto_index_add_local_stepsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395771_auto_index_add_local_steps.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa3, 0xc4, 0xbc, 0x13, 0x9, 0x5c, 0xce, 0xa, 0x89, 0x58, 0x90, 0x6b, 0x79, 0xb5, 0x0, 0x44, 0x94, 0xcc, 0xb3, 0xcf, 0x89, 0x82, 0xee, 0xf9, 0x52, 0x27, 0x75, 0xc9, 0x14, 0x36, 0xca, 0xbb}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3987,6 +4029,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395769_drop_added_to_campaign.up.sql":                                               _1528395769_drop_added_to_campaignUpSql,
 	"1528395770_drop_unsynced.down.sql":                                                      _1528395770_drop_unsyncedDownSql,
 	"1528395770_drop_unsynced.up.sql":                                                        _1528395770_drop_unsyncedUpSql,
+	"1528395771_auto_index_add_local_steps.down.sql":                                         _1528395771_auto_index_add_local_stepsDownSql,
+	"1528395771_auto_index_add_local_steps.up.sql":                                           _1528395771_auto_index_add_local_stepsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -4207,6 +4251,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395769_drop_added_to_campaign.up.sql":                                               {_1528395769_drop_added_to_campaignUpSql, map[string]*bintree{}},
 	"1528395770_drop_unsynced.down.sql":                                                      {_1528395770_drop_unsyncedDownSql, map[string]*bintree{}},
 	"1528395770_drop_unsynced.up.sql":                                                        {_1528395770_drop_unsyncedUpSql, map[string]*bintree{}},
+	"1528395771_auto_index_add_local_steps.down.sql":                                         {_1528395771_auto_index_add_local_stepsDownSql, map[string]*bintree{}},
+	"1528395771_auto_index_add_local_steps.up.sql":                                           {_1528395771_auto_index_add_local_stepsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

@@ -2,14 +2,21 @@ package apiworker
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/command"
 )
 
 func TestHandle(t *testing.T) {
+	makeTempDir = func() (string, error) {
+		return "/tmp/codeintel", nil
+	}
+	os.Mkdir("/tmp/codeintel", os.ModePerm)
+
 	store := NewMockStore()
 	runner := NewMockRunner()
 
@@ -81,12 +88,16 @@ func TestHandle(t *testing.T) {
 
 	var commands [][]string
 	for _, call := range runner.RunFunc.History() {
-		commands = append(commands, call.Arg1.Commands)
+		if call.Arg1.Image != "" {
+			commands = append(commands, []string{"/bin/sh", call.Arg1.ScriptPath})
+		} else {
+			commands = append(commands, call.Arg1.Command)
+		}
 	}
 
 	expectedCommands := [][]string{
-		{"go", "mod", "install"},
-		{"yarn", "install"},
+		{"/bin/sh", "/tmp/codeintel/42.0_linux@deadbeef.sh"},
+		{"/bin/sh", "/tmp/codeintel/42.1_linux@deadbeef.sh"},
 		{"src", "campaigns", "help"},
 		{"src", "campaigns", "apply", "-f", "spec.yaml"},
 	}

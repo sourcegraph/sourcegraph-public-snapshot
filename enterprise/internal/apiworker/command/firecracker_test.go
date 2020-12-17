@@ -12,9 +12,9 @@ import (
 func TestFormatFirecrackerCommandRaw(t *testing.T) {
 	actual := formatFirecrackerCommand(
 		CommandSpec{
-			Commands: []string{"ls", "-a"},
-			Dir:      "subdir",
-			Env:      []string{"TEST=true"},
+			Command: []string{"ls", "-a"},
+			Dir:     "subdir",
+			Env:     []string{"TEST=true"},
 		},
 		"deadbeef",
 		"/proj/src",
@@ -22,7 +22,7 @@ func TestFormatFirecrackerCommandRaw(t *testing.T) {
 	)
 
 	expected := command{
-		Commands: []string{
+		Command: []string{
 			"ignite", "exec", "deadbeef", "--",
 			"cd /work/subdir && TEST=true ls -a",
 		},
@@ -32,13 +32,13 @@ func TestFormatFirecrackerCommandRaw(t *testing.T) {
 	}
 }
 
-func TestFormatFirecrackerCommandDocker(t *testing.T) {
+func TestFormatFirecrackerCommandDockerScript(t *testing.T) {
 	actual := formatFirecrackerCommand(
 		CommandSpec{
-			Image:    "alpine:latest",
-			Commands: []string{"ls", "-a"},
-			Dir:      "subdir",
-			Env:      []string{"TEST=true"},
+			Image:      "alpine:latest",
+			ScriptPath: "myscript.sh",
+			Dir:        "subdir",
+			Env:        []string{"TEST=true"},
 		},
 		"deadbeef",
 		"/proj/src",
@@ -51,18 +51,48 @@ func TestFormatFirecrackerCommandDocker(t *testing.T) {
 	)
 
 	expected := command{
-		Commands: []string{
+		Command: []string{
 			"ignite", "exec", "deadbeef", "--",
 			strings.Join([]string{
 				"docker", "run", "--rm",
 				"--cpus", "4",
 				"--memory", "20G",
 				"-v", "/work:/data",
+				"-v", "myscript.sh:myscript.sh",
 				"-w", "/data/subdir",
 				"-e", "TEST=true",
+				"--entrypoint /bin/sh",
 				"alpine:latest",
-				"ls", "-a",
+				"myscript.sh",
 			}, " "),
+		},
+	}
+	if diff := cmp.Diff(expected, actual); diff != "" {
+		t.Errorf("unexpected command (-want +got):\n%s", diff)
+	}
+}
+
+func TestFormatFirecrackerCommandDockerCommand(t *testing.T) {
+	actual := formatFirecrackerCommand(
+		CommandSpec{
+			Command: []string{"ls", "-a"},
+			Dir:     "subdir",
+			Env:     []string{"TEST=true"},
+		},
+		"deadbeef",
+		"/proj/src",
+		Options{
+			ResourceOptions: ResourceOptions{
+				NumCPUs: 4,
+				Memory:  "20G",
+			},
+		},
+	)
+
+	expected := command{
+		Command: []string{
+			"ignite", "exec", "deadbeef", "--",
+			"cd /work/subdir && TEST=true ls -a",
 		},
 	}
 	if diff := cmp.Diff(expected, actual); diff != "" {
@@ -72,7 +102,7 @@ func TestFormatFirecrackerCommandDocker(t *testing.T) {
 
 func TestSetupFirecracker(t *testing.T) {
 	runner := NewMockCommandRunner()
-	if err := setupFirecracker(context.Background(), runner, nil, "deadbeef", "/proj", []string{"img1", "img2", "img3"}, Options{
+	if err := setupFirecracker(context.Background(), runner, nil, "deadbeef", "/proj", []string{"img1", "img2", "img3"}, []string{}, Options{
 		FirecrackerOptions: FirecrackerOptions{
 			Image:             "ignite-ubuntu",
 			ImageArchivesPath: "/archives",
@@ -88,7 +118,7 @@ func TestSetupFirecracker(t *testing.T) {
 
 	var actual []string
 	for _, call := range runner.RunCommandFunc.History() {
-		actual = append(actual, strings.Join(call.Arg2.Commands, " "))
+		actual = append(actual, strings.Join(call.Arg2.Command, " "))
 	}
 
 	expected := []string{
@@ -129,7 +159,7 @@ func TestTeardownFirecracker(t *testing.T) {
 
 	var actual []string
 	for _, call := range runner.RunCommandFunc.History() {
-		actual = append(actual, strings.Join(call.Arg2.Commands, " "))
+		actual = append(actual, strings.Join(call.Arg2.Command, " "))
 	}
 
 	expected := []string{
