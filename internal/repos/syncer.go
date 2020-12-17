@@ -31,7 +31,7 @@ import (
 type Syncer struct {
 	Sourcer Sourcer
 	Worker  *workerutil.Worker
-	Store   Store
+	Store   *Store
 
 	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
 	Synced chan Diff
@@ -73,7 +73,7 @@ type RunOptions struct {
 }
 
 // Run runs the Sync at the specified interval.
-func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOptions) error {
+func (s *Syncer) Run(pctx context.Context, db *sql.DB, store *Store, opts RunOptions) error {
 	if opts.EnqueueInterval == nil {
 		opts.EnqueueInterval = func() time.Duration { return time.Minute }
 	}
@@ -124,7 +124,7 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store Store, opts RunOpti
 type syncHandler struct {
 	db              *sql.DB
 	syncer          *Syncer
-	store           Store
+	store           *Store
 	minSyncInterval func() time.Duration
 }
 
@@ -134,12 +134,9 @@ func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record
 		return fmt.Errorf("expected repos.SyncJob, got %T", record)
 	}
 
-	store := s.store
-	if ws, ok := s.store.(WithStore); ok {
-		store = ws.With(tx.Handle().DB())
-	}
+	store := s.store.With(tx)
 
-	return s.syncer.SyncExternalService(ctx, store, store.RepoStore(), sj.ExternalServiceID, s.minSyncInterval())
+	return s.syncer.SyncExternalService(ctx, store, store.RepoStore, sj.ExternalServiceID, s.minSyncInterval())
 }
 
 // contextWithSignalCancel will return a context which will be cancelled if
@@ -176,7 +173,7 @@ type Lister interface {
 }
 
 // SyncExternalService syncs repos using the supplied external service.
-func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, repoLister Lister, externalServiceID int64, minSyncInterval time.Duration) (err error) {
+func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, repoLister Lister, externalServiceID int64, minSyncInterval time.Duration) (err error) {
 	var diff Diff
 
 	if s.Logger != nil {
@@ -188,7 +185,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, repoLister L
 	defer s.setOrResetLastSyncErr(externalServiceID, &err)
 
 	ids := []int64{externalServiceID}
-	svcs, err := tx.ExternalServiceStore().List(ctx, db.ExternalServicesListOptions{IDs: ids})
+	svcs, err := tx.ExternalServiceStore.List(ctx, db.ExternalServicesListOptions{IDs: ids})
 	if err != nil {
 		return errors.Wrap(err, "fetching external services")
 	}
@@ -352,7 +349,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx Store, repoLister L
 	svc.NextSyncAt = now.Add(interval)
 	svc.LastSyncAt = now
 
-	err = tx.ExternalServiceStore().Upsert(ctx, svc)
+	err = tx.ExternalServiceStore.Upsert(ctx, svc)
 	if err != nil {
 		return errors.Wrap(err, "upserting external service")
 	}
@@ -445,20 +442,18 @@ func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Du
 }
 
 // SyncRepo runs the syncer on a single repository.
-func (s *Syncer) SyncRepo(ctx context.Context, store Store, sourcedRepo *types.Repo) (err error) {
+func (s *Syncer) SyncRepo(ctx context.Context, store *Store, sourcedRepo *types.Repo) (err error) {
 	var diff Diff
 
 	ctx, save := s.observe(ctx, "Syncer.SyncRepo", string(sourcedRepo.Name))
 	defer save(&diff, &err)
 
-	if tr, ok := store.(Transactor); ok {
-		var txs TxStore
-		if txs, err = tr.Transact(ctx); err != nil {
-			return errors.Wrap(err, "Syncer.SyncRepo.transact")
-		}
-		defer txs.Done(err)
-		store = txs
+	var txs *Store
+	if txs, err = store.Transact(ctx); err != nil {
+		return errors.Wrap(err, "Syncer.SyncRepo.transact")
 	}
+	defer txs.Done(err)
+	store = txs
 
 	diff, err = s.syncRepo(ctx, store, false, true, sourcedRepo)
 	return err
@@ -466,7 +461,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, store Store, sourcedRepo *types.R
 
 // insertIfNew is a specialization of SyncRepo. It will insert sourcedRepo
 // if there are no related repositories, otherwise does nothing.
-func (s *Syncer) insertIfNew(ctx context.Context, store Store, publicOnly bool, sourcedRepo *types.Repo) (err error) {
+func (s *Syncer) insertIfNew(ctx context.Context, store *Store, publicOnly bool, sourcedRepo *types.Repo) (err error) {
 	var diff Diff
 
 	ctx, save := s.observe(ctx, "Syncer.InsertIfNew", string(sourcedRepo.Name))
@@ -477,7 +472,7 @@ func (s *Syncer) insertIfNew(ctx context.Context, store Store, publicOnly bool, 
 }
 
 // syncRepo syncs a single repo that has been sourced from a single external service.
-func (s *Syncer) syncRepo(ctx context.Context, store Store, insertOnly bool, publicOnly bool, sourcedRepo *types.Repo) (diff Diff, err error) {
+func (s *Syncer) syncRepo(ctx context.Context, store *Store, insertOnly bool, publicOnly bool, sourcedRepo *types.Repo) (diff Diff, err error) {
 	if publicOnly && sourcedRepo.Private {
 		return Diff{}, nil
 	}
@@ -488,7 +483,7 @@ func (s *Syncer) syncRepo(ctx context.Context, store Store, insertOnly bool, pub
 		ExternalRepos: []api.ExternalRepoSpec{sourcedRepo.ExternalRepo},
 		UseOr:         true,
 	}
-	if storedSubset, err = store.RepoStore().List(ctx, args); err != nil {
+	if storedSubset, err = store.RepoStore.List(ctx, args); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.syncrepo.store.list-repos")
 	}
 
@@ -651,12 +646,12 @@ func (s *Syncer) sourceDiff(repoID api.RepoID, diff *sourceDiff, oldSources, new
 // of s.Synced will receive a list of repos. In particular this is so that the
 // git update scheduler can start working straight away on existing
 // repositories.
-func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store Store) {
+func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store *Store) {
 	if s.Synced == nil {
 		return
 	}
 
-	stored, err := store.RepoStore().List(ctx, db.ReposListOptions{})
+	stored, err := store.RepoStore.List(ctx, db.ReposListOptions{})
 	if err != nil {
 		if s.Logger != nil {
 			s.Logger.Warn("initialUnmodifiedDiffFromStore store.ListRepos", "error", err)
@@ -800,7 +795,7 @@ func (s *Syncer) sourced(ctx context.Context, svcs []*types.ExternalService, onS
 
 // makeNewRepoInserter returns a function that will insert repos.
 // If publicOnly is set it will never insert a private repo.
-func (s *Syncer) makeNewRepoInserter(ctx context.Context, store Store, publicOnly bool) (func(*types.Repo) error, error) {
+func (s *Syncer) makeNewRepoInserter(ctx context.Context, store *Store, publicOnly bool) (func(*types.Repo) error, error) {
 	// insertIfNew requires querying the store for related repositories, and
 	// will do nothing if `insertOnly` is set and there are any related repositories. Most
 	// repositories will already have related repos, so to avoid that cost we

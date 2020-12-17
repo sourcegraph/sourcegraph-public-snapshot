@@ -31,7 +31,7 @@ func TestIntegration(t *testing.T) {
 
 	db := dbtest.NewDB(t, *dsn)
 
-	store := repos.NewDBStore(db, sql.TxOptions{
+	store := repos.NewStore(db, sql.TxOptions{
 		Isolation: sql.LevelReadCommitted,
 	})
 
@@ -51,7 +51,7 @@ func TestIntegration(t *testing.T) {
 
 	for _, tc := range []struct {
 		name string
-		test func(*testing.T, repos.Store) func(*testing.T)
+		test func(*testing.T, *repos.Store) func(*testing.T)
 	}{
 		{"DBStore/SyncRateLimiters", testSyncRateLimiters},
 		{"DBStore/UpsertRepos", testStoreUpsertRepos},

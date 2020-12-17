@@ -48,7 +48,7 @@ func TestIntegration(t *testing.T) {
 
 	db := dbtest.NewDB(t, *dsn)
 
-	store := repos.NewDBStore(db, sql.TxOptions{
+	store := repos.NewStore(db, sql.TxOptions{
 		Isolation: sql.LevelSerializable,
 	})
 
@@ -60,7 +60,7 @@ func TestIntegration(t *testing.T) {
 
 	for _, tc := range []struct {
 		name string
-		test func(*testing.T, repos.Store) func(*testing.T)
+		test func(*testing.T, *repos.Store) func(*testing.T)
 	}{
 		{"Server/SetRepoEnabled", testServerSetRepoEnabled},
 		{"Server/EnqueueRepoUpdate", testServerEnqueueRepoUpdate},
@@ -180,7 +180,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 	})
 }
 
-func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T) {
+func testServerSetRepoEnabled(t *testing.T, store *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		githubService := &types.ExternalService{
 			ID:          1,
@@ -333,18 +333,18 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 				ctx := context.Background()
 
 				storedSvcs := tc.svcs.Clone()
-				err := store.ExternalServiceStore().Upsert(ctx, storedSvcs...)
+				err := store.ExternalServiceStore.Upsert(ctx, storedSvcs...)
 				if err != nil {
 					t.Fatalf("failed to prepare store: %v", err)
 				}
 
 				storedRepos := tc.repos.Clone()
-				err = store.RepoStore().Create(ctx, storedRepos...)
+				err = store.RepoStore.Create(ctx, storedRepos...)
 				if err != nil {
 					t.Fatalf("failed to prepare store: %v", err)
 				}
 
-				s := &Server{Store: store, RepoLister: store.RepoStore()}
+				s := &Server{Store: store, RepoLister: store.RepoStore}
 				srv := httptest.NewServer(s.Handler())
 				defer srv.Close()
 				cli := repoupdater.Client{URL: srv.URL}
@@ -380,7 +380,7 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 					ids = append(ids, s.ID)
 				}
 
-				svcs, err := store.ExternalServiceStore().List(ctx, idb.ExternalServicesListOptions{
+				svcs, err := store.ExternalServiceStore.List(ctx, idb.ExternalServicesListOptions{
 					IDs:              ids,
 					OrderByDirection: "ASC",
 				})
@@ -397,7 +397,7 @@ func testServerSetRepoEnabled(t *testing.T, store repos.Store) func(t *testing.T
 	}
 }
 
-func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testing.T) {
+func testServerEnqueueRepoUpdate(t *testing.T, store *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 
@@ -409,7 +409,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 }`,
 		}
 
-		if err := store.ExternalServiceStore().Upsert(ctx, &svc); err != nil {
+		if err := store.ExternalServiceStore.Upsert(ctx, &svc); err != nil {
 			t.Fatal(err)
 		}
 
@@ -423,13 +423,13 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 			Metadata: new(github.Repository),
 		}
 
-		if err := store.RepoStore().Create(ctx, &repo); err != nil {
+		if err := store.RepoStore.Create(ctx, &repo); err != nil {
 			t.Fatal(err)
 		}
 
 		type testCase struct {
 			name       string
-			store      repos.Store
+			store      *repos.Store
 			repoLister repos.Lister
 			repo       api.RepoName
 			res        *protocol.RepoUpdateResponse
@@ -444,7 +444,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 					name:  "returns an error on store failure",
 					store: store,
 					repoLister: &repoListerWithErrors{
-						RepoStore:    store.RepoStore(),
+						RepoStore:    store.RepoStore,
 						ListReposErr: err,
 					},
 					err: `store.list-repos: boom`,
@@ -453,7 +453,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 			testCase{
 				name:       "missing repo",
 				store:      store,
-				repoLister: store.RepoStore(), // empty store
+				repoLister: store.RepoStore, // empty store
 				repo:       "foo",
 				err:        `repo "foo" not found in store`,
 			},
@@ -462,7 +462,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 				return testCase{
 					name:       "existing repo",
 					store:      store,
-					repoLister: store.RepoStore(),
+					repoLister: store.RepoStore,
 					repo:       repo.Name,
 					res: &protocol.RepoUpdateResponse{
 						ID:   repo.ID,
@@ -499,7 +499,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store repos.Store) func(t *testin
 	}
 }
 
-func testServerRepoExternalServices(t *testing.T, store repos.Store) func(t *testing.T) {
+func testServerRepoExternalServices(t *testing.T, store *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 
 		service1 := &types.ExternalService{
@@ -528,7 +528,7 @@ func testServerRepoExternalServices(t *testing.T, store repos.Store) func(t *tes
 		// set for test cases.
 		ctx := context.Background()
 
-		if err := store.ExternalServiceStore().Upsert(ctx, service1, service2); err != nil {
+		if err := store.ExternalServiceStore.Upsert(ctx, service1, service2); err != nil {
 			t.Fatal(err)
 		}
 
@@ -552,7 +552,7 @@ func testServerRepoExternalServices(t *testing.T, store repos.Store) func(t *tes
 			Metadata: new(github.Repository),
 		}).With(types.Opt.RepoSources(service1.URN(), service2.URN()))
 
-		if err := store.RepoStore().Create(ctx, repoNoSources, repoSources); err != nil {
+		if err := store.RepoStore.Create(ctx, repoNoSources, repoSources); err != nil {
 			t.Fatal(err)
 		}
 
@@ -578,7 +578,7 @@ func testServerRepoExternalServices(t *testing.T, store repos.Store) func(t *tes
 			err:    "repository with ID 42 does not exist",
 		}}
 
-		s := &Server{Store: store, RepoLister: store.RepoStore()}
+		s := &Server{Store: store, RepoLister: store.RepoStore}
 		srv := httptest.NewServer(s.Handler())
 		defer srv.Close()
 		cli := repoupdater.Client{URL: srv.URL}
@@ -598,7 +598,7 @@ func testServerRepoExternalServices(t *testing.T, store repos.Store) func(t *tes
 	}
 }
 
-func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T) {
+func testServerStatusMessages(t *testing.T, store *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 
@@ -609,7 +609,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 			DisplayName: "github.com - test",
 		}
 
-		err := store.ExternalServiceStore().Upsert(ctx, githubService)
+		err := store.ExternalServiceStore.Upsert(ctx, githubService)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -746,7 +746,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 					}
 				}
 
-				err := store.RepoStore().Create(ctx, stored...)
+				err := store.RepoStore.Create(ctx, stored...)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -756,7 +756,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 					for _, r := range stored {
 						ids = append(ids, r.ID)
 					}
-					err := store.RepoStore().Delete(ctx, ids...)
+					err := store.RepoStore.Delete(ctx, ids...)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -774,7 +774,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 
 				if tc.sourcerErr != nil || tc.listRepoErr != nil {
 					repoLister := &repoListerWithErrors{
-						RepoStore:    store.RepoStore(),
+						RepoStore:    store.RepoStore,
 						ListReposErr: tc.listRepoErr,
 					}
 
@@ -787,7 +787,7 @@ func testServerStatusMessages(t *testing.T, store repos.Store) func(t *testing.T
 				s := &Server{
 					Syncer:          syncer,
 					Store:           store,
-					RepoLister:      store.RepoStore(),
+					RepoLister:      store.RepoStore,
 					GitserverClient: gitserverClient,
 				}
 
@@ -838,8 +838,8 @@ func apiExternalServices(es ...*types.ExternalService) []api.ExternalService {
 	return svcs
 }
 
-func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t *testing.T) {
-	return func(t *testing.T, store repos.Store) func(t *testing.T) {
+func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(t *testing.T) {
+	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx := context.Background()
 			clock := dbtesting.NewFakeClock(time.Now(), 0)
@@ -858,7 +858,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 				Config: `{}`,
 			}
 
-			if err := store.ExternalServiceStore().Upsert(ctx, &githubSource, &awsSource, &gitlabSource); err != nil {
+			if err := store.ExternalServiceStore.Upsert(ctx, &githubSource, &awsSource, &gitlabSource); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1216,7 +1216,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 					ctx := context.Background()
 
 					rs := tc.stored.Clone()
-					err := store.RepoStore().Create(ctx, rs...)
+					err := store.RepoStore.Create(ctx, rs...)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -1232,7 +1232,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 						for _, r := range tc.stored {
 							ids = append(ids, r.ID)
 						}
-						err := store.RepoStore().Delete(ctx, ids...)
+						err := store.RepoStore.Delete(ctx, ids...)
 						if err != nil {
 							t.Fatal(err)
 						}
@@ -1242,7 +1242,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 					syncer := &repos.Syncer{
 						Now: clock.Now,
 					}
-					s := &Server{Syncer: syncer, Store: store, RepoLister: store.RepoStore()}
+					s := &Server{Syncer: syncer, Store: store, RepoLister: store.RepoStore}
 					if tc.githubDotComSource != nil {
 						s.SourcegraphDotComMode = true
 						s.GithubDotComSource = tc.githubDotComSource
@@ -1279,7 +1279,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t
 						if tc.assertDelay != 0 {
 							time.Sleep(tc.assertDelay)
 						}
-						rs, err := store.RepoStore().List(ctx, idb.ReposListOptions{})
+						rs, err := store.RepoStore.List(ctx, idb.ReposListOptions{})
 						if err != nil {
 							t.Fatal(err)
 						}
