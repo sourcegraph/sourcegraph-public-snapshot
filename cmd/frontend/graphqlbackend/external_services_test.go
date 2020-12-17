@@ -674,7 +674,7 @@ func TestExternalServices(t *testing.T) {
 			ExpectedResult: `
 			{
 				"externalServices": {
-					"nodes": [{"id":"RXh0ZXJuYWxTZXJ2aWNlOjE=","latestSyncError":"Oops"}]
+					"nodes": [{"id":"RXh0ZXJuYWxTZXJ2aWNlOjE=","lastSyncError":"Oops"}]
 				}
 			}
 		`,
