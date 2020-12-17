@@ -97,7 +97,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.AutomaticRetry(5),
 			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn gulp generate"),
-			bk.Env("CHROMATIC", "1"),
+			bk.Env("MINIFY", "1"),
 			bk.Cmd(chromaticCommand))
 
 		// Shared tests
