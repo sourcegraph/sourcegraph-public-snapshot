@@ -6,12 +6,10 @@ import { addHours } from 'date-fns'
 import { of } from 'rxjs'
 import {
     ChangesetFields,
-    ChangesetExternalState,
-    ChangesetReconcilerState,
-    ChangesetPublicationState,
     ChangesetCheckState,
     ChangesetReviewState,
     ChangesetSpecType,
+    ChangesetState,
 } from '../../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs } from '../backend'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
@@ -22,16 +20,14 @@ const { add } = storiesOf('web/campaigns/CampaignChangesets', module).addDecorat
 
 const now = new Date()
 const nodes: ChangesetFields[] = [
-    ...Object.values(ChangesetExternalState).map(
-        (externalState): ChangesetFields => ({
+    ...Object.values(ChangesetState).map(
+        (state): ChangesetFields => ({
             __typename: 'ExternalChangeset',
-            id: 'somechangeset' + externalState,
+            id: 'somechangeset' + state,
             updatedAt: now.toISOString(),
             nextSyncAt: addHours(now, 1).toISOString(),
-            externalState,
+            state,
             title: 'Changeset title on code host',
-            reconcilerState: ChangesetReconcilerState.COMPLETED,
-            publicationState: ChangesetPublicationState.PUBLISHED,
             body: 'This changeset does the following things:\nIs awesome\nIs useful',
             checkState: ChangesetCheckState.PENDING,
             createdAt: now.toISOString(),
@@ -62,16 +58,14 @@ const nodes: ChangesetFields[] = [
             },
         })
     ),
-    ...Object.values(ChangesetExternalState).map(
-        (externalState): ChangesetFields => ({
+    ...Object.values(ChangesetState).map(
+        (state): ChangesetFields => ({
             __typename: 'HiddenExternalChangeset' as const,
-            id: 'somehiddenchangeset' + externalState,
+            id: 'somehiddenchangeset' + state,
             updatedAt: now.toISOString(),
             nextSyncAt: addHours(now, 1).toISOString(),
-            externalState,
+            state,
             createdAt: now.toISOString(),
-            reconcilerState: ChangesetReconcilerState.COMPLETED,
-            publicationState: ChangesetPublicationState.PUBLISHED,
         })
     ),
 ]

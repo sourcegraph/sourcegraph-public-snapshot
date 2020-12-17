@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -318,9 +319,7 @@ type ChangesetCountsArgs struct {
 type ListChangesetsArgs struct {
 	First                       int32
 	After                       *string
-	PublicationState            *campaigns.ChangesetPublicationState
-	ReconcilerState             *[]campaigns.ReconcilerState
-	ExternalState               *campaigns.ChangesetExternalState
+	State                       *campaigns.ChangesetState
 	ReviewState                 *campaigns.ChangesetReviewState
 	CheckState                  *campaigns.ChangesetCheckState
 	OnlyPublishedByThisCampaign *bool
@@ -384,9 +383,7 @@ type ChangesetResolver interface {
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	NextSyncAt(ctx context.Context) (*DateTime, error)
-	PublicationState() campaigns.ChangesetPublicationState
-	ReconcilerState() campaigns.ReconcilerState
-	ExternalState() *campaigns.ChangesetExternalState
+	State() (campaigns.ChangesetState, error)
 	Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)

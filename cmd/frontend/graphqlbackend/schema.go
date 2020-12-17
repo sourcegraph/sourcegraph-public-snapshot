@@ -1655,17 +1655,9 @@ type Campaign implements Node {
         """
         after: String
         """
-        Only include changesets with any of the given reconciler states.
+        Only include changesets with the given state.
         """
-        reconcilerState: [ChangesetReconcilerState!]
-        """
-        Only include changesets with the given publication state.
-        """
-        publicationState: ChangesetPublicationState
-        """
-        Only include changesets with the given external state.
-        """
-        externalState: ChangesetExternalState
+        state: ChangesetState
         """
         Only include changesets with the given review state.
         """
@@ -1774,64 +1766,6 @@ type CampaignConnection {
 }
 
 """
-The publication state of a changeset on Sourcegraph
-"""
-enum ChangesetPublicationState {
-    """
-    The changeset has not yet been created on the code host.
-    """
-    UNPUBLISHED
-    """
-    The changeset has been created on the code host.
-    """
-    PUBLISHED
-}
-
-"""
-The reconciler state of a changeset on Sourcegraph
-"""
-enum ChangesetReconcilerState {
-    """
-    The changeset is enqueued for the reconciler to process it.
-    """
-    QUEUED
-
-    """
-    The changeset reconciler is currently computing the delta between the
-    If a delta exists, the reconciler tries to update the state of the
-    changeset on the code host and on Sourcegraph to the desired state.
-    """
-    PROCESSING
-
-    """
-    The changeset reconciler ran into a problem while processing the
-    changeset and will retry it for a number of retries.
-    """
-    ERRORED
-    """
-    The changeset reconciler ran into a problem while processing the
-    changeset that can't be fixed by retrying.
-    """
-    FAILED
-
-    """
-    The changeset is not enqueued for processing.
-    """
-    COMPLETED
-}
-
-"""
-The state of a changeset on the code host on which it's hosted.
-"""
-enum ChangesetExternalState {
-    DRAFT
-    OPEN
-    CLOSED
-    MERGED
-    DELETED
-}
-
-"""
 The review state of a changeset.
 """
 enum ChangesetReviewState {
@@ -1870,6 +1804,52 @@ type ChangesetLabel {
 }
 
 """
+The visual state a changeset is currently in.
+"""
+enum ChangesetState {
+    """
+    The changeset has not been marked as to be published.
+    """
+    UNPUBLISHED
+    """
+    The changeset reconciler ran into a problem while processing the
+    changeset that can't be fixed by retrying.
+    """
+    FAILED
+    """
+    The changeset reconciler ran into a problem while processing the
+    changeset and will retry it for a number of retries.
+    """
+    RETRYING
+    """
+    The changeset reconciler is currently computing the delta between the
+    If a delta exists, the reconciler tries to update the state of the
+    changeset on the code host and on Sourcegraph to the desired state.
+    """
+    PROCESSING
+    """
+    The changeset is published, not being reconciled and open on the code host.
+    """
+    OPEN
+    """
+    The changeset is published, not being reconciled and in draft state on the code host.
+    """
+    DRAFT
+    """
+    The changeset is published, not being reconciled and closed on the code host.
+    """
+    CLOSED
+    """
+    The changeset is published, not being reconciled and merged on the code host.
+    """
+    MERGED
+    """
+    The changeset is published, not being reconciled and has been deleted on the code host.
+    """
+    DELETED
+}
+
+"""
 A changeset on a codehost.
 """
 interface Changeset {
@@ -1901,19 +1881,9 @@ interface Changeset {
     ): CampaignConnection!
 
     """
-    The publication state of the changeset.
+    The state of the changeset.
     """
-    publicationState: ChangesetPublicationState!
-
-    """
-    The reconciler state of the changeset.
-    """
-    reconcilerState: ChangesetReconcilerState!
-
-    """
-    The external state of the changeset, or null when not yet published to the code host.
-    """
-    externalState: ChangesetExternalState
+    state: ChangesetState!
 
     """
     The date and time when the changeset was created.
@@ -1963,19 +1933,9 @@ type HiddenExternalChangeset implements Node & Changeset {
     ): CampaignConnection!
 
     """
-    The publication state of the changeset.
+    The state of the changeset.
     """
-    publicationState: ChangesetPublicationState!
-
-    """
-    The reconciler state of the changeset.
-    """
-    reconcilerState: ChangesetReconcilerState!
-
-    """
-    The external state of the changeset, or null when not yet opened.
-    """
-    externalState: ChangesetExternalState
+    state: ChangesetState!
 
     """
     The date and time when the changeset was created.
@@ -2066,19 +2026,9 @@ type ExternalChangeset implements Node & Changeset {
     body: String
 
     """
-    The publication state of the changeset.
+    The state of the changeset.
     """
-    publicationState: ChangesetPublicationState!
-
-    """
-    The reconciler state of the changeset.
-    """
-    reconcilerState: ChangesetReconcilerState!
-
-    """
-    The external state of the changeset, or null when not yet published to the code host or when the changeset data hasn't been synced from the code host yet.
-    """
-    externalState: ChangesetExternalState
+    state: ChangesetState!
 
     """
     The labels attached to the changeset on the code host.
@@ -2086,7 +2036,8 @@ type ExternalChangeset implements Node & Changeset {
     labels: [ChangesetLabel!]!
 
     """
-    The external URL of the changeset on the code host. Not set when changeset state is UNPUBLISHED, externalState is DELETED, or the changeset's data hasn't been synced yet.
+    The external URL of the changeset on the code host. Not set when changeset state is UNPUBLISHED,
+    externalState is DELETED, or the changeset's data hasn't been synced yet.
     """
     externalURL: ExternalLink
 

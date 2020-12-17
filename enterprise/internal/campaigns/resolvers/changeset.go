@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strconv"
 	"sync"
@@ -272,28 +273,49 @@ func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*camp
 	return spec.Spec, nil
 }
 
-func (r *changesetResolver) PublicationState() campaigns.ChangesetPublicationState {
-	return r.changeset.PublicationState
-}
-
-func (r *changesetResolver) ReconcilerState() campaigns.ReconcilerState {
-	return r.changeset.ReconcilerState
-}
-
-func (r *changesetResolver) ExternalState() *campaigns.ChangesetExternalState {
-	if !r.changeset.Published() {
-		return nil
+func (r *changesetResolver) State() (campaigns.ChangesetState, error) {
+	if r.changeset.ReconcilerState == campaigns.ReconcilerStateErrored {
+		return campaigns.ChangesetStateRetrying, nil
 	}
-	return &r.changeset.ExternalState
+	if r.changeset.ReconcilerState == campaigns.ReconcilerStateFailed {
+		return campaigns.ChangesetStateFailed, nil
+	}
+	if r.changeset.ReconcilerState != campaigns.ReconcilerStateCompleted {
+		return campaigns.ChangesetStateProcessing, nil
+	}
+	if r.changeset.PublicationState == campaigns.ChangesetPublicationStateUnpublished {
+		return campaigns.ChangesetStateUnpublished, nil
+	}
+
+	switch r.changeset.ExternalState {
+	case campaigns.ChangesetExternalStateDraft:
+		return campaigns.ChangesetStateDraft, nil
+	case campaigns.ChangesetExternalStateOpen:
+		return campaigns.ChangesetStateOpen, nil
+	case campaigns.ChangesetExternalStateClosed:
+		return campaigns.ChangesetStateClosed, nil
+	case campaigns.ChangesetExternalStateMerged:
+		return campaigns.ChangesetStateMerged, nil
+	case campaigns.ChangesetExternalStateDeleted:
+		return campaigns.ChangesetStateDeleted, nil
+	default:
+		return "", fmt.Errorf("invalid ExternalState %q for state calculation", r.changeset.ExternalState)
+	}
 }
 
 func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 	if !r.changeset.Published() {
 		return nil, nil
 	}
+	if r.changeset.ExternalState == campaigns.ChangesetExternalStateDeleted {
+		return nil, nil
+	}
 	url, err := r.changeset.URL()
 	if err != nil {
 		return nil, err
+	}
+	if url == "" {
+		return nil, nil
 	}
 	return externallink.NewResolver(url, r.changeset.ExternalServiceType), nil
 }
