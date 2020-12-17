@@ -36,7 +36,7 @@ func Repository(ctx context.Context, repo *types.Repo) (links []*Resolver, err e
 		))
 	}
 	if link != nil && link.Root != "" {
-		links = append(links, NewResolver(link.Root, extsvc.TypeToKind(serviceType)))
+		links = append(links, NewResolver(link.Root, nullableKind(serviceType)))
 	}
 	return links, nil
 }
@@ -71,7 +71,7 @@ func FileOrDir(ctx context.Context, repo *types.Repo, rev, path string, isDir bo
 		}
 		if url != "" {
 			url = strings.NewReplacer("{rev}", rev, "{path}", path).Replace(url)
-			links = append(links, NewResolver(url, extsvc.TypeToKind(serviceType)))
+			links = append(links, NewResolver(url, nullableKind(serviceType)))
 		}
 	}
 
@@ -93,7 +93,7 @@ func Commit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (links
 	if link != nil && link.Commit != "" {
 		links = append(links, NewResolver(
 			strings.Replace(link.Commit, "{commit}", commitStr, -1),
-			extsvc.TypeToKind(serviceType),
+			nullableKind(serviceType),
 		))
 	}
 
@@ -140,6 +140,15 @@ var linksForRepositoryFailed = prometheus.NewCounter(prometheus.CounterOpts{
 	Name: "src_graphql_links_for_repository_failed_total",
 	Help: "The total number of times the GraphQL field LinksForRepository failed.",
 })
+
+func nullableKind(st string) string {
+	var kind string
+	if st != "" {
+		kind = extsvc.TypeToKind(st)
+	}
+
+	return kind
+}
 
 func init() {
 	prometheus.MustRegister(linksForRepositoryFailed)

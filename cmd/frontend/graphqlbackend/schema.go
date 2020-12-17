@@ -4171,7 +4171,7 @@ type ExternalLink {
     """
     url: String!
     """
-    The kind of external service, such as "GITHUB", or "OTHER" if unknown/unrecognized. This is used solely for
+    The kind of external service, such as "GITHUB", or null if unknown/unrecognized. This is used solely for
     displaying an icon that represents the service.
     """
     serviceKind: ExternalServiceKind
