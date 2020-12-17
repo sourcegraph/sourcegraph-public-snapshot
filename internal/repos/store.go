@@ -23,8 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// Store implements the Store interface for reading and writing repos directly
-// from the Postgres database.
+// A Store exposes methods to read and write repos and external services.
 type Store struct {
 	*basestore.Store
 
