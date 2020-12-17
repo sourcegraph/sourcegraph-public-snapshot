@@ -791,10 +791,7 @@ LIMIT 1
 `, id)
 
 	latestError, _, err := basestore.ScanFirstString(e.Query(ctx, q))
-	if err != nil {
-		return "", err
-	}
-	return latestError, nil
+	return latestError, err
 }
 
 // List returns external services under given namespace.
