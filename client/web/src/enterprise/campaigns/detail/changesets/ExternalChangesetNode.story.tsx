@@ -180,14 +180,7 @@ add('Importing', () => {
                             url: 'http://test.test/sourcegraph/sourcegraph',
                         },
                         reviewState: null,
-                        currentSpec: {
-                            id: 'spec-rand-id-1',
-                            type: ChangesetSpecType.EXISTING,
-                            description: {
-                                __typename: 'GitBranchChangesetDescription',
-                                headRef: 'my-branch',
-                            },
-                        },
+                        currentSpec: null,
                     }}
                     viewerCanAdminister={boolean('viewerCanAdminister', true)}
                     queryExternalChangesetWithFileDiffs={() =>
@@ -240,14 +233,7 @@ add('Importing failed', () => {
                             url: 'http://test.test/sourcegraph/sourcegraph',
                         },
                         reviewState: null,
-                        currentSpec: {
-                            id: 'spec-rand-id-2',
-                            type: ChangesetSpecType.EXISTING,
-                            description: {
-                                __typename: 'GitBranchChangesetDescription',
-                                headRef: 'my-branch',
-                            },
-                        },
+                        currentSpec: null,
                     }}
                     viewerCanAdminister={boolean('viewerCanAdminister', true)}
                     queryExternalChangesetWithFileDiffs={() =>
