@@ -45,7 +45,8 @@ func main() {
 		definitions.ZoektIndexServer(),
 		definitions.ZoektWebServer(),
 		definitions.Prometheus(),
-		definitions.ExecutorAndExecutorQueue(),
+		definitions.ExecutorQueue(),
+		definitions.PreciseCodeIntelIndexer(),
 	); err != nil {
 		// Rely on the Generate function doing logging, so just exit with an appropriate
 		// error code here.
