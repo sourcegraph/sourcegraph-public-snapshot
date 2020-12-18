@@ -16,7 +16,7 @@ func PreciseCodeIntelIndexer() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:              "executor_codeintel_job_99th_percentile_duration",
+							Name:              "codeintel_job_99th_percentile_duration",
 							Description:       "99th percentile successful job duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_executor_queue_processor_duration_seconds_bucket{queue="codeintel"}[5m])))`,
 							DataMayNotExist:   true,
@@ -26,7 +26,7 @@ func PreciseCodeIntelIndexer() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "executor_codeintel_active_handlers",
+							Name:              "codeintel_active_handlers",
 							Description:       "active handlers processing jobs",
 							Query:             `sum(src_executor_queue_processor_handlers{queue="codeintel"})`,
 							DataMayNotExist:   true,
@@ -36,7 +36,7 @@ func PreciseCodeIntelIndexer() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "executor_codeintel_job_errors",
+							Name:              "codeintel_job_errors",
 							Description:       "job errors every 5m",
 							Query:             `sum(increase(src_executor_queue_processor_errors_total{queue="codeintel"}[5m]))`,
 							DataMayNotExist:   true,

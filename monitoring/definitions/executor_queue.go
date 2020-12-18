@@ -16,7 +16,7 @@ func ExecutorQueue() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:              "executor_queue_codeintel_queue_size",
+							Name:              "codeintel_queue_size",
 							Description:       "queue size",
 							Query:             `max(src_executor_queue_total{queue="codeintel"})`,
 							DataMayNotExist:   true,
@@ -26,7 +26,7 @@ func ExecutorQueue() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "executor_queue_codeintel_queue_growth_rate",
+							Name:              "codeintel_queue_growth_rate",
 							Description:       "queue growth rate over 30m",
 							Query:             `sum(increase(src_executor_queue_total{queue="codeintel"}[30m])) / sum(increase(src_executor_queue_processor_total{queue="codeintel"}[30m]))`,
 							DataMayNotExist:   true,
@@ -36,7 +36,7 @@ func ExecutorQueue() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "executor_queue_codeintel_job_errors",
+							Name:              "codeintel_job_errors",
 							Description:       "job errors every 5m",
 							Query:             `sum(increase(src_executor_queue_processor_errors_total{queue="codeintel"}[5m]))`,
 							DataMayNotExist:   true,
@@ -48,7 +48,7 @@ func ExecutorQueue() *monitoring.Container {
 					},
 					{
 						{
-							Name:              "executor_queue_codeintel_active_executors",
+							Name:              "codeintel_active_executors",
 							Description:       "active executors processing codeintel jobs",
 							Query:             `max(src_apiworker_apiserver_executors_total{queue="codeintel"})`,
 							DataMayNotExist:   true,
@@ -58,7 +58,7 @@ func ExecutorQueue() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "executor_queue_codeintel_active_jobs",
+							Name:              "codeintel_active_jobs",
 							Description:       "active jobs",
 							Query:             `sum(src_apiworker_apiserver_jobs_total{queue="codeintel"})`,
 							DataMayNotExist:   true,
@@ -75,7 +75,7 @@ func ExecutorQueue() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:              "executor_queue_codeintel_workerstore_99th_percentile_duration",
+							Name:              "codeintel_workerstore_99th_percentile_duration",
 							Description:       "99th percentile successful worker store operation duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le,op)(rate(src_workerutil_dbworker_store_precise_code_intel_index_worker_store_duration_seconds_bucket{job="executor-queue"}[5m])))`,
 							DataMayNotExist:   true,
@@ -85,7 +85,7 @@ func ExecutorQueue() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "executor_queue_codeintel_workerstore_errors",
+							Name:              "codeintel_workerstore_errors",
 							Description:       "worker store errors every 5m",
 							Query:             `sum by (op)(increase(src_workerutil_dbworker_store_precise_code_intel_index_worker_store_errors_total{job="executor-queue"}[5m]))`,
 							DataMayNotExist:   true,

@@ -453,7 +453,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <br />
 
-## frontend: frontend_codeintel_resolvers_99th_percentile_duration
+## frontend: codeintel_resolvers_99th_percentile_duration
 
 <p class="subtitle">code-intel: 99th percentile successful resolver duration over 5m</p>
 
@@ -467,13 +467,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_resolvers_99th_percentile_duration"
+  "warning_frontend_codeintel_resolvers_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_resolvers_errors
+## frontend: codeintel_resolvers_errors
 
 <p class="subtitle">code-intel: resolver errors every 5m</p>
 
@@ -487,13 +487,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_resolvers_errors"
+  "warning_frontend_codeintel_resolvers_errors"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_api_99th_percentile_duration
+## frontend: codeintel_api_99th_percentile_duration
 
 <p class="subtitle">code-intel: 99th percentile successful codeintel API operation duration over 5m</p>
 
@@ -507,13 +507,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_api_99th_percentile_duration"
+  "warning_frontend_codeintel_api_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_api_errors
+## frontend: codeintel_api_errors
 
 <p class="subtitle">code-intel: code intel API errors every 5m</p>
 
@@ -527,13 +527,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_api_errors"
+  "warning_frontend_codeintel_api_errors"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_dbstore_99th_percentile_duration
+## frontend: codeintel_dbstore_99th_percentile_duration
 
 <p class="subtitle">code-intel: 99th percentile successful database store operation duration over 5m</p>
 
@@ -547,13 +547,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_dbstore_99th_percentile_duration"
+  "warning_frontend_codeintel_dbstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_dbstore_errors
+## frontend: codeintel_dbstore_errors
 
 <p class="subtitle">code-intel: database store errors every 5m</p>
 
@@ -567,13 +567,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_dbstore_errors"
+  "warning_frontend_codeintel_dbstore_errors"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_upload_workerstore_99th_percentile_duration
+## frontend: codeintel_upload_workerstore_99th_percentile_duration
 
 <p class="subtitle">code-intel: 99th percentile successful upload worker store operation duration over 5m</p>
 
@@ -587,13 +587,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_upload_workerstore_99th_percentile_duration"
+  "warning_frontend_codeintel_upload_workerstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_upload_workerstore_errors
+## frontend: codeintel_upload_workerstore_errors
 
 <p class="subtitle">code-intel: upload worker store errors every 5m</p>
 
@@ -607,13 +607,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_upload_workerstore_errors"
+  "warning_frontend_codeintel_upload_workerstore_errors"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_index_workerstore_99th_percentile_duration
+## frontend: codeintel_index_workerstore_99th_percentile_duration
 
 <p class="subtitle">code-intel: 99th percentile successful index worker store operation duration over 5m</p>
 
@@ -627,13 +627,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_index_workerstore_99th_percentile_duration"
+  "warning_frontend_codeintel_index_workerstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_index_workerstore_errors
+## frontend: codeintel_index_workerstore_errors
 
 <p class="subtitle">code-intel: index worker store errors every 5m</p>
 
@@ -647,13 +647,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_index_workerstore_errors"
+  "warning_frontend_codeintel_index_workerstore_errors"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_lsifstore_99th_percentile_duration
+## frontend: codeintel_lsifstore_99th_percentile_duration
 
 <p class="subtitle">code-intel: 99th percentile successful LSIF store operation duration over 5m</p>
 
@@ -667,13 +667,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_lsifstore_99th_percentile_duration"
+  "warning_frontend_codeintel_lsifstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_lsifstore_errors
+## frontend: codeintel_lsifstore_errors
 
 <p class="subtitle">code-intel: lSIF store errors every 5m</p>
 
@@ -687,13 +687,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_lsifstore_errors"
+  "warning_frontend_codeintel_lsifstore_errors"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_uploadstore_99th_percentile_duration
+## frontend: codeintel_uploadstore_99th_percentile_duration
 
 <p class="subtitle">code-intel: 99th percentile successful upload store operation duration over 5m</p>
 
@@ -707,13 +707,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_uploadstore_99th_percentile_duration"
+  "warning_frontend_codeintel_uploadstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_uploadstore_errors
+## frontend: codeintel_uploadstore_errors
 
 <p class="subtitle">code-intel: upload store errors every 5m</p>
 
@@ -727,13 +727,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_uploadstore_errors"
+  "warning_frontend_codeintel_uploadstore_errors"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_gitserverclient_99th_percentile_duration
+## frontend: codeintel_gitserverclient_99th_percentile_duration
 
 <p class="subtitle">code-intel: 99th percentile successful gitserver client operation duration over 5m</p>
 
@@ -747,13 +747,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_gitserverclient_99th_percentile_duration"
+  "warning_frontend_codeintel_gitserverclient_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_gitserverclient_errors
+## frontend: codeintel_gitserverclient_errors
 
 <p class="subtitle">code-intel: gitserver client errors every 5m</p>
 
@@ -767,13 +767,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_gitserverclient_errors"
+  "warning_frontend_codeintel_gitserverclient_errors"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_commit_graph_queue_size
+## frontend: codeintel_commit_graph_queue_size
 
 <p class="subtitle">code-intel: commit graph queue size</p>
 
@@ -787,13 +787,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_commit_graph_queue_size"
+  "warning_frontend_codeintel_commit_graph_queue_size"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_commit_graph_queue_growth_rate
+## frontend: codeintel_commit_graph_queue_growth_rate
 
 <p class="subtitle">code-intel: commit graph queue growth rate over 30m</p>
 
@@ -807,13 +807,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_commit_graph_queue_growth_rate"
+  "warning_frontend_codeintel_commit_graph_queue_growth_rate"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_commit_graph_updater_99th_percentile_duration
+## frontend: codeintel_commit_graph_updater_99th_percentile_duration
 
 <p class="subtitle">code-intel: 99th percentile successful commit graph updater operation duration over 5m</p>
 
@@ -827,13 +827,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_commit_graph_updater_99th_percentile_duration"
+  "warning_frontend_codeintel_commit_graph_updater_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_commit_graph_updater_errors
+## frontend: codeintel_commit_graph_updater_errors
 
 <p class="subtitle">code-intel: commit graph updater errors every 5m</p>
 
@@ -847,13 +847,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_commit_graph_updater_errors"
+  "warning_frontend_codeintel_commit_graph_updater_errors"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_janitor_errors
+## frontend: codeintel_janitor_errors
 
 <p class="subtitle">code-intel: janitor errors every 5m</p>
 
@@ -867,13 +867,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_janitor_errors"
+  "warning_frontend_codeintel_janitor_errors"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_background_upload_resets
+## frontend: codeintel_background_upload_resets
 
 <p class="subtitle">code-intel: upload records re-queued (due to unresponsive worker) every 5m</p>
 
@@ -887,13 +887,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_background_upload_resets"
+  "warning_frontend_codeintel_background_upload_resets"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_background_upload_reset_failures
+## frontend: codeintel_background_upload_reset_failures
 
 <p class="subtitle">code-intel: upload records errored due to repeated reset every 5m</p>
 
@@ -907,13 +907,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_background_upload_reset_failures"
+  "warning_frontend_codeintel_background_upload_reset_failures"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_background_index_resets
+## frontend: codeintel_background_index_resets
 
 <p class="subtitle">code-intel: index records re-queued (due to unresponsive indexer) every 5m</p>
 
@@ -927,13 +927,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_background_index_resets"
+  "warning_frontend_codeintel_background_index_resets"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_background_index_reset_failures
+## frontend: codeintel_background_index_reset_failures
 
 <p class="subtitle">code-intel: index records errored due to repeated reset every 5m</p>
 
@@ -947,13 +947,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_background_index_reset_failures"
+  "warning_frontend_codeintel_background_index_reset_failures"
 ]
 ```
 
 <br />
 
-## frontend: frontend_codeintel_indexing_errors
+## frontend: codeintel_indexing_errors
 
 <p class="subtitle">code-intel: indexing errors every 5m</p>
 
@@ -967,7 +967,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_frontend_codeintel_indexing_errors"
+  "warning_frontend_codeintel_indexing_errors"
 ]
 ```
 
@@ -2235,7 +2235,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <br />
 
-## precise-code-intel-worker: precise_code_intel_worker_upload_queue_size
+## precise-code-intel-worker: upload_queue_size
 
 <p class="subtitle">code-intel: queue size</p>
 
@@ -2249,13 +2249,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_precise_code_intel_worker_upload_queue_size"
+  "warning_precise-code-intel-worker_upload_queue_size"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: precise_code_intel_worker_upload_queue_growth_rate
+## precise-code-intel-worker: upload_queue_growth_rate
 
 <p class="subtitle">code-intel: queue growth rate over 30m</p>
 
@@ -2269,13 +2269,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_precise_code_intel_worker_upload_queue_growth_rate"
+  "warning_precise-code-intel-worker_upload_queue_growth_rate"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: precise_code_intel_worker_job_errors
+## precise-code-intel-worker: job_errors
 
 <p class="subtitle">code-intel: job errors errors every 5m</p>
 
@@ -2289,13 +2289,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_precise_code_intel_worker_job_errors"
+  "warning_precise-code-intel-worker_job_errors"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: precise_code_intel_worker_codeintel_dbstore_99th_percentile_duration
+## precise-code-intel-worker: codeintel_dbstore_99th_percentile_duration
 
 <p class="subtitle">code-intel: 99th percentile successful database store operation duration over 5m</p>
 
@@ -2309,13 +2309,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_dbstore_99th_percentile_duration"
+  "warning_precise-code-intel-worker_codeintel_dbstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: precise_code_intel_worker_codeintel_dbstore_errors
+## precise-code-intel-worker: codeintel_dbstore_errors
 
 <p class="subtitle">code-intel: database store errors every 5m</p>
 
@@ -2329,13 +2329,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_dbstore_errors"
+  "warning_precise-code-intel-worker_codeintel_dbstore_errors"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: precise_code_intel_worker_codeintel_workerstore_99th_percentile_duration
+## precise-code-intel-worker: codeintel_workerstore_99th_percentile_duration
 
 <p class="subtitle">code-intel: 99th percentile successful worker store operation duration over 5m</p>
 
@@ -2349,13 +2349,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_workerstore_99th_percentile_duration"
+  "warning_precise-code-intel-worker_codeintel_workerstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: precise_code_intel_worker_codeintel_workerstore_errors
+## precise-code-intel-worker: codeintel_workerstore_errors
 
 <p class="subtitle">code-intel: worker store errors every 5m</p>
 
@@ -2369,13 +2369,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_workerstore_errors"
+  "warning_precise-code-intel-worker_codeintel_workerstore_errors"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: precise_code_intel_worker_codeintel_lsifstore_99th_percentile_duration
+## precise-code-intel-worker: codeintel_lsifstore_99th_percentile_duration
 
 <p class="subtitle">code-intel: 99th percentile successful LSIF store operation duration over 5m</p>
 
@@ -2389,13 +2389,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_lsifstore_99th_percentile_duration"
+  "warning_precise-code-intel-worker_codeintel_lsifstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: precise_code_intel_worker_codeintel_lsifstore_errors
+## precise-code-intel-worker: codeintel_lsifstore_errors
 
 <p class="subtitle">code-intel: lSIF store errors every 5m</p>
 
@@ -2409,13 +2409,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_lsifstore_errors"
+  "warning_precise-code-intel-worker_codeintel_lsifstore_errors"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: precise_code_intel_worker_codeintel_uploadstore_99th_percentile_duration
+## precise-code-intel-worker: codeintel_uploadstore_99th_percentile_duration
 
 <p class="subtitle">code-intel: 99th percentile successful upload store operation duration over 5m</p>
 
@@ -2429,13 +2429,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_uploadstore_99th_percentile_duration"
+  "warning_precise-code-intel-worker_codeintel_uploadstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: precise_code_intel_worker_codeintel_uploadstore_errors
+## precise-code-intel-worker: codeintel_uploadstore_errors
 
 <p class="subtitle">code-intel: upload store errors every 5m</p>
 
@@ -2449,13 +2449,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_uploadstore_errors"
+  "warning_precise-code-intel-worker_codeintel_uploadstore_errors"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: precise_code_intel_worker_codeintel_gitserverclient_99th_percentile_duration
+## precise-code-intel-worker: codeintel_gitserverclient_99th_percentile_duration
 
 <p class="subtitle">code-intel: 99th percentile successful gitserver client operation duration over 5m</p>
 
@@ -2469,13 +2469,13 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_gitserverclient_99th_percentile_duration"
+  "warning_precise-code-intel-worker_codeintel_gitserverclient_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## precise-code-intel-worker: precise_code_intel_worker_codeintel_gitserverclient_errors
+## precise-code-intel-worker: codeintel_gitserverclient_errors
 
 <p class="subtitle">code-intel: gitserver client errors every 5m</p>
 
@@ -2489,7 +2489,7 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_precise_code_intel_worker_codeintel_gitserverclient_errors"
+  "warning_precise-code-intel-worker_codeintel_gitserverclient_errors"
 ]
 ```
 
@@ -5438,7 +5438,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## executor-queue: executor_queue_codeintel_queue_size
+## executor-queue: codeintel_queue_size
 
 <p class="subtitle">code-intel: queue size</p>
 
@@ -5452,13 +5452,13 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor-queue_executor_queue_codeintel_queue_size"
+  "warning_executor-queue_codeintel_queue_size"
 ]
 ```
 
 <br />
 
-## executor-queue: executor_queue_codeintel_queue_growth_rate
+## executor-queue: codeintel_queue_growth_rate
 
 <p class="subtitle">code-intel: queue growth rate over 30m</p>
 
@@ -5472,13 +5472,13 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor-queue_executor_queue_codeintel_queue_growth_rate"
+  "warning_executor-queue_codeintel_queue_growth_rate"
 ]
 ```
 
 <br />
 
-## executor-queue: executor_queue_codeintel_job_errors
+## executor-queue: codeintel_job_errors
 
 <p class="subtitle">code-intel: job errors every 5m</p>
 
@@ -5492,13 +5492,13 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor-queue_executor_queue_codeintel_job_errors"
+  "warning_executor-queue_codeintel_job_errors"
 ]
 ```
 
 <br />
 
-## executor-queue: executor_queue_codeintel_workerstore_99th_percentile_duration
+## executor-queue: codeintel_workerstore_99th_percentile_duration
 
 <p class="subtitle">code-intel: 99th percentile successful worker store operation duration over 5m</p>
 
@@ -5512,13 +5512,13 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor-queue_executor_queue_codeintel_workerstore_99th_percentile_duration"
+  "warning_executor-queue_codeintel_workerstore_99th_percentile_duration"
 ]
 ```
 
 <br />
 
-## executor-queue: executor_queue_codeintel_workerstore_errors
+## executor-queue: codeintel_workerstore_errors
 
 <p class="subtitle">code-intel: worker store errors every 5m</p>
 
@@ -5532,7 +5532,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_executor-queue_executor_queue_codeintel_workerstore_errors"
+  "warning_executor-queue_codeintel_workerstore_errors"
 ]
 ```
 
@@ -5805,7 +5805,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## precise-code-intel-indexer: executor_codeintel_job_errors
+## precise-code-intel-indexer: codeintel_job_errors
 
 <p class="subtitle">code-intel: job errors every 5m</p>
 
@@ -5819,7 +5819,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-indexer_executor_codeintel_job_errors"
+  "warning_precise-code-intel-indexer_codeintel_job_errors"
 ]
 ```
 

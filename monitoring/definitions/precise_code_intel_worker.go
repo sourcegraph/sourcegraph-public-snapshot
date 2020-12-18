@@ -16,7 +16,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:              "precise_code_intel_worker_upload_queue_size",
+							Name:              "upload_queue_size",
 							Description:       "queue size",
 							Query:             `max(src_upload_queue_uploads_total)`,
 							DataMayNotExist:   true,
@@ -26,7 +26,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "precise_code_intel_worker_upload_queue_growth_rate",
+							Name:              "upload_queue_growth_rate",
 							Description:       "queue growth rate over 30m",
 							Query:             `sum(increase(src_upload_queue_uploads_total[30m])) / sum(increase(src_codeintel_upload_queue_processor_total[30m]))`,
 							DataMayNotExist:   true,
@@ -36,7 +36,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "precise_code_intel_worker_job_errors",
+							Name:              "job_errors",
 							Description:       "job errors errors every 5m",
 							Query:             `sum(increase(src_codeintel_upload_queue_processor_errors_total[5m]))`,
 							DataMayNotExist:   true,
@@ -48,7 +48,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 					},
 					{
 						{
-							Name:              "precise_code_intel_worker_active_workers",
+							Name:              "active_workers",
 							Description:       "active workers processing uploads",
 							Query:             `max(up{job="precise-code-intel-worker"})`,
 							DataMayNotExist:   true,
@@ -58,7 +58,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "precise_code_intel_worker_active_jobs",
+							Name:              "active_jobs",
 							Description:       "active jobs",
 							Query:             `sum(src_codeintel_upload_queue_processor_handlers)`,
 							DataMayNotExist:   true,
@@ -75,7 +75,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:              "precise_code_intel_worker_job_99th_percentile_duration",
+							Name:              "job_99th_percentile_duration",
 							Description:       "99th percentile successful job duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_upload_queue_processor_duration_seconds_bucket[5m])))`,
 							DataMayNotExist:   true,
@@ -92,7 +92,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:              "precise_code_intel_worker_codeintel_dbstore_99th_percentile_duration",
+							Name:              "codeintel_dbstore_99th_percentile_duration",
 							Description:       "99th percentile successful database store operation duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le,op)(rate(src_codeintel_dbstore_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
 							DataMayNotExist:   true,
@@ -102,7 +102,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "precise_code_intel_worker_codeintel_dbstore_errors",
+							Name:              "codeintel_dbstore_errors",
 							Description:       "database store errors every 5m",
 							Query:             `sum by (op)(increase(src_codeintel_dbstore_errors_total{job="precise-code-intel-worker"}[5m]))`,
 							DataMayNotExist:   true,
@@ -114,7 +114,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 					},
 					{
 						{
-							Name:              "precise_code_intel_worker_codeintel_workerstore_99th_percentile_duration",
+							Name:              "codeintel_workerstore_99th_percentile_duration",
 							Description:       "99th percentile successful worker store operation duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le,op)(rate(src_workerutil_dbworker_store_precise_code_intel_upload_worker_store_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
 							DataMayNotExist:   true,
@@ -124,7 +124,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "precise_code_intel_worker_codeintel_workerstore_errors",
+							Name:              "codeintel_workerstore_errors",
 							Description:       "worker store errors every 5m",
 							Query:             `sum by (op)(increase(src_workerutil_dbworker_store_precise_code_intel_upload_worker_store_errors_total{job="precise-code-intel-worker"}[5m]))`,
 							DataMayNotExist:   true,
@@ -136,7 +136,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 					},
 					{
 						{
-							Name:              "precise_code_intel_worker_codeintel_lsifstore_99th_percentile_duration",
+							Name:              "codeintel_lsifstore_99th_percentile_duration",
 							Description:       "99th percentile successful LSIF store operation duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le,op)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
 							DataMayNotExist:   true,
@@ -146,7 +146,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "precise_code_intel_worker_codeintel_lsifstore_errors",
+							Name:              "codeintel_lsifstore_errors",
 							Description:       "lSIF store errors every 5m", // DUMB
 							Query:             `sum by (op)(increase(src_codeintel_lsifstore_errors_total{job="precise-code-intel-worker"}[5m]))`,
 							DataMayNotExist:   true,
@@ -158,7 +158,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 					},
 					{
 						{
-							Name:              "precise_code_intel_worker_codeintel_uploadstore_99th_percentile_duration",
+							Name:              "codeintel_uploadstore_99th_percentile_duration",
 							Description:       "99th percentile successful upload store operation duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le,op)(rate(src_codeintel_uploadstore_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
 							DataMayNotExist:   true,
@@ -168,7 +168,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "precise_code_intel_worker_codeintel_uploadstore_errors",
+							Name:              "codeintel_uploadstore_errors",
 							Description:       "upload store errors every 5m",
 							Query:             `sum by (op)(increase(src_codeintel_uploadstore_errors_total{job="precise-code-intel-worker"}[5m]))`,
 							DataMayNotExist:   true,
@@ -180,7 +180,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 					},
 					{
 						{
-							Name:              "precise_code_intel_worker_codeintel_gitserverclient_99th_percentile_duration",
+							Name:              "codeintel_gitserverclient_99th_percentile_duration",
 							Description:       "99th percentile successful gitserver client operation duration over 5m",
 							Query:             `histogram_quantile(0.99, sum by (le,op)(rate(src_codeintel_gitserver_duration_seconds_bucket{job="precise-code-intel-worker"}[5m])))`,
 							DataMayNotExist:   true,
@@ -190,7 +190,7 @@ func PreciseCodeIntelWorker() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 						{
-							Name:              "precise_code_intel_worker_codeintel_gitserverclient_errors",
+							Name:              "codeintel_gitserverclient_errors",
 							Description:       "gitserver client errors every 5m",
 							Query:             `sum by (op)(increase(src_codeintel_gitserver_errors_total{job="precise-code-intel-worker"}[5m]))`,
 							DataMayNotExist:   true,
