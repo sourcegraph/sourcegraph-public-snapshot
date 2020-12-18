@@ -6,9 +6,6 @@ import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/scr
 import { subDays, addDays } from 'date-fns'
 import {
     ChangesetCheckState,
-    ChangesetExternalState,
-    ChangesetPublicationState,
-    ChangesetReconcilerState,
     ChangesetReviewState,
     ChangesetCountsOverTimeVariables,
     ChangesetCountsOverTimeResult,
@@ -25,6 +22,7 @@ import {
 } from '../graphql-operations'
 import {
     ChangesetSpecOperation,
+    ChangesetState,
     ExternalServiceKind,
     SharedGraphQlOperations,
 } from '../../../shared/src/graphql-operations'
@@ -181,7 +179,7 @@ const CampaignChangesets: (variables: CampaignChangesetsVariables) => CampaignCh
                     },
                     error: null,
                     externalID: '123',
-                    externalState: ChangesetExternalState.OPEN,
+                    state: ChangesetState.OPEN,
                     externalURL: {
                         url: 'http://test.test/123',
                     },
@@ -194,8 +192,6 @@ const CampaignChangesets: (variables: CampaignChangesetsVariables) => CampaignCh
                         },
                     ],
                     nextSyncAt: null,
-                    publicationState: ChangesetPublicationState.PUBLISHED,
-                    reconcilerState: ChangesetReconcilerState.COMPLETED,
                     repository: {
                         id: 'repo123',
                         name: 'github.com/sourcegraph/repo',

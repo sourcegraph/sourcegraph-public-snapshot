@@ -119,24 +119,22 @@ type ExternalURL struct {
 }
 
 type Changeset struct {
-	Typename         string `json:"__typename"`
-	ID               string
-	Repository       Repository
-	Campaigns        CampaignConnection
-	CreatedAt        string
-	UpdatedAt        string
-	NextSyncAt       string
-	Title            string
-	Body             string
-	PublicationState string
-	ReconcilerState  string
-	Error            string
-	ExternalState    string
-	ExternalID       string
-	ExternalURL      ExternalURL
-	ReviewState      string
-	CheckState       string
-	Events           ChangesetEventConnection
+	Typename    string `json:"__typename"`
+	ID          string
+	Repository  Repository
+	Campaigns   CampaignConnection
+	CreatedAt   string
+	UpdatedAt   string
+	NextSyncAt  string
+	Title       string
+	Body        string
+	Error       string
+	State       string
+	ExternalID  string
+	ExternalURL ExternalURL
+	ReviewState string
+	CheckState  string
+	Events      ChangesetEventConnection
 
 	Diff Comparison
 

@@ -1,28 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import * as H from 'history'
-import {
-    ChangesetExternalState,
-    ChangesetReviewState,
-    ChangesetCheckState,
-    ChangesetReconcilerState,
-    ChangesetPublicationState,
-} from '../../../../graphql-operations'
-import {
-    ChangesetUIState,
-    isValidChangesetUIState,
-    isValidChangesetReviewState,
-    isValidChangesetCheckState,
-} from '../../utils'
+import { ChangesetReviewState, ChangesetCheckState, ChangesetState } from '../../../../graphql-operations'
+import { isValidChangesetState, isValidChangesetReviewState, isValidChangesetCheckState } from '../../utils'
 import classNames from 'classnames'
 import { upperFirst, lowerCase } from 'lodash'
 import { Form } from 'reactstrap'
 
 export interface ChangesetFilters {
-    externalState: ChangesetExternalState | null
+    state: ChangesetState | null
     reviewState: ChangesetReviewState | null
     checkState: ChangesetCheckState | null
-    reconcilerState: ChangesetReconcilerState[] | null
-    publicationState: ChangesetPublicationState | null
     search: string | null
 }
 
@@ -39,9 +26,9 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
 }) => {
     const searchElement = useRef<HTMLInputElement | null>(null)
     const searchParameters = new URLSearchParams(location.search)
-    const [uiState, setUIState] = useState<ChangesetUIState | undefined>(() => {
+    const [state, setState] = useState<ChangesetState | undefined>(() => {
         const value = searchParameters.get('status')
-        return value && isValidChangesetUIState(value) ? value : undefined
+        return value && isValidChangesetState(value) ? value : undefined
     })
     const [reviewState, setReviewState] = useState<ChangesetReviewState | undefined>(() => {
         const value = searchParameters.get('review_state')
@@ -54,8 +41,8 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
     const [search, setSearch] = useState<string | undefined>(() => searchParameters.get('search') ?? undefined)
     useEffect(() => {
         const searchParameters = new URLSearchParams(location.search)
-        if (uiState) {
-            searchParameters.set('status', uiState)
+        if (state) {
+            searchParameters.set('status', state)
         } else {
             searchParameters.delete('status')
         }
@@ -79,20 +66,14 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
         }
         // Update the filters in the parent component.
         onFiltersChange({
-            ...(uiState
-                ? changesetUIStateToChangesetFilters(uiState)
-                : {
-                      reconcilerState: null,
-                      publicationState: null,
-                      externalState: null,
-                  }),
+            state: state || null,
             reviewState: reviewState || null,
             checkState: checkState || null,
             search: search || null,
         })
         // We cannot depend on the history, since it's modified by this hook and that would cause an infinite render loop.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [uiState, reviewState, checkState, search])
+    }, [state, reviewState, checkState, search])
 
     const onSubmit = useCallback(
         (event?: React.FormEvent<HTMLFormElement>): void => {
@@ -120,11 +101,11 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
                 <div className="m-0 col col-md-auto">
                     <div className="row no-gutters">
                         <div className="col my-2 ml-0 ml-md-2">
-                            <ChangesetFilter<ChangesetUIState>
-                                values={Object.values(ChangesetUIState)}
+                            <ChangesetFilter<ChangesetState>
+                                values={Object.values(ChangesetState)}
                                 label="Status"
-                                selected={uiState}
-                                onChange={setUIState}
+                                selected={state}
+                                onChange={setState}
                                 className="w-100"
                             />
                         </div>
@@ -185,58 +166,3 @@ export const ChangesetFilter = <T extends string>({
         </select>
     </>
 )
-
-function changesetUIStateToChangesetFilters(
-    state: ChangesetUIState
-): Omit<ChangesetFilters, 'checkState' | 'reviewState' | 'search'> {
-    switch (state) {
-        case ChangesetUIState.OPEN:
-            return {
-                externalState: ChangesetExternalState.OPEN,
-                reconcilerState: [ChangesetReconcilerState.COMPLETED],
-                publicationState: ChangesetPublicationState.PUBLISHED,
-            }
-        case ChangesetUIState.DRAFT:
-            return {
-                externalState: ChangesetExternalState.DRAFT,
-                reconcilerState: [ChangesetReconcilerState.COMPLETED],
-                publicationState: ChangesetPublicationState.PUBLISHED,
-            }
-        case ChangesetUIState.CLOSED:
-            return {
-                externalState: ChangesetExternalState.CLOSED,
-                reconcilerState: [ChangesetReconcilerState.COMPLETED],
-                publicationState: ChangesetPublicationState.PUBLISHED,
-            }
-        case ChangesetUIState.MERGED:
-            return {
-                externalState: ChangesetExternalState.MERGED,
-                reconcilerState: [ChangesetReconcilerState.COMPLETED],
-                publicationState: ChangesetPublicationState.PUBLISHED,
-            }
-        case ChangesetUIState.DELETED:
-            return {
-                externalState: ChangesetExternalState.DELETED,
-                reconcilerState: [ChangesetReconcilerState.COMPLETED],
-                publicationState: ChangesetPublicationState.PUBLISHED,
-            }
-        case ChangesetUIState.UNPUBLISHED:
-            return {
-                reconcilerState: [ChangesetReconcilerState.COMPLETED],
-                externalState: null,
-                publicationState: ChangesetPublicationState.UNPUBLISHED,
-            }
-        case ChangesetUIState.PROCESSING:
-            return {
-                reconcilerState: [ChangesetReconcilerState.QUEUED, ChangesetReconcilerState.PROCESSING],
-                externalState: null,
-                publicationState: null,
-            }
-        case ChangesetUIState.ERRORED:
-            return {
-                reconcilerState: [ChangesetReconcilerState.ERRORED],
-                publicationState: null,
-                externalState: null,
-            }
-    }
-}

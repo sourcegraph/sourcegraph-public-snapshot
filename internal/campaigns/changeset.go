@@ -18,10 +18,45 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
+// ChangesetState defines the possible states of a Changeset.
+// These are displayed in the UI as well.
+type ChangesetState string
+
+// ChangesetState constants.
+const (
+	ChangesetStateUnpublished ChangesetState = "UNPUBLISHED"
+	ChangesetStateProcessing  ChangesetState = "PROCESSING"
+	ChangesetStateOpen        ChangesetState = "OPEN"
+	ChangesetStateDraft       ChangesetState = "DRAFT"
+	ChangesetStateClosed      ChangesetState = "CLOSED"
+	ChangesetStateMerged      ChangesetState = "MERGED"
+	ChangesetStateDeleted     ChangesetState = "DELETED"
+	ChangesetStateRetrying    ChangesetState = "RETRYING"
+	ChangesetStateFailed      ChangesetState = "FAILED"
+)
+
+// Valid returns true if the given ChangesetState is valid.
+func (s ChangesetState) Valid() bool {
+	switch s {
+	case ChangesetStateUnpublished,
+		ChangesetStateProcessing,
+		ChangesetStateOpen,
+		ChangesetStateDraft,
+		ChangesetStateClosed,
+		ChangesetStateMerged,
+		ChangesetStateDeleted,
+		ChangesetStateRetrying,
+		ChangesetStateFailed:
+		return true
+	default:
+		return false
+	}
+}
+
 // ChangesetPublicationState defines the possible publication states of a Changeset.
 type ChangesetPublicationState string
 
-// ChangesetState constants.
+// ChangesetPublicationState constants.
 const (
 	ChangesetPublicationStateUnpublished ChangesetPublicationState = "UNPUBLISHED"
 	ChangesetPublicationStatePublished   ChangesetPublicationState = "PUBLISHED"

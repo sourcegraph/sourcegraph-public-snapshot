@@ -63,20 +63,16 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
 }) => {
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
-        externalState: null,
+        state: null,
         reviewState: null,
-        publicationState: null,
-        reconcilerState: null,
         search: null,
     })
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArguments) =>
             queryChangesets({
-                externalState: changesetFilters.externalState,
+                state: changesetFilters.state,
                 reviewState: changesetFilters.reviewState,
                 checkState: changesetFilters.checkState,
-                publicationState: changesetFilters.publicationState,
-                reconcilerState: changesetFilters.reconcilerState,
                 first: args.first ?? null,
                 after: args.after ?? null,
                 campaign: campaignID,
@@ -85,11 +81,9 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
             }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
         [
             campaignID,
-            changesetFilters.externalState,
+            changesetFilters.state,
             changesetFilters.reviewState,
             changesetFilters.checkState,
-            changesetFilters.reconcilerState,
-            changesetFilters.publicationState,
             changesetFilters.search,
             queryChangesets,
         ]
@@ -209,12 +203,5 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
  * Returns true, if any filter is selected.
  */
 function filtersSelected(filters: ChangesetFilters): boolean {
-    return (
-        filters.checkState !== null ||
-        filters.externalState !== null ||
-        filters.publicationState !== null ||
-        filters.reconcilerState !== null ||
-        filters.reviewState !== null ||
-        !!filters.search
-    )
+    return filters.checkState !== null || filters.state !== null || filters.reviewState !== null || !!filters.search
 }
