@@ -49,7 +49,7 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execGitCommand(ctx, repositoryID, "show", "-s", "--format=%cI", commit)
+	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "show", "-s", "--format=%cI", commit)
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -97,7 +97,7 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitG
 		commands = append(commands, fmt.Sprintf("-%d", opts.Limit))
 	}
 
-	out, err := c.execGitCommand(ctx, repositoryID, commands...)
+	out, err := c.execResolveRevGitCommand(ctx, repositoryID, opts.Commit, commands...)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execGitCommand(ctx, repositoryID, "show", fmt.Sprintf("%s:%s", commit, file))
+	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "show", fmt.Sprintf("%s:%s", commit, file))
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +181,7 @@ func (c *Client) DirectoryChildren(ctx context.Context, repositoryID int, commit
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execGitCommand(ctx, repositoryID, append([]string{"ls-tree", "--name-only", commit, "--"}, cleanDirectoriesForLsTree(dirnames)...)...)
+	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, append([]string{"ls-tree", "--name-only", commit, "--"}, cleanDirectoriesForLsTree(dirnames)...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +289,7 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execGitCommand(ctx, repositoryID, "ls-tree", "--name-only", "-r", commit, "--")
+	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "ls-tree", "--name-only", "-r", commit, "--")
 	if err != nil {
 		return nil, err
 	}
@@ -306,6 +306,12 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 
 // execGitCommand executes a git command for the given repository by identifier.
 func (c *Client) execGitCommand(ctx context.Context, repositoryID int, args ...string) (string, error) {
+	return c.execResolveRevGitCommand(ctx, repositoryID, "", args...)
+}
+
+// execResolveRevGitCommand executes a git command for the given repository by identifier if the
+// given revision is resolvable prior to running the command.
+func (c *Client) execResolveRevGitCommand(ctx context.Context, repositoryID int, revision string, args ...string) (string, error) {
 	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
 		return "", err
@@ -313,8 +319,25 @@ func (c *Client) execGitCommand(ctx context.Context, repositoryID int, args ...s
 
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = repo
+
 	out, err := cmd.CombinedOutput(ctx)
-	return string(bytes.TrimSpace(out)), errors.Wrap(err, "gitserver.Command")
+	if err == nil {
+		return string(bytes.TrimSpace(out)), nil
+	}
+
+	if revision != "" {
+		// If we're returning an error, try to resolve revision that was the
+		// target of the command (if any). If the revision fails to resolve,
+		// we return a RevisionNotFoundError error instead of an "exit 128".
+		if _, err := git.ResolveRevision(ctx, repo, revision, git.ResolveRevisionOptions{}); err != nil {
+			return "", errors.Wrap(err, "git.ResolveRevision")
+		}
+	}
+
+	// If we didn't expect a particular revision to exist, or we did but it
+	// resolved without error, return the original error as the command had
+	// failed for another reason.
+	return "", errors.Wrap(err, "gitserver.Command")
 }
 
 // repositoryIDToRepo creates a api.RepoName from a repository identifier.
