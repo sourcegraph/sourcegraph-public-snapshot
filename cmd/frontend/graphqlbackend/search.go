@@ -849,7 +849,15 @@ func searchLimits() schema.SearchLimits {
 
 func hasTypeRepo(q query.QueryInfo) bool {
 	fields := q.Fields()
-	return len(fields["type"]) == 1 && fields["type"][0].Value() == "repo"
+	if len(fields["type"]) == 0 {
+		return false
+	}
+	for _, t := range fields["type"] {
+		if t.Value() == "repo" {
+			return true
+		}
+	}
+	return false
 }
 
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedRepositories, error) {

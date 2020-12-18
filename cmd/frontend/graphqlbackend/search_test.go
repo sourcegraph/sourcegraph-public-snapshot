@@ -1002,13 +1002,21 @@ func TestGetReposWrongUnderlyingType(t *testing.T) {
 	}
 }
 
-func TestTypeRepo(t *testing.T) {
+func TestHasTypeRepo(t *testing.T) {
 	tests := []struct {
 		query           string
 		wantHasTypeRepo bool
 	}{
 		{
 			query:           "sourcegraph type:repo",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "sourcegraph type:symbol type:repo",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "(sourcegraph type:repo) or (goreman type:repo)",
 			wantHasTypeRepo: true,
 		},
 		{
@@ -1025,6 +1033,10 @@ func TestTypeRepo(t *testing.T) {
 		},
 		{
 			query:           "repository",
+			wantHasTypeRepo: false,
+		},
+		{
+			query:           "",
 			wantHasTypeRepo: false,
 		},
 	}
