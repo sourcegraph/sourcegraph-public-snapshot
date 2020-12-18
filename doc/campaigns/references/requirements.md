@@ -11,7 +11,7 @@ Campaigns is compatible with the following code hosts:
 * GitLab 12.7 and later (burndown charts are only supported with 13.2 and later)
 * Bitbucket Server 5.7 and later
 
->NOTE: If your code host [is configured to use SSH to clone repositories using the `gitURLType` setting](../../admin/repo/auth.md), then only site admins can create campaigns.
+>NOTE: Currently, in code hosts configured [to use SSH to clone repositories via the `gitURLType` setting](../../admin/repo/auth.md), only site admins will be able to publish changesets. 
 
 ### Campaigns effect on code host rate limits
 
