@@ -38,6 +38,7 @@ import {
     SearchStreamingProps,
     resolveVersionContext,
 } from '../..'
+import { ErrorAlert } from '../../../components/alerts'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
@@ -258,6 +259,15 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     <div className="text-center my-4" data-testid="loading-container">
                         <LoadingSpinner className="icon-inline" />
                     </div>
+                )}
+
+                {results?.state === 'error' && (
+                    <ErrorAlert
+                        className="m-2"
+                        data-testid="search-results-list-error"
+                        error={results.error}
+                        history={history}
+                    />
                 )}
 
                 {results?.state === 'complete' && !results?.alert && results?.results.length === 0 && (
