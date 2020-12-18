@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
@@ -82,23 +83,21 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
 			bk.Env("ENTERPRISE", "1"),
 			bk.Env("PERCY_ON", "true"),
-			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-web"),
-			bk.Cmd("yarn percy exec -- yarn run cover-integration"),
-			bk.Cmd("yarn nyc report -r json"),
+			bk.Env("COVERAGE_INSTRUMENT", "true"),
+			bk.Cmd(`dev/ci/yarn-run.sh build-web "percy exec -- yarn run cover-integration" "nyc report -r json"`),
 			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 
 		// Upload storybook to Chromatic
-		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
+		chromaticCommand := "chromatic --exit-zero-on-changes --exit-once-uploaded"
 		if !c.isPR() {
 			chromaticCommand += " --auto-accept-changes"
 		}
 		pipeline.AddStep(":chromatic: Upload storybook to Chromatic",
-			bk.AutomaticRetry(5),
-			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("yarn gulp generate"),
+			bk.AutomaticRetry(2),
 			bk.Env("MINIFY", "1"),
-			bk.Cmd(chromaticCommand))
+			bk.Cmd(fmt.Sprintf("dev/ci/yarn-run.sh generate %s", strconv.Quote(chromaticCommand))),
+		)
 
 		// Shared tests
 		pipeline.AddStep(":jest: Test shared client code",
