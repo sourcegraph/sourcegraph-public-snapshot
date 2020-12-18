@@ -503,28 +503,29 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 }
 
 func alertForDiffCommitSearch(multiErr *multierror.Error) (newMultiErr *multierror.Error, alert *searchAlert) {
-	tErr := &DiffCommitTimeLimitErr{}
+	if multiErr == nil {
+		return newMultiErr, alert
+	}
 	rErr := &DiffCommitRepoLimitErr{}
-	if multiErr != nil {
-		for _, err := range multiErr.Errors {
-			if ok := errors.As(err, rErr); ok {
-				alert = &searchAlert{
-					prometheusType: "exceeded_diff_commit_search_limit",
-					title:          fmt.Sprintf("Too many matching repositories for %s search to handle", rErr.ResultType),
-					description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(rErr.ResultType), rErr.Max),
-				}
-				continue
+	tErr := &DiffCommitTimeLimitErr{}
+	for _, err := range multiErr.Errors {
+		if ok := errors.As(err, rErr); ok {
+			alert = &searchAlert{
+				prometheusType: "exceeded_diff_commit_search_limit",
+				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", rErr.ResultType),
+				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(rErr.ResultType), rErr.Max),
 			}
-			if ok := errors.As(err, tErr); ok {
-				alert = &searchAlert{
-					prometheusType: "exceeded_diff_commit_with_time_search_limit",
-					title:          fmt.Sprintf("Too many matching repositories for %s search to handle", tErr.ResultType),
-					description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(tErr.ResultType), tErr.Max),
-				}
-				continue
-			}
-			newMultiErr = multierror.Append(newMultiErr, err)
+			continue
 		}
+		if ok := errors.As(err, tErr); ok {
+			alert = &searchAlert{
+				prometheusType: "exceeded_diff_commit_with_time_search_limit",
+				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", tErr.ResultType),
+				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(tErr.ResultType), tErr.Max),
+			}
+			continue
+		}
+		newMultiErr = multierror.Append(newMultiErr, err)
 	}
 	return newMultiErr, alert
 }
