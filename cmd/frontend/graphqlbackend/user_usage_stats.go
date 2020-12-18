@@ -95,7 +95,6 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 	}
 
 	if strings.HasPrefix(args.Event, "search.latencies.frontend.") {
-		fmt.Println(args.Event, string(payload))
 		if err := exportPrometheusSearchLatencies(args.Event, payload); err != nil {
 			log15.Error("export prometheus search latencies", "error", err)
 		}
