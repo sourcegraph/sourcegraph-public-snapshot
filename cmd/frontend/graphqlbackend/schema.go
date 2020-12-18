@@ -1655,6 +1655,27 @@ type Campaign implements Node {
         """
         after: String
         """
+        Only include changesets with any of the given reconciler states.
+        """
+        reconcilerState: [ChangesetReconcilerState!]
+            @deprecated(
+                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
+            )
+        """
+        Only include changesets with the given publication state.
+        """
+        publicationState: ChangesetPublicationState
+            @deprecated(
+                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
+            )
+        """
+        Only include changesets with the given external state.
+        """
+        externalState: ChangesetExternalState
+            @deprecated(
+                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
+            )
+        """
         Only include changesets with the given state.
         """
         state: ChangesetState
@@ -1763,6 +1784,64 @@ type CampaignConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+"""
+The publication state of a changeset on Sourcegraph
+"""
+enum ChangesetPublicationState {
+    """
+    The changeset has not yet been created on the code host.
+    """
+    UNPUBLISHED
+    """
+    The changeset has been created on the code host.
+    """
+    PUBLISHED
+}
+
+"""
+The reconciler state of a changeset on Sourcegraph
+"""
+enum ChangesetReconcilerState {
+    """
+    The changeset is enqueued for the reconciler to process it.
+    """
+    QUEUED
+
+    """
+    The changeset reconciler is currently computing the delta between the
+    If a delta exists, the reconciler tries to update the state of the
+    changeset on the code host and on Sourcegraph to the desired state.
+    """
+    PROCESSING
+
+    """
+    The changeset reconciler ran into a problem while processing the
+    changeset and will retry it for a number of retries.
+    """
+    ERRORED
+    """
+    The changeset reconciler ran into a problem while processing the
+    changeset that can't be fixed by retrying.
+    """
+    FAILED
+
+    """
+    The changeset is not enqueued for processing.
+    """
+    COMPLETED
+}
+
+"""
+The state of a changeset on the code host on which it's hosted.
+"""
+enum ChangesetExternalState {
+    DRAFT
+    OPEN
+    CLOSED
+    MERGED
+    DELETED
 }
 
 """
@@ -1881,6 +1960,24 @@ interface Changeset {
     ): CampaignConnection!
 
     """
+    The publication state of the changeset.
+    """
+    publicationState: ChangesetPublicationState!
+        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
+
+    """
+    The reconciler state of the changeset.
+    """
+    reconcilerState: ChangesetReconcilerState!
+        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
+
+    """
+    The external state of the changeset, or null when not yet published to the code host.
+    """
+    externalState: ChangesetExternalState
+        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
+
+    """
     The state of the changeset.
     """
     state: ChangesetState!
@@ -1931,6 +2028,24 @@ type HiddenExternalChangeset implements Node & Changeset {
         """
         viewerCanAdminister: Boolean
     ): CampaignConnection!
+
+    """
+    The publication state of the changeset.
+    """
+    publicationState: ChangesetPublicationState!
+        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
+
+    """
+    The reconciler state of the changeset.
+    """
+    reconcilerState: ChangesetReconcilerState!
+        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
+
+    """
+    The external state of the changeset, or null when not yet published to the code host.
+    """
+    externalState: ChangesetExternalState
+        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
 
     """
     The state of the changeset.
@@ -2026,6 +2141,24 @@ type ExternalChangeset implements Node & Changeset {
     body: String
 
     """
+    The publication state of the changeset.
+    """
+    publicationState: ChangesetPublicationState!
+        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
+
+    """
+    The reconciler state of the changeset.
+    """
+    reconcilerState: ChangesetReconcilerState!
+        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
+
+    """
+    The external state of the changeset, or null when not yet published to the code host.
+    """
+    externalState: ChangesetExternalState
+        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
+
+    """
     The state of the changeset.
     """
     state: ChangesetState!
@@ -2036,8 +2169,7 @@ type ExternalChangeset implements Node & Changeset {
     labels: [ChangesetLabel!]!
 
     """
-    The external URL of the changeset on the code host. Not set when changeset state is UNPUBLISHED,
-    externalState is DELETED, or the changeset's data hasn't been synced yet.
+    The external URL of the changeset on the code host. Not set when changeset state is UNPUBLISHED, externalState is DELETED, or the changeset's data hasn't been synced yet.
     """
     externalURL: ExternalLink
 

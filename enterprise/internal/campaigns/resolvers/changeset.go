@@ -273,6 +273,21 @@ func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*camp
 	return spec.Spec, nil
 }
 
+func (r *changesetResolver) PublicationState() campaigns.ChangesetPublicationState {
+	return r.changeset.PublicationState
+}
+
+func (r *changesetResolver) ReconcilerState() campaigns.ReconcilerState {
+	return r.changeset.ReconcilerState
+}
+
+func (r *changesetResolver) ExternalState() *campaigns.ChangesetExternalState {
+	if !r.changeset.Published() {
+		return nil
+	}
+	return &r.changeset.ExternalState
+}
+
 func (r *changesetResolver) State() (campaigns.ChangesetState, error) {
 	if r.changeset.ReconcilerState == campaigns.ReconcilerStateErrored {
 		return campaigns.ChangesetStateRetrying, nil
