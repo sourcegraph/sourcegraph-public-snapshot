@@ -8,7 +8,7 @@ import { AddExternalServiceOptions } from '../../../components/externalServices/
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { ErrorAlert } from '../../../components/alerts'
 import { Link } from '../../../../../shared/src/components/Link'
-import { isDefined } from '../../../../../shared/src/util/types'
+import { isDefined, keyExistsIn } from '../../../../../shared/src/util/types'
 
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
@@ -20,15 +20,17 @@ export interface UserAddCodeHostsPageProps {
     history: H.History
 }
 
-type Status = undefined | 'loading' | ErrorLike
-export type ServicesByKindState = Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
+type ServicesByKind = Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
+type Status = undefined | 'loading' | ServicesByKind | ErrorLike
+
+const isServicesByKind = (status: Status): status is ServicesByKind =>
+    typeof status === 'object' && Object.keys(status).every(key => keyExistsIn(key, ExternalServiceKind))
 
 export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageProps> = ({
     userID,
     codeHostExternalServices,
     history,
 }) => {
-    const [servicesByKind, setServicesByKind] = useState<ServicesByKindState>({})
     const [statusOrError, setStatusOrError] = useState<Status>()
 
     const [isUpdateModalOpen, setIssUpdateModalOpen] = useState(false)
@@ -45,14 +47,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             after: null,
         }).toPromise()
 
-        const services: ServicesByKindState = fetchedServices.reduce<ServicesByKindState>((accumulator, service) => {
-            // backend constrain - user have only one external service per ExternalServiceKind
+        const services: ServicesByKind = fetchedServices.reduce<ServicesByKind>((accumulator, service) => {
+            // backend constraint - non-admin users have only one external service per ExternalServiceKind
             accumulator[service.kind] = service
             return accumulator
         }, {})
 
-        setServicesByKind(services)
-        setStatusOrError(undefined)
+        setStatusOrError(services)
     }, [userID])
 
     useEffect(() => {
@@ -67,9 +68,11 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     const handleServiceUpsert = useCallback(
         (service: ListExternalServiceFields): void => {
-            setServicesByKind({ ...servicesByKind, [service.kind]: service })
+            if (isServicesByKind(statusOrError)) {
+                setStatusOrError({ ...statusOrError, [service.kind]: service })
+            }
         },
-        [servicesByKind]
+        [statusOrError]
     )
 
     const getServiceWarningFragment = ({ id, displayName }: ListExternalServiceFields): React.ReactFragment => (
@@ -98,10 +101,11 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             </p>
 
             {/* display external service errors */}
-            {Object.values(servicesByKind)
-                .filter(isDefined)
-                .filter(service => service.warning)
-                .map(getServiceWarningFragment)}
+            {isServicesByKind(statusOrError) &&
+                Object.values(statusOrError)
+                    .filter(isDefined)
+                    .filter(service => service.warning)
+                    .map(getServiceWarningFragment)}
 
             {/* display other errors */}
             {isErrorLike(statusOrError) && (
@@ -113,7 +117,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                     {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) => (
                         <li key={id} className="list-group-item">
                             <CodeHostItem
-                                service={servicesByKind[kind]}
+                                service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
                                 userID={userID}
                                 kind={kind}
                                 name={defaultDisplayName}
