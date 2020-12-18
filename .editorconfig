@@ -22,5 +22,10 @@ indent_style = space
 indent_size = 2
 switch_case_indent = true
 
+[.buildkite/hooks/**]
+indent_style = space
+indent_size = 2
+switch_case_indent = true
+
 [**/node_modules/**]
 ignore = true
