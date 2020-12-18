@@ -90,8 +90,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                                 className="form-control pr-4"
                             />
                             <ShieldCheckIcon
-                                size="1.25em"
-                                className="add-user-code-hosts-page__icon--inside add-user-code-hosts-page__icon--muted"
+                                className="icon-inline add-user-code-hosts-page__icon--inside text-muted"
                                 data-tooltip="Data will be encrypted and will not be visible again."
                             />
                         </div>
@@ -99,12 +98,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                         {hintFragment}
                     </div>
                     <div className="d-flex justify-content-end">
-                        <button
-                            type="button"
-                            disabled={false}
-                            className="btn btn-outline-secondary mr-2"
-                            onClick={onDidCancel}
-                        >
+                        <button type="button" className="btn btn-outline-secondary mr-2" onClick={onDidCancel}>
                             Cancel
                         </button>
                         <button type="submit" disabled={!token || isLoading} className="btn btn-primary">

@@ -1,19 +1,7 @@
 .add-user-code-hosts-page {
     &__icon--inside {
         position: absolute;
-        right: 0.5rem;
+        right: 0.25rem;
         top: 0.5rem;
-    }
-    &__icon--success.mdi-icon {
-        fill: var(--success);
-    }
-    &__icon--danger.mdi-icon {
-        fill: var(--danger);
-    }
-    &__icon--outline.mdi-icon {
-        fill: var(--border-color);
-    }
-    &__icon--muted.mdi-icon {
-        fill: var(--text-muted);
     }
 }

@@ -89,11 +89,11 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
             )}
             <div className="align-self-center">
                 {service?.warning || service?.lastSyncError ? (
-                    <AlertCircleIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon--danger" />
+                    <AlertCircleIcon className="icon-inline mb-0 mr-2 text-danger" />
                 ) : service?.id ? (
-                    <CheckCircleIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon--success" />
+                    <CheckCircleIcon className="icon-inline mb-0 mr-2 text-success" />
                 ) : (
-                    <CircleOutlineIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon--outline" />
+                    <CircleOutlineIcon className="icon-inline mb-0 mr-2 text-muted" />
                 )}
                 <Icon className="icon-inline mb-0 mr-1" />
             </div>
@@ -105,17 +105,15 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     <>
                         <button
                             type="button"
-                            className="btn btn-link text-primary p-0 mr-2 shadow-none"
+                            className="btn btn-link text-primary px-0 mr-2"
                             onClick={toggleUpdateModal}
-                            disabled={false}
                         >
                             Edit
                         </button>
                         <button
                             type="button"
-                            className="btn btn-link text-danger p-0 shadow-none"
+                            className="btn btn-link text-danger px-0"
                             onClick={toggleRemoveConnectionModal}
-                            disabled={false}
                         >
                             Remove
                         </button>

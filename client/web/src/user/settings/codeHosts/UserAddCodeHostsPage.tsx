@@ -21,14 +21,14 @@ export interface UserAddCodeHostsPageProps {
 }
 
 type Status = undefined | 'loading' | ErrorLike
-export type servicesByKindState = Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
+export type ServicesByKindState = Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
 
 export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageProps> = ({
     userID,
     codeHostExternalServices,
     history,
 }) => {
-    const [servicesByKind, setServicesByKind] = useState<servicesByKindState>({})
+    const [servicesByKind, setServicesByKind] = useState<ServicesByKindState>({})
     const [statusOrError, setStatusOrError] = useState<Status>()
 
     const [isUpdateModalOpen, setIssUpdateModalOpen] = useState(false)
@@ -45,7 +45,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             after: null,
         }).toPromise()
 
-        const services: servicesByKindState = fetchedServices.reduce<servicesByKindState>((accumulator, service) => {
+        const services: ServicesByKindState = fetchedServices.reduce<ServicesByKindState>((accumulator, service) => {
             // backend constrain - user have only one external service per ExternalServiceKind
             accumulator[service.kind] = service
             return accumulator
@@ -76,7 +76,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         <div className="alert alert-danger my-4" key={id}>
             <strong className="align-middle">Could not connect to {displayName}.</strong>
             <span className="align-middle"> Please </span>
-            <button type="button" className="btn btn-link text-primary p-0 shadow-none" onClick={toggleUpdateModal}>
+            <button type="button" className="btn btn-link text-primary p-0" onClick={toggleUpdateModal}>
                 update your access token
             </button>{' '}
             <span className="align-middle">to restore the connection.</span>
