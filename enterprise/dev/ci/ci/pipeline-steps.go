@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
@@ -84,19 +83,19 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.Env("ENTERPRISE", "1"),
 			bk.Env("PERCY_ON", "true"),
 			bk.Env("COVERAGE_INSTRUMENT", "true"),
-			bk.Cmd(`dev/ci/yarn-run.sh build-web "percy exec -- yarn run cover-integration" "nyc report -r json"`),
+			bk.Cmd(`dev/ci/yarn-run.sh build-web percy-integration nyc-report`),
 			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 
 		// Upload storybook to Chromatic
-		chromaticCommand := "chromatic --exit-zero-on-changes --exit-once-uploaded"
+		chromaticCommand := "chromatic"
 		if !c.isPR() {
-			chromaticCommand += " --auto-accept-changes"
+			chromaticCommand = "chromatic-autoapprove"
 		}
 		pipeline.AddStep(":chromatic: Upload storybook to Chromatic",
 			bk.AutomaticRetry(2),
 			bk.Env("MINIFY", "1"),
-			bk.Cmd(fmt.Sprintf("dev/ci/yarn-run.sh generate %s", strconv.Quote(chromaticCommand))),
+			bk.Cmd("dev/ci/yarn-run.sh "+chromaticCommand),
 		)
 
 		// Shared tests

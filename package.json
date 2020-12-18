@@ -31,7 +31,11 @@
     "build-storybook": "build-storybook -c .storybook -s ui/assets",
     "cover-storybook": "nyc --hook-require=false yarn jest .storybook/coverage",
     "deduplicate": "yarn-deduplicate -s fewer",
-    "release": "cd dev/release && yarn run release"
+    "release": "cd dev/release && yarn run release",
+    "chromatic": "chromatic --exit-zero-on-changes --exit-once-uploaded",
+    "chromatic-autoapprove": "chromatic --exit-zero-on-changes --exit-once-uploaded --auto-accept-changes",
+    "percy-integration": "percy exec -- yarn run cover-integration",
+    "nyc-report": "nyc report -r json"
   },
   "browserslist": [
     "last 1 version",
