@@ -21,7 +21,7 @@ sourcegraph-upgrade         not created (google)
 $
 ```
 
-Copy [this 1password entry](https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=mn37wmu5dzhll6qxcnpmutvlq4&h=team-sourcegraph.1password.com) into a `.env` file. This is used to populate the environment variables for each test. 
+Copy [this 1password entry](https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=mn37wmu5dzhll6qxcnpmutvlq4&h=team-sourcegraph.1password.com) into a `.env` file this directory. This is used to populate the environment variables for each test. 
 
 
 To run the tests, simply execute the following:
@@ -30,7 +30,17 @@ $ vagrant up <machine>
 ```
 where `<machine>` is one of those listed above. 
 
-Note: these tests rsync the sourcegraph directory to the machine in Google Cloud. Depending on your connection speed, this could take a while. 
+Once the tests are finished, you can destroy the machine by executing the following:
+```shell
+$ vagrant destroy -f <machine>
+```
+
+To login into the machine by executing:
+```shell
+$ vagrant ssh <machine>
+```
+
+**Note:** these tests rsync the sourcegraph directory to the machine in Google Cloud. Depending on your connection speed, this could take a while. 
 
 ## Adding tests
 
