@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -51,13 +52,18 @@ func (u *Updater) Handle(ctx context.Context) error {
 		return errors.Wrap(err, "store.DirtyRepositories")
 	}
 
+	var updateErr error
 	for repositoryID, dirtyFlag := range repositoryIDs {
 		if err := u.tryUpdate(ctx, repositoryID, dirtyFlag); err != nil {
-			log15.Warn("Failed to update commit graph", "err", err)
+			if updateErr == nil {
+				updateErr = err
+			} else {
+				updateErr = multierror.Append(updateErr, err)
+			}
 		}
 	}
 
-	return nil
+	return updateErr
 }
 
 func (u *Updater) HandleError(err error) {
