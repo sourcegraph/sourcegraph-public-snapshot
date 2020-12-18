@@ -3,6 +3,7 @@ import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { CodeMonitoringProps } from '..'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { AuthenticatedUser } from '../../../auth'
@@ -21,7 +22,8 @@ interface Props
         PlatformContextProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        CodeMonitoringProps {
+        CodeMonitoringProps,
+        SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }
