@@ -120,7 +120,7 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 		refs[i] = &repositoryTextSearchIndexedRef{ref: &GitRefResolver{name: refName, repo: r.repo}}
 	}
 	refByName := func(name string) *repositoryTextSearchIndexedRef {
-		possibleRefNames := []string{"refs/heads/" + name, "refs/tags/" + name, name}
+		possibleRefNames := []string{"refs/heads/" + name, "refs/tags/" + name}
 		for _, ref := range possibleRefNames {
 			if _, err := git.ResolveRevision(ctx, r.repo.innerRepo.Name, ref, git.ResolveRevisionOptions{NoEnsureRevision: true}); err == nil {
 				name = ref
