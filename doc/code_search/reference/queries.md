@@ -79,7 +79,7 @@ The following keywords can be used on all searches (using [RE2 syntax](https://g
 | **file:regexp-pattern** <br> _alias: f_ | Only include results in files whose full path matches the regexp. | [`file:\.js$ httptest`](https://sourcegraph.com/search?q=file:%5C.js%24+httptest) <br> [`file:internal/ httptest`](https://sourcegraph.com/search?q=file:internal/+httptest) |
 | **-file:regexp-pattern** <br> _alias: -f_ | Exclude results from files whose full path matches the regexp. | [`file:\.js$ -file:test http`](https://sourcegraph.com/search?q=file:%5C.js%24+-file:test+http) |
 | **content:"pattern"** | Set the search pattern with a dedicated parameter. Useful when searching literally for a string that may conflict with the [search pattern syntax](#search-pattern-syntax). | [`repo:sourcegraph content:"repo:sourcegraph"`](https://sourcegraph.com/search?q=repo:sourcegraph+content:"repo:sourcegraph"&patternType=literal) |
-| **-content:"pattern"** | Exclude results from files whose content matches the pattern. See the [requirements and current support](#negated-content-search) for negated content search. | [`file:Dockerfile alpine -content:alpine:latest`](https://sourcegraph.com/search?q=file:Dockerfile+alpine+-content:alpine:latest&patternType=literal) |
+| **-content:"pattern"** | Exclude results from files whose content matches the pattern. Not supported for structural search. | [`file:Dockerfile alpine -content:alpine:latest`](https://sourcegraph.com/search?q=file:Dockerfile+alpine+-content:alpine:latest&patternType=literal) |
 | **lang:language-name** <br> _alias: l_ | Only include results from files in the specified programming language. | [`lang:typescript encoding`](https://sourcegraph.com/search?q=lang:typescript+encoding) |
 | **-lang:language-name** <br> _alias: -l_ | Exclude results from files in the specified programming language. | [`-lang:typescript encoding`](https://sourcegraph.com/search?q=-lang:typescript+encoding) |
 | **type:symbol** | Perform a symbol search. | [`type:symbol path`](https://sourcegraph.com/search?q=type:symbol+path)  ||
@@ -121,25 +121,26 @@ Returns file content matching either on the left or right side, or both (set uni
 search patterns, `NOT` excludes documents that contain the term after `NOT`. For readability, you can also include the
 `AND` operator before a `NOT` (i.e. `panic NOT ever` is equivalent to `panic AND NOT ever`).
 
-
 ### Operator precedence and groups
 
-Operators may be combined. `and`-expressions have higher precedence (bind tighter) than `or`-expressions so that `a and b or c and d` means `(a and b) or (c and d)`.
+Operators may be combined. `and` expressions have higher precedence (bind tighter) than `or` expressions so that `a and b or c and d` means `(a and b) or (c and d)`.
 
 Expressions may be grouped with parentheses to change the default precedence and meaning. For example: `a and (b or c) and d`.
 
-### Operator scope
+### Filter scope
 
-Except for simple cases, search patterns bind tightest to scoped fields, like `file:main.c`. So, a combined query like
-`file:main.c char c  or (int i and int j)` generally means `(file:main.c char c) or (int i and int j)`
+When parentheses are absent, we use the convention that operators divide
+sequences of terms that should be grouped together. That is:
 
-Since we don't yet support search subexpressions with different scopes, the above will raise an alert. If the intent is to apply the `file` scope to the entire pattern, group it like so: `file:main.c (char c or (int i and int j))`
+`file:main.c char c or (int i and int j)` generally means `(file:main.c char c) or (int i and int
+j)`
 
-### Operator support
+To apply the scope of the `file` filter to the entire subexpression, fully group the subexpression:
 
-Operators are supported in regexp and structural search modes, but not literal search mode. How operators interpret search pattern syntax depends on kind of search (whether [regexp](#regexp-search) or [structural](#structural-search)). Operators currently only apply to searches for file content. Thus, expressions like `repo:npm/cli or repo:npm/npx` are not currently supported.
+`file:main.c (char c or (int i and int j))`.
 
----
+Browse the [search subexpressions examples](../tutorials/search_subexpressions.md) to
+learn more about use cases.
 
 ## Keywords (diff and commit searches only)
 
@@ -217,8 +218,3 @@ Example: [`repo:docker repo:registry`](https://sourcegraph.com/search?q=repo:doc
 A query with `type:path` restricts terms to matching filenames only (not file contents).
 
 Example: [`type:path repo:/docker/ registry`](https://sourcegraph.com/search?q=type:path+repo:/docker/+registry)
-
-
-## Negated content search
-
-To exclude code or text matches with `not pattern` or `-content:pattern`, set the `"search.migrateParser": true` option in global settings. Negated content search is currently supported for literal and regexp queries.
