@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path"
 	"regexp"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -498,6 +500,34 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 		}
 	}
 	return buildAlert(proposedQueries, description)
+}
+
+func alertForDiffCommitSearch(multiErr *multierror.Error) (newMultiErr *multierror.Error, alert *searchAlert) {
+	if multiErr == nil {
+		return newMultiErr, alert
+	}
+	rErr := &RepoLimitErr{}
+	tErr := &TimeLimitErr{}
+	for _, err := range multiErr.Errors {
+		if ok := errors.As(err, rErr); ok {
+			alert = &searchAlert{
+				prometheusType: "exceeded_diff_commit_search_limit",
+				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", rErr.ResultType),
+				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(rErr.ResultType), rErr.Max),
+			}
+			continue
+		}
+		if ok := errors.As(err, tErr); ok {
+			alert = &searchAlert{
+				prometheusType: "exceeded_diff_commit_with_time_search_limit",
+				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", tErr.ResultType),
+				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(tErr.ResultType), tErr.Max),
+			}
+			continue
+		}
+		newMultiErr = multierror.Append(newMultiErr, err)
+	}
+	return newMultiErr, alert
 }
 
 // alertForStructuralSearch filters certain errors from multiErr and converts

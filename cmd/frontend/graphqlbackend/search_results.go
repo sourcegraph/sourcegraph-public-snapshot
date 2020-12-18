@@ -1628,44 +1628,44 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 	return resolved, nil, nil
 }
 
-// Surface an alert if a query exceeds limits that we place on search. Currently limits
-// diff and commit searches where more than repoLimit repos need to be searched.
-func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]string, *searchAlert) {
-	limits := searchLimits()
-	// we don't need to handle the error here, because we don't have context and the
-	// promise can only return context errors
-	repos, _ := getRepos(context.Background(), args.RepoPromise)
+type DiffCommitError struct {
+	ResultType string
+	Max        int
+}
 
-	for _, resultType := range resultTypes {
-		if resultType != "commit" && resultType != "diff" {
-			continue
-		}
+type RepoLimitErr DiffCommitError
+type TimeLimitErr DiffCommitError
 
-		hasTimeFilter := false
-		if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
-			hasTimeFilter = true
-		}
-		if _, beforePresent := args.Query.Fields()["before"]; beforePresent {
-			hasTimeFilter = true
-		}
+func (RepoLimitErr) Error() string {
+	return "repo limit error"
+}
 
-		if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
-			return []string{}, &searchAlert{
-				prometheusType: "exceeded_diff_commit_search_limit",
-				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
-				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), max),
-			}
-		}
-		if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(repos) > max {
-			return []string{}, &searchAlert{
-				prometheusType: "exceeded_diff_commit_with_time_search_limit",
-				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
-				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), max),
-			}
-		}
+func (TimeLimitErr) Error() string {
+	return "time limit error"
+}
+
+func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameters, resultType string) error {
+	repos, err := getRepos(ctx, args.RepoPromise)
+	if err != nil {
+		return err
 	}
 
-	return resultTypes, nil
+	hasTimeFilter := false
+	if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
+		hasTimeFilter = true
+	}
+	if _, beforePresent := args.Query.Fields()["before"]; beforePresent {
+		hasTimeFilter = true
+	}
+
+	limits := searchLimits()
+	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
+		return RepoLimitErr{ResultType: resultType, Max: max}
+	}
+	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(repos) > max {
+		return TimeLimitErr{ResultType: resultType, Max: max}
+	}
+	return nil
 }
 
 type aggregator struct {
@@ -1778,6 +1778,11 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 }
 
 func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters) {
+	err := checkDiffCommitSearchLimits(ctx, tp, "diff")
+	if err != nil {
+		a.collect(ctx, nil, nil, err)
+		return
+	}
 	tr, ctx := trace.New(ctx, "doDiffSearch", "")
 	defer func() {
 		tr.Finish()
@@ -1795,6 +1800,11 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 }
 
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) {
+	err := checkDiffCommitSearchLimits(ctx, tp, "commit")
+	if err != nil {
+		a.collect(ctx, nil, nil, err)
+		return
+	}
 	tr, ctx := trace.New(ctx, "doCommitSearch", "")
 	defer func() {
 		tr.Finish()
@@ -1885,10 +1895,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	resultTypes := r.determineResultTypes(args, forceOnlyResultType)
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 	var (
-		requiredWg sync.WaitGroup
-		optionalWg sync.WaitGroup
-		// Alert is a potential alert shown to the user.
-		alert           *searchAlert
+		requiredWg      sync.WaitGroup
+		optionalWg      sync.WaitGroup
 		seenResultTypes = make(map[string]struct{})
 	)
 
@@ -1969,11 +1977,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	// results before the above reporting.
 	args.RepoPromise.Resolve(resolved.repoRevs)
 
-	// Apply search limits and generate warnings before firing off workers.
-	// This currently limits diff and commit search to a set number of
-	// repos, and removes the diff and commit resultTypes if it is breached.
-	resultTypes, alert = alertOnSearchLimit(resultTypes, &args)
-
 	searchedFileContentsOrPaths := false
 	for _, resultType := range resultTypes {
 		resultType := resultType // shadow so it doesn't change in the goroutine
@@ -2050,7 +2053,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		common.excluded.archived,
 		len(common.timedout))
 
-	multiErr, newAlert := alertForStructuralSearch(multiErr)
+	var alert *searchAlert
+
+	multiErr, newAlert := alertForDiffCommitSearch(multiErr)
+	if newAlert != nil {
+		alert = newAlert
+	}
+
+	multiErr, newAlert = alertForStructuralSearch(multiErr)
 	if newAlert != nil {
 		alert = newAlert // takes higher precedence
 	}
