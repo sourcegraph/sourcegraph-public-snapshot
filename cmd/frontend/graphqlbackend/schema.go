@@ -3959,6 +3959,12 @@ type ExternalService implements Node {
     not break the API and stay backwards compatible.
     """
     warning: String
+
+    """
+    External services are synced with code hosts in the background. This optional field
+    will contain any errors that occured during the most recent completed sync.
+    """
+    lastSyncError: String
 }
 
 """

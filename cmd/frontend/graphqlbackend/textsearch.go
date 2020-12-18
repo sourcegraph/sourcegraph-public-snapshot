@@ -165,9 +165,9 @@ func (lm *lineMatch) LimitHit() bool {
 	return lm.JLimitHit
 }
 
-var mockSearchFilesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error)
+var mockSearchFilesInRepo func(ctx context.Context, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error)
 
-func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *types.Repo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]*FileMatchResolver, bool, error) {
+func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]*FileMatchResolver, bool, error) {
 	if mockSearchFilesInRepo != nil {
 		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
 	}
@@ -195,7 +195,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 	}
 
 	workspace := fileMatchURI(repo.Name, rev, "")
-	repoResolver := &RepositoryResolver{innerRepo: repo}
+	repoResolver := &RepositoryResolver{innerRepo: repo.ToRepo()}
 	resolvers := make([]*FileMatchResolver, 0, len(matches))
 	for _, fm := range matches {
 		lineMatches := make([]*lineMatch, 0, len(fm.LineMatches))
@@ -346,7 +346,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 	var searcherRepos []*search.RepositoryRevisions
 	if indexed.DisableUnindexedSearch {
 		tr.LazyPrintf("disabling unindexed search")
-		common.missing = make([]*types.Repo, len(indexed.Unindexed))
+		common.missing = make([]*types.RepoName, len(indexed.Unindexed))
 		for i, r := range indexed.Unindexed {
 			common.missing[i] = r.Repo
 		}
@@ -473,15 +473,9 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 					}
 					mu.Lock()
 					defer mu.Unlock()
-					if ctx.Err() == nil {
-						common.searched = append(common.searched, repoRev.Repo)
-					}
-					if repoLimitHit {
-						// We did not return all results in this repository.
-						common.partial[repoRev.Repo.ID] = struct{}{}
-					}
 					// non-diff search reports timeout through err, so pass false for timedOut
-					if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, false, err); fatalErr != nil {
+					repoCommon, fatalErr := handleRepoSearchResult(repoRev, repoLimitHit, false, err)
+					if fatalErr != nil {
 						if ctx.Err() == context.Canceled {
 							// Our request has been canceled (either because another one of searcherRepos
 							// had a fatal error, or otherwise), so we can just ignore these results. We
@@ -496,6 +490,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 							cancel()
 						}
 					}
+					common.update(&repoCommon)
 					addMatches(matches)
 				}(limitCtx, limitDone) // ends the Go routine for a call to searcher for a repo
 			} // ends the for loop iterating over repo's revs
@@ -586,7 +581,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 // repositories that are limited / excluded.
 //
 // A slice to the input list is returned, it is not copied.
-func limitSearcherRepos(unindexed []*search.RepositoryRevisions, limit int) (searcherRepos []*search.RepositoryRevisions, limitedSearcherRepos []*types.Repo) {
+func limitSearcherRepos(unindexed []*search.RepositoryRevisions, limit int) (searcherRepos []*search.RepositoryRevisions, limitedSearcherRepos []*types.RepoName) {
 	totalRepoRevs := 0
 	limitedRepos := 0
 	for _, repoRevs := range unindexed {

@@ -319,7 +319,8 @@ func (e *executor) importChangeset(ctx context.Context) error {
 		return err
 	}
 
-	e.ch.Unsynced = false
+	// The changeset finished importing, so it is published now.
+	e.ch.PublicationState = campaigns.ChangesetPublicationStatePublished
 
 	return nil
 }

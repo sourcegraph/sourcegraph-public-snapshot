@@ -9,9 +9,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go/ext"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"golang.org/x/net/context/ctxhttp"
 )
 
@@ -49,9 +46,6 @@ type BaseClientOptions struct {
 	// UserAgent specifies the user agent string to supply on requests.
 	UserAgent string
 
-	// TraceOperationName is the name supply to the open tracing span.
-	TraceOperationName string
-
 	// Transport is a configurable round tripper, which can include things like
 	// tracing, metrics, and request/response decoration.
 	Transport http.RoundTripper
@@ -68,26 +62,9 @@ func NewBaseClient(options BaseClientOptions) *BaseClient {
 // Do performs the given HTTP request and returns the body. If there is no content
 // to be read due to a 204 response, then a false-valued flag is returned.
 func (c *BaseClient) Do(ctx context.Context, req *http.Request) (hasContent bool, _ io.ReadCloser, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "do")
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
-
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", c.options.UserAgent)
 	req = req.WithContext(ctx)
-
-	req, ht := nethttp.TraceRequest(
-		span.Tracer(),
-		req,
-		nethttp.OperationName(c.options.TraceOperationName),
-		nethttp.ClientTrace(false),
-	)
-	defer ht.Finish()
 
 	resp, err := ctxhttp.Do(req.Context(), c.httpClient, req)
 	if err != nil {

@@ -31,10 +31,10 @@ describe('StreamingSearchResults', () => {
     history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
 
     const streamingSearchResult: AggregateStreamingSearchResults = {
+        state: 'complete',
         results: MULTIPLE_SEARCH_RESULT.results,
         filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
         progress: {
-            done: true,
             durationMs: 500,
             matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
             skipped: [],

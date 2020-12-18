@@ -14,10 +14,10 @@ import (
 	dbws "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func testSyncWorkerPlumbing(db *sql.DB) func(t *testing.T, repoStore repos.Store) func(t *testing.T) {
+func testSyncWorkerPlumbing(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(t *testing.T) {
 	// The reason we need two higher level functions is because we need access to the *sql.DB struct but also
 	// need to satisfy the signature expected by integration tests.
-	return func(t *testing.T, repoStore repos.Store) func(t *testing.T) {
+	return func(t *testing.T, repoStore *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
 			ctx := context.Background()
 			testSvc := &types.ExternalService{
@@ -27,7 +27,7 @@ func testSyncWorkerPlumbing(db *sql.DB) func(t *testing.T, repoStore repos.Store
 			}
 
 			// Create external service
-			err := repoStore.UpsertExternalServices(ctx, testSvc)
+			err := repoStore.ExternalServiceStore.Upsert(ctx, testSvc)
 			if err != nil {
 				t.Fatal(err)
 			}

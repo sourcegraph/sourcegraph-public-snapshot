@@ -55,13 +55,13 @@ type searchResultsCommon struct {
 	//
 	// TODO All other fields are sets of repo IDs. They can only contain repos
 	// that are in this map.
-	repos map[api.RepoID]*types.Repo
+	repos map[api.RepoID]*types.RepoName
 
-	searched []*types.Repo // repos that were searched
-	indexed  []*types.Repo // repos that were searched using an index
-	cloning  []*types.Repo // repos that could not be searched because they were still being cloned
-	missing  []*types.Repo // repos that could not be searched because they do not exist
-	excluded excludedRepos // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
+	searched []*types.RepoName // repos that were searched
+	indexed  []*types.RepoName // repos that were searched using an index
+	cloning  []*types.RepoName // repos that could not be searched because they were still being cloned
+	missing  []*types.RepoName // repos that could not be searched because they do not exist
+	excluded excludedRepos     // repo counts of excluded repos because the search query doesn't apply to them, but that we want to know about (forks, archives)
 
 	partial map[api.RepoID]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
 
@@ -70,7 +70,7 @@ type searchResultsCommon struct {
 	// timedout usually contains repos that haven't finished being fetched yet.
 	// This should only happen for large repos and the searcher caches are
 	// purged.
-	timedout []*types.Repo
+	timedout []*types.RepoName
 
 	indexUnavailable bool // True if indexed search is enabled but was not available during this search.
 }
@@ -83,7 +83,7 @@ func (c *searchResultsCommon) Repositories() []*RepositoryResolver {
 	repos := c.repos
 	resolvers := make([]*RepositoryResolver, 0, len(repos))
 	for _, r := range repos {
-		resolvers = append(resolvers, &RepositoryResolver{innerRepo: r})
+		resolvers = append(resolvers, &RepositoryResolver{innerRepo: r.ToRepo()})
 	}
 	sort.Slice(resolvers, func(a, b int) bool {
 		return resolvers[a].innerRepo.ID < resolvers[b].innerRepo.ID
@@ -123,7 +123,7 @@ func (c *searchResultsCommon) Equal(other *searchResultsCommon) bool {
 	return reflect.DeepEqual(c, other)
 }
 
-func RepositoryResolvers(repos types.Repos) []*RepositoryResolver {
+func RepositoryResolvers(repos types.RepoNames) []*RepositoryResolver {
 	dedupSort(&repos)
 	return toRepositoryResolvers(repos)
 }
@@ -165,7 +165,7 @@ func (c *searchResultsCommon) update(other *searchResultsCommon) {
 
 // dedupSort sorts (by ID in ascending order) and deduplicates
 // the given repos in-place.
-func dedupSort(repos *types.Repos) {
+func dedupSort(repos *types.RepoNames) {
 	if len(*repos) == 0 {
 		return
 	}
@@ -1120,18 +1120,22 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 }
 
 // invalidateRepoCache returns whether resolved repos should be invalidated when
-// evaluating subexpressions. If a query contains more than one repo or repogroup
-// field, we should invalidate resolved repos, since multiple repo or repogroups
-// imply that different repos may need to be resolved.
+// evaluating subexpressions. If a query contains more than one repo, revision,
+// or repogroup field, we should invalidate resolved repos, since multiple
+// repos, revisions, or repogroups imply that different repos may need to be
+// resolved.
 func invalidateRepoCache(q []query.Node) bool {
-	var seenRepo, seenRepoGroup int
+	var seenRepo, seenRevision, seenRepoGroup int
 	query.VisitField(q, "repo", func(_ string, _ bool, _ query.Annotation) {
 		seenRepo += 1
+	})
+	query.VisitField(q, "rev", func(_ string, _ bool, _ query.Annotation) {
+		seenRevision += 1
 	})
 	query.VisitField(q, "repogroup", func(_ string, _ bool, _ query.Annotation) {
 		seenRepoGroup += 1
 	})
-	return seenRepo+seenRepoGroup > 1
+	return seenRepo+seenRepoGroup > 1 || seenRevision > 1
 }
 
 func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolver, err error) {
@@ -1624,44 +1628,44 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 	return resolved, nil, nil
 }
 
-// Surface an alert if a query exceeds limits that we place on search. Currently limits
-// diff and commit searches where more than repoLimit repos need to be searched.
-func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]string, *searchAlert) {
-	limits := searchLimits()
-	// we don't need to handle the error here, because we don't have context and the
-	// promise can only return context errors
-	repos, _ := getRepos(context.Background(), args.RepoPromise)
+type DiffCommitError struct {
+	ResultType string
+	Max        int
+}
 
-	for _, resultType := range resultTypes {
-		if resultType != "commit" && resultType != "diff" {
-			continue
-		}
+type RepoLimitErr DiffCommitError
+type TimeLimitErr DiffCommitError
 
-		hasTimeFilter := false
-		if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
-			hasTimeFilter = true
-		}
-		if _, beforePresent := args.Query.Fields()["before"]; beforePresent {
-			hasTimeFilter = true
-		}
+func (RepoLimitErr) Error() string {
+	return "repo limit error"
+}
 
-		if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
-			return []string{}, &searchAlert{
-				prometheusType: "exceeded_diff_commit_search_limit",
-				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
-				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), max),
-			}
-		}
-		if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(repos) > max {
-			return []string{}, &searchAlert{
-				prometheusType: "exceeded_diff_commit_with_time_search_limit",
-				title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
-				description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), max),
-			}
-		}
+func (TimeLimitErr) Error() string {
+	return "time limit error"
+}
+
+func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameters, resultType string) error {
+	repos, err := getRepos(ctx, args.RepoPromise)
+	if err != nil {
+		return err
 	}
 
-	return resultTypes, nil
+	hasTimeFilter := false
+	if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
+		hasTimeFilter = true
+	}
+	if _, beforePresent := args.Query.Fields()["before"]; beforePresent {
+		hasTimeFilter = true
+	}
+
+	limits := searchLimits()
+	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
+		return RepoLimitErr{ResultType: resultType, Max: max}
+	}
+	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(repos) > max {
+		return TimeLimitErr{ResultType: resultType, Max: max}
+	}
+	return nil
 }
 
 type aggregator struct {
@@ -1694,7 +1698,7 @@ func (a *aggregator) report(ctx context.Context, results []SearchResultResolver,
 }
 
 // collect the results. This doesn't send down resultChannel. Should only be
-// used by non-streaming supported backends.
+// used by streaming supported backends.
 func (a *aggregator) collect(ctx context.Context, results []SearchResultResolver, common *searchResultsCommon, err error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -1774,6 +1778,11 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 }
 
 func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters) {
+	err := checkDiffCommitSearchLimits(ctx, tp, "diff")
+	if err != nil {
+		a.collect(ctx, nil, nil, err)
+		return
+	}
 	tr, ctx := trace.New(ctx, "doDiffSearch", "")
 	defer func() {
 		tr.Finish()
@@ -1791,6 +1800,11 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 }
 
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) {
+	err := checkDiffCommitSearchLimits(ctx, tp, "commit")
+	if err != nil {
+		a.collect(ctx, nil, nil, err)
+		return
+	}
 	tr, ctx := trace.New(ctx, "doCommitSearch", "")
 	defer func() {
 		tr.Finish()
@@ -1802,8 +1816,8 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 		return
 	}
 
-	commitResults, commitCommon, err := searchCommitLogInRepos(ctx, args)
-	a.report(ctx, commitResults, commitCommon, errors.Wrap(err, "commit search failed"))
+	commitResults, commitCommon, err := searchCommitLogInRepos(ctx, args, a.resultChannel)
+	a.collect(ctx, commitResults, commitCommon, errors.Wrap(err, "commit search failed"))
 }
 
 // isGlobalSearch returns true if the query does not contain repo, repogroup, or
@@ -1881,10 +1895,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	resultTypes := r.determineResultTypes(args, forceOnlyResultType)
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 	var (
-		requiredWg sync.WaitGroup
-		optionalWg sync.WaitGroup
-		// Alert is a potential alert shown to the user.
-		alert           *searchAlert
+		requiredWg      sync.WaitGroup
+		optionalWg      sync.WaitGroup
 		seenResultTypes = make(map[string]struct{})
 	)
 
@@ -1949,7 +1961,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	// Send down our first bit of progress.
 	{
-		repos := make(map[api.RepoID]*types.Repo, len(resolved.repoRevs))
+		repos := make(map[api.RepoID]*types.RepoName, len(resolved.repoRevs))
 		for _, repoRev := range resolved.repoRevs {
 			repos[repoRev.Repo.ID] = repoRev.Repo
 		}
@@ -1964,11 +1976,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	// after reporting the above progress to ensure we don't get search
 	// results before the above reporting.
 	args.RepoPromise.Resolve(resolved.repoRevs)
-
-	// Apply search limits and generate warnings before firing off workers.
-	// This currently limits diff and commit search to a set number of
-	// repos, and removes the diff and commit resultTypes if it is breached.
-	resultTypes, alert = alertOnSearchLimit(resultTypes, &args)
 
 	searchedFileContentsOrPaths := false
 	for _, resultType := range resultTypes {
@@ -2046,7 +2053,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		common.excluded.archived,
 		len(common.timedout))
 
-	multiErr, newAlert := alertForStructuralSearch(multiErr)
+	var alert *searchAlert
+
+	multiErr, newAlert := alertForDiffCommitSearch(multiErr)
+	if newAlert != nil {
+		alert = newAlert
+	}
+
+	multiErr, newAlert = alertForStructuralSearch(multiErr)
 	if newAlert != nil {
 		alert = newAlert // takes higher precedence
 	}

@@ -10,7 +10,6 @@ import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopov
 describe('StreamingProgressSkippedButton', () => {
     it('should not show if no skipped items', () => {
         const progress: Progress = {
-            done: false,
             durationMs: 0,
             matchCount: 0,
             skipped: [],
@@ -23,7 +22,6 @@ describe('StreamingProgressSkippedButton', () => {
 
     it('should be in info state with only info items', () => {
         const progress: Progress = {
-            done: true,
             durationMs: 1500,
             matchCount: 2,
             repositoriesCount: 2,
@@ -58,7 +56,6 @@ describe('StreamingProgressSkippedButton', () => {
 
     it('should be in warning state with at least one warning item', () => {
         const progress: Progress = {
-            done: true,
             durationMs: 1500,
             matchCount: 2,
             repositoriesCount: 2,
@@ -103,7 +100,6 @@ describe('StreamingProgressSkippedButton', () => {
 
     it('should open and close popover when button is clicked', () => {
         const progress: Progress = {
-            done: true,
             durationMs: 1500,
             matchCount: 2,
             repositoriesCount: 2,
@@ -150,7 +146,6 @@ describe('StreamingProgressSkippedButton', () => {
 
     it('should close popup and call onSearchAgain callback when popover raises event', () => {
         const progress: Progress = {
-            done: true,
             durationMs: 1500,
             matchCount: 2,
             repositoriesCount: 2,

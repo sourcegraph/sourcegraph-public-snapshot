@@ -33,7 +33,7 @@ func (lsifGoJobRecognizer) InferIndexJobs(paths []string) (indexes []IndexJob) {
 				{
 					Root:     root,
 					Image:    lsifGoImage,
-					Commands: []string{"go", "mod", "download"},
+					Commands: []string{"go mod download"},
 				},
 			}
 

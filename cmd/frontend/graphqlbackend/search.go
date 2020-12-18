@@ -847,6 +847,19 @@ func searchLimits() schema.SearchLimits {
 	return limits
 }
 
+func hasTypeRepo(q query.QueryInfo) bool {
+	fields := q.Fields()
+	if len(fields["type"]) == 0 {
+		return false
+	}
+	for _, t := range fields["type"] {
+		if t.Value() == "repo" {
+			return true
+		}
+	}
+	return false
+}
+
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedRepositories, error) {
 	var err error
 	tr, ctx := trace.New(ctx, "resolveRepositories", op.String())
@@ -907,8 +920,9 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 		}
 	}
 
-	var defaultRepos []*types.Repo
-	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 {
+	var defaultRepos []*types.RepoName
+
+	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !hasTypeRepo(op.query) {
 		start := time.Now()
 		defaultRepos, err = defaultRepositories(ctx, db.DefaultRepos.List, search.Indexed(), excludePatterns)
 		if err != nil {
@@ -922,7 +936,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 		}
 	}
 
-	var repos []*types.Repo
+	var repos []*types.RepoName
 	var excluded excludedRepos
 	if len(defaultRepos) > 0 {
 		repos = defaultRepos
@@ -952,7 +966,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 			excludedC <- computeExcludedRepositories(ctx, op.query, options)
 		}()
 
-		repos, err = db.Repos.List(ctx, options)
+		repos, err = db.Repos.ListRepoNames(ctx, options)
 		tr.LazyPrintf("Repos.List - done")
 
 		excluded = <-excludedC
@@ -1065,9 +1079,9 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 	}, err
 }
 
-type defaultReposFunc func(ctx context.Context) ([]*types.Repo, error)
+type defaultReposFunc func(ctx context.Context) ([]*types.RepoName, error)
 
-func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, z *searchbackend.Zoekt, excludePatterns []string) ([]*types.Repo, error) {
+func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, z *searchbackend.Zoekt, excludePatterns []string) ([]*types.RepoName, error) {
 	// Get the list of default repos from the db.
 	defaultRepos, err := getRawDefaultRepos(ctx)
 	if err != nil {
@@ -1330,31 +1344,36 @@ func sortSearchSuggestions(s []*searchSuggestionResolver) {
 }
 
 // handleRepoSearchResult handles the limitHit and searchErr returned by a search function,
-// updating common as to reflect that new information. If searchErr is a fatal error,
+// returning common as to reflect that new information. If searchErr is a fatal error,
 // it returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error, it returns a
 // nil error.
-func handleRepoSearchResult(common *searchResultsCommon, repoRev *search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (fatalErr error) {
-	common.limitHit = common.limitHit || limitHit
+func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (common searchResultsCommon, fatalErr error) {
+	if limitHit {
+		common.limitHit = true
+		common.partial = map[api.RepoID]struct{}{repoRev.Repo.ID: {}}
+	}
 	if vcs.IsRepoNotExist(searchErr) {
 		if vcs.IsCloneInProgress(searchErr) {
-			common.cloning = append(common.cloning, repoRev.Repo)
+			common.cloning = []*types.RepoName{repoRev.Repo}
 		} else {
-			common.missing = append(common.missing, repoRev.Repo)
+			common.missing = []*types.RepoName{repoRev.Repo}
 		}
 	} else if gitserver.IsRevisionNotFound(searchErr) {
 		if len(repoRev.Revs) == 0 || len(repoRev.Revs) == 1 && repoRev.Revs[0].RevSpec == "" {
 			// If we didn't specify an input revision, then the repo is empty and can be ignored.
 		} else {
-			return searchErr
+			return common, searchErr
 		}
 	} else if errcode.IsNotFound(searchErr) {
-		common.missing = append(common.missing, repoRev.Repo)
+		common.missing = []*types.RepoName{repoRev.Repo}
 	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
-		common.timedout = append(common.timedout, repoRev.Repo)
+		common.timedout = []*types.RepoName{repoRev.Repo}
 	} else if searchErr != nil {
-		return searchErr
+		return common, searchErr
+	} else {
+		common.searched = []*types.RepoName{repoRev.Repo}
 	}
-	return nil
+	return common, nil
 }
 
 // getRepos is a wrapper around p.Get. It returns an error if the promise

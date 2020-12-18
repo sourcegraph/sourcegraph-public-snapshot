@@ -110,34 +110,6 @@ func (s *Store) GetDumpByID(ctx context.Context, id int) (_ Dump, _ bool, err er
 
 const visibleAtTipFragment = `EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE repository_id = d.repository_id AND upload_id = d.id)`
 
-// OldestDumpForRepository returns the oldest dump for the given repository and boolean flag indicating its existence.
-func (s *Store) OldestDumpForRepository(ctx context.Context, repositoryID int) (_ Dump, _ bool, err error) {
-	ctx, endObservation := s.operations.getDumpByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	return scanFirstDump(s.Store.Query(ctx, sqlf.Sprintf(`
-		SELECT
-			d.id,
-			d.commit,
-			d.root,
-			`+visibleAtTipFragment+` AS visible_at_tip,
-			d.uploaded_at,
-			d.state,
-			d.failure_message,
-			d.started_at,
-			d.finished_at,
-			d.process_after,
-			d.num_resets,
-			d.num_failures,
-			d.repository_id,
-			d.repository_name,
-			d.indexer
-		FROM lsif_dumps_with_repository_name d WHERE repository_id = %s ORDER BY d.uploaded_at LIMIT 1
-	`, repositoryID)))
-}
-
 // FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, path, and
 // optional indexer. If rootMustEnclosePath is true, then only dumps with a root which is a prefix of path are returned. Otherwise,
 // any dump with a root intersecting the given path is returned.

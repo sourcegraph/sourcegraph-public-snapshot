@@ -29,7 +29,7 @@ import (
 )
 
 func TestSearchFilesInRepos(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -116,7 +116,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 }
 
 func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo":
@@ -228,8 +228,8 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	return r
 }
 
-func mkRepos(names ...string) []*types.Repo {
-	var repos []*types.Repo
+func mkRepos(names ...string) []*types.RepoName {
+	var repos []*types.RepoName
 	for _, name := range names {
 		sum := md5.Sum([]byte(name))
 		id := api.RepoID(binary.BigEndian.Uint64(sum[:]))
@@ -239,7 +239,7 @@ func mkRepos(names ...string) []*types.Repo {
 		if id == 0 {
 			id++
 		}
-		repos = append(repos, &types.Repo{ID: id, Name: api.RepoName(name)})
+		repos = append(repos, &types.RepoName{ID: id, Name: api.RepoName(name)})
 	}
 	return repos
 }
@@ -275,7 +275,7 @@ func TestLimitSearcherRepos(t *testing.T) {
 		limit       int
 		input       []*search.RepositoryRevisions
 		want        []*search.RepositoryRevisions
-		wantLimited []*types.Repo
+		wantLimited []*types.RepoName
 	}{
 		{
 			name:        "non_limited",

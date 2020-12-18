@@ -26,7 +26,7 @@ func newTriggerQueryRunner(ctx context.Context, s *cm.Store, metrics codeMonitor
 		Name:        "code_monitors_trigger_jobs_worker",
 		NumHandlers: 1,
 		Interval:    5 * time.Second,
-		Metrics:     workerutil.WorkerMetrics{HandleOperation: metrics.handleOperation},
+		Metrics:     metrics.workerMetrics,
 	}
 	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(s), &queryRunner{s}, options)
 	return worker
@@ -80,7 +80,7 @@ func newActionRunner(ctx context.Context, s *cm.Store, metrics codeMonitorsMetri
 		Name:        "code_monitors_action_jobs_worker",
 		NumHandlers: 1,
 		Interval:    5 * time.Second,
-		Metrics:     workerutil.WorkerMetrics{HandleOperation: metrics.handleOperation},
+		Metrics:     metrics.workerMetrics,
 	}
 	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForActionJobs(s), &actionRunner{s}, options)
 	return worker

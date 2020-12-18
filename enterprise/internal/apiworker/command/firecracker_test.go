@@ -7,14 +7,17 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestFormatFirecrackerCommandRaw(t *testing.T) {
 	actual := formatFirecrackerCommand(
 		CommandSpec{
-			Commands: []string{"ls", "-a"},
-			Dir:      "subdir",
-			Env:      []string{"TEST=true"},
+			Command:   []string{"ls", "-a"},
+			Dir:       "subdir",
+			Env:       []string{"TEST=true"},
+			Operation: makeTestOperation(),
 		},
 		"deadbeef",
 		"/proj/src",
@@ -22,23 +25,24 @@ func TestFormatFirecrackerCommandRaw(t *testing.T) {
 	)
 
 	expected := command{
-		Commands: []string{
+		Command: []string{
 			"ignite", "exec", "deadbeef", "--",
 			"cd /work/subdir && TEST=true ls -a",
 		},
 	}
-	if diff := cmp.Diff(expected, actual); diff != "" {
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
 	}
 }
 
-func TestFormatFirecrackerCommandDocker(t *testing.T) {
+func TestFormatFirecrackerCommandDockerScript(t *testing.T) {
 	actual := formatFirecrackerCommand(
 		CommandSpec{
-			Image:    "alpine:latest",
-			Commands: []string{"ls", "-a"},
-			Dir:      "subdir",
-			Env:      []string{"TEST=true"},
+			Image:      "alpine:latest",
+			ScriptPath: "myscript.sh",
+			Dir:        "subdir",
+			Env:        []string{"TEST=true"},
+			Operation:  makeTestOperation(),
 		},
 		"deadbeef",
 		"/proj/src",
@@ -51,18 +55,48 @@ func TestFormatFirecrackerCommandDocker(t *testing.T) {
 	)
 
 	expected := command{
-		Commands: []string{
+		Command: []string{
 			"ignite", "exec", "deadbeef", "--",
 			strings.Join([]string{
 				"docker", "run", "--rm",
 				"--cpus", "4",
 				"--memory", "20G",
 				"-v", "/work:/data",
+				"-v", "myscript.sh:myscript.sh",
 				"-w", "/data/subdir",
 				"-e", "TEST=true",
+				"--entrypoint /bin/sh",
 				"alpine:latest",
-				"ls", "-a",
+				"myscript.sh",
 			}, " "),
+		},
+	}
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
+		t.Errorf("unexpected command (-want +got):\n%s", diff)
+	}
+}
+
+func TestFormatFirecrackerCommandDockerCommand(t *testing.T) {
+	actual := formatFirecrackerCommand(
+		CommandSpec{
+			Command: []string{"ls", "-a"},
+			Dir:     "subdir",
+			Env:     []string{"TEST=true"},
+		},
+		"deadbeef",
+		"/proj/src",
+		Options{
+			ResourceOptions: ResourceOptions{
+				NumCPUs: 4,
+				Memory:  "20G",
+			},
+		},
+	)
+
+	expected := command{
+		Command: []string{
+			"ignite", "exec", "deadbeef", "--",
+			"cd /work/subdir && TEST=true ls -a",
 		},
 	}
 	if diff := cmp.Diff(expected, actual); diff != "" {
@@ -72,7 +106,7 @@ func TestFormatFirecrackerCommandDocker(t *testing.T) {
 
 func TestSetupFirecracker(t *testing.T) {
 	runner := NewMockCommandRunner()
-	if err := setupFirecracker(context.Background(), runner, nil, "deadbeef", "/proj", []string{"img1", "img2", "img3"}, Options{
+	options := Options{
 		FirecrackerOptions: FirecrackerOptions{
 			Image:             "ignite-ubuntu",
 			ImageArchivesPath: "/archives",
@@ -82,13 +116,16 @@ func TestSetupFirecracker(t *testing.T) {
 			Memory:    "20G",
 			DiskSpace: "1T",
 		},
-	}); err != nil {
+	}
+	operations := MakeOperations(&observation.TestContext)
+
+	if err := setupFirecracker(context.Background(), runner, nil, "deadbeef", "/proj", []string{"img1", "img2", "img3"}, []string{}, options, operations); err != nil {
 		t.Fatalf("unexpected error tearing down virtual machine: %s", err)
 	}
 
 	var actual []string
 	for _, call := range runner.RunCommandFunc.History() {
-		actual = append(actual, strings.Join(call.Arg2.Commands, " "))
+		actual = append(actual, strings.Join(call.Arg1.Command, " "))
 	}
 
 	expected := []string{
@@ -123,13 +160,16 @@ func TestSetupFirecracker(t *testing.T) {
 
 func TestTeardownFirecracker(t *testing.T) {
 	runner := NewMockCommandRunner()
-	if err := teardownFirecracker(context.Background(), runner, nil, "deadbeef"); err != nil {
+	options := Options{}
+	operations := MakeOperations(&observation.TestContext)
+
+	if err := teardownFirecracker(context.Background(), runner, nil, "deadbeef", options, operations); err != nil {
 		t.Fatalf("unexpected error tearing down virtual machine: %s", err)
 	}
 
 	var actual []string
 	for _, call := range runner.RunCommandFunc.History() {
-		actual = append(actual, strings.Join(call.Arg2.Commands, " "))
+		actual = append(actual, strings.Join(call.Arg1.Command, " "))
 	}
 
 	expected := []string{

@@ -150,8 +150,7 @@ func TestChangesetResolver(t *testing.T) {
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "9876",
-		Unsynced:            true,
-		PublicationState:    campaigns.ChangesetPublicationStatePublished,
+		PublicationState:    campaigns.ChangesetPublicationStateUnpublished,
 		ReconcilerState:     campaigns.ReconcilerStateQueued,
 	})
 
@@ -268,7 +267,7 @@ func TestChangesetResolver(t *testing.T) {
 				ExternalID:       "9876",
 				Repository:       apitest.Repository{Name: string(repo.Name)},
 				Labels:           []apitest.Label{},
-				PublicationState: string(campaigns.ChangesetPublicationStatePublished),
+				PublicationState: string(campaigns.ChangesetPublicationStateUnpublished),
 				ReconcilerState:  string(campaigns.ReconcilerStateQueued),
 			},
 		},

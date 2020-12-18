@@ -1,7 +1,7 @@
 .trigger-area {
     &__query-input {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
 
         &-preview-link {
             white-space: nowrap;
@@ -22,6 +22,10 @@
                 max-height: 1rem;
                 max-width: 1rem;
             }
+        }
+
+        &-error-message {
+            font-size: 12px;
         }
 
         &-field {

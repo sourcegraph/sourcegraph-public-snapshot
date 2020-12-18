@@ -1,7 +1,6 @@
 package command
 
 import (
-	"fmt"
 	"path/filepath"
 	"strconv"
 )
@@ -12,26 +11,30 @@ import (
 // of a one-shot docker container subject to the resource limits specified in the
 // given options.
 func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) command {
+	// TODO - make this a non-special case
 	if spec.Image == "" {
 		return command{
-			Key:      spec.Key,
-			Commands: spec.Commands,
-			Dir:      filepath.Join(dir, spec.Dir),
-			Env:      spec.Env,
+			Key:       spec.Key,
+			Command:   spec.Command,
+			Dir:       filepath.Join(dir, spec.Dir),
+			Env:       spec.Env,
+			Operation: spec.Operation,
 		}
 	}
 
 	return command{
 		Key: spec.Key,
-		Commands: flatten(
+		Command: flatten(
 			"docker", "run", "--rm",
 			dockerResourceFlags(options.ResourceOptions),
-			dockerVolumeFlags(dir),
+			dockerVolumeFlags(dir, spec.ScriptPath),
 			dockerWorkingdirectoryFlags(spec.Dir),
 			dockerEnvFlags(spec.Env),
+			dockerEntrypointFlags(),
 			spec.Image,
-			spec.Commands,
+			spec.ScriptPath,
 		),
+		Operation: spec.Operation,
 	}
 }
 
@@ -42,8 +45,8 @@ func dockerResourceFlags(options ResourceOptions) []string {
 	}
 }
 
-func dockerVolumeFlags(wd string) []string {
-	return []string{"-v", fmt.Sprintf("%s:/data", wd)}
+func dockerVolumeFlags(wd, scriptPath string) []string {
+	return []string{"-v", wd + ":/data", "-v", scriptPath + ":" + scriptPath}
 }
 
 func dockerWorkingdirectoryFlags(dir string) []string {
@@ -52,4 +55,8 @@ func dockerWorkingdirectoryFlags(dir string) []string {
 
 func dockerEnvFlags(env []string) []string {
 	return intersperse("-e", env)
+}
+
+func dockerEntrypointFlags() []string {
+	return []string{"--entrypoint", "/bin/sh"}
 }

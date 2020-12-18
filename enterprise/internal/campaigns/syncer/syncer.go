@@ -459,7 +459,6 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source repos.Change
 	}
 	defer func() { err = tx.Done(err) }()
 
-	c.Unsynced = false
 	if err := tx.UpdateChangeset(ctx, c); err != nil {
 		return err
 	}
