@@ -305,7 +305,7 @@ func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 				// If the source is unauthorized we should treat this as if zero repos were returned as it indicates
 				// that the source no longer has access to its repos
 				name:    string(tc.repo.Name) + "/unauthorized",
-				sourcer: repos.NewFakeSourcer(&errUnauthorized{}),
+				sourcer: repos.NewFakeSourcer(&repos.ErrUnauthorized{}),
 				store:   s,
 				stored: types.Repos{tc.repo.With(
 					types.Opt.RepoSources(tc.svc.URN()),
@@ -315,7 +315,7 @@ func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 					types.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
 				)}},
 				svcs: []*types.ExternalService{tc.svc},
-				err:  "<nil>",
+				err:  "bad credentials",
 			},
 			testCase{
 				// It's expected that there could be multiple stored sources but only one will ever be returned
@@ -2262,14 +2262,4 @@ func assertDeletedRepoCount(ctx context.Context, t *testing.T, db *sql.DB, want 
 	if rowCount != want {
 		t.Fatalf("Expected %d rows, got %d", want, rowCount)
 	}
-}
-
-type errUnauthorized struct{}
-
-func (u *errUnauthorized) Error() string {
-	return "not authorised"
-}
-
-func (u *errUnauthorized) Unauthorized() bool {
-	return true
 }

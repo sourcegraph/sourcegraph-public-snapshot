@@ -170,7 +170,10 @@ func (s *Syncer) TriggerEnqueueSyncJobs() {
 
 // SyncExternalService syncs repos using the supplied external service.
 func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalServiceID int64, minSyncInterval time.Duration) (err error) {
-	var diff Diff
+	var (
+		diff         Diff
+		unauthorized bool
+	)
 
 	if s.Logger != nil {
 		s.Logger.Debug("Syncing external service", "serviceID", externalServiceID)
@@ -241,6 +244,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 			return errors.Wrap(err, "syncer.sync.sourced")
 		}
 		log15.Warn("Unauthorized while syncing", "externalService", svc.ID)
+		unauthorized = true
 	}
 
 	// Unless explicitly specified with the "all" setting or the owner of the service has the "AllowUserExternalServicePrivate" tag,
@@ -357,7 +361,21 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		}
 	}
 
+	if unauthorized {
+		return &ErrUnauthorized{}
+	}
+
 	return nil
+}
+
+type ErrUnauthorized struct{}
+
+func (e ErrUnauthorized) Error() string {
+	return "bad credentials"
+}
+
+func (e ErrUnauthorized) Unauthorized() bool {
+	return true
 }
 
 // We need to resolve name conflicts by deciding whether to keep the newly added repo
