@@ -317,16 +317,27 @@ func (c *Client) execResolveRevGitCommand(ctx context.Context, repositoryID int,
 		return "", err
 	}
 
+	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd.Repo = repo
+
+	out, err := cmd.CombinedOutput(ctx)
+	if err == nil {
+		return string(bytes.TrimSpace(out)), nil
+	}
+
 	if revision != "" {
+		// If we're returning an error, try to resolve revision that was the
+		// target of the command (if any). If the revision fails to resolve,
+		// we return a RevisionNotFoundError error instead of an "exit 128".
 		if _, err := git.ResolveRevision(ctx, repo, revision, git.ResolveRevisionOptions{}); err != nil {
 			return "", errors.Wrap(err, "git.ResolveRevision")
 		}
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", args...)
-	cmd.Repo = repo
-	out, err := cmd.CombinedOutput(ctx)
-	return string(bytes.TrimSpace(out)), errors.Wrap(err, "gitserver.Command")
+	// If we didn't expect a particular revision to exist, or we did but it
+	// resolved without error, return the original error as the command had
+	// failed for another reason.
+	return "", errors.Wrap(err, "gitserver.Command")
 }
 
 // repositoryIDToRepo creates a api.RepoName from a repository identifier.
