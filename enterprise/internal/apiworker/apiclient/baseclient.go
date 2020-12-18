@@ -38,8 +38,9 @@ import (
 //         return s, err
 //     }
 type BaseClient struct {
-	httpClient *http.Client
-	options    BaseClientOptions
+	circuitBreaker *CircuitBreaker
+	httpClient     *http.Client
+	options        BaseClientOptions
 }
 
 type BaseClientOptions struct {
@@ -52,10 +53,11 @@ type BaseClientOptions struct {
 }
 
 // NewBaseClient creates a new BaseClient with the given transport.
-func NewBaseClient(options BaseClientOptions) *BaseClient {
+func NewBaseClient(circuitBreaker *CircuitBreaker, options BaseClientOptions) *BaseClient {
 	return &BaseClient{
-		httpClient: makeHTTPClient(options.Transport),
-		options:    options,
+		circuitBreaker: circuitBreaker,
+		httpClient:     makeHTTPClient(options.Transport),
+		options:        options,
 	}
 }
 
@@ -68,8 +70,13 @@ func (c *BaseClient) Do(ctx context.Context, req *http.Request) (hasContent bool
 
 	resp, err := ctxhttp.Do(req.Context(), c.httpClient, req)
 	if err != nil {
+		// Open circuit breaker on network failure
+		c.circuitBreaker.Bump(false)
 		return false, nil, err
 	}
+
+	// Open circuit breaker on status codes indicating a bad gateway
+	c.circuitBreaker.Bump(resp.StatusCode != http.StatusBadGateway && resp.StatusCode != http.StatusGatewayTimeout)
 
 	if resp.StatusCode != http.StatusOK {
 		resp.Body.Close()

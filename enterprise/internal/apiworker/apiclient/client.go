@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/opentracing/opentracing-go/log"
 
@@ -17,9 +18,10 @@ import (
 
 // Client is the client used to communicate with a remote job queue API.
 type Client struct {
-	options    Options
-	client     *BaseClient
-	operations *operations
+	options        Options
+	client         *BaseClient
+	operations     *operations
+	circuitBreaker *CircuitBreaker
 }
 
 type Options struct {
@@ -48,10 +50,14 @@ type EndpointOptions struct {
 }
 
 func New(options Options, observationContext *observation.Context) *Client {
+	// TODO - pass in instead
+	circuitBreaker := makeCircuitBreaker(2, time.Second, time.Second*30)
+
 	return &Client{
-		options:    options,
-		client:     NewBaseClient(options.BaseClientOptions),
-		operations: makeOperations(observationContext),
+		options:        options,
+		client:         NewBaseClient(circuitBreaker, options.BaseClientOptions),
+		operations:     makeOperations(observationContext),
+		circuitBreaker: circuitBreaker,
 	}
 }
 
@@ -60,6 +66,10 @@ func (c *Client) Dequeue(ctx context.Context, queueName string, job *Job) (_ boo
 		log.String("queueName", queueName),
 	}})
 	defer endObservation(1, observation.Args{})
+
+	if err := c.circuitBreaker.Wait(ctx, false); err != nil {
+		return false, err
+	}
 
 	req, err := c.makeRequest("POST", fmt.Sprintf("%s/dequeue", queueName), DequeueRequest{
 		ExecutorName: c.options.ExecutorName,
@@ -77,6 +87,10 @@ func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, job
 		log.Int("jobID", jobID),
 	}})
 	defer endObservation(1, observation.Args{})
+
+	if err := c.circuitBreaker.Wait(ctx, false); err != nil {
+		return err
+	}
 
 	req, err := c.makeRequest("POST", fmt.Sprintf("%s/addExecutionLogEntry", queueName), AddExecutionLogEntryRequest{
 		ExecutorName:      c.options.ExecutorName,
@@ -97,6 +111,10 @@ func (c *Client) MarkComplete(ctx context.Context, queueName string, jobID int) 
 	}})
 	defer endObservation(1, observation.Args{})
 
+	if err := c.circuitBreaker.Wait(ctx, false); err != nil {
+		return err
+	}
+
 	req, err := c.makeRequest("POST", fmt.Sprintf("%s/markComplete", queueName), MarkCompleteRequest{
 		ExecutorName: c.options.ExecutorName,
 		JobID:        jobID,
@@ -114,6 +132,10 @@ func (c *Client) MarkErrored(ctx context.Context, queueName string, jobID int, e
 		log.Int("jobID", jobID),
 	}})
 	defer endObservation(1, observation.Args{})
+
+	if err := c.circuitBreaker.Wait(ctx, false); err != nil {
+		return err
+	}
 
 	req, err := c.makeRequest("POST", fmt.Sprintf("%s/markErrored", queueName), MarkErroredRequest{
 		ExecutorName: c.options.ExecutorName,
@@ -133,6 +155,10 @@ func (c *Client) MarkFailed(ctx context.Context, queueName string, jobID int, er
 		log.Int("jobID", jobID),
 	}})
 	defer endObservation(1, observation.Args{})
+
+	if err := c.circuitBreaker.Wait(ctx, false); err != nil {
+		return err
+	}
 
 	req, err := c.makeRequest("POST", fmt.Sprintf("%s/markFailed", queueName), MarkErroredRequest{
 		ExecutorName: c.options.ExecutorName,
@@ -156,6 +182,10 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (err error) {
 		log.String("jobIDs", strings.Join(strJobIDs, ",")),
 	}})
 	defer endObservation(1, observation.Args{})
+
+	if err := c.circuitBreaker.Wait(ctx, true); err != nil {
+		return err
+	}
 
 	req, err := c.makeRequest("POST", "heartbeat", HeartbeatRequest{
 		ExecutorName: c.options.ExecutorName,

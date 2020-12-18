@@ -31,7 +31,7 @@ func makeOperations(observationContext *observation.Context) *operations {
 			Name:         fmt.Sprintf("codeintel.gitserver.%s", name),
 			MetricLabels: []string{name},
 			Metrics:      metrics,
-			ErrorFilter:  gitserver.IsRevisionNotFound,
+			ErrorFilter:  gitserver.IsRevisionNotFound, // TODO - needs to unwrap?
 		})
 	}
 
