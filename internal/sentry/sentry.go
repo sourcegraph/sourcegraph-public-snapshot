@@ -29,22 +29,10 @@ func Init() {
 		}
 
 		err := sentry.Init(sentry.ClientOptions{
-			Dsn:              dsn,
-			Debug:            sentryDebug,
-			AttachStacktrace: false,
-			SampleRate:       0,
-			IgnoreErrors:     nil,
-			BeforeBreadcrumb: nil,
-			Integrations:     nil,
-			DebugWriter:      nil,
-			Transport:        nil,
-			ServerName:       "",
-			Release:          version.Version(),
-			Dist:             "",
-			Environment:      "",
-			MaxBreadcrumbs:   0,
-			HTTPClient:       nil,
-			HTTPTransport:    nil,
+			Dsn:        dsn,
+			Debug:      sentryDebug,
+			ServerName: "", // Sentry client will gather the server name when leave empty
+			Release:    version.Version(),
 		})
 		if err != nil {
 			return err
@@ -84,29 +72,36 @@ func Init() {
 	}()
 }
 
-// CaptureError adds the given error to the default Sentry client delivery queue
-// for reporting.
-func CaptureError(err error, tags map[string]string) {
+func captureError(err error, level sentry.Level, tags map[string]string) {
 	event, extraDetails := errors.BuildSentryReport(err)
+
+	// Sentry uses the Type of the first exception as the issue title. By default,
+	// "github.com/cockroachdb/errors" uses "<filename>:<lineno> (<functionname>)"
+	// which is very sensitive to move up/down lines. Using the original error
+	// string would be much more readable. We are also not losing location
+	// information because that is also encoded in the stack trace.
+	if len(event.Exception) > 0 {
+		event.Exception[0].Type = errors.Cause(err).Error()
+	}
 
 	sentry.WithScope(func(scope *sentry.Scope) {
 		scope.SetExtras(extraDetails)
 		scope.SetTags(tags)
+		scope.SetLevel(level)
 		sentry.CaptureEvent(event)
 	})
+}
+
+// CaptureError adds the given error to the default Sentry client delivery queue
+// for reporting.
+func CaptureError(err error, tags map[string]string) {
+	captureError(err, sentry.LevelError, tags)
 }
 
 // CapturePanic does same thing as CaptureError, and adds additional tags to
 // mark the report as "fatal" level.
 func CapturePanic(err error, tags map[string]string) {
-	event, extraDetails := errors.BuildSentryReport(err)
-
-	sentry.WithScope(func(scope *sentry.Scope) {
-		scope.SetExtras(extraDetails)
-		scope.SetTags(tags)
-		scope.SetLevel(sentry.LevelFatal)
-		sentry.CaptureEvent(event)
-	})
+	captureError(err, sentry.LevelFatal, tags)
 }
 
 // Recovery handler to wrap the stdlib net/http Mux.
@@ -120,7 +115,7 @@ func Recoverer(handler http.Handler) http.Handler {
 			if r := recover(); r != nil {
 				debug.PrintStack()
 
-				err := errors.Errorf("%v", r)
+				err := errors.Errorf("handler panic: %v", errors.Safe(r))
 				CapturePanic(err, nil)
 
 				log15.Error("recovered from panic", "error", err)
