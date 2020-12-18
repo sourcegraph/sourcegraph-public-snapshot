@@ -67,6 +67,7 @@ func (s *defaultRepos) List(ctx context.Context) (results []*types.RepoName, err
 func (s *defaultRepos) refreshCache(ctx context.Context) ([]*types.RepoName, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	// Check whether another routine already did the work
 	cached, _ := s.cache.Load().(*cachedRepos)
 	repos, needsUpdate := cached.Repos()
@@ -74,8 +75,10 @@ func (s *defaultRepos) refreshCache(ctx context.Context) ([]*types.RepoName, err
 		return repos, nil
 	}
 
-	// Reset fetched repos
-	repos = repos[0:0]
+	// We can reset the slice here so we don't allocate another one
+	if repos != nil {
+		repos = repos[0:0]
+	}
 
 	const q = `
 -- source: internal/db/default_repos.go:defaultRepos.List
