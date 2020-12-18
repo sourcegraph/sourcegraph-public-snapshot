@@ -116,10 +116,6 @@ func (r *ChangesetRewirer) updateChangesetToNewSpec(c *campaigns.Changeset, spec
 	// Ensure that the changeset is attached to the campaign
 	c.CampaignIDs = append(c.CampaignIDs, r.campaignID)
 
-	// Copy over diff stat from the new spec.
-	diffStat := spec.DiffStat()
-	c.SetDiffStat(&diffStat)
-
 	// We need to enqueue it for the changeset reconciler, so the
 	// reconciler wakes up, compares old and new spec and, if
 	// necessary, updates the changesets accordingly.
