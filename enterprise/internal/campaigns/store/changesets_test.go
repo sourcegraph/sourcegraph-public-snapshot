@@ -950,12 +950,13 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		var campaignID int64 = 99999
 
 		wantEnqueued := ct.ChangesetAssertions{
-			Repo:            repo.ID,
-			OwnedByCampaign: campaignID,
-			ReconcilerState: campaigns.ReconcilerStateQueued,
-			NumFailures:     0,
-			FailureMessage:  nil,
-			Closing:         true,
+			Repo:             repo.ID,
+			OwnedByCampaign:  campaignID,
+			ReconcilerState:  campaigns.ReconcilerStateQueued,
+			PublicationState: campaigns.ChangesetPublicationStatePublished,
+			NumFailures:      0,
+			FailureMessage:   nil,
+			Closing:          true,
 		}
 
 		tests := []struct {
@@ -963,40 +964,61 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			want ct.ChangesetAssertions
 		}{
 			{
-				have: ct.TestChangesetOpts{ReconcilerState: campaigns.ReconcilerStateQueued},
-				want: wantEnqueued,
-			},
-			{
-				have: ct.TestChangesetOpts{ReconcilerState: campaigns.ReconcilerStateProcessing},
-				want: wantEnqueued,
-			},
-			{
 				have: ct.TestChangesetOpts{
-					ReconcilerState: campaigns.ReconcilerStateErrored,
-					FailureMessage:  "failed",
-					NumFailures:     1,
+					ReconcilerState:  campaigns.ReconcilerStateQueued,
+					PublicationState: campaigns.ChangesetPublicationStatePublished,
 				},
 				want: wantEnqueued,
 			},
 			{
 				have: ct.TestChangesetOpts{
-					ExternalState:   campaigns.ChangesetExternalStateOpen,
-					ReconcilerState: campaigns.ReconcilerStateCompleted,
+					ReconcilerState:  campaigns.ReconcilerStateProcessing,
+					PublicationState: campaigns.ChangesetPublicationStatePublished,
+				},
+				want: wantEnqueued,
+			},
+			{
+				have: ct.TestChangesetOpts{
+					ReconcilerState:  campaigns.ReconcilerStateErrored,
+					PublicationState: campaigns.ChangesetPublicationStatePublished,
+					FailureMessage:   "failed",
+					NumFailures:      1,
+				},
+				want: wantEnqueued,
+			},
+			{
+				have: ct.TestChangesetOpts{
+					ExternalState:    campaigns.ChangesetExternalStateOpen,
+					ReconcilerState:  campaigns.ReconcilerStateCompleted,
+					PublicationState: campaigns.ChangesetPublicationStatePublished,
 				},
 				want: ct.ChangesetAssertions{
-					ReconcilerState: campaigns.ReconcilerStateQueued,
-					Closing:         true,
-					ExternalState:   campaigns.ChangesetExternalStateOpen,
+					ReconcilerState:  campaigns.ReconcilerStateQueued,
+					PublicationState: campaigns.ChangesetPublicationStatePublished,
+					Closing:          true,
+					ExternalState:    campaigns.ChangesetExternalStateOpen,
 				},
 			},
 			{
 				have: ct.TestChangesetOpts{
-					ExternalState:   campaigns.ChangesetExternalStateClosed,
-					ReconcilerState: campaigns.ReconcilerStateCompleted,
+					ExternalState:    campaigns.ChangesetExternalStateClosed,
+					ReconcilerState:  campaigns.ReconcilerStateCompleted,
+					PublicationState: campaigns.ChangesetPublicationStatePublished,
 				},
 				want: ct.ChangesetAssertions{
-					ReconcilerState: campaigns.ReconcilerStateCompleted,
-					ExternalState:   campaigns.ChangesetExternalStateClosed,
+					ReconcilerState:  campaigns.ReconcilerStateCompleted,
+					ExternalState:    campaigns.ChangesetExternalStateClosed,
+					PublicationState: campaigns.ChangesetPublicationStatePublished,
+				},
+			},
+			{
+				have: ct.TestChangesetOpts{
+					ReconcilerState:  campaigns.ReconcilerStateCompleted,
+					PublicationState: campaigns.ChangesetPublicationStateUnpublished,
+				},
+				want: ct.ChangesetAssertions{
+					ReconcilerState:  campaigns.ReconcilerStateCompleted,
+					PublicationState: campaigns.ChangesetPublicationStateUnpublished,
 				},
 			},
 		}
