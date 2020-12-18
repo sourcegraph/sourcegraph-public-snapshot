@@ -1038,7 +1038,6 @@ func TestTypeRepo(t *testing.T) {
 			if got := hasTypeRepo(q); got != tt.wantHasTypeRepo {
 				t.Fatalf("got %t, expected %t", got, tt.wantHasTypeRepo)
 			}
-
 		})
 	}
 }
