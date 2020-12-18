@@ -113,12 +113,12 @@ func Recoverer(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if r := recover(); r != nil {
-				debug.PrintStack()
-
 				err := errors.Errorf("handler panic: %v", errors.Safe(r))
 				CapturePanic(err, nil)
 
 				log15.Error("recovered from panic", "error", err)
+				debug.PrintStack()
+
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		}()
