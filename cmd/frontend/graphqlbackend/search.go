@@ -847,6 +847,11 @@ func searchLimits() schema.SearchLimits {
 	return limits
 }
 
+func hasTypeRepo(q query.QueryInfo) bool {
+	fields := q.Fields()
+	return len(fields["type"]) == 1 && fields["type"][0].Value() == "repo"
+}
+
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedRepositories, error) {
 	var err error
 	tr, ctx := trace.New(ctx, "resolveRepositories", op.String())
@@ -908,7 +913,8 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (resolvedReposit
 	}
 
 	var defaultRepos []*types.RepoName
-	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 {
+
+	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !hasTypeRepo(op.query) {
 		start := time.Now()
 		defaultRepos, err = defaultRepositories(ctx, db.DefaultRepos.List, search.Indexed(), excludePatterns)
 		if err != nil {

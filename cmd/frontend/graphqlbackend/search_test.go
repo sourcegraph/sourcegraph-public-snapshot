@@ -1001,3 +1001,44 @@ func TestGetReposWrongUnderlyingType(t *testing.T) {
 		t.Errorf("Expected error, got nil")
 	}
 }
+
+func TestTypeRepo(t *testing.T) {
+	tests := []struct {
+		query           string
+		wantHasTypeRepo bool
+	}{
+		{
+			query:           "sourcegraph type:repo",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "sourcegraph repohasfile:Dockerfile type:repo",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "repo:sourcegraph type:repo",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "repo:sourcegraph",
+			wantHasTypeRepo: false,
+		},
+		{
+			query:           "repository",
+			wantHasTypeRepo: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.query, func(t *testing.T) {
+			q, err := query.ProcessAndOr(tt.query, query.ParserOptions{SearchType: query.SearchTypeLiteral})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := hasTypeRepo(q); got != tt.wantHasTypeRepo {
+				t.Fatalf("got %t, expected %t", got, tt.wantHasTypeRepo)
+			}
+
+		})
+	}
+}
