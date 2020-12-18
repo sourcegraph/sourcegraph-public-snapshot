@@ -417,6 +417,16 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	if err != nil {
 		return err
 	}
+
+	// Check if any preconditions on the changeset changed since we computed the
+	// last syncer schedule.
+	if cs.ReconcilerState != campaigns.ReconcilerStateCompleted ||
+		cs.PublicationState != campaigns.ChangesetPublicationStatePublished {
+		// If so, skip the changeset for now, it is part of the next
+		// computed schedule, since we don't update last_updated.
+		return nil
+	}
+
 	repo, err := loadRepo(ctx, s.reposStore, cs.RepoID)
 	if err != nil {
 		return err
