@@ -163,17 +163,17 @@ func TestAlertForDiffCommitSearchLimits(t *testing.T) {
 	}{
 		{
 			name:                 "diff_search_warns_on_repos_greater_than_search_limit",
-			multiErr:             multierror.Append(&multierror.Error{}, DiffCommitRepoLimitErr{ResultType: "diff", Max: 50}),
+			multiErr:             multierror.Append(&multierror.Error{}, RepoLimitErr{ResultType: "diff", Max: 50}),
 			wantAlertDescription: `Diff search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
 		},
 		{
 			name:                 "commit_search_warns_on_repos_greater_than_search_limit",
-			multiErr:             multierror.Append(&multierror.Error{}, DiffCommitRepoLimitErr{ResultType: "commit", Max: 50}),
+			multiErr:             multierror.Append(&multierror.Error{}, RepoLimitErr{ResultType: "commit", Max: 50}),
 			wantAlertDescription: `Commit search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
 		},
 		{
 			name:                 "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
-			multiErr:             multierror.Append(&multierror.Error{}, DiffCommitTimeLimitErr{ResultType: "commit", Max: 10000}),
+			multiErr:             multierror.Append(&multierror.Error{}, TimeLimitErr{ResultType: "commit", Max: 10000}),
 			wantAlertDescription: `Commit search can currently only handle searching over 10000 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
 		},
 	}

@@ -1629,14 +1629,14 @@ type DiffCommitError struct {
 	Max        int
 }
 
-type DiffCommitRepoLimitErr DiffCommitError
-type DiffCommitTimeLimitErr DiffCommitError
+type RepoLimitErr DiffCommitError
+type TimeLimitErr DiffCommitError
 
-func (DiffCommitRepoLimitErr) Error() string {
+func (RepoLimitErr) Error() string {
 	return "repo limit error"
 }
 
-func (DiffCommitTimeLimitErr) Error() string {
+func (TimeLimitErr) Error() string {
 	return "time limit error"
 }
 
@@ -1656,10 +1656,10 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 
 	limits := searchLimits()
 	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
-		return DiffCommitRepoLimitErr{ResultType: resultType, Max: max}
+		return RepoLimitErr{ResultType: resultType, Max: max}
 	}
 	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(repos) > max {
-		return DiffCommitTimeLimitErr{ResultType: resultType, Max: max}
+		return TimeLimitErr{ResultType: resultType, Max: max}
 	}
 	return nil
 }

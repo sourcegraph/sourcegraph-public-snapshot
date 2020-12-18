@@ -506,8 +506,8 @@ func alertForDiffCommitSearch(multiErr *multierror.Error) (newMultiErr *multierr
 	if multiErr == nil {
 		return newMultiErr, alert
 	}
-	rErr := &DiffCommitRepoLimitErr{}
-	tErr := &DiffCommitTimeLimitErr{}
+	rErr := &RepoLimitErr{}
+	tErr := &TimeLimitErr{}
 	for _, err := range multiErr.Errors {
 		if ok := errors.As(err, rErr); ok {
 			alert = &searchAlert{
