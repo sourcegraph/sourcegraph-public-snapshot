@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-enry/go-enry/v2"
 	"github.com/pkg/errors"
-	"github.com/src-d/enry/v2"
 )
 
 // exists traverses every node in nodes and returns early as soon as fn is satisfied.
