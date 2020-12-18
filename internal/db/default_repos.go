@@ -66,14 +66,13 @@ func (s *defaultRepos) List(ctx context.Context) (results []*types.RepoName, err
 
 func (s *defaultRepos) refreshCache(ctx context.Context) ([]*types.RepoName, error) {
 	s.mu.Lock()
+	defer s.mu.Unlock()
 	// Check whether another routine already did the work
 	cached, _ := s.cache.Load().(*cachedRepos)
 	repos, needsUpdate := cached.Repos()
 	if !needsUpdate {
-		s.mu.Unlock()
 		return repos, nil
 	}
-	defer s.mu.Unlock()
 
 	// Reset fetched repos
 	repos = repos[0:0]
