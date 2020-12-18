@@ -3,11 +3,6 @@
 set -eu
 pushd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
-# Skip the rest if this is pipeline upload or empty
-if [[ "${BUILDKITE_COMMAND:-}" =~ "buildkite-agent pipeline upload".* ]]; then
-  exit 0
-fi
-
 ORPHAN_ASDF=()
 mapfile ORPHAN_ASDF < <(find "$HOME/.asdf/installs/" -maxdepth 2 -empty)
 
