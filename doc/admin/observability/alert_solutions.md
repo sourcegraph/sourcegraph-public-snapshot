@@ -953,6 +953,26 @@ To learn more about Sourcegraph's alerting, see [our alerting documentation](htt
 
 <br />
 
+## frontend: frontend_codeintel_indexing_errors
+
+<p class="subtitle">code-intel: indexing errors every 5m</p>
+
+**Descriptions:**
+
+- _frontend: 20+ indexing errors every 5m_
+
+**Possible solutions:**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_frontend_codeintel_indexing_errors"
+]
+```
+
+<br />
+
 ## frontend: internal_indexed_search_error_responses
 
 <p class="subtitle">search: internal indexed search error responses every 5m</p>

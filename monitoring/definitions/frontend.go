@@ -639,14 +639,34 @@ func Frontend() *monitoring.Container {
 					},
 				},
 			},
-			// TODO
-			// {
-			// 	Title:  "Auto-indexing",
-			// 	Hidden: true,
-			// 	Rows:   []monitoring.Row{
-			// 		{},
-			// 	},
-			// },
+			{
+				Title:  "Auto-indexing",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:              "frontend_codeintel_indexing_99th_percentile_duration",
+							Description:       "99th percentile successful indexing operation duration over 5m",
+							Query:             `histogram_quantile(0.99, sum by (le,op)(rate(src_codeintel_indexing_duration_seconds_bucket{job=~"(sourcegraph-)?frontend"}[5m])))`,
+							DataMayNotExist:   true,
+							NoAlert:           true,
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{op}}").Unit(monitoring.Seconds),
+							Owner:             monitoring.ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "frontend_codeintel_indexing_errors",
+							Description:       "indexing errors every 5m",
+							Query:             `sum by (op)(increase(src_codeintel_indexing_errors_total{job=~"(sourcegraph-)?frontend"}[5m]))`,
+							DataMayNotExist:   true,
+							Warning:           monitoring.Alert().GreaterOrEqual(20),
+							PanelOptions:      monitoring.PanelOptions().LegendFormat("{{op}}"),
+							Owner:             monitoring.ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+					},
+				},
+			},
 			{
 				Title:  "Internal service requests",
 				Hidden: true,
