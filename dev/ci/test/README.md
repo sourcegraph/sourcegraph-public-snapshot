@@ -30,6 +30,8 @@ $ vagrant up <machine>
 ```
 where `<machine>` is one of those listed above. 
 
+Note: these tests rsync the sourcegraph directory to the machine in Google Cloud. Depending on your connection speed, this could take a while. 
+
 ## Adding tests
 
 All machines are defined in the [servers.yaml](servers.yaml) file, and have a number of configuarable options based on the requirements of your test. 
