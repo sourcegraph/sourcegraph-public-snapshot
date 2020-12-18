@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -211,7 +212,7 @@ func TestSyncerRun(t *testing.T) {
 		go syncer.Run(ctx)
 		select {
 		case <-ctx.Done():
-		case <-time.After(50 * time.Millisecond):
+		case <-time.After(100 * time.Millisecond):
 			t.Fatal("Sync should have been triggered")
 		}
 	})
@@ -272,7 +273,7 @@ func TestSyncerRun(t *testing.T) {
 		go syncer.Run(ctx)
 		select {
 		case <-ctx.Done():
-		case <-time.After(50 * time.Millisecond):
+		case <-time.After(100 * time.Millisecond):
 			t.Fatal("Sync not called")
 		}
 	})
