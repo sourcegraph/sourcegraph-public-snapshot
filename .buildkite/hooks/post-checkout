@@ -5,3 +5,8 @@
 echo "Running git fetch..."
 git fetch
 echo "Running git fetch... done"
+
+echo "Setup NPM proxy..."
+yarn config set httpsProxy http://npm-proxy-cache:8080/
+yarn config set httpProxy http://npm-proxy-cache:8080/
+echo "Running NPM proxy... done"
