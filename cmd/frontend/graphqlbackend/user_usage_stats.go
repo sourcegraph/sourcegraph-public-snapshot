@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
@@ -113,16 +114,21 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 
 var (
 	searchLatenciesFrontendCodeLoad = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_search_latency_frontend_code_load_ms",
+		Name:    "src_search_latency_frontend_code_load_seconds",
 		Help:    "Milliseconds the webapp frontend spends waiting for search result code snippets to load.",
 		Buckets: trace.UserLatencyBuckets,
 	}, nil)
 	searchLatenciesFrontendFirstResult = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_search_latency_frontend_first_result_ms",
+		Name:    "src_search_latency_frontend_first_result_seconds",
 		Help:    "Milliseconds the webapp frontend spends waiting for the first search result to load.",
 		Buckets: trace.UserLatencyBuckets,
 	}, []string{"type"})
 )
+
+func init() {
+	prometheus.MustRegister(searchLatenciesFrontendCodeLoad)
+	prometheus.MustRegister(searchLatenciesFrontendFirstResult)
+}
 
 // exportPrometheusSearchLatencies exports Prometheus search latency metrics given a GraphQL
 // LogEvent payload.
@@ -133,12 +139,13 @@ func exportPrometheusSearchLatencies(event string, payload json.RawMessage) erro
 	if err := json.Unmarshal([]byte(payload), &v); err != nil {
 		return err
 	}
+	fmt.Println(event, v.DurationMS)
 	if event == "search.latencies.frontend.code-load" {
-		searchLatenciesFrontendCodeLoad.WithLabelValues().Observe(v.DurationMS)
+		searchLatenciesFrontendCodeLoad.WithLabelValues().Observe(v.DurationMS / 1000.0)
 	}
 	if strings.HasPrefix(event, "search.latencies.frontend.") && strings.HasSuffix(event, ".first-result") {
 		searchType := strings.TrimSuffix(strings.TrimPrefix(event, "search.latencies.frontend."), ".first-result")
-		searchLatenciesFrontendFirstResult.WithLabelValues(searchType).Observe(v.DurationMS)
+		searchLatenciesFrontendFirstResult.WithLabelValues(searchType).Observe(v.DurationMS / 1000.0)
 	}
 	return nil
 }
