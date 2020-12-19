@@ -285,7 +285,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
 
     private onFirstResultLoad = (): void => {
         const patternType = parseSearchURLPatternType(this.props.location.search)
-        eventLogger.log(`search.latencies.frontend.${patternType ? patternType : "unknown"}.first-result`, {
+        eventLogger.log(`search.latencies.frontend.${patternType || 'unknown'}.first-result`, {
             durationMs: Date.now() - this.state.loadingStarted,
         })
     }

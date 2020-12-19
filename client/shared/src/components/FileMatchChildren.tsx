@@ -105,8 +105,12 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 false
             ).pipe(
                 map(lines => {
-                    if (isFirst && onFirstResultLoad) { onFirstResultLoad() }
-                    if (eventLogger) { eventLogger.log('search.latencies.frontend.code-load', { durationMs: Date.now() - startTime }) }
+                    if (isFirst && onFirstResultLoad) {
+                        onFirstResultLoad()
+                    }
+                    if (eventLogger) {
+                        eventLogger.log('search.latencies.frontend.code-load', { durationMs: Date.now() - startTime })
+                    }
                     return optimizeHighlighting
                         ? lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
                         : lines[0].slice(startLine, endLine)
