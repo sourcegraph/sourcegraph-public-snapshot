@@ -39,6 +39,7 @@ import {
     resolveVersionContext,
 } from '../..'
 import { ErrorAlert } from '../../../components/alerts'
+import { eventLogger } from '../../../tracking/eventLogger'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
@@ -167,6 +168,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     <FileMatch
                         key={'file:' + result.file.url}
                         location={location}
+                        eventLogger={eventLogger}
                         icon={result.lineMatches && result.lineMatches.length > 0 ? SourceRepositoryIcon : FileIcon}
                         result={result}
                         onSelect={logSearchResultClicked}

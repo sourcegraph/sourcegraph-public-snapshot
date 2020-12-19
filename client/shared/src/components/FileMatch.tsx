@@ -5,7 +5,7 @@ import { pluralize } from '../util/strings'
 import * as GQL from '../graphql/schema'
 import { SettingsCascadeProps } from '../settings/settings'
 import { FetchFileParameters } from './CodeExcerpt'
-import { FileMatchChildren } from './FileMatchChildren'
+import { EventLogger, FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
 import { BadgeAttachmentRenderOptions } from 'sourcegraph'
@@ -37,10 +37,14 @@ export interface MatchItem {
 
 interface Props extends SettingsCascadeProps {
     location: H.Location
+    eventLogger?: EventLogger
     /**
      * The file match search result.
      */
     result: FileLineMatch
+
+    /* Called when the first result has fully loaded. */
+    onFirstResultLoad?: () => void
 
     /**
      * Formatted repository name to be displayed in repository link. If not
