@@ -177,12 +177,15 @@ func (u *Updater) getOldestCommitDate(ctx context.Context, repositoryID int) (ti
 		return time.Time{}, false, errors.Wrap(err, "store.GetUploads")
 	}
 
+outer:
 	for _, upload := range uploads {
 		commitDate, err := u.gitserverClient.CommitDate(ctx, repositoryID, upload.Commit)
 		if err != nil {
-			if basegitserver.IsRevisionNotFound(err) {
-				log15.Warn("Unknown commit", "commit", upload.Commit)
-				continue
+			for ex := err; ex != nil; ex = errors.Unwrap(ex) {
+				if basegitserver.IsRevisionNotFound(ex) {
+					log15.Warn("Unknown commit", "commit", upload.Commit)
+					continue outer
+				}
 			}
 
 			return time.Time{}, false, errors.Wrap(err, "gitserver.CommitDate")
