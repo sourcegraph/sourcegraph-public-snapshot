@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	amconfig "github.com/prometheus/alertmanager/config"
 	commoncfg "github.com/prometheus/common/config"
@@ -44,14 +45,40 @@ var (
 )
 
 // newRoutesAndReceivers converts the given alerts from Sourcegraph site configuration into Alertmanager receivers
-// and routes. Each alert level has a receiver, which has configuration for all channels for that level. Additional
-// routes can route alerts based on `alerts.on`, but all alerts still fall through to the per-level receivers.
+// and routes with the following strategy:
+//
+// * Each alert level has a receiver, which has configuration for all channels for that level.
+// * Each alert level and owner combination has a receiver and route, which has configuration for all channels for that filter.
+// * Additional routes can route alerts based on `alerts.on`, but all alerts still fall through to the per-level receivers.
 func newRoutesAndReceivers(newAlerts []*schema.ObservabilityAlerts, externalURL string, newProblem func(error)) ([]*amconfig.Receiver, []*amconfig.Route) {
+	// Receivers must be uniquely named. They route
 	var (
 		warningReceiver     = &amconfig.Receiver{Name: alertmanagerWarningReceiver}
 		criticalReceiver    = &amconfig.Receiver{Name: alertmanagerCriticalReceiver}
-		additionalReceivers []*amconfig.Receiver
-		additionalRoutes    []*amconfig.Route
+		additionalReceivers = map[string]*amconfig.Receiver{
+			// stub receiver, for routes that do not have a configured receiver
+			alertmanagerNoopReceiver: {
+				Name: alertmanagerNoopReceiver,
+			},
+		}
+	)
+
+	// Routes
+	var (
+		defaultRoutes = []*amconfig.Route{
+			{
+				Receiver: alertmanagerWarningReceiver,
+				Match: map[string]string{
+					"level": "warning",
+				},
+			}, {
+				Receiver: alertmanagerCriticalReceiver,
+				Match: map[string]string{
+					"level": "critical",
+				},
+			},
+		}
+		additionalRoutes []*amconfig.Route
 	)
 
 	// Parameterized alertmanager templates
@@ -72,6 +99,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 		notificationBodyTemplateWithLinks = fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, firingBodyTemplateWithLinks, resolvedBodyTemplate)
 	)
 
+	// Convert site configuration alerts to Alertmanager configuration
 	for i, alert := range newAlerts {
 		var receiver *amconfig.Receiver
 		var activeColor string
@@ -84,7 +112,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 		}
 		colorTemplate := fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, activeColor, colorGood)
 
-		// generate a new receiver and route for alerts with 'Owners'
+		// Generate receiver and route for alerts with 'Owners'
 		if len(alert.Owners) > 0 {
 			owners := strings.Join(alert.Owners, "|")
 			ownerRegexp, err := amconfig.NewRegexp(fmt.Sprintf("^(%s)$", owners))
@@ -94,24 +122,28 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 			}
 
 			receiverName := fmt.Sprintf("src-%s-on-%s", alert.Level, owners)
-			receiver = &amconfig.Receiver{Name: receiverName}
-			additionalReceivers = append(additionalReceivers, receiver)
-			additionalRoutes = append(additionalRoutes, &amconfig.Route{
-				Receiver: receiverName,
-				Match: map[string]string{
-					"level": alert.Level,
-				},
-				MatchRE: amconfig.MatchRegexps{
-					"owner": *ownerRegexp,
-				},
-				// Generated routes are set up as siblings. Generally, Alertmanager
-				// matches on exactly one route, but for additionalRoutes we don't
-				// want to prevent other routes from getting this alert, so we configure
-				// this route with 'continue: true'
-				//
-				// Also see https://prometheus.io/docs/alerting/latest/configuration/#route
-				Continue: true,
-			})
+			if r, exists := additionalReceivers[receiverName]; exists {
+				receiver = r
+			} else {
+				receiver = &amconfig.Receiver{Name: receiverName}
+				additionalReceivers[receiverName] = receiver
+				additionalRoutes = append(additionalRoutes, &amconfig.Route{
+					Receiver: receiverName,
+					Match: map[string]string{
+						"level": alert.Level,
+					},
+					MatchRE: amconfig.MatchRegexps{
+						"owner": *ownerRegexp,
+					},
+					// Generated routes are set up as siblings. Generally, Alertmanager
+					// matches on exactly one route, but for additionalRoutes we don't
+					// want to prevent other routes from getting this alert, so we configure
+					// this route with 'continue: true'
+					//
+					// Also see https://prometheus.io/docs/alerting/latest/configuration/#route
+					Continue: true,
+				})
+			}
 		}
 
 		notifierConfig := amconfig.NotifierConfig{
@@ -263,16 +295,31 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 		}
 	}
 
-	return append(additionalReceivers, warningReceiver, criticalReceiver),
-		append(additionalRoutes, &amconfig.Route{
-			Receiver: alertmanagerWarningReceiver,
-			Match: map[string]string{
-				"level": "warning",
-			},
-		}, &amconfig.Route{
-			Receiver: alertmanagerCriticalReceiver,
-			Match: map[string]string{
-				"level": "critical",
-			},
-		})
+	var additionalReceiversSlice []*amconfig.Receiver
+	for _, r := range additionalReceivers {
+		additionalReceiversSlice = append(additionalReceiversSlice, r)
+	}
+	return append(additionalReceiversSlice, warningReceiver, criticalReceiver),
+		append(additionalRoutes, defaultRoutes...)
+}
+
+// newRootRoute generates a base Route required by Alertmanager to wrap all routes
+func newRootRoute(routes []*amconfig.Route) *amconfig.Route {
+	return &amconfig.Route{
+		GroupByStr: commonLabels,
+
+		// How long to initially wait to send a notification for a group - each group matches exactly one alert, so fire immediately
+		GroupWait: duration(1 * time.Second),
+
+		// How long to wait before sending a notification about new alerts that are added to a group of alerts - in this case,
+		// equivalent to how long to wait until notifying about an alert re-firing
+		GroupInterval:  duration(1 * time.Minute),
+		RepeatInterval: duration(7 * 24 * time.Hour),
+
+		// Route alerts to notifications
+		Routes: routes,
+
+		// Fallback to do nothing for alerts not compatible with our receivers
+		Receiver: alertmanagerNoopReceiver,
+	}
 }
