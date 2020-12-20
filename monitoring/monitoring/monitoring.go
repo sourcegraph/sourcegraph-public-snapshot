@@ -204,7 +204,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 				if !o.NoAlert {
 					panel.Links = append(panel.Links, sdk.Link{
 						Title:       "Alerts reference",
-						URL:         stringPtr(fmt.Sprintf("%s#%s", canonicalDashboardsDocsURL, observableDocAnchor(c, o))),
+						URL:         stringPtr(fmt.Sprintf("%s#%s", canonicalAlertSolutionsURL, observableDocAnchor(c, o))),
 						TargetBlank: boolPtr(true),
 					})
 				}
