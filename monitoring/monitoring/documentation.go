@@ -11,6 +11,9 @@ import (
 const (
 	canonicalAlertSolutionsURL = "https://docs.sourcegraph.com/admin/observability/alert_solutions"
 	canonicalDashboardsDocsURL = "https://docs.sourcegraph.com/admin/observability/dashboards"
+
+	alertSolutionsFile = "alert_solutions.md"
+	dashboardsDocsFile = "dashboards.md"
 )
 
 const alertSolutionsHeader = `# Sourcegraph alert solutions
@@ -74,7 +77,7 @@ func renderDocumentation(containers []*Container) (*documentation, error) {
 		for _, g := range c.Groups {
 			// the "General" group is top-level
 			if g.Title != "General" {
-				fmt.Fprintf(&docs.dashboards, "### %s: %s\n\n", c.Name, g.Title)
+				fmt.Fprintf(&docs.dashboards, "### %s: %s\n\n", c.Title, g.Title)
 			}
 
 			for _, r := range g.Rows {
@@ -103,9 +106,9 @@ func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) err
 	fprintObservableHeader(&d.alertSolutions, c, &o, 2)
 	fprintSubtitle(&d.alertSolutions, fmt.Sprintf(`%s (%s)`, o.Description, o.Owner))
 
+	var prometheusAlertNames []string // collect names for silencing configuration
 	// Render descriptions of various levels of this alert
 	fmt.Fprintf(&d.alertSolutions, "**Descriptions:**\n\n")
-	var prometheusAlertNames []string
 	for _, alert := range []struct {
 		level     string
 		threshold *ObservableAlertDefinition
@@ -120,7 +123,7 @@ func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) err
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(&d.alertSolutions, "- _%s_\n", desc)
+		fmt.Fprintf(&d.alertSolutions, "- <span class=\"badge badge-%s\">%s</span> %s\n", alert.level, alert.level, desc)
 		prometheusAlertNames = append(prometheusAlertNames,
 			fmt.Sprintf("  \"%s\"", prometheusAlertName(alert.level, c.Name, o.Name)))
 	}
@@ -134,8 +137,8 @@ func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) err
 	}
 	// add link to panel information IF there are additional details available
 	if o.Interpretation != "" && o.Interpretation != "none" {
-		fmt.Fprintf(&d.alertSolutions, "- Refer to the [dashboards reference](%s#%s) for more help interpreting this panel.\n",
-			canonicalDashboardsDocsURL, observableDocAnchor(c, o))
+		fmt.Fprintf(&d.alertSolutions, "- **Refer to the [dashboards reference](./%s#%s)** for more help interpreting this alert and metric.\n",
+			dashboardsDocsFile, observableDocAnchor(c, o))
 	}
 	// add silencing configuration as another solution
 	fmt.Fprintf(&d.alertSolutions, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:\n\n")
@@ -149,7 +152,7 @@ func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) err
 
 func (d *documentation) renderDashboardPanelEntry(c *Container, o Observable) error {
 	fprintObservableHeader(&d.dashboards, c, &o, 4)
-	fmt.Fprintf(&d.dashboards, "This panel indicates %s (%s).\n\n", o.Description, o.Owner)
+	fmt.Fprintf(&d.dashboards, "This %s panel indicates %s.\n\n", o.Owner, o.Description)
 	// render interpretation reference if available
 	if o.Interpretation != "" && o.Interpretation != "none" {
 		interpretation, _ := toMarkdown(o.Interpretation, false)
@@ -157,10 +160,10 @@ func (d *documentation) renderDashboardPanelEntry(c *Container, o Observable) er
 	}
 	// add link to alert solutions IF there is an alert attached
 	if !o.NoAlert {
-		fmt.Fprintf(&d.dashboards, "Refer to the [alert solutions reference](%s#%s) for relevant alerts.\n\n",
-			canonicalAlertSolutionsURL, observableDocAnchor(c, o))
+		fmt.Fprintf(&d.dashboards, "Refer to the [alert solutions reference](./%s#%s) for relevant alerts.\n",
+			alertSolutionsFile, observableDocAnchor(c, o))
 	}
 	// render break for readability
-	fmt.Fprint(&d.dashboards, "<br />\n\n")
+	fmt.Fprint(&d.dashboards, "\n<br />\n\n")
 	return nil
 }
