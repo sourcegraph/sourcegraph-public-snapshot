@@ -130,12 +130,12 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 	// Generate documentation
 	if opts.DocsDir != "" {
 		logger.Debug("Rendering docs")
-		solutions, err := renderDocumentation(containers)
+		docs, err := renderDocumentation(containers)
 		if err != nil {
 			logger.Crit("Unable to generate docs", "error", err)
 			return err
 		}
-		err = ioutil.WriteFile(filepath.Join(opts.DocsDir, alertSolutionsFile), solutions, os.ModePerm)
+		err = ioutil.WriteFile(filepath.Join(opts.DocsDir, alertSolutionsFile), docs.alertSolutions.Bytes(), os.ModePerm)
 		if err != nil {
 			logger.Crit("Could not write alert solutions to output", "error", err)
 			return err
