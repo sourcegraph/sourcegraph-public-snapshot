@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	canonicalAlertSolutionsLink = "https://docs.sourcegraph.com/admin/observability/alert_solutions"
-	canonicalDashboardsLink     = "https://docs.sourcegraph.com/admin/observability/dashboards"
+	canonicalAlertSolutionsURL = "https://docs.sourcegraph.com/admin/observability/alert_solutions"
+	canonicalDashboardsDocsURL = "https://docs.sourcegraph.com/admin/observability/dashboards"
 )
 
 const alertSolutionsHeader = `# Sourcegraph alert solutions
@@ -52,7 +52,7 @@ var observableDocAnchorRemoveRegexp = regexp.MustCompile("(_low|_high)$")
 // Create an anchor link that matches `fprintObservableHeader`
 //
 // Must match Prometheus template in `docker-images/prometheus/cmd/prom-wrapper/receivers.go`
-func observableDocAnchor(c *Container, o *Observable) string {
+func observableDocAnchor(c *Container, o Observable) string {
 	observableAnchor := strings.ReplaceAll(observableDocAnchorRemoveRegexp.ReplaceAllString(o.Name, ""), "_", "-")
 	return fmt.Sprintf("%s-%s", c.Name, observableAnchor)
 }
@@ -134,7 +134,8 @@ func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) err
 	}
 	// add link to panel information IF there are additional details available
 	if o.Interpretation != "" && o.Interpretation != "none" {
-		fmt.Fprintf(&d.alertSolutions, "- Refer to the [dashboards reference](%s#%s) for more help interpreting this panel.\n", canonicalDashboardsLink, observableDocAnchor(c, &o))
+		fmt.Fprintf(&d.alertSolutions, "- Refer to the [dashboards reference](%s#%s) for more help interpreting this panel.\n",
+			canonicalDashboardsDocsURL, observableDocAnchor(c, o))
 	}
 	// add silencing configuration as another solution
 	fmt.Fprintf(&d.alertSolutions, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:\n\n")
@@ -155,7 +156,8 @@ func (d *documentation) renderDashboardPanelEntry(c *Container, o Observable) er
 	}
 	// add link to alert solutions IF there is an alert attached
 	if !o.NoAlert {
-		fmt.Fprintf(&d.dashboards, "Refer to the [alert solutions reference](%s#%s) for relevant alerts.\n\n", canonicalAlertSolutionsLink, observableDocAnchor(c, &o))
+		fmt.Fprintf(&d.dashboards, "Refer to the [alert solutions reference](%s#%s) for relevant alerts.\n\n",
+			canonicalAlertSolutionsURL, observableDocAnchor(c, o))
 	}
 	// render break for readability
 	fmt.Fprint(&d.dashboards, "<br />\n\n")

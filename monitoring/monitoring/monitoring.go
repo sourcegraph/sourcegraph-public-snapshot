@@ -195,6 +195,20 @@ func (c *Container) renderDashboard() *sdk.Board {
 					Show: true,
 				}
 
+				// Add reference links
+				panel.Links = []sdk.Link{{
+					Title:       "Panel reference",
+					URL:         stringPtr(fmt.Sprintf("%s#%s", canonicalDashboardsDocsURL, observableDocAnchor(c, o))),
+					TargetBlank: boolPtr(true),
+				}}
+				if !o.NoAlert {
+					panel.Links = append(panel.Links, sdk.Link{
+						Title:       "Alerts reference",
+						URL:         stringPtr(fmt.Sprintf("%s#%s", canonicalDashboardsDocsURL, observableDocAnchor(c, o))),
+						TargetBlank: boolPtr(true),
+					})
+				}
+
 				opt := o.PanelOptions.withDefaults()
 				leftAxis := sdk.Axis{
 					Decimals: 0,

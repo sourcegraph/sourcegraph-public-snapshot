@@ -23,9 +23,10 @@ func withPeriod(s string) string {
 }
 
 // stringPtr converts a string value to a pointer, useful for setting fields in some APIs.
-func stringPtr(s string) *string {
-	return &s
-}
+func stringPtr(s string) *string { return &s }
+
+// boolPtr converts a boolean value to a pointer, useful for setting fields in some APIs.
+func boolPtr(b bool) *bool { return &b }
 
 // isValidUID checks if the given string is a valid UID for entry into a Grafana dashboard. This is
 // primarily used in the URL, e.g. /-/debug/grafana/d/syntect-server/<UID> and allows us to have
