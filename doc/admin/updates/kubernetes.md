@@ -13,7 +13,7 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 ## 3.22 -> 3.23
 
-TODO
+No manual migration is required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
 
 ## 3.21 -> 3.22
 
